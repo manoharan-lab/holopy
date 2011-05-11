@@ -1,0 +1,74 @@
+From dmckwski@eng.auburn.edu Wed Apr 27 08:40:14 2011
+Date: Wed, 27 Apr 2011 07:39:58 -0500
+From: Daniel Mackowski <dmckwski@eng.auburn.edu>
+To: fung@physics.harvard.edu
+Subject: Re: Request for permission to distribute SCSMFO1B
+
+Dear Jerome,
+
+Yes, you have my official permission to distribute the modified version
+of my scsmfo1b.for code.     
+
+Thank you very much for the encouraging words regarding the code, and
+it is very rewarding to me to know that you have found it useful.
+
+I have stopped all work on the old fortran-77 codes; everything is now
+directed towards the mstm fortran 90 codes.    I will be attending the
+conference in italy, and will be giving a presentation on the new code. 
+ I'll be looking forward to meeting you there.
+
+Cheers,
+
+Dan
+
+>>> On 4/25/2011 at 12:34 PM, in message
+<53668.140.247.59.213.1303752853.squirrel@mail.physics.harvard.edu>,
+<fung@physics.harvard.edu> wrote:
+> Dear Prof. Mackwoski,
+> 
+> I'm a graduate student in Prof. Vinothan N. Manoharan's group at
+Harvard
+> University. We are developing an imaging technique, digital
+holographic
+> microscopy, for studying the 3D dynamics of clusters made from
+colloidal
+> spheres. Your T-matrix code SCSMFO1B.FOR is the cornerstone of our
+> analysis techique. As described in the manuscript I'm attaching,
+we've
+> modified the code so that it can calculate the scattered field from
+a
+> cluster of spheres with non-asymptotic radial dependence on
+spherical
+> Hankel functions of the first kind, and so that the relevant
+subroutines
+> can be readily called from Python.
+> 
+> We are currently interested in making our digital hologram analysis
+codes
+> publicly available via Launchpad: https://launchpad.net.  Launchpad
+> requires that all software it hosts be free, in a broad sense.  We
+> therefore would like to ask your permission to distribute our
+modified
+> version of your code, as part of our digital holography package,
+under the
+> GNU General Public License 3.0:
+> 
+> http://www.gnu.org/licenses/gpl-3.0.html 
+> 
+> We would of course clearly attribute you, and also clearly delineate
+the
+> changes we have made.  We would also be happy to address in detail
+any
+> concerns or questions you may have.
+> 
+> By the way, I just found out about your new Fortran 90 code, MSTM,
+and
+> look forward to using it in the future.  Allow me to express my
+> appreciation and thanks for your work in light scattering; if you
+will be
+> attending the ELS XIII conference in September I would be delighted
+to
+> meet you.
+> 
+> Sincerely,
+> Jerome Fung

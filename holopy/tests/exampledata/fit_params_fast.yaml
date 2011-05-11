@@ -1,0 +1,90 @@
+#max number of iterations for each frame
+max_iter: 5
+
+# physical parameter limits:
+bounds:
+  n_particle_real: [1.0, none]
+  n_particle_imag: [1.0, none]
+  n_particle_real_1: [1.0, none]
+  n_particle_real_2: [1.0, none]
+  n_particle_real_3: [1.0, none]
+  n_particle_imag_1: [0., none]
+  n_particle_imag_2: [0., none]
+  n_particle_imag_3: [0., none]
+  radius: [0, none]
+  radius_1: [0, none]
+  radius_2: [0, none]
+  radius_3: [0, none]
+  x: [none, none]
+  y: [none, none]
+  z: [none, none]
+  x_1: [none, none]
+  y_1: [none, none]
+  z_1: [none, none]
+  x_com: [none, none]
+  y_com: [none, none]
+  z_com: [none, none]
+  # based on continuity issues do not limit euler angles
+  euler_alpha: [none, none]
+  euler_beta: [-90., 270.] # continuity kluge
+  euler_gamma: [none,none]
+  gap_distance: [0.0, none]
+  scaling_alpha: [0.0, 1.0]
+
+# max step size (step sizes are determined by fitter, but can be limited here):
+max_step:
+  n_particle_real:
+  n_particle_imag:
+  n_particle_real_1:
+  n_particle_real_2:
+  n_particle_real_3:
+  n_particle_imag_1:
+  n_particle_imag_2:
+  n_particle_imag_3:
+  radius: 1e-6
+  radius_1: 1e-6
+  radius_2: 1e-6
+  radius_3: 1e-6
+  x: 1e-6
+  y: 1e-6
+  z: 1e-6
+  x_1: 
+  y_1: 
+  z_1: 
+  x_com: 
+  y_com: 
+  z_com: 
+  euler_alpha: 90.
+  euler_beta: 90.
+  euler_gamma: 90.
+  gap_distance: 
+  scaling_alpha: 
+
+# step size to use in calculating the numerical derivatives used to explore the parameter space:
+step:
+  n_particle_real: 1e-4
+  n_particle_imag: 1e-4
+  n_particle_real_1: 1e-4
+  n_particle_real_2: 
+  n_particle_real_3: 
+  n_particle_imag_1:
+  n_particle_imag_2:
+  n_particle_imag_3: 
+  radius: 100e-9
+  radius_1: 
+  radius_2: 
+  radius_3: 
+  x: 100e-9
+  y: 100e-9
+  z: 100e-9
+  x_1: 
+  y_1: 
+  z_1:  
+  x_com: 
+  y_com: 
+  z_com: 
+  euler_alpha:
+  euler_beta: 0.001
+  euler_gamma: 
+  gap_distance: 
+  scaling_alpha:

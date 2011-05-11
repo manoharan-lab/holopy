@@ -1,0 +1,33 @@
+Two options for installing:
+
+User installation
+-----------------
+
+If you want to install the binary build of holopy on your system, run 
+
+python setup.py install
+
+as root.  This will build the packages and install holopy in the local
+dist-packages directory of your python installation, so that python
+will automatically be able to find it when you type "import holopy".
+
+If you are a developer, you might not want to do this because you
+might eventually find yourself with two versions of holopy on your
+system, one installed globally and one installed locally.  An
+alternative is the:
+
+Developer installation
+----------------------
+
+If you are going to hack on holopy, you probably only want to compile the
+scattering extensions.  Let's say you install it in
+/home/me/holopy.  Then cd to "/home/me/holopy" and run
+
+python setup.py build_ext --inplace
+
+This puts the extensions inside the source tree, so that you can work
+directly from /home/me/holopy.  You will need to add
+/home/me/holopy to your python_path for python to find the
+module when you import it.
+
+

@@ -1,0 +1,6 @@
+- make functions and classes conform to Python style guidelines:
+  http://www.python.org/dev/peps/pep-0008/
+
+- replace tiffinfo code with portable code from PIL (look at
+  TiffImagePlugin.py and TiffTags.py from PIL)
+

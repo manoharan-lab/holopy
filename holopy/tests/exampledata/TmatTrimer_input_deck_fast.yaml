@@ -1,0 +1,46 @@
+# files
+data_directory: '.'
+image_range: [3,3]
+results_directory: '.'
+optics_file: './optical_train3.yaml'
+fit_file: './fit_params_fast.yaml'
+
+# Specify one of these two
+frames_per_second: 100
+
+# cluster type (mie, dimer, trimer)
+cluster_type: 'trimer'
+
+# particle and medium properties (initial guesses or constant values)
+# lengths in meters, angles in degrees
+radius_1: .5e-6
+radius_2: .5e-6
+radius_3: .5e-6
+x_com: 6e-6
+y_com: 6e-6
+z_com: 7.09e-6
+n_particle_real_1: 1.651
+n_particle_real_2: 1.598
+n_particle_real_3: 1.599
+n_particle_imag_1: .00001
+n_particle_imag_2: .00001
+n_particle_imag_3: .00001
+medium_index: 1.33
+euler_beta: 5
+euler_gamma: 45
+euler_alpha: 5
+scaling_alpha: .6
+
+#hold these parameters constant (initial values=constant values)
+hold_constant:
+ - n_particle_imag_1
+ - n_particle_imag_2
+ - n_particle_imag_3
+ - radius_1
+ - radius_2
+ - radius_3
+  
+# These parameter pairs are forced to have the same value
+# this should be a dict, not a list
+tied:
+

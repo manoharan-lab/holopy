@@ -1,0 +1,52 @@
+From arbus@math.waikato.ac.nz Wed Feb 10 17:16:49 2010
+Date: Thu, 11 Feb 2010 11:16:25 +1300 (NZDT)
+From: arbus@math.waikato.ac.nz
+To: Jerome Fung <fung@physics.harvard.edu>
+Subject: Re: Permissions for use of SBESJY.FOR
+
+Dear Jerome,
+
+I am pleased to learn that my code SBESJY is of use to you. I am happy for
+you to share the code with collaborators and others as you described. I
+regard the code as open source and public domain as indeed are all my
+published programs. Detailed discussions explaining the method are in the
+.TEX, .DVI and .PDF files at the fresco address.
+
+If you have questions please contact me.
+
+Best wishes,
+
+Ross Barnett
+
+
+>
+> Dear Dr. Barnett,
+>
+> I'm a graduate student in Prof. Vinothan Manoharan's group in the
+> Department of Physics of Harvard University.  I found your code
+> SBESJY.FOR for the computation of spherical Bessel functions of real
+> argument at
+>
+> http://www.fresco.org.uk/programs/barnett/index.htm
+>
+> and have been incorporating those routines into some code of my own for
+> the calculation of electromagnetic scattering from clusters of colloidal
+> spheres, in the context of our group's work on digital holographic
+> microscopy.
+>
+> We would like to share our code base with various collaborators and
+> perhaps eventually make it public and open source.  I am therefore writing
+> to ask permission to distribute SBESJY.FOR along with our code, either
+> unmodified or with minor changes (primarily to add additional comments).
+> We would of course clearly attribute the code to you, as well as delineate
+> all changes we make, if any.
+>
+> Thank you for your assistance, and please let me know if you have any
+> questions.
+>
+> Sincerely,
+> Jerome Fung
+>
+>
+
+
