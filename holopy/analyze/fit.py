@@ -39,7 +39,7 @@ import numpy as np
 from holopy.optics import Optics
 
 
-from minimizers.nmpfit_adapter import _minimize_nmpfit
+import minimizers.nmpfit_adapter as minimizer
 
 def fit(input_deck):
     '''
@@ -249,39 +249,21 @@ def _minimize(holo, parlist, model, err=None, extra_fitter_params={}):
                                                   hasattr(par, 'tied'))]
     fixed_pars = [par for par in parlist if par.fixed]
     tied_pars = [par for par in parlist if hasattr(par, 'tied')]
-    parinfo = [par.parinfo_dict() for par in fitted_pars]
 
-    def residfunct(p, fjac = None):
-        # nmpfit calls residfunct w/fjac as a kwarg, we ignore
-
+    def forward_holo(values):
         scat_dict = {}
         i = 0
         for par in fitted_pars:
-            scat_dict[par.name] = p[i]
+            scat_dict[par.name] = values[i]
             i += 1
         for par in fixed_pars:
             scat_dict[par.name] = par.value
         for par in tied_pars:
             scat_dict[par.name] = scat_dict[par.tied]
-#        print(scat_dict)
-        calculated = model._forward_holo(holo.shape, holo.optics, scat_dict)
-        status = 0
-        if err:
-            derivates = (holo - calculated) / err
-        else:
-            derivates = holo - calculated
+        return model._forward_holo(holo.shape, holo.optics, scat_dict)
 
-        return([status, derivates.ravel()])
-        
-    
-    fitresult = _minimize_nmpfit(residfunct, parinfo = parinfo, quiet=False,
-                                 **extra_fitter_params)
-
-    # Update the fitted_pars with new values from the fit
-    for i in range(fitresult.raw_nmpfit_result.params.size):
-        fitted_pars[i].fit_value = fitresult.raw_nmpfit_result.params[i]
-        fitted_pars[i].fit_error = fitresult.raw_nmpfit_result.perror[i]
-
+    fitresult = minimizer._minimize(holo, forward_holo, fitted_pars,
+                                    **extra_fitter_params)
 
     # include the list of what was done with each parameter in the fitresult
     fitresult.holo_shape = holo.shape
