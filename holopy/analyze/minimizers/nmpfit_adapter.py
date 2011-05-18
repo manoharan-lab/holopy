@@ -103,7 +103,7 @@ class NmpfitParam(object):
         # write fitted param value and error if fitted, None if not
         if (not self.fixed) and (not getattr(self,'tied', None)):
             out_pdict['final_value'] = float(self.fit_value)
-            out_pdict['final_error'] = float(self.fit_error)
+            out_pdict['final_error'] = self.fit_error
         else:
             out_pdict['final_value'] = float(self.value)
             # doesn't handle tying, this can't be done w/o knowing
@@ -115,7 +115,7 @@ class NmpfitParam(object):
             out_pdict['limits'] = self.limits.tolist()
         else:
             raise NotImplemented('Limits cannot be handled in output')
-        
+
         return out_pdict
 
     def __str__(self):
@@ -187,6 +187,13 @@ class NmpfitResult(object):
         self.damp = damp
         self.maxiter = maxiter
 
+    @property
+    def fit_error(self):
+        return self.raw_nmpfit_result.fnorm
+
+    @property
+    def fit_status(self):
+        return self.raw_nmpfit_result.status
 
     def fitter_state_dict(self):
         nmpfit_dict = {'ftol' : self.ftol, 

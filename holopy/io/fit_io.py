@@ -47,8 +47,12 @@ class FitInputDeck(object):
         # we want to keep this initialization fast
         self._background = None
 
-        import holopy.analyze.minimizers.nmpfit_adapter 
-        self.minimizer = holopy.analyze.minimizers.nmpfit_adapter
+        if self.get('minimizer') == 'genetic':
+            import holopy.analyze.minimizers.genetic
+            self.minimizer = holopy.analyze.minimizers.genetic
+        else:
+            import holopy.analyze.minimizers.nmpfit_adapter 
+            self.minimizer = holopy.analyze.minimizers.nmpfit_adapter
 
     # These functions let other code interact with FitInputDeck as if it is a
     # dictionary: deck['name'] will index into the loaded yaml file

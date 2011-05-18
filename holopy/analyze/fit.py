@@ -107,7 +107,7 @@ def fit(input_deck):
             return deck.model._forward_holo(holo.shape, holo.optics, scat_dict)
 
         fit_result = deck.minimizer._minimize(holo, forward_holo, fitted_pars,
-                                              deck._get_extra_minimizer_params())
+                                              **deck._get_extra_minimizer_params())
         
         # include the list of what was done with each parameter in the fit_result
         fit_result.holo_shape = holo.shape
@@ -130,21 +130,18 @@ def fit(input_deck):
         fit_io._output_frame_yaml(deck, fit_result, num)
 
         outf.write_data_line(out_param_dict, num,
-                             fit_result.raw_nmpfit_result.fnorm,
-                             fit_result.raw_nmpfit_result.status)
+                             fit_result.fit_error,
+                             fit_result.fit_status)
 
         # Update parameters to set initial values for next frame
         parameters = update_params(parameters)
 
         # Reset parameters if needed
-        # this is duplicative because scaling code is IMHO over-encapsulated
-        # within FitInputDeck._get_fit_parameters
-        if deck.has_key('reset_to_initial'):
-            if deck['reset_to_initial']:
-                reset_to_initial = deck.get('reset_to_initial')
-                for parname in reset_to_initial:
-                    scaling = deck._param_rescaling_factor(parname)
-                    parameters[parname].value = deck[parname] * scaling
+        if deck.get('reset_to_initial'):
+            reset_to_initial = deck.get('reset_to_initial')
+            for parname in reset_to_initial:
+                scaling = deck._param_rescaling_factor(parname)
+                parameters[parname].value = deck[parname] * scaling
  
     # Cleanup: close tsv file
     outf.close()
@@ -237,7 +234,6 @@ def get_initial_guess(deck):
 
     """
     deck = fit_io.load_FitInputDeck(deck)
-    model = deck.model
 
     parameters = deck._get_fit_parameters()
     h = get_target(deck)
@@ -246,7 +242,7 @@ def get_initial_guess(deck):
     guess = dict([(p, parameters[p].value) for p in
                   deck._get_full_par_ordering()])
 
-    return model._forward_holo(shape, h.optics, guess)
+    return deck.model._forward_holo(shape, h.optics, guess)
 
 
 def get_fit_result(fit_yaml): 
