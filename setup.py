@@ -47,14 +47,21 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('holopy.process')
     config.add_subpackage('holopy.utility')
     config.add_subpackage('holopy.third_party')
-
+    config.get_version()
     return config
+
+__version__ = 'unknown'
+try:
+    from holopy._version import __version__
+except ImportError:
+    # no version specified, or file got deleted in bzr
+    pass
 
 if __name__ == "__main__":
     from numpy.distutils.core import setup
     setup(configuration=configuration,
       name='holopy',
-      version='1.0',
+      version=__version__,
       description='Holography in Python',
       author='Manoharan Lab, Harvard University',
       author_email='vnm@seas.harvard.edu',

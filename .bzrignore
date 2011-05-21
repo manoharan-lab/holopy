@@ -1,0 +1,4 @@
+build
+MFE.c
+*.tsv
+holopy/tests/exampledata/fits

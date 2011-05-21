@@ -108,6 +108,6 @@ To run these tests navigate to holopy/tests and run:
 
 .. sourcecode:: bash
 
-    $ nosetests -a `!slow`
+    $ nosetests -a '!slow'
 
 If installed to the system directory, you will need to run the tests as root.  
