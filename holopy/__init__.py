@@ -33,3 +33,10 @@ from .analyze.fit import fit, get_target, get_initial_guess, get_fit_result
 import process
 from .io.image_io import load
 
+__version__ = 'unknown'
+try:
+    from _version import __version__
+except ImportError:
+    # version doesn't exist, or got deleted in bzr
+    pass
+

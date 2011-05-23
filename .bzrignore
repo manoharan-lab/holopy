@@ -1,4 +1,7 @@
-holopy/model/scattering/mie/MFE.c
 build
+MFE.c
+*.tsv
+holopy/tests/exampledata/fits
 dist
 MANIFEST
+Makefile

@@ -56,21 +56,26 @@ def configuration(parent_package='',top_path=None):
                          ['./holopy/model/scattering/mie/MieFieldExtension.h',
                           './holopy/model/scattering/mie/MieFieldExtension.c',
                           './holopy/model/scattering/mie/MFE.c'],
-#                         include_dirs = './holopy/model/scattering/mie',
                          depends ='./holopy/model/scattering/mie/MFE.pyx',
                          language='cython')
     
+    config.get_version()
     return config
+
+__version__ = 'unknown'
+try:
+    from holopy._version import __version__
+except ImportError:
+    # no version specified, or file got deleted in bzr
+    pass
 
 if __name__ == "__main__":
     from numpy.distutils.core import setup
     setup(configuration=configuration,
           name='holopy',
-          version='1.0',
+          version=__version__,
           description='Holography in Python',
           author='Manoharan Lab, Harvard University',
           author_email='vnm@seas.harvard.edu',
           url='http://manoharan.seas.harvard.edu/',
-          package=['holopy', 'holopy.io'],
-          include_dirs = [np.get_include()].append('./holopy/model/scattering/mie')
-    )
+          package=['holopy', 'holopy.io'])
