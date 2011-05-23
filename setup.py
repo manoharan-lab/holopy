@@ -30,6 +30,8 @@
 # "gfortran" and "python-dev" packages installed.
 
 from numpy.distutils.core import setup, Extension
+import numpy as np
+
 
 # this will automatically build the scattering extensions, using the
 # setup.py files located in their subdirectories
@@ -43,21 +45,32 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('holopy.model')
     config.add_subpackage('holopy.model.scattering')
     config.add_subpackage('holopy.model.scattering.tmatrix')
-    config.add_subpackage('holopy.model.scattering.mie')
     config.add_subpackage('holopy.process')
     config.add_subpackage('holopy.utility')
+    config.add_subpackage('holopy.tests')
     config.add_subpackage('holopy.third_party')
-
+    config.add_scripts('./holopy/bin/fit')
+    config.add_data_files(['.',['AUTHORS']])
+    config.add_data_dir('./holopy/tests')
+    config.add_extension('holopy/model/scattering/mie/MFE',
+                         ['./holopy/model/scattering/mie/MieFieldExtension.h',
+                          './holopy/model/scattering/mie/MieFieldExtension.c',
+                          './holopy/model/scattering/mie/MFE.c'],
+#                         include_dirs = './holopy/model/scattering/mie',
+                         depends ='./holopy/model/scattering/mie/MFE.pyx',
+                         language='cython')
+    
     return config
 
 if __name__ == "__main__":
     from numpy.distutils.core import setup
     setup(configuration=configuration,
-      name='holopy',
-      version='1.0',
-      description='Holography in Python',
-      author='Manoharan Lab, Harvard University',
-      author_email='vnm@seas.harvard.edu',
-      url='http://manoharan.seas.harvard.edu/',
-      package=['holopy', 'holopy.io']
+          name='holopy',
+          version='1.0',
+          description='Holography in Python',
+          author='Manoharan Lab, Harvard University',
+          author_email='vnm@seas.harvard.edu',
+          url='http://manoharan.seas.harvard.edu/',
+          package=['holopy', 'holopy.io'],
+          include_dirs = [np.get_include()].append('./holopy/model/scattering/mie')
     )

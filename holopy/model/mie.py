@@ -98,8 +98,6 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius, x, y, z,
     calc_holo : Hologram
        Calculated hologram from the given distribution of spheres
     """
-    print(n_particle_real, n_particle_imag, radius, x, y, z,
-                 scaling_alpha)
     if isinstance(opt, dict):
         opt = holopy.optics.Optics(**opt)
 
