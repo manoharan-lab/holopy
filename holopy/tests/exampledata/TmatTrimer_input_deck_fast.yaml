@@ -1,7 +1,7 @@
 # files
 data_directory: '.'
 image_range: [3,3]
-results_directory: '.'
+results_directory: './TmatTrimerFast'
 optics_file: './optical_train3.yaml'
 fit_file: './fit_params_fast.yaml'
 

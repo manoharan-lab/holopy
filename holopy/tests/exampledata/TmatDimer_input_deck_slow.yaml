@@ -1,7 +1,7 @@
 # files
 data_directory: '.'
 image_range: [2,2]
-results_directory: '.'
+results_directory: './TmatDimerSlow'
 optics_file: './optical_train2.yaml'
 fit_file: './fit_params_slow.yaml'
 

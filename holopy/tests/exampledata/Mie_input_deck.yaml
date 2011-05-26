@@ -1,6 +1,6 @@
 data_directory: '.' 
 image_range: [1,1]
-results_directory: '.'
+results_directory: './Mie'
 optics_file: './optical_train1.yaml'
 fit_file: './fit_params_slow.yaml'
 

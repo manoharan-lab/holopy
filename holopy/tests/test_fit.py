@@ -54,7 +54,7 @@ class TestFit:
         path = os.path.abspath(holopy.__file__)
         path = string.rstrip(path, chars='__init__.pyc')+'tests/exampledata/'
         input_path = path + 'Mie_input_deck.yaml'
-        result_path = path + 'fit_result.tsv'       
+        result_path = path + 'Mie/fit_result.tsv'       
         holopy.fit(input_path)
         fit_result = np.loadtxt(result_path,skiprows=2,
             usecols=[1,2,3,4,5,6,7,8,9])
@@ -66,7 +66,7 @@ class TestFit:
         path = os.path.abspath(holopy.__file__)
         path = string.rstrip(path, chars='__init__.pyc')+'tests/exampledata/'
         input_path = path + 'TmatDimer_input_deck_slow.yaml'
-        result_path = path + 'fit_result.tsv'    
+        result_path = path + 'TmatDimerSlow/fit_result.tsv'    
         holopy.fit(input_path)
         fit_result = np.loadtxt(result_path,skiprows=2,
             usecols=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])
@@ -77,7 +77,7 @@ class TestFit:
         path = os.path.abspath(holopy.__file__)
         path = string.rstrip(path, chars='__init__.pyc')+'tests/exampledata/'
         input_path = path + 'TmatDimer_input_deck_fast.yaml'
-        result_path = path + 'fit_result.tsv'    
+        result_path = path + 'TmatDimerFast/fit_result.tsv'    
         holopy.fit(input_path)
         fit_result = np.loadtxt(result_path,skiprows=2,
             usecols=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])
@@ -90,7 +90,7 @@ class TestFit:
         path = os.path.abspath(holopy.__file__)
         path = string.rstrip(path, chars='__init__.pyc')+'tests/exampledata/'
         input_path = path + 'TmatTrimer_input_deck_slow.yaml'
-        result_path = path + 'fit_result.tsv'    
+        result_path = path + 'TmatTrimerSlow/fit_result.tsv'    
         holopy.fit(input_path)
         fit_result = np.loadtxt(result_path,skiprows=2,
             usecols=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]) 
@@ -101,7 +101,7 @@ class TestFit:
         path = os.path.abspath(holopy.__file__)
         path = string.rstrip(path, chars='__init__.pyc')+'tests/exampledata/'
         input_path = path + 'TmatTrimer_input_deck_fast.yaml'
-        result_path = path + 'fit_result.tsv'    
+        result_path = path + 'TmatTrimerFast/fit_result.tsv'    
         holopy.fit(input_path)
         fit_result = np.loadtxt(result_path,skiprows=2,
             usecols=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]) 
