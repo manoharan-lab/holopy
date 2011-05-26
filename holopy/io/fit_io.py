@@ -221,9 +221,7 @@ class FitInputDeck(object):
 
         # Normalize after all other transformations because things like
         # subimaging could change the mean pixel value.  
-        normalize(image)
-            
-        return image
+        return normalize(image)
 
     def _get_extra_minimizer_params(self):
         minimizer_params = {}
