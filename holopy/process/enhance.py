@@ -37,7 +37,8 @@ divide = 1
 
 def normalize(image):
     """
-    Normalize an image (numpy array) to itself.
+    Normalize an image (numpy array) by dividing by the pixel average.  This
+    gives the image a mean value of 1.  
 
     Parameters
     ----------
