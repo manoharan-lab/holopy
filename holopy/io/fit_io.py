@@ -199,7 +199,7 @@ class FitInputDeck(object):
             image = background(load(self._image_file_name(number),
                                     opt), self.background, 'divide')
         else:
-            image = normalize(load(self._image_file_name(number), opt))
+            image = load(self._image_file_name(number), opt)
 
         if self.has_key('subimage_center'):
             hologuess = subimage(image, self['subimage_center'],
@@ -219,8 +219,10 @@ class FitInputDeck(object):
         if self.has_key('resample'):
             image = image.resample(self['resample'])
 
-        image = image - image.sum()/image.size + 1
-        
+        # Normalize after all other transformations because things like
+        # subimaging could change the mean pixel value.  
+        normalize(image)
+            
         return image
 
     def _get_extra_minimizer_params(self):
