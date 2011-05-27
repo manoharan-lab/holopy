@@ -45,6 +45,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('holopy.model')
     config.add_subpackage('holopy.model.scattering')
     config.add_subpackage('holopy.model.scattering.tmatrix')
+    config.add_subpackage('holopy.model.scattering.mie')
     config.add_subpackage('holopy.process')
     config.add_subpackage('holopy.utility')
     config.add_subpackage('holopy.tests')
@@ -52,12 +53,6 @@ def configuration(parent_package='',top_path=None):
     config.add_scripts('./holopy/bin/fit')
     config.add_data_files(['.',['AUTHORS']])
     config.add_data_dir('./holopy/tests')
-    config.add_extension('holopy/model/scattering/mie/MFE',
-                         ['./holopy/model/scattering/mie/MieFieldExtension.h',
-                          './holopy/model/scattering/mie/MieFieldExtension.c',
-                          './holopy/model/scattering/mie/MFE.c'],
-                         depends ='./holopy/model/scattering/mie/MFE.pyx',
-                         language='cython')
     
     config.get_version()
     return config

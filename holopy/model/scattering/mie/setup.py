@@ -58,7 +58,7 @@ except ImportError:
 # Define a cython-based extension module, using the generated sources if cython
 # is not available.
 if has_cython:
-    pyx_sources = ['MFE.pyx','MieFieldExtension.c']
+    pyx_sources = ['MFE.pyx','MieFieldExtension.c','MieFieldExtension.h']
 else:
     # In production work, you can ship the auto-generated C source yourself to
     # your users.  In this case, we do NOT ship the .c file as part of numpy,
@@ -68,7 +68,7 @@ else:
     # the pyx at will with less chances for source update conflicts when you
     # update numpy.
 
-    pyx_sources = ['numpyx.c']
+    pyx_sources = ['MFE.c','MieFieldExtension.c','MieFieldExtension.h']
     
 
 # Declare the extension object
@@ -76,7 +76,7 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     config = Configuration('mie',parent_package,top_path)
     config.add_extension('MFE',
-                         [pyx_sources], include_dirs = [numpy.get_include()]
+                         [pyx_sources], include_dirs = ['.']
                          )
     return config
 
