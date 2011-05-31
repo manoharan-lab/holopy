@@ -103,7 +103,7 @@ class NmpfitParam(object):
         # write fitted param value and error if fitted, None if not
         if (not self.fixed) and (not getattr(self,'tied', None)):
             out_pdict['final_value'] = float(self.fit_value)
-            out_pdict['final_error'] = float(self.fit_error)
+            out_pdict['final_error'] = self.fit_error
         else:
             out_pdict['final_value'] = float(self.value)
             # doesn't handle tying, this can't be done w/o knowing
@@ -115,7 +115,7 @@ class NmpfitParam(object):
             out_pdict['limits'] = self.limits.tolist()
         else:
             raise NotImplemented('Limits cannot be handled in output')
-        
+
         return out_pdict
 
     def __str__(self):
@@ -149,13 +149,32 @@ class TiedNmpfitParam(NmpfitParam):
                 "                fit_value: {0.fit_value}, "+
                 "fit_error: {0.fit_error})"
                 ).format(self)
+
+def _minimize(target, forward_holo, parameters, ftol = 1e-10, xtol = 1e-10, gtol =
+              1e-10, damp = 0, maxiter = 100, quiet = False, err=None):
     
-def _minimize_nmpfit(residfunct, parinfo, ftol = 1e-10, xtol = 1e-10, gtol =
-                     1e-10, damp = 0, maxiter = 100, quiet = False):
+    parinfo = [par.parinfo_dict() for par in parameters]
+
+    def residfunct(p, fjac = None):
+        # nmpfit calls residfunct w/fjac as a kwarg, we ignore
+
+        calculated = forward_holo(p)
+        status = 0
+        if err:
+            derivates = (target - calculated) / err
+        else:
+            derivates = target - calculated
+
+        return([status, derivates.ravel()])
 
     fitresult = nmpfit.mpfit(residfunct,  parinfo = parinfo, ftol = ftol, xtol =
-                     xtol, gtol = gtol, damp = damp, maxiter = maxiter, quiet =
-                     False)
+                             xtol, gtol = gtol, damp = damp, maxiter = maxiter, quiet =
+                             False)
+
+    # Update the parameters with new values from the fit
+    for i in range(fitresult.params.size):
+        parameters[i].fit_value = fitresult.params[i]
+        parameters[i].fit_error = fitresult.perror[i]
 
     return NmpfitResult(fitresult,ftol, xtol, gtol, damp, maxiter)
 
@@ -167,6 +186,14 @@ class NmpfitResult(object):
         self.gtol = gtol
         self.damp = damp
         self.maxiter = maxiter
+
+    @property
+    def fit_error(self):
+        return self.raw_nmpfit_result.fnorm
+
+    @property
+    def fit_status(self):
+        return self.raw_nmpfit_result.status
 
     def fitter_state_dict(self):
         nmpfit_dict = {'ftol' : self.ftol, 

@@ -37,7 +37,7 @@ class FitInputDeck(object):
         self._yaml = load_yaml(filename)
         self.filename = filename
         self.deck_location = os.path.split(filename)[0]
-        self.cluster_type = _choose_cluster_type(self)
+        self.model = _choose_model(self)
         self.fit_params = load_yaml(self._get_filename('fit_file'))
         self.optics = Optics(**load_yaml(self._get_filename('optics_file')))
         self.results_directory = os.path.join(self.deck_location,
@@ -46,6 +46,13 @@ class FitInputDeck(object):
         # Load the background on demand since it could take a little while and
         # we want to keep this initialization fast
         self._background = None
+
+        if self.get('minimizer') == 'genetic':
+            import holopy.analyze.minimizers.genetic
+            self.minimizer = holopy.analyze.minimizers.genetic
+        else:
+            import holopy.analyze.minimizers.nmpfit_adapter 
+            self.minimizer = holopy.analyze.minimizers.nmpfit_adapter
 
     # These functions let other code interact with FitInputDeck as if it is a
     # dictionary: deck['name'] will index into the loaded yaml file
@@ -104,7 +111,7 @@ class FitInputDeck(object):
             # rescale into nondimensionalized scattering units because it will
             # put the parameters into a similar order of maginitude and improve
             # fitter stability
-            scaling = _param_rescaling_factor(name, self.cluster_type,
+            scaling = _param_rescaling_factor(name, self.model,
                                               self.optics)
             value = self._yaml[name] * scaling
 
@@ -158,7 +165,7 @@ class FitInputDeck(object):
     def _get_full_par_ordering(self):
         # I don't think this is right. self isn't a parameter dictionary
         #num_particles = _get_num_particles(self,
-        #                                   self.cluster_type.par_ordering[0])
+        #                                   self.model.par_ordering[0])
         # Temporary workaround
         if self._yaml['cluster_type'] == 'mie':
             num_particles = 1
@@ -169,7 +176,7 @@ class FitInputDeck(object):
 
         '''
         par_ordering = []
-        for name in self.cluster_type.par_ordering: 
+        for name in self.model.par_ordering: 
             if self.has_key(name):
                 par_ordering.append(name)
             else: # the parameter name does not match, that is probably because it
@@ -182,7 +189,7 @@ class FitInputDeck(object):
     
         '''
         # temporary workaround
-        par_ordering = self.cluster_type.par_ordering
+        par_ordering = self.model.par_ordering
 
         return par_ordering
 
@@ -237,7 +244,7 @@ class FitInputDeck(object):
         return minimizer_params
 
     def _param_rescaling_factor(self, name):
-        return _param_rescaling_factor(name, self.cluster_type, self.optics)
+        return _param_rescaling_factor(name, self.model, self.optics)
     
     
             
@@ -265,14 +272,14 @@ def _get_num_particles(parm_dict, name):
         num_particles += 1
     return num_particles
 
-def _param_rescaling_factor(name, cluster_type, optics):
-    if cluster_type._scaled_by_k(name):
+def _param_rescaling_factor(name, model, optics):
+    if model._scaled_by_k(name):
         # multiply the parameters that are lengths by k to
         # scaled.  This will put parameters closer to the same
         # order of magnitude and improve the linear algebra properties 
         # of the fitter
         scaling = optics.wavevec
-    elif cluster_type._scaled_by_med_index(name):
+    elif model._scaled_by_med_index(name):
         scaling = 1.0/optics.index
     else:
         scaling = 1.0
@@ -288,20 +295,20 @@ def _split_particle_number(name):
         return name, None
     return '_'.join(tok[:-1]), number
 
-def _choose_cluster_type(name):
+def _choose_model(name):
     if isinstance(name, FitInputDeck) or isinstance(name, dict):
         name = name['cluster_type']
     if name == 'mie':
-        import holopy.model.mie_fortran as cluster_type
+        import holopy.model.mie_fortran as model
 #    if name == 'mie_c':
-#        import holopy.model.mie as cluster_type
+#        import holopy.model.mie as model
     elif name == 'dimer':
-        import holopy.model.tmatrix_dimer as cluster_type
+        import holopy.model.tmatrix_dimer as model
     elif name == 'trimer':
-        import holopy.model.tmatrix_trimer as cluster_type
+        import holopy.model.tmatrix_trimer as model
     else:
         raise NotImplementedError("Fit type {0} not yet implemented.".format(name))
-    return cluster_type
+    return model
 
 
 
@@ -352,7 +359,7 @@ class SimpleFitOutFile(object):
         # write the header
         self.outf.write('# Fit results from: {0} @ {1}\n'.format(deck.filename,
                                                                  time.asctime()))
-        self.cluster_type = _choose_cluster_type(deck)
+        self.model = _choose_model(deck)
         self.output_p_ordering = deck._get_full_par_ordering()
         self.outf.write("Image\t" + '\t'.join(self.output_p_ordering))
         self.outf.write('\tfnorm\tstatus')
@@ -381,7 +388,7 @@ class SimpleFitOutFile(object):
         for key, val in param_dict.iteritems():
             pars_for_output[key] = (val['final_value'] /
                                     _param_rescaling_factor(key,
-                                                            self.cluster_type,
+                                                            self.model,
                                                             self.opt))
 
         pars_for_output = [str(pars_for_output[key]) for key in 

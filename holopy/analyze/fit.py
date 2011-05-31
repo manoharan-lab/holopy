@@ -39,7 +39,7 @@ import numpy as np
 from holopy.optics import Optics
 
 
-from minimizers.nmpfit_adapter import _minimize_nmpfit
+import minimizers.nmpfit_adapter as minimizer
 
 def fit(input_deck):
     '''
@@ -82,13 +82,44 @@ def fit(input_deck):
     for num in range(deck['image_range'][0], 
                      deck['image_range'][1]+1):
 
+        ######################################################################
+        # Minimization
+        ######################################################################
+        
         holo = get_target(deck, num)
 
         parlist = [parameters[k] for k in deck._get_full_par_ordering()]
+        fitted_pars = [par for par in parlist if not (par.fixed or 
+                                                      hasattr(par, 'tied'))]
+        fixed_pars = [par for par in parlist if par.fixed]
         tied_pars = [par for par in parlist if hasattr(par, 'tied')]
 
-        fit_result = _minimize(holo, parlist, deck.cluster_type,
-                               extra_fitter_params=deck._get_extra_minimizer_params())
+        def forward_holo(values):
+            scat_dict = {}
+            i = 0
+            for par in fitted_pars:
+                scat_dict[par.name] = values[i]
+                i += 1
+            for par in fixed_pars:
+                scat_dict[par.name] = par.value
+            for par in tied_pars:
+                scat_dict[par.name] = scat_dict[par.tied]
+            return deck.model._forward_holo(holo.shape, holo.optics, scat_dict)
+
+        fit_result = deck.minimizer._minimize(holo, forward_holo, fitted_pars,
+                                              **deck._get_extra_minimizer_params())
+        
+        # include the list of what was done with each parameter in the fit_result
+        fit_result.holo_shape = holo.shape
+        fit_result.parlist = parlist
+        fit_result.fitted_pars = fitted_pars
+        fit_result.fixed_pars = fixed_pars
+        fit_result.tied_pars = tied_pars
+        
+        
+        ######################################################################
+        # Output
+        ######################################################################
 
         out_param_dict = {}
         for par in parlist:
@@ -99,21 +130,18 @@ def fit(input_deck):
         fit_io._output_frame_yaml(deck, fit_result, num)
 
         outf.write_data_line(out_param_dict, num,
-                             fit_result.raw_nmpfit_result.fnorm,
-                             fit_result.raw_nmpfit_result.status)
+                             fit_result.fit_error,
+                             fit_result.fit_status)
 
         # Update parameters to set initial values for next frame
         parameters = update_params(parameters)
 
         # Reset parameters if needed
-        # this is duplicative because scaling code is IMHO over-encapsulated
-        # within FitInputDeck._get_fit_parameters
-        if deck.has_key('reset_to_initial'):
-            if deck['reset_to_initial']:
-                reset_to_initial = deck.get('reset_to_initial')
-                for parname in reset_to_initial:
-                    scaling = deck._param_rescaling_factor(parname)
-                    parameters[parname].value = deck[parname] * scaling
+        if deck.get('reset_to_initial'):
+            reset_to_initial = deck.get('reset_to_initial')
+            for parname in reset_to_initial:
+                scaling = deck._param_rescaling_factor(parname)
+                parameters[parname].value = deck[parname] * scaling
  
     # Cleanup: close tsv file
     outf.close()
@@ -206,7 +234,6 @@ def get_initial_guess(deck):
 
     """
     deck = fit_io.load_FitInputDeck(deck)
-    cluster_type = deck.cluster_type
 
     parameters = deck._get_fit_parameters()
     h = get_target(deck)
@@ -215,7 +242,7 @@ def get_initial_guess(deck):
     guess = dict([(p, parameters[p].value) for p in
                   deck._get_full_par_ordering()])
 
-    return cluster_type._forward_holo(shape, h.optics, guess)
+    return deck.model._forward_holo(shape, h.optics, guess)
 
 
 def get_fit_result(fit_yaml): 
@@ -232,13 +259,13 @@ def get_fit_result(fit_yaml):
     fit = load_yaml(fit_yaml)
     opt = Optics(**fit['optics'])
 
-    cluster_type = fit_io._choose_cluster_type(fit['model'])
+    model = fit_io._choose_model(fit['model'])
     
     scat_dict = {}
     for param_name, param_out_dict in fit['parameters'].iteritems():
         scat_dict[param_name] = param_out_dict['final_value']
 
-    return cluster_type._forward_holo(fit['io']['hologram_shape'], opt,
+    return model._forward_holo(fit['io']['hologram_shape'], opt,
                                      scat_dict)
 
     
@@ -249,39 +276,21 @@ def _minimize(holo, parlist, model, err=None, extra_fitter_params={}):
                                                   hasattr(par, 'tied'))]
     fixed_pars = [par for par in parlist if par.fixed]
     tied_pars = [par for par in parlist if hasattr(par, 'tied')]
-    parinfo = [par.parinfo_dict() for par in fitted_pars]
 
-    def residfunct(p, fjac = None):
-        # nmpfit calls residfunct w/fjac as a kwarg, we ignore
-
+    def forward_holo(values):
         scat_dict = {}
         i = 0
         for par in fitted_pars:
-            scat_dict[par.name] = p[i]
+            scat_dict[par.name] = values[i]
             i += 1
         for par in fixed_pars:
             scat_dict[par.name] = par.value
         for par in tied_pars:
             scat_dict[par.name] = scat_dict[par.tied]
-#        print(scat_dict)
-        calculated = model._forward_holo(holo.shape, holo.optics, scat_dict)
-        status = 0
-        if err:
-            derivates = (holo - calculated) / err
-        else:
-            derivates = holo - calculated
+        return model._forward_holo(holo.shape, holo.optics, scat_dict)
 
-        return([status, derivates.ravel()])
-        
-    
-    fitresult = _minimize_nmpfit(residfunct, parinfo = parinfo, quiet=False,
-                                 **extra_fitter_params)
-
-    # Update the fitted_pars with new values from the fit
-    for i in range(fitresult.raw_nmpfit_result.params.size):
-        fitted_pars[i].fit_value = fitresult.raw_nmpfit_result.params[i]
-        fitted_pars[i].fit_error = fitresult.raw_nmpfit_result.perror[i]
-
+    fitresult = minimizer._minimize(holo, forward_holo, fitted_pars,
+                                    **extra_fitter_params)
 
     # include the list of what was done with each parameter in the fitresult
     fitresult.holo_shape = holo.shape
