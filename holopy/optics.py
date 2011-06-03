@@ -41,26 +41,26 @@ class Optics(object):
 
     Attributes
     ----------
-    wavelen: float (optional)
+    wavelen : float (optional)
         Wavelength of imaging light in vacuo.
 
-    index: float (optional)
+    index : float (optional)
         Refractive index of medium
 
-    polarization: tuple or array (optional)
+    polarization : tuple or array (optional)
         Electric field amplitudes in x and y direction.
 
-    divergence: float (optional)
+    divergence : float (optional)
         Divergence of the incident beam (currently unused)
 
-    pixel_size: tuple (optional)
+    pixel_size : tuple (optional)
         Physical size of the camera's pixels.
 
-    mag: float (optional)
+    mag : float (optional)
         Magnification of optical train. Ignored if pixel_scale
         is specified.
 
-    pixel_scale: tuple (optional)
+    pixel_scale : tuple (optional)
         Size of pixel in the imaging plane. This is equal to the
         physical size of the pixel divided by the magnification. 
 

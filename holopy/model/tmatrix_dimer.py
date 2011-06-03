@@ -60,40 +60,40 @@ def forward_holo(size, opt, n_particle_real_1, n_particle_real_2,
 
     Parameters
     ----------
-    size: int or (int, int)
+    size : int or (int, int)
        of pixels in hologram to calculate (square if scalar)
-    opt: Optics or dict
+    opt : Optics or dict
        Optics class or dictionary describing wavelength and pixel 
        information for the calculation
-    n_particle_real_1: float
+    n_particle_real_1 : float
        Real part of the index of refraction of particle 1.  
-    n_particle_real_2: float
+    n_particle_real_2 : float
        Real index of particle 2. If None, assumed same as n_particle_real_1.
-    n_particle_imag_1: float
+    n_particle_imag_1 : float
        particle 1 imaginary refractive index
-    n_particle_imag_2: float
+    n_particle_imag_2 : float
        imaginary index of particle 2. If None, assumed same as 
        n_particle_imag_1.
-    radius_1, radius_2: float
+    radius_1, radius_2 : float
        particle radii
-    x_com, y_com, z_com:
+    x_com, y_com, z_com :
        coordinates of dimer center of mass
-    scaling_alpha: float
+    scaling_alpha : float
        Overall scaling factor for terms containing E_scat
-    euler_beta: float
+    euler_beta : float
        Euler angle beta (deg) in modified zyz convention (rotation about y).
-    euler_gamma: float
+    euler_gamma : float
        Euler angle gamma (deg) in modified zyz convention (rotation about z).
-    gap_distance: float
+    gap_distance : float
        Interparticle gap distance ( = 0 at hard-sphere contact.) 
-    scaling_alpha: float
+    scaling_alpha : float
        Overall scaling factor for terms containing E_scat
-    tmat_dict: float
+    tmat_dict : float
        dictionary of T-matrix code parameters
-    old_coords: bool
+    old_coords : bool
        If True, use old coordinate convention of (0,0) at center,
        positive x -rows, positive y cols.
-    dimensional: bool
+    dimensional : bool
        If False, assume all lengths non-dimensionalized by k and all indices
        relative (divided by medium index).
 

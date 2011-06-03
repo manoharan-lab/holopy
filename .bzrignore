@@ -1,6 +1,7 @@
 build
 MFE.c
 *.tsv
+.coverage
 holopy/tests/exampledata/fits
 dist
 MANIFEST
