@@ -146,7 +146,7 @@ def save_image(im, filename=None, phase=False):
     
     Parameters
     ----------
-    im : ndarray or Hologram
+    im : ndarray or :class:`holopy.hologram.Hologram`
         image to save. 
     filename : basestring (optional)
         filename in which to save image. If im is a hologram the
