@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -16,21 +16,23 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 #! /usr/bin/python
-#
-# Extensions for T-Matrix scattering calculations (in fortran77 and
-# fortran90); numpy.distutils should automatically use f2py to compile
-# these, and f2py should detect your fortran compiler.
-#
-# The code works with gcc, but has not been tested with other
-# compilers.  Note that f2py by default compiles with optimization
-# flags.
-#
-# Ignore compiler warnings of unused variables, unused dummy
-# arguments, and variables being used uninitialized from compiling 
-# scsmfo_min. The former is relics of how scsmfo was written which I 
-# am not touching. The latter is likely due to some GOTO statements that
-# could cause a variable to be referenced before it's initialized. Under
-# normal usage I wouldn't worry about it. 
+
+'''
+Extensions for T-Matrix scattering calculations (in fortran77 and
+fortran90); numpy.distutils should automatically use f2py to compile
+these, and f2py should detect your fortran compiler.
+
+The code works with gcc, but has not been tested with other
+compilers.  Note that f2py by default compiles with optimization
+flags.
+
+Ignore compiler warnings of unused variables, unused dummy
+arguments, and variables being used uninitialized from compiling 
+scsmfo_min. The former is relics of how scsmfo was written which I 
+am not touching. The latter is likely due to some GOTO statements that
+could cause a variable to be referenced before it's initialized. Under
+normal usage I wouldn't worry about it. 
+'''
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration

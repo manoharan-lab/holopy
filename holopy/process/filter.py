@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -44,7 +44,8 @@ def _mask(im_size, mask_rad):
     Returns
     -------
     mask : ndarray<Boolean>
-       im_size x im_size Boolean ndarray; True for r from center < mask_rad 
+       im_size x im_size Boolean ndarray; True for r from center <
+       mask_rad  
     '''
     # resulting grid will be symmetric about the center if im_size even
     grid = scipy.mgrid[0:im_size, 0:im_size] - (im_size/2. - 0.5)
@@ -116,10 +117,9 @@ def zero_filter(image):
 
 
 
-# TODO convert to using scipy.ndimage.fourier.fourier_gaussian() instead.  Also
-# propose renaming to lowpass()
-
 # This function taken from http://www.scipy.org/Cookbook/SignalSmooth
+# TODO convert to using scipy.ndimage.fourier.fourier_gaussian()
+# instead.  
 @_preserve_holo_type
 def lowpass(im, n, ny=None) :
     """ blurs the image by convolving with a gaussian kernel of typical
@@ -131,7 +131,7 @@ def lowpass(im, n, ny=None) :
     return improc
 
 # This function taken from http://www.scipy.org/Cookbook/SignalSmooth
-# TODO: deleting _gauss_kern() in favor of
+# TODO: delete _gauss_kern() in favor of
 # scipy.ndimage.fourier.fourier_gaussian()
 def _gauss_kern(size, sizey=None):
     """ Returns a normalized 2D gauss kernel array for convolutions """

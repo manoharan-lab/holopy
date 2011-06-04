@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -44,9 +44,13 @@ def center_find(image,scale=.5):
     ----------
     image : ndarray
         image to find the center of
-    
     scale : float (optional)
         gradient magnitude threshold
+
+    Returns
+    -------
+    res : ndarray
+        row and column of center
 
     Notes
     -----
@@ -71,6 +75,13 @@ def image_gradient(image):
     ----------
     image : ndarray
         image to find the gradient of
+
+    Returns
+    -------
+    gradx : ndarray
+        x-components of intensity gradient
+    grady : ndarray
+        y-components of intensity gradient
     """
     gradx = scipy.ndimage.sobel(image, axis = 0)
     grady = -1*scipy.ndimage.sobel(image, axis=1)
@@ -95,6 +106,14 @@ def hough(x_deriv, y_deriv,scale=.5):
     
     scale : float (optional)
         gradient magnitude threshold
+
+    Returns
+    -------
+    res : ndarray
+        row and column of center
+    accumulator : ndarray
+        accumulator array.  The maximum of this array should be the
+        center of the hologram 
 
     """
     #Finding the center: Using the derivatives we have already found

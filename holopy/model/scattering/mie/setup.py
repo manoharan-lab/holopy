@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -46,27 +46,27 @@ Then you can just do the "python setup.py build_ext --inplace" and it should com
 
 import numpy
 
-# We detect whether Cython is available, so that below, we can eventually ship
-# pre-generated C for users to compile the extension without having Cython
-# installed on their systems.
+# We detect whether Cython is available, so that below, we can
+# eventually ship pre-generated C for users to compile the extension
+# without having Cython installed on their systems.
 try:
     import Cython.Distutils 
     has_cython = True
 except ImportError:
     has_cython = False
 
-# Define a cython-based extension module, using the generated sources if cython
-# is not available.
+# Define a cython-based extension module, using the generated sources
+# if cython is not available.
 if has_cython:
     pyx_sources = ['MFE.pyx','MieFieldExtension.c','MieFieldExtension.h']
 else:
-    # In production work, you can ship the auto-generated C source yourself to
-    # your users.  In this case, we do NOT ship the .c file as part of numpy,
-    # so you'll need to actually have cython installed at least the first
-    # time.  Since this is really just an example to show you how to use
-    # *Cython*, it makes more sense NOT to ship the C sources so you can edit
-    # the pyx at will with less chances for source update conflicts when you
-    # update numpy.
+    # In production work, you can ship the auto-generated C source
+    # yourself to your users.  In this case, we do NOT ship the .c
+    # file as part of numpy, so you'll need to actually have cython
+    # installed at least the first time.  Since this is really just an
+    # example to show you how to use *Cython*, it makes more sense NOT
+    # to ship the C sources so you can edit the pyx at will with less
+    # chances for source update conflicts when you update numpy.
 
     pyx_sources = ['MFE.c','MieFieldExtension.c','MieFieldExtension.h']
     
@@ -88,9 +88,9 @@ from numpy.distutils.misc_util import appendpath
 from numpy.distutils import log
 
 
-# patch to get numpy.distutils to work with Cython
-# from Matthew Brett
-# see http://www.mail-archive.com/numpy-discussion@scipy.org/msg25279.html
+# patch to get numpy.distutils to work with Cython from Matthew Brett
+# see
+# http://www.mail-archive.com/numpy-discussion@scipy.org/msg25279.html
 def generate_a_pyrex_source(self, base, ext_name, source, extension):
     ''' Monkey patch for numpy build_src.build_src method
     

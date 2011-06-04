@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -43,27 +43,20 @@ class Optics(object):
     ----------
     wavelen : float (optional)
         Wavelength of imaging light in vacuo.
-
     index : float (optional)
         Refractive index of medium
-
     polarization : tuple or array (optional)
         Electric field amplitudes in x and y direction.
-
     divergence : float (optional)
         Divergence of the incident beam (currently unused)
-
     pixel_size : tuple (optional)
         Physical size of the camera's pixels.
-
     mag : float (optional)
         Magnification of optical train. Ignored if pixel_scale
         is specified.
-
     pixel_scale : tuple (optional)
         Size of pixel in the imaging plane. This is equal to the
         physical size of the pixel divided by the magnification. 
-
 
     Notes
     -----
@@ -71,8 +64,6 @@ class Optics(object):
     reconstructions to work you should specify at least `pixel_scale`,
     `wavelen` in vacuo, and `index`.  Alternatively you can specify 
     `pixel_size`, `mag`, `wavelen`, and `index`.
-
-    
     """
 
     def __init__(self, wavelen=None, index=None, polarization=(1.0, 0),
@@ -87,7 +78,8 @@ class Optics(object):
         # optical train parameters
         self.mag = mag          # magnification 
         self.train = train
-        # TODO: code here to validate optical train, calculate magnification
+        # TODO: code here to validate optical train, calculate
+        # magnification
 
         # detector parameters
         self.pixel_size = np.array(pixel_size)
@@ -129,8 +121,10 @@ class Optics(object):
         """
         Not yet implemented
 
-        :return: returns a plane reference wave propagated through the optics
-        
+        Returns
+        -------
+        field : ndarray
+            A plane reference wave propagated through the optics 
         """
         pass
 

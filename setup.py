@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -18,16 +18,18 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 
-# setup.py
-#
-# uses numpy.distutils instead of standard distutils so that we can
-# build fortran extensions
-#
-# Notes:
-#
-# The t-matrix and mie scattering codes require working Fortran 90 and
-# C compilers, as well as f2py and cython. On Ubuntu, you will need the
-# "gfortran" and "python-dev" packages installed.
+'''
+setup.py
+
+uses numpy.distutils instead of standard distutils so that we can
+build fortran extensions
+
+Notes:
+
+The t-matrix and mie scattering codes require working Fortran 90 and
+C compilers, as well as f2py and cython. On Ubuntu, you will need the
+"gfortran" and "python-dev" packages installed.
+'''
 
 from numpy.distutils.core import setup, Extension
 import numpy as np

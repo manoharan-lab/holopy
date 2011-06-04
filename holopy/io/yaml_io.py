@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -18,9 +18,10 @@
 """
 Reading and writing of yaml files.
 
-yaml files are structured text files designed to be easy for humans to read and
-write but also easy for computers to read.  Holopy uses them to store
-information about experimental conditions and to describe analysis procedures.
+yaml files are structured text files designed to be easy for humans to
+read and write but also easy for computers to read.  Holopy uses them
+to store information about experimental conditions and to describe
+analysis procedures.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 """
@@ -34,23 +35,24 @@ def load_yaml(filename):
     """
     Load a yaml config file
 
-    Does a fair amount of preprocessing to ensure numbers are read correctly,
-    arrays are read as numpy arrays and compute simple arithmetic expressions
+    Does a fair amount of preprocessing to ensure numbers are read
+    correctly, arrays are read as numpy arrays and compute simple
+    arithmetic expressions 
 
     Parameters
     ----------
-    filename: string
+    filename : string
         File to load
 
     Returns
     -------
     yaml : dict
-       Dictionary with all key value pairs from the yaml file and with aritmetic
-       experssions evaluated
+       Dictionary with all key value pairs from the yaml file and with
+       arithmetic expressions evaluated 
 
     Raises
     ------
-    LoadError if it can't fine the file
+    LoadError if it can't find the file
     """
 
     yf = yaml.load(open(filename))

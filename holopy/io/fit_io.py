@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -15,6 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
+
 from .yaml_io import load_yaml
 from .image_io import load
 import yaml_io
@@ -43,8 +44,8 @@ class FitInputDeck(object):
         self.results_directory = os.path.join(self.deck_location,
                                               self['results_directory'])
         self.optics.index = self._yaml['medium_index']
-        # Load the background on demand since it could take a little while and
-        # we want to keep this initialization fast
+        # Load the background on demand since it could take a little
+        # while and we want to keep this initialization fast
         self._background = None
 
         if self.get('minimizer') == 'genetic':
@@ -54,16 +55,17 @@ class FitInputDeck(object):
             import holopy.analyze.minimizers.nmpfit_adapter 
             self.minimizer = holopy.analyze.minimizers.nmpfit_adapter
 
-    # These functions let other code interact with FitInputDeck as if it is a
-    # dictionary: deck['name'] will index into the loaded yaml file
+    # These functions let other code interact with FitInputDeck as if
+    # it is a dictionary: deck['name'] will index into the loaded yaml
+    # file
     def has_key(self, key):
         return self._yaml.has_key(key)
     def get(self, key):
         return self._yaml.get(key)
     def __getitem__(self, key):
         return self._yaml[key]
-    # Lack of a __setitem__ is intentional, we don't other code changing the
-    # input deck
+    # Lack of a __setitem__ is intentional, we don't want other code
+    # changing the input deck
 
     def _image_name(self, num):
         return 'image' + str(num).zfill(4)
@@ -108,15 +110,16 @@ class FitInputDeck(object):
             self._yaml['tied'] = {}
 
         def make_param(name):
-            # rescale into nondimensionalized scattering units because it will
-            # put the parameters into a similar order of maginitude and improve
-            # fitter stability
+            # rescale into nondimensionalized scattering units because
+            # it will put the parameters into a similar order of
+            # maginitude and improve fitter stability
             scaling = _param_rescaling_factor(name, self.model,
                                               self.optics)
             value = self._yaml[name] * scaling
 
-            # if the parm is specified as x_n we may only have a values sepecified
-            # for x, in this case, use the general values for x
+            # if the parm is specified as x_n we may only have a
+            # values sepecified for x, in this case, use the general
+            # values for x 
 
             fit_params_name = name
             if not fit_params['bounds'].has_key(name):
@@ -151,8 +154,9 @@ class FitInputDeck(object):
         for name in self._get_full_par_ordering():
             try:
                 parameters[name] = make_param(name)
-            except KeyError: # if parameter value not specified in input deck
-                # probably because of tying, ignore for now
+            except KeyError: # if parameter value not specified in
+                # input deck, probably because of tying, ignore for
+                # now 
                 pass
 
         if self.has_key('tied'):
@@ -198,9 +202,9 @@ class FitInputDeck(object):
         if number is None:
             number = self['image_range'][0]
 
-        # read the optics fresh, because self.optics will have resampled pixel
-        # sizes for correct parameter conversions, but we don't want that when
-        # loading an image
+        # read the optics fresh, because self.optics will have
+        # resampled pixel sizes for correct parameter conversions, but
+        # we don't want that when loading an image
         opt = self.optics
         if self.background is not None:
             image = background(load(self._image_file_name(number),
@@ -247,7 +251,6 @@ class FitInputDeck(object):
         return _param_rescaling_factor(name, self.model, self.optics)
     
     
-            
 def load_FitInputDeck(name):
     if isinstance(name, FitInputDeck):
         return name
@@ -259,8 +262,8 @@ def _setup_output_directory(deck):
 
     _mkdir_p(os.path.join(deck.results_directory,'fits'))
     
-    # Copy all of the files used to the output directory, helping associate with
-    # the results with the parameters used to get them
+    # Copy all of the files used to the output directory, helping
+    # associate with the results with the parameters used to get them
     _copy_file(deck.filename, deck.results_directory)
     _copy_file(deck._get_filename('optics_file'), deck.results_directory)
     _copy_file(deck._get_filename('fit_file'), deck.results_directory)
@@ -290,8 +293,9 @@ def _split_particle_number(name):
     try:
         number = int(tok[-1])
     except ValueError:
-        # if the parameter name has no number off the end, then there is only
-        # one of that parameter, return none to make that clear
+        # if the parameter name has no number off the end, then there
+        # is only one of that parameter, return none to make that
+        # clear 
         return name, None
     return '_'.join(tok[:-1]), number
 

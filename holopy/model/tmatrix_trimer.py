@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -34,10 +34,13 @@ from holopy.utility.helpers import _ensure_pair
 
 from numpy import array, pi, sqrt, arccos, sin, cos
 
-par_ordering = ['n_particle_real_1', 'n_particle_real_2', 'n_particle_real_3',
-                'n_particle_imag_1', 'n_particle_imag_2', 'n_particle_imag_3', 
-                'radius_1', 'radius_2', 'radius_3', 'x_com', 'y_com',
-                'z_com', 'scaling_alpha', 'euler_alpha', 'euler_beta',
+par_ordering = ['n_particle_real_1', 'n_particle_real_2', 
+                'n_particle_real_3',
+                'n_particle_imag_1', 'n_particle_imag_2', 
+                'n_particle_imag_3', 
+                'radius_1', 'radius_2', 'radius_3', 
+                'x_com', 'y_com', 'z_com', 
+                'scaling_alpha', 'euler_alpha', 'euler_beta',
                 'euler_gamma']
 
 def _scaled_by_k(param_name):
@@ -55,46 +58,46 @@ def forward_holo(size, opt, n_particle_real_1,  n_particle_real_2,
                  z_com, scaling_alpha, euler_alpha, euler_beta, euler_gamma, 
                  tmat_dict = None, old_coords = False, dimensional = True):
     """
-    Calculate hologram of a trimer with all 3 spheres touching from T-matrix
-    scattering model.
+    Calculate hologram of a trimer with all 3 spheres touching from
+    T-matrix scattering model.
 
     Parameters
     ----------
-    size: int or (int, int)
+    size : int or (int, int)
        Number of pixels in hologram to calculate (square if scalar)
-    opt: Optics or dict
+    opt : Optics or dict
        Optics class or dictionary describing wavelength and pixel 
        information for the calculation
-    n_particle_real_1: float
+    n_particle_real_1 : float
        Real part of the index of refraction of particle 1.  
-    n_particle_real_2, n_particle_3: float
+    n_particle_real_2, n_particle_3 : float
        Real index of particle 2 or 3. If None, assumed same as 
        n_particle_real_1.
-    n_particle_imag_1: float
+    n_particle_imag_1 : float
        particle 1 imaginary refractive index
-    n_particle_imag_2, n_particle_3: float
+    n_particle_imag_2, n_particle_3 : float
        imaginary index of particle 2 or 3. If None, assumed same as
        n_particle_imag_1.
-    radius_1, radius_2, radius_3: float
+    radius_1, radius_2, radius_3 : float
        particle radii
-    x_com, y_com, z_com:
+    x_com, y_com, z_com :
        coordinates of dimer center of mass
-    euler_alpha: float
+    euler_alpha : float
        Euler angle alpha (deg), describes rotation about z axis
-    euler_beta: float
+    euler_beta : float
        Euler angle beta (deg), describes rotation about y axis
-    euler_gamma: float
+    euler_gamma : float
        Euler angle gamma (deg), describes rotation about z axis
-    scaling_alpha: float
+    scaling_alpha : float
        Overall scaling factor for terms containing E_scat
-    tmat_dict: float
+    tmat_dict : float
        dictionary of T-matrix code parameters
-    old_coords: bool
+    old_coords : bool
        If True, use old coordinate convention of (0,0) at center,
        positive x -rows, positive y cols.
-    dimensional: bool
-       If False, assume all lengths non-dimensionalized by k and all indices
-       relative (divided by medium index).
+    dimensional : bool
+       If False, assume all lengths non-dimensionalized by k and all
+       indices relative (divided by medium index). 
 
     Returns
     -------
@@ -103,20 +106,21 @@ def forward_holo(size, opt, n_particle_real_1,  n_particle_real_2,
 
     Notes
     -----
-    This code assumes the three particles are all touching. All three may be
-    of different sizes.
+    This code assumes the three particles are all touching. All three
+    may be of different sizes.
 
-    Euler angles are defined in the zyz convention. As described elsewhere, 
-    it is convenient to think in terms of an active transformation. In the 
-    reference configuration, with all Euler angles = 0, all particles lie
-    in the x-y plane. Particle 1 has a larger x-coordinate than particles
-    2 and 3, and particles 3, 1, and 2 have progressively larger y-coordinates.
+    Euler angles are defined in the zyz convention. As described
+    elsewhere, it is convenient to think in terms of an active
+    transformation. In the reference configuration, with all Euler
+    angles = 0, all particles lie in the x-y plane. Particle 1 has a
+    larger x-coordinate than particles 2 and 3, and particles 3, 1,
+    and 2 have progressively larger y-coordinates.
 
-    See details concerning implementation in [1].
+    See details concerning implementation in [1]_.
 
     References
     ----------
-    [1] J. Fung et al., Optics Express 19, 8051-8065 (2011).
+    .. [1] Jerome Fung et al., Optics Express 19, 8051-8065 (2011).
        
     """
     if not tmat_dict:
@@ -139,7 +143,8 @@ def forward_holo(size, opt, n_particle_real_1,  n_particle_real_2,
     if isinstance(opt, dict):
         opt = optics.Optics(**opt)
 
-    # Allow size and pixel size to be either 1 number (square) or rectangular
+    # Allow size and pixel size to be either 1 number (square) or
+    # rectangular
     xdim, ydim = _ensure_pair(size)
     px, py = _ensure_pair(opt.pixel)
 
@@ -165,8 +170,9 @@ def forward_holo(size, opt, n_particle_real_1,  n_particle_real_2,
         m_imags = array([n_particle_imag_1, n_particle_imag_2,
                          n_particle_imag_3])
 
-    # calculate particle coordinates. Rely on scat. being computed about COM,
-    # so to make geometry easier, put particle #1 at the origin.
+    # calculate particle coordinates. Rely on scat. being computed
+    # about COM, so to make geometry easier, put particle #1 at the
+    # origin. 
     # particle 2 at x = -sqrt(3)/2 * (x1+x2), y = 0.5 * (x1+x2) by fiat
     # angle defs: see p. 127 of JF lab notebook "June 2010"
     # particle 3 at x = -cos(delta - pi/3) * (x1+x3)
@@ -187,7 +193,8 @@ def forward_holo(size, opt, n_particle_real_1,  n_particle_real_2,
     nodr, nodrt, amn0 = scsmfo_min.amncalc(1, xarr, yarr, zarr, m_reals, 
                                            m_imags, x_parts, 
                                            tmat_dict['niter'], 
-                                           tmat_dict['eps'], tmat_dict['qeps1'],
+                                           tmat_dict['eps'], 
+                                           tmat_dict['qeps1'],
                                            tmat_dict['qeps2'], 
                                            tmat_dict['meth'], ea)
 
@@ -211,11 +218,12 @@ def forward_holo(size, opt, n_particle_real_1,  n_particle_real_2,
 
 def _forward_holo(size, opt, scat_dict): 
     '''
-    Internal use; passes everything to public forward_holo non-dimensionally.
+    Internal use; passes everything to public forward_holo
+    non-dimensionally.
     '''
-        # make sure these params have value of None if they do not exist.  The
-    # fitter will assume a value for them in that case, but it will fail if they
-    # don't exist at all.
+    # make sure these params have value of None if they do not exist.  The
+    # fitter will assume a value for them in that case, but it will
+    # fail if they don't exist at all.
     scat_dict['n_particle_real_2'] = scat_dict.get('n_particle_real_2')
     scat_dict['n_particle_imag_2'] = scat_dict.get('n_particle_imag_2')
     scat_dict['n_particle_real_3'] = scat_dict.get('n_particle_real_3')

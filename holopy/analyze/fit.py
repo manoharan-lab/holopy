@@ -63,10 +63,10 @@ def fit(input_deck):
     -----
     Tentative output is a dictionary of dictionaries.
     Output dict has following keys: {'model', 'parameters', 'nmpfit_data',
-    'optics', 'io'}
-    whose values could also be dictionaries.
-    This seems a little easier (and also more robust) than defining a new 
-    output_object class and writing PyYAML dumpers, etc to write it out.
+    'optics', 'io'} whose values could also be dictionaries. This
+    seems a little easier (and also more robust) than defining a new
+    output_object class and writing PyYAML dumpers, etc to write it
+    out. 
     '''
     # read input deck
     deck = fit_io.load_FitInputDeck(input_deck)
@@ -163,18 +163,18 @@ def get_target(deck, number=None):
     deck : dict
        Input parameters from input deck yaml file
     number : int
-       Number of the image to use for this frame.  Defaults to first hologram in
-       the fit series.  
+       Number of the image to use for this frame.  Defaults to first
+       hologram in the fit series.
 
     Returns
     -------
-    target : Hologram
+    target : :class:`holopy.hologram.Hologram`
        Hologram properly preprocessed for fitting
 
     Notes
     -----
-    Background is cached by FitInputDeck, so calling this repeatedly does not
-    incure overhead of loading the background each time.  
+    Background is cached by FitInputDeck, so calling this repeatedly
+    does not incur overhead of loading the background each time.
 
     Examples
     --------
@@ -212,7 +212,7 @@ def get_initial_guess(deck):
 
     Returns
     -------
-    guess_holo : Hologram
+    guess_holo : :class:`holopy.hologram.Hologram`
        The computed hologram that input_deck uses as its initial guess
 
     Examples
@@ -255,6 +255,11 @@ def get_fit_result(fit_yaml):
     fit_yaml : string
         filename and path of yaml file describing the fit results, as
         produced by fit.fit() 
+
+    Returns
+    -------
+    holo : :class:`holopy.hologram.Hologram` object
+        Hologram corresponding to best fit
     '''
     fit = load_yaml(fit_yaml)
     opt = Optics(**fit['optics'])
@@ -326,13 +331,10 @@ def dimer_angles_gap(position1, position2, radius1, radius2):
     ----------
     position1 : three-element tuple or array
         The x,y,z coordinate of the first bead
-
     position2 : three-element tuple or array
         The x,y,z coordinate of the second bead
-
     radius1 : float
         First bead's radius
-
     radius2 : float
         Second bead's radius
 
@@ -341,13 +343,10 @@ def dimer_angles_gap(position1, position2, radius1, radius2):
     center_of_mass : three-element float array
         The x,y,z coordinate of the center of mass
         of the dimer.
-
     epsilon_r : float
         The dimensionless separation parameter.
-
     beta : float
         The Euler angle beta.
-
     gamma : float
         The Euler angle gamma.
 
@@ -371,11 +370,12 @@ def dimer_angles_gap(position1, position2, radius1, radius2):
 
 def dimer_bead_coords(beta, gamma, gap, x1,x2,k, xcom, ycom, zcom):
     """
-    This function takes the position and orientation of the dimer defined
-    by the center of mass, the two Euler angles (beta and gamma), the dimensionless gap
-    distance parameter between the particles, the two size of parameters of each particle,
-    and the wave vector, k. It then returns the x,y,z coordinates of each bead,
-    their radius and the separation between them.
+    This function takes the position and orientation of the dimer
+    defined by the center of mass, the two Euler angles (beta and
+    gamma), the dimensionless gap distance parameter between the
+    particles, the two size of parameters of each particle, and the
+    wave vector, k. It then returns the x,y,z coordinates of each
+    bead, their radius and the separation between them. 
 
     Parameters
     ----------
@@ -414,7 +414,6 @@ def dimer_bead_coords(beta, gamma, gap, x1,x2,k, xcom, ycom, zcom):
         Radius of first particle.
     radius2 : float
         Radius of second particle.
-
     center_to_center : float
         Center-to-center separation between the two particles.
         

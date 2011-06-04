@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -36,8 +36,8 @@ from scattering.tmatrix.mieangfuncs import singleholo
 from scattering.tmatrix.miescatlib import nstop, scatcoeffs
 
 
-par_ordering = ['n_particle_real', 'n_particle_imag', 'radius', 'x', 'y', 'z',
-                'scaling_alpha']
+par_ordering = ['n_particle_real', 'n_particle_imag', 'radius', 'x',
+                'y', 'z', 'scaling_alpha'] 
 
 
 def _scaled_by_k(param_name):
@@ -54,16 +54,16 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius,
     """
     Compute a hologram of n spheres by mie superposition
 
-    Parameters may be specified in any consistent set of units (make sure the
-    optics object is also in the same units).  
+    Parameters may be specified in any consistent set of units (make
+    sure the optics object is also in the same units).
     
     Parameters
     ----------
     size : int or (int, int)
        dimension in pixels of the hologram to calculate (square if scalar)
     opt : Optics or dict
-       Optics class or dictionary describing wavelength and pixel information
-       for the calculation
+       Optics class or dictionary describing wavelength and pixel
+       information for the calculation 
     n_particle_real : float 
        refractive index of sphere
     n_particle_imag : float or array(float)
@@ -79,8 +79,8 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius,
     scaling_alpha : float
        hologram scaling alpha
     dimensional: bool
-       If False, assume all lengths non-dimensionalized by k and all indices
-       relative (divided by medium index).    
+       If False, assume all lengths non-dimensionalized by k and all
+       indices relative (divided by medium index).
 
     Returns
     -------
@@ -137,9 +137,7 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius,
 
 def _forward_holo(size, opt, scat_dict): 
     '''
-    Internal use; passes everything to public forward_holo non-dimensionally.
+    Internal use; passes everything to public forward_holo
+    non-dimensionally.
     '''
     return forward_holo(size, opt, dimensional = False, **scat_dict)
-
-
-
