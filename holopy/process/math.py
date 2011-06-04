@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -28,7 +28,7 @@ from holopy.utility.helpers import _preserve_holo_type
 @_preserve_holo_type
 def fft(a, overwrite=False, shift=True):
     """
-    More convienent Fast Fourier Transform
+    More convenient Fast Fourier Transform
     
     An easier to use fft function, it will pick the correct fft to do
     based on the shape of the data, and do the fftshift for you.  This
@@ -41,19 +41,21 @@ def fft(a, overwrite=False, shift=True):
     a : ndarray
        The array to transform
     overwrite : bool
-       Allow this function to overwrite the data you pass in.  This may improve
-       performance slightly.  Default is not to overwrite
+       Allow this function to overwrite the data you pass in.  This
+       may improve performance slightly.  Default is not to overwrite
     shift : bool
-       Whether to preform an fftshift on the data to give low frequences near
-       the center as you probably expect.  Default is to do the fftshift.
+       Whether to preform an fftshift on the data to give low
+       frequences near the center as you probably expect.  Default is
+       to do the fftshift. 
 
     Returns
     -------
     fta : ndarray
-       The fourier transform of a
+       The fourier transform of `a`
     """
     if shift:
-        shift = lambda x: fftpack.fftshift(x, axes=[0,1]) #Only words for ndim>1
+        shift = lambda x: fftpack.fftshift(x, axes=[0,1]) # Only works
+                                                          # for ndim>1 
     else:
         shift = lambda x: x
 
@@ -65,28 +67,30 @@ def fft(a, overwrite=False, shift=True):
 @_preserve_holo_type
 def ifft(a, overwrite=False, shift=True):
     """
-    More convienent Inverse  Fast Fourier Transform
+    More convenient Inverse Fast Fourier Transform
     
-    An easier to use ifft function, it will pick the correct ifft to do
-    based on the shape of the data, and do the fftshift for you.  This is
-    indendended for working with images, and thus for dimensions greater than 2
-    does slicewise transforms of each "image" in a multidimensional stack
+    An easier to use ifft function, it will pick the correct ifft to
+    do based on the shape of the data, and do the fftshift for you.
+    This is indendended for working with images, and thus for
+    dimensions greater than 2 does slicewise transforms of each
+    "image" in a multidimensional stack
 
     Parameters
     ----------
     a : ndarray
        The array to transform
     overwrite : bool
-       Allow this function to overwrite the data you pass in.  This may improve
-       performance slightly.  Default is not to overwrite
+       Allow this function to overwrite the data you pass in.  This
+       may improve performance slightly.  Default is not to overwrite 
     shift : bool
-       Whether to preform an fftshift on the data to give low frequences near
-       the center as you probably expect.  Default is to do the fftshift.
+       Whether to preform an fftshift on the data to give low
+       frequences near the center as you probably expect.  Default is to
+       do the fftshift. 
 
     Returns
     -------
     ifta : ndarray
-       The inverse fourier transform of a
+       The inverse fourier transform of `a`
     """
 
     if shift:

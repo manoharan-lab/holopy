@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -37,8 +37,8 @@ divide = 1
 
 def normalize(image):
     """
-    Normalize an image (numpy array) by dividing by the pixel average.  This
-    gives the image a mean value of 1.  
+    Normalize an image (numpy array) by dividing by the pixel average.
+    This gives the image a mean value of 1.
 
     Parameters
     ----------
@@ -58,7 +58,7 @@ def background(holo, background, kind = divide):
 
     Parameters
     ----------
-    holo : Hologram
+    holo : :class:`holopy.hologram.Hologram`
        Image to process
     background : ndarray
        Background image to remove
@@ -67,7 +67,7 @@ def background(holo, background, kind = divide):
 
     Returns
     -------
-    holo : Hologram
+    holo : :class:`holopy.hologram.Hologram`
        Hologram with background eliminated
     '''
     if background.ndim < holo.ndim:
@@ -88,7 +88,7 @@ def detrend(image):
     Remove linear trends from an image.
 
     Performs a 2 axis linear detrend using scipy.signal.detrend
-    
+
     Parameters
     ----------
     image : ndarray

@@ -33,23 +33,25 @@ from holopy.utility.helpers import _ensure_pair
 # so that we can do things other than convolution
 
 def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
-              gradient_filter=False, rec_zx_plane=False, project_along_z=False):
+              gradient_filter=False, rec_zx_plane=False, 
+              project_along_z=False):
     """
     Propagates a hologram a distance d along the optical axis.
 
-    Uses scalar diffraction theory calculate a hologram at a given distance
-    away.  If you are doing a series of propagations of the same image (like in
-    a reconstruction stack), you can save time by doing the fourier transform
-    once outside this function.  If you do not provide the fourier transform, it
-    will be computed here.  Propagate can apply an arbitrary array to
-    the data as a fourier filter, this will be multiplied by the hologram in the
-    fourier domain.  If you want to apply several, just multiply them together.
-    This functionallity is used for efficiently applying contrast enhancing
-    masks to data.
+    Uses scalar diffraction theory calculate a hologram at a given
+    distance away.  If you are doing a series of propagations of the
+    same image (like in a reconstruction stack), you can save time by
+    doing the fourier transform once outside this function.  If you do
+    not provide the fourier transform, it will be computed here.
+    Propagate can apply an arbitrary array to the data as a fourier
+    filter, this will be multiplied by the hologram in the fourier
+    domain.  If you want to apply several, just multiply them
+    together.  This functionallity is used for efficiently applying
+    contrast enhancing masks to data.
 
     Parameters
     ----------
-    holo : Hologram
+    holo : :class:`holopy.hologram.Hologram`
        Hologram to propagate
     d : float
        Distance to propagate, in meters
@@ -58,16 +60,16 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
     fourier_filter : ndarray<complex> (optional)
        Fourier filter to apply to reconstructed data
     squeeze : Boolean (optional)
-       If True, remove size 1 dimensions (so if a single z is provided return
-       holo will be a 2d array
+       If True, remove size 1 dimensions (so if a single z is provided
+       return holo will be a 2d array
     gradient_filter : float
        For each distance, compute a second propagation a distance
-       gradient_filter away and subtract.  This enhances contrast of rapidly
-       varying features
+       gradient_filter away and subtract.  This enhances contrast of
+       rapidly varying features 
     rec_zx_plane : Boolean (optional)
        Set to True to reconstruct a plane along the z-dimension, this will
-       average along the shorter dimension in x and y and return a 2d array of
-       (x or y),  z
+       average along the shorter dimension in x and y and return a 2d
+       array of (x or y),  z 
     project_along_z : Boolean (optional)
        Set to True to reconstruct a projection of z-slices, d should be an
        array of distances, return will be a sum of reconstructions at those
@@ -75,14 +77,15 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
 
     Returns
     -------
-    holo(d) : Hologram
+    holo(d) : :class:`holopy.hologram.Hologram`
        The hologram progagated to a distance d from its current location.  
         
     Notes
     -----
-    propagate is used primarily to support reconstructions, but is separated out
-    because occasionally you want to propagate a hologram without invoking the
-    rest of the reconstruction machinery.  
+    propagate is used primarily to support reconstructions, but is
+    separated out because occasionally you want to propagate a
+    hologram without invoking the rest of the reconstruction
+    machinery. 
     """
     
     m,n = holo.shape[:2]
@@ -116,8 +119,9 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
         ft = np.repeat(ft[:,np.newaxis,...], G.shape[1], axis=1)
 
         ft[(dim_im/2-mm):(dim_im/2+mm),:] *= G[:(mm*2),:]
-        # Transfer function may not cover the whole image, any values outside it
-        # need to be set to zero to make the reconstruction correct
+        # Transfer function may not cover the whole image, any values
+        # outside it need to be set to zero to make the reconstruction
+        # correct
         ft[0:dim_im/2-mm,...]=0
         ft[dim_im/2+mm:m,...]=0
 
@@ -132,8 +136,9 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
         ft = ft.reshape(ft.shape[0], ft.shape[1], 1)
     ft = np.repeat(ft[:,:,np.newaxis,...], G.shape[2], axis=2)
     ft[(m/2-mm):(m/2+mm),(n/2-nn):(n/2+nn),...] *= G[:(mm*2),:(nn*2),:,np.newaxis]
-    # Transfer function may not cover the whole image, any values outside it
-    # need to be set to zero to make the reconstruction correct
+    # Transfer function may not cover the whole image, any values
+    # outside it need to be set to zero to make the reconstruction
+    # correct
     ft[0:n/2-nn,...]=0
     ft[n/2+nn:n,...]=0
     ft[:,0:m/2-mm,...]=0
@@ -146,41 +151,43 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
         return ifft(ft, overwrite=True)
 
 def trans_func(shape, pixel, wavelen, d, cfsp=0, squeeze=True,
-               gradient_filter=0, recon_in_zx_plane=False, zprojection=False):
+               gradient_filter=0, recon_in_zx_plane=False, 
+               zprojection=False):
     """
     Calculates the optical transfer function to use in reconstruction
 
     This routine uses the analytical form of the transfer function
-    found in in Kreis [1].  It can optionally do cascaded free-space
-    propagation for greater accuracy [2] , although the code will run
-    slightly slower.
+    found in in Kreis [1]_.  It can optionally do cascaded free-space
+    propagation for greater accuracy [2]_, although the code will run
+    slightly more slowly.
 
     Parameters
     ----------
     shape : (int, int)
        maximum dimensions of the transfer function
-    pixel: (float, float)
+    pixel : (float, float)
        effective pixel dimensions
-    wavelen: float
+    wavelen : float
        recording wavelength
-    d: float or list of floats
+    d : float or list of floats
        reconstruction distance.  If list or array, this function will
        return an array of transfer functions, one for each distance 
-    cfsp: integer (optional)
+    cfsp : integer (optional)
        cascaded free-space propagation factor.  If this is an integer
        > 0, the transfer function G will be calculated at d/csf and
        the value returned will be G**csf.
-    squeeze: Bool (optional)
-       Remove length 1 dimensions (so that if only one distance is specified
-       trans_func will be a 2d array)
-    gradient_filter: float (optional)
-       Subtract a second transfer function a distance gradint_filter from each z
-    recon_in_zx_plane: Boolean (optional)
-       Calculate a 2d transfer function along z and (x or y) [pick the larger
-       dimension].  
-    zprojection: Boolean (optional)
-       Set to True to return a sum of the transfer functions at distances z,
-       used to calculate a projected hologram
+    squeeze : Bool (optional)
+       Remove length 1 dimensions (so that if only one distance is
+       specified trans_func will be a 2d array) 
+    gradient_filter : float (optional)
+       Subtract a second transfer function a distance gradint_filter
+       from each z 
+    recon_in_zx_plane : Boolean (optional)
+       Calculate a 2d transfer function along z and (x or y) [pick the
+       larger dimension].   
+    zprojection : Boolean (optional)
+       Set to True to return a sum of the transfer functions at
+       distances z, used to calculate a projected hologram 
 
     Returns
     -------
@@ -190,10 +197,10 @@ def trans_func(shape, pixel, wavelen, d, cfsp=0, squeeze=True,
 
     References
     ----------
-    [1] Kreis, Handbook of Holographic Interferometry (Wiley,
-    2005), equation 3.79 (page 116)
+    .. [1] Kreis, Handbook of Holographic Interferometry (Wiley,
+       2005), equation 3.79 (page 116)
 
-    [2] Kreis, Optical Engineering 41(8):1829, section 5
+    .. [2] Kreis, Optical Engineering 41(8):1829, section 5
     
     """
     d = np.array([d])
@@ -246,8 +253,8 @@ def trans_func(shape, pixel, wavelen, d, cfsp=0, squeeze=True,
     # the size of the array only as large as the domain corresponding
     # to the transfer function at the smallest z-distance
 
-    # for this we need to use the magnitude of d, size of the image should be a
-    # positive number
+    # for this we need to use the magnitude of d, size of the image
+    # should be a positive number
     max_m = int(np.max(xdim**2*dx**2/np.abs(d)/wavelen/2))+1
     max_n = int(np.max(ydim**2*dy**2/np.abs(d)/wavelen/2))+1
 

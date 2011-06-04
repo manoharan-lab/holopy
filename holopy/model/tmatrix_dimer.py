@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -33,13 +33,16 @@ from holopy.utility.helpers import _ensure_pair
 
 from numpy import array, pi
 
-par_ordering = ['n_particle_real_1',  'n_particle_real_2', 'n_particle_imag_1',
-                'n_particle_imag_2', 'radius_1', 'radius_2', 'x_com', 'y_com', 
-                'z_com', 'scaling_alpha', 'euler_beta', 'euler_gamma',
+par_ordering = ['n_particle_real_1',  'n_particle_real_2', 
+                'n_particle_imag_1',  'n_particle_imag_2', 
+                'radius_1', 'radius_2', 
+                'x_com', 'y_com', 'z_com', 
+                'scaling_alpha', 'euler_beta', 'euler_gamma',
                 'gap_distance']
 
 def _scaled_by_k(param_name):
-    pars = ['radius_1', 'radius_2', 'x_com', 'y_com', 'z_com', 'gap_distance']
+    pars = ['radius_1', 'radius_2', 'x_com', 'y_com', 'z_com', 
+            'gap_distance']
     return param_name in pars
 
 def _scaled_by_med_index(param_name):
@@ -55,47 +58,49 @@ def forward_holo(size, opt, n_particle_real_1, n_particle_real_2,
     """
     Calculate hologram of a dimer from T-matrix scattering model.
 
-    Parameters may be specified in any consistent set of units (make sure the
-    optics object is also in the same units).
+    Parameters may be specified in any consistent set of units (make
+    sure the optics object is also in the same units).
 
     Parameters
     ----------
-    size: int or (int, int)
+    size : int or (int, int)
        of pixels in hologram to calculate (square if scalar)
-    opt: Optics or dict
+    opt : Optics or dict
        Optics class or dictionary describing wavelength and pixel 
        information for the calculation
-    n_particle_real_1: float
+    n_particle_real_1 : float
        Real part of the index of refraction of particle 1.  
-    n_particle_real_2: float
+    n_particle_real_2 : float
        Real index of particle 2. If None, assumed same as n_particle_real_1.
-    n_particle_imag_1: float
+    n_particle_imag_1 : float
        particle 1 imaginary refractive index
-    n_particle_imag_2: float
+    n_particle_imag_2 : float
        imaginary index of particle 2. If None, assumed same as 
        n_particle_imag_1.
-    radius_1, radius_2: float
+    radius_1, radius_2 : float
        particle radii
-    x_com, y_com, z_com:
+    x_com, y_com, z_com : float
        coordinates of dimer center of mass
-    scaling_alpha: float
+    scaling_alpha : float
        Overall scaling factor for terms containing E_scat
-    euler_beta: float
-       Euler angle beta (deg) in modified zyz convention (rotation about y).
-    euler_gamma: float
-       Euler angle gamma (deg) in modified zyz convention (rotation about z).
-    gap_distance: float
+    euler_beta : float
+       Euler angle beta (deg) in modified zyz convention (rotation
+       about y). 
+    euler_gamma : float
+       Euler angle gamma (deg) in modified zyz convention (rotation
+       about z). 
+    gap_distance : float
        Interparticle gap distance ( = 0 at hard-sphere contact.) 
-    scaling_alpha: float
+    scaling_alpha : float
        Overall scaling factor for terms containing E_scat
-    tmat_dict: float
+    tmat_dict : float
        dictionary of T-matrix code parameters
-    old_coords: bool
+    old_coords : bool
        If True, use old coordinate convention of (0,0) at center,
        positive x -rows, positive y cols.
-    dimensional: bool
-       If False, assume all lengths non-dimensionalized by k and all indices
-       relative (divided by medium index).
+    dimensional : bool
+       If False, assume all lengths non-dimensionalized by k and all
+       indices relative (divided by medium index).
 
     Returns
     -------
@@ -104,26 +109,28 @@ def forward_holo(size, opt, n_particle_real_1, n_particle_real_2,
 
     Notes
     -----
-    The larger the size of the cluster, the more terms are needed in the
-    expansion of the scattered fields in a series of vector spherical harmonics,
-    and the longer the code takes to run.  The cluster size is determined 
-    both by the particle radii and by gap_distance.  In particular, this code
-    is not recommended for use when the gap distance is very large (in 
-    particular, more than several particle diameters).  Use Lorenz-Mie 
-    superposition instead.
+    The larger the size of the cluster, the more terms are needed in
+    the expansion of the scattered fields in a series of vector
+    spherical harmonics, and the longer the code takes to run.  The
+    cluster size is determined both by the particle radii and by
+    gap_distance.  In particular, this code is not recommended for use
+    when the gap distance is very large (in particular, more than
+    several particle diameters).  Use Lorenz-Mie superposition
+    instead.
 
-    Only two Euler angles are necessary because dimers are axisymmetric.  Our
-    Euler angle beta differs slightly from the zyz convention in that it is
-    permitted to be negative.  It will behave in a mathematically sensible way 
-    between -180 and 360 degrees.  The reference configuration (beta and gamma
-    both = 0) occurs wtih both particles lying on the x-axis, with the 
-    x coordinate of particle #1 being positive.
+    Only two Euler angles are necessary because dimers are
+    axisymmetric.  Our Euler angle beta differs slightly from the zyz
+    convention in that it is permitted to be negative.  It will behave
+    in a mathematically sensible way between -180 and 360 degrees.
+    The reference configuration (beta and gamma both = 0) occurs wtih
+    both particles lying on the x-axis, with the x coordinate of
+    particle #1 being positive.
 
-    See details concerning implementation in [1].
+    See details concerning implementation in [1]_.
 
     References
     ----------
-    [1] J. Fung et al., Optics Express 19, 8051-8065 (2011).
+    .. [1] Jerome Fung et al., Optics Express 19, 8051-8065 (2011).
 
     """
     if not tmat_dict: # Provide sensible defaults
@@ -139,7 +146,8 @@ def forward_holo(size, opt, n_particle_real_1, n_particle_real_2,
     if isinstance(opt, dict):
         opt = optics.Optics(**opt)
 
-    # Allow size and pixel size to be either 1 number (square) or rectangular
+    # Allow size and pixel size to be either 1 number (square) or
+    # rectangular 
     xdim, ydim = _ensure_pair(size)
     px, py = _ensure_pair(opt.pixel)
 
@@ -182,7 +190,8 @@ def forward_holo(size, opt, n_particle_real_1, n_particle_real_2,
     nodr, nodrt, amn0 = scsmfo_min.amncalc(1, xarr, yarr, zarr, m_reals, 
                                            m_imags, x_parts, 
                                            tmat_dict['niter'], 
-                                           tmat_dict['eps'], tmat_dict['qeps1'],
+                                           tmat_dict['eps'], 
+                                           tmat_dict['qeps1'],
                                            tmat_dict['qeps2'], 
                                            tmat_dict['meth'], ea)
 
@@ -208,9 +217,9 @@ def _forward_holo(size, opt, scat_dict):
     '''
     Internal use; passes everything to public forward_holo non-dimensionally.
     '''
-    # make sure these params have value of None if they do not exist.  The
-    # fitter will assume a value for them in that case, but it will fail if they
-    # don't exist at all.
+    # make sure these params have value of None if they do not exist.
+    # The fitter will assume a value for them in that case, but it
+    # will fail if they don't exist at all.
     scat_dict['n_particle_real_2'] = scat_dict.get('n_particle_real_2')
     scat_dict['n_particle_imag_2'] = scat_dict.get('n_particle_imag_2')
     

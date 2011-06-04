@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -24,15 +24,6 @@ reconstructions.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Tom G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
-
-.. automodule:: holopy.process.enhance
-        :members:
-.. automodule:: holopy.process.filter
-        :members:        
-.. automodule:: holopy.process.math
-        :members:        
-.. automodule:: holopy.process.centerfinder
-        :members:        
 '''
 
 from .enhance import *

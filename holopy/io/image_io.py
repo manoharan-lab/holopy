@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -48,27 +48,22 @@ def load(im, optics=None, bg=None, bg_type='subtract',
         if ndarray, contains the raw hologram data;
         if string or list of strings, specifies the filename or
         list of filenames 
-        
-    optics : Optics object or string (optional)
+    optics : :class:`holopy.optics.Optics` object or string (optional)
         Optical train parameters.  If string, specifies the filename
         of an optics yaml
-
     bg : string (optional)
         name of background file
-
     bg_type : string (optional)
         set to 'subtract' or 'divide' to specify how background is removed
-
     channel : int (optional)
         number of channel to load for a color image (in general 0=red,
         1=green, 2=blue) 
-    
     time_scale : float or list (optional)
         time between frames or, if list, time at each frame
 
     Returns
     -------
-    holo : Hologram object
+    holo : :class:`holopy.hologram.Hologram` object
     
     Notes
     -----
@@ -78,10 +73,10 @@ def load(im, optics=None, bg=None, bg_type='subtract',
     # Handle the Optics File
     if isinstance(optics, basestring):
         try:
-            # read from a yaml file.  Each line should be one of the parameters
-            # of the optics.
+            # read from a yaml file.  Each line should be one of the
+            # parameters of the optics.
             #
-            #For Example
+            # For Example
             #
             # wavelen: 785e-9
             # pixel_scale: [3.4e-7, 3.4e-7]
@@ -151,15 +146,12 @@ def save_image(im, filename=None, phase=False):
     
     Parameters
     ----------
-
     im : ndarray or Hologram
         image to save. 
-
     filename : basestring (optional)
         filename in which to save image. If im is a hologram the
         function should default to the hologram's name field if no
         filename is specified 
-
     phase : boolean (optional)
         if True, save the phase data rather than the magnitude
 
@@ -191,7 +183,6 @@ def _read(filename, channel=0):
     ----------
     filename : String
         name of file to open.
-
     channel : int (optional)
         number of channel in color image (in general 0=red,
         1=green, 2=blue) 
@@ -213,7 +204,8 @@ def _read(filename, channel=0):
         # numpy format
         return np.load(filename)
     elif extension in ['.tif', '.TIF', '.tiff', '.TIFF']:
-        # check for nonstandard TIFF file (e.g. 12-bit, which PIL can't open) 
+        # check for nonstandard TIFF file (e.g. 12-bit, which PIL
+        # can't open)  
         arr = _read_tiff(filename)
     else:
         # try PIL
@@ -229,7 +221,8 @@ def _read(filename, channel=0):
     elif channel > 0:
         print "Warning: not a color image (channel number ignored)"
 
-    # we choose a convention that the large dimension of an image is always x
+    # we choose a convention that the large dimension of an image is
+    # always x 
     # here we rotate if the file does not obey this convention
     if arr.shape[0] < arr.shape[1]:
         arr = np.transpose(arr)
@@ -321,9 +314,8 @@ def _read_tiff_12bit(filename, size):
 
 
 def _make_id(name):
-    """ Construct an identifying name for a hologram based on the file or files
-    it came from
-    
+    """ Construct an identifying name for a hologram based on the file
+    or files it came from 
     """
 
     if isinstance(name, np.ndarray):

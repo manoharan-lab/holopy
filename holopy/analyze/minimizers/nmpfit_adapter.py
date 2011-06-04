@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -40,7 +40,8 @@ class NmpfitParam(object):
         self.deriv_side = 0
         self.maxstep = maxstep
         self.name = name
-        # tying parameters in nmpfit does not work, so work around ourselves
+        # tying parameters in nmpfit does not work, so work around
+        # ourselves 
         # may need error-checking code b/c tying only makes sense for a few
         # params
         # self.tied = 'param' ties to value of parameter 'param'
@@ -129,14 +130,16 @@ class NmpfitParam(object):
     
 class TiedNmpfitParam(NmpfitParam):
     def __init__(self, tied_par, name):
-        # this is a reference to the nmpfit_param object this object is tied to
+        # this is a reference to the nmpfit_param object this object
+        # is tied to 
         self.tied_par = tied_par
         # tied_nmpfit_param has only two variables, everything else passes
         # through to nmpfit_param
         self.name = name
         self.tied = self.tied_par.name
 
-    # Pass through all parameter requests except for .name or .tied to the tied parameter
+    # Pass through all parameter requests except for .name or .tied to
+    # the tied parameter 
     def __getattr__(self, name):
         return getattr(self.tied_par, name)
 
@@ -150,12 +153,13 @@ class TiedNmpfitParam(NmpfitParam):
                 "fit_error: {0.fit_error})"
                 ).format(self)
     
-def _minimize_nmpfit(residfunct, parinfo, ftol = 1e-10, xtol = 1e-10, gtol =
-                     1e-10, damp = 0, maxiter = 100, quiet = False):
+def _minimize_nmpfit(residfunct, parinfo, ftol = 1e-10, xtol = 1e-10, 
+                     gtol = 1e-10, damp = 0, maxiter = 100, quiet = False):
 
-    fitresult = nmpfit.mpfit(residfunct,  parinfo = parinfo, ftol = ftol, xtol =
-                     xtol, gtol = gtol, damp = damp, maxiter = maxiter, quiet =
-                     False)
+    fitresult = nmpfit.mpfit(residfunct, parinfo = parinfo, 
+                             ftol = ftol, xtol = xtol, gtol = gtol, 
+                             damp = damp, maxiter = maxiter, 
+                             quiet = False)
 
     return NmpfitResult(fitresult,ftol, xtol, gtol, damp, maxiter)
 

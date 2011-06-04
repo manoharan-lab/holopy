@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -39,18 +39,15 @@ class Hologram(np.ndarray):
     ----------
     arr : numpy.ndarray
         raw data array of hologram.
-    
-    optics : Optics object (optional)
+    optics : :class:`holopy.optics.Optics` object (optional)
         optical train parameters
-
     time_scale : float or list of float (optional)
         time betwen frames or list of times of each frame
 
     Notes
     -----
     Hologram class stores the data in the measured hologram or
-    hologram stack as an ndarray of integers with user-defined
-    precision.
+    hologram stack as an ndarray
     """
     # The reason I don't separate the hologram class from a separate
     # optics class is that the hologram image itself is only
@@ -87,7 +84,8 @@ class Hologram(np.ndarray):
     @property
     def shape3d(self):
         """
-        returns shape as a 3 tuple (if the hologram is 2d then the third dimension will be 1
+        returns shape as a 3 tuple (if the hologram is 2d then the
+        third dimension will be 1
         """
         if self.ndim == 2:
             return self.shape[0], self.shape[1], 1
@@ -127,13 +125,11 @@ class Hologram(np.ndarray):
 
         Returns
         -------
-        new_image : Hologram object
+        new_image : :class:`holopy.hologram.Hologram` object
 
         Notes
         -----
-        This algorithm does 2 1-D resamplings.  In the
-        future we should probably implement a Lanczos resampling
-        filter.
+        This algorithm does 2 1-D resamplings.  
         
         """
         if np.isscalar(shape):
@@ -143,7 +139,8 @@ class Hologram(np.ndarray):
             x, y = shape
             name = self.name+'r{0}'.format(x)
         new_image = scipy.signal.resample(self, x, axis=0, window=window)
-        new_image = scipy.signal.resample(new_image, y, axis=1, window=window)
+        new_image = scipy.signal.resample(new_image, y, axis=1, 
+                                          window=window)
 
         # Change the pixel calibration appropriately.  If image is
         # downsampled, pixel scale should increase
@@ -164,17 +161,15 @@ def subimage(im, center=None, size=None):
     ----------
     im : ndarray
         the image from which the subimage is to be extracted
-
     center : (int, int) tuple (optional)
         The center of the subimage.  Defaults to center of im.
-
     size : int or (int, int) tuple (optional)
         number of pixels across subimage.  Defaults to largest power
         of 2 that fits within im
 
     Returns
     -------
-    Hologram : Hologram object
+    Hologram : :class:`holopy.hologram.Hologram` object
 
     Raises
     ------
@@ -200,11 +195,12 @@ def subimage(im, center=None, size=None):
         Makes sure subimage is within bounds of image.
         Moves center of subimage to be within bounds.
         '''
-        # move the center if needed to fit the given subimage within the image
+        # move the center if needed to fit the given subimage within
+        # the image 
         x1 = center+(length + 1) // 2
-        # Use so that, for example, the middle pixel in length 9 comes out is 5
-        # instead of for.  Truncation will cause 8 to still give a middle pixel
-        # of 4 as desired.
+        # Use so that, for example, the middle pixel in length 9 comes
+        # out is 5 instead of for.  Truncation will cause 8 to still
+        # give a middle pixel of 4 as desired.
 
         #Re-center subimage
         if x1 > maxval:

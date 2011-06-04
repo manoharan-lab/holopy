@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -19,7 +19,12 @@
 Classes and functions for reconstructing holograms
 
 Currently this uses the convolution method outlined in Schnars and
-Juptner.  In the future it may include other reconstruction techniques.
+Juptner [1]_.  In the future it may include other reconstruction
+techniques.
+
+.. [1] Ulf Schnars and Werner P. O. Juptner, Digital recording and
+   numerical reconstruction of holograms, Measurement Science and
+   Technology 13(9): R85, 2002.
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.havard.edu>
 .. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
@@ -48,23 +53,23 @@ class Reconstruction(np.ndarray):
     ----------
     arr : ndarray
        The reconstructed data this reconstruction should hold
-    holo : Hologram
+    holo : :class:`holopy.hologram.Hologram`
        The hologram this reconstruction derives from
     name : string
-       Description of where this reconstruction came from and what manipulations
-       were applied to its hologram and to it.
+       Description of where this reconstruction came from and what
+       manipulations were applied to its hologram and to it.
     
     Attributes
     ----------
-    holo : Hologram
+    holo : :class:`holopy.hologram.Hologram`
        The hologram this reconstruction derives from
     time_scale : time (float)
        The time spacing between t slices in this reconstruction
-    optics : Optics
+    optics : :class:`holopy.optics.Optics`
        Optics of associated hologram
     name : string
-       Description of where this reconstruction came from and what manipulations
-       were applied to its hologram and to it.
+       Description of where this reconstruction came from and what
+       manipulations were applied to its hologram and to it.
     """
 
     def __new__(cls, arr, holo, distances,pixel_scale=None, time_scale=None,
@@ -115,23 +120,27 @@ class Reconstruction(np.ndarray):
 
     def resample(self, shape, window=None):
         """
-        Resamples hologram to a given size.
+        Resamples reconstruction to a given size.
 
-        Use, for example, to downsample a hologram in a way that avoids aliasing
+        Use, for example, to downsample in a way that avoids aliasing
         and ringing.
 
         Parameters
         ----------
         shape : int or (int, int)
-           desired shape of hologram after resampling.  If only one int is
-           given, a square is assumed.
+           desired shape of reconstruction after resampling.  If only
+           one int is given, a square is assumed. 
         window : scipy.signal.window
-           type of smoothing window passed to the scipy.signal.resample filter.
+           type of smoothing window passed to the
+           scipy.signal.resample filter.  
+
+        Returns
+        -------
+        new_rec : :class:`holopy.analyze.reconstruct.Reconstruction` object
 
         Notes
         -----
-        This algorithm does 2 1-D resamplings.  In the future I should probably
-        implement a Lanczos resampling filter.
+        This algorithm does 2 1-D resamplings.
         """
         if np.isscalar(shape):
             x, y = (shape, shape)
@@ -141,16 +150,18 @@ class Reconstruction(np.ndarray):
             name = self.name+'r{0}'.format(x)
             
         new_image = scipy.signal.resample(self, x, axis=0, window=window)
-        new_image = scipy.signal.resample(new_image, y, axis=1, window=window)
+        new_image = scipy.signal.resample(new_image, y, axis=1,
+                                          window=window) 
 
         # Change the pixel calibration appropriately.  If image is
         # downsampled, pixel scale should increase
         factor = np.array(new_image.shape).astype('float')/self.shape
         factor = factor[:1]
 
-        # return a new hologram, now divorced from its optical train
+        # return a new reconstruction
         new_rec = Reconstruction(new_image, self.holo, self.distances,
-                                 self.pixel_scale/factor, self.time_scale, name)
+                                 self.pixel_scale/factor,
+                                 self.time_scale, name) 
 
         return new_rec       
 
@@ -165,16 +176,17 @@ def reconstruct(holo, distances, fourier_mask=None, gradient_filter=None,
 
     Parameters
     ----------
-    holo : Hologram
+    holo : :class:`holopy.hologram.Hologram`
        the hologram to reconstruct
     distances : length (float) or array<length>
        reconstruction distance(s)
 
     Returns
     -------
-    reconstruction : Reconstruction
-       Reconstructed images.  4d matrix (x, y, z, t), len(z) will be 1 unless
-       distances is an array, len(t) will be 1 unless holo is 3d (time series)
+    reconstruction : :class:`holopy.analyze.reconstruct.Reconstruction`
+       Reconstructed images.  4d matrix (x, y, z, t), len(z) will be 1
+       unless distances is an array, len(t) will be 1 unless holo is 3d
+       (time series) 
     
     Other Parameters
     ----------------
@@ -186,30 +198,30 @@ def reconstruct(holo, distances, fourier_mask=None, gradient_filter=None,
        gradient_filter from the reconstruction to suppress slowly varying
        features
     recon_along_xz : bool
-       If True reconstruct a 1d slice along z.  Will sum along the shorter of x
-       or y.
+       If True reconstruct a 1d slice along z.  Will sum along the
+       shorter of x or y.
     zprojection : bool
        If True the transfer matrix for all distances will be added together
        and a single image returned
 
     See Also
     --------
-    propagation.propagate : Used here to do numerical propagations
+    holopy.analyze.propagate.propagate : Used here to do numerical propagations
 
     Notes
     -----
-    This function reconstructs the hologram at some distance z. That distance
-    should be in the same units specifying the wavelength and pixel
-    size that are in the optics class instance associated with the
-    hologram object.
+    This function reconstructs the hologram at some distance z. That
+    distance should be in the same units specifying the wavelength and
+    pixel size that are in the optics class instance associated with
+    the  hologram object.
 
     Examples
     --------
     To reconstruct the hologram at a distance of 10 microns. :
     >>> rec = reconstruction.reconstruct(holo, 10e-6)
 
-    If the hologram, 'holo', was a 256-by-256 array, then the returned array
-    will be 256x256x1x1 and complex.
+    If the hologram, 'holo', was a 256-by-256 array, then the returned
+    array will be 256x256x1x1 and complex.
     
     >>> rec.shape
     (256L, 256L, 1L, 1L)
@@ -218,8 +230,9 @@ def reconstruct(holo, distances, fourier_mask=None, gradient_filter=None,
 
     
     """
-    # This lets us always assume distances is an array, if we are reconstructing
-    # at only a single distance, then we just have a 1 element array
+    # This lets us always assume distances is an array, if we are
+    # reconstructing at only a single distance, then we just have a 1
+    # element array 
     if np.isscalar(distances):
         distances = np.array([distances])
 
@@ -230,8 +243,10 @@ def reconstruct(holo, distances, fourier_mask=None, gradient_filter=None,
     else:
         fourier_mask=None
 
-    r = Reconstruction(propagate(holo, distances, fourier_filter=fourier_mask,
-                                 squeeze=False, gradient_filter=gradient_filter,
+    r = Reconstruction(propagate(holo, distances,
+                                 fourier_filter=fourier_mask,
+                                 squeeze=False,
+                                 gradient_filter=gradient_filter, 
                                  rec_zx_plane=recon_along_xz,
                                  project_along_z=zprojection),
                        holo=holo, distances=distances, name=name)

@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -50,15 +50,17 @@ def _preserve_holo_type(func):
     def wrapper(*args, **kw):
         ret = func(*args, **kw)
         if isinstance(args[0], holopy.hologram.Hologram) and not isinstance(ret, holopy.hologram.Hologram):
-            return holopy.hologram.Hologram(ret, args[0].optics, name=args[0].name)
+            return holopy.hologram.Hologram(ret, args[0].optics, 
+                                            name=args[0].name)
         else:
             return ret
     return wrapper
 
 def _mkdir_p(path):
     '''
-    Equivalent to mkdir -p at the shell, this function makes a directory and its
-    parents as needed, silently doing nothing if it exists.
+    Equivalent to mkdir -p at the shell, this function makes a
+    directory and its parents as needed, silently doing nothing if it
+    exists.
 
     Mainly a convenience function for including in scripts that crunch
     through a lot of files.
