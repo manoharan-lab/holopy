@@ -21,12 +21,15 @@ The tests here test basic reconstruction capability
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 '''
 
+import sys
+import os
+hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
+sys.path.append(hp_dir)
 import numpy as np
 import scipy
 import holopy
 import nose
 from numpy.testing import assert_array_equal
-import os
 import string
 
 class TestRecon:
