@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -24,13 +24,16 @@ Test construction and manipulation of Scatterer objects.
 import numpy as np
 import holopy
 import nose
+from nose.tools import raises, assert_raises
 from numpy.testing import assert_, assert_equal, assert_array_almost_equal
 import os
 import string
 from nose.plugins.attrib import attr
 
 from holopy.model.scatterer import Sphere, CoatedSphere
-from holopy.model.scatterer import SphereDimer #, SphereCluster
+from holopy.model.scatterer import Composite, SphereCluster
+from holopy.model.scatterer.spherecluster import SphereClusterDefError
+#from holopy.model.scatterer import SphereDimer
 
 class TestScatterer:
 
@@ -38,40 +41,90 @@ class TestScatterer:
         s = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
         s = Sphere(n = 1.59, r = 5e-7)
         # index can be complex
-        s = Sphere(n = 1.59+0.001j, r = 5e-7)
+        s = Sphere(n = 1.59+0.0001j, r = 5e-7)
         s = Sphere()
 
     def test_Sphere_construct_list(self):
-        # specify centerition as list
+        # specify center as list
         center = [1e-6, -1e-6, 10e-6]
-        s = Sphere(n = 1.59+0.001j, r = 5e-7, center = center)
+        s = Sphere(n = 1.59+0.0001j, r = 5e-7, center = center)
         assert_equal(s.center, np.array(center))
 
     def test_Sphere_construct_tuple(self):
-        # specify centerition as list
+        # specify center as list
         center = (1e-6, -1e-6, 10e-6)
-        s = Sphere(n = 1.59+0.001j, r = 5e-7, center = center)
+        s = Sphere(n = 1.59+0.0001j, r = 5e-7, center = center)
         assert_equal(s.center, np.array(center))
 
     def test_Sphere_construct_array(self):
-        # specify centerition as list
+        # specify center as list
         center = np.array([1e-6, -1e-6, 10e-6])
-        s = Sphere(n = 1.59+0.001j, r = 5e-7, center = center)
+        s = Sphere(n = 1.59+0.0001j, r = 5e-7, center = center)
         assert_equal(s.center, center)
         
     def test_CoatedSphere_construction(self):
-        cs = CoatedSphere(n = 1.59, r1 = 5e-7, r2 = 1e-6, x = 1e-6,
-                    y = -1e-6, z = 10e-6) 
-        cs = CoatedSphere(n = 1.59, r1 = 5e-7, r2 = 1e-6)
+        cs = CoatedSphere(n1=1.59, n2=1.59, r1=5e-7, r2=1e-6, x=1e-6, 
+                          y=-1e-6, z=10e-6) 
+        cs = CoatedSphere(n1=1.59, n2=1.33, r1=5e-7, r2=1e-6)
         # index can be complex
-        cs = CoatedSphere(n = 1.59+0.001j, r1 = 5e-7)
+        cs = CoatedSphere(n1 = 1.59+0.0001j, n2=1.33+0.0001j, r1=5e-7,
+                          r2=1e-6) 
         center = np.array([1e-6, -1e-6, 10e-6])
-        cs = CoatedSphere(n = 1.59+0.001j, r1 = 5e-7, r2 = 1e-6,
+        cs = CoatedSphere(n1 = 1.59+0.0001j, n2=1.33+0.0001j, r1=5e-7, 
+                          r2=1e-6,
                           center = center) 
         cs = CoatedSphere()
 
-    def test_SphereDimer_construction(self):
-        sd = SphereDimer()
+    def test_Composite_construction(self):
+        # empty composite
+        comp_empty = Composite()
+        print comp_empty.get_component_list()
+        
+        # composite of multiple spheres
+        s1 = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
+        s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
+        s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,0,0])
+        comp_spheres = Composite(scatterers=[s1, s2, s3])
 
-    # def test_SphereCluster_construction(self):
-    #     sc = SphereCluster(n = [1.59+0.001j, 1.59+0.001j], r = [])
+        # heterogeneous composite
+        cs = CoatedSphere(n1 = 1.59+0.0001j, n2=1.33+0.0001j, r1=5e-7, 
+                          r2=1e-6,
+                          center=[-5e-6, 0,0])
+        comp = Composite(scatterers=[s1, s2, s3, cs])
+
+        # multi-level composite (contains another composite)
+        s4 = Sphere(center=[0, 5e-6, 0])
+        comp_spheres.add(s4)
+        comp2 = Composite(scatterers=[comp_spheres, comp])
+        print comp2.get_component_list()
+
+        # even more levels
+        comp3 = Composite(scatterers=[comp2, cs])
+        print comp3
+
+    def test_SphereCluster_construction(self):
+        # empty cluster
+        sc_empty = SphereCluster()
+        print sc_empty.get_component_list()
+        
+        # cluster of multiple spheres
+        s1 = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
+        s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
+        s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,0,0])
+        sc = SphereCluster(spheres=[s1, s2, s3])
+        print sc.get_component_list()
+        print sc
+
+        # construct from an array
+
+    @raises(SphereClusterDefError)
+    def test_SphereCluster_construction_typechecking(self):
+        # heterogeneous composite should raise exception, since a
+        # sphere cluster must contain only Spheres
+        s1 = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
+        s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
+        s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,0,0])
+        cs = CoatedSphere(n1 = 1.59+0.0001j, n2=1.33+0.0001j, r1=5e-7, 
+                          r2=1e-6,
+                          center=[-5e-6, 0,0])
+        sc = SphereCluster(spheres=[s1, s2, s3, cs])

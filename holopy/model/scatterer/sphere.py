@@ -33,19 +33,14 @@ class Sphere(object):
     ----------
     n : float or complex
         Index of refraction of sphere
-
     r : float
         Radius of sphere
-
     x : float
         x-component of center
-
     y : float
         y-component of center
-
     z : float
         z-component of center
-
     center : 3-tuple, list or numpy array (optional)
         specifies coordinates of center of sphere
 
@@ -60,3 +55,10 @@ class Sphere(object):
         else:
             self.center = np.array([x, y, z])
 
+    
+    def __repr__(self):
+        '''
+        Outputs the object parameters in a way that can be typed into
+        the python interpreter
+        '''
+        return "{c}(center={center}, n={n}, r={r})".format(c=self.__class__.__name__, center=repr(self.center), n=self.n, r=self.r)

@@ -26,6 +26,7 @@ as Clusters.
 
 from sphere import Sphere
 from coatedsphere import CoatedSphere
+from composite import Composite
+from spherecluster import SphereCluster
 from spheredimer import SphereDimer
-#from spherecluster import SphereCluster
 
