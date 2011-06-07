@@ -17,7 +17,7 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-Forward calculations for an arbitrary number of spheres by mie
+Calculates scattering for an arbitrary number of spheres by mie
 superposition
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
@@ -26,7 +26,7 @@ superposition
 
 import re
 import numpy as np
-from scattering.mie import MFE
+from mie_cython import MFE
 from holopy.hologram import Hologram
 import holopy.optics
 from holopy.utility.helpers import _ensure_array, _ensure_pair

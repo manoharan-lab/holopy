@@ -25,7 +25,7 @@ import string
 import pylab
 
 import holopy
-from holopy.model import mie
+from holopy.model.theory import mie_fortran as mie
 from holopy.third_party import nmpfit
 from holopy.process import normalize
 

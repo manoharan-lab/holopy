@@ -15,10 +15,16 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
-"""
-C and Fortran extension modules which do the heavy lifting of
-calculating forward holograms.
+'''
+Scattering theories for calculating field and intensity patterns from
+a collection of scatterers.  The fields can also be used to calculate
+holograms. 
 
+.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 .. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
-"""
+.. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
+.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
+'''
+
+#from mie import Mie

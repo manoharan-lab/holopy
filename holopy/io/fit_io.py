@@ -303,13 +303,13 @@ def _choose_model(name):
     if isinstance(name, FitInputDeck) or isinstance(name, dict):
         name = name['cluster_type']
     if name == 'mie':
-        import holopy.model.mie_fortran as model
-#    if name == 'mie_c':
-#        import holopy.model.mie as model
+        import holopy.model.theory.mie_fortran as model
+#    if name == 'mie_cython':
+#        import holopy.model.theory.mie as model
     elif name == 'dimer':
-        import holopy.model.tmatrix_dimer as model
+        import holopy.model.theory.tmatrix_dimer as model
     elif name == 'trimer':
-        import holopy.model.tmatrix_trimer as model
+        import holopy.model.theory.tmatrix_trimer as model
     else:
         raise NotImplementedError("Fit type {0} not yet implemented.".format(name))
     return model

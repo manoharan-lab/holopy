@@ -16,18 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 '''
-Code to calculate fields, intensity, and holograms from various types
-of scatterers, using various scattering theories.  
+Functions for calculating scattered fields, intensities, and
+holograms from collections of scatterers.  
 
-.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
-.. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
-.. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
-from scatterer.sphere import Sphere
-from scatterer.spherecluster import SphereCluster
-from scatterer.composite import Composite
-import theory.mie as mie
-import theory.tmatrix_dimer as tmatrix_dimer
-import theory.tmatrix_trimer as tmatrix_trimer
+
+from theory import Mie
+
+def calc_fields():
+    pass
+
+def calc_intensity():
+    pass
+
+def calc_holo():
+    pass

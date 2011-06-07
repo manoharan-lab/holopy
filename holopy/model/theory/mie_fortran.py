@@ -26,14 +26,14 @@ field.
 
 import scipy as sp
 import numpy as np
-import scattering.tmatrix.mieangfuncs as mieangfuncs
-import scattering.tmatrix.scsmfo_min as scsmfo_min
-import scattering.tmatrix.miescatlib as miescatlib
+import tmatrix_scsmfo.mieangfuncs as mieangfuncs
+import tmatrix_scsmfo.scsmfo_min as scsmfo_min
+import tmatrix_scsmfo.miescatlib as miescatlib
 from holopy.hologram import Hologram
 
 from scipy import array, pi
-from scattering.tmatrix.mieangfuncs import singleholo
-from scattering.tmatrix.miescatlib import nstop, scatcoeffs
+from tmatrix_scsmfo.mieangfuncs import singleholo
+from tmatrix_scsmfo.miescatlib import nstop, scatcoeffs
 
 
 par_ordering = ['n_particle_real', 'n_particle_imag', 'radius', 'x',
