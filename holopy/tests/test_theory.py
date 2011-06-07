@@ -37,12 +37,14 @@ from holopy.model.scatterer.spherecluster import SphereClusterDefError
 from holopy.model.theory import Mie
 from holopy.model.calculate import calc_field, calc_holo, calc_intensity
 
-class TestTheory:
-
-    def test_Mie_construction(self):
-        theory = Mie()
-        theory = Mie(size=(256,256))
-        theory = Mie(size=(256,256))
+def test_Mie_construction():
+    theory = Mie()
+    assert_(theory.imshape == (256,256))
+    theory = Mie(imshape=(100,100))
+    assert_(theory.imshape == (100,100))
+    # test with single value instead of tuple
+    theory = Mie(imshape=128)
+    assert_(theory.imshape == (128,128))
 
 #    def test_SCSM_construction
 

@@ -24,7 +24,7 @@ holograms from collections of scatterers.
 
 from theory import Mie
 
-def calc_fields():
+def calc_field():
     pass
 
 def calc_intensity():

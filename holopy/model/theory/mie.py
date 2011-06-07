@@ -31,6 +31,36 @@ from holopy.hologram import Hologram
 import holopy.optics
 from holopy.utility.helpers import _ensure_array, _ensure_pair
 from holopy.io.fit_io import _split_particle_number, _get_num_particles
+from scatteringtheory import ScatteringTheory
+
+class Mie():
+    """
+    Class that contains methods and parameters for calculating
+    scattering using Mie theory.
+
+    Attributes
+    ----------
+    imshape : float or tuple (optional)
+        Size of grid to calculate scattered fields or
+        intensities. This is the shape of the image that calc_field or
+        calc_intensity will return
+    phis : array 
+        Specifies azimuthal scattering angles to calculate (incident
+        direction is z)
+    thetas : array 
+        Specifies polar scattering angles to calculate
+
+    Notes
+    -----
+    If phis and thetas are both 1-D vectors, the calc_ functions
+    should return an array where result(i,j) = result(phi(i),
+    theta(j))
+    """
+
+    def __init__(self, imshape=(256,256), thetas=None, phis=None):
+        self.imshape = _ensure_pair(imshape)
+        self.thetas = thetas
+        self.phis = phis
 
 par_ordering = ['n_particle_real', 'n_particle_imag', 'radius', 'x',
                 'y', 'z', 'scaling_alpha']

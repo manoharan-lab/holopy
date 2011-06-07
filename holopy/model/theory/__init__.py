@@ -27,4 +27,4 @@ holograms.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
-#from mie import Mie
+from mie import Mie
