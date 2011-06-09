@@ -24,14 +24,14 @@ superposition
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 '''
 
-import re
 import numpy as np
 from mie_cython import MFE
 from holopy.hologram import Hologram
 import holopy.optics
 from holopy.utility.helpers import _ensure_array, _ensure_pair
 from holopy.io.fit_io import _split_particle_number, _get_num_particles
-from scatteringtheory import ScatteringTheory
+from holopy.model.scatterer import Sphere, SphereCluster
+
 
 class Mie():
     """
@@ -49,6 +49,8 @@ class Mie():
         direction is z)
     thetas : array 
         Specifies polar scattering angles to calculate
+    optics : :class:`holopy.optics.Optics` object
+        specifies optical train
 
     Notes
     -----
@@ -57,10 +59,41 @@ class Mie():
     theta(j))
     """
 
-    def __init__(self, imshape=(256,256), thetas=None, phis=None):
+    def __init__(self, imshape=(256,256), thetas=None, phis=None,
+                 optics=None): 
         self.imshape = _ensure_pair(imshape)
         self.thetas = thetas
         self.phis = phis
+        if isinstance(optics, dict):
+            optics = holopy.optics.Optics(**opt)
+        else:
+            self.optics = optics
+
+    def calc_field(self, scatterer, alpha):
+        """
+        Calculate fields 
+
+        Parameters
+        ----------
+        scatterer : :mod:`holopy.model.scatterer` object
+            scatterer or list of scatterers to compute field for
+
+        Notes
+        -----
+        
+        """
+        if isinstance(scatterer, Sphere):
+            field = calc_mie_fields(self.imshape, self.optics, 
+                                    np.real(scatterer.n), 
+                                    np.imag(scatterer.n),
+                                    scatterer.r,
+                                    scatterer.center[0],
+                                    scatterer.center[1],
+                                    scatterer.center[2],
+                                    alpha)
+
+        elif isinstance(scatterer, SphereCluster):
+            pass
 
 par_ordering = ['n_particle_real', 'n_particle_imag', 'radius', 'x',
                 'y', 'z', 'scaling_alpha']
