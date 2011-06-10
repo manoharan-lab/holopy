@@ -88,7 +88,7 @@ def image_gradient(image):
     return gradx, grady
 
 
-def hough(x_deriv, y_deriv,scale=.5):
+def hough(x_deriv, y_deriv,scale=.25):
     """
     Following the approach of a Hough transform, finds the pixel which
     the most gradients point towards or away from. Uses only gradients
