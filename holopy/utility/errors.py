@@ -74,3 +74,20 @@ class ParameterDefinitionError(Exception):
         self.message = message
     def __str__(self):
         return "Input error: " + self.message
+
+class SphereClusterDefError(Exception):
+    def __init__(self, message = None):
+        self.message = message
+    def __str__(self):
+        return "SphereCluster expects all component scatterers to be Spheres: " + self.message
+
+class TheoryNotCompatibleError(Exception):
+    def __init__(self, theory, scatterer):
+        self.theory = theory
+        self.scatterer = scatterer
+    def __str__(self):
+        return ("The implementation of the " +
+                self.theory.__class__.__name__ + 
+                " scattering theory doesn't know how to handle " +
+                "scatterers of type " + 
+                self.scatterer.__class__.__name__)

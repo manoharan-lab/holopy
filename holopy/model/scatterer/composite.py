@@ -26,6 +26,7 @@ scatterers (e.g. two trimers).
 
 import numpy as np
 import pprint
+from sphere import Sphere
 
 class Composite(object):
     '''
@@ -67,6 +68,18 @@ class Composite(object):
             else:
                 components.append(s)
         return components
+
+    def _contains_only_spheres(self):
+        """
+        Returns True if the Composite object contains only spheres.
+        Used mainly for error checking by models that can only handle
+        spheres
+        """
+        
+        for scatterer in self.get_component_list():
+            if not isinstance(scatterer, Sphere):
+                return False
+        return True
 
     def _prettystr(self, level, indent="  "):
         '''

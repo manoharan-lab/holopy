@@ -30,8 +30,8 @@ from holopy.hologram import Hologram
 import holopy.optics
 from holopy.utility.helpers import _ensure_array, _ensure_pair
 from holopy.io.fit_io import _split_particle_number, _get_num_particles
-from holopy.model.scatterer import Sphere, SphereCluster
-
+from holopy.model.scatterer import Sphere, SphereCluster, Composite
+from holopy.utility.errors import TheoryNotCompatibleError
 
 class Mie():
     """
@@ -69,7 +69,7 @@ class Mie():
         else:
             self.optics = optics
 
-    def calc_field(self, scatterer, alpha):
+    def calc_field(self, scatterer, alpha=1.0):
         """
         Calculate fields 
 
@@ -77,6 +77,8 @@ class Mie():
         ----------
         scatterer : :mod:`holopy.model.scatterer` object
             scatterer or list of scatterers to compute field for
+        alpha : float
+            scaling value for fields
 
         Notes
         -----
@@ -91,9 +93,14 @@ class Mie():
                                     scatterer.center[1],
                                     scatterer.center[2],
                                     alpha)
-
-        elif isinstance(scatterer, SphereCluster):
-            pass
+        elif isinstance(scatterer, Composite):
+            # validate that the cluster only contains spheres
+            if not scatterer._contains_only_spheres():
+                for s in scatterer.get_component_list():
+                    if not isinstance(s, Sphere):
+                        raise TheoryNotCompatibleError(self, s)
+        else: raise TheoryNotCompatibleError(self, scatterer)
+            
 
 par_ordering = ['n_particle_real', 'n_particle_imag', 'radius', 'x',
                 'y', 'z', 'scaling_alpha']

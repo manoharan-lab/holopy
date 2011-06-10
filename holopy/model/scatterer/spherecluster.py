@@ -25,12 +25,7 @@ Defines SphereCluster, a Composite scatterer consisting of Spheres
 import numpy as np
 from sphere import Sphere
 from composite import Composite
-
-class SphereClusterDefError(Exception):
-    def __init__(self, message = None):
-        self.message = message
-    def __str__(self):
-        return "SphereCluster expects all component scatterers to be Spheres: " + self.message
+from holopy.utility.errors import SphereClusterDefError
 
 class SphereCluster(Composite):
     '''
@@ -56,3 +51,4 @@ class SphereCluster(Composite):
         for s in self.scatterers:
             if not isinstance(s, Sphere):
                 raise SphereClusterDefError(repr(s)+' is not a Sphere')
+
