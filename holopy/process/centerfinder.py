@@ -88,7 +88,7 @@ def image_gradient(image):
     return gradx, grady
 
 
-def hough(x_deriv, y_deriv,scale=.5):
+def hough(x_deriv, y_deriv,scale=.25):
     """
     Following the approach of a Hough transform, finds the pixel which
     the most gradients point towards or away from. Uses only gradients
@@ -125,7 +125,9 @@ def hough(x_deriv, y_deriv,scale=.5):
     #11/20/2009
     
     #Edited by Rebecca Dec. 1, 2009 to include weighted average
-
+    #Edited by Rebecca Perry June 9, 2011 to change default scale and 
+    #modify weighted averaging box size for centers close to the edges.
+    
     accumulator = zeros(x_deriv.shape)
     dim = x_deriv.shape[0]
     gradient_mag = sqrt(x_deriv**2 + y_deriv**2)
@@ -153,9 +155,10 @@ def hough(x_deriv, y_deriv,scale=.5):
     #m is row number, n is column number
     [m,n]=scipy.unravel_index(accumulator.argmax(), accumulator.shape) 
     #brightness average around brightest pixel:
-    small_sq=accumulator[m-10:m+11,n-10:n+11] 
+    boxsize=min(10,m,n,dim-1-m,dim-1-n) #boxsize changes with closeness to image edge
+    small_sq=accumulator[m-boxsize:m+boxsize+1,n-boxsize:n+boxsize+1] 
     #the part of the accumulator to average over
-    rowNum,colNum=numpy.mgrid[m-10:m+11,n-10:n+11]
+    rowNum,colNum=numpy.mgrid[m-boxsize:m+boxsize+1,n-boxsize:n+boxsize+1]
     #row and column of the revised center:
     weightedRowNum=scipy.average(rowNum,None,small_sq)
     weightedColNum=scipy.average(colNum,None,small_sq)
