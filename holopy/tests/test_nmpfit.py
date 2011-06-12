@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -25,7 +25,10 @@ import string
 import pylab
 
 import holopy
-from holopy.model.theory import mie_fortran as mie
+#from holopy.model.theory import mie_fortran as mie
+from holopy.model.theory import mie
+from holopy.model.theory import Mie
+from holopy.model.scatterer import Sphere, SphereCluster
 from holopy.third_party import nmpfit
 from holopy.process import normalize
 
@@ -114,6 +117,8 @@ holo = normalize(holopy.load(path + 'image0001.npy'))
 #                        gold_single[2], gold_single[3],
 #                        gold_single[4], gold_single[5], gold_single[6])
 
+theory = Mie(imshape = holo.shape, optics=optics)
+
 # define the residual function
 def residfunct(p, fjac = None):
     # nmpfit calls residfunct w/fjac as a kwarg, we ignore
@@ -122,9 +127,12 @@ def residfunct(p, fjac = None):
     # mie.forward_holo(im.shape[0], optics, n_particle_real,
     #                        n_particle_imag, radius, x, y,
     #                        z, scaling_alpha)
-    calculated = mie.forward_holo(holo.shape[0], optics, p[0],
-                                  n_particle_imag, p[1], p[2], p[3],
-                                  p[4], p[5])
+#    calculated = mie.forward_holo(holo.shape[0], optics, p[0],
+#                                  n_particle_imag, p[1], p[2], p[3],
+#                                  p[4], p[5])
+    sphere = Sphere(n=p[0]+n_particle_imag*1j, r=p[1], x=p[2], y=p[3], 
+                    z=p[4])
+    calculated = theory.calc_holo(sphere, alpha=p[5])
     status = 0
     derivates = holo - calculated
 

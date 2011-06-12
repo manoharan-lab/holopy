@@ -25,14 +25,14 @@ import numpy as np
 import holopy
 import nose
 from nose.tools import raises, assert_raises
-from numpy.testing import assert_, assert_equal, assert_array_almost_equal
+from numpy.testing import assert_, assert_equal, assert_almost_equal, assert_array_almost_equal
 import os
 import string
 from nose.plugins.attrib import attr
 
 from holopy.model.scatterer import Sphere, CoatedSphere
 from holopy.model.scatterer import Composite, SphereCluster
-from holopy.utility.errors import SphereClusterDefError
+from holopy.model.errors import ScattererDefinitionError
 #from holopy.model.scatterer import SphereDimer
 
 def test_Sphere_construction():
@@ -113,8 +113,56 @@ def test_SphereCluster_construction():
     print sc.get_component_list()
     print sc
 
-    # construct from an array
-        
+    # construct from lists
+    n = [1.59, 1.58, 1.57, 1.56]
+    r = [0.5e-6, 0.49e-6, 0.48e-6, 0.47e-6]
+    x = [0.0, 1.0e-6, 2.0e-6, 3.0e-6]
+    y = [0.0, -1.0e-6, -2.0e-6, -3.0e-6]
+    z = [10.0e-6, 11.0e-6, 12.0e-6, 13.0e-6]
+    sc = SphereCluster(n=n, r=r, x=x, y=y, z=z)
+    assert_((sc.n == n) and (sc.r == r) and (sc.x == x) and 
+            (sc.y == y) and (sc.z == z))
+
+    # construct from arrays
+    na = np.array(n)
+    ra = np.array(r)
+    xa = np.array(x)
+    ya = np.array(y)
+    za = np.array(z)
+    sc = SphereCluster(n=na, r=ra, x=xa, y=ya, z=za)
+    assert_((sc.n == n) and (sc.r == r) and (sc.x == x) and 
+            (sc.y == y) and (sc.z == z))
+
+    # __init__ should throw an exception if arrays are wrong sizes
+    assert_raises(ScattererDefinitionError, lambda:
+                      SphereCluster(n=n, r=r, x=x, y=y, z=0))
+    assert_raises(ScattererDefinitionError, lambda: 
+                  SphereCluster(n=n, r=r, centers=[0,0,0]))
+    # should be okay if all arrays are the same size
+    sc = SphereCluster(n=n, r=r, centers=np.ones((4,3)))
+    assert_((sc.n == n) and (sc.r == r))
+    assert_equal(sc.centers[0], np.ones(3))
+    # but throw error if they're different
+    assert_raises(ScattererDefinitionError, lambda: 
+                  SphereCluster(n=n, r=r, centers=np.ones((3,3))))
+    assert_raises(ScattererDefinitionError, lambda: 
+                  SphereCluster(n=n, r=r, centers=np.ones((5,3))))
+
+    # test for single sphere only
+    sc = SphereCluster(n=1.59, r=1e-6, 
+                       centers=np.array([x[0], y[0], z[0]]))
+    assert_almost_equal(sc.n, 1.59)
+    assert_almost_equal(sc.r, 1e-6)
+    assert_equal(sc.centers[0], np.array([x[0], y[0], z[0]]))
+    sc = SphereCluster(n=1.59, r=1e-6, 
+                       centers=[x[0], y[0], z[0]])
+    
+    # now use an array to define the centers
+    centers = np.array([[0,0,1], [0,0,2], [0,0,3], [0,0,4]])
+    sc = SphereCluster(n=n, r=r, centers=centers)
+    assert_equal(sc.centers[0], centers[0])
+    print sc.get_component_list()
+    
 def test_SphereCluster__contains_only_spheres():
     s1 = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
@@ -125,7 +173,11 @@ def test_SphereCluster__contains_only_spheres():
     sc.add(CoatedSphere())
     assert_(sc._contains_only_spheres() is False)
 
-@raises(SphereClusterDefError)
+    # a cluster with no spheres defined should return false
+    sc = SphereCluster()
+    assert_(sc._contains_only_spheres() is False)
+
+@raises(ScattererDefinitionError)
 def test_SphereCluster_construction_typechecking():
     # heterogeneous composite should raise exception, since a
     # sphere cluster must contain only Spheres

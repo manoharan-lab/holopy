@@ -115,7 +115,10 @@ class Optics(object):
             
     @property
     def pixel(self):
-        return _ensure_pair(self.pixel_scale)
+        try:
+            return _ensure_pair(self.pixel_scale)
+        except AttributeError:
+            raise PixelScaleNotSpecified
 
     def propagate_ref_wave(self):
         """
@@ -139,3 +142,21 @@ class Optics(object):
         new = copy.copy(self)
         new.pixel_scale = self.pixel_scale * factor
         return new
+
+class WavelengthNotSpecified(Exception):
+    def __init__(self):
+        pass
+    def __str__(self):
+        return ("Wavelength not specified in Optics instance.")
+
+class MediumIndexNotSpecified(Exception):
+    def __init__(self):
+        pass
+    def __str__(self):
+        return ("Medium index not specified in Optics instance.")
+
+class PixelScaleNotSpecified(Exception):
+    def __init__(self):
+        pass
+    def __str__(self):
+        return ("Pixel scale not specified in Optics instance.")

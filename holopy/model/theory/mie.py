@@ -31,7 +31,7 @@ import holopy.optics
 from holopy.utility.helpers import _ensure_array, _ensure_pair
 from holopy.io.fit_io import _split_particle_number, _get_num_particles
 from holopy.model.scatterer import Sphere, SphereCluster, Composite
-from holopy.utility.errors import TheoryNotCompatibleError
+from holopy.model.errors import TheoryNotCompatibleError
 
 class Mie():
     """
@@ -66,10 +66,12 @@ class Mie():
         self.phis = phis
         if isinstance(optics, dict):
             optics = holopy.optics.Optics(**opt)
+        elif optics is None:
+            self.optics = holopy.optics.Optics()
         else:
             self.optics = optics
 
-    def calc_field(self, scatterer, alpha=1.0):
+    def calc_field(self, scatterer):
         """
         Calculate fields 
 
@@ -77,30 +79,109 @@ class Mie():
         ----------
         scatterer : :mod:`holopy.model.scatterer` object
             scatterer or list of scatterers to compute field for
-        alpha : float
-            scaling value for fields
+
+        Returns
+        -------
+        xfield, yfield, zfield : complex arrays with shape `imshape`
+            x, y, z components of scattered fields
 
         Notes
         -----
-        
+        For multiple particles, this code superposes the fields
+        calculated from each particle (using calc_mie_fields()). The
+        Mie field calculation for each particle assumes that the
+        incident field phase angle is 0 at each particle's center.  So
+        when we superpose the fields, we need to correct for the phase
+        differences between particles.  We choose the convention that
+        the incident field phase angle will be 0 at z=0.  This makes
+        it possible to interfere the total scattered field with the
+        incident field to compute the hologram (in calc_holo())
+
+        Short summary: the total scattered field is computed such that
+        the phase angle of the incident field is 0 at z=0
         """
         if isinstance(scatterer, Sphere):
-            field = calc_mie_fields(self.imshape, self.optics, 
-                                    np.real(scatterer.n), 
-                                    np.imag(scatterer.n),
-                                    scatterer.r,
-                                    scatterer.center[0],
-                                    scatterer.center[1],
-                                    scatterer.center[2],
-                                    alpha)
+            spheres = [scatterer]
+        # compatibility check: verify that the cluster only contains
+        # spheres 
         elif isinstance(scatterer, Composite):
-            # validate that the cluster only contains spheres
+            spheres = scatterer.get_component_list()
             if not scatterer._contains_only_spheres():
-                for s in scatterer.get_component_list():
+                for s in spheres:
                     if not isinstance(s, Sphere):
                         raise TheoryNotCompatibleError(self, s)
         else: raise TheoryNotCompatibleError(self, scatterer)
             
+        for s in spheres:
+            # The cython code we use here expects x,y in terms of
+            # pixels, so convert to pixels by dividing by the pixel
+            # size
+            x = s.x/self.optics.pixel[0]
+            y = s.y/self.optics.pixel[1]
+            z = s.z     # not in terms of pixels
+
+            xfield_tot = np.zeros(self.imshape, dtype='complex128')
+            yfield_tot = np.zeros(self.imshape, dtype='complex128')
+            zfield_tot = np.zeros(self.imshape, dtype='complex128')
+
+            xfield, yfield, zfield  = \
+                calc_mie_fields(self.imshape, self.optics, 
+                                np.real(s.n), np.imag(s.n), s.r,
+                                x, y, z)
+            # see Notes section above for how phase is computed
+            phase_dif = (np.exp(-1j*np.pi*2*s.z/self.optics.med_wavelen))
+            xfield_tot += xfield*phase_dif
+            yfield_tot += yfield*phase_dif
+            zfield_tot += zfield*phase_dif
+
+            return xfield_tot, yfield_tot, zfield_tot
+
+    def calc_intensity(self, scatterer):
+        """
+        Calculate intensity at focal plane (z=0)
+
+        Parameters
+        ----------
+        scatterer : :mod:`holopy.model.scatterer` object
+            scatterer or list of scatterers to compute field for
+        alpha : scaling value for intensity
+
+        Returns
+        -------
+        
+        """
+
+        xfield, yfield, zfield = self.calc_field(scatterer)
+        return (abs(xfield**2) + abs(yfield**2) + abs(zfield**2))
+
+    def calc_holo(self, scatterer, alpha=1.0):
+        """
+        Calculate hologram formed by interference between scattered
+        fields and a reference wave
+        
+        Parameters
+        ----------
+        scatterer : :mod:`holopy.model.scatterer` object
+            scatterer or list of scatterers to compute field for
+        alpha : scaling value for intensity of reference wave
+
+        Returns
+        -------
+        holo : :class:`holopy.hologram.Hologram` object
+            Calculated hologram from the given distribution of spheres
+        """
+
+        xfield, yfield, zfield = self.calc_field(scatterer)
+        total_scat_inten = (abs(xfield**2) + abs(yfield**2) + 
+                            abs(zfield**2))
+        # interference = conj(xfield)*phase + conj(phase)*xfield, 
+        # but we choose phase angle = 0 at z=0, so phase = 1
+        # which gives 2*real(xfield)
+        interference = 2*np.real(xfield)
+        holo = (1. + total_scat_inten*(alpha**2) + 
+                interference*alpha)     # this should be purely real
+
+        return Hologram(holo, optics = self.optics)
 
 par_ordering = ['n_particle_real', 'n_particle_imag', 'radius', 'x',
                 'y', 'z', 'scaling_alpha']
@@ -120,7 +201,7 @@ def _forward_holo(size, opt, scat_dict):
         packed_dict[name] = [None] * num_particles
     for key, val in scat_dict.iteritems():
         if _scaled_by_k(key):
-            # parameter was nondimensianalized by k in input; our code
+            # parameter was nondimensionalized by k in input; our code
             # expects that not to have happened, so we divide it out
             val /= opt.wavevec
         if _scaled_by_med_index(key):
@@ -134,6 +215,8 @@ def _forward_holo(size, opt, scat_dict):
 
     return forward_holo(size, opt, **packed_dict)
 
+# TODO: Need to refactor fitting code so that it no longer relies on
+# the legacy functions below.  Then remove.
 def forward_holo(size, opt, n_particle_real, n_particle_imag, radius, x, y, z,
                  scaling_alpha):
     """
@@ -200,9 +283,13 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius, x, y, z,
                                                  n_particle_real[i],
                                                  n_particle_imag[i], 
                                                  radius[i],
-                                                 x[i], y[i], z[i],
-                                                 scaling_alpha[0])
- 
+                                                 x[i], y[i], z[i])
+
+        # TODO: resolve questions about this
+        # 1) are z, r really required to be in microns as passed to
+        # MFE.fields_tonumpy()? 
+        # 2) why does interference only include the xfield term?  Does
+        # this assume something about the polarization?
         phase = np.exp(1j*np.pi*2*z[i]/opt.med_wavelen)
         phase_dif = np.exp(1j*np.pi*2*(z[i]-z[0])/opt.med_wavelen)
         interference += np.conj(xfield)*phase + np.conj(phase)*xfield
@@ -219,7 +306,7 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius, x, y, z,
         
         
 def calc_mie_fields(size, opt, n_particle_real, n_particle_imag,
-                    radius, x, y, z, alpha):
+                    radius, x, y, z):
     """
     Calculates the scattered electric field from a spherical
     particle.

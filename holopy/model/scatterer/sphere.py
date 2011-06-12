@@ -55,10 +55,20 @@ class Sphere(object):
         else:
             self.center = np.array([x, y, z])
 
-    
     def __repr__(self):
         '''
         Outputs the object parameters in a way that can be typed into
         the python interpreter
         '''
         return "{c}(center={center}, n={n}, r={r})".format(c=self.__class__.__name__, center=repr(self.center), n=self.n, r=self.r)
+
+    def get_x(self):
+        return self.center[0]
+    def get_y(self):
+        return self.center[1]
+    def get_z(self):
+        return self.center[2]
+
+    x = property(get_x)
+    y = property(get_y)
+    z = property(get_z)

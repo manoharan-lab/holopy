@@ -37,7 +37,8 @@ from holopy.model.scatterer import Composite, SphereCluster
 from holopy.model.theory import Mie
 from holopy.model.calculate import calc_field, calc_holo, calc_intensity
 from holopy import Optics
-from holopy.utility.errors import TheoryNotCompatibleError
+from holopy.model.errors import TheoryNotCompatibleError
+from holopy.optics import WavelengthNotSpecified, PixelScaleNotSpecified
 
 # nose setup/teardown methods
 def setup_optics():
@@ -78,28 +79,43 @@ def test_Mie_calc_field():
     # try it with a single sphere first
     sc = Sphere(n=1.59, r=5e-7, x=1e-6, y=-1e-6, z=10e-6)
     theory = Mie(imshape=128, optics=optics)
-    theory.calc_field(sc, alpha=1.0)
+    theory.calc_field(sc)
+    theory.calc_intensity(sc)
+    theory.calc_holo(sc)
+
+    # this shouldn't work because the theory doesn't know the pixel
+    # scale 
+    theory = Mie(imshape=128)
+    assert_raises(PixelScaleNotSpecified, lambda:
+                      theory.calc_field(sc))
+    assert_raises(PixelScaleNotSpecified, lambda:
+                      theory.calc_intensity(sc)) 
+    assert_raises(PixelScaleNotSpecified, lambda:
+                      theory.calc_holo(sc)) 
 
     # now multiple spheres
     s1 = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
     s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,0,0])
     sc = SphereCluster(spheres=[s1, s2, s3])
-    theory = Mie(imshape=128)
-    theory.calc_field(sc, alpha=1.0)
+    theory = Mie(imshape=128, optics=optics)
+    theory.calc_field(sc)
+    theory.calc_intensity(sc)
+    theory.calc_holo(sc)
 
-@raises(TheoryNotCompatibleError)
-def test_Mie_calc_field_coated_sphere():
-    theory = Mie(imshape=128)
-    theory.calc_field(CoatedSphere())
-
-@raises(TheoryNotCompatibleError)
-def test_Mie_calc_field_multiple():
-    # add a wrench into the works
-    s1 = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
-    s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
-    s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,0,0])
-    sc = SphereCluster(spheres=[s1, s2, s3])
+    # should throw exception when fed a coated sphere
+    assert_raises(TheoryNotCompatibleError, lambda: 
+                  theory.calc_field(CoatedSphere()))
+    assert_raises(TheoryNotCompatibleError, lambda: 
+                  theory.calc_intensity(CoatedSphere()))
+    assert_raises(TheoryNotCompatibleError, lambda: 
+                  theory.calc_holo(CoatedSphere()))
+    # and when the list of scatterers includes a coated sphere
     sc.add(CoatedSphere())
-    theory = Mie(imshape=128)
-    theory.calc_field(sc, alpha=1.0) # should raise assertion
+    assert_raises(TheoryNotCompatibleError, lambda: 
+                  theory.calc_field(sc))
+    assert_raises(TheoryNotCompatibleError, lambda: 
+                  theory.calc_intensity(sc))
+    assert_raises(TheoryNotCompatibleError, lambda: 
+                  theory.calc_holo(sc))
+
