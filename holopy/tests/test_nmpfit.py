@@ -127,9 +127,9 @@ def residfunct(p, fjac = None):
     # mie.forward_holo(im.shape[0], optics, n_particle_real,
     #                        n_particle_imag, radius, x, y,
     #                        z, scaling_alpha)
-#    calculated = mie.forward_holo(holo.shape[0], optics, p[0],
-#                                  n_particle_imag, p[1], p[2], p[3],
-#                                  p[4], p[5])
+    #calculated = mie.forward_holo(holo.shape[0], optics, p[0],
+    #                              n_particle_imag, p[1], p[2], p[3],
+    #                              p[4], p[5])
     sphere = Sphere(n=p[0]+n_particle_imag*1j, r=p[1], x=p[2], y=p[3], 
                     z=p[4])
     calculated = theory.calc_holo(sphere, alpha=p[5])
