@@ -105,9 +105,9 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius, x, y, z,
     xdim, ydim = _ensure_pair(size)
     px, py = _ensure_pair(opt.pixel)
 
-    x = _ensure_array(x)
-    y = _ensure_array(y)
-    z = _ensure_array(z)
+    xarr = _ensure_array(x).copy()
+    yarr = _ensure_array(y).copy()
+    zarr = _ensure_array(z)
     n_particle_real = _ensure_array(n_particle_real)
     n_particle_imag = _ensure_array(n_particle_imag)
     radius = _ensure_array(radius)
@@ -115,26 +115,26 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius, x, y, z,
 
     # The code we use here expects things in terms of pixels, so convert to
     # pixels by dividing by the pixel size
-    x /= opt.pixel[0]
-    y /= opt.pixel[1]
+    xarr /= opt.pixel[0]
+    yarr /= opt.pixel[1]
 
     xfield_tot = np.zeros((xdim,ydim),dtype='complex128')
     yfield_tot = np.zeros((xdim,ydim),dtype='complex128')
     zfield_tot = np.zeros((xdim,ydim),dtype='complex128')
     interference = np.zeros((xdim,ydim),dtype='complex128')
     
-    for i in range(len(x)):
+    for i in range(len(xarr)):
         # assign phase for each particle based on reference wave phase
         # phi=0 at the imaging plane
         xfield, yfield, zfield = calc_mie_fields(size, opt, 
                                                  n_particle_real[i],
                                                  n_particle_imag[i], 
                                                  radius[i],
-                                                 x[i], y[i], z[i],
+                                                 xarr[i], yarr[i], z[i],
                                                  scaling_alpha[0])
  
         phase = np.exp(1j*np.pi*2*z[i]/opt.med_wavelen)
-        phase_dif = np.exp(1j*np.pi*2*(z[i]-z[0])/opt.med_wavelen)
+        phase_dif = np.exp(-1j*np.pi*2*(z[i]-z[0])/opt.med_wavelen)
         # allow arbitrary linear polarization
         interference += (phase * (np.conj(xfield) * opt.polarization[0] + 
                                   np.conj(yfield) * opt.polarization[1]) + 
