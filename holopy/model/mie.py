@@ -135,7 +135,11 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius, x, y, z,
  
         phase = np.exp(1j*np.pi*2*z[i]/opt.med_wavelen)
         phase_dif = np.exp(1j*np.pi*2*(z[i]-z[0])/opt.med_wavelen)
-        interference += np.conj(xfield)*phase + np.conj(phase)*xfield
+        # allow arbitrary linear polarization
+        interference += (phase * (np.conj(xfield) * opt.polarization[0] + 
+                                  np.conj(yfield) * opt.polarization[1]) + 
+                         np.conj(phase) * (xfield * opt.polarization[0] + 
+                                           yfield * opt.polarization[1]))
         xfield_tot += xfield*phase_dif
         yfield_tot += yfield*phase_dif
         zfield_tot += zfield*phase_dif
