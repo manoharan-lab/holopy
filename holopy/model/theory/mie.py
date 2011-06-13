@@ -177,7 +177,9 @@ class Mie():
         # interference = conj(xfield)*phase + conj(phase)*xfield, 
         # but we choose phase angle = 0 at z=0, so phase = 1
         # which gives 2*real(xfield)
-        interference = 2*np.real(xfield)
+        # Generalize to support arbitrary linear polarization.
+        interference = 2*np.real(xfield * self.optics.polarization[0] +
+                                 yfield * self.optics.polarization[1])
         holo = (1. + total_scat_inten*(alpha**2) + 
                 interference*alpha)     # this should be purely real
 
@@ -289,10 +291,14 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius, x, y, z,
         # 1) are z, r really required to be in microns as passed to
         # MFE.fields_tonumpy()? 
         # 2) why does interference only include the xfield term?  Does
-        # this assume something about the polarization?
+        # this assume something about the polarization? (Fixed)
         phase = np.exp(1j*np.pi*2*z[i]/opt.med_wavelen)
         phase_dif = np.exp(1j*np.pi*2*(z[i]-z[0])/opt.med_wavelen)
-        interference += np.conj(xfield)*phase + np.conj(phase)*xfield
+        #interference += np.conj(xfield)*phase + np.conj(phase)*xfield
+        interference += (phase * (np.conj(xfield) * opt.polarization[0] + 
+                                  np.conj(yfield) * opt.polarization[1]) + 
+                         np.conj(phase) * (xfield * opt.polarization[0] + 
+                                           yfield * opt.polarization[1]))
         xfield_tot += xfield*phase_dif
         yfield_tot += yfield*phase_dif
         zfield_tot += zfield*phase_dif
