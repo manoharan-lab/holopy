@@ -1,3 +1,21 @@
+! Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+! W. Perry, Jerome Fung, and Ryan McGorty
+!
+! This file is part of Holopy.
+!
+! Holopy is free software: you can redistribute it and/or modify
+! it under the terms of the GNU General Public License as published by
+! the Free Software Foundation, either version 3 of the License, or
+! (at your option) any later version.
+!
+! Holopy is distributed in the hope that it will be useful,
+! but WITHOUT ANY WARRANTY; without even the implied warranty of
+! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+! GNU General Public License for more details.
+!
+! You should have received a copy of the GNU General Public License
+! along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
+!
 ! mieangfuncs.f90
 ! 
 ! Author: Jerome Fung
@@ -19,7 +37,7 @@
 !    kcoords: k*coordinates of cluster or sphere center
 !    asbs: array of shape (2, n) of a_n, b_n Mie coefficients (only singleholo)
 !    amn: array of amn cluster scattering coefficients (not in singleholo)
-!    gamma: Euler angle gamma, *radians* (not in singleholo)
+!    gamma: Euler angle gamma, degrees (not in singleholo)
 !    alpha: scaling factor that should be close to 1
 !    einc: polarization vector of incident field
 !
