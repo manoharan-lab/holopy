@@ -66,7 +66,7 @@ class TestFit:
         #so that we may use just one tolerance for all array values.
         assert_array_almost_equal(fit_result[0:8]*[1,10**4,10**7,
             10**6,10**6,10**5,10,1],gold_single,
-            decimal=3,err_msg='Mie fit results from the single particle are not approx. equal to the standard fit results.')
+            decimal=2,err_msg='Mie fit results from the single particle are not approx. equal to the standard fit results.')
         assert_array_less(fit_result[8],5)      
 
     @attr('slow')
@@ -82,7 +82,7 @@ class TestFit:
         #so that we may use just one tolerance for all array values.
         assert_array_almost_equal(fit_result[0:14]*[1,1,10**5,10**5,
             10**7,10**7,10**5,10**5,10**5,1,10**-1,10**-1,10**9,10**-1],gold_dimerslow,
-            decimal=3,err_msg='Fit results from the dimer are not approx. equal to the standard fit results.')
+            decimal=2,err_msg='Fit results from the dimer are not approx. equal to the standard fit results.')
         assert_array_less(fit_result[14],5)
         assert_equal(fit_result[15],0)
 
@@ -98,7 +98,7 @@ class TestFit:
         #so that we may use just one tolerance for all array values.
         assert_array_almost_equal(fit_result*[1,1,10**5,10**5,
             10**7,10**7,10**5,10**5,10**5,10,10**-1,10**-1,10**9,10**-1,1,1],gold_dimerfast,
-            decimal=3,err_msg='Fit results from the dimer are not approx.' 
+            decimal=2,err_msg='Fit results from the dimer are not approx.' 
             +'equal to the standard fit results.')
 
     @attr('slow')  
@@ -114,7 +114,7 @@ class TestFit:
         #so that we may use just one tolerance for all array values.
         assert_array_almost_equal(fit_result[0:17]*[1,1,1,10**5,10**5,10**5,10**7,10**7,
             10**7,10**6,10**6,10**6,10,10**-1,10**-1,1,1],gold_trimerslow,
-            decimal=3,err_msg='Fit results from the trimer are not approx. equal to the standard fit results.')
+            decimal=2,err_msg='Fit results from the trimer are not approx. equal to the standard fit results.')
         assert_array_less(fit_result[17],5)
         assert_equal(fit_result[18],0)   
         
@@ -130,4 +130,4 @@ class TestFit:
         #so that we may use just one tolerance for all array values.
         assert_array_almost_equal(fit_result*[1,1,1,10**5,10**5,10**5,10**7,10**7,
             10**7,10**6,10**6,10**6,10,10**-1,10**-1,1,1,1,1],gold_trimerfast,
-            decimal=3,err_msg='Fit results from the trimer are not approx. equal to the standard fit results.')
+            decimal=2,err_msg='Fit results from the trimer are not approx. equal to the standard fit results.')
