@@ -28,7 +28,7 @@ import pylab
 
 from nose.tools import raises, assert_raises
 from numpy.testing import assert_, assert_equal, \
-    assert_array_almost_equal, assert_array_equal
+    assert_array_almost_equal, assert_array_equal, assert_almost_equal
 from nose.tools import with_setup
 
 import holopy
@@ -78,4 +78,7 @@ def test_mie_polarization():
     else:
         raise AssertionError("Holograms computed for both x- and y-polarized light are too similar.")
 
+    # but their max and min values should be close
+    assert_almost_equal(xholo.max(), yholo.max())
+    assert_almost_equal(xholo.min(), yholo.min())
     return xholo, yholo
