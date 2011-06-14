@@ -85,6 +85,29 @@ def test_single_sphere():
 
     assert_array_almost_equal(hnew, hold)
 
+def test_single_sphere_polarization():
+    # optics for x-polarization
+    xopts = holopy.optics.Optics(wavelen=wavelen, index=index,
+                                pixel_scale=pixel_scale,
+                                polarization=[1.0, 0],
+                                divergence=divergence)
+    # optics for y-polarization
+    yopts = holopy.optics.Optics(wavelen=wavelen, index=index,
+                                pixel_scale=pixel_scale,
+                                polarization=[0, 1.0],
+                                divergence=divergence)
+    sphere = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius, 
+                    x=x, y=y, z=z)
+
+    ytheory = Mie(imshape = imshape, optics=yopts)
+    xtheory = Mie(imshape = imshape, optics=xopts)
+
+    yh = ytheory.calc_holo(sphere, alpha=scaling_alpha)
+    xh = xtheory.calc_holo(sphere, alpha=scaling_alpha)
+
+    return xh, yh
+#    assert_array_almost_equal(xh, yh)
+
 def test_two_spheres_samez():
     # put a second sphere at twice x and y
     x2 = x*2
