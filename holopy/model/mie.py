@@ -107,7 +107,7 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius, x, y, z,
 
     xarr = _ensure_array(x).copy()
     yarr = _ensure_array(y).copy()
-    zarr = _ensure_array(z)
+    zarr = _ensure_array(z).copy()
     n_particle_real = _ensure_array(n_particle_real)
     n_particle_imag = _ensure_array(n_particle_imag)
     radius = _ensure_array(radius)
@@ -130,11 +130,11 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius, x, y, z,
                                                  n_particle_real[i],
                                                  n_particle_imag[i], 
                                                  radius[i],
-                                                 xarr[i], yarr[i], z[i],
+                                                 xarr[i], yarr[i], zarr[i],
                                                  scaling_alpha[0])
  
-        phase = np.exp(1j*np.pi*2*z[i]/opt.med_wavelen)
-        phase_dif = np.exp(-1j*np.pi*2*(z[i]-z[0])/opt.med_wavelen)
+        phase = np.exp(1j*np.pi*2*zarr[i]/opt.med_wavelen)
+        phase_dif = np.exp(-1j*np.pi*2*(zarr[i]-zarr[0])/opt.med_wavelen)
         # allow arbitrary linear polarization
         interference += (phase * (np.conj(xfield) * opt.polarization[0] + 
                                   np.conj(yfield) * opt.polarization[1]) + 

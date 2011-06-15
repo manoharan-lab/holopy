@@ -32,7 +32,7 @@ from numpy.testing import assert_, assert_equal, \
 from nose.tools import with_setup
 
 import holopy
-from holopy.model import mie
+import holopy.model.mie as mie
 
 # define optical train
 wavelen = 658e-9
