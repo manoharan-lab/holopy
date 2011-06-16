@@ -20,7 +20,10 @@ Test cython Mie calculations and python interface
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
-
+import sys
+import os
+hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
+sys.path.append(hp_dir)
 import numpy as np
 import os
 import string
@@ -32,7 +35,7 @@ from numpy.testing import assert_, assert_equal, \
 from nose.tools import with_setup
 
 import holopy
-from holopy.model import mie
+import holopy.model.mie as mie
 
 # define optical train
 wavelen = 658e-9

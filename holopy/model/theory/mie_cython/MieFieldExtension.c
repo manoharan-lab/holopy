@@ -94,7 +94,7 @@ void AS( int nc, float x, float *ASpsi, float *ASeta)
 	ASpsi[0] = (float)sin(x);
 	ASeta[0] = (float)(-1.) * cos(x);
 
-	for (ii = 1; ii <= nc; ii++)
+	for (ii = 1; ii < nc; ii++)
 	{
 		u = 0.5 + ii;
 		term = 0;
@@ -186,7 +186,7 @@ void a_and_b(float x, float re_m, float im_m, int nc,
 	im_a[0] = 0.;
 	im_b[0] = 0.;
 
-	for (i=1; i<=nc; i++)
+	for (i=1; i<nc; i++)
 	{
 		tmp = pow(re_m,2) + pow(im_m,2);
 		re_fac = (re_dns[i] * re_m + im_dns[i] * im_m) / tmp;
@@ -351,7 +351,7 @@ void *flds (double *re_Ec1, double *re_Ec2, double *re_Ec3,
 		}
 	}
 
-	for (n = 1; n<=nc; n++)
+	for (n = 1; n<nc; n++)
 	{
 		temp = (n + n + 1.) / n / (1.+n);
 		for (m=sizem; m--; )
@@ -582,7 +582,7 @@ void *scattering_matrix (double *re_S1, double *re_S2,
 		}
 	}
 
-	for (n = 1; n<=nc; n++)
+	for (n = 1; n<nc; n++)
 	{
 		temp = (n + n + 1.) / n / (1.+n);
 		for (m=sizem; m--; )
