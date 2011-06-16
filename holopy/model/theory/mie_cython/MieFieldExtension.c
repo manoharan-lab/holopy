@@ -464,6 +464,7 @@ void *flds (double *re_Ec1, double *re_Ec2, double *re_Ec3,
 		re_Es3[m] *= sinphi[m]/kr[m];
 		im_Es3[m] *= sinphi[m]/kr[m];
 
+		// convert to cartesian coordinates
 		re_Ec1[m] = re_Es1[m] * sintheta[m] * cosphi[m];
 		re_Ec1[m] += re_Es2[m] * costheta[m] * cosphi[m];
 		re_Ec1[m] -= re_Es3[m] * sinphi[m];
@@ -485,7 +486,7 @@ void *flds (double *re_Ec1, double *re_Ec2, double *re_Ec3,
 		//im_Ec2[m] /= temp2;
 
 		re_Ec3[m] = re_Es1[m]*costheta[m] - re_Es2[m]*sintheta[m];
-		im_Ec3[m] = im_Es1[m]*costheta[m] - re_Es2[m]*sintheta[m];
+		im_Ec3[m] = im_Es1[m]*costheta[m] - im_Es2[m]*sintheta[m];
 
 	}
 
