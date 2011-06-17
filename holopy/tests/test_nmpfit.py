@@ -33,7 +33,7 @@ from holopy.third_party import nmpfit
 from holopy.process import normalize
 
 # these are the exact values; should correspond to fit results
-# in order: real index, imag index, radius , x, y, z, alpha, ?, fit status
+# in order: real index, imag index, radius , x, y, z, alpha, fnorm, fit status
 gold_single = np.array([1.5768, 0.0001, 6.62e-7, 5.54e-6, 5.79e-6,
                         14.2e-6, 0.6398, 7.119, 2]) 
 
