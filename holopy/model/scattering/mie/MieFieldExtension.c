@@ -188,17 +188,24 @@ void a_and_b(float x, float re_m, float im_m, int nc,
 
 	for (i=1; i<nc; i++)
 	{
-		tmp = pow(re_m,2) + pow(im_m,2);
+	 		tmp = pow(re_m,2) + pow(im_m,2);
 		re_fac = (re_dns[i] * re_m + im_dns[i] * im_m) / tmp;
 		re_fac += i/x;
 		im_fac = (im_dns[i] * re_m - re_dns[i] * im_m) / tmp;
+	  
 		re_num = (re_fac * ASpsi[i]) - ASpsi[i-1];
 		im_num = (im_fac * ASpsi[i]);
 		re_den = (re_fac * ASpsi[i] - im_fac * ASeta[i]) - ASpsi[i-1];
 		im_den = (re_fac * ASeta[i] + im_fac * ASpsi[i]) - ASeta[i-1];
-		tmp = pow(re_den,2) + pow(im_den,2);
-		re_a[i] = (re_num*re_den + im_num*im_den) / tmp;
+		   
+	
+		  tmp = pow(re_den,2) + pow(im_den,2);
+	  
+	 
+	  re_a[i] = (re_num*re_den + im_num*im_den) / tmp;
+
 		im_a[i] = (im_num*re_den - re_num*im_den) / tmp;
+
 
 		re_fac = (re_m*re_dns[i] - im_m*im_dns[i]);
 		re_fac += i/x;
@@ -210,7 +217,7 @@ void a_and_b(float x, float re_m, float im_m, int nc,
 		tmp = pow(re_den,2) + pow(im_den,2);
 		re_b[i] = (re_num*re_den + im_num*im_den) / tmp;
 		im_b[i] = (im_num*re_den - re_num*im_den) / tmp;
-	}
+	  	}
 }
 
 void *flds (double *re_Ec1, double *re_Ec2, double *re_Ec3,
@@ -328,7 +335,9 @@ void *flds (double *re_Ec1, double *re_Ec2, double *re_Ec3,
 			costhetanf[m] = cos(temp*sa_coeff);
 			sintheta[m] = sin(temp);
 			//Now temp is phi:
-			temp = atan2(xs[i],ys[j]);
+		        temp = atan2(ys[j], xs[i]);
+			// BUG? should next line switch y and x?
+			//temp = atan2(xs[i],ys[j]);
 			cosphi[m] = cos(temp);
 			sinphi[m] = sin(temp);
 
@@ -771,11 +780,13 @@ void outputhol (double xstart, double ystart, double zparam, double re_np,
 	float *ASeta;
 	float *re_dns;
 	float *im_dns;
-	float *re_a={0};
-	float *im_a={0};
-	float *re_b={0};
-	float *im_b={0};
-	double z = zparam*1e-6;
+	 
+	  float *re_a;//={0};
+	  float *im_a;//={0};
+	  float *re_b;//={0};
+	  float *im_b;//={0};
+	 	
+double z = zparam*1e-6;
 	double re_m;
 	double im_m = imm_glob;
 	double sizeparam;
@@ -828,17 +839,21 @@ void outputhol (double xstart, double ystart, double zparam, double re_np,
 	}
 	z_in_pixels = z*1e6/mpp;
 	k_in_pixels = (2 * 3.14159265) / (wavelength / re_nm / (mpp*1e-6));
+
+
 	a_and_b(sizeparam,re_m,im_m,nterms,&re_a[0],&im_a[0],&re_b[0],&im_b[0],&ASpsi[0],&ASeta[0],&re_dns[0],&im_dns[0]);
 
-	flds(&re_Ec1[0], &re_Ec2[0], &re_Ec3[0], &im_Ec1[0], &im_Ec2[0], &im_Ec3[0], nterms,xstart,x_dim,1,ystart,y_dim,1,k_in_pixels,z_in_pixels,&re_a[0],&im_a[0],&re_b[0],&im_b[0]);
-
+	
+/*
+flds(&re_Ec1[0], &re_Ec2[0], &re_Ec3[0], &im_Ec1[0], &im_Ec2[0], &im_Ec3[0], nterms,xstart,x_dim,1,ystart,y_dim,1,k_in_pixels,z_in_pixels,&re_a[0],&im_a[0],&re_b[0],&im_b[0]);
+	  */
 	/*
 	if ((xs_sa == 0) && (ys_sa == 0))
 		miehol(holdata, z, 1e-6, re_nm, x_dim, y_dim, wavelength, alpha, &re_Ec1[0], &im_Ec1[0], xstart, ystart);
 	else
 		miehol(holdata, z, 1e-6, re_nm, x_dim, y_dim, wavelength, alpha, &re_Ec1[0], &im_Ec1[0], xs_sa, ys_sa);
 	*/
-
+	/*
 	miehol(holdata, z, 1e-6, re_nm, x_dim, y_dim, mpp, wavelength, alpha, &re_Ec1[0], &im_Ec1[0], 0, 0);
 
 	for (i=0; i<n; i++)
@@ -849,21 +864,26 @@ void outputhol (double xstart, double ystart, double zparam, double re_np,
 	fclose(outp);
 
 
-	free(re_Ec1);
+	*/
+
+	  /*  free(re_Ec1);
 	free(im_Ec1);
 	free(re_Ec2);
 	free(im_Ec2);
 	free(re_Ec3);
 	free(im_Ec3);
 	free(ASpsi);
-	free(ASeta);
-	free(re_dns);
+	free(ASeta); */
+	  //free(re_dns); 
 	free(im_dns);
-	free(re_a);
+
+
+
+	  /*	free(re_a);
 	free(im_a);
 	free(re_b);
 	free(im_b);
-	free(holdata);
+	free(holdata); */
 
 }
 

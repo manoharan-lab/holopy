@@ -33,7 +33,7 @@ void miehol_dimer(double *result, double z, double z2, float a,
 				  double *re_Ec1_2, double *im_Ec1_2,
 				  double *re_Ec2, double *im_Ec2,
 				  double *re_Ec2_2, double *im_Ec2_2);
-void outputhol (double xstart, double ystart, double zparam, double re_np,
+extern void outputhol (double xstart, double ystart, double zparam, double re_np,
 		double re_nm, double radius, double alpha, int x_dim, int y_dim, double mpp, 
 		float wlength, char* fn);
 void *read_hol_bin(double *holdata, char *fn, int x_dim, int y_dim);
