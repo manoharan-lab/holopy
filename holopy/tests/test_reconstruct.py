@@ -43,6 +43,7 @@ class TestRecon:
         im = holopy.load(image_path,optics=opts)
         rec_im = holopy.reconstruct(im, 4e-6)
         rec_im = abs(rec_im[:,:,0,0] * scipy.conj(rec_im[:,:,0,0]))
+        rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
         assert_array_equal(rec_im.astype('uint8'),gold)
 
     def test_reconMiddle(self):
@@ -55,6 +56,7 @@ class TestRecon:
         im = holopy.load(image_path,optics=opts)
         rec_im = holopy.reconstruct(im, 7e-6)
         rec_im = abs(rec_im[:,:,0,0] * scipy.conj(rec_im[:,:,0,0]))
+        rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
         assert_array_equal(rec_im.astype('uint8'),gold)
     
     def test_reconFar(self):
@@ -67,4 +69,5 @@ class TestRecon:
         im = holopy.load(image_path,optics=opts)
         rec_im = holopy.reconstruct(im, 10e-6)
         rec_im = abs(rec_im[:,:,0,0] * scipy.conj(rec_im[:,:,0,0]))
+        rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
         assert_array_equal(rec_im.astype('uint8'),gold)

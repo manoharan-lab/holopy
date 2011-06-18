@@ -30,6 +30,7 @@ import holopy.model.tmatrix_dimer
 import holopy.model.tmatrix_trimer
 import scipy.ndimage
 import numpy.random
+import numpy as np
 
 #single particle
 #image0001.npy is real data
@@ -56,15 +57,18 @@ opts = 'optical_train3.yaml'
 im = holopy.load(image_path,optics=opts)
 rec_im = holopy.reconstruct(im, 4e-6)
 rec_im = abs(rec_im[:,:,0,0] * scipy.conj(rec_im[:,:,0,0]))
+rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
 out_name = 'recon_4.npy'
 numpy.save(out_name, rec_im.astype('uint8'))
 
 rec_im = holopy.reconstruct(im, 7e-6)
 rec_im = abs(rec_im[:,:,0,0] * scipy.conj(rec_im[:,:,0,0]))
+rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
 out_name = 'recon_7.npy'
 numpy.save(out_name, rec_im.astype('uint8'))
 
 rec_im = holopy.reconstruct(im, 10e-6)
 rec_im = abs(rec_im[:,:,0,0] * scipy.conj(rec_im[:,:,0,0]))
+rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
 out_name = 'recon_10.npy'
 numpy.save(out_name, rec_im.astype('uint8'))

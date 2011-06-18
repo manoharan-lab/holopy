@@ -41,15 +41,16 @@ from numpy.testing import assert_, assert_equal, assert_array_almost_equal, asse
 import string
 from nose.plugins.attrib import attr
 
-gold_single = np.array([1.5768,0.0001,6.62e-7,5.54e-6,5.79e-6,14.2e-6,0.6398,7.119])
-gold_dimerslow = np.array([1.6026,1.6026,0.00001,0.00001,6.857e-7,6.964e-7,
-    1.6998e-5,1.739e-5,2.0927e-5,1,-29.78,-13.83,5.447e-25,16.722])
-gold_dimerfast = np.array([1.5999,1.5999,0.00001,0.00001,6.773e-7,6.651e-7,
-    1.7186e-5,1.735e-5,2.0670e-5,0.787,-30.791,-14.038,0.00,53.655,5.000,0.000])
-gold_trimerslow = np.array([1.5894,1.598,1.599,1.00e-5,1.00e-5,1.00e-5,5.00e-7,5.00e-7,
-    5.00e-7,6.00e-6,6.00e-6,7.02e-6,0.60948,40.678,12.0806,4.438,4.795])
-gold_trimerfast = np.array([1.5898,1.598,1.599,1.00e-5,1.00e-5,1.00e-5,5.00e-7,5.00e-7,
-    5.00e-7,6.00e-6,6.00e-6,7.02e-6,0.60865,41.4538,11.113,3.638,4.8098,5.00,0.00])
+#The gold standards are the fit results normalized to be between 0 and 10
+gold_single = np.array([1.577,1.000,6.623,5.536,5.794,1.419,6.398,7.119])
+gold_dimerslow = np.array([1.603,1.603,1.000,1.000,6.857,6.964,
+    1.700,1.739,2.093,1,-2.978,-1.383,0.000,1.672])
+gold_dimerfast = np.array([1.600,1.600,1.000,1.000,6.773,6.651,
+    1.719,1.735,2.067,7.876,-3.079,-1.404,0.000,5.366,5.000,0.000])
+gold_trimerslow = np.array([1.589,1.598,1.599,1.000,1.000,1.000,5.000,5.000,
+    5.000,6.001,5.999,7.018,6.095,4.068,1.208,4.438,4.795])
+gold_trimerfast = np.array([1.590,1.598,1.599,1.000,1.000,1.000,5.000,5.000,
+    5.000,6.001,5.999,7.020,6.087,4.145,1.111,3.638,4.810,5.000,0.000])
 
 class TestFit:
 
@@ -61,8 +62,11 @@ class TestFit:
         holopy.fit(input_path)
         fit_result = np.loadtxt(result_path,skiprows=2,
             usecols=[1,2,3,4,5,6,7,8,9])
-        assert_array_almost_equal(fit_result[0:8],gold_single,
-            decimal=3,err_msg='Mie fit results from the single particle are not approx. equal to the standard fit results.')
+        #multiply results by powers of 10 to make them be of the same magnitude
+        #so that we may use just one tolerance for all array values.
+        assert_array_almost_equal(fit_result[0:8]*[1,10**4,10**7,
+            10**6,10**6,10**5,10,1],gold_single,
+            decimal=2,err_msg='Mie fit results from the single particle are not approx. equal to the standard fit results.')
         assert_array_less(fit_result[8],5)      
 
     @attr('slow')
@@ -74,8 +78,11 @@ class TestFit:
         holopy.fit(input_path)
         fit_result = np.loadtxt(result_path,skiprows=2,
             usecols=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])
-        assert_array_almost_equal(fit_result[0:14],gold_dimerslow,
-            decimal=3,err_msg='Fit results from the dimer are not approx. equal to the standard fit results.')
+        #multiply results by powers of 10 to make them be of the same magnitude
+        #so that we may use just one tolerance for all array values.
+        assert_array_almost_equal(fit_result[0:14]*[1,1,10**5,10**5,
+            10**7,10**7,10**5,10**5,10**5,1,10**-1,10**-1,10**9,10**-1],gold_dimerslow,
+            decimal=2,err_msg='Fit results from the dimer are not approx. equal to the standard fit results.')
         assert_array_less(fit_result[14],5)
         assert_equal(fit_result[15],0)
 
@@ -87,8 +94,11 @@ class TestFit:
         holopy.fit(input_path)
         fit_result = np.loadtxt(result_path,skiprows=2,
             usecols=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])
-        assert_array_almost_equal(fit_result,gold_dimerfast,
-            decimal=3,err_msg='Fit results from the dimer are not approx.' 
+        #multiply results by powers of 10 to make them be of the same magnitude
+        #so that we may use just one tolerance for all array values.
+        assert_array_almost_equal(fit_result*[1,1,10**5,10**5,
+            10**7,10**7,10**5,10**5,10**5,10,10**-1,10**-1,10**9,10**-1,1,1],gold_dimerfast,
+            decimal=2,err_msg='Fit results from the dimer are not approx.' 
             +'equal to the standard fit results.')
 
     @attr('slow')  
@@ -100,8 +110,11 @@ class TestFit:
         holopy.fit(input_path)
         fit_result = np.loadtxt(result_path,skiprows=2,
             usecols=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]) 
-        assert_array_almost_equal(fit_result[0:17],gold_trimerslow,
-            decimal=3,err_msg='Fit results from the trimer are not approx. equal to the standard fit results.')
+        #multiply results by powers of 10 to make them be of the same magnitude
+        #so that we may use just one tolerance for all array values.
+        assert_array_almost_equal(fit_result[0:17]*[1,1,1,10**5,10**5,10**5,10**7,10**7,
+            10**7,10**6,10**6,10**6,10,10**-1,10**-1,1,1],gold_trimerslow,
+            decimal=2,err_msg='Fit results from the trimer are not approx. equal to the standard fit results.')
         assert_array_less(fit_result[17],5)
         assert_equal(fit_result[18],0)   
         
@@ -112,6 +125,9 @@ class TestFit:
         result_path = path + 'TmatTrimerFast/fit_result.tsv'    
         holopy.fit(input_path)
         fit_result = np.loadtxt(result_path,skiprows=2,
-            usecols=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]) 
-        assert_array_almost_equal(fit_result,gold_trimerfast,
-            decimal=3,err_msg='Fit results from the trimer are not approx. equal to the standard fit results.')
+            usecols=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19])
+        #multiply results by powers of 10 to make them be of the same magnitude
+        #so that we may use just one tolerance for all array values.
+        assert_array_almost_equal(fit_result*[1,1,1,10**5,10**5,10**5,10**7,10**7,
+            10**7,10**6,10**6,10**6,10,10**-1,10**-1,1,1,1,1],gold_trimerfast,
+            decimal=2,err_msg='Fit results from the trimer are not approx. equal to the standard fit results.')
