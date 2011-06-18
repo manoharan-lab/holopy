@@ -33,7 +33,7 @@ from holopy.third_party import nmpfit
 from holopy.process import normalize
 
 # these are the exact values; should correspond to fit results
-# in order: real index, imag index, radius , x, y, z, alpha, ?, fit status
+# in order: real index, imag index, radius , x, y, z, alpha, fnorm, fit status
 gold_single = np.array([1.5768, 0.0001, 6.62e-7, 5.54e-6, 5.79e-6,
                         14.2e-6, 0.6398, 7.119, 2]) 
 
@@ -127,9 +127,9 @@ def residfunct(p, fjac = None):
     # mie.forward_holo(im.shape[0], optics, n_particle_real,
     #                        n_particle_imag, radius, x, y,
     #                        z, scaling_alpha)
-#    calculated = mie.forward_holo(holo.shape[0], optics, p[0],
-#                                  n_particle_imag, p[1], p[2], p[3],
-#                                  p[4], p[5])
+    #calculated = mie.forward_holo(holo.shape[0], optics, p[0],
+    #                              n_particle_imag, p[1], p[2], p[3],
+    #                              p[4], p[5])
     sphere = Sphere(n=p[0]+n_particle_imag*1j, r=p[1], x=p[2], y=p[3], 
                     z=p[4])
     calculated = theory.calc_holo(sphere, alpha=p[5])
