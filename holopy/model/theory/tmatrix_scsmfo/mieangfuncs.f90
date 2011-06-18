@@ -202,7 +202,60 @@
         end
 
 
-      subroutine tmatrix_fields()
+      subroutine tmatrix_fields(n_rows, n_cols, kxgrid, kygrid, kcoords, &
+           amn, lmax, euler_gamma, pol_vec, es_x, es_y, es_z)
+        implicit none
+        integer, intent(in) :: n_rows, n_cols, lmax
+        real (kind = 8), intent(in), dimension(n_rows) :: kxgrid
+        real (kind = 8), intent(in), dimension(n_cols) :: kygrid
+        real (kind = 8), intent(in), dimension(3) :: kcoords
+        complex (kind = 8), intent(in), dimension(2,lmax*(lmax+2),2) :: amn
+        real (kind = 8), intent(in) :: euler_gamma
+        real (kind = 8), intent(in), dimension(2) :: pol_vec
+        complex (kind = 8), intent(out), dimension(n_rows, n_cols) :: es_x, &
+             es_y, es_z
+        complex (kind = 8), dimension(4) :: ascatmat
+        complex (kind = 8), dimension(2,2) :: asreshape
+        real (kind = 8), dimension(3) :: sphcoords
+        real (kind = 8), dimension(2) :: einc_sph, signarr
+        real (kind = 8) :: kr, theta, phi
+        complex (kind = 8) :: prefactor, ci
+        complex (kind = 8), dimension(3) :: escat_rect
+        complex (kind = 8), dimension(2) :: escat_sph
+        integer :: i, j
+        data ci/(0.d0, 1.d0)/
+
+        ! Main loop over hologram points, columns first
+        do  j = 1, n_cols, 1
+           do i = 1, n_rows, 1
+              ! get spherical coordinates of hologram point relative to cluster
+              call getsphercoords(kxgrid(i) - kcoords(1), &
+                   kygrid(j) - kcoords(2), kcoords(3), sphcoords)
+              kr = sphcoords(1)
+              theta = sphcoords(2)
+              phi = sphcoords(3)
+
+              ! calculate amplitude scattering matrix from amn coefficients
+              ! code in uts_scsmfo.for
+              call asmfr(amn, lmax, theta, phi + euler_gamma, kr, ascatmat)
+              ! fudge factor of -0.5 for agreement with single sphere case
+              asreshape = reshape(cshift(ascatmat, shift = 1), (/ 2, 2 /), &
+                   order = (/ 2, 1 /)) * (-0.5) 
+
+              ! calculate scattered fields in spherical coordinates
+              ! convert polarization to spherical coords
+              call incfield(pol_vec(1), pol_vec(2), phi, einc_sph)
+              prefactor = ci / kr * exp(ci * kr) ! Bohren & Huffman formalism
+              signarr = (/ 1.0, -1.0 /) ! accounts for escatperp = -escatphi
+              escat_sph = prefactor * matmul(asreshape, einc_sph) * signarr
+
+              ! convert to rectangular
+              call fieldstocart(escat_sph, theta, phi, escat_rect)
+              es_x(i, j) = escat_rect(1)
+              es_y(i, j) = escat_rect(2)
+              es_z(i, j) = escat_rect(3)
+           end do
+        end do
 
         return
         end

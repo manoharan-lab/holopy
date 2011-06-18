@@ -24,9 +24,10 @@ c
 c Intended to be called from Python.
 c Inputs:
 c inew (legacy, for program control -- set to 1)
-c xp (array with particle x coords, non-dimensionalized by wavevector)
-c yp (array with particle y coords)
-c zp (array with particle z coords)
+c xp (array with particle x coords relative to COM, non-dimensionalized by 
+c wavevector)
+c yp (array with particle y coords, non-dimensionalized)
+c zp (array with particle z coords, non-dimensionalized)
 c sni (array, real part of relative index)
 c ski (array, imaginary part of relative index)
 c xi (array, particle size parameters)
@@ -40,6 +41,12 @@ c Outputs:
 c nodr: array of single sphere expansion orders
 c nodrtmax: max order of cluster VSH expansion
 c amn0 (2 x 5040 x 2 array of amn coefficients, listed in a compactified way)
+c *****************************************************************
+c Note: If amn0 is used from Python as an argument to subroutines for
+c hologram calculation in mieangfuncs.f90, it is necessary to truncate
+c the output ndarray in Python, as follows:
+c        amn0 = amn0[:, 0:(nodrtmax**2 + 2 * nodrtmax), :]
+c ******************************************************************
       implicit real*8(a-h,o-z)
       include 'scfodim.for'
       parameter(nbd=nod*(nod+2),nbc=4*notd+4,

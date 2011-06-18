@@ -198,7 +198,6 @@ def forward_holo(size, opt, n_particle_real_1, n_particle_real_2,
     # chop off unused parts of amn0 (2nd dim is nodrt^2 + 2*nodrt) 
     limit = nodrt**2 + 2*nodrt
     amncoeffs = amn0[:,0:limit, :]
-
     if old_coords:
         gridx = np.mgrid[(xdim-1) * px/2 : -0.5 * xdim * px : -1 * px]
         gridy = np.mgrid[(-1 * ydim+1) * py/2 : ydim * py/2 : py]
