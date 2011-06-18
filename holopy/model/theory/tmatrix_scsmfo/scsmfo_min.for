@@ -24,7 +24,7 @@ c
 c Intended to be called from Python.
 c Inputs:
 c inew (legacy, for program control -- set to 1)
-c xp (array with particle x coords)
+c xp (array with particle x coords, non-dimensionalized by wavevector)
 c yp (array with particle y coords)
 c zp (array with particle z coords)
 c sni (array, real part of relative index)

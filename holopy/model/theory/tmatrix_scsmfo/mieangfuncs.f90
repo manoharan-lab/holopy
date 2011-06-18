@@ -38,89 +38,54 @@
 !    amn: array of amn cluster scattering coefficients (not in singleholo)
 !    gamma: Euler angle gamma, degrees (not in singleholo)
 !    alpha: scaling factor that should be close to 1
-!    einc: polarization vector of incident field
+!    einc: linear polarization vector of incident field
 !
 ! Output parameters:
 !    hologram: calculated hologram
 
 
-      subroutine singleholo(n_rows, n_cols, kxgrid, kygrid, kcoords, asbs, nstop, & 
-           alpha, einc, hologram)
-        ! Intended fast replacement for FitSingle.CalcHoloSingle
+      subroutine singleholo(n_rows, n_cols, kxgrid, kygrid, kcoords, asbs, &
+           nstop, alpha, einc, hologram)
         ! Use Python to calculate scat. coeffs a_n and b_n once per frame
         ! This function performs nested loop over pixels
         implicit none
-        integer nstop
-        integer n_rows, n_cols, i, j, n, nn, ifail
-        real (kind = 8), dimension(n_rows, n_cols) :: hologram
-        real*8 kcoords(3), sphcoords(3), alpha, einc(2), kxgrid(n_rows), kygrid(n_cols)
-        real*8 pixel, kr, kz, theta, phi, prefactor(nstop), pi_n(nstop), tau_n(nstop)
-        ! use single vectors rather than redundant mgrid for x, y values
-        complex*16 asbs(2, nstop), ascatmat(4), asreshape(2,2)
-        complex*16 hl, dhl, inv_pref, ci
-        real*8 jn(0:nstop), djn(0:nstop), yn(0:nstop), dyn(0:nstop) ! radial
+        integer, intent(in) :: nstop, n_rows, n_cols
+        integer i, j
+        real (kind = 8), dimension(n_rows, n_cols), intent(out) :: hologram
+        real (kind = 8), intent(in) :: alpha
+        real (kind = 8), intent(in), dimension(2) :: einc
+        complex (kind = 8), intent(in), dimension(2, nstop) :: asbs
+        real (kind = 8), dimension(3), intent(in) :: kcoords
+        real (kind = 8), dimension(n_rows) :: kxgrid
+        real (kind = 8), dimension(n_cols) :: kygrid
+        real (kind = 8), dimension(3) :: sphcoords
+        real (kind = 8) :: pixel, kr, kz, theta, phi
+        complex (kind = 8), dimension(2,2) :: asreshape
+        complex*16 ci
         data ci/(0.d0,1.d0)/
-! comments for use by f2py
-!f2py intent(in) n_rows
-!f2py intent(in) n_cols
-!f2py intent(in) kxgrid
-!f2py intent(in) kygrid
-!f2py intent(in) kcoords
-!f2py intent(in) asbs
-!f2py intent(in) nstop
-!f2py intent(in) alpha
-!f2py intent(in) einc
-!f2py intent(out) hologram
 
-
-        ! calculate scattering matrix prefactor
-        do n = 1, nstop, 1
-           prefactor(n) = (2.*n + 1.) / (n * (n+1.))
-        end do
-
-        ! the great loop
+        ! the main loop over hologram points
         do  j = 1, n_cols, 1
            do i = 1, n_rows, 1
-              call getsphercoords(kxgrid(i) - kcoords(1), kygrid(j) - kcoords(2), &
-                   kcoords(3), sphcoords)
+              ! Get spherical coordinates of hologram point
+              call getsphercoords(kxgrid(i) - kcoords(1), &
+                   kygrid(j) - kcoords(2), kcoords(3), sphcoords)
               kr = sphcoords(1)
               kz = kcoords(3)
               theta = sphcoords(2)
               phi = sphcoords(3)
 
-              call pisandtaus(nstop, theta, pi_n, tau_n)
-
-              ! spherical bessels for full radial dependence
-              call sbesjy(kr, nstop, jn, yn, djn, dyn, ifail)
-                           
-              ! calculate S1 and S2 by looping summation
-              ascatmat = (/ 0, 0, 0, 0 /)
-              ! inverse prefactor allows use of existing radially asymptotic code
-              inv_pref = cdexp(-1*ci*kr)*kr
-
-              do nn = 1, nstop, 1
-                 hl = jn(nn) + ci*yn(nn)
-                 dhl = hl/kr + djn(nn) + ci*dyn(nn)
-                 ascatmat(1) = ascatmat(1) + prefactor(nn) * ci**nn * ( &
-                      asbs(1,nn)*pi_n(nn)*dhl + ci*asbs(2,nn)*tau_n(nn)*hl)
-                 ascatmat(2) = ascatmat(2) + prefactor(nn) * ci**nn * ( &
-                      asbs(1,nn)*tau_n(nn)*dhl + ci*asbs(2,nn)*pi_n(nn)*hl)
-              end do
-
-              ! apply inverse prefactor
-              ascatmat(1) = ascatmat(1) * inv_pref
-              ascatmat(2) = ascatmat(2) * inv_pref
-   
-              asreshape = reshape(cshift(ascatmat, shift = 1), (/ 2, 2 /), &
-                   order = (/ 2, 1 /)) 
-              call paraxholocl(kr, kz, theta, phi, asreshape, einc, alpha, pixel)
+              ! Calculate amplitude scattering matrix w/full radial dependence
+              call asm_mie_fullradial(nstop, asbs, sphcoords, asreshape)
+              ! Calculate intensity at hologram point from ASM
+              call paraxholocl(kr, kz, theta, phi, asreshape, einc, alpha, &
+                   pixel)
               hologram(i,j) = pixel
            end do
         end do
 
         return 
         end
-
 
 
       subroutine tmholo_nf(n_rows, n_cols, kxgrid, kygrid, kcoords, amn, &
@@ -132,7 +97,7 @@
         include 'scfodim.for'
         integer, parameter :: nbc = 4*notd+4
         integer n_rows, n_cols, nodrt, i, j, n
-        real (kind = 8), dimension(n_rows, n_cols) :: hologram
+        real (kind = 8), dimension(n_rows, n_cols), intent(out) :: hologram
         real*8 kcoords(3), sphcoords(3), gamma, einc(2), kxgrid(n_rows)
         real*8 kygrid(n_cols)
         real*8 pixel, kr, kz, theta, phi, alpha
@@ -151,7 +116,6 @@
 !f2py intent(in) gamma
 !f2py intent(in) alpha
 !f2py intent(in) einc
-!f2py intent(out) hologram
 
         !  added by me to avoid common block, copied from scmsfo1b.for
         do n=1,2*nbc
@@ -183,6 +147,112 @@
         return
         end
 
+
+      subroutine mie_fields(n_rows, n_cols, kxgrid, kygrid, kcoords, asbs, & 
+           nstop, einc, es_x, es_y, es_z)
+        ! Calculate Mie scattering fields to use for superposition holograms.
+        implicit none
+        integer, intent(in) :: nstop, n_rows, n_cols
+        complex (kind = 8), intent(out), dimension(n_rows, n_cols) :: es_x, &
+             es_y, es_z
+        complex (kind = 8), intent(in), dimension(2, nstop) :: asbs
+        real (kind = 8), intent(in), dimension(2) :: einc ! polarization
+        real (kind = 8), intent(in), dimension(n_rows) :: kxgrid
+        real (kind = 8), intent(in), dimension(n_cols) :: kygrid
+        real (kind = 8), intent(in), dimension(3) :: kcoords
+        real (kind = 8) :: kr, theta, phi
+        real (kind = 8), dimension(2) :: signarr, einc_sph
+        real (kind = 8), dimension(3) :: sphcoords
+        complex (kind = 8), dimension(2,2) :: asm_scat
+        complex (kind = 8), dimension(2) :: escat_sph
+        complex (kind = 8), dimension(3) :: escat_rect
+        complex (kind = 8) :: prefactor, ci
+        integer :: i, j
+        data ci/(0.d0, 1.d0)/
+
+        ! Main loop over hologram points, columns first
+        do  j = 1, n_cols, 1
+           do i = 1, n_rows, 1
+              ! get spherical coordinates of hologram point relative to particle
+              call getsphercoords(kxgrid(i) - kcoords(1), &
+                   kygrid(j) - kcoords(2), kcoords(3), sphcoords)
+              kr = sphcoords(1)
+              theta = sphcoords(2)
+              phi = sphcoords(3)
+
+              ! calculate the amplitude scattering matrix
+              call asm_mie_fullradial(nstop, asbs, sphcoords, asm_scat)
+
+              ! calculate scattered fields in spherical coordinates
+              ! convert polarization to spherical coords
+              call incfield(einc(1), einc(2), phi, einc_sph)
+              prefactor = ci / kr * exp(ci * kr) ! Bohren & Huffman formalism
+              signarr = (/ 1.0, -1.0 /) ! accounts for escatperp = -escatphi
+              escat_sph = prefactor * matmul(asm_scat, einc_sph) * signarr
+
+              ! convert to rectangular
+              call fieldstocart(escat_sph, theta, phi, escat_rect)
+              es_x(i, j) = escat_rect(1)
+              es_y(i, j) = escat_rect(2)
+              es_z(i, j) = escat_rect(3)
+           end do
+        end do
+
+        return 
+        end
+
+
+      subroutine tmatrix_fields()
+
+        return
+        end
+
+
+      subroutine asm_mie_fullradial(nstop, asbs, sphcoords, asm_out)
+        ! perform summations to calculate amplitude scattering matrix
+        ! with full radial dependence, compatible with B/H formalism
+        implicit none
+        integer, intent(in) :: nstop
+        real (kind = 8), intent(in), dimension(3) :: sphcoords
+        complex (kind = 8), dimension(2, nstop), intent(in) :: asbs
+        complex (kind = 8), dimension(2, 2), intent(out) :: asm_out
+        complex (kind = 8) :: ci, hl, dhl, inv_pref
+        data ci/(0.d0, 1.d0)/
+        complex (kind = 8), dimension(4) :: asm
+        integer :: n, ifail
+        real (kind = 8) :: prefactor, kr, theta
+        real (kind = 8), dimension(nstop) :: pi_n, tau_n
+        real (kind = 8), dimension(0:nstop) :: jn, djn, yn, dyn
+
+        ! initialize 
+        asm = (/0., 0., 0., 0. /)
+        kr = sphcoords(1)
+        theta = sphcoords(2)
+        inv_pref = cdexp(-1*ci*kr)*kr
+
+        ! compute special functions (angular and spherical bessel)
+        call pisandtaus(nstop, theta, pi_n, tau_n)
+        call sbesjy(kr, nstop, jn, yn, djn, dyn, ifail)
+
+        ! main loop
+        do n = 1, nstop, 1
+           prefactor = (2.*n + 1.) / (n * (n + 1.))
+           hl = jn(n) + ci*yn(n) ! spherical hankel
+           dhl = hl/kr + djn(n) + ci*dyn(n)
+           asm(1) = asm(1) + prefactor * ci**n * ( &
+                asbs(1,n)*pi_n(n)*dhl + ci*asbs(2,n)*tau_n(n)*hl)
+           asm(2) = asm(2) + prefactor * ci**n * ( &
+                asbs(1,n)*tau_n(n)*dhl + ci*asbs(2,n)*pi_n(n)*hl)   
+        end do
+
+        ! apply inverse prefactor so B/H far field formalism can be used
+        asm = asm * inv_pref
+
+        asm_out = reshape(cshift(asm, shift = 1), (/ 2, 2 /), &
+             order = (/ 2, 1 /))
+
+        return
+        end
 
 
       subroutine paraxholocl(kr, kz, theta, phi, ascatm, polvec, alpha, holo)
@@ -264,7 +334,7 @@
         pi = 2.d0*dacos(0.d0)
 
         sph(1) = dsqrt(x**2 + y**2 + z**2)
-        sph(2) = dacos(z / sph(1))
+        sph(2) = datan2(dsqrt(x**2 + y**2), z)
         gamma = datan2(y, x)
         if (gamma.lt.0.d0) then
            gamma = gamma + 2.d0*pi
