@@ -18,16 +18,17 @@
 
 '''
 Forward calculations for an arbitrary number of spheres by mie
-superposition
+superposition using the Cython code for Mie field calculation.  Note
+that this code can only handle x-polarized incident fields.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
+.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
 import re
 import numpy as np
 from scattering.mie import MFE
-from scattering.tmatrix import miescatlib, mieangfuncs
 from holopy.hologram import Hologram
 import holopy.optics
 from holopy.utility.helpers import _ensure_array, _ensure_pair
@@ -68,7 +69,8 @@ def _forward_holo(size, opt, scat_dict):
 def forward_holo(size, opt, n_particle_real, n_particle_imag, radius, x, y, z,
                  scaling_alpha):
     """
-    Compute a hologram of n spheres by mie superposition
+    Compute a hologram of N spheres by Mie superposition, using the
+    cython Mie code.
 
     Parameters may be specified in any consistent set of units (make
     sure the optics object is also in the same units).
@@ -99,6 +101,15 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius, x, y, z,
     -------
     calc_holo : Hologram
        Calculated hologram from the given distribution of spheres
+
+    Notes
+    -----
+    The Cython Mie code assumes that the polarization is in the
+    x-direction, so don't use this function unless you're able to
+    align your incident field along x.  Also the scattered intensity
+    includes the z-component of the scattered fields, so calculations
+    will differ from those of codes that use only the x- and y-
+    components to calculated the scattered intensity.
     """
     if isinstance(opt, dict):
         opt = holopy.optics.Optics(**opt)
@@ -136,11 +147,8 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius, x, y, z,
  
         phase = np.exp(1j*np.pi*2*zarr[i]/opt.med_wavelen)
         phase_dif = np.exp(-1j*np.pi*2*(zarr[i]-zarr[0])/opt.med_wavelen)
-        # allow arbitrary linear polarization
-        interference += (phase * (np.conj(xfield) * opt.polarization[0] + 
-                                  np.conj(yfield) * opt.polarization[1]) + 
-                         np.conj(phase) * (xfield * opt.polarization[0] + 
-                                           yfield * opt.polarization[1]))
+        # note that cython code assumes polarization is in x-direction
+        interference += phase*np.conj(xfield) + np.conj(phase)*xfield
         xfield_tot += xfield*phase_dif
         yfield_tot += yfield*phase_dif
         zfield_tot += zfield*phase_dif
@@ -152,79 +160,6 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius, x, y, z,
 
     return Hologram(abs(holo), optics = opt)
 
-
-def calc_mie_fields_f(size, opt, n_particle_real, n_particle_imag, radius, x,
-                      y, z, alpha): 
-    # TODO: alpha is a dummy argument
-    # but keep it for compatability with calc_mie_fields 
-    # where it is also a dummy arg.  Suggest eventual removal.
-    '''
-    Calculate the scattered electric field from a spherical particle.
-    Intended Fortran-based replacement for calc_mie_fields.
-
-    Parameters
-    ----------
-    size : int or tuple
-        Dimension of hologram.
-    opt : instance of the :class:`holopy.optics.Optics` class
-        Optics class containing information about the optics
-        used in generating the hologram.
-    n_particle_real : float
-        Refractive index of particle.
-    n_particle_imag : float
-        Refractive index of particle.
-    radius : float
-        Radius of bead in microns.
-    x : float
-        x-position of particle in pixels.
-    y : float
-        y-position of particle in pixels.
-    z : float
-        z-position of particle in microns
-
-    Returns
-    -------
-    Returns three arrays: the x-, y-, and z-component of scattered fields.
-
-    Notes
-    -----
-    x- and y-coordinate of particle are given in pixels where
-    (0,0) is at the top left corner of the image. 
-    '''
-
-    # Allow size and pixel size to be either 1 number (square) 
-    #    or rectangular
-    if np.isscalar(size):
-        xdim, ydim = size, size
-    else:
-        xdim, ydim = size
-    if opt.pixel_scale.size == 1: # pixel_scale is an ndarray
-        px, py = opt.pixel_scale, opt.pixel_scale
-    else:
-        px, py = opt.pixel_scale
-
-    # Determine particle properties in scattering units
-    m_p = (n_particle_real + 1.j * n_particle_imag) / opt.index
-    x_p = opt.wavevec * radius
-
-    # Calculate maximum order lmax of Mie series expansion.
-    lmax = miescatlib.nstop(x_p)
-    # Calculate scattering coefficients a_l and b_l
-    albl = miescatlib.scatcoeffs(x_p, m_p, lmax)
-
-    # mieangfuncs.f90 works with everything dimensionless.
-    gridx = opt.wavevec * np.mgrid[0:xdim] * px # (0,0) at upper left convention
-    gridy = opt.wavevec * np.mgrid[0:ydim] * py
-    kcoords = opt.wavevec * np.array([x, y, z])
-    escat_x, escat_y, escat_z = mieangfuncs.mie_fields(gridx, gridy, kcoords, 
-                                                       albl,
-                                                       opt.polarization)
-
-    return escat_x, escat_y, escat_z
-    
-
-        
-        
 def calc_mie_fields(size, opt, n_particle_real, n_particle_imag,
                     radius, x, y, z, alpha):
     """
@@ -257,9 +192,11 @@ def calc_mie_fields(size, opt, n_particle_real, n_particle_imag,
 
     Notes
     -----
-    x- and y-coordinate of particle are given in pixels where
-    (0,0) is at the top left corner of the image. 
-
+    x- and y-coordinate of particle are given in pixels where (0,0) is
+    at the top left corner of the image.  Also, the Cython Mie code
+    assumes that the polarization is in the x-direction, so don't use
+    this function unless you're able to align your incident field
+    along x.
     """
         
     if isinstance(opt, dict):
