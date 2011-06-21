@@ -119,7 +119,7 @@ def test_fit_general():
 
     sc = Composite(Cluster(com=[17.3e-6,17.3e-6,20.7e-6], n1=1.59, n2=1.59, r1=.65e-6,
                            r2=.65e-6, gap=10e-9, beta=-28.5, gamma=-14.87),
-                   CoatedSphere(n1=1.59, n2=1.4, r1=6.5e-7 r2=1e-6, x=.567e-5,
+                   CoatedSphere(n1=1.59, n2=1.4, r1=6.5e-7, r2=1e-6, x=.567e-5,
                                 y=.576e-5, z=15e-6))
 
     theory = holopy.model.theory.RayleighGansDiscritize(holo.shape,

@@ -15,25 +15,33 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
-
 '''
-Calculates scattering for an arbitrary number of spheres by mie
-superposition
+Do forward calculation of a dimer hologram from Fortran subroutines.
+Uses full radial dependence of spherical Hankel functions for scattered
+field.
 
-.. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
+.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
+import scipy as sp
 import numpy as np
-from mie_cython import MFE
+import tmatrix_scsmfo.mieangfuncs as mieangfuncs
+import tmatrix_scsmfo.scsmfo_min as scsmfo_min
+import tmatrix_scsmfo.miescatlib as miescatlib
 from holopy.hologram import Hologram
-import holopy.optics
 from holopy.utility.helpers import _ensure_array, _ensure_pair
-from holopy.io.fit_io import _split_particle_number, _get_num_particles
+
 from holopy.model.scatterer import Sphere, SphereCluster, Composite
 from holopy.model.errors import TheoryNotCompatibleError
+from holopy.model.theory.scatteringtheory import ScatteringTheory
+from tmatrix_scsmfo.mieangfuncs import singleholo
+from tmatrix_scsmfo.miescatlib import nstop, scatcoeffs
 
-class Mie():
+par_ordering = ['n_particle_real', 'n_particle_imag', 'radius', 'x',
+                'y', 'z', 'scaling_alpha'] 
+
+class Mie(ScatteringTheory):
     """
     Class that contains methods and parameters for calculating
     scattering using Mie theory.
@@ -59,21 +67,12 @@ class Mie():
     theta(j))
     """
 
-    def __init__(self, imshape=(256,256), thetas=None, phis=None,
-                 optics=None): 
-        self.imshape = _ensure_pair(imshape)
-        self.thetas = thetas
-        self.phis = phis
-        if isinstance(optics, dict):
-            optics = holopy.optics.Optics(**opt)
-        elif optics is None:
-            self.optics = holopy.optics.Optics()
-        else:
-            self.optics = optics
+    # don't need to define __init__() because we'll use the base class
+    # constructor 
 
     def calc_field(self, scatterer):
         """
-        Calculate fields 
+        Calculate fields for a single scatterer
 
         Parameters
         ----------
@@ -88,74 +87,29 @@ class Mie():
         Notes
         -----
         For multiple particles, this code superposes the fields
-        calculated from each particle (using calc_mie_fields()). The
-        Mie field calculation for each particle assumes that the
-        incident field phase angle is 0 at each particle's center.  So
-        when we superpose the fields, we need to correct for the phase
-        differences between particles.  We choose the convention that
-        the incident field phase angle will be 0 at z=0.  This makes
-        it possible to interfere the total scattered field with the
-        incident field to compute the hologram (in calc_holo())
-
-        Short summary: the total scattered field is computed such that
-        the phase angle of the incident field is 0 at z=0
+        calculated from each particle (using calc_mie_fields()). 
         """
         if isinstance(scatterer, Sphere):
-            spheres = [scatterer]
-        # compatibility check: verify that the cluster only contains
-        # spheres 
+            s = scatterer
+            xfield, yfield, zfield = calc_mie_fields(self.imshape,
+                                                     self.optics,
+                                                     s.n.real,
+                                                     s.n.imag, 
+                                                     s.r, 
+                                                     s.x, s.y, s.z)
         elif isinstance(scatterer, Composite):
             spheres = scatterer.get_component_list()
+            # compatibility check: verify that the cluster only contains
+            # spheres 
             if not scatterer._contains_only_spheres():
                 for s in spheres:
                     if not isinstance(s, Sphere):
                         raise TheoryNotCompatibleError(self, s)
+            # if it passes, superpose the fields
+            xfield, yfield, zfield = self.superpose(spheres)
         else: raise TheoryNotCompatibleError(self, scatterer)
-            
-        xfield_tot = np.zeros(self.imshape, dtype='complex128')
-        yfield_tot = np.zeros(self.imshape, dtype='complex128')
-        zfield_tot = np.zeros(self.imshape, dtype='complex128')
 
-        for s in spheres:
-            # The cython code we use here expects x,y in terms of
-            # pixels, so convert to pixels by dividing by the pixel
-            # size
-            x = s.x/self.optics.pixel[0]
-            y = s.y/self.optics.pixel[1]
-            z = s.z     # z is not expected to be in pixels
-
-            xfield, yfield, zfield  = \
-                calc_mie_fields(self.imshape, self.optics, 
-                                np.real(s.n), np.imag(s.n), s.r,
-                                x, y, z)
-            # see Notes section above for how phase is computed.
-            # The - sign in front of the phase is necessary to get the
-            # holograms to come out right!  I think this is because in
-            # our convention, k points in the -z direction. 
-            phase_dif = (np.exp(-1j*np.pi*2*(s.z)/self.optics.med_wavelen))
-            xfield_tot += xfield*phase_dif
-            yfield_tot += yfield*phase_dif
-            zfield_tot += zfield*phase_dif
-
-        return xfield_tot, yfield_tot, zfield_tot
-
-    def calc_intensity(self, scatterer):
-        """
-        Calculate intensity at focal plane (z=0)
-
-        Parameters
-        ----------
-        scatterer : :mod:`holopy.model.scatterer` object
-            scatterer or list of scatterers to compute field for
-        alpha : scaling value for intensity
-
-        Returns
-        -------
-        
-        """
-
-        xfield, yfield, zfield = self.calc_field(scatterer)
-        return (abs(xfield**2) + abs(yfield**2) + abs(zfield**2))
+        return xfield, yfield, zfield
 
     def calc_holo(self, scatterer, alpha=1.0):
         """
@@ -172,153 +126,41 @@ class Mie():
         -------
         holo : :class:`holopy.hologram.Hologram` object
             Calculated hologram from the given distribution of spheres
+
+        Notes
+        -----
+        For a single particle, this code uses a fast Fortran
+        subroutine to calculate the hologram.  Otherwise it uses the
+        Fortran subroutine for calculating the fields from each
+        particle, then superposes them using numpy.
         """
 
-        xfield, yfield, zfield = self.calc_field(scatterer)
-        total_scat_inten = (abs(xfield**2) + abs(yfield**2) + 
-                            abs(zfield**2))
-        # normally we would have
-        # interference = conj(xfield)*phase + conj(phase)*xfield, 
-        # but we choose phase angle = 0 at z=0, so phase = 1
-        # which gives 2*real(xfield)
-        interference = 2*np.real(xfield * self.optics.polarization[0] +
-                                 yfield * self.optics.polarization[1])
-        holo = (1. + total_scat_inten*(alpha**2) + 
-                interference*alpha)     # holo should be purely real
+        if isinstance(scatterer, Sphere):
+            s = scatterer
+            holo = forward_holo(self.imshape, self.optics,
+                                s.n.real, s.n.imag, s.r, 
+                                s.x, s.y, s.z, alpha)
+        else:   # call base class calc_holo
+            holo = ScatteringTheory.calc_holo(self, scatterer, 
+                                              alpha=alpha)
 
-        return Hologram(abs(holo), optics = self.optics)
-
-par_ordering = ['n_particle_real', 'n_particle_imag', 'radius', 'x',
-                'y', 'z', 'scaling_alpha']
-
-def _scaled_by_k(parm_name):
-    pars = ['radius', 'x', 'y', 'z']
-    return _split_particle_number(parm_name)[0] in pars
-
-def _scaled_by_med_index(parm_name):
-    pars = ['n_particle_real', 'n_particle_imag']
-    return _split_particle_number(parm_name)[0] in pars
-
-def _forward_holo(size, opt, scat_dict):
-    packed_dict = {}
-    num_particles = _get_num_particles(scat_dict, par_ordering[0])
-    for name in par_ordering:
-        packed_dict[name] = [None] * num_particles
-    for key, val in scat_dict.iteritems():
-        if _scaled_by_k(key):
-            # parameter was nondimensionalized by k in input; our code
-            # expects that not to have happened, so we divide it out
-            val /= opt.wavevec
-        if _scaled_by_med_index(key):
-            val *= opt.index
-        name, number = _split_particle_number(key)
-        if number is None:
-            # parameter like scaling alpha that there is only one of
-            packed_dict[name] = val
-        else:
-            packed_dict[name][number-1] = val
-
-    return forward_holo(size, opt, **packed_dict)
+        return Hologram(holo, optics = self.optics)
 
 # TODO: Need to refactor fitting code so that it no longer relies on
 # the legacy functions below.  Then remove.
-def forward_holo(size, opt, n_particle_real, n_particle_imag, radius,
-                 x, y, z, 
-                 scaling_alpha, intensity=False):
-    """
-    Compute a hologram of n spheres by mie superposition
+def _scaled_by_k(param_name):
+    pars = ['radius', 'x', 'y', 'z']
+    return param_name in pars
 
-    Parameters may be specified in any consistent set of units (make
-    sure the optics object is also in the same units).
-    
-    Parameters
-    ----------
-    size : int or (int, int)
-       dimension in pixels of the hologram to calculate (square if scalar)
-    opt : Optics
-       Optics class describing wavelength and pixel information for the
-       caluclation
-    n_particle_real : float or array(float)
-       refractive index of sphere(s)
-    n_particle_imag : float or array(float)
-       imaginary refractive index of sphere(s)
-    radius : float or array(float)
-       sphere(s)'s radius
-    x : float or array(float) 
-       x-position of sphere(s), (0,0) is upper left
-    y : float or array(float)
-       y-position of sphere(s)
-    z : float or array(float) 
-       z-position of sphere(s)
-    scaling_alpha : float
-       hologram scaling alpha
+def _scaled_by_med_index(param_name):
+    pars = ['n_particle_real', 'n_particle_imag']
+    return param_name in pars
 
-    Returns
-    -------
-    calc_holo : Hologram
-       Calculated hologram from the given distribution of spheres
-    """
-    if isinstance(opt, dict):
-        opt = holopy.optics.Optics(**opt)
-
-    xdim, ydim = _ensure_pair(size)
-    px, py = _ensure_pair(opt.pixel)
-
-    xarr = _ensure_array(x).copy()
-    yarr = _ensure_array(y).copy()
-    zarr = _ensure_array(z).copy()
-    n_particle_real = _ensure_array(n_particle_real)
-    n_particle_imag = _ensure_array(n_particle_imag)
-    radius = _ensure_array(radius)
-    scaling_alpha = _ensure_array(scaling_alpha)
-
-    # The code we use here expects things in terms of pixels, so convert to
-    # pixels by dividing by the pixel size
-    xarr /= opt.pixel[0]
-    yarr /= opt.pixel[1]
-
-    xfield_tot = np.zeros((xdim,ydim),dtype='complex128')
-    yfield_tot = np.zeros((xdim,ydim),dtype='complex128')
-    zfield_tot = np.zeros((xdim,ydim),dtype='complex128')
-    interference = np.zeros((xdim,ydim),dtype='complex128')
-    
-    for i in range(len(xarr)):
-        # assign phase for each particle based on reference wave phase
-        # phi=0 at the imaging plane
-        xfield, yfield, zfield = calc_mie_fields(size, opt, 
-                                                 n_particle_real[i],
-                                                 n_particle_imag[i], 
-                                                 radius[i],
-                                                 xarr[i], yarr[i], zarr[i])
-
-        phase = np.exp(1j*np.pi*2*zarr[i]/opt.med_wavelen)
-        phase_dif = np.exp(-1j*np.pi*2*(zarr[i]-zarr[0])/opt.med_wavelen)
-        # allow arbitrary linear polarization
-        interference += (phase * (np.conj(xfield) * opt.polarization[0] + 
-                                  np.conj(yfield) * opt.polarization[1]) + 
-                         np.conj(phase) * (xfield * opt.polarization[0] + 
-                                           yfield * opt.polarization[1]))
-#        interference += phase*np.conj(xfield) + np.conj(phase)*xfield
-        xfield_tot += xfield*phase_dif
-        yfield_tot += yfield*phase_dif
-        zfield_tot += zfield*phase_dif
-
-    total_scat_inten = (abs(xfield_tot**2) + abs(yfield_tot**2) +
-                        abs(zfield_tot**2))
-
-    holo = 1. + total_scat_inten*(scaling_alpha**2) + interference*scaling_alpha
-
-    if intensity is True:
-        return total_scat_inten
-    else:
-        return Hologram(abs(holo), optics = opt)
-        
-        
 def calc_mie_fields(size, opt, n_particle_real, n_particle_imag,
-                    radius, x, y, z):
-    """
-    Calculates the scattered electric field from a spherical
-    particle.
+                    radius, x, y, z, dimensional = True):
+    '''
+    Calculate the scattered electric field from a spherical particle
+    using Fortran Mie code.
 
     Parameters
     ----------
@@ -339,6 +181,9 @@ def calc_mie_fields(size, opt, n_particle_real, n_particle_imag,
         y-position of particle in pixels.
     z : float
         z-position of particle in microns
+    dimensional: bool
+       If False, assume all lengths non-dimensionalized by k and all
+       indices relative (divided by medium index).
 
     Returns
     -------
@@ -348,9 +193,86 @@ def calc_mie_fields(size, opt, n_particle_real, n_particle_imag,
     -----
     x- and y-coordinate of particle are given in pixels where
     (0,0) is at the top left corner of the image. 
+    '''
+
+    # Allow size and pixel size to be either 1 number (square) 
+    #    or rectangular
+    if np.isscalar(size):
+        xdim, ydim = size, size
+    else:
+        xdim, ydim = size
+    if opt.pixel_scale.size == 1: # pixel_scale is an ndarray
+        px, py = opt.pixel_scale, opt.pixel_scale
+    else:
+        px, py = opt.pixel_scale
+
+    # Determine particle properties in scattering units
+    if dimensional:
+        m_p = (n_particle_real + 1.j * n_particle_imag) / opt.index
+        x_p = opt.wavevec * radius        
+        kcoords = opt.wavevec * np.array([x, y, z])
+    else:
+        m_p = (n_particle_real + 1.j * n_particle_imag)
+        x_p = radius
+        kcoords = np.array([x, y, z])
+
+    # Calculate maximum order lmax of Mie series expansion.
+    lmax = miescatlib.nstop(x_p)
+    # Calculate scattering coefficients a_l and b_l
+    albl = miescatlib.scatcoeffs(x_p, m_p, lmax)
+
+    # mieangfuncs.f90 works with everything dimensionless.
+    gridx = opt.wavevec * np.mgrid[0:xdim] * px # (0,0) at upper left convention
+    gridy = opt.wavevec * np.mgrid[0:ydim] * py
+
+    escat_x, escat_y, escat_z = mieangfuncs.mie_fields(gridx, gridy, 
+                                                       kcoords, 
+                                                       albl,
+                                                       opt.polarization)
+
+    return escat_x, escat_y, escat_z
+    
+def forward_holo(size, opt, n_particle_real, n_particle_imag, radius,
+                 x, y, z, scaling_alpha, dimensional = True, 
+                 intensity=False):
+    """
+    Compute a hologram of N spheres by Mie superposition
+
+    Parameters may be specified in any consistent set of units (make
+    sure the optics object is also in the same units).
+    
+    Parameters
+    ----------
+    size : int or (int, int)
+       dimension in pixels of the hologram to calculate (square if scalar)
+    opt : Optics or dict
+       Optics class or dictionary describing wavelength and pixel
+       information for the calculation 
+    n_particle_real : float or array(float)
+       refractive index of sphere(s)
+    n_particle_imag : float or array(float)
+       imaginary refractive index of sphere(s)
+    radius : float or array(float)
+       radius of sphere(s)
+    x : float or array(float) 
+       x-position of sphere(s), (0,0) is upper left
+    y : float or array(float)
+       y-position of sphere(s)
+    z : float or array(float) 
+       z-position of sphere(s)
+    scaling_alpha : float
+       hologram scaling alpha
+    dimensional: bool
+       If False, assume all lengths non-dimensionalized by k and all
+       indices relative (divided by medium index).
+
+    Returns
+    -------
+    calc_holo : Hologram
+       Calculated hologram from the given distribution of spheres
 
     """
-        
+    
     if isinstance(opt, dict):
         opt = optics.Optics(**opt)
 
@@ -365,15 +287,91 @@ def calc_mie_fields(size, opt, n_particle_real, n_particle_imag,
     else:
         px, py = opt.pixel_scale
 
-    n = xdim*ydim
+    wavevec = 2.0 * np.pi / opt.med_wavelen
 
-    fld_array = MFE.fields_tonumpy(x, y, z*1e6, n_particle_real, 
-                                   n_particle_imag,
-                                   opt.index, radius*1e6,
-                                   xdim, ydim, opt.wavelen,
-                                   px*1e6)
+    xarr = _ensure_array(x).copy()
+    yarr = _ensure_array(y).copy()
+    zarr = _ensure_array(z).copy()
+    nrarr = _ensure_array(n_particle_real).copy()
+    niarr = _ensure_array(n_particle_imag).copy()
+    rarr = _ensure_array(radius).copy()
+
+    # For a single particle, use fast fortran subroutine to
+    # calculate hologram instead of calculating fields first
+    if len(xarr) == 1:
+        # non-dimensionalization
+        if dimensional:
+            # multiply all length scales by k
+            com_coords = np.array([xarr[0], yarr[0], zarr[0]]) * wavevec
+            x_p = rarr[0] * wavevec
+            # relative indices
+            m_real = nrarr[0] / opt.index
+            m_imag = niarr[0] / opt.index
+        else:
+            com_coords = np.array([xarr[0], yarr[0], zarr[0]])
+            x_p = rarr[0]
+            m_real = nrarr[0]
+            m_imag = niarr[0]
+
+        # Scattering coefficent calculation (still in Python)
+        ns = nstop(x_p)
+        scoeffs = scatcoeffs(x_p, m_real + 1j*m_imag, ns)
     
-    fld_x = fld_array[0:n] + (1j * fld_array[3*n:4*n])
-    fld_y = fld_array[n:2*n] + (1j * fld_array[4*n:5*n])
-    fld_z = fld_array[2*n:3*n] + (1j * fld_array[5*n:6*n])
-    return fld_x.reshape(xdim,ydim),fld_y.reshape(xdim,ydim),fld_z.reshape(xdim,ydim)
+        # hologram grid (new convention)
+        gridx = np.mgrid[0:xdim]*px
+        gridy = np.mgrid[0:ydim]*py
+
+        holo = Hologram(singleholo(wavevec*gridx, 
+                                   wavevec*gridy, com_coords, 
+                                   scoeffs, scaling_alpha, 
+                                   opt.polarization), 
+                        optics = opt)
+
+        return holo
+
+    xfield_tot = np.zeros((xdim,ydim),dtype='complex128')
+    yfield_tot = np.zeros((xdim,ydim),dtype='complex128')
+    zfield_tot = np.zeros((xdim,ydim),dtype='complex128')
+    interference = np.zeros((xdim,ydim),dtype='complex128')
+
+    # for multiple particles, do Mie superposition in Python using
+    # Fortran-calculated fields
+    for i in range(len(xarr)):
+        # assign phase for each particle based on reference wave phase
+        # phi=0 at the imaging plane
+        xfield, yfield, zfield = calc_mie_fields(size, opt, 
+                                                 nrarr[i],
+                                                 niarr[i], 
+                                                 rarr[i],
+                                                 xarr[i], yarr[i], zarr[i],
+                                                 dimensional=dimensional)
+ 
+        phase = np.exp(1j*np.pi*2*zarr[i]/opt.med_wavelen)
+        phase_dif = np.exp(-1j*np.pi*2*(zarr[i]-zarr[0])/opt.med_wavelen)
+        # allow arbitrary linear polarization
+        interference += (phase * (np.conj(xfield) * opt.polarization[0] + 
+                                  np.conj(yfield) * opt.polarization[1]) + 
+                         np.conj(phase) * (xfield * opt.polarization[0] + 
+                                           yfield * opt.polarization[1]))
+        xfield_tot += xfield*phase_dif
+        yfield_tot += yfield*phase_dif
+        zfield_tot += zfield*phase_dif
+
+    # ignore z-field in total scattered intensity; the camera's pixels
+    # should be sensitive to the z component of the Poynting vector, 
+    # E x B, and the z component of E x B cannot depend on Ez.
+    total_scat_inten = (abs(xfield_tot**2) + abs(yfield_tot**2))
+
+    holo = 1. + total_scat_inten*(scaling_alpha**2) + interference*scaling_alpha
+
+    if intensity is True:
+        return total_scat_inten
+    else:
+        return Hologram(abs(holo), optics = opt)
+
+def _forward_holo(size, opt, scat_dict): 
+    '''
+    Internal use; passes everything to public forward_holo
+    non-dimensionally.
+    '''
+    return forward_holo(size, opt, dimensional = False, **scat_dict)

@@ -1,1 +1,1 @@
-      parameter(npd=4,nod=32,notd=70)
+      parameter(npd=16,nod=32,notd=70)

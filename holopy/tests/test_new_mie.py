@@ -35,7 +35,6 @@ from nose.tools import with_setup
 
 import holopy
 from holopy.model.theory import mie
-#from holopy.model.theory import mie_fortran as mie
 from holopy.model.theory import Mie
 from holopy.model.scatterer import Sphere, SphereCluster
 from holopy.third_party import nmpfit
@@ -69,13 +68,6 @@ def test_single_sphere():
     sphere = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius, 
                     x=x, y=y, z=z)
     theory = Mie(imshape = imshape, optics=optics)
-    inew = theory.calc_intensity(sphere)
-
-    iold = mie.forward_holo(imshape, optics, n_particle_real,
-                            n_particle_imag, radius, x, y, z, 
-                            scaling_alpha, intensity=True)
-
-    assert_array_almost_equal(inew, iold)
 
     # compare holograms
     hnew = theory.calc_holo(sphere, alpha=scaling_alpha)
@@ -105,8 +97,18 @@ def test_single_sphere_polarization():
     yh = ytheory.calc_holo(sphere, alpha=scaling_alpha)
     xh = xtheory.calc_holo(sphere, alpha=scaling_alpha)
 
+    # holograms should *not* be the same
+    try:
+        assert_array_almost_equal(xh, yh)
+    except AssertionError:
+        pass    # no way to do "assert array not equal" in numpy.testing
+    else:
+        raise AssertionError("Holograms calculated for x- and " +
+                             "y-polarizations look suspiciously "+
+                             "similar")
+
     return xh, yh
-#    assert_array_almost_equal(xh, yh)
+
 
 def test_two_spheres_samez():
     # put a second sphere at twice x and y

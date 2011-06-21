@@ -123,16 +123,16 @@ theory = Mie(imshape = holo.shape, optics=optics)
 def residfunct(p, fjac = None):
     # nmpfit calls residfunct w/fjac as a kwarg, we ignore
 
-    # syntax:
-    # mie.forward_holo(im.shape[0], optics, n_particle_real,
-    #                        n_particle_imag, radius, x, y,
-    #                        z, scaling_alpha)
+    # uncomment for old interface to mie calculation
     #calculated = mie.forward_holo(holo.shape[0], optics, p[0],
     #                              n_particle_imag, p[1], p[2], p[3],
     #                              p[4], p[5])
+
+    # below uses new class-based interface to mie calculation
     sphere = Sphere(n=p[0]+n_particle_imag*1j, r=p[1], x=p[2], y=p[3], 
                     z=p[4])
     calculated = theory.calc_holo(sphere, alpha=p[5])
+
     status = 0
     derivates = holo - calculated
 
