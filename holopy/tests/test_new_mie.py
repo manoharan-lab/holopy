@@ -68,13 +68,6 @@ def test_single_sphere():
     sphere = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius, 
                     x=x, y=y, z=z)
     theory = Mie(imshape = imshape, optics=optics)
-    inew = theory.calc_intensity(sphere)
-
-    iold = mie.forward_holo(imshape, optics, n_particle_real,
-                            n_particle_imag, radius, x, y, z, 
-                            scaling_alpha, intensity=True)
-
-    assert_array_almost_equal(inew, iold)
 
     # compare holograms
     hnew = theory.calc_holo(sphere, alpha=scaling_alpha)
@@ -104,7 +97,16 @@ def test_single_sphere_polarization():
     yh = ytheory.calc_holo(sphere, alpha=scaling_alpha)
     xh = xtheory.calc_holo(sphere, alpha=scaling_alpha)
 
-    assert_array_almost_equal(xh, yh)
+    # holograms should *not* be the same
+    try:
+        assert_array_almost_equal(xh, yh)
+    except AssertionError:
+        pass    # no way to do "assert array not equal" in numpy.testing
+    else:
+        raise AssertionError("Holograms calculated for x- and " +
+                             "y-polarizations look suspiciously "+
+                             "similar")
+
     return xh, yh
 
 

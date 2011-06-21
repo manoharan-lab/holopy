@@ -21,7 +21,7 @@ Uses full radial dependence of spherical Hankel functions for scattered
 field.
 
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
-
+.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
 import scipy as sp
@@ -32,15 +32,122 @@ import tmatrix_scsmfo.miescatlib as miescatlib
 from holopy.hologram import Hologram
 from holopy.utility.helpers import _ensure_array, _ensure_pair
 
-from scipy import array, pi
+from holopy.model.scatterer import Sphere, SphereCluster, Composite
+from holopy.model.errors import TheoryNotCompatibleError
+from holopy.model.theory.scatteringtheory import ScatteringTheory
 from tmatrix_scsmfo.mieangfuncs import singleholo
 from tmatrix_scsmfo.miescatlib import nstop, scatcoeffs
-
 
 par_ordering = ['n_particle_real', 'n_particle_imag', 'radius', 'x',
                 'y', 'z', 'scaling_alpha'] 
 
+class Mie(ScatteringTheory):
+    """
+    Class that contains methods and parameters for calculating
+    scattering using Mie theory.
 
+    Attributes
+    ----------
+    imshape : float or tuple (optional)
+        Size of grid to calculate scattered fields or
+        intensities. This is the shape of the image that calc_field or
+        calc_intensity will return
+    phis : array 
+        Specifies azimuthal scattering angles to calculate (incident
+        direction is z)
+    thetas : array 
+        Specifies polar scattering angles to calculate
+    optics : :class:`holopy.optics.Optics` object
+        specifies optical train
+
+    Notes
+    -----
+    If phis and thetas are both 1-D vectors, the calc_ functions
+    should return an array where result(i,j) = result(phi(i),
+    theta(j))
+    """
+
+    # don't need to define __init__() because we'll use the base class
+    # constructor 
+
+    def calc_field(self, scatterer):
+        """
+        Calculate fields for a single scatterer
+
+        Parameters
+        ----------
+        scatterer : :mod:`holopy.model.scatterer` object
+            scatterer or list of scatterers to compute field for
+
+        Returns
+        -------
+        xfield, yfield, zfield : complex arrays with shape `imshape`
+            x, y, z components of scattered fields
+
+        Notes
+        -----
+        For multiple particles, this code superposes the fields
+        calculated from each particle (using calc_mie_fields()). 
+        """
+        if isinstance(scatterer, Sphere):
+            s = scatterer
+            xfield, yfield, zfield = calc_mie_fields(self.imshape,
+                                                     self.optics,
+                                                     s.n.real,
+                                                     s.n.imag, 
+                                                     s.r, 
+                                                     s.x, s.y, s.z)
+        elif isinstance(scatterer, Composite):
+            spheres = scatterer.get_component_list()
+            # compatibility check: verify that the cluster only contains
+            # spheres 
+            if not scatterer._contains_only_spheres():
+                for s in spheres:
+                    if not isinstance(s, Sphere):
+                        raise TheoryNotCompatibleError(self, s)
+            # if it passes, superpose the fields
+            xfield, yfield, zfield = self.superpose(spheres)
+        else: raise TheoryNotCompatibleError(self, scatterer)
+
+        return xfield, yfield, zfield
+
+    def calc_holo(self, scatterer, alpha=1.0):
+        """
+        Calculate hologram formed by interference between scattered
+        fields and a reference wave
+        
+        Parameters
+        ----------
+        scatterer : :mod:`holopy.model.scatterer` object
+            scatterer or list of scatterers to compute field for
+        alpha : scaling value for intensity of reference wave
+
+        Returns
+        -------
+        holo : :class:`holopy.hologram.Hologram` object
+            Calculated hologram from the given distribution of spheres
+
+        Notes
+        -----
+        For a single particle, this code uses a fast Fortran
+        subroutine to calculate the hologram.  Otherwise it uses the
+        Fortran subroutine for calculating the fields from each
+        particle, then superposes them using numpy.
+        """
+
+        if isinstance(scatterer, Sphere):
+            s = scatterer
+            holo = forward_holo(self.imshape, self.optics,
+                                s.n.real, s.n.imag, s.r, 
+                                s.x, s.y, s.z, alpha)
+        else:   # call base class calc_holo
+            holo = ScatteringTheory.calc_holo(self, scatterer, 
+                                              alpha=alpha)
+
+        return Hologram(holo, optics = self.optics)
+
+# TODO: Need to refactor fitting code so that it no longer relies on
+# the legacy functions below.  Then remove.
 def _scaled_by_k(param_name):
     pars = ['radius', 'x', 'y', 'z']
     return param_name in pars
@@ -126,7 +233,8 @@ def calc_mie_fields(size, opt, n_particle_real, n_particle_imag,
     return escat_x, escat_y, escat_z
     
 def forward_holo(size, opt, n_particle_real, n_particle_imag, radius,
-                 x, y, z, scaling_alpha, dimensional = True):
+                 x, y, z, scaling_alpha, dimensional = True, 
+                 intensity=False):
     """
     Compute a hologram of N spheres by Mie superposition
 
@@ -179,7 +287,7 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius,
     else:
         px, py = opt.pixel_scale
 
-    wavevec = 2.0 * pi / opt.med_wavelen
+    wavevec = 2.0 * np.pi / opt.med_wavelen
 
     xarr = _ensure_array(x).copy()
     yarr = _ensure_array(y).copy()
@@ -194,13 +302,13 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius,
         # non-dimensionalization
         if dimensional:
             # multiply all length scales by k
-            com_coords = array([xarr[0], yarr[0], zarr[0]]) * wavevec
+            com_coords = np.array([xarr[0], yarr[0], zarr[0]]) * wavevec
             x_p = rarr[0] * wavevec
             # relative indices
             m_real = nrarr[0] / opt.index
             m_imag = niarr[0] / opt.index
         else:
-            com_coords = array([xarr[0], yarr[0], zarr[0]])
+            com_coords = np.array([xarr[0], yarr[0], zarr[0]])
             x_p = rarr[0]
             m_real = nrarr[0]
             m_imag = niarr[0]
@@ -256,7 +364,10 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius,
 
     holo = 1. + total_scat_inten*(scaling_alpha**2) + interference*scaling_alpha
 
-    return Hologram(abs(holo), optics = opt)
+    if intensity is True:
+        return total_scat_inten
+    else:
+        return Hologram(abs(holo), optics = opt)
 
 def _forward_holo(size, opt, scat_dict): 
     '''

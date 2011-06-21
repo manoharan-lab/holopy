@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 '''
-Test Mie calculations and python interface.  This tests whatever
-extension (Fortran or Cython) is loaded by default when "from
-holopy.model import mie" is called
+Test fortran-based Mie calculations and python interface.  
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
@@ -42,10 +40,6 @@ import holopy
 from holopy.analyze.propagate import trans_func
 
 from holopy.model import mie
-# comment above and uncomment one of the lines below to test
-# individual extensions
-#import holopy.model.mie as mie
-#import holopy.model.theory.mie_cython as mie
 
 # define optical train
 wavelen = 658e-9
