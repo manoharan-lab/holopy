@@ -35,7 +35,6 @@ from nose.tools import with_setup
 
 import holopy
 from holopy.model.theory import mie
-#from holopy.model.theory import mie_fortran as mie
 from holopy.model.theory import Mie
 from holopy.model.scatterer import Sphere, SphereCluster
 from holopy.third_party import nmpfit
@@ -105,8 +104,9 @@ def test_single_sphere_polarization():
     yh = ytheory.calc_holo(sphere, alpha=scaling_alpha)
     xh = xtheory.calc_holo(sphere, alpha=scaling_alpha)
 
+    assert_array_almost_equal(xh, yh)
     return xh, yh
-#    assert_array_almost_equal(xh, yh)
+
 
 def test_two_spheres_samez():
     # put a second sphere at twice x and y
