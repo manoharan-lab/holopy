@@ -28,7 +28,6 @@ import string
 import pylab
 
 import holopy
-#from holopy.model.theory import mie_fortran as mie
 from holopy.model.theory import tmatrix_dimer
 from holopy.model.scatterer import SphereDimer
 from holopy.third_party import nmpfit
@@ -41,14 +40,14 @@ gold_dimerslow = np.array([1.603,1.603,0.0001,0.0001,6.857e-7,6.964e-7,
     1.700e-5,1.739e-5,2.093e-5,1,-29.78,-13.83,0.000,16.72])
 
 # Particle parameters for input file
-medium_index = 1.33
+medium_index = 1.334
 
 # define optical train
 wavelen = 658e-9
 polarization = [0., 1.0]
 divergence = 0
 pixel_scale = [.345e-6, .345e-6]
-index = 1.33
+index = 1.334
 
 optics = holopy.optics.Optics(wavelen=wavelen, index=index,
                               pixel_scale=pixel_scale,
@@ -61,8 +60,6 @@ radius_1 = .65e-6
 radius_2 = .65e-6
 n_particle_real_1 = 1.59
 n_particle_imag_1 = .00001
-n_particle_real_2 = 1.59
-n_particle_imag_2 = .00001
 x_com = 17.3e-6
 y_com = 17.3e-6
 z_com =  20.7e-6
@@ -76,7 +73,7 @@ ftol = 1e-10
 xtol = 1e-10
 gtol = 1e-10
 damp = 0
-maxiter = 100
+maxiter = 60
 quiet = False
 
 # parinfo to pass to MPFIT (fitting for 10 parameters for dimer)
@@ -85,21 +82,14 @@ parinfo = [{'parname':'n_particle_real_1',
           'step': 1e-4,
           'limits': [1.0, 0],
           'value': n_particle_real_1},
-          {'parname':'n_particle_real_2',
-          'limited': [True, False],
-          'step': 1e-4,
-          'limits': [1.0, 0],
-          'value': n_particle_real_2},
           {'parname': 'radius_1',
            'limited': [True, False],
            'limits': [0.0, 0],
-           'step': 100e-9,
            'mpmaxstep': 1e-6,
            'value': radius_1},
           {'parname': 'radius_2',
            'limited': [True, False],
            'limits': [0.0, 0],
-           'step': 100e-9,
            'mpmaxstep': 1e-6,
            'value': radius_2},
           {'parname': 'x_com',
@@ -123,25 +113,21 @@ parinfo = [{'parname':'n_particle_real_1',
           {'parname': 'scaling_alpha',
            'limited': [True, True],
            'limits': [0.0, 1.0],
-           'mpmaxstep': .01,
            'value': scaling_alpha},
           {'parname': 'euler_beta',
-           'limited': [False, False],
-           'limits': [0, 0],
+           'limited': [True, True],
+           'limits': [-90., 270.],
            'step': .001,
-           'mpmaxstep': 10,
+           'mpmaxstep': 90,
            'value': euler_beta},
           {'parname':'euler_gamma',
            'limited': [False, False],
            'limits': [0, 0],
-           'step': .001,
-           'mpmaxstep': 10,
+           'mpmaxstep': 90,
            'value': euler_gamma},
           {'parname':'gap_distance',
-           'limited': [False, False],
-           'limits': [0, 0],
-           'step': 1e-9,
-           'mpmaxstep': 10e-9,
+           'limited': [True, False],
+           'limits': [0.0, 0],
            'value': gap_distance},
  ] 
 
@@ -166,7 +152,7 @@ def residfunct(p, fjac = None):
 
 
     calculated = tmatrix_dimer.forward_holo(holo.shape[0],optics,p[0],
-        p[1], n_particle_imag_1, n_particle_imag_2, p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10])
+        p[0], n_particle_imag_1, n_particle_imag_1, p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9])
 
     status = 0
     derivates = holo - calculated
@@ -181,7 +167,7 @@ def residfunct(p, fjac = None):
 def residfunctoverlapallowed(p, fjac = None):
     # nmpfit calls residfunct w/fjac as a kwarg, we ignore
 
-    if p[10] >= 0:
+    if p[9] >= 0:
         # nmpfit calls residfunct w/fjac as a kwarg, we ignore
         # syntax:
         # tmatrix_dimer.forward_holo(im.shape[0], optics, n_particle_real_1,
@@ -193,8 +179,8 @@ def residfunctoverlapallowed(p, fjac = None):
         #                        dimensional=True)
 
         calculated = tmatrix_dimer.forward_holo(holo.shape[0],optics,p[0],
-            p[1], n_particle_imag_1, n_particle_imag_2, p[2], p[3], 
-            p[4], p[5], p[6], p[7], p[8], p[9], p[10])
+            p[0], n_particle_imag_1, n_particle_imag_1, p[1], p[2], 
+            p[3], p[4], p[5], p[6], p[7], p[8], p[9])
         status = 0
         derivates = holo - calculated
 
@@ -208,7 +194,7 @@ def residfunctoverlapallowed(p, fjac = None):
     print "params: ", p
     return([status, derivates.ravel()])
 
-fitresult = nmpfit.mpfit(residfunctoverlapallowed, parinfo = parinfo, ftol = ftol,
+fitresult = nmpfit.mpfit(residfunct, parinfo = parinfo, ftol = ftol,
                          xtol = xtol, gtol = gtol, damp = damp,
                          maxiter = maxiter, quiet = quiet)
 # or uncomment this fit to try fitting without hard limits on the gap distance
@@ -218,5 +204,4 @@ fitresult = nmpfit.mpfit(residfunctoverlapallowed, parinfo = parinfo, ftol = fto
 
 print "Fit finished with status ", fitresult.status
 print "Difference from expected values: ", \
-      fitresult.params - gold_dimerslow[np.array([0,1,4,5,6,7,8,9,10,11,12])] 
-
+      fitresult.params - gold_dimerslow[np.array([0,4,5,6,7,8,9,10,11,12])] 

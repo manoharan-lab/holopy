@@ -157,7 +157,6 @@ def _minimize(target, forward_holo, parameters, ftol = 1e-10, xtol = 1e-10, gtol
               1e-10, damp = 0, maxiter = 100, quiet = False, err=None):
     
     parinfo = [par.parinfo_dict() for par in parameters]
-
     def residfunct(p, fjac = None):
         # nmpfit calls residfunct w/fjac as a kwarg, we ignore
 
