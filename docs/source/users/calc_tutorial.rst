@@ -71,9 +71,9 @@ Single sphere
 
 Here we use the single sphere Mie calculations for computing the
 hologram.  The arguments to the ``forward_holo`` function are
-specified in :meth:`holopy.model.mie.forward_holo`.  They include the
-size of the hologram we want to calculate (in pixels) and the
-properties and position of the particle::
+specified in :meth:`holopy.model.mie_fortran.forward_holo`.  They
+include the size of the hologram we want to calculate (in pixels) and
+the properties and position of the particle::
 
     from holopy.model import mie
     holo = mie.forward_holo(256, my_optics, \
