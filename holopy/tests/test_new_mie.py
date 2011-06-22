@@ -148,7 +148,6 @@ def test_multiple_spheres():
     xarr = np.random.random(N)*imshape*pixel_scale[0]
     yarr = np.random.random(N)*imshape*pixel_scale[0]
     zarr = np.random.random(N)*5e-6 + z
-    #zarr = np.ones(N)*z
     rarr = np.ones(N)*radius
     nrarr = np.ones(N)*n_particle_real
     niarr = np.ones(N)*n_particle_imag

@@ -72,7 +72,7 @@ class Mie(ScatteringTheory):
 
     def calc_field(self, scatterer):
         """
-        Calculate fields for a single scatterer
+        Calculate fields for single or multiple spheres
 
         Parameters
         ----------
