@@ -80,7 +80,7 @@ maxiter = 100
 quiet = False
 
 # parinfo to pass to MPFIT (fitting for 10 parameters for dimer)
-parinfo = [{'parname':'n_particle_real_1',#TODO: understand the limits better
+parinfo = [{'parname':'n_particle_real_1',
           'limited': [True, False],
           'step': 1e-4,
           'limits': [1.0, 0],
@@ -122,7 +122,7 @@ parinfo = [{'parname':'n_particle_real_1',#TODO: understand the limits better
            'value': z_com},
           {'parname': 'scaling_alpha',
            'limited': [True, True],
-           'limits': [0.0, 1.0],
+           'limits': [0.5, 1.0],
            'value': scaling_alpha},
           {'parname': 'euler_beta',
            'limited': [False, False],
@@ -192,13 +192,14 @@ def residfunctoverlapallowed(p, fjac = None):
         #                        dimensional=True)
 
         calculated = tmatrix_dimer.forward_holo(holo.shape[0],optics,p[0],
-            p[1], n_particle_imag_1, n_particle_imag_2, p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10])
-
+            p[1], n_particle_imag_1, n_particle_imag_2, p[2], p[3], 
+            p[4], p[5], p[6], p[7], p[8], p[9], p[10])
         status = 0
         derivates = holo - calculated
 
     else:
-        derivates = 200
+        status = 0
+        derivates = np.ones([holo.shape[0],holo.shape[0]])
     
     # print sum of squares and param values for debugging
     print "sum of squares: ", np.dot(derivates.ravel(), derivates.ravel())
