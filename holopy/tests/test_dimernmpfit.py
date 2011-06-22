@@ -47,7 +47,7 @@ medium_index = 1.33
 wavelen = 658e-9
 polarization = [0., 1.0]
 divergence = 0
-pixel_scale = [.1151e-6, .1151e-6]
+pixel_scale = [.345e-6, .345e-6]
 index = 1.33
 
 optics = holopy.optics.Optics(wavelen=wavelen, index=index,
@@ -122,7 +122,8 @@ parinfo = [{'parname':'n_particle_real_1',
            'value': z_com},
           {'parname': 'scaling_alpha',
            'limited': [True, True],
-           'limits': [0.5, 1.0],
+           'limits': [0.0, 1.0],
+           'mpmaxstep': .01,
            'value': scaling_alpha},
           {'parname': 'euler_beta',
            'limited': [False, False],
