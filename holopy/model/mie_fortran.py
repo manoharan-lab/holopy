@@ -16,12 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 '''
-Do forward calculation of a dimer hologram from Fortran subroutines.
-Uses full radial dependence of spherical Hankel functions for scattered
-field.
+Calculates holograms of spheres using Fortran implementation of Mie
+theory. Uses superposition to calculate scattering from multiple
+spheres. Uses full radial dependence of spherical Hankel functions for
+scattered field.
 
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
-
+.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
 import scipy as sp
