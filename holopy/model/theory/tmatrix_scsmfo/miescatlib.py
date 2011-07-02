@@ -38,6 +38,7 @@ complex arguments
 
 import scipy
 import scipy.special
+import mieangfuncs # use Fortran angular functions to avoid duplication
 
 from scipy import sin, cos, array
 from scipy.special import lpn, riccati_jn, riccati_yn, sph_jn, sph_yn
@@ -75,7 +76,6 @@ def LogDerPsi2(z, nmx, nstop):
     return dn[0:nstop+1]
 
 
-
 def scatcoeffs(x, m, nstop): # see B/H eqn 4.88
     # implement criterion used by BHMIE plus a couple more orders to
     # be safe 
@@ -97,3 +97,65 @@ def nstop(x):
     # Wiscombe, Applied Optics 19, 1505 (1980).
     # 7/7/08: generalize to apply same criterion when x is complex
     return scipy.round_(scipy.absolute(x+4.05*x**(1./3.)+2))
+
+
+def asymmetry_parameter(an, bn):
+    '''
+    Inputs: an, bn coefficient arrays from Mie solution
+    
+    See discussion on Bohren & Huffman p. 120.
+    The output of this function omits the prefactor of 4/(x^2 Q_sca).
+    '''
+    nmax = an.shape[0]
+    n = scipy.arange(nmax) + 1
+    astarshift = scipy.concatenate((an.conj()[1:], scipy.zeros(1)))
+    bstarshift = scipy.concatenate((bn.conj()[1:], scipy.zeros(1)))
+    gterms = n * (n+2.) / (n+1.) * (an*astarshift + bn*bstarshift).real + (
+        2.*n + 1.) / (n*(n+1.)) * (an*bn.conj()).real
+
+    return gterms.sum()
+
+
+def cross_sections(an,bn): 
+    '''
+    Calculates scattering, extension, and radar backscattering cross sections
+    given arrays of Mie scattering coefficients an and bn.
+
+    See Bohren & Huffman eqns. 4.61 and 4.62.
+
+    The output omits a scaling prefactor of 2 * pi / k^2.
+    '''
+    nmax = an.shape[0] # determine number of terms in series
+    alts = 2*(scipy.arange(nmax)%2) - 1 # mod 2 division gets alternating signs
+    prefactor = 2*(scipy.arange(nmax)+1)+1
+    cscacoeffs = an.conj()*an + bn.conj()*bn
+    csca = (prefactor*cscacoeffs).sum()
+    cextcoeffs = (an+bn).real	
+    cext = (prefactor*cextcoeffs).sum()
+    cbackcoeffs = an - bn
+    cback = scipy.absolute((prefactor*alts*cbackcoeffs).sum())**2
+    return array([csca,cext,cback], dtype = 'float64') # contents are real
+
+
+def ascatmatrix_mie(theta, a_l, b_l):
+    '''
+    Calculate nonzero (diagonal) elements of the amplitude scattering matrix
+    for a sphere or coated sphere.
+
+    Input: scattering angle and scattering coefficients a_l and b_l
+
+    From the amplitude scattering matrix one can calculate fields for
+    arbitrary polarization.
+    '''
+    nstop = a_l.size
+   
+    n = scipy.arange(nstop)+1.
+    prefactor = (2*n+1.)/(n*(n+1.))
+
+    angfuncs = mieangfuncs.pisandtaus(nstop, theta)
+    pis = angfuncs[0]
+    taus = angfuncs[1]
+    
+    S1 = (prefactor*(a_l*pis + b_l*taus)).sum()
+    S2 = (prefactor*(a_l*taus + b_l[1]*pis)).sum()
+    return array([S2,S1])

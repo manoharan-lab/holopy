@@ -1,75 +1,160 @@
-c scsmfo_min.for
-c Modified by Jerome Fung from scsmfo1b.for by Daniel Mackowski.
-c Original code available at ftp://ftp.eng.auburn.edu/pub/dmckwski/scatcodes/
+      program scsmfo
+
+c                                                                            c
+c     Refer to the notes on SCSMFO.FOR for details.                          c
+c                                                                            c
+c     The code is currently set to be compiled using SUN fortran 77.         c
+c                                                                            c
+c     Usage: a.out inputfile                                                 c
+c                                                                            c
+c     where:  a.out: executable of this code                                 c
+c             inputfile: file containing the input parameters                c
+c                                                                            c
+c     if inputfile is blank on command line, code prompts for                c
+c     input parameters.                                                      c
+c                                                                            c
+c     Input parameters:                                                      c
+c                                                                            c
+c     fpos: ascii file containing radius, xp, yp, zp, Re(m), Im(m)           c
+c           of spheres in cluster.  If fpos is blank, the following          c
+c           options are taken:                                               c
+c             Data read from inputfile:  sphere size, position, and RI       c
+c             information appears at end of inputfile (one line for          c
+c             each sphere).                                                  c
+c             Data read from keyboard: code prompts for sphere data.         c
+c                                                                            c
+c     npart: number of spheres in cluster.  npart data points are read       c
+c            from fpos.   If npart> the number of data points in fpos,       c
+c            npart is reset to the number of points in fpos.                 c
+c                                                                            c
+c     xscale, rscale, rirscale, riiscale: scaling factors for sphere data.   c
+c         size parameter of sphere i is xscale * a_i, where a_i is the       c
+c         radius read from fpos for the ith sphere.  Position of i is        c
+c         (x_i, y_i, z_i)*xscale*rscale.   Refractive index of i is          c
+c         (rirscale*Re(m_i), riiscale*Im(m_i))                               c
+c                                                                            c
+c     fout: output file for efficiency and scattering matrix results.        c
+c           Leave blank for no output file                                   c
+c                                                                            c
+c     famn: output file for scattered field expansion coefficients.          c
+c           Leave blank if not needed.                                       c
+c                                                                            c
+c     itermax, eps, meth, qeps1, qeps2: solution parameters:                 c
+c       itermax: max number of iterations in solution method (default: 100)  c
+c       eps: relative residual error tolerance in solution (10^(-6))         c
+c       meth = 1, uses order-of-scattering                                   c
+c            = 0, uses biconjugate gradient method                           c
+c       qeps1: error tolerance for determining single-sphere harmonic        c
+c              order truncation (10^(-4)).  Set to -n_O to fix number        c
+c              of harmonics for spheres.  Set to 0 to use Rayleigh-limit     c
+c              formula for a_1.                                              c
+c       qeps2: error tolerance for determining cluster expansion             c
+c              truncation limit (10^(-9)).                                   c
+c                                                                            c
+c     norien: number of orientations of the incident wave for which          c
+c       solutions are calculated                                             c
+c                                                                            c
+c     alpha(i), beta(i), i=1, norien:  phi=alpha and theta=beta              c
+c       propagation directions for each orientation. Units are degrees       c
+c                                                                            c
+c     nt, ipltopt: scattering matrix plotting options:                       c
+c       ipltopt=1: scattering matrix elements are calculated for the         c
+c       forward and backward hemispherical projections:  This will give      c
+c       a (2nt+1)*(2nt+1) list of the 16 matrix elements for each            c
+c       projection and for each orientation.  On a contour map, the          c
+c       forward direction will be the pole, and phi and theta correspond     c
+c       to longitude and latitude directions.                                c
+c                                                                            c
+c       ipltopt=2: this calculates the scattering matrix for nt+1            c
+c       theta and nt+1 phi values between 0 and pi, and 0 and 2pi,           c
+c       respectively.  The contour map for this option will be               c
+c       rectangular, with theta and phi representing the vertical            c
+c       and horizontal coordinates.                                          c                           c                                                c
+c                                                                            c
+c     Output: the code writes to fout, for each orientation,                 c
+c      Q_ext,c, Q_abs,c: the extinction and absorption efficiency            c
+c        of the cluster for unpolarized incident radiation. The              c
+c        efficiencies are based on the volume-mean radius of the cluster.    c
+c      Q_exc,c and Q_abs,c for polarization angle gamma=0,pi/2 and pi/4.     c
+c        These give the linearly-polarized incident wave efficiencies.       c
+c        For an arbitrary gamma, the efficiencies would be obtained from     c
+c        Q(gamma) = (Q(0) + Q(pi/2) + cos(2gamma)(Q(0)-Q(pi/2))              c
+c                 + sin(2 gamma)(2Q(pi/4)-Q(0)-Q(pi/2)))/2                   c
+c      <cos theta>,c: the asymmetry factor of the cluster for unpolarized    c
+c        incident radiation.                                                 c
+c      Q_ext,i, Q_abs,i: the extinction and absorption efficiency            c
+c        of each sphere, based on the sphere radius, for gamma=0,pi/2,pi/4.  c
+c      Scattering matrix map                                                 c
+c                                                                            c
+c      The code writes to famn, for each orientation, the                    c
+c      expansion coefficients of the scattered field.  These can             c
+c      be used (with auxilliary codes) to re-calculate the                   c
+c      scattering matrix map or the azimuth--averaged scattering             c
+c      matrix expansion.                                                     c
+c                                                                            c
+c     Important parameter dimensions:  There is an included file,            c
+c     scfodim.for, which contains the parameter dimensions:                  c
+c                                                                            c
+c           parameter(npd=15,nod=30,notd=85)                                 c
+c                                                                            c
+c     npd is the maximum number of spheres.                                  c
+c     nod is the maximum order of the sphere expansions                      c
+c     notd is the maximum order of the cluster expansion                     c
+c                                                                            c
+c     Set these dimensions according to the size of your problem.            c
+c     The memory used by the code scales as npd^2*nod^6 and notd^2.  I       c
+c     cannot specify precisely how much memory the code will use: you        c
+c     will obviously know if it uses too much.                               c
+c                                                                            c
+c     Revision history:                                                      c
+c                                                                            c
+c     August 1999: released to public.                                       c
+c     October 1999: Polarized efficiency formulas added to code, and         c
+c                   a couple of bugs were fixed (thanks to Nikolai           c
+c                   Khlebtsov for debugging).                                c
+c                                                                            c
+c     I have made all efforts to check the accuracy of the code --           c
+c     yet I cannot guarantee that it will work for all cases.                c
+c                                                                            c
+c     Questions/comments:                                                    c
+c                                                                            c
+c     Daniel W. Mackowski                                                    c
+c     Mechanical Engineering Department                                      c
+c     Auburn University, AL 36849, USA                                       c
+c     dmckwski@eng.auburn.edu                                                c
 c
-c This is a minimal subset of scsmfo1b's subroutines (w/o the main program),
-c hence the name scsmfo_min. 
-c Note: I think SCSMFO stands for "Scattering, Clusters of Spheres,
-c Mackowski, Fixed Orientation"; I don't know what the 1B refers to.
+c     Changes made by J. Fung from scsmfo1b.for (original source):
+c         -- printing to screen compile error due to WRITE statements
+c         -- amn file: modify format string to print more than 5 sig figs
+c     Code is intended to be run as an executable; not set up for compilation
+c     with f2py.
 
-c The code is intended to be compiled with f2py; only the subroutine amncalc 
-c is intended to be called from Python. This permits the calculation of 
-c amn coefficients for arbitrary sphere clusters.
-
-c amncalc has been modified from original code as follows:
-c 1) code to calculate bcof and fnr and avoid common block added
-c 2) sizes of necessary arrays determined at run time rather than
-c    by allocating way more memory than necessary.
-
-c calculation of cluster T matrix via iteration scheme
-c
-      subroutine amncalc(inew,npart,xp,yp,zp,sni,ski,xi,nodr,
-     1            nodrtmax,niter,eps,qeps1,qeps2,meth,
-     1            ea, amn0)
-c Intended to be called from Python.
-c Inputs:
-c inew (legacy, for program control -- set to 1)
-c xp (array with particle x coords relative to COM, non-dimensionalized by 
-c wavevector)
-c yp (array with particle y coords, non-dimensionalized)
-c zp (array with particle z coords, non-dimensionalized)
-c sni (array, real part of relative index)
-c ski (array, imaginary part of relative index)
-c xi (array, particle size parameters)
-c niter (max # of iterations)
-c eps (relative error tolerance in sol'n)
-c qeps1 (single sphere error tolerance)
-c qeps2 (cluster error tolerance)
-c meth (set to 1 to use order of scattering)
-c ea (array of cluster Euler alpha and beta, degrees)
-c Outputs:
-c nodr: array of single sphere expansion orders
-c nodrtmax: max order of cluster VSH expansion
-c amn0 (2 x 5040 x 2 array of amn coefficients, listed in a compactified way)
-c *****************************************************************
-c Note: If amn0 is used from Python as an argument to subroutines for
-c hologram calculation in mieangfuncs.f90, it is necessary to truncate
-c the output ndarray in Python, as follows:
-c        amn0 = amn0[:, 0:(nodrtmax**2 + 2 * nodrtmax), :]
-c ******************************************************************
-      implicit real*8(a-h,o-z)
+      implicit real*8 (a-h,o-z)
       include 'scfodim.for'
-      parameter(nbd=nod*(nod+2),nbc=4*notd+4,
-     1          nbtd=notd*(notd+2),nrd=.5*(npd-1)*(npd-2)+npd-1)
-      parameter (nrotd=nod*(2*nod*nod+9*nod+13)/6,
-     1           ntrad=nod*(nod*nod+6*nod+5)/6)
-      integer nodr(npd),nblk(npd),nodrt(npd),nblkt(npd)
-      real*8 xi(npart),sni(npart),ski(npart),rp(npd),qe1(npd),
-     1       xp(npart),yp(npart),zp(npart)
-      real*8 ea(2),drott(-nod:nod,0:nbd)
-      complex*16 ci,cin,a,an1(2,nod,npd),pfac(npd)
-      complex*16 amn(2,nbd,npd,2),amn0(2,nbtd,2)
-      complex*16 pmn(2,nbd,npd),pp(2,nbd,2),amnlt(2,nod,nbd)
-      real*8 drot(nrotd,nrd),dbet(-1:1,0:nbd)
-      complex*16 ephi,anpt(2,nbtd),amnl(2,ntrad,nrd),
-     1           ek(nod,nrd),ealpha(-nod:nod)
+c
+      parameter(nbd=nod*(nod+2),nbd2=nbd+nbd,
+     1          nbtd=notd*(notd+2),nbt1=(notd+1)*(notd+3),
+     1          ntd=npd*nbd,notd2=notd+notd,nfd=(notd2*(notd2+3))/2,
+     1          nbc=2*notd2+4)
+      integer nodr(npd)
+      real*8 xi(npd),sni(npd),ski(npd),
+     1       xp(npd),yp(npd),zp(npd),qai(npd,3),qei(npd,3)
+      real*8 ea(2,50),sm(4,4)
+      complex*16 ci,amn0(2,nbtd,2),sa(4),gmn(0:2)
       common/consts/bcof(0:nbc,0:nbc),fnr(0:2*nbc)
+      character fpos*30,fposo*30,fout*30,fdat*30,famn*30
       data ci/(0.d0,1.d0)/
-Cf2py intent(in) inew, npart, xp, yp, zp, sni, ski, xi, niter
-Cf2py intent(in) eps, qeps1, qeps2, meth, ea
-Cf2py intent(out) nodr, nodrtmax, amn0
-      
-c calculate constants in common block /consts/
+      data itermax,eps,rlx,qeps1,qeps2/100,1.d-6,0,1.d-3,1.d-9/
+      data itest/0/
+
+
+c
+c calculation of constants
+c
+
+      open(6,form='formatted')
+
+      pi=4.d0*datan(1.d0)
       do n=1,2*nbc
          fnr(n)=dsqrt(dble(n))
       enddo
@@ -81,7 +166,533 @@ c calculate constants in common block /consts/
          enddo
          bcof(n+1,n+1)=fnr(n+n+2)*fnr(n+n+1)*bcof(n,n)/fnr(n+1)/fnr(n+1)
       enddo
+c
+c data input
+c
+c the function iargc() returns the number of command-line arguments, and         c
+c the subroutine getarg(1,fdat) returns the first argument in the string         c
+c fdat.   These are intrinsic on the SUN f77 used to compile this code.          c
+c The user should substitute the appropriate functions/subroutines available     c
+c on their compiler.                                                             c
+c
+      na=iargc()
+      if(na.eq.1) then
+         call getarg(1,fdat)
+      else
+         fdat='con'
+      endif
+   10 if(fdat.eq.'con') then
+         write(*,'('' particle position file:'',$)')
+         read(*,'(a)') fpos
+         if(fpos.eq.'/') fpos=fposo
+         fposo=fpos
+         if(fpos.ne.' ') open(1,file=fpos)
+         write(*,'('' npart:'',$)')
+         read(*,*) npart
+         write(*,'('' xscale, rscale, rirscale, riiscale:'',$)')
+         read(*,*) xscale,rscale,rirscale,riiscale
+         write(*,'('' output file (return for none):'',$)')
+         read(*,'(a)') fout
+         if(fout.eq.'/') fout=' '
+         write(*,'('' amn output file (return for none):'',$)')
+         read(*,'(a)') famn
+         if(famn.eq.'/') famn=' '
+         write(*,'('' itermax, eps, meth, qeps1, qeps2:'',$)')
+         read(*,*) itermax,eps,meth,qeps1,qeps2
+         write(*,'('' number of fixed orientations:'',$)')
+         read(*,*) norien
+         do i=1,norien
+            write(*,'('' alpha, beta#'',i2,'':'',$)') i
+            read(*,*) ea(1,i),ea(2,i)
+         enddo
+         write(*,'('' nt, ipltopt:'',$)')
+         read(*,*) nt,ipltopt
+      else
+         open(1,file=fdat)
+         read(1,'(a)') fpos
+         fpos=fpos(:index(fpos,' '))
+         read(1,*) npart
+         read(1,*) xscale,rscale,rirscale,riiscale
+         read(1,'(a)') fout
+         if(fout.eq.'/') fout=' '
+         fout=fout(:index(fout,' '))
+         read(1,'(a)') famn
+         if(famn.eq.'/') famn=' '
+         famn=famn(:index(famn,' '))
+         read(1,*) itermax,eps,meth,qeps1,qeps2
+         read(1,*) norien
+         do i=1,norien
+            read(1,*) ea(1,i),ea(2,i)
+         enddo
+         read(1,*) nt,ipltopt
+         if(fpos.ne.' ') then
+            close(1)
+            open(1,file=fpos)
+         endif
+      endif
+      xv=0.
+      xm=0.
+      ym=0.
+      zm=0.
+      do i=1,npart
+         if(fdat.eq.'con'.and.fpos.eq.' ') then
+            write(*,'('' x, xp, yp, zp, Re(m), Im(m)#'',i2,'':'',$)') i
+            read(*,*) xii,xpi,ypi,zpi,rir,rii
+         else
+            read(1,*,end=25,err=25) xii,xpi,ypi,zpi,rir,rii
+         endif
+         xi(i)=xscale*xii
+         xp(i)=xscale*rscale*xpi
+         yp(i)=xscale*rscale*ypi
+         zp(i)=xscale*rscale*zpi
+         sni(i)=rir*rirscale
+         ski(i)=rii*riiscale
+         xm=xm+xp(i)
+         ym=ym+yp(i)
+         zm=zm+zp(i)
+         xv=xv+xi(i)*xi(i)*xi(i)
+         if(qeps1.lt.0.) nodr(i)=-qeps1
+      enddo
+   25 npart=i-1
+      close(1)
+c
+c xv: volume mean size parameter
+c
+      xv=xv**(1./3.)
+      xm=xm/dble(npart)
+      ym=ym/dble(npart)
+      zm=zm/dble(npart)
 
+      if(fout.ne.' ') then
+         open(1,file=fout)
+         write(1,'('' scsmfo results'')')
+         if(fdat.eq.'con') then
+            write(1,'('' position file:'',a)') fpos
+            write(1,'('' number of spheres:'',i6)') npart
+            write(1,'('' xscale,rscale,riscales'',4e12.4)') xscale,
+     *           rscale,rirscale,riiscale
+         else
+            write(1,'('' input file:'',a)') fdat
+         endif
+         write(1,'('' xv:'', e12.4)') xv
+         close(1)
+      endif
+
+      if(famn.ne.' ') then
+         open(2,file=famn)
+         close(2,status='delete')
+      endif
+
+c
+c begin the loop over cluster orientations
+c
+      inew=1
+      do io=1,norien
+
+         write(*,*)
+         write(*,'('' solving for alpha,beta:'',2f8.1)')
+     1        ea(1,io),ea(2,io)
+         niter=itermax
+         call amncalc(inew,npart,xp,yp,zp,sni,ski,xi,nodr,
+     1            nodrt,niter,eps,qeps1,qeps2,meth,
+     1            ea(1,io),qei,qai,amn0)
+         nblkt=nodrt*(nodrt+2)
+c
+c This computes the total extinction and scattering efficiencies.
+c
+         qet0=0.
+         qetpi2=0.
+         qetpi4=0.
+         qat0=0.
+         qatpi2=0.
+         qatpi4=0.
+         do i=1,npart
+            qet0=qet0+qei(i,1)*xi(i)*xi(i)
+            qetpi2=qetpi2+qei(i,2)*xi(i)*xi(i)
+            qetpi4=qetpi4+qei(i,3)*xi(i)*xi(i)
+            qat0=qat0+qai(i,1)*xi(i)*xi(i)
+            qatpi2=qatpi2+qai(i,2)*xi(i)*xi(i)
+            qatpi4=qatpi4+qai(i,3)*xi(i)*xi(i)
+         enddo
+         qet0=qet0/xv/xv
+         qetpi2=qetpi2/xv/xv
+         qetpi4=qetpi4/xv/xv
+         qat0=qat0/xv/xv
+         qatpi2=qatpi2/xv/xv
+         qatpi4=qatpi4/xv/xv
+
+         qetc0=0.
+         qetcpi2=0.
+         qetcpi4=0.
+         qstc0=0.
+         qstcpi2=0.
+         qstcpi4=0.
+
+         do n=1,nodrt
+            nn1=n*(n+1)
+            do ip=1,2
+               qetc0=qetc0+(-ci)**(n+1)*fnr(n+n+1)
+     *            *((amn0(ip,nn1-1,1)+amn0(ip,nn1-1,2))*(-1)**ip
+     *            +amn0(ip,nn1+1,1)+amn0(ip,nn1+1,2))
+               qetcpi2=qetcpi2+(-ci)**(n+1)*fnr(n+n+1)
+     *            *((amn0(ip,nn1-1,1)-amn0(ip,nn1-1,2))*(-1)**ip
+     *            -amn0(ip,nn1+1,1)+amn0(ip,nn1+1,2))
+               qetcpi4=qetcpi4+(-ci)**(n+1)*fnr(n+n+1)
+     *            *((amn0(ip,nn1-1,1)-ci*amn0(ip,nn1-1,2))*(-1)**ip
+     *            +ci*(amn0(ip,nn1+1,1)-ci*amn0(ip,nn1+1,2)))
+               do m=-n,n
+                  mn=nn1+m
+                  qstc0=qstc0+cdabs(amn0(ip,mn,1)+amn0(ip,mn,2))**2.
+                  qstcpi2=qstcpi2+cdabs(amn0(ip,mn,1)-amn0(ip,mn,2))**2.
+                  qstcpi4=qstcpi4
+     *              +cdabs(amn0(ip,mn,1)-ci*amn0(ip,mn,2))**2.
+               enddo
+            enddo
+         enddo
+         qetc0=-2.*qetc0/xv/xv
+         qetcpi2=-2.*qetcpi2/xv/xv
+         qetcpi4=-2.*qetcpi4/xv/xv
+         qstc0=4.*qstc0/xv/xv
+         qstcpi2=4.*qstcpi2/xv/xv
+         qstcpi4=4.*qstcpi4/xv/xv
+         qatc0=qetc0-qstc0
+         qatcpi2=qetcpi2-qstcpi2
+         qatcpi4=qetcpi4-qstcpi4
+
+c the asymmetry factor is calculated in scatexp
+c
+         call scatexp(amn0,nodrt,1,gmn)
+c
+c The code has calculated extinciton and scattering efficiencies based on       c
+c two formulations: 1) by summation of the individual sphere results, and 2)    c
+c by analytical integration of the cluster scattered field expansion.  If the   c
+c two results do not agree, it indicates that either 1) the interaction         c
+c equations did not converge to a solution, or 2) the cluster field expansion   c
+c was truncated at an insufficiently large value of nodrt.                      c
+c
+         qet=(qet0+qetpi2)/2.
+         qat=(qat0+qatpi2)/2.
+         qst=qet-qat
+         qet=(qet0+qetpi2)/2.
+         write(*,'(''              qe(0)      qe(pi/2)    qe(pi/4)'',
+     *             ''     qa(0)      qa(pi/2)    qa(pi/4)'')') 
+         write(*,'('' sphere : '',6e12.4)')
+     *    qet0,qetpi2,qetpi4,qat0,qatpi2,qatpi4
+         write(*,'('' cluster: '',6e12.4)')
+     *    qetc0,qetcpi2,qetcpi4,qatc0,qatcpi2,qatcpi4
+         write(*,'('' <cos theta>:'',e12.4)') dble(gmn(1))/3.
+
+         if(fout.ne.' ')  then
+            open(1,file=fout,access='append')
+            write(1,'('' alpha,beta:'')')
+            write(1,'(2f8.1)') ea(1,io),ea(2,io)
+            write(1,'('' ave. cluster qext,qabs,qsca,<cos theta>:'')')
+            write(1,'(4e13.5)') qet,qat,qst,dble(gmn(1))/3.d0
+            write(1,'('' cluster qe(0),qe(pi/2),qe(pi/4),'',
+     *             ''qa(0),qa(pi/2),qa(pi/4)'')') 
+            write(1,'(6e13.5)') qet0,qetpi2,qetpi4,qat0,qatpi2,qatpi4
+            write(1,'('' sphere qext and qabs:'')')
+            write(1,'('' sphere   qe(0)       qe(pi/2)     qe(pi/4)'',
+     *             ''      qa(0)       qa(pi/2)     qa(pi/4)'')') 
+            do i=1,npart
+               write(1,'(i5, 6e13.5)') i, qei(i,1),qei(i,2),
+     *          qei(i,3),qai(i,1),qai(i,2),qai(i,3)
+            enddo
+            write(1,'('' scattering map grid size, grid option:'')')
+            write(1,*) nt,ipltopt
+         endif
+c
+c  this writes the cluster scattering coefficients to the file famn
+c
+
+         if(famn.ne.' ') then
+            open(2,file=famn,access='append')
+            write(2,'(i5,f10.3,2f8.2)') nodrt,xv,ea(1,io),ea(2,io)
+            do ik=1,2
+               do n=1,nodrt
+                  nn1=n*(n+1)
+                  do m=-n,n
+                     mn=nn1+m
+                     do ip=1,2
+                        write(2,'(2e22.14)') amn0(ip,mn,ik)
+                     enddo
+                  enddo
+               enddo
+            enddo
+            close(2)
+         endif
+
+         if(ipltopt.eq.1.and.nt.gt.0) then
+
+            do idir=1,-1,-2
+               if(idir.eq.1) then
+                  write(*,'('' calculating forward scattering map'')')
+                  if(fout.ne.' ') then
+                     write(1,'('' forward scattering'')')
+                     write(1,'(''  S11         S22         S33'',
+     *     ''         S44         S21         S32         S43'',
+     *     ''         S31         S42         S41         S12'',
+     *     ''         S23         S34         S13         S24'',
+     *     ''         S14'')')
+                  endif
+               else
+                  write(*,'('' calculating backward scattering map'')')
+                  if(fout.ne.' ') then
+                     write(1,'('' backward scattering'')')
+                     write(1,'(''  S11         S22         S33'',
+     *     ''         S44         S21         S32         S43'',
+     *     ''         S31         S42         S41         S12'',
+     *     ''         S23         S34         S13         S24'',
+     *     ''         S14'')')
+                  endif
+               endif
+               do ix=-nt,nt
+                  x=ix/dble(nt)
+                  do iy=-nt,nt
+                     y=iy/dble(nt)
+                     r=sqrt(x*x+y*y)
+                     if(r.le.1.) then
+                        ct=sqrt((1.-r)*(1.+r))*idir
+                        th=dacos(ct)*180./pi
+                        if(x.eq.0..and.y.eq.0.) then
+                           phi=0.
+                        else
+                           phi=datan2(x,y)
+                        endif
+                        call scatfunc(amn0,nodrt,xv,ct,phi,sa,sm)
+                        sphi=sin(phi)
+                        cphi=cos(phi)
+                     else
+                        do i=1,4
+                           do j=1,4
+                              sm(i,j)=0.
+                           enddo
+                        enddo
+                     endif
+                     if(fout.ne.' ') write(1,'(16e12.4)')
+     *                  (sm(i,i),i=1,4),
+     *                  (sm(i+1,i),i=1,3),(sm(i+2,i),i=1,2),sm(4,1),
+     *                  (sm(i,i+1),i=1,3),(sm(i,i+2),i=1,2),sm(1,4)
+                  enddo
+               enddo
+            enddo
+         elseif(ipltopt.eq.2.and.nt.gt.0) then
+            write(*,'('' calculating scattering map'')')
+            if(fout.ne.' ') then
+               write(1,'('' scattering map'')')
+               write(1,'(''  S11         S22         S33'',
+     *     ''         S44         S21         S32         S43'',
+     *     ''         S31         S42         S41         S12'',
+     *     ''         S23         S34         S13         S24'',
+     *     ''         S14'')')
+                  endif
+            do it=0,nt
+               th=pi*it/dble(nt)
+               ct=cos(th)
+               do iphi=0,nt
+                  phi=2.*pi*iphi/dble(nt+1)
+                  call scatfunc(amn0,nodrt,xv,ct,phi,sa,sm)
+                  write(1, '(8e12.4)') sa(1), sa(2), sa(3), sa(4)
+                  if(fout.ne.' ') write(1,'(16e12.4)') (sm(i,i),i=1,4),
+     *               (sm(i+1,i),i=1,3),(sm(i+2,i),i=1,2),sm(4,1),
+     *               (sm(i,i+1),i=1,3),(sm(i,i+2),i=1,2),sm(1,4)
+               enddo
+            enddo
+         endif
+         if(fout.ne.' ') close(1)
+      enddo
+
+  200 if(fdat.eq.'con') then
+         write(*,'('' more (0/1):'',$)')
+         read(*,*) more
+         if(more.eq.1) goto 10
+      endif
+      stop
+      end
+
+c                                                                               c
+c  subroutine scatexp(amn0,nodrt,nodrg,gmn) computes the expansion coefficients c
+c  for the spherical harmonic expansion of the scattering phase function from   c
+c  the scattering coefficients amn0.  For a complete expansion, the max. order  c
+c  of the phase function expansion (nodrg) will be 2*nodrt, where nodrt is      c
+c  the max. order of the scattered field expansion.   In this code nodrg is     c
+c  typically set to 1, so that the subroutine returns the first moments         c
+c  of the phase function; gmn(1) and gmn(2).                                    c
+c                                                                               c
+c  The expansion coefficients are normalized so that gmn(0)=1                   c
+c                                                                               c
+c  gmn(1)/3 is the asymmetry parameter.                                         c
+c                                                                               c
+
+      subroutine scatexp(amn0,nodrt,nodrg,gmn)
+      include 'scfodim.for'
+      parameter(nbd=notd*(notd+2),notd2=2*notd,ngd=(notd2*(notd2+3))/2,
+     1          nbc=2*notd2+4)
+      implicit real*8(a-h,o-z)
+      complex*16 amn0(2,nbd,2),gmn(0:nodrg*(nodrg+3)/2),a(2,2),c,c2
+      real*8 vc1(0:notd2+1),vc2(0:notd2+1)
+      integer w,w1,w2,u,uw,ww1
+      common/consts/bcof(0:nbc,0:nbc),fnr(0:2*nbc)
+
+      do w=0,nodrg
+         do u=0,w
+            uw=(w*(w+1))/2+u
+            gmn(uw)=0.
+         enddo
+      enddo
+
+      do n=1,nodrt
+         write(*,'(''+order:'',i5,$)') n
+         nn1=n*(n+1)
+         l1=max(1,n-nodrg)
+         l2=min(nodrt,n+nodrg)
+         do l=l1,l2
+            ll1=l*(l+1)
+            c=fnr(n+n+1)*fnr(l+l+1)*dcmplx(0.d0,1.d0)**(l-n)
+            w2=min(n+l,nodrg)
+            call vcfunc(-1,l,1,n,w2,vc2)
+            do m=-n,n
+               mn=nn1+m
+               do k=-l,min(l,m)
+                  kl=ll1+k
+                  ik=(-1)**k
+                  c2=ik*c
+                  u=m-k
+                  do ip=1,2
+                     do iq=1,2
+                        a(ip,iq)=c2*(amn0(ip,mn,1)*conjg(amn0(iq,kl,1))
+     *                  +amn0(ip,mn,2)*conjg(amn0(iq,kl,2)))
+                     enddo
+                  enddo
+                  w1=max(abs(n-l),abs(u))
+                  w2=min(n+l,nodrg)
+                  call vcfunc(-k,l,m,n,w2,vc1)
+                  do w=w1,w2
+                     uw=(w*(w+1))/2+u
+                     do ip=1,2
+                        if(mod(n+l+w,2).eq.0) then
+                           iq=ip
+                        else
+                           iq=3-ip
+                        endif
+                        gmn(uw)=gmn(uw)-vc1(w)*vc2(w)*a(ip,iq)
+                     enddo
+                  enddo
+               enddo
+            enddo
+         enddo
+      enddo
+
+      g0=dble(gmn(0))
+      gmn(0)=1.d0
+      do w=1,nodrg
+         ww1=(w*(w+1))/2
+         gmn(ww1)=dcmplx(dble(gmn(ww1)),0.d0)/g0
+         do u=1,w
+            uw=ww1+u
+            gmn(uw)=(-1)**u*2.d0*gmn(uw)/g0
+         enddo
+      enddo
+
+      write(*,*)
+      return
+      end
+
+      subroutine scatfunc(amn0,nodrt,xv,ct,phi,sa,sm)
+      include 'scfodim.for'
+      implicit real*8(a-h,o-z)
+c
+      parameter(nbd=nod*(nod+2),nbd2=nbd+nbd,
+     1          nbtd=notd*(notd+2),notd2=notd+notd,
+     1          nbc=2*notd2+4)
+      real*8 drot(-1:1,0:nbtd),tau(2),sm(4,4)
+      complex*16 ci,amn0(2,nbtd,2),cin,sa(4),
+     1           sp(4,4),ephi(-notd-1:notd+1),a,b
+      common/consts/bcof(0:nbc,0:nbc),fnr(0:2*nbc)
+      data ci/(0.d0,1.d0)/
+
+      call rotcoef(ct,1,nodrt,drot,1)
+      ephi(1)=cdexp(ci*phi)
+      ephi(-1)=conjg(ephi(1))
+      ephi(0)=1.d0
+      do m=2,nodrt+1
+         ephi(m)=ephi(1)*ephi(m-1)
+         ephi(-m)=conjg(ephi(m))
+      enddo
+      do i=1,4
+         sa(i)=0.
+      enddo
+      do n=1,nodrt
+         cin=(-ci)**n
+         nn1=n*(n+1)
+         do m=-n,n
+            mn=nn1+m
+            mnm=nn1-m
+            tau(1)=fnr(n+n+1)*(drot(-1,mnm)-drot(1,mnm))
+            tau(2)=fnr(n+n+1)*(drot(-1,mnm)+drot(1,mnm))
+            do ip=1,2
+               a=amn0(ip,mn,1)*ephi(m+1)+amn0(ip,mn,2)*ephi(m-1)
+               b=ci*(amn0(ip,mn,1)*ephi(m+1)-amn0(ip,mn,2)*ephi(m-1))
+c
+c  s1,s2,s3,s4: amplitude scattering matrix elements.
+c
+               sa(1)=sa(1)+cin*tau(3-ip)*b
+               sa(2)=sa(2)-ci*cin*tau(ip)*a
+               sa(3)=sa(3)-ci*cin*tau(ip)*b
+               sa(4)=sa(4)+cin*tau(3-ip)*a
+            enddo
+         enddo
+      enddo
+
+
+      do i=1,4
+         do j=1,4
+            sp(i,j)=sa(i)*conjg(sa(j))*.5/xv/xv
+         enddo
+      enddo
+      sm(1,1)=sp(1,1)+sp(2,2)+sp(3,3)+sp(4,4)
+      sm(1,2)=-sp(1,1)+sp(2,2)-sp(3,3)+sp(4,4)
+      sm(2,1)=-sp(1,1)+sp(2,2)+sp(3,3)-sp(4,4)
+      sm(2,2)=sp(1,1)+sp(2,2)-sp(3,3)-sp(4,4)
+      sm(3,3)=2.*(sp(1,2)+sp(3,4))
+      sm(3,4)=-2.*dimag(sp(1,2)+sp(3,4))
+      sm(4,3)=2.*dimag(sp(1,2)-sp(3,4))
+      sm(4,4)=2.*(sp(1,2)-sp(3,4))
+      sm(1,3)=2.*(sp(2,3)+sp(1,4))
+      sm(3,1)=2.*(sp(2,4)+sp(1,3))
+      sm(1,4)=2.*dimag(sp(2,3)-sp(1,4))
+      sm(4,1)=-2.*dimag(sp(2,4)+sp(1,3))
+      sm(2,3)=2.*(sp(2,3)-sp(1,4))
+      sm(3,2)=2.*(sp(2,4)-sp(1,3))
+      sm(2,4)=2.*dimag(sp(2,3)+sp(1,4))
+      sm(4,2)=-2.*dimag(sp(2,4)-sp(1,3))
+
+      return
+      end
+c
+c calculation of cluster T matrix via iteration scheme
+c
+      subroutine amncalc(inew,npart,xp,yp,zp,sni,ski,xi,nodr,
+     1            nodrtmax,niter,eps,qeps1,qeps2,meth,
+     1            ea,qei,qai,amn0)
+      implicit real*8(a-h,o-z)
+      include 'scfodim.for'
+      parameter(nbd=nod*(nod+2),nbc=4*notd+4,
+     1          nbtd=notd*(notd+2),nrd=.5*(npd-1)*(npd-2)+npd-1)
+      parameter (nrotd=nod*(2*nod*nod+9*nod+13)/6,
+     1           ntrad=nod*(nod*nod+6*nod+5)/6)
+      integer nodr(npd),nblk(npd),nodrt(npd),nblkt(npd)
+      real*8 xi(*),sni(*),ski(*),rp(npd),qe1(npd),
+     1       xp(*),yp(*),zp(*),qei(npd,3),qai(npd,3)
+      real*8 ea(2),drott(-nod:nod,0:nbd)
+      complex*16 ci,cin,a,an1(2,nod,npd),pfac(npd)
+      complex*16 amn(2,nbd,npd,2),amn0(2,nbtd,2)
+      complex*16 pmn(2,nbd,npd),pp(2,nbd,2),amnlt(2,nod,nbd)
+      real*8 drot(nrotd,nrd),dbet(-1:1,0:nbd)
+      complex*16 ephi,anpt(2,nbtd),amnl(2,ntrad,nrd),
+     1           ek(nod,nrd),ealpha(-nod:nod)
+      common/consts/bcof(0:nbc,0:nbc),fnr(0:2*nbc)
+      data ci/(0.d0,1.d0)/
 
       if(inew.eq.0) goto 15
 
@@ -106,17 +717,13 @@ c
          xv=xv+xi(i)*xi(i)*xi(i)
          nodrmax=max(nodr(i),nodrmax)
       enddo
-
-
-      print*, 'single sphere max. order: ', nodrmax
+      write(*,'('' single sphere max. order:'',i5)') nodrmax
       if(nodrmax.eq.nod) then
-         print*, 'Warning: single--sphere error tolerance may not 
-     1            be obtained.'
-         print*, 'Decrease qeps1 and/or increase nod.'
+         write(*,'('' Warning: single--sphere error tolerance'',
+     1   '' may not be attained'')')
+         write(*,'('' decrease qeps1 and/or increase nod'')')
       endif
-
       nblkmax=nodrmax*(nodrmax+2)
-      
       xm=xm/dble(npart)
       ym=ym/dble(npart)
       zm=zm/dble(npart)
@@ -135,16 +742,15 @@ c
          nblkt(i)=nodrt(i)*(nodrt(i)+2)
       enddo
       if(nodrtmax.gt.notd) then
-         print*, 'Warning: notd dimension may be too small.'
-         print*, 'increase to ', nodrtmax
+         write(*,'('' Warning: notd dimension may be too small.'',
+     1       '' increase to '',i5)') nodrtmax
       endif
       nodrtmax=min(nodrtmax,notd)
-      print*,''
-      print*, 'Estimated cluster expansion order:', nodrtmax
+      write(*,'('' estimated cluster expansion order:'',i5)') nodrtmax
       nblktmax=nodrtmax*(nodrtmax+2)
 c
       do i=1,npart
-         print*, 'assembling interaction matrix row: ', i
+         write(*,'(''+assembling interaction matrix row:'',i4,$)') i
          do j=i+1,npart
             ij=.5*(j-1)*(j-2)+j-i
             x=xp(i)-xp(j)
@@ -187,7 +793,7 @@ c
             enddo
          enddo
       enddo
-      print*, ''
+      write(*,*)
 
 15    do n=1,nblktmax
          do ip=1,2
@@ -247,8 +853,8 @@ c
       nodrtmax=0
 
       do k=1,2
-         print*, 'Solving for incident state ', k
-        
+         write(*,'('' solving for incident state '',i1)') k
+
          do i=1,npart
             do n=1,nodr(i)
                nn1=n*(n+1)
@@ -270,7 +876,7 @@ c
             itermax=max(itermax,iter)
          endif
 
-         nodrt1=0
+14       nodrt1=0
          do i=1,npart
             qaii=0.
             qeii=0.
@@ -316,8 +922,41 @@ c
 
       enddo
 
-      print*, ' Cluster expansion order: ', nodrtmax
-      
+      do i=1,npart
+         do k=1,3
+            qai(i,k)=0.
+            qei(i,k)=0.
+         enddo
+         do n=1,nodr(i)
+            nn1=n*(n+1)
+            do m=-n,n
+               mn=nn1+m
+               do ip=1,2
+                  cn=dble(1.d0/an1(ip,n,i)-1.d0)
+                  qai(i,1)=qai(i,1)
+     *                  +cn*cdabs(amn(ip,mn,i,1)+amn(ip,mn,i,2))**2.
+                  qai(i,2)=qai(i,2)
+     *                  +cn*cdabs(amn(ip,mn,i,1)-amn(ip,mn,i,2))**2.
+                  qai(i,3)=qai(i,3)
+     *                  +cn*cdabs(amn(ip,mn,i,1)-ci*amn(ip,mn,i,2))**2.
+                  a=conjg(pfac(i))
+                  qei(i,1)=qei(i,1)+a*(amn(ip,mn,i,1)+amn(ip,mn,i,2))
+     *                *conjg(pp(ip,mn,1)+pp(ip,mn,2))
+                  qei(i,2)=qei(i,2)+a*(amn(ip,mn,i,1)-amn(ip,mn,i,2))
+     *                *conjg(pp(ip,mn,1)-pp(ip,mn,2))
+                  qei(i,3)=qei(i,3)+a*(amn(ip,mn,i,1)-ci*amn(ip,mn,i,2))
+     *                *conjg(pp(ip,mn,1)-ci*pp(ip,mn,2))
+               enddo
+            enddo
+         enddo
+         do k=1,3
+            qai(i,k)=4.*qai(i,k)/xi(i)/xi(i)
+            qei(i,k)=4.*qei(i,k)/xi(i)/xi(i)
+         enddo
+      enddo
+
+      write(*,'('' cluster expansion order:'',i5)') nodrtmax
+
       return
       end
 c
@@ -402,7 +1041,7 @@ c
                csk=csk+cr(ip,n,i)*cr(ip,n,i)
             enddo
          enddo
-      enddo
+  30  enddo
       if(cdabs(csk).eq.0.) then
          return
       endif
@@ -463,7 +1102,7 @@ c     enorm=0.
                cak=cak+cap(ip,n,i)*conjg(cw(ip,n,i))
             enddo
          enddo
-      enddo
+50    enddo
       cak=csk/cak
       csk2=(0.,0.)
       err=0.
@@ -480,10 +1119,9 @@ c              enorm=enorm+anp(ip,n,i)*conjg(anp(ip,n,i))
          enddo
       enddo
       err=err/enorm
-      print*, '+iteration: ', iter
-      print*, 'error: ', err
+      write(*,'(''+iteration:'',i4,'' error:'',e13.5,$)') iter,err
       if(err.lt. eps) then
-         print*, ''
+         write(*,*)
          return
       endif
       cbk=csk2/csk
@@ -498,7 +1136,7 @@ c              enorm=enorm+anp(ip,n,i)*conjg(anp(ip,n,i))
       csk=csk2
       iter=iter+1
       if(iter.le.niter) goto 40
-      print*, ''
+      write(*,*)
       return
 
 200   do i=1,npart
@@ -551,13 +1189,12 @@ c              enorm=enorm+anp(ip,n,i)*conjg(anp(ip,n,i))
                enddo
             enddo
          enddo
-      enddo
+350   enddo
       err=err/enorm
       iter=iter+1
-      print*, '+iteration: ', iter
-      print*, 'error: ', err
+      write(*,'(''+iteration:'',i4,'' error:'',e13.5,$)') iter,err
       if((err.gt.eps).and.(iter.lt.niter)) goto 310
-      print*, ''
+      write(*,*)
       return
       end
 c
@@ -1021,7 +1658,7 @@ c
       else
          call hankel(nmax+lmax+1,r,xi)
       endif
-      nlmax=max(nmax,lmax)
+5     nlmax=max(nmax,lmax)
       do n=0,nmax+lmax+1
          if(itype.eq.1) then
             xi(n)=psi(n)/r*ci**n
@@ -1069,7 +1706,7 @@ c
       data ci/(0.d0,1.d0)/
       if(r.eq.0.) return
       call bessel(nmax+lmax+1,r,nbmax,psi)
-      nlmax=max(nmax,lmax)
+5     nlmax=max(nmax,lmax)
       do n=0,nbmax
          psi(n)=psi(n)/r
       enddo
@@ -1386,152 +2023,3 @@ c
    30 continue
       return
       end
-
-
-c                                                                               c
-c  subroutine scatexp(amn0,nodrt,nodrg,gmn) computes the expansion coefficients c
-c  for the spherical harmonic expansion of the scattering phase function from   c
-c  the scattering coefficients amn0.  For a complete expansion, the max. order  c
-c  of the phase function expansion (nodrg) will be 2*nodrt, where nodrt is      c
-c  the max. order of the scattered field expansion.   In this code nodrg is     c
-c  typically set to 1, so that the subroutine returns the first moments         c
-c  of the phase function; gmn(1) and gmn(2).                                    c
-c                                                                               c
-c  The expansion coefficients are normalized so that gmn(0)=1                   c
-c                                                                               c
-c  gmn(1)/3 is the asymmetry parameter.                                         c
-c                                                                               c
-
-      subroutine scatexp(amn0,nodrt,nodrg,gmn)
-      include 'scfodim.for'
-      parameter(nbd=notd*(notd+2),notd2=2*notd,ngd=(notd2*(notd2+3))/2,
-     1          nbc=2*notd2+4)
-      implicit real*8(a-h,o-z)
-      complex*16 amn0(2,nbd,2),gmn(0:nodrg*(nodrg+3)/2),a(2,2),c,c2
-      real*8 vc1(0:notd2+1),vc2(0:notd2+1)
-      integer w,w1,w2,u,uw,ww1
-      common/consts/bcof(0:nbc,0:nbc),fnr(0:2*nbc)
-
-      do w=0,nodrg
-         do u=0,w
-            uw=(w*(w+1))/2+u
-            gmn(uw)=0.
-         enddo
-      enddo
-
-      do n=1,nodrt
-         write(*,'(''+order:'',i5,$)') n
-         nn1=n*(n+1)
-         l1=max(1,n-nodrg)
-         l2=min(nodrt,n+nodrg)
-         do l=l1,l2
-            ll1=l*(l+1)
-            c=fnr(n+n+1)*fnr(l+l+1)*dcmplx(0.d0,1.d0)**(l-n)
-            w2=min(n+l,nodrg)
-            call vcfunc(-1,l,1,n,w2,vc2)
-            do m=-n,n
-               mn=nn1+m
-               do k=-l,min(l,m)
-                  kl=ll1+k
-                  ik=(-1)**k
-                  c2=ik*c
-                  u=m-k
-                  do ip=1,2
-                     do iq=1,2
-                        a(ip,iq)=c2*(amn0(ip,mn,1)*conjg(amn0(iq,kl,1))
-     *                  +amn0(ip,mn,2)*conjg(amn0(iq,kl,2)))
-                     enddo
-                  enddo
-                  w1=max(abs(n-l),abs(u))
-                  w2=min(n+l,nodrg)
-                  call vcfunc(-k,l,m,n,w2,vc1)
-                  do w=w1,w2
-                     uw=(w*(w+1))/2+u
-                     do ip=1,2
-                        if(mod(n+l+w,2).eq.0) then
-                           iq=ip
-                        else
-                           iq=3-ip
-                        endif
-                        gmn(uw)=gmn(uw)-vc1(w)*vc2(w)*a(ip,iq)
-                     enddo
-                  enddo
-               enddo
-            enddo
-         enddo
-      enddo
-
-      g0=dble(gmn(0))
-      gmn(0)=1.d0
-      do w=1,nodrg
-         ww1=(w*(w+1))/2
-         gmn(ww1)=dcmplx(dble(gmn(ww1)),0.d0)/g0
-         do u=1,w
-            uw=ww1+u
-            gmn(uw)=(-1)**u*2.d0*gmn(uw)/g0
-         enddo
-      enddo
-
-      write(*,*)
-      return
-      end
-
-
-
-c *********************** 
-c Added by Jerome
-
-c      subroutine xsects(npart, sni, ski, xi, qeps1, amn0)
-c npart (integer, number of particles)
-c sni (array, real part of relative index)
-c ski (array, imaginary part of relative index)
-c xi (array, particle size parameters)
-c qeps1 (float, single sphere tolerance)
-c amn0 (complex array, output of amncalc)
-c      include 'scfodim.for'
-c      parameter(nbd=nod*(nod+2),nbc=4*notd+4,
-c     1          nbtd=notd*(notd+2),nrd=.5*(npd-1)*(npd-2)+npd-1)
-c      integer i
-c      integer nodr(npart), nblkt(npart)
-c      real*8 xi(npart),sni(npart),ski(npart), qe1(npart)
-c      real*8 qeps1, qs1, xv, qei(npart, 3)
-c      real*8 qet, qetpi2, qetpi4, qat0, qatpi2, qatpi4
-c      complex*16 amn0(2,nbtd, 2), an1(2,nod,npd)
-c
-c      do i=1,npart
-c         call mie1(xi(i),sni(i),ski(i),nodr(i),qeps1,qe1(i),
-c     1             qs1,an1(1,1,i))
-c         xv=xv+xi(i)*xi(i)*xi(i)
-c      enddo
-c
-c      xv=xv**(1./3.)
-
-c
-c This computes the total extinction and scattering efficiencies.
-c
-c      qet0=0.
-c      qetpi2=0.
-c      qetpi4=0.
-c      qat0=0.
-c      qatpi2=0.
-c      qatpi4=0.
-c      do i=1,npart
-c         qet0=qet0+qei(i,1)*xi(i)*xi(i)
-c         qetpi2=qetpi2+qei(i,2)*xi(i)*xi(i)
-c         qetpi4=qetpi4+qei(i,3)*xi(i)*xi(i)
-c         qat0=qat0+qai(i,1)*xi(i)*xi(i)
-c         qatpi2=qatpi2+qai(i,2)*xi(i)*xi(i)
-c         qatpi4=qatpi4+qai(i,3)*xi(i)*xi(i)
-c      enddo
-c      qet0=qet0/xv/xv
-c      qetpi2=qetpi2/xv/xv
-c      qetpi4=qetpi4/xv/xv
-c      qat0=qat0/xv/xv
-c      qatpi2=qatpi2/xv/xv
-c      qatpi4=qatpi4/xv/xv
-
-c      call scatexp(amn0,nodrt,1,gmn)
-      
-
-c      return
-c      end
