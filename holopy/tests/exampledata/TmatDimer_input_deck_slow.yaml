@@ -30,8 +30,6 @@ scaling_alpha: .635
 hold_constant:
  - n_particle_imag_1
  - n_particle_imag_2
- - radius1
- - radius2
  - medium_index
 
 # reset these parameters to their initial value every frame 

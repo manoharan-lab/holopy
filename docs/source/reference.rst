@@ -72,8 +72,8 @@ Scattering models: the :mod:`holopy.model` module
 .. automodule:: holopy.model
     :members: 
 
-The :mod:`holopy.model.mie` scattering model
---------------------------------------------
+The :mod:`holopy.model.mie_fortran` scattering model
+----------------------------------------------------
 .. automodule:: holopy.model.mie_fortran
     :members:
 

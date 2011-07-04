@@ -16,13 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 '''
-Calculates holograms of spheres using Fortran implementation of Mie
-theory. Uses superposition to calculate scattering from multiple
-spheres. Uses full radial dependence of spherical Hankel functions for
-scattered field.
+Defines Tmatrix theory class, which calculates scattering for multiple
+spheres using the T-matrix superposition method, as implemented in
+modified version of Daniel Mackowski's SCSMFO1B.FOR.  Uses full radial
+dependence of spherical Hankel functions for the scattered field.
 
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
+.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 '''
 
 import scipy as sp
@@ -39,13 +39,10 @@ from holopy.model.theory.scatteringtheory import ScatteringTheory
 from tmatrix_scsmfo.mieangfuncs import singleholo
 from tmatrix_scsmfo.miescatlib import nstop, scatcoeffs
 
-par_ordering = ['n_particle_real', 'n_particle_imag', 'radius', 'x',
-                'y', 'z', 'scaling_alpha'] 
-
-class Mie(ScatteringTheory):
+class Tmatrix(ScatteringTheory):
     """
     Class that contains methods and parameters for calculating
-    scattering using Mie theory.
+    scattering using T-matrix superposition method.
 
     Attributes
     ----------
@@ -60,16 +57,56 @@ class Mie(ScatteringTheory):
         Specifies polar scattering angles to calculate
     optics : :class:`holopy.optics.Optics` object
         specifies optical train
+    niter : integer (optional)
+        maximum number of iterations to use in solving the interaction
+        equations 
+    meth : integer (optional)
+        method to use to solve interaction equations.  Set to 0 for
+        biconjugate gradient; 1 for order-of-scattering
+    eps : float (optional)
+        relative error tolerance in solution for interaction equations
+    qeps1 : float (optional) 
+        error tolerance used to determine at what order the
+        single-sphere spherical harmonic expansion should be truncated
+    qeps2 : float (optional) 
+        error tolerance used to determine at what order the cluster
+        spherical harmonic expansion should be truncated 
 
     Notes
     -----
-    If phis and thetas are both 1-D vectors, the calc_ functions
-    should return an array where result(i,j) = result(phi(i),
-    theta(j))
+    According to Mackowski's manual for SCSMFO1B.FOR [1]_ and later
+    papers [2]_, the biconjugate gradient is generally the most
+    efficient method for solving the interaction equations, especially
+    for dense arrays of identical spheres.  Order-of-scattering may
+    converge better for non-identical spheres.
+
+    References
+    ---------
+    [1] Daniel W. Mackowski, SCSMFO.FOR: Calculation of the Scattering
+    Properties for a Cluster of Spheres,
+    ftp://ftp.eng.auburn.edu/pub/dmckwski/scatcodes/scsmfo.ps 
+
+    [2] D.W. Mackowski, M.I. Mishchenko, A multiple sphere T-matrix
+    Fortran code for use on parallel computer clusters, Journal of
+    Quantitative Spectroscopy and Radiative Transfer, In Press,
+    Corrected Proof, Available online 11 March 2011, ISSN 0022-4073,
+    DOI: 10.1016/j.jqsrt.2011.02.019. 
     """
 
-    # don't need to define __init__() because we'll use the base class
-    # constructor 
+    def __init__(self, imshape=(256,256), thetas=None, phis=None,
+                 optics=None,  niter=200, eps=1e-6, meth=1, qeps1=1e-5, 
+                 qeps2=1e-8): 
+
+        # call base class constructor
+        ScatteringTheory.__init__(self, imshape=imshape,
+                                  thetas=thetas, phis=phis,
+                                  optics=optics) 
+
+        self.niter = niter
+        self.eps = eps
+        self.meth = meth
+        self.qeps1 = qeps1
+        self.qeps2 = qeps2
 
     def calc_field(self, scatterer):
         """

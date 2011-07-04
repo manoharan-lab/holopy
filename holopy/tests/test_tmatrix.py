@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 '''
-Test fortran-based Mie calculations and python interface.  
+Test T-matrix sphere cluster calculations and python interface.  
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
@@ -39,7 +39,7 @@ from nose.tools import with_setup
 import holopy
 from holopy.analyze.propagate import trans_func
 
-from holopy.model.theory import mie
+from holopy.model.theory.tmatrix import Tmatrix
 
 # define optical train
 wavelen = 658e-9
@@ -69,7 +69,22 @@ z = 15e-6
 
 imshape = 128
 
-def test_mie_polarization():
+def test_construction():
+    # test constructor to make sure it works properly and calls base
+    # class constructor properly
+    theory = Tmatrix(imshape=128, optics=xoptics, niter=100, eps=1e-6,
+                     meth=0, qeps1=1e-5, qeps2=1e-8)
+
+    assert_equal(theory.imshape, (128,128))
+    assert_equal(theory.optics.wavelen, wavelen)
+    assert_equal(theory.niter, 100)
+    assert_equal(theory.eps, 1e-6)
+    assert_equal(theory.meth, 0)
+    assert_equal(theory.qeps1, 1e-5)
+    assert_equal(theory.qeps2, 1e-8)
+
+"""
+def test_polarization():
     # test holograms for orthogonal polarizations; make sure they're
     # not the same, nor too different from one another.
     xholo = mie.forward_holo(imshape, xoptics, n_particle_real,
@@ -238,3 +253,4 @@ def test_multiple_spheres():
                             scaling_alpha)
     # uncomment to debug
     #return holo
+"""
