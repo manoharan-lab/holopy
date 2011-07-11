@@ -49,7 +49,8 @@ def _preserve_holo_type(func):
     @wraps(func)
     def wrapper(*args, **kw):
         ret = func(*args, **kw)
-        if isinstance(args[0], holopy.hologram.Hologram) and not isinstance(ret, holopy.hologram.Hologram):
+        if (isinstance(args[0], holopy.hologram.Hologram) and 
+            not isinstance(ret, holopy.hologram.Hologram)):
             return holopy.hologram.Hologram(ret, args[0].optics, 
                                             name=args[0].name)
         else:

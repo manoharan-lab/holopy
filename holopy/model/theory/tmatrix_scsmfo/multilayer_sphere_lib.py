@@ -15,7 +15,7 @@ sphere," Applied Optics 42, 1710-1720, (1993).
 
 import numpy as np
 import miescatlib
-import holopy.errors as errors
+from holopy.utility.errors import ModelInputError
 
 from numpy import exp, sin, cos, real, imag
 
@@ -37,7 +37,7 @@ def LogDer13(z, nstop):
     # See Mackowski eqn. 62
     nmx = np.maximum(nstop, np.round_(np.absolute(z))) + 15
     dn1 = np.zeros(nmx+1, dtype = 'complex128') # initialize w/zeros
-    for i in np.arange(nmx-1,-1,-1): # down recurrence
+    for i in np.arange(nmx-1, -1, -1): # down recurrence
         dn1[i] = (i+1.)/z - 1.0/(dn1[i+1.] + (i+1.)/z)
 	
     # Calculate Dn_3 (based on \xi) by up recurrence
@@ -113,7 +113,7 @@ def scatcoeffs_multi(marray, xarray):
 
     # sanity check: marray and xarray must be same size
     if marray.size != xarray.size:
-        raise error.ModelInputError('Arrays of layer indices and size parameters must be the same length!')
+        raise ModelInputError('Arrays of layer indices and size parameters must be the same length!')
 
     # need number of layers L
     nlayers = marray.size

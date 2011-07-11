@@ -303,7 +303,7 @@ def _choose_model(name):
     if isinstance(name, FitInputDeck) or isinstance(name, dict):
         name = name['cluster_type']
     if name == 'mie':
-        import holopy.model.theory.mie_fortran as model
+        import holopy.model.theory.mie as model
 #    if name == 'mie_cython':
 #        import holopy.model.theory.mie as model
     elif name == 'dimer':
@@ -375,7 +375,7 @@ class SimpleFitOutFile(object):
         elif deck.has_key('frames_per_second'):
             self.frame_time = 1.0/deck['frames_per_second']
         else:
-            self.frame_time=0
+            self.frame_time = 0
 
         if self.frame_time:
             self.outf.write('\ttimestamp\n')

@@ -72,7 +72,7 @@ class Reconstruction(np.ndarray):
        manipulations were applied to its hologram and to it.
     """
 
-    def __new__(cls, arr, holo, distances,pixel_scale=None, time_scale=None,
+    def __new__(cls, arr, holo, distances, pixel_scale=None, time_scale=None,
                 name=None):
         if isinstance(arr, np.ndarray):
             # Input array is an already formed ndarray instance
@@ -96,14 +96,15 @@ class Reconstruction(np.ndarray):
         if pixel_scale is None:
             obj.pixel_scale = holo.optics.pixel_scale
         else:
-            obj.pixel_scale=pixel_scale
-        obj.time_scale=time_scale
+            obj.pixel_scale = pixel_scale
+        obj.time_scale = time_scale
 
         return obj
 
     def __array_finalize__(self, obj):
         # this function finishes the construction of our new object
-        if obj is None: return
+        if obj is None: 
+            return
         self.holo = getattr(obj, 'holo', None)
         self.time_scale = getattr(obj, 'time_scale', None)
         self.pixel_scale = getattr(obj, 'pixel_scale', None)
@@ -239,9 +240,9 @@ def reconstruct(holo, distances, fourier_mask=None, gradient_filter=None,
     name = holo.name
         
     if fourier_mask:
-        fourier_mask=fourier_mask(holo.shape)
+        fourier_mask = fourier_mask(holo.shape)
     else:
-        fourier_mask=None
+        fourier_mask = None
 
     r = Reconstruction(propagate(holo, distances,
                                  fourier_filter=fourier_mask,

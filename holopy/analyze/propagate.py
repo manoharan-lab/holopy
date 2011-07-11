@@ -88,19 +88,19 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
     machinery. 
     """
     
-    m,n = holo.shape[:2]
+    m, n = holo.shape[:2]
     # To quickly reconstruct along the z-direction, we'll take a 1D slide
     # of the hologram and reconstruct over a range of z.
     # To get the 1D hologram, we'll sum over the shortest axis. 
     if rec_zx_plane:
-        if m>n:
+        if m > n:
             dim_im = m
             holo = holo.sum(axis=1)
         else:
             dim_im = n
             holo = holo.sum(axis=0)
             
-    G = trans_func([m,n], holo.optics.pixel_scale, holo.optics.med_wavelen, d,
+    G = trans_func([m, n], holo.optics.pixel_scale, holo.optics.med_wavelen, d,
                    squeeze=False, gradient_filter=gradient_filter,
                    recon_in_zx_plane=rec_zx_plane, zprojection=project_along_z)
     # Half dimensions of the psf, they will be used to define the area
@@ -116,33 +116,33 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
         ft *= fourier_filter
 
     if rec_zx_plane:
-        ft = np.repeat(ft[:,np.newaxis,...], G.shape[1], axis=1)
+        ft = np.repeat(ft[:, np.newaxis,...], G.shape[1], axis=1)
 
-        ft[(dim_im/2-mm):(dim_im/2+mm),:] *= G[:(mm*2),:]
+        ft[(dim_im/2-mm):(dim_im/2+mm),:] *= G[:(mm*2), :]
         # Transfer function may not cover the whole image, any values
         # outside it need to be set to zero to make the reconstruction
         # correct
-        ft[0:dim_im/2-mm,...]=0
-        ft[dim_im/2+mm:m,...]=0
+        ft[0:dim_im/2-mm,...] = 0
+        ft[dim_im/2+mm:m,...] = 0
 
         ift = sp.zeros_like(ft)
 
-        for i in range(0,ft.shape[1]):
-            ift[:,i] = ifft(ft[:,i],overwrite=True)
+        for i in range(0, ft.shape[1]):
+            ift[:,i] = ifft(ft[:,i], overwrite=True)
             
         return ift
         
     if ft.ndim is 2:
         ft = ft.reshape(ft.shape[0], ft.shape[1], 1)
-    ft = np.repeat(ft[:,:,np.newaxis,...], G.shape[2], axis=2)
-    ft[(m/2-mm):(m/2+mm),(n/2-nn):(n/2+nn),...] *= G[:(mm*2),:(nn*2),:,np.newaxis]
+    ft = np.repeat(ft[:, :, np.newaxis,...], G.shape[2], axis=2)
+    ft[(m/2-mm):(m/2+mm),(n/2-nn):(n/2+nn),...] *= G[:(mm*2),:(nn*2), :, np.newaxis]
     # Transfer function may not cover the whole image, any values
     # outside it need to be set to zero to make the reconstruction
     # correct
-    ft[0:n/2-nn,...]=0
-    ft[n/2+nn:n,...]=0
-    ft[:,0:m/2-mm,...]=0
-    ft[:,m/2+mm:m,...]=0
+    ft[0:n/2-nn,...] = 0
+    ft[n/2+nn:n,...] = 0
+    ft[:,0:m/2-mm,...] = 0
+    ft[:,m/2+mm:m,...] = 0
 
     
     if squeeze:
@@ -213,14 +213,14 @@ def trans_func(shape, pixel, wavelen, d, cfsp=0, squeeze=True,
 
     if recon_in_zx_plane:
         #first determine which axis to use along x-y (that is, x or y)
-        if xdim>ydim:
+        if xdim > ydim:
             xy_length = xdim
             d_xy = dx
         else:
             xy_length = ydim
             d_xy = dy
 
-        d = d.reshape([1,d.size])
+        d = d.reshape([1, d.size])
         
         #max_xy = int(np.min(xy_length**2*d_xy**2/d/wavelen/2))+1
 
@@ -239,11 +239,11 @@ def trans_func(shape, pixel, wavelen, d, cfsp=0, squeeze=True,
 
         return g
 
-    d = d.reshape([1,1,d.size])
+    d = d.reshape([1, 1, d.size])
     
     if(cfsp > 0):
-       cfsp = int(abs(cfsp)) # should be nonnegative integer
-       d = d/cfsp
+        cfsp = int(abs(cfsp)) # should be nonnegative integer
+        d = d/cfsp
 
     # The transfer function is only defined on a finite domain of
     # spatial frequencies; outside this domain the transfer function
@@ -261,10 +261,10 @@ def trans_func(shape, pixel, wavelen, d, cfsp=0, squeeze=True,
     
     # make sure that the array is not larger than the hologram if we
     # are using cascaded free space propagation
-    max_m = min(xdim,max_m*2)/2
-    max_n = min(ydim,max_n*2)/2
+    max_m = min(xdim, max_m*2)/2
+    max_n = min(ydim, max_n*2)/2
    
-    m, n= np.ogrid[-max_m:max_m,-max_n:max_n]
+    m, n = np.ogrid[-max_m:max_m,-max_n:max_n]
     
     
     root = 1.+0j-(wavelen*n/(xdim*dx))**2 - (wavelen*m/(ydim*dy))**2
@@ -272,7 +272,7 @@ def trans_func(shape, pixel, wavelen, d, cfsp=0, squeeze=True,
     root *= (root >= 0)
     
     # add the z axis to this array so it broadcasts correctly
-    root = root[...,np.newaxis]
+    root = root[..., np.newaxis]
 
     g = np.exp(-1j*2*np.pi*d/wavelen*np.sqrt(root))
 
@@ -291,7 +291,7 @@ def trans_func(shape, pixel, wavelen, d, cfsp=0, squeeze=True,
 
     if zprojection and len(g.shape)>2:
         g = g.sum(axis=-1)
-        g = g[...,np.newaxis]
+        g = g[..., np.newaxis]
 
     if squeeze:
         return np.squeeze(g)

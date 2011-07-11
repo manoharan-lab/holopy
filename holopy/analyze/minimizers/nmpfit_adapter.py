@@ -25,7 +25,7 @@ Tom Dimiduk (tdimiduk@physics.harvard.edu)
 
 import numpy as np
 from holopy.third_party import nmpfit
-from holopy.utility.errors import NotImplemented
+from holopy.utility.errors import NotImplementedError
 
 class NmpfitParam(object):
     '''
@@ -102,7 +102,7 @@ class NmpfitParam(object):
             out_pdict['maxstep'] = self.maxstep
 
         # write fitted param value and error if fitted, None if not
-        if (not self.fixed) and (not getattr(self,'tied', None)):
+        if (not self.fixed) and (not getattr(self, 'tied', None)):
             out_pdict['final_value'] = float(self.fit_value)
             out_pdict['final_error'] = self.fit_error
         else:
@@ -115,7 +115,7 @@ class NmpfitParam(object):
         elif self.limits.__class__ == np.ndarray:
             out_pdict['limits'] = self.limits.tolist()
         else:
-            raise NotImplemented('Limits cannot be handled in output')
+            raise NotImplementedError('Limits cannot be handled in output')
 
         return out_pdict
 
@@ -171,14 +171,14 @@ def _minimize(target, forward_holo, parameters, ftol = 1e-10, xtol = 1e-10, gtol
 
     fitresult = nmpfit.mpfit(residfunct,  parinfo = parinfo, ftol = ftol, 
                              xtol = xtol, gtol = gtol, damp = damp, 
-                             maxiter = maxiter, quiet = False)
+                             maxiter = maxiter, quiet = quiet)
 
     # Update the parameters with new values from the fit
     for i in range(fitresult.params.size):
         parameters[i].fit_value = fitresult.params[i]
         parameters[i].fit_error = fitresult.perror[i]
 
-    return NmpfitResult(fitresult,ftol, xtol, gtol, damp, maxiter)
+    return NmpfitResult(fitresult, ftol, xtol, gtol, damp, maxiter)
 
 class NmpfitResult(object):
     def __init__(self, fitresult, ftol, xtol, gtol, damp, maxiter):

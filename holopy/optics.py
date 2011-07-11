@@ -68,12 +68,12 @@ class Optics(object):
 
     def __init__(self, wavelen=None, index=None, polarization=(1.0, 0),
                  divergence=0., pixel_size=None, train=None,
-                 mag=None, pixel_scale = None, ref_pos=0):
+                 mag=None, pixel_scale = None):
         # source parameters
         self.wavelen = wavelen
         self.index = index
         self.polarization = np.array(polarization)
-        self.divergence=divergence
+        self.divergence = divergence
 
         # optical train parameters
         self.mag = mag          # magnification 

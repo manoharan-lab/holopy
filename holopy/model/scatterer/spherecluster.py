@@ -86,7 +86,7 @@ class SphereCluster(Composite):
                         x = np.array(x).reshape(N)
                         y = np.array(y).reshape(N)
                         z = np.array(z).reshape(N)
-                        centers = np.array([x,y,z]).transpose()
+                        centers = np.array([x, y, z]).transpose()
                     except ValueError:
                         raise ScattererDefinitionError(
                             "n, r, x, y, and z should all be of length N",

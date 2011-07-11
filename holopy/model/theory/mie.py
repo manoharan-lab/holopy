@@ -25,12 +25,12 @@ scattered field.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
-import scipy as sp
 import numpy as np
 import tmatrix_scsmfo.mieangfuncs as mieangfuncs
 import tmatrix_scsmfo.scsmfo_min as scsmfo_min
 import tmatrix_scsmfo.miescatlib as miescatlib
 from holopy.hologram import Hologram
+from holopy import Optics
 from holopy.utility.helpers import _ensure_array, _ensure_pair
 
 from holopy.model.scatterer import Sphere, SphereCluster, Composite
@@ -102,7 +102,7 @@ class Mie(ScatteringTheory):
             spheres = scatterer.get_component_list()
             # compatibility check: verify that the cluster only contains
             # spheres 
-            if not scatterer._contains_only_spheres():
+            if not scatterer.contains_only_spheres():
                 for s in spheres:
                     if not isinstance(s, Sphere):
                         raise TheoryNotCompatibleError(self, s)
@@ -202,10 +202,7 @@ def calc_mie_fields(size, opt, n_particle_real, n_particle_imag,
         xdim, ydim = size, size
     else:
         xdim, ydim = size
-    if opt.pixel_scale.size == 1: # pixel_scale is an ndarray
-        px, py = opt.pixel_scale, opt.pixel_scale
-    else:
-        px, py = opt.pixel_scale
+    px, py = opt.pixel
 
     # Determine particle properties in scattering units
     if dimensional:
@@ -275,7 +272,7 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius,
     """
     
     if isinstance(opt, dict):
-        opt = optics.Optics(**opt)
+        opt = Optics(**opt)
 
     # Allow size and pixel size to be either 1 number (square) 
     #    or rectangular
@@ -283,10 +280,7 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius,
         xdim, ydim = size, size
     else:
         xdim, ydim = size
-    if opt.pixel_scale.size == 1: # pixel_scale is an ndarray
-        px, py = opt.pixel_scale, opt.pixel_scale
-    else:
-        px, py = opt.pixel_scale
+    px, py = opt.pixel
 
     wavevec = 2.0 * np.pi / opt.med_wavelen
 
@@ -330,10 +324,10 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius,
 
         return holo
 
-    xfield_tot = np.zeros((xdim,ydim),dtype='complex128')
-    yfield_tot = np.zeros((xdim,ydim),dtype='complex128')
-    zfield_tot = np.zeros((xdim,ydim),dtype='complex128')
-    interference = np.zeros((xdim,ydim),dtype='complex128')
+    xfield_tot = np.zeros((xdim, ydim),dtype='complex128')
+    yfield_tot = np.zeros((xdim, ydim),dtype='complex128')
+    zfield_tot = np.zeros((xdim, ydim),dtype='complex128')
+    interference = np.zeros((xdim, ydim),dtype='complex128')
 
     # for multiple particles, do Mie superposition in Python using
     # Fortran-calculated fields

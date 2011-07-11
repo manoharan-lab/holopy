@@ -28,12 +28,11 @@ import scipy as sp
 import Image
 import os
 import glob
-import os.path
 from scipy.misc.pilutil import fromimage
 from holopy.third_party.tifffile import TIFFfile
 from holopy.optics import Optics
 from holopy.hologram import Hologram
-from holopy.utility.errors import NotImplemented, LoadError, NoFilesFound
+from holopy.utility.errors import NotImplementedError, LoadError, NoFilesFound
 from holopy import process
 from holopy.io.yaml_io import load_yaml
 
@@ -87,7 +86,7 @@ def load(im, optics=None, bg=None, bg_type='subtract',
             print("Could not load optics file: %s" % er.filename)
         if not isinstance(optics, Optics):
             print("Optics not provided, loading hologram without physical reference")
-            optics = Optics(wavelen=1, pixel_scale=(1,1))
+            optics = Optics(wavelen=1, pixel_scale=(1, 1))
             
     def _guess_extension(filename):
         # most images will be tif files, this lets the user not
@@ -165,7 +164,7 @@ def save_image(im, filename=None, phase=False):
 
     # if we don't have an extension, default to tif
     if os.path.splitext(filename)[1] is '':
-        filename+='.tif'
+        filename += '.tif'
     if np.iscomplex(im).any():
         if phase:
             im = np.angle(im)
@@ -215,9 +214,10 @@ def _read(filename, channel=0):
     # pick out only one channel of a color image
     if len(arr.shape) > 2:
         if channel >= arr.shape[2]:
-            raise LoadError(filename, "The image doesn't have a channel number " + channel)
+            raise LoadError(filename,
+                            "The image doesn't have a channel number " + channel)
         else:
-            arr = arr[:,:,channel]
+            arr = arr[:, :, channel]
     elif channel > 0:
         print "Warning: not a color image (channel number ignored)"
 
@@ -265,9 +265,9 @@ def _read_tiff(filename):
     elif depth == 12:
         tif.close()
         if width == height:
-            arr = _read_tiff_12bit(filename,height)
+            arr = _read_tiff_12bit(filename, height)
         else:
-            raise NotImplemented("Read non-square 12 bit tiff")
+            raise NotImplementedError("Read non-square 12 bit tiff")
     else:
         # use the tifffile representation
         arr = tif.asarray().astype('d')

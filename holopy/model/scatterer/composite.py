@@ -24,8 +24,6 @@ scatterers (e.g. two trimers).
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
-import numpy as np
-import pprint
 from sphere import Sphere
 
 class Composite(object):
@@ -69,7 +67,7 @@ class Composite(object):
                 components.append(s)
         return components
 
-    def _contains_only_spheres(self):
+    def contains_only_spheres(self):
         """
         Returns True if the Composite object contains only spheres.
         Used mainly for error checking by models that can only handle

@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
-'''
+"""
 Defines Tmatrix theory class, which calculates scattering for multiple
 spheres using the T-matrix superposition method, as implemented in
 modified version of Daniel Mackowski's SCSMFO1B.FOR.  Uses full radial
@@ -23,14 +23,14 @@ dependence of spherical Hankel functions for the scattered field.
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
-'''
+"""
 
-import scipy as sp
 import numpy as np
 import tmatrix_scsmfo.mieangfuncs as mieangfuncs
 import tmatrix_scsmfo.scsmfo_min as scsmfo_min
 import tmatrix_scsmfo.miescatlib as miescatlib
 from holopy.hologram import Hologram
+from holopy import Optics
 from holopy.utility.helpers import _ensure_array, _ensure_pair
 
 from holopy.model.scatterer import Sphere, SphereCluster, Composite
@@ -93,7 +93,7 @@ class Tmatrix(ScatteringTheory):
     DOI: 10.1016/j.jqsrt.2011.02.019. 
     """
 
-    def __init__(self, imshape=(256,256), thetas=None, phis=None,
+    def __init__(self, imshape=(256, 256), thetas=None, phis=None,
                  optics=None,  niter=200, eps=1e-6, meth=1, qeps1=1e-5, 
                  qeps2=1e-8): 
 
@@ -139,7 +139,7 @@ class Tmatrix(ScatteringTheory):
             spheres = scatterer.get_component_list()
             # compatibility check: verify that the cluster only contains
             # spheres 
-            if not scatterer._contains_only_spheres():
+            if not scatterer.contains_only_spheres():
                 for s in spheres:
                     if not isinstance(s, Sphere):
                         raise TheoryNotCompatibleError(self, s)
@@ -312,7 +312,7 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius,
     """
     
     if isinstance(opt, dict):
-        opt = optics.Optics(**opt)
+        opt = Optics(**opt)
 
     # Allow size and pixel size to be either 1 number (square) 
     #    or rectangular
@@ -367,10 +367,10 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius,
 
         return holo
 
-    xfield_tot = np.zeros((xdim,ydim),dtype='complex128')
-    yfield_tot = np.zeros((xdim,ydim),dtype='complex128')
-    zfield_tot = np.zeros((xdim,ydim),dtype='complex128')
-    interference = np.zeros((xdim,ydim),dtype='complex128')
+    xfield_tot = np.zeros((xdim, ydim),dtype='complex128')
+    yfield_tot = np.zeros((xdim, ydim),dtype='complex128')
+    zfield_tot = np.zeros((xdim, ydim),dtype='complex128')
+    interference = np.zeros((xdim, ydim),dtype='complex128')
 
     # for multiple particles, do Mie superposition in Python using
     # Fortran-calculated fields

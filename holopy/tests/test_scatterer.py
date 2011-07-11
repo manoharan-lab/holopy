@@ -163,19 +163,19 @@ def test_SphereCluster_construction():
     assert_equal(sc.centers[0], centers[0])
     print sc.get_component_list()
     
-def test_SphereCluster__contains_only_spheres():
+def test_SphereCluster_contains_only_spheres():
     s1 = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
     s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,0,0])
     sc = SphereCluster(spheres=[s1, s2, s3])
-    assert_(sc._contains_only_spheres() is True)
+    assert_(sc.contains_only_spheres() is True)
 
     sc.add(CoatedSphere())
-    assert_(sc._contains_only_spheres() is False)
+    assert_(sc.contains_only_spheres() is False)
 
     # a cluster with no spheres defined should return false
     sc = SphereCluster()
-    assert_(sc._contains_only_spheres() is False)
+    assert_(sc.contains_only_spheres() is False)
 
 @raises(ScattererDefinitionError)
 def test_SphereCluster_construction_typechecking():

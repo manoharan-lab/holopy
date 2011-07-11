@@ -34,10 +34,10 @@ could cause a variable to be referenced before it's initialized. Under
 normal usage I wouldn't worry about it. 
 '''
 
-def configuration(parent_package='',top_path=None):
+def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
     from numpy.distutils.command import build_ext
-    config = Configuration('tmatrix',parent_package,top_path)
+    config = Configuration('tmatrix', parent_package, top_path)
     config.add_extension('uts_scsmfo',
                          ['uts_scsmfo.for',
                           '../../../third_party/SBESJY.F']

@@ -127,7 +127,7 @@ def lowpass(im, n, ny=None) :
         size in the y direction.
     """
     g = _gauss_kern(n, sizey=ny)
-    improc = scipy.signal.fftconvolve(im,g, mode='valid')
+    improc = scipy.signal.fftconvolve(im, g, mode='valid')
     return improc
 
 # This function taken from http://www.scipy.org/Cookbook/SignalSmooth

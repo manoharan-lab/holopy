@@ -24,7 +24,6 @@ Routines for manipulating, reconstructing, and fitting holograms
 
 import numpy as np
 import scipy.signal
-from .optics import Optics
 from holopy.utility import errors
 
 class Hologram(np.ndarray):
@@ -95,7 +94,8 @@ class Hologram(np.ndarray):
 
     def __array_finalize__(self, obj):
         # this function finishes the construction of our new object
-        if obj is None: return
+        if obj is None: 
+            return
         self.optics = getattr(obj, 'optics', None)
         self.time_scale = getattr(obj, 'time_scale', None)
         self.name = getattr(obj, 'name', None)
@@ -223,7 +223,7 @@ def subimage(im, center=None, size=None):
     y0, y1 = constrain(center[1], ly, im.shape[1])
 
     if hasattr(im, 'name'):
-        n = "%s@%sx%s" %(im.name, center, size)
+        n = "%s@%sx%s" % (im.name, center, size)
     
     # might go wrong if lx,ly are not divisible by 2, but they
     # probably will be, so I am not worrying about it

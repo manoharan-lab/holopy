@@ -37,22 +37,21 @@ complex arguments
 '''
 
 import scipy
-import scipy.special
 import mieangfuncs # use Fortran angular functions to avoid duplication
 
 from scipy import sin, cos, array
 from scipy.special import lpn, riccati_jn, riccati_yn, sph_jn, sph_yn
 
 
-def RicBesHank(x,nstop): 
+def RicBesHank(x, nstop): 
     # modification: generalize to allow for complex x
     if scipy.imag(x) == 0:
-        psin = riccati_jn(nstop,x)
+        psin = riccati_jn(nstop, x)
         # construct riccati hankel function of 1st kind by linear
         # combination of RB's based on j_n and y_n 
         # scipy sign on y_n consistent with B/H
-        xin = riccati_jn(nstop,x)[0]+1j*riccati_yn(nstop,x)[0] 
-        rbh = array([psin[0],xin])
+        xin = riccati_jn(nstop, x)[0] + 1j*riccati_yn(nstop, x)[0] 
+        rbh = array([psin[0], xin])
     else:
         rbjns = x*sph_jn(nstop, x)[0]
         rbyns = x*sph_yn(nstop, x)[0]
@@ -68,7 +67,7 @@ def LogDerPsi2(z, nmx, nstop):
     # would be gained  
     dn = scipy.zeros(nmx+1, dtype = 'complex128')
     # initialize w/zeros
-    for i in scipy.arange(nmx-1,-1,-1):
+    for i in scipy.arange(nmx-1, -1, -1):
         # 1's must be floats to avoid division problems
         dn[i] = (i+1.)/z - 1.0/(dn[i+1.] + (i+1.)/z)
     #for i in scipy.arange(1, nmx+1):
@@ -82,7 +81,7 @@ def scatcoeffs(x, m, nstop): # see B/H eqn 4.88
     nmx = array([nstop, scipy.round_(scipy.absolute(m*x))]).max() + 20
     Dnmx = LogDerPsi2(m*x, nmx, nstop) # corrected version w/down recurrence 
     n = scipy.arange(nstop+1)
-    psiandxi = RicBesHank(x,nstop)
+    psiandxi = RicBesHank(x, nstop)
     psi = psiandxi[0]
     xi = psiandxi[1]
     psishift = scipy.concatenate((scipy.zeros(1), psi))[0:nstop+1]
@@ -116,7 +115,7 @@ def asymmetry_parameter(an, bn):
     return gterms.sum()
 
 
-def cross_sections(an,bn): 
+def cross_sections(an, bn): 
     '''
     Calculates scattering, extension, and radar backscattering cross sections
     given arrays of Mie scattering coefficients an and bn.
@@ -134,7 +133,7 @@ def cross_sections(an,bn):
     cext = (prefactor*cextcoeffs).sum()
     cbackcoeffs = an - bn
     cback = scipy.absolute((prefactor*alts*cbackcoeffs).sum())**2
-    return array([csca,cext,cback], dtype = 'float64') # contents are real
+    return array([csca, cext, cback], dtype = 'float64') # contents are real
 
 
 def ascatmatrix_mie(theta, a_l, b_l):
@@ -158,4 +157,4 @@ def ascatmatrix_mie(theta, a_l, b_l):
     
     S1 = (prefactor*(a_l*pis + b_l*taus)).sum()
     S2 = (prefactor*(a_l*taus + b_l[1]*pis)).sum()
-    return array([S2,S1])
+    return array([S2, S1])

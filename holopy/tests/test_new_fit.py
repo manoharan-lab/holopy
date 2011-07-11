@@ -15,16 +15,17 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
-
-'''
+"""
 Proposal for new function structure for fitting in the form of tests.
 
 Don't expect these tests to pass for a while
 
-'''
+"""
 
 import numpy as np
 import holopy
+from holopy.process import normalize
+
 import nose
 from nose.tools import raises, assert_raises
 from numpy.testing import assert_, assert_equal, assert_array_almost_equal
@@ -33,7 +34,7 @@ import os
 import string
 from nose.plugins.attrib import attr
 
-from holopy.model.scatterer import Sphere, Cluster, Composite
+from holopy.model.scatterer import Sphere, SphereCluster, Composite
 
 def setup_optics():
     # set up optics class for use in several test functions
@@ -102,7 +103,7 @@ def test_fit_dimer():
 
 def test_fit_superposition():
     # TODO: connect this with real data
-    holo = load('something.tif')
+    holo = holopy.load('something.tif')
 
     sc = Composite(Sphere(n=1.59, r=8.5e-7, x=.567e-5, y=.576e-5, z=15e-6),
                    Sphere(n=1.59, r=8.5e-7, x=.587e-5, y=.586e-5, z=16e-6))
@@ -115,7 +116,7 @@ def test_fit_superposition():
 
 def test_fit_general():
     # TODO: connect this with some kind of data
-    holo = load('something.tif')
+    holo = holopy.load('something.tif')
 
     sc = Composite(Cluster(com=[17.3e-6,17.3e-6,20.7e-6], n1=1.59, n2=1.59, r1=.65e-6,
                            r2=.65e-6, gap=10e-9, beta=-28.5, gamma=-14.87),

@@ -355,12 +355,12 @@ def dimer_angles_gap(position1, position2, radius1, radius2):
     separation = sqrt(sum((position1 - position2)**2))
     xysep = sqrt(sum((position1[:2] - position2[:2])**2))
     epsilon_r = ((separation - radius2)/radius1)-1.0
-    if position2[1]>position1[1]:
+    if position2[1] > position1[1]:
         sgn = 1
     else:
         sgn = -1
     gamma = real((180./pi)*arcsin((position2[1]-position1[1])/xysep*sgn))
-    if position2[2]>position1[2]:
+    if position2[2] > position1[2]:
         sgn = 1
     else:
         sgn = -1
@@ -368,7 +368,7 @@ def dimer_angles_gap(position1, position2, radius1, radius2):
     return center_of_mass, epsilon_r, beta, gamma
     
 
-def dimer_bead_coords(beta, gamma, gap, x1,x2,k, xcom, ycom, zcom):
+def dimer_bead_coords(beta, gamma, gap, x1, x2, k, xcom, ycom, zcom):
     """
     This function takes the position and orientation of the dimer
     defined by the center of mass, the two Euler angles (beta and
@@ -428,7 +428,7 @@ def dimer_bead_coords(beta, gamma, gap, x1,x2,k, xcom, ycom, zcom):
     elif beta > 180:
         beta -= 180.
 
-    vect = array([center_to_center, 0,0])
+    vect = array([center_to_center, 0, 0])
 
     trans_1 = array([[cos(gamma*pi/180.), sin(gamma*pi/180.), 0.],
                          [-1.*sin(gamma*pi/180.), cos(gamma*pi/180.), 0.],
@@ -436,10 +436,10 @@ def dimer_bead_coords(beta, gamma, gap, x1,x2,k, xcom, ycom, zcom):
     trans_2 = array([[cos(beta*pi/180.), 0., -1*sin(beta*pi/180.)],
                          [0., 1., 0.],
                          [sin(beta*pi/180.), 0., cos(beta*pi/180.)]])
-    newvect = dot(trans_1,dot(trans_2, vect.transpose()))
+    newvect = dot(trans_1, dot(trans_2, vect.transpose()))
 
-    position1 = array([xcom,ycom,zcom])+(0.5*newvect*array([1,1,-1]))
-    position2 = array([xcom,ycom,zcom])-(0.5*newvect*array([1,1,-1]))
+    position1 = array([xcom, ycom, zcom])+(0.5*newvect*array([1,1,-1]))
+    position2 = array([xcom, ycom, zcom])-(0.5*newvect*array([1,1,-1]))
 
     return real(position1), real(position2), radius1, radius2, center_to_center
 

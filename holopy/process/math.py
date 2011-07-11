@@ -54,7 +54,7 @@ def fft(a, overwrite=False, shift=True):
        The fourier transform of `a`
     """
     if shift:
-        shift = lambda x: fftpack.fftshift(x, axes=[0,1]) # Only works
+        shift = lambda x: fftpack.fftshift(x, axes=[0, 1]) # Only works
                                                           # for ndim>1 
     else:
         shift = lambda x: x
@@ -62,7 +62,7 @@ def fft(a, overwrite=False, shift=True):
     if a.ndim is 1:
         return fftpack.fftshift(fftpack.fft(a, overwrite_x=overwrite))
     else:
-        return shift(fftpack.fft2(a, axes=[0,1], overwrite_x=overwrite))
+        return shift(fftpack.fft2(a, axes=[0, 1], overwrite_x=overwrite))
 
 @_preserve_holo_type
 def ifft(a, overwrite=False, shift=True):
@@ -94,13 +94,13 @@ def ifft(a, overwrite=False, shift=True):
     """
 
     if shift:
-        shift = lambda x: fftpack.fftshift(x, axes=[0,1])
+        shift = lambda x: fftpack.fftshift(x, axes=[0, 1])
     else:
         shift = lambda x: x
         
     if a.ndim is 1:
         return fftpack.ifft(fftpack.fftshift(a))
     else:
-        return fftpack.ifft2(shift(a), axes=[0,1], overwrite_x=overwrite)
+        return fftpack.ifft2(shift(a), axes=[0, 1], overwrite_x=overwrite)
     
 

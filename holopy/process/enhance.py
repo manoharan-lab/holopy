@@ -52,7 +52,7 @@ def normalize(image):
     """
     return image * 1.0 / image.sum() * image.size
 
-def background(holo, background, kind = divide):
+def background(holo, bg, kind = divide):
     '''
     Improve an image by eliminating a background.
 
@@ -60,7 +60,7 @@ def background(holo, background, kind = divide):
     ----------
     holo : :class:`holopy.hologram.Hologram`
        Image to process
-    background : ndarray
+    bg : ndarray
        Background image to remove
     kind : 'subtract' or 'divide'
        Type of background elimination to perform
@@ -70,15 +70,15 @@ def background(holo, background, kind = divide):
     holo : :class:`holopy.hologram.Hologram`
        Hologram with background eliminated
     '''
-    if background.ndim < holo.ndim:
-        background = background[...,np.newaxis]
+    if bg.ndim < holo.ndim:
+        bg = bg[..., np.newaxis]
     
     if kind is subtract or kind is 'subtract':
-        name = "%sbgs%s" % (holo.name, background.name)
-        ar = holo - background
+        name = "%sbgs%s" % (holo.name, bg.name)
+        ar = holo - bg
     else:
-        name = "%sbgd%s" % (holo.name, background.name)
-        ar = holo / zero_filter(background)
+        name = "%sbgd%s" % (holo.name, bg.name)
+        ar = holo / zero_filter(bg)
 
     return Hologram(ar, holo.optics, holo.time_scale, name=name)
 

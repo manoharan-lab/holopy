@@ -32,7 +32,7 @@ instead.
 import numpy as np
 from mie_c import MFE
 from holopy.hologram import Hologram
-import holopy.optics
+from holopy import Optics
 from holopy.utility.helpers import _ensure_array, _ensure_pair
 from holopy.io.fit_io import _split_particle_number, _get_num_particles
 from holopy.model.scatterer import Sphere, SphereCluster, Composite
@@ -67,15 +67,15 @@ class Mie():
     theta(j))
     """
 
-    def __init__(self, imshape=(256,256), thetas=None, phis=None,
+    def __init__(self, imshape=(256, 256), thetas=None, phis=None,
                  optics=None): 
         self.imshape = _ensure_pair(imshape)
         self.thetas = thetas
         self.phis = phis
         if isinstance(optics, dict):
-            optics = holopy.optics.Optics(**opt)
+            optics = Optics(**optics)
         elif optics is None:
-            self.optics = holopy.optics.Optics()
+            self.optics = Optics()
         else:
             self.optics = optics
 
@@ -114,7 +114,7 @@ class Mie():
         # spheres 
         elif isinstance(scatterer, Composite):
             spheres = scatterer.get_component_list()
-            if not scatterer._contains_only_spheres():
+            if not scatterer.contains_only_spheres():
                 for s in spheres:
                     if not isinstance(s, Sphere):
                         raise TheoryNotCompatibleError(self, s)
@@ -277,10 +277,9 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius,
     components to calculated the scattered intensity.
     """
     if isinstance(opt, dict):
-        opt = holopy.optics.Optics(**opt)
+        opt = Optics(**opt)
 
     xdim, ydim = _ensure_pair(size)
-    px, py = _ensure_pair(opt.pixel)
 
     xarr = _ensure_array(x).copy()
     yarr = _ensure_array(y).copy()
@@ -295,10 +294,10 @@ def forward_holo(size, opt, n_particle_real, n_particle_imag, radius,
     xarr /= opt.pixel[0]
     yarr /= opt.pixel[1]
 
-    xfield_tot = np.zeros((xdim,ydim),dtype='complex128')
-    yfield_tot = np.zeros((xdim,ydim),dtype='complex128')
-    zfield_tot = np.zeros((xdim,ydim),dtype='complex128')
-    interference = np.zeros((xdim,ydim),dtype='complex128')
+    xfield_tot = np.zeros((xdim, ydim),dtype='complex128')
+    yfield_tot = np.zeros((xdim, ydim),dtype='complex128')
+    zfield_tot = np.zeros((xdim, ydim),dtype='complex128')
+    interference = np.zeros((xdim, ydim),dtype='complex128')
     
     for i in range(len(xarr)):
         # assign phase for each particle based on reference wave phase
@@ -367,7 +366,7 @@ def calc_mie_fields(size, opt, n_particle_real, n_particle_imag,
     """
         
     if isinstance(opt, dict):
-        opt = optics.Optics(**opt)
+        opt = Optics(**opt)
 
     # Allow size and pixel size to be either 1 number (square) 
     #    or rectangular
@@ -391,4 +390,4 @@ def calc_mie_fields(size, opt, n_particle_real, n_particle_imag,
     fld_x = fld_array[0:n] + (1j * fld_array[3*n:4*n])
     fld_y = fld_array[n:2*n] + (1j * fld_array[4*n:5*n])
     fld_z = fld_array[2*n:3*n] + (1j * fld_array[5*n:6*n])
-    return fld_x.reshape(xdim,ydim),fld_y.reshape(xdim,ydim),fld_z.reshape(xdim,ydim)
+    return fld_x.reshape(xdim,ydim), fld_y.reshape(xdim,ydim), fld_z.reshape(xdim,ydim)

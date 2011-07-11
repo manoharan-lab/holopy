@@ -37,12 +37,12 @@ def _minimize(target, forward_holo, parameters, generations=5, members = 10,
     members : int
        number of members in the population
     '''
-    E = np.zeros([generations,members]);
-    averageE = np.zeros([generations]);
-    bestE = np.zeros([generations]);
-    F = np.zeros([generations,members]);
-    averageF = np.zeros([generations]);
-    bestF = np.zeros([generations]);
+    E = np.zeros([generations, members])
+    averageE = np.zeros([generations])
+    bestE = np.zeros([generations])
+    F = np.zeros([generations, members])
+    averageF = np.zeros([generations])
+    bestF = np.zeros([generations])
 
     def cost_modified(values):
         guess = forward_holo(values)
@@ -56,7 +56,7 @@ def _minimize(target, forward_holo, parameters, generations=5, members = 10,
     
     # history holds the parameter values across the evolution
     # history[generation, individual, parameter]
-    history = np.zeros([generations,members,len(parameters)])
+    history = np.zeros([generations,members, len(parameters)])
 
     ## Set the initial population
     # We are given an initial guess, so make the population near that guess.  We
@@ -70,18 +70,18 @@ def _minimize(target, forward_holo, parameters, generations=5, members = 10,
             history[0, individual, par] = normal(value, value*sigma_factor)
 
         
-        E[0,individual] = cost(history[0,individual,:])
-        F[0,individual] = 1./E[0,individual] ** 10
-    averageE[0] = E[0,:].mean()
-    averageF[0] = F[0,:].mean()
+        E[0,individual] = cost(history[0, individual,:])
+        F[0,individual] = 1./E[0, individual] ** 10
+    averageE[0] = E[0, :].mean()
+    averageF[0] = F[0, :].mean()
 
     ## Now for some evolution
-    for gen in range(1,generations):
+    for gen in range(1, generations):
         print("Generation {0}".format(gen))
         ############################################
         #reproduction
         ############################################   
-        scaled_F = F[gen-1,:]/sum(F[gen-1,:])
+        scaled_F = F[gen-1, :] / sum(F[gen-1, :])
         dividers = scaled_F.cumsum()
 
         # TODO switch this to generating members rand's at once, do vectorized update
@@ -120,18 +120,18 @@ def _minimize(target, forward_holo, parameters, generations=5, members = 10,
 #                history[gen, individual, :].put(temp, crossover_pars)
 
 
-            E[gen,individual] = cost(history[gen,individual,:])
-            F[gen,individual] = 1./E[gen,individual] ** 10
+            E[gen, individual] = cost(history[gen, individual,:])
+            F[gen, individual] = 1./E[gen, individual] ** 10
 
-        averageE[gen] = E[gen,:].mean()
-        averageF[gen] = F[gen,:].mean()
-        bestE[gen] = E[gen,:].min()
-        bestF[gen] = F[gen,:].max()
+        averageE[gen] = E[gen, :].mean()
+        averageF[gen] = F[gen, :].mean()
+        bestE[gen] = E[gen, :].min()
+        bestF[gen] = F[gen, :].max()
 
         print("Energy: Best: {0}, Average: {1}".format(bestE[gen], averageE[gen]))
         print("Fitness: Best: {0}, Average: {1}".format(bestF[gen],
                                                         averageF[gen]))
-        best_individual = F[gen,:].argmax()
+        best_individual = F[gen, :].argmax()
         best_individual = history[gen, best_individual, :]
         print("Best individual: {0}".format(best_individual))
 

@@ -26,10 +26,9 @@ determining an initial parameter guess for hologram fitting.
 
 import scipy
 import numpy
-import scipy.ndimage
 from scipy import arange, around, array, int16, zeros, sqrt
 
-def center_find(image,scale=.5):
+def center_find(image, scale=.5):
     """
     Finds the coordinates of the center of a holographic pattern
     The coordinates returned are in pixels (row number, column number).
@@ -60,8 +59,8 @@ def center_find(image,scale=.5):
     bit longer. The user should pay attention to how the magnitude of
     the gradients correlates with finding an accurate center.
     """
-    x_deriv,y_deriv = image_gradient(image)
-    res,acc = hough(x_deriv,y_deriv,scale)
+    x_deriv, y_deriv = image_gradient(image)
+    res,acc = hough(x_deriv, y_deriv, scale)
     return res
 
 
@@ -88,7 +87,7 @@ def image_gradient(image):
     return gradx, grady
 
 
-def hough(x_deriv, y_deriv,scale=.25):
+def hough(x_deriv, y_deriv, scale=.25):
     """
     Following the approach of a Hough transform, finds the pixel which
     the most gradients point towards or away from. Uses only gradients
@@ -140,9 +139,9 @@ def hough(x_deriv, y_deriv,scale=.25):
         # draw a line
         # add it to the accumulator
         slope = y_deriv[coords[0], coords[1]]/x_deriv[coords[0], coords[1]]
-	if abs(slope) > 1.:
+        if abs(slope) > 1.:
             line = around(coords[1] - slope*(arange(dim) - coords[0]))
-	    acc_cols = int16(line[(array(line >= 0) * array(line < dim))])
+            acc_cols = int16(line[(array(line >= 0) * array(line < dim))])
             acc_rows = arange(dim, dtype='int16')[(array(line >= 0) * 
                                                    array(line < dim))]
         else:
@@ -153,13 +152,13 @@ def hough(x_deriv, y_deriv,scale=.25):
         
         accumulator[acc_rows, acc_cols] = accumulator[acc_rows, acc_cols] + 1
     #m is row number, n is column number
-    [m,n]=scipy.unravel_index(accumulator.argmax(), accumulator.shape) 
+    [m, n]=scipy.unravel_index(accumulator.argmax(), accumulator.shape) 
     #brightness average around brightest pixel:
-    boxsize=min(10,m,n,dim-1-m,dim-1-n) #boxsize changes with closeness to image edge
-    small_sq=accumulator[m-boxsize:m+boxsize+1,n-boxsize:n+boxsize+1] 
+    boxsize = min(10, m, n, dim-1-m, dim-1-n) #boxsize changes with closeness to image edge
+    small_sq = accumulator[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1] 
     #the part of the accumulator to average over
-    rowNum,colNum=numpy.mgrid[m-boxsize:m+boxsize+1,n-boxsize:n+boxsize+1]
+    rowNum, colNum = numpy.mgrid[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1]
     #row and column of the revised center:
-    weightedRowNum=scipy.average(rowNum,None,small_sq)
-    weightedColNum=scipy.average(colNum,None,small_sq)
+    weightedRowNum = scipy.average(rowNum,None,small_sq)
+    weightedColNum = scipy.average(colNum,None,small_sq)
     return array([weightedRowNum, weightedColNum]), accumulator

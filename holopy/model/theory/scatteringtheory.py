@@ -15,26 +15,27 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
-'''
+"""
 Base class for scattering theories.  Implements python-based
 calc_intensity and calc_holo, based on subclass's calc_field
 
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
-'''
+"""
 
 import numpy as np
+from holopy import Optics
 from holopy.hologram import Hologram
-from holopy.utility.helpers import _ensure_array, _ensure_pair
+from holopy.utility.helpers import _ensure_pair
 
-class NotImplemented(Exception):
+class NotImplementedError(Exception):
     def __init__(self, method, theory, message=None):
         self.message = message
         self.method = method
         self.theory = theory
     def __str__(self):
-        return ("Method " + method + " not implemented in theory " + 
-                theory + ". " + self.message)
+        return ("Method " + self.method + " not implemented in theory " + 
+                self.theory + ". " + self.message)
 
 class ScatteringTheory():
     """
@@ -61,15 +62,15 @@ class ScatteringTheory():
     theta(j))
     """
 
-    def __init__(self, imshape=(256,256), thetas=None, phis=None,
+    def __init__(self, imshape=(256, 256), thetas=None, phis=None,
                  optics=None): 
         self.imshape = _ensure_pair(imshape)
         self.thetas = thetas
         self.phis = phis
         if isinstance(optics, dict):
-            optics = holopy.optics.Optics(**opt)
+            optics = Optics(**optics)
         elif optics is None:
-            self.optics = holopy.optics.Optics()
+            self.optics = Optics()
         else:
             self.optics = optics
 
@@ -92,7 +93,7 @@ class ScatteringTheory():
         NotImplemented : if calc_field is undefined in the derived class 
         """
 
-        raise NotImplemented(self.calc_field().__name__,
+        raise NotImplementedError(self.calc_field().__name__,
                              self.__class__.__name__) 
 
     def superpose(self, scatterers):
@@ -203,3 +204,4 @@ class ScatteringTheory():
                 interference*alpha)     # holo should be purely real
 
         return Hologram(holo, optics = self.optics)
+

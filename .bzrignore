@@ -12,3 +12,5 @@ holopy/tests/exampledata/TmatTrimerSlow
 dist
 MANIFEST
 Makefile
+.ropeproject
+.spyderproject
