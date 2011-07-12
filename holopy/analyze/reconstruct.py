@@ -35,9 +35,16 @@ import scipy as sp
 import scipy.signal
 import os
 from holopy.process.math import fft
+from holopy.utility.helpers import _ensure_pair
 import io
 from holopy.analyze.propagate import propagate
 
+class VoxelNotDefined(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+    def __str__(self):
+        return ("Voxel size not defined for this reconstruction because: " +
+                self.msg)
 
 class Reconstruction(np.ndarray):
     """
@@ -110,6 +117,16 @@ class Reconstruction(np.ndarray):
         self.distances = getattr(obj, 'distances', None)
         self.name = getattr(obj, 'name', None)
 
+    @property
+    def voxel(self):
+        dd = np.diff(self.distances)
+        try:
+            np.testing.assert_almost_equal(dd/dd[0], 1.0)
+            pixel = _ensure_pair(self.pixel_scale)
+            return (pixel[0], pixel[1], self.distances[1]-self.distances[0])
+        except AssertionError:
+            raise VoxelNotDefined('nonuniform z spacing')
+        
 
     def __array_wrap__(self, out_arr, context=None):
         # this function is needed so that if we run another numpy
