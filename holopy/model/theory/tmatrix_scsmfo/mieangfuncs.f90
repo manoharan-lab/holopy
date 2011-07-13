@@ -202,6 +202,62 @@
         end
 
 
+      subroutine mie_fields_sph(n_theta, n_phi, thetagrid, phigrid, krgrid, &
+           asbs, nstop, einc, es_x, es_y, es_z)
+        ! Calculate Mie fields, using a grid of spherical coordinates
+        ! thetagrid: 1D array of the polar spherical coordinate
+        ! phigrid: 1D array of the azimuthal spherical coordinate
+        ! krgrid: (n_theta x n_phi) grid containing non-dimensional radial
+        ! coordinate
+        ! asbs: Mie coefficients
+        ! einc: polarization
+        implicit none
+        integer, intent(in) :: n_theta, n_phi, nstop
+        real (kind = 8), intent(in), dimension(n_theta) :: thetagrid
+        real (kind = 8), intent(in), dimension(n_phi) :: phigrid
+        real (kind = 8), intent(in), dimension(n_theta, n_phi) :: krgrid
+        complex (kind = 8), intent(in), dimension(2, nstop) :: asbs
+        real (kind = 8), intent(in), dimension(2) :: einc
+        complex (kind = 8), intent(out), dimension(n_theta, n_phi) :: es_x, &
+             es_y, es_z
+        integer i, j
+        real (kind = 8) :: kr, theta, phi
+        real (kind = 8), dimension(2) :: einc_sph, signarr
+        real (kind = 8), dimension(3) :: sphcoords
+        complex (kind = 8) :: prefactor, ci
+        complex (kind = 8), dimension(2, 2) :: asm_scat
+        complex (kind = 8), dimension(2) :: escat_sph
+        complex (kind = 8), dimension(3) :: escat_rect
+
+        do j = 1, n_phi, 1
+           do i = 1, n_theta, 1
+              kr = krgrid(i, j)
+              theta = thetagrid(i)
+              phi = phigrid(j)
+              sphcoords(1) = kr
+              sphcoords(2) = theta
+              sphcoords(3) = phi
+            
+              ! calculate the amplitude scattering matrix
+              call asm_mie_fullradial(nstop, asbs, sphcoords, asm_scat)
+
+              call incfield(einc(1), einc(2), phi, einc_sph)
+              prefactor = ci / kr * exp(ci * kr) ! Bohren & Huffman formalism
+              signarr = (/ 1.0, -1.0 /) ! accounts for escatperp = -escatphi
+              escat_sph = prefactor * matmul(asm_scat, einc_sph) * signarr
+
+              ! convert to rectangular
+              call fieldstocart(escat_sph, theta, phi, escat_rect)
+              es_x(i, j) = escat_rect(1)
+              es_y(i, j) = escat_rect(2)
+              es_z(i, j) = escat_rect(3)
+           end do
+        end do
+
+        return 
+        end
+
+
       subroutine tmatrix_fields(n_rows, n_cols, kxgrid, kygrid, kcoords, &
            amn, lmax, euler_gamma, pol_vec, es_x, es_y, es_z)
         implicit none
