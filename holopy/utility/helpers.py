@@ -32,7 +32,7 @@ def _ensure_array(x):
     if np.isscalar(x):
         return np.array([x])
     else:
-        return x
+        return np.array(x)
 
 def _ensure_pair(x):
     try:

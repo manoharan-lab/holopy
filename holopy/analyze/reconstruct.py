@@ -37,6 +37,7 @@ import os
 from holopy.process.math import fft
 import io
 from holopy.analyze.propagate import propagate
+from holopy.utility.helpers import _ensure_pair
 
 
 class Reconstruction(np.ndarray):
@@ -118,6 +119,16 @@ class Reconstruction(np.ndarray):
         # metadata will be transferred to the new object that is
         # created
         return np.ndarray.__array_wrap__(self, out_arr, context)
+
+    @property
+    def voxel(self):
+        dd = np.diff(self.distances)
+        try:
+            np.testing.assert_almost_equal(dd/dd[0], 1.0)
+            pixel = _ensure_pair(self.pixel_scale)
+            return (pixel[0], pixel[1], self.distances[1]-self.distances[0])
+        except AssertionError:
+            raise VoxelNotDefined('nonuniform z spacing')
 
     def resample(self, shape, window=None):
         """
