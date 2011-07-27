@@ -127,7 +127,6 @@ class ScatteringTheory():
         zfield_tot = np.zeros(self.imshape, dtype='complex128')
 
         for s in scatterers:
-            print s
             xfield, yfield, zfield  = self.calc_field(s)
             # see Notes section above for how phase is computed.
             # The - sign in front of the phase is necessary to get the
