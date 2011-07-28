@@ -26,8 +26,8 @@ field.
 '''
 
 import numpy as np
-import tmatrix_scsmfo.mieangfuncs as mieangfuncs
-import tmatrix_scsmfo.scsmfo_min as scsmfo_min
+import mie_f.mieangfuncs as mieangfuncs
+import mie_f.scsmfo_min as scsmfo_min
 import holopy.optics as optics
 from holopy.hologram import Hologram
 from holopy.utility.helpers import _ensure_pair

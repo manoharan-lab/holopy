@@ -47,7 +47,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('holopy.model')
     config.add_subpackage('holopy.model.theory')
     config.add_subpackage('holopy.model.theory.mie_c')
-    config.add_subpackage('holopy.model.theory.tmatrix_scsmfo')
+    config.add_subpackage('holopy.model.theory.mie_f')
     config.add_subpackage('holopy.model.scatterer')
     config.add_subpackage('holopy.process')
     config.add_subpackage('holopy.utility')

@@ -39,7 +39,7 @@ from nose.tools import with_setup
 import holopy
 from holopy.analyze.propagate import trans_func
 
-from holopy.model.theory.tmatrix import Tmatrix
+from holopy.model.theory.multisphere import Multisphere
 
 # define optical train
 wavelen = 658e-9
@@ -72,8 +72,8 @@ imshape = 128
 def test_construction():
     # test constructor to make sure it works properly and calls base
     # class constructor properly
-    theory = Tmatrix(imshape=128, optics=xoptics, niter=100, eps=1e-6,
-                     meth=0, qeps1=1e-5, qeps2=1e-8)
+    theory = Multisphere(imshape=128, optics=xoptics, niter=100, eps=1e-6,
+                         meth=0, qeps1=1e-5, qeps2=1e-8)
 
     assert_equal(theory.imshape, (128,128))
     assert_equal(theory.optics.wavelen, wavelen)

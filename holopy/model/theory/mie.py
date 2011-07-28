@@ -24,20 +24,19 @@ scattered field.
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
-
+import mie_f.mieangfuncs as mieangfuncs
+import mie_f.miescatlib as miescatlib
 import numpy as np
-import tmatrix_scsmfo.mieangfuncs as mieangfuncs
-import tmatrix_scsmfo.scsmfo_min as scsmfo_min
-import tmatrix_scsmfo.miescatlib as miescatlib
-from holopy.hologram import Hologram
-from holopy import Optics
-from holopy.utility.helpers import _ensure_array, _ensure_pair
+from mie_f.mieangfuncs import singleholo
+from mie_f.miescatlib import nstop, scatcoeffs
 
-from holopy.model.scatterer import Sphere, SphereCluster, Composite
+from holopy import Optics
+from holopy.hologram import Hologram
 from holopy.model.errors import TheoryNotCompatibleError
+from holopy.model.scatterer import Sphere, Composite
 from holopy.model.theory.scatteringtheory import ScatteringTheory
-from tmatrix_scsmfo.mieangfuncs import singleholo
-from tmatrix_scsmfo.miescatlib import nstop, scatcoeffs
+from holopy.utility.helpers import _ensure_array
+
 
 par_ordering = ['n_particle_real', 'n_particle_imag', 'radius', 'x',
                 'y', 'z', 'scaling_alpha'] 

@@ -28,4 +28,4 @@ holograms.
 '''
 
 from mie import Mie
-
+from multisphere import Multisphere
