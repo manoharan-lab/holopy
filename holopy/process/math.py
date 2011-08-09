@@ -53,16 +53,18 @@ def fft(a, overwrite=False, shift=True):
     fta : ndarray
        The fourier transform of `a`
     """
-    if shift:
-        shift = lambda x: fftpack.fftshift(x, axes=[0, 1]) # Only works
-                                                          # for ndim>1 
-    else:
-        shift = lambda x: x
-
     if a.ndim is 1:
-        return fftpack.fftshift(fftpack.fft(a, overwrite_x=overwrite))
+        if shift:
+            return fftpack.fftshift(fftpack.fft(a, overwrite_x=overwrite))
+        else:
+            return fftpack.fft(a, overwrite_x=overwrite)
     else:
-        return shift(fftpack.fft2(a, axes=[0, 1], overwrite_x=overwrite))
+        if shift:
+            return fftpack.fftshift(fftpack.fft2(a, axes=[0, 1],
+                                                 overwrite_x=overwrite),
+                                    axes=[0,1])
+        else:
+            return fftpack.fft2(a, axes=[0, 1], overwrite_x=overwrite)
 
 @_preserve_holo_type
 def ifft(a, overwrite=False, shift=True):
@@ -92,15 +94,16 @@ def ifft(a, overwrite=False, shift=True):
     ifta : ndarray
        The inverse fourier transform of `a`
     """
-
-    if shift:
-        shift = lambda x: fftpack.fftshift(x, axes=[0, 1])
-    else:
-        shift = lambda x: x
-        
     if a.ndim is 1:
-        return fftpack.ifft(fftpack.fftshift(a))
+        if shift:
+            return fftpack.ifft(fftpack.fftshift(a, overwrite_x=overwrite))
+        else:
+            return fftpack.ifft(a, overwrite_x=overwrite)
     else:
-        return fftpack.ifft2(shift(a), axes=[0, 1], overwrite_x=overwrite)
+        if shift:
+            return fftpack.ifft2(fftpack.fftshift(a, axes=[0,1]), axes=[0, 1],
+                                 overwrite_x=overwrite)
+        else:
+            return fftpack.ifft2(a, overwrite_x=overwrite)
     
 
