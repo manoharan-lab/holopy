@@ -25,7 +25,8 @@ import numpy as np
 import holopy
 import nose
 from nose.tools import raises, assert_raises
-from numpy.testing import assert_, assert_equal, assert_array_almost_equal
+from numpy.testing import (assert_, assert_equal, assert_almost_equal,
+                           assert_array_almost_equal, assert_allclose)
 from nose.tools import with_setup
 import os
 import string
@@ -77,14 +78,25 @@ def test_Mie_construction():
 
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
-def test_Mie_calc_field():
+def test_Mie_single():
     # try it with a single sphere first
     sc = Sphere(n=1.59, r=5e-7, x=1e-6, y=-1e-6, z=10e-6)
     theory = Mie(imshape=128, optics=optics)
-    theory.calc_field(sc)
-    theory.calc_intensity(sc)
-    theory.calc_holo(sc)
 
+    fields = theory.calc_field(sc)
+    assert_allclose([f.sum() for f in fields], [(-0.083472463089860685+0.012770539644076111j),
+                                                (-3.9082981023926409-22.567322348753319j),
+                                                (-0.56230133684984218+2.768094495730304j)])
+    assert_allclose([i.std() for i in fields], [0.0024371296061972384,
+                                                0.044179364188274006,
+                                                0.012691656014223607])
+    
+    theory.calc_intensity(sc)
+    
+    holo = theory.calc_holo(sc)
+    assert_almost_equal(holo.sum(), 16370.390727161264)
+    assert_almost_equal(holo.std(), 0.061010648908953205)
+    
     # this shouldn't work because the theory doesn't know the pixel
     # scale 
     theory = Mie(imshape=128)
@@ -95,15 +107,28 @@ def test_Mie_calc_field():
     assert_raises(PixelScaleNotSpecified, lambda:
                       theory.calc_holo(sc)) 
 
-    # now multiple spheres
+@attr('fast')
+@with_setup(setup=setup_optics, teardown=teardown_optics)
+def test_Mie_multiple():
     s1 = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
-    s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
-    s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,0,0])
+    s2 = Sphere(n = 1.59, r = 1e-6, center=[8e-6,5e-6,5e-6])
+    s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,10e-6,3e-6])
     sc = SphereCluster(spheres=[s1, s2, s3])
     theory = Mie(imshape=128, optics=optics)
-    theory.calc_field(sc)
+
+    fields = theory.calc_field(sc)
+    assert_allclose([f.sum() for f in fields], [(0.0071378971541543289+0.082689606560838652j),
+                                                (-490.32038052262499-3.1134313018817421j),
+                                                (2.336770696224467+1.2237755614295063j)])
+    assert_allclose([i.std() for i in fields], [0.01040974038137019,
+                                                0.23932970855985464,
+                                                0.047290610049841725])
+    
     theory.calc_intensity(sc)
-    theory.calc_holo(sc)
+
+    holo = theory.calc_holo(sc)
+    assert_almost_equal(holo.sum(), 16358.263330873539)
+    assert_almost_equal(holo.std(), 0.21107984880858663)
 
     # should throw exception when fed a coated sphere
     assert_raises(TheoryNotCompatibleError, lambda: 
