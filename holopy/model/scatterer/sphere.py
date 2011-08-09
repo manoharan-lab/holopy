@@ -62,13 +62,14 @@ class Sphere(object):
         '''
         return "{c}(center={center}, n={n}, r={r})".format(c=self.__class__.__name__, center=repr(self.center), n=self.n, r=self.r)
 
-    def get_x(self):
+    # convenience functions, defined so you can write, e.g., sc.n
+    # instead of sc.get_n()
+    @property
+    def x(self):
         return self.center[0]
-    def get_y(self):
+    @property
+    def y(self):
         return self.center[1]
-    def get_z(self):
+    @property
+    def z(self):
         return self.center[2]
-
-    x = property(get_x)
-    y = property(get_y)
-    z = property(get_z)
