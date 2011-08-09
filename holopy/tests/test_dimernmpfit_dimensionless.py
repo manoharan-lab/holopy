@@ -189,18 +189,19 @@ def residfunctoverlapallowed(p, fjac = None):
     print "sum of squares: ", np.dot(derivates.ravel(), derivates.ravel())
     return([status, derivates.ravel()])
 
-fitresult = nmpfit.mpfit(residfunct, parinfo = parinfo, ftol = ftol,
-                         xtol = xtol, gtol = gtol, damp = damp,
-                         maxiter = maxiter, quiet = quiet)
-# comment the previous three lines and uncomment the three lines below and get 
-# rid of the limits on the gap distance to try fitting without hard limits 
-# on the gap distance
-'''fitresult = nmpfit.mpfit(residfunctoverlapallowed, parinfo = parinfo, ftol = ftol,
+def test_dimerfitdimensionless():
+    fitresult = nmpfit.mpfit(residfunct, parinfo = parinfo, ftol = ftol,
+                             xtol = xtol, gtol = gtol, damp = damp,
+                             maxiter = maxiter, quiet = quiet)
+    # comment the previous three lines and uncomment the three lines below and get 
+    # rid of the limits on the gap distance to try fitting without hard limits 
+    # on the gap distance
+    '''fitresult = nmpfit.mpfit(residfunctoverlapallowed, parinfo = parinfo, ftol = ftol,
                          xtol = xtol, gtol = gtol, damp = damp,
                          maxiter = maxiter, quiet = quiet)'''
 
-print "gold standard sum of squares: 16.7224924836"
-print "Fit finished with status: ", fitresult.status
-print "final params: ", fitresult.params
-print "Difference from expected values: ", \
-      fitresult.params - gold_dimerslow[0:10] 
+    print "gold standard sum of squares: 16.7224924836"
+    print "Fit finished with status: ", fitresult.status
+    print "final params: ", fitresult.params
+    print "Difference from expected values: ", \
+        fitresult.params - gold_dimerslow[0:10] 

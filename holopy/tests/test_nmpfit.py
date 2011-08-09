@@ -141,12 +141,13 @@ def residfunct(p, fjac = None):
     print "params: ", p
     return([status, derivates.ravel()])
 
-fitresult = nmpfit.mpfit(residfunct, parinfo = parinfo, ftol = ftol,
-                         xtol = xtol, gtol = gtol, damp = damp,
-                         maxiter = maxiter, quiet = quiet)
+def test_nmpfit():
+    fitresult = nmpfit.mpfit(residfunct, parinfo = parinfo, ftol = ftol,
+                             xtol = xtol, gtol = gtol, damp = damp,
+                             maxiter = maxiter, quiet = quiet)
 
-print "Fit finished with status ", fitresult.status
-print "Difference from expected values: ", \
-      fitresult.params - gold_single[np.array([0,2,3,4,5,6])] 
+    print "Fit finished with status ", fitresult.status
+    print "Difference from expected values: ", \
+        fitresult.params - gold_single[np.array([0,2,3,4,5,6])] 
 
 

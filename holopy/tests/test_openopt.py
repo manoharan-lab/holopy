@@ -122,44 +122,45 @@ def residual(x):
     return np.dot(resid,resid)
     #return resid
 
-p = NLP(residual, x0, lb=lb, ub=ub,
-        iprint=1, plot=True)
-# uncomment the following (and set scale = 1 above) to use openopt's
-# scaling mechanism.  This only seems to work with a few solvers, though.
-#p.scale = np.array([1, 1e6, 1e6, 1e6, 1e6, 1])
+def test_openopt():
+    p = NLP(residual, x0, lb=lb, ub=ub,
+            iprint=1, plot=True)
+    # uncomment the following (and set scale = 1 above) to use openopt's
+    # scaling mechanism.  This only seems to work with a few solvers, though.
+    #p.scale = np.array([1, 1e6, 1e6, 1e6, 1e6, 1])
 
-r = p.solve('ralg')             # OpenOpt solver, seems to work well,
-                                # though not too fast (~50 seconds)
+    r = p.solve('ralg')             # OpenOpt solver, seems to work well,
+                                    # though not too fast (~50 seconds)
 
-# Or try some other solvers.  Time estimates are relative
+    # Or try some other solvers.  Time estimates are relative
 
-# r = p.solve('scipy_cobyla')     # derivative-free but really slow
-                                # convergence (>5 minutes)
-# r = p.solve('scipy_lbfgsb')     # seems to work well (~20 sec)
-# r = p.solve('scipy_tnc')        # truncated Newton, converges but
-                                # gets wrong answer
-# r = p.solve('scipy_slsqp')      # sequential least squares; works
-                                # and converges pretty quickly (~8 sec)
-# r = p.solve('sqlcp')            # does not converge
-# r = p.solve('gsubg')            # converges but slowly (~6 min)
-# r = p.solve('lincher')          # doesn't work; throws error
+    # r = p.solve('scipy_cobyla')     # derivative-free but really slow
+                                    # convergence (>5 minutes)
+    # r = p.solve('scipy_lbfgsb')     # seems to work well (~20 sec)
+    # r = p.solve('scipy_tnc')        # truncated Newton, converges but
+                                    # gets wrong answer
+    # r = p.solve('scipy_slsqp')      # sequential least squares; works
+                                    # and converges pretty quickly (~8 sec)
+    # r = p.solve('sqlcp')            # does not converge
+    # r = p.solve('gsubg')            # converges but slowly (~6 min)
+    # r = p.solve('lincher')          # doesn't work; throws error
 
-# Global solvers
-# r = p.solve('galileo')          # genetic algorithm
-# r = p.solve('de')               # differential evolution; could not
-                                # get to converge within iteration limit
+    # Global solvers
+    # r = p.solve('galileo')          # genetic algorithm
+    # r = p.solve('de')               # differential evolution; could not
+                                    # get to converge within iteration limit
 
 
-# comment out lb and ub in the NLP statement above to try these
-# unconstrained solvers
-# r = p.solve('scipy_powell')     # no derivatives; converges in ~30 s
-# r = p.solve('scipy_fmin')       # Nelder-Mead simplex; converges in
-                                # ~30 s
-# r = p.solve('scipy_bfgs')       # Broyden method; converges faster
-                                # than above two (~13 s)
-# r = p.solve('scipy_cg')         # conjugate gradient; converges in ~45 s
-# r = p.solve('scipy_ncg')        # could not get to converge
+    # comment out lb and ub in the NLP statement above to try these
+    # unconstrained solvers
+    # r = p.solve('scipy_powell')     # no derivatives; converges in ~30 s
+    # r = p.solve('scipy_fmin')       # Nelder-Mead simplex; converges in
+                                    # ~30 s
+    # r = p.solve('scipy_bfgs')       # Broyden method; converges faster
+                                    # than above two (~13 s)
+    # r = p.solve('scipy_cg')         # conjugate gradient; converges in ~45 s
+    # r = p.solve('scipy_ncg')        # could not get to converge
 
-# redefine objective function to return a vector to use unconstrained
-# Levenberg-Marquardt.  Also change from NLP to NLLSP above
-# r = p.solve('scipy_leastsq')    # fast (2-3 seconds)
+    # redefine objective function to return a vector to use unconstrained
+    # Levenberg-Marquardt.  Also change from NLP to NLLSP above
+    # r = p.solve('scipy_leastsq')    # fast (2-3 seconds)

@@ -54,6 +54,7 @@ gold_trimerfast = np.array([1.590,1.598,1.599,1.000,1.000,1.000,5.000,5.000,
 
 class TestFit:
 
+    @attr('medium')
     def test_mie_noisysingle(self):
         path = os.path.abspath(holopy.__file__)
         path = string.rstrip(path, chars='__init__.pyc')+'tests/exampledata/'
@@ -86,6 +87,7 @@ class TestFit:
         assert_array_less(fit_result[14],5)
         assert_equal(fit_result[15],0)
 
+    @attr('medium')
     def test_tmatrix_noisydimer_fast(self): #this fit stops after 5 iterations to be a faster fit test
         path = os.path.abspath(holopy.__file__)
         path = string.rstrip(path, chars='__init__.pyc')+'tests/exampledata/'
@@ -117,7 +119,8 @@ class TestFit:
             decimal=2,err_msg='Fit results from the trimer are not approx. equal to the standard fit results.')
         assert_array_less(fit_result[17],5)
         assert_equal(fit_result[18],0)   
-        
+
+    @attr('medium')
     def test_tmatrix_noisytrimer_fast(self):
         path = os.path.abspath(holopy.__file__)
         path = string.rstrip(path, chars='__init__.pyc')+'tests/exampledata/'

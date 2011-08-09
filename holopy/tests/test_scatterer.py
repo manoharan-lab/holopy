@@ -35,6 +35,7 @@ from holopy.model.scatterer import Composite, SphereCluster
 from holopy.model.errors import ScattererDefinitionError
 #from holopy.model.scatterer import SphereDimer
 
+@attr('fast')
 def test_Sphere_construction():
     s = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
     s = Sphere(n = 1.59, r = 5e-7)
@@ -42,24 +43,28 @@ def test_Sphere_construction():
     s = Sphere(n = 1.59+0.0001j, r = 5e-7)
     s = Sphere()
 
+@attr('fast')
 def test_Sphere_construct_list():
     # specify center as list
     center = [1e-6, -1e-6, 10e-6]
     s = Sphere(n = 1.59+0.0001j, r = 5e-7, center = center)
     assert_equal(s.center, np.array(center))
 
+@attr('fast')
 def test_Sphere_construct_tuple():
     # specify center as list
     center = (1e-6, -1e-6, 10e-6)
     s = Sphere(n = 1.59+0.0001j, r = 5e-7, center = center)
     assert_equal(s.center, np.array(center))
 
+@attr('fast')
 def test_Sphere_construct_array():
     # specify center as list
     center = np.array([1e-6, -1e-6, 10e-6])
     s = Sphere(n = 1.59+0.0001j, r = 5e-7, center = center)
     assert_equal(s.center, center)
     
+@attr('fast')
 def test_CoatedSphere_construction():
     cs = CoatedSphere(n1=1.59, n2=1.59, r1=5e-7, r2=1e-6, x=1e-6, 
                       y=-1e-6, z=10e-6) 
@@ -73,6 +78,7 @@ def test_CoatedSphere_construction():
                       center = center) 
     cs = CoatedSphere()
 
+@attr('fast')
 def test_Composite_construction():
     # empty composite
     comp_empty = Composite()
@@ -100,6 +106,7 @@ def test_Composite_construction():
     comp3 = Composite(scatterers=[comp2, cs])
     print comp3
 
+@attr('fast')
 def test_SphereCluster_construction():
     # empty cluster
     sc_empty = SphereCluster()
@@ -163,6 +170,7 @@ def test_SphereCluster_construction():
     assert_equal(sc.centers[0], centers[0])
     print sc.get_component_list()
     
+@attr('fast')
 def test_SphereCluster_contains_only_spheres():
     s1 = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
@@ -177,6 +185,7 @@ def test_SphereCluster_contains_only_spheres():
     sc = SphereCluster()
     assert_(sc.contains_only_spheres() is False)
 
+@attr('fast')
 @raises(ScattererDefinitionError)
 def test_SphereCluster_construction_typechecking():
     # heterogeneous composite should raise exception, since a

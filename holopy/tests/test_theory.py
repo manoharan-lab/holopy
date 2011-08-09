@@ -59,6 +59,7 @@ def teardown_optics():
     global optics
     del optics
 
+@attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_Mie_construction():
     theory = Mie()
@@ -74,6 +75,7 @@ def test_Mie_construction():
     theory = Mie(imshape=256, optics=optics)
     assert_(theory.optics.index == 1.33)
 
+@attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_Mie_calc_field():
     # try it with a single sphere first

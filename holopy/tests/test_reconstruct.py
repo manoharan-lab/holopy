@@ -23,6 +23,7 @@ The tests here test basic reconstruction capability
 
 import sys
 import os
+import string
 hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
 sys.path.append(hp_dir)
 import numpy as np
@@ -30,9 +31,11 @@ import scipy
 import holopy
 import nose
 from numpy.testing import assert_array_equal
-import string
+from nose.plugins.attrib import attr
+
 
 class TestRecon:
+    @attr('fast')
     def test_reconNear(self):
         path = os.path.abspath(holopy.__file__)
         path = string.rstrip(path, chars='__init__.pyc')+'tests/exampledata/'
@@ -46,6 +49,7 @@ class TestRecon:
         rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
         assert_array_equal(rec_im.astype('uint8'),gold)
 
+    @attr('fast')
     def test_reconMiddle(self):
         path = os.path.abspath(holopy.__file__)
         path = string.rstrip(path, chars='__init__.pyc')+'tests/exampledata/'
@@ -59,6 +63,7 @@ class TestRecon:
         rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
         assert_array_equal(rec_im.astype('uint8'),gold)
     
+    @attr('fast')
     def test_reconFar(self):
         path = os.path.abspath(holopy.__file__)
         path = string.rstrip(path, chars='__init__.pyc')+'tests/exampledata/'

@@ -194,14 +194,15 @@ def residfunctoverlapallowed(p, fjac = None):
     print "params: ", p
     return([status, derivates.ravel()])
 
-fitresult = nmpfit.mpfit(residfunct, parinfo = parinfo, ftol = ftol,
-                         xtol = xtol, gtol = gtol, damp = damp,
-                         maxiter = maxiter, quiet = quiet)
-# or uncomment this fit to try fitting without hard limits on the gap distance
+def test_dimernmpfit():
+    fitresult = nmpfit.mpfit(residfunct, parinfo = parinfo, ftol = ftol,
+                             xtol = xtol, gtol = gtol, damp = damp,
+                             maxiter = maxiter, quiet = quiet)
+    # or uncomment this fit to try fitting without hard limits on the gap distance
 #fitresult = nmpfit.mpfit(residfunctoverlapallowed, parinfo = parinfo, ftol = ftol,
 #                         xtol = xtol, gtol = gtol, damp = damp,
 #                         maxiter = maxiter, quiet = quiet)
-
-print "Fit finished with status ", fitresult.status
-print "Difference from expected values: ", \
-      fitresult.params - gold_dimerslow[np.array([0,4,5,6,7,8,9,10,11,12])] 
+    
+    print "Fit finished with status ", fitresult.status
+    print "Difference from expected values: ", \
+        fitresult.params - gold_dimerslow[np.array([0,4,5,6,7,8,9,10,11,12])] 

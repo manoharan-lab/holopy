@@ -35,6 +35,7 @@ from nose.tools import raises, assert_raises, assert_true
 from numpy.testing import assert_, assert_equal, \
     assert_array_almost_equal, assert_array_equal, assert_almost_equal
 from nose.tools import with_setup
+from nose.plugins.attrib import attr
 
 import holopy
 from holopy.analyze.propagate import trans_func
@@ -69,6 +70,7 @@ z = 15e-6
 
 imshape = 128
 
+@attr('fast')
 def test_construction():
     # test constructor to make sure it works properly and calls base
     # class constructor properly

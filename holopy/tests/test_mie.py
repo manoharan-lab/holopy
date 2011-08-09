@@ -35,11 +35,14 @@ from nose.tools import raises, assert_raises, assert_true
 from numpy.testing import assert_, assert_equal, \
     assert_array_almost_equal, assert_array_equal, assert_almost_equal
 from nose.tools import with_setup
+from nose.plugins.attrib import attr
 
 import holopy
 from holopy.model.scatterer import Sphere, SphereCluster
 from holopy.model.theory import mie
 from holopy.model.theory import Mie
+
+
 
 # define optical train
 wavelen = 658e-9
@@ -69,6 +72,7 @@ z = 15e-6
 
 imshape = 128
 
+@attr('fast')
 def test_mie_polarization():
     # test holograms for orthogonal polarizations; make sure they're
     # not the same, nor too different from one another.
@@ -93,6 +97,7 @@ def test_mie_polarization():
     assert_almost_equal(xholo.min(), yholo.min())
     return xholo, yholo
 
+@attr('fast')
 def test_single_sphere():
     # single sphere hologram (only tests that functions return)
     sphere = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius, 
@@ -102,6 +107,7 @@ def test_single_sphere():
     holo = model.calc_holo(sphere, alpha=scaling_alpha)
     xfield, yfield, zfield = model.calc_field(sphere)
 
+@attr('fast')
 def test_linearity():
     # look at superposition of scattering from two point particles;
     # make sure that this is sum of holograms from individual point
@@ -145,6 +151,7 @@ def test_linearity():
     # uncomment to debug
     #return holo_1, holo_2, holo_super
 
+@attr('fast')
 def test_nonlinearity():
     # look at superposition of scattering from two large particles;
     # make sure that this is *not equal* to sum of holograms from
@@ -182,6 +189,7 @@ def test_nonlinearity():
     # uncomment to debug
     #return holo_1, holo_2, holo_super
 
+@attr('fast')
 def test_two_spheres_samez():
     # put a second sphere in the same plane as the first.  This only
     # tests that the function returns.
