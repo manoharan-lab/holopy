@@ -109,11 +109,18 @@ class SphereCluster(Composite):
                         repr(s) + " is not a Sphere", self)
             self.scatterers = spheres
 
+            
     # convenience functions, defined so you can write, e.g., sc.n
     # instead of sc.get_n()
     @property
     def n(self):
         return [s.n for s in self.scatterers]
+    @property
+    def n_real(self):
+        return [s.n.real for s in self.scatterers]
+    @property
+    def n_imag(self):
+        return [s.n.imag for s in self.scatterers]
     @property
     def r(self):
         return [s.r for s in self.scatterers]
@@ -129,5 +136,4 @@ class SphereCluster(Composite):
     @property
     def centers(self):
         return [s.center for s in self.scatterers]
-
 
