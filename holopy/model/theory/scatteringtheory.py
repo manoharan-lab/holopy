@@ -96,6 +96,8 @@ class ScatteringTheory():
         raise NotImplementedError(self.calc_field().__name__,
                              self.__class__.__name__) 
 
+    # TODO: is this function still needed?  The new ElectricField class makes it
+    # essentially trivial -tgd 2011-08-12
     def superpose(self, scatterers):
         """
         Superpose fields from different scatterers, taking into
@@ -122,22 +124,13 @@ class ScatteringTheory():
         Short summary: the total scattered field is computed such that
         the phase angle of the incident field is 0 at z=0
         """
-        xfield_tot = np.zeros(self.imshape, dtype='complex128')
-        yfield_tot = np.zeros(self.imshape, dtype='complex128')
-        zfield_tot = np.zeros(self.imshape, dtype='complex128')
 
-        for s in scatterers:
-            xfield, yfield, zfield  = self.calc_field(s)
-            # see Notes section above for how phase is computed.
-            # The - sign in front of the phase is necessary to get the
-            # holograms to come out right!  I think this is because in
-            # our convention, k points in the -z direction. 
-            phase_dif = (np.exp(-1j*np.pi*2*(s.z)/self.optics.med_wavelen))
-            xfield_tot += xfield*phase_dif
-            yfield_tot += yfield*phase_dif
-            zfield_tot += zfield*phase_dif
-        return xfield_tot, yfield_tot, zfield_tot
+        field = self.calc_field(scatterers[0])
+        for s in scatterers[1:]:
+            field += self.calc_field(s)
 
+        return field
+        
     def calc_intensity(self, scatterer, 
                        xfield=None, yfield=None, zfield=None): 
         """
@@ -166,10 +159,8 @@ class ScatteringTheory():
         You can specify the fields to avoid the cost of calculating
         them twice during calc_holo()
         """
-
-        if (xfield is None) and (yfield is None):
-            xfield, yfield, zfield = self.calc_field(scatterer)
-        return (abs(xfield**2) + abs(yfield**2))
+        field = self.calc_field(scatterer)
+        return interfere_at_detector(field, field)
 
     def calc_holo(self, scatterer, alpha=1.0):
         """
@@ -188,19 +179,107 @@ class ScatteringTheory():
             Calculated hologram from the given distribution of spheres
         """
 
-        xfield, yfield, zfield = self.calc_field(scatterer)
-        total_scat_inten = self.calc_intensity(scatterer,
-                                               xfield=xfield,
-                                               yfield=yfield,
-                                               zfield=zfield) 
-        # normally we would have
-        # interference = conj(xfield)*phase + conj(phase)*xfield, 
-        # but we choose phase angle = 0 at z=0, so phase = 1
-        # which gives 2*real(xfield)
-        interference = 2*np.real(xfield * self.optics.polarization[0] +
-                                 yfield * self.optics.polarization[1])
-        holo = (1. + total_scat_inten*(alpha**2) + 
-                interference*alpha)     # holo should be purely real
+        scat = self.calc_field(scatterer)
+        ref = ElectricField(self.optics.polarization[0],
+                            self.optics.polarization[1], 0, 0,
+                            self.optics.med_wavelen)
 
-        return Hologram(holo, optics = self.optics)
+        return Hologram(interfere_at_detector(scat * alpha, ref),
+                        optics=self.optics)
 
+#TODO: Should this be a method of the Electric field class? - tgd 2011-08-15
+def interfere_at_detector(e1, e2):
+    """
+    Compute the intensity as detected by a plane sensor normal to z from the
+    interference of e1 and e2
+
+    Parameters
+    ----------
+    e1, e2: :class:`holopy.model.theory.scatteringtheory.ElectricField`
+        The two electric fields to superimpose
+
+    Returns
+    i: :class:`numpy.ndarray`
+        2d array of detected intensity
+    """
+    # This function assumes the detector is normal to z and planar, these
+    # assumptions could be relaxed by adding more parameters if necessary
+
+    # normally we would have
+    # interference = conj(xfield)*phase + conj(phase)*xfield, 
+    # but we choose phase angle = 0 at z=0, so phase = 1
+    # which gives 2*real(xfield)
+
+    return (abs(e1.x_comp**2) + abs(e1.y_comp**2) + abs(e2.x_comp**2) +
+            abs(e2.y_comp**2) + 2 * np.real(e1.x_comp*e2.x_comp) +
+            2 * np.real(e1.y_comp*e2.y_comp))
+
+
+    
+class InvalidElectricFieldComputation(Exception):
+    def __init__(self, reason):
+        self.reason = reason
+    def __str__(self):
+        "Invalid Electric Computation: " + self.reason
+    
+class ElectricField(object):
+    """
+    Representation of electric fields.  Correctly handles phase referencing for
+    superposition
+
+    Attributes
+    ----------
+    x_field, y_field, z_field : complex :class:`numpy.ndarray`
+        Fields in each cartesian firection
+    z_ref: float (distance)
+        Z position of 0 phase (phase reference)
+    wavelen: float (distance)
+        wavelength of the light this field represents, this should be the
+        wavelength in medium if a non unity index medium is present
+    """
+
+    def __init__(self, x_field, y_field, z_field, z_ref, wavelen):
+        self.x_comp = x_field
+        self.y_comp = y_field
+        self.z_comp = z_field
+        self.z_ref = z_ref
+        self.wavelen = wavelen
+
+    def __add__(self, other):
+        """
+        Superpositon of electric fields.  Phase shifts as necessary to give all
+        fields the same reference phase.
+        """
+        
+        if self.wavelen != other.wavelen:
+            raise InvalidElectricFieldComputation(
+                "Superposition of fields with different wavelengths is not " +
+                "implemented")
+        
+        
+        def phase_shift(z):
+            # - sign is needed to adjust phase to 0, since our z is opposite the
+            # propagation direction we have to backpropagate fields to get them
+            # to the origin.  
+            return np.exp(-1j*np.pi*2*z/self.wavelen)
+        
+        new_x = (self.x_comp * phase_shift(self.z_ref) +
+                 other.x_comp * phase_shift(other.z_ref))
+        new_y = (self.y_comp * phase_shift(self.z_ref) +
+                 other.y_comp * phase_shift(other.z_ref))
+        new_z = (self.z_comp * phase_shift(self.z_ref) +
+                 other.z_comp * phase_shift(other.z_ref))
+
+        # We phase shifted all of the fields to reference against 0, so the
+        # field returned has z_ref=0
+        return ElectricField(new_x, new_y, new_z, 0.0, self.wavelen)
+
+    def __rmul__(self, other):
+        return self.__mult__(self, other)
+    def __mul__(self, other):
+        if not np.isscalar(other):
+            raise InvalidElectricFieldComputation(
+                "multiplication by nonscalar values not yet implemented")
+
+        return ElectricField(self.x_comp * other, self.y_comp * other,
+                             self.z_comp * other, self.z_ref, self.wavelen)

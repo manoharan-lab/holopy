@@ -105,7 +105,7 @@ def test_single_sphere():
     model = Mie(imshape = imshape, optics=xoptics)
 
     holo = model.calc_holo(sphere, alpha=scaling_alpha)
-    xfield, yfield, zfield = model.calc_field(sphere)
+    field = model.calc_field(sphere)
 
 @attr('fast')
 def test_linearity():

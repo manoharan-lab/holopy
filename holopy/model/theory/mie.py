@@ -34,8 +34,10 @@ from holopy import Optics
 from holopy.hologram import Hologram
 from holopy.model.errors import TheoryNotCompatibleError
 from holopy.model.scatterer import Sphere, Composite
-from holopy.model.theory.scatteringtheory import ScatteringTheory
+from holopy.model.theory.scatteringtheory import ScatteringTheory, ElectricField
 from holopy.utility.helpers import _ensure_array
+
+
 
 
 par_ordering = ['n_particle_real', 'n_particle_imag', 'radius', 'x',
@@ -81,22 +83,42 @@ class Mie(ScatteringTheory):
 
         Returns
         -------
-        xfield, yfield, zfield : complex arrays with shape `imshape`
-            x, y, z components of scattered fields
+        field : :class:`holopy.model.theory.scatteringtheory.ElectricField`with shape `imshape`
+            scattered electric field
 
         Notes
         -----
         For multiple particles, this code superposes the fields
         calculated from each particle (using calc_mie_fields()). 
         """
+
+        def sphere_field(s):
+            # Nondimensionalize for the fortran code
+            m_p = s.n / self.optics.index
+            x_p = self.optics.wavevec * s.r
+            kcoords = self.optics.wavevec * np.array([s.x, s.y, s.z])
+
+            # Calculate maximum order lmax of Mie series expansion.
+            lmax = miescatlib.nstop(x_p)
+            # Calculate scattering coefficients a_l and b_l
+            albl = miescatlib.scatcoeffs(x_p, m_p, lmax)
+
+            # TODO: convert to calling in spherical coordinates
+            # mieangfuncs.f90 works with everything dimensionless.
+            px, py = self.optics.pixel
+            xdim, ydim = self.imshape
+            gridx = self.optics.wavevec * np.mgrid[0:xdim] * px # (0,0) at upper left convention
+            gridy = self.optics.wavevec * np.mgrid[0:ydim] * py
+
+            e_x, e_y, e_z = mieangfuncs.mie_fields(gridx, gridy, 
+                                                   kcoords, 
+                                                   albl,
+                                                   self.optics.polarization)
+
+            return ElectricField(e_x, e_y, e_z, s.z, self.optics.med_wavelen)
+        
         if isinstance(scatterer, Sphere):
-            s = scatterer
-            xfield, yfield, zfield = calc_mie_fields(self.imshape,
-                                                     self.optics,
-                                                     s.n.real,
-                                                     s.n.imag, 
-                                                     s.r, 
-                                                     s.x, s.y, s.z)
+            return sphere_field(scatterer)
         elif isinstance(scatterer, Composite):
             spheres = scatterer.get_component_list()
             # compatibility check: verify that the cluster only contains
@@ -106,10 +128,8 @@ class Mie(ScatteringTheory):
                     if not isinstance(s, Sphere):
                         raise TheoryNotCompatibleError(self, s)
             # if it passes, superpose the fields
-            xfield, yfield, zfield = self.superpose(spheres)
+            return self.superpose(spheres)
         else: raise TheoryNotCompatibleError(self, scatterer)
-
-        return xfield, yfield, zfield
 
     def calc_holo(self, scatterer, alpha=1.0):
         """

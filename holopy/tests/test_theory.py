@@ -39,7 +39,8 @@ from holopy.model.theory import Mie
 from holopy.model.calculate import calc_field, calc_holo, calc_intensity
 from holopy import Optics
 from holopy.model.errors import TheoryNotCompatibleError
-from holopy.optics import WavelengthNotSpecified, PixelScaleNotSpecified
+from holopy.optics import (WavelengthNotSpecified, PixelScaleNotSpecified,
+                           MediumIndexNotSpecified)
 
 # nose setup/teardown methods
 def setup_optics():
@@ -84,12 +85,16 @@ def test_Mie_single():
     theory = Mie(imshape=128, optics=optics)
 
     fields = theory.calc_field(sc)
-    assert_allclose([f.sum() for f in fields], [(-0.083472463089860685+0.012770539644076111j),
-                                                (-3.9082981023926409-22.567322348753319j),
-                                                (-0.56230133684984218+2.768094495730304j)])
-    assert_allclose([i.std() for i in fields], [0.0024371296061972384,
-                                                0.044179364188274006,
-                                                0.012691656014223607])
+    assert_allclose([fields.x_comp.sum(), fields.y_comp.sum(),
+                     fields.z_comp.sum()],
+                    [(-0.083472463089860685+0.012770539644076111j),
+                     (-3.9082981023926409-22.567322348753319j),
+                     (-0.56230133684984218+2.768094495730304j)])
+    assert_allclose([fields.x_comp.std(),
+                     fields.y_comp.std(),fields.z_comp.std()],
+                    [0.0024371296061972384,
+                     0.044179364188274006,
+                     0.012691656014223607])
     
     theory.calc_intensity(sc)
     
@@ -98,11 +103,11 @@ def test_Mie_single():
     assert_almost_equal(holo.std(), 0.061010648908953205)
     
     # this shouldn't work because the theory doesn't know the pixel
-    # scale 
+    # scale or medium index
     theory = Mie(imshape=128)
-    assert_raises(PixelScaleNotSpecified, lambda:
+    assert_raises(MediumIndexNotSpecified, lambda:
                       theory.calc_field(sc))
-    assert_raises(PixelScaleNotSpecified, lambda:
+    assert_raises(MediumIndexNotSpecified, lambda:
                       theory.calc_intensity(sc)) 
     assert_raises(PixelScaleNotSpecified, lambda:
                       theory.calc_holo(sc)) 
@@ -117,12 +122,16 @@ def test_Mie_multiple():
     theory = Mie(imshape=128, optics=optics)
 
     fields = theory.calc_field(sc)
-    assert_allclose([f.sum() for f in fields], [(0.0071378971541543289+0.082689606560838652j),
-                                                (-490.32038052262499-3.1134313018817421j),
-                                                (2.336770696224467+1.2237755614295063j)])
-    assert_allclose([i.std() for i in fields], [0.01040974038137019,
-                                                0.23932970855985464,
-                                                0.047290610049841725])
+    assert_allclose([fields.x_comp.sum(), fields.y_comp.sum(),
+                     fields.z_comp.sum()],
+                    [(0.0071378971541543289+0.082689606560838652j),
+                     (-490.32038052262499-3.1134313018817421j),
+                     (2.336770696224467+1.2237755614295063j)])
+    assert_allclose([fields.x_comp.std(),
+                     fields.y_comp.std(),fields.z_comp.std()],
+                    [0.01040974038137019,
+                     0.23932970855985464,
+                     0.047290610049841725])
     
     theory.calc_intensity(sc)
 
