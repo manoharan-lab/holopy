@@ -70,8 +70,8 @@ class Optics(object):
                  divergence=0., pixel_size=None, train=None,
                  mag=None, pixel_scale = None):
         # source parameters
-        self.wavelen = wavelen
-        self.index = index
+        self._wavelen = wavelen
+        self._index = index
         self.polarization = np.array(polarization)
         self.divergence = divergence
 
@@ -92,19 +92,34 @@ class Optics(object):
                 self.pixel_scale = self.pixel_size/mag
         else:
             self.pixel_scale = np.array(pixel_scale)
+
+    @property
+    def index(self):
+        if self._index is not None:
+            return self._index
+        else:
+            raise MediumIndexNotSpecified
+    @index.setter
+    def index(self, value):
+        self._index=index
+
+    @property
+    def wavelen(self):
+        if self._wavelen is not None:
+            return self._wavelen
+        else:
+            raise WavelengthNotSpecified
+    @wavelen.setter
+    def wavelen(self, value):
+        self._wavelen=wavelen
+    
     
     @property
     def med_wavelen(self):
         """
         Calculates the wavelength in the medium.
         """
-        if self.wavelen and self.index:
-            return self.wavelen/self.index
-        else:
-            if not self.wavelen:
-                raise WavelengthNotSpecified
-            if not self.index:
-                raise MediumIndexNotSpecified
+        return self.wavelen/self.index
 
     @property
     def wavevec(self):
