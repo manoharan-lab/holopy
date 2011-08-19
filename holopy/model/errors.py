@@ -41,3 +41,13 @@ class TheoryNotCompatibleError(Exception):
                 " scattering theory doesn't know how to handle " +
                 "scatterers of type " + 
                 self.scatterer.__class__.__name__)
+
+class UnrealizableScatterer(Exception):
+    def __init__(self, theory, scatterer, message):
+        self.theory = theory
+        self.scatterer = scatterer
+        self.message = message
+    def __str__(self):
+        return ("Cannot compute scattering with "+ self.theory.__class__.__name__
+                + " scattering theory for a scatterer of type " +
+                self.scatterer.__class__.__name__ + " because: " + self.message)

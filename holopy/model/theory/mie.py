@@ -32,7 +32,7 @@ from mie_f.miescatlib import nstop, scatcoeffs
 
 from holopy import Optics
 from holopy.hologram import Hologram
-from holopy.model.errors import TheoryNotCompatibleError
+from holopy.model.errors import TheoryNotCompatibleError, UnrealizableScatterer
 from holopy.model.scatterer import Sphere, Composite
 from holopy.model.theory.scatteringtheory import ScatteringTheory, ElectricField
 from holopy.utility.helpers import _ensure_array
@@ -93,10 +93,16 @@ class Mie(ScatteringTheory):
         """
 
         def sphere_field(s):
+            if s.r < 0:
+                raise UnrealizableScatterer(self, s, "radius is negative")
             # Nondimensionalize for the fortran code
             m_p = s.n / self.optics.index
             x_p = self.optics.wavevec * s.r
             kcoords = self.optics.wavevec * np.array([s.x, s.y, s.z])
+
+            if x_p > 1e3:
+                raise UnrealizableScatterer(self, s, "radius too large, field "+
+                                            "calculation would take forever")
 
             # Calculate maximum order lmax of Mie series expansion.
             lmax = miescatlib.nstop(x_p)
@@ -176,6 +182,8 @@ def _scaled_by_med_index(param_name):
     pars = ['n_particle_real', 'n_particle_imag']
     return param_name in pars
 
+#TODO: This function is now not needed by the new model code.  It can be
+#removed as soon as we are willing to break the old fitting code.  
 def calc_mie_fields(size, opt, n_particle_real, n_particle_imag,
                     radius, x, y, z, dimensional = True):
     '''
@@ -248,7 +256,9 @@ def calc_mie_fields(size, opt, n_particle_real, n_particle_imag,
                                                        opt.polarization)
 
     return escat_x, escat_y, escat_z
-    
+
+#TODO: This function is now not needed by the new model code.  It can be
+#removed as soon as we are willing to break the old fitting code.  
 def forward_holo(size, opt, n_particle_real, n_particle_imag, radius,
                  x, y, z, scaling_alpha, dimensional = True, 
                  intensity=False):
