@@ -37,7 +37,7 @@ class NotImplementedError(Exception):
         return ("Method " + self.method + " not implemented in theory " + 
                 self.theory + ". " + self.message)
 
-class ScatteringTheory():
+class ScatteringTheory(object):
     """
     Base class for scattering theories
 

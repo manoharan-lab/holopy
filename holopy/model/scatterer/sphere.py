@@ -23,8 +23,9 @@ Defines Sphere, a scattering primitive
 '''
 
 import numpy as np
+from holopy.model.scatterer import Scatterer
 
-class Sphere(object):
+class Sphere(Scatterer):
     '''
     Contains optical and geometrical properties of a sphere, a
     scattering primitive

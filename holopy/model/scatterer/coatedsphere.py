@@ -23,8 +23,9 @@ Defines CoatedSphere, a scattering primitive
 '''
 
 import numpy as np
+from holopy.model.scatterer import Scatterer
 
-class CoatedSphere(object):
+class CoatedSphere(Scatterer):
     '''
     Contains optical and geometrical properties of a coated sphere, a
     scattering primitive.  Core and shell are concentric.

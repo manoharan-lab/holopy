@@ -22,7 +22,30 @@ scattering primitives such as Spheres, and more complex objects such
 as Clusters.
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
+.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
+
+class Scatterer(object):
+    """
+    abstract base class for scatterers
+
+    """
+
+    def parameter_list(self):
+        """
+        Return's the scatterer's parameters as an 1d array in a defined order.
+        This form is suitable for passing to a minimizer
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def make_from_parameter_list(cls, params):
+        """
+        Make a new scatterer from a parameter list of the form reterned by
+        parameter_list().
+        """
+        raise NotImplementedError
+
 
 from sphere import Sphere
 from coatedsphere import CoatedSphere

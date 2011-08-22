@@ -109,7 +109,11 @@ class SphereCluster(Composite):
                         repr(s) + " is not a Sphere", self)
             self.scatterers = spheres
 
-            
+
+    def __repr__(self):
+        return "{c}(spheres={spheres})".format(c=self.__class__.__name__,
+                                       spheres=repr(self.get_component_list()))
+    
     # convenience functions, defined so you can write, e.g., sc.n
     # instead of sc.get_n()
     @property

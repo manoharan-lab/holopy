@@ -35,7 +35,7 @@ from holopy.utility.helpers import _ensure_array, _ensure_pair
 
 from holopy.model.scatterer import Sphere, SphereCluster, Composite
 from holopy.model.errors import TheoryNotCompatibleError
-from holopy.model.theory.scatteringtheory import ScatteringTheory
+from holopy.model.theory.scatteringtheory import ScatteringTheory, ElectricField
 from mie_f.mieangfuncs import singleholo
 from mie_f.miescatlib import nstop, scatcoeffs
 
@@ -283,5 +283,6 @@ def calc_multisphere_fields(size, opt, n_particle_real, n_particle_imag,
                                                        gridy, kcoords,
                                                        albl,
                                                        opt.polarization)
+
 
     return escat_x, escat_y, escat_z

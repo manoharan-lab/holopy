@@ -23,8 +23,9 @@ Defines SphereDimer, a scatterer consisting of two Spheres
 '''
 
 import numpy as np
+from holopy.model.scatterer import Scatterer
 
-class SphereDimer(object):
+class SphereDimer(Scatterer):
     '''
     Contains optical and geometrical properties of a dimer of two
     spheres.  

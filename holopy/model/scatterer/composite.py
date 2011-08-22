@@ -25,8 +25,9 @@ scatterers (e.g. two trimers).
 '''
 
 from sphere import Sphere
+from holopy.model.scatterer import Scatterer
 
-class Composite(object):
+class Composite(Scatterer):
     '''
     Contains optical and geometrical properties of a a composite
     scatterer.  A Composite can consist of multiple scattering
