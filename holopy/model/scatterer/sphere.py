@@ -24,6 +24,7 @@ Defines Sphere, a scattering primitive
 
 import numpy as np
 from holopy.model.scatterer import Scatterer
+from holopy.model.errors import ScattererDefinitionError
 
 class Sphere(Scatterer):
     '''
@@ -47,11 +48,15 @@ class Sphere(Scatterer):
 
     '''
 
-    def __init__(self, n = 1.59, r = 0.5e-6, x = 0.0, y = 0.0, z = 0.0,
+    def __init__(self, n = 1.59, r = 0.5e-6, x = 0.0, y = 0.0, z = 0.0, 
                  center = None):
         self.n = n
         self.r = r
         if center is not None:
+            if np.isscalar(center) or len(center) != 3:
+                raise ScattererDefinitionError(
+                    "center specified as {0}, center should be specified as (x,"
+                    " y, z)".format(center), self)
             self.center = np.array(center)
         else:
             self.center = np.array([x, y, z])
@@ -61,7 +66,21 @@ class Sphere(Scatterer):
         Outputs the object parameters in a way that can be typed into
         the python interpreter
         '''
-        return "{c}(center={center}, n={n}, r={r})".format(c=self.__class__.__name__, center=repr(self.center), n=self.n, r=self.r)
+        return "{c}(center={center}, n={n}, r={r})".format(
+            c=self.__class__.__name__, center=repr(self.center), n=self.n,
+            r=self.r)
+
+    def get_parameter_list(self):
+        """
+        Return sphere parameters in order: n, r, x, y, z
+        """
+        return np.array([self.n.real, self.n.imag, self.r, self.x, self.y,
+                         self.z])
+
+    @classmethod
+    def make_from_parameter_list(cls, params):
+        n = params[0] + 1.0j * params[1]
+        return cls(n, *params[2:])
 
     # convenience functions, defined so you can write, e.g., sc.n
     # instead of sc.get_n()

@@ -30,18 +30,134 @@ hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
 sys.path.append(hp_dir)
 from scipy import sin, cos, array, pi, sqrt, arcsin, arccos, real, dot
 from holopy.io import fit_io
-from holopy.io import load
 from holopy.io.yaml_io import load_yaml
-from holopy.hologram import subimage
-from holopy.process.enhance import normalize, background, divide
-from holopy.process import centerfinder
 import numpy as np
 from holopy.optics import Optics
 
-
 import minimizers.nmpfit_adapter as minimizer
+from holopy.model.errors import UnrealizableScatterer
 
-def fit(input_deck):
+def fit(holo, initial_guess, theory, minimizer, lower_bound=None,
+        upper_bound=None):
+    """
+    Find a scatterer which best recreates the given holo
+
+    Parameters
+    ----------
+    holo : :class:`holopy.hologram.Hologram` object
+        The hologram to fit to
+    initial_guess : (:class:`holopy.model.scatterer.Scatterer`, alpha)
+        An initial guess at the scatterer which formed the hologram.  
+    theory : :class:`holopy.model.theory.scatteringtheory.ScatteringTheory`
+        The scattering theory to use in computing holograms of the scatterer
+    minimizer : holopy.minmizer.Minimizer
+        The minimizer to use to refine the scatterer to agree with the hologram
+    lower_bound, upper_bound : :class:`holopy.model.scatterer.Scatterer`, alpha
+        The minimum and maximum values which the scatterer can vary        
+
+    Notes
+    -----
+    You must choose a scattering theory which is compatible with the scatterer
+    you specified.
+
+    The initial guess fixes the number and type of scatterers, only their
+    numerical parameters will be varied to fit the hologram.
+
+    lower_bound and upper_bound should be scatterers of the same character as
+    initial_guess.  Each of their parameters is treated individually as a limit
+    on the space the fitter will explore.  Thus you can think of the two
+    scatterers as describing the lower right and upper left corners of the
+    n-dimensional parameter space describing the scatterer.  
+    
+    """
+
+    scatterer, alpha = initial_guess
+    def unpack_bound(b):
+        return np.append(b[0].get_parameter_list(), b[1])
+    if lower_bound:
+        lower_bound = unpack_bound(lower_bound)
+    if upper_bound:
+        upper_bound = unpack_bound(upper_bound)
+        
+    if isinstance(theory, type):
+        # allow the user to pass the type, we instantiate it here
+        theory = theory(imshape = holo.shape, optics = holo.optics)
+
+    # Rescale parameters so that the minimizer is working with all parameter
+    # values ~ 1
+    scale = scatterer.get_parameter_list()
+    scale = np.append(scale, alpha)
+    # since we pick the intial guess as the scaling factor, our initial guess to
+    # the minimizer will be all ones
+
+    fixed = []
+    for i in range(len(scale)):
+        # if the lower_bound == scale == upper_bound the user wants this value
+        # fixed, some fittters will not handle this case nicely, so we pull the
+        # parameter from the list and add it back at the end.  
+        if scale[i] == lower_bound[i] and scale[i] == upper_bound[i]:
+            fixed.append(i)
+
+    lower_bound = np.delete(lower_bound/scale, fixed)
+    upper_bound = np.delete(upper_bound/scale, fixed)
+
+    guess = np.ones(len(lower_bound))
+
+    residual = make_residual(holo, scatterer, theory, scale, fixed)
+
+    result = minimizer.minimize(guess, residual, lb=lower_bound, ub=upper_bound)
+
+    
+    # put back in the fixed values 
+    for v in fixed:
+        result = np.insert(result, v, 1.0)
+
+    return scale * result
+
+def make_residual(holo, scatterer, theory, scale=None, fixed = []):
+    """
+    Construct a residual function suitable for fitting scatterer to holo using
+    theory
+
+    Parameters
+    ----------
+    holo : :class:`holopy.hologram.Hologram` object
+        The hologram to fit to
+    theory : :class:`holopy.model.theory.scatteringtheory.ScatteringTheory`
+        The scattering theory to use in computing holograms of the scatterer
+    initial_guess : :class:`holopy.model.scatterer.Scatterer`
+        The scatter which models the hologram
+    scale: :class:`numpy.ndarray`
+        Factors to rescale each parameter before computing a hologram
+    """
+
+    def residual(p, **keywords):
+        # put back in the fixed values 
+        for v in fixed:
+            p = np.insert(p, v, 1.0)
+        p = p*scale
+        # alpha should always be the last parameter, we prune it because the
+        # scatterer doesn't want to know about it
+        this_scatterer = scatterer.make_from_parameter_list(p[:-1])
+
+        try:
+            calculated = theory.calc_holo(this_scatterer, p[-1])
+        except UnrealizableScatterer:
+            print("Fitter asked for a value which the scattering theory " +
+                  "thought was unphysical, returning NaN")
+            return np.nan
+
+        derivatives = holo - calculated
+        resid = derivatives.ravel()
+
+        return resid
+
+    return residual
+
+    
+
+# Legacy code, figure out what of this should stay
+def fit_deck(input_deck):
     '''
     Run a fit described by yaml file input_deck.
 

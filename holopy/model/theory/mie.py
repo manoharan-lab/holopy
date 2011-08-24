@@ -93,32 +93,14 @@ class Mie(ScatteringTheory):
         """
 
         def sphere_field(s):
-            if s.r < 0:
-                raise UnrealizableScatterer(self, s, "radius is negative")
-            # Nondimensionalize for the fortran code
-            m_p = s.n / self.optics.index
-            x_p = self.optics.wavevec * s.r
-            kcoords = self.optics.wavevec * np.array([s.x, s.y, s.z])
-
-            if x_p > 1e3:
-                raise UnrealizableScatterer(self, s, "radius too large, field "+
-                                            "calculation would take forever")
-
-            # Calculate maximum order lmax of Mie series expansion.
-            lmax = miescatlib.nstop(x_p)
-            # Calculate scattering coefficients a_l and b_l
-            albl = miescatlib.scatcoeffs(x_p, m_p, lmax)
-
+            scat_coeffs = self._scat_coeffs(s)
+            
             # TODO: convert to calling in spherical coordinates
             # mieangfuncs.f90 works with everything dimensionless.
-            px, py = self.optics.pixel
-            xdim, ydim = self.imshape
-            gridx = self.optics.wavevec * np.mgrid[0:xdim] * px # (0,0) at upper left convention
-            gridy = self.optics.wavevec * np.mgrid[0:ydim] * py
-
+            gridx, gridy = self._grid()
             e_x, e_y, e_z = mieangfuncs.mie_fields(gridx, gridy, 
-                                                   kcoords, 
-                                                   albl,
+                                                   s.center*self.optics.wavevec,
+                                                   scat_coeffs,
                                                    self.optics.polarization)
 
             return ElectricField(e_x, e_y, e_z, s.z, self.optics.med_wavelen)
@@ -162,15 +144,55 @@ class Mie(ScatteringTheory):
         """
 
         if isinstance(scatterer, Sphere):
-            s = scatterer
-            holo = forward_holo(self.imshape, self.optics,
-                                s.n.real, s.n.imag, s.r, 
-                                s.x, s.y, s.z, alpha)
+            scat_coeffs = self._scat_coeffs(scatterer)
+            
+            gridx, gridy = self._grid()
+
+            holo = singleholo(gridx, gridy,
+                              scatterer.center * self.optics.wavevec,
+                              scat_coeffs, alpha, self.optics.polarization)
+            
         else:   # call base class calc_holo
             holo = ScatteringTheory.calc_holo(self, scatterer, 
                                               alpha=alpha)
 
         return Hologram(holo, optics = self.optics)
+
+    def _grid(self):
+        px, py = self.optics.pixel
+        xdim, ydim = self.imshape
+        return (self.optics.wavevec*np.mgrid[0:xdim]*py,
+                self.optics.wavevec*np.mgrid[0:ydim]*py)
+
+    def _scat_coeffs(self, s):
+        x_p = self.optics.wavevec * s.r
+        m_p = s.n / self.optics.index
+
+        # Check that the scatterer is in a range we can compute for
+        if x_p < 0:
+            raise UnrealizableScatterer(self, s, "radius is negative")
+        if x_p > 1e3:
+            raise UnrealizableScatterer(self, s, "radius too large, field "+
+                                        "calculation would take forever")
+        
+        # Calculate maximum order lmax of Mie series expansion.
+        lmax = miescatlib.nstop(x_p)
+        return  miescatlib.scatcoeffs(x_p, m_p, lmax)
+
+    def _nondimensionalize(self, s):
+        m_p = s.n / self.optics.index
+        x_p = self.optics.wavevec * s.r
+        kcoords = self.optics.wavevec * s.center
+        return m_p, x_p, kcoords
+
+    def _check_scatterer(self, s):
+        if s.r < 0:
+            raise UnrealizableScatterer(self, s, "radius is negative")
+        m_p, x_p, kcoords = self._nondimensionalize(s)
+        if x_p > 1e3:
+            raise UnrealizableScatterer(self, s, "radius too large, field "+
+                                        "calculation would take forever")
+        
 
 # TODO: Need to refactor fitting code so that it no longer relies on
 # the legacy functions below.  Then remove.

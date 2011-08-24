@@ -63,6 +63,12 @@ def test_Sphere_construct_array():
     center = np.array([1e-6, -1e-6, 10e-6])
     s = Sphere(n = 1.59+0.0001j, r = 5e-7, center = center)
     assert_equal(s.center, center)
+
+@attr('fast')
+def test_Sphere_construct_params():
+    params = np.array([1.59, 1e-4, 5e-7, 1e-6, -1e-6, 10e-6])
+    s = Sphere.make_from_parameter_list(params)
+    assert_equal(s.parameter_list(), params)
     
 @attr('fast')
 def test_CoatedSphere_construction():

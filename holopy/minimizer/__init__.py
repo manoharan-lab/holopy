@@ -16,28 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 """
-A python package containing routines to load, reconstruct, fit, and
-analyze digital holograms  
+Adapters to fitting libraries.  This lets us access them all through a common
+syntax
 
-.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
-
-
-# import some names into the top level namespace so we can use,
-# e.g. holopy.Hologram or holopy.load
-from .hologram import Hologram, subimage
-from .optics import Optics
-from .analyze.reconstruct import reconstruct
-from .analyze.fit import fit, get_target, get_initial_guess, get_fit_result
-import process
-import minimizer
-from .io.image_io import load
-
-__version__ = 'unknown'
-try:
-    from _version import __version__
-except ImportError:
-    # version doesn't exist, or got deleted in bzr
-    pass
-
+import nmpfit

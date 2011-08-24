@@ -90,6 +90,8 @@ class Optics(object):
             elif mag is not None:
                 # calculate from specified magnification
                 self.pixel_scale = self.pixel_size/mag
+            else:
+                self.pixel_scale = None
         else:
             self.pixel_scale = np.array(pixel_scale)
 
@@ -101,7 +103,7 @@ class Optics(object):
             raise MediumIndexNotSpecified
     @index.setter
     def index(self, value):
-        self._index=index
+        self._index=value
 
     @property
     def wavelen(self):
@@ -111,7 +113,7 @@ class Optics(object):
             raise WavelengthNotSpecified
     @wavelen.setter
     def wavelen(self, value):
-        self._wavelen=wavelen
+        self._wavelen=value
     
     
     @property
@@ -157,6 +159,15 @@ class Optics(object):
         new = copy.copy(self)
         new.pixel_scale = self.pixel_scale * factor
         return new
+
+    def __repr__(self):
+        return ("{0}(wavelen={1}, index={2}, ".format(self.__class__.__name__,
+                                                      self._wavelen, self._index)
+                +"polarization={0}, divergence={1}, ".format(self.polarization,
+                                                            self.divergence)
+                +"pixel_size={0}, train={1}, ".format(self.pixel_size,
+                                                      self.train)
+                +"mag={0}, pixel_scale = {1})".format(self.mag, self.pixel_scale))
 
 class WavelengthNotSpecified(Exception):
     def __init__(self):

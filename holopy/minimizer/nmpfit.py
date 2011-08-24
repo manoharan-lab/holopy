@@ -16,28 +16,31 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 """
-A python package containing routines to load, reconstruct, fit, and
-analyze digital holograms  
+Wrapper around nmpfit to allow it to accept input in our unified format
 
-.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
+
 """
 
+from holopy.third_party import nmpfit
 
-# import some names into the top level namespace so we can use,
-# e.g. holopy.Hologram or holopy.load
-from .hologram import Hologram, subimage
-from .optics import Optics
-from .analyze.reconstruct import reconstruct
-from .analyze.fit import fit, get_target, get_initial_guess, get_fit_result
-import process
-import minimizer
-from .io.image_io import load
+def minimize(guess, residual, lb=None , ub=None, ftol = 1e-10, xtol = 1e-10,
+              gtol = 1e-10, damp = 0, maxiter = 100, quiet = False, err=None):
 
-__version__ = 'unknown'
-try:
-    from _version import __version__
-except ImportError:
-    # version doesn't exist, or got deleted in bzr
-    pass
+    def resid_wrapper(p, fjac=None):
+        status = 0
+        return [status, residual(p)]
 
+    parinfo = []
+    for i, par in enumerate(guess):
+        parinfo.append({'limited' : [True, True],
+                        'limits' : [lb[i], ub[i]],
+                        'value' : par})
+
+    fitresult = nmpfit.mpfit(resid_wrapper, parinfo=parinfo, ftol = ftol,
+                             xtol = xtol, gtol = gtol, damp = damp,
+                             maxiter = maxiter, quiet = quiet)
+
+    print(fitresult.fnorm)
+
+    return fitresult.params

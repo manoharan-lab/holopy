@@ -30,14 +30,26 @@ class Scatterer(object):
     abstract base class for scatterers
 
     """
+    def __init__(self):
+        raise NotImplementedError
 
-    def parameter_list(self):
+    def get_parameter_list(self):
         """
         Return's the scatterer's parameters as an 1d array in a defined order.
         This form is suitable for passing to a minimizer
+
+        Note: if the scatter has complex values (like index of refraction) they
+        need to be split into two seperate variables
         """
         raise NotImplementedError
 
+    def get_parameter_names_list(self):
+        """
+        returns the list of names of the parameters, in the same order as the
+        parameter_list() function
+        """
+
+    
     @classmethod
     def make_from_parameter_list(cls, params):
         """
@@ -45,6 +57,8 @@ class Scatterer(object):
         parameter_list().
         """
         raise NotImplementedError
+
+
 
 
 from sphere import Sphere
