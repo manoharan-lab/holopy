@@ -31,7 +31,7 @@ import os
 import string
 from nose.plugins.attrib import attr
 
-from holopy.model.scatterer import Sphere
+from holopy.model.scatterer import Sphere, SphereCluster
 from holopy.analyze.fit import fit
 
 def setup_optics():
@@ -72,6 +72,44 @@ def test_fit_mie_single():
     assert_array_almost_equal(fitresult * [1,10**4,10**7,
             10**6,10**6,10**5,10], gold_single, decimal=2)
 
+@attr('slow')
+def test_fit_superposition():
+    # Make a test hologram
+    optics = hp.Optics(wavelen=6.58e-07, index=1.33, polarization=[0.0, 1.0],
+                    divergence=0, pixel_size=None, train=None, mag=None,
+                    pixel_scale=[2.151e-07, 2.151e-07])
+
+    s1 = Sphere(n=1.5891+1e-4j, r = .65e-6, center=(1.56e-05, 1.44e-05, 15e-6))
+    s2 = Sphere(n=1.5891+1e-4j, r = .65e-6, center=(3.42e-05, 3.17e-05, 10e-6))
+    sc = SphereCluster([s1, s2])
+    alpha = .629
+    
+    theory = hp.model.theory.Mie(imshape=400, optics=optics)
+
+    holo = hp.process.normalize(theory.calc_holo(sc, alpha))
+
+    # Now fit it
+    s1 = Sphere(n=1.5891+1e-4j, r = .65e-6, center=(1.56e-05, 1.44e-05, 15e-6))
+    s2 = Sphere(n=1.5891+1e-4j, r = .65e-6, center=(3.42e-05, 3.17e-05, 10e-6))
+    sc = SphereCluster([s1, s2])
+    alpha = .635
+
+    lb1 = Sphere(1+1e-4j, 1e-8, 0, 0, 0)
+    ub1 = Sphere(2+1e-4j, 1e-5, 1e-4, 1e-4, 1e-4)
+    lb = SphereCluster([lb1, lb1]), .1
+    ub = SphereCluster([ub1, ub1]), 1
+
+    theory = hp.model.theory.Mie(holo.shape, holo.optics)
+
+    fitresult = fit(holo, (sc, alpha), hp.model.theory.Mie, hp.minimizer.nmpfit,
+                    lb, ub)
+
+    gold = np.array([1.5891, 1.000, 6.500, 1.560, 1.440, 1.500, 1.5891, 1.000, 6.50,
+                  3.420, 3.170, 1.000, 6.26])
+    assert_array_almost_equal(fitresult * [1, 10**4, 10**7, 10**5, 10**5,
+                                           10**5,1,10**4, 10**7, 10**5,10**5,
+                                           10**5, 10], gold, decimal=2)
+    
 '''
 def test_fit_cluster():
     path = os.path.abspath(hp.__file__)

@@ -113,6 +113,26 @@ class SphereCluster(Composite):
     def __repr__(self):
         return "{c}(spheres={spheres})".format(c=self.__class__.__name__,
                                        spheres=repr(self.get_component_list()))
+
+    def get_parameter_list(self):
+        """
+        Return sphere parameters in order: n, r, x, y, z
+        """
+        spheres = self.get_component_list()
+        parlist = spheres[0].get_parameter_list()
+        for sphere in spheres[1:]:
+            parlist = np.append(parlist, sphere.get_parameter_list())
+        return parlist
+
+    @classmethod
+    def make_from_parameter_list(cls, params):
+        sphere_params = 6
+        num_spheres = len(params)/sphere_params
+        s = []
+        for i in range(num_spheres):
+            s.append(Sphere.make_from_parameter_list(
+                    params[i*sphere_params:(i+1)*sphere_params]))
+        return cls(s)
     
     # convenience functions, defined so you can write, e.g., sc.n
     # instead of sc.get_n()
