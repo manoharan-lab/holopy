@@ -22,3 +22,4 @@ syntax
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 import nmpfit
+import oo

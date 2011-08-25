@@ -77,14 +77,14 @@ def test_fit_superposition():
     # Make a test hologram
     optics = hp.Optics(wavelen=6.58e-07, index=1.33, polarization=[0.0, 1.0],
                     divergence=0, pixel_size=None, train=None, mag=None,
-                    pixel_scale=[2.151e-07, 2.151e-07])
+                    pixel_scale=[2.302e-07, 2.302e-07])
 
     s1 = Sphere(n=1.5891+1e-4j, r = .65e-6, center=(1.56e-05, 1.44e-05, 15e-6))
     s2 = Sphere(n=1.5891+1e-4j, r = .65e-6, center=(3.42e-05, 3.17e-05, 10e-6))
     sc = SphereCluster([s1, s2])
     alpha = .629
     
-    theory = hp.model.theory.Mie(imshape=400, optics=optics)
+    theory = hp.model.theory.Mie(imshape=200, optics=optics)
 
     holo = hp.process.normalize(theory.calc_holo(sc, alpha))
 
@@ -92,14 +92,12 @@ def test_fit_superposition():
     s1 = Sphere(n=1.5891+1e-4j, r = .65e-6, center=(1.56e-05, 1.44e-05, 15e-6))
     s2 = Sphere(n=1.5891+1e-4j, r = .65e-6, center=(3.42e-05, 3.17e-05, 10e-6))
     sc = SphereCluster([s1, s2])
-    alpha = .635
+    alpha = .629
 
     lb1 = Sphere(1+1e-4j, 1e-8, 0, 0, 0)
     ub1 = Sphere(2+1e-4j, 1e-5, 1e-4, 1e-4, 1e-4)
     lb = SphereCluster([lb1, lb1]), .1
     ub = SphereCluster([ub1, ub1]), 1
-
-    theory = hp.model.theory.Mie(holo.shape, holo.optics)
 
     fitresult = fit(holo, (sc, alpha), hp.model.theory.Mie, hp.minimizer.nmpfit,
                     lb, ub)
