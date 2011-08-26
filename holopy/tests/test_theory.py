@@ -105,11 +105,11 @@ def test_Mie_single():
     # this shouldn't work because the theory doesn't know the pixel
     # scale or medium index
     theory = Mie(imshape=128)
-    assert_raises(MediumIndexNotSpecified, lambda:
+    assert_raises(WavelengthNotSpecified, lambda:
                       theory.calc_field(sc))
-    assert_raises(MediumIndexNotSpecified, lambda:
+    assert_raises(WavelengthNotSpecified, lambda:
                       theory.calc_intensity(sc)) 
-    assert_raises(PixelScaleNotSpecified, lambda:
+    assert_raises(WavelengthNotSpecified, lambda:
                       theory.calc_holo(sc)) 
 
 @attr('fast')

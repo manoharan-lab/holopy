@@ -34,7 +34,7 @@ from holopy.io.yaml_io import load_yaml
 import numpy as np
 from holopy.optics import Optics
 
-import minimizers.nmpfit_adapter as minimizer
+#import minimizers.nmpfit_adapter as minimizer
 from holopy.model.errors import UnrealizableScatterer
 
 def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
@@ -222,6 +222,10 @@ def minimize(residual, algorithm='nmpfit', guess=None, lb=None , ub=None,
     
     if algorithm in openopt:
         import openopt
+        if quiet:
+            iprint = 0
+        else:
+            iprint = 1
         def resid_wrap(p):
             resid = residual(p)
             return np.dot(resid, resid)

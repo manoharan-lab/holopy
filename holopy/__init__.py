@@ -31,7 +31,6 @@ from .optics import Optics
 from .analyze.reconstruct import reconstruct
 from .analyze.fit import fit, get_target, get_initial_guess, get_fit_result
 import process
-import minimizer
 from .io.image_io import load
 
 __version__ = 'unknown'
