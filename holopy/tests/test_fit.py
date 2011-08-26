@@ -58,15 +58,16 @@ gold_single = np.array([1.582, 1.000, 6.484, 5.534, 5.792, 1.415, 6.497])
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_fit_mie_single():
     path = os.path.abspath(hp.__file__)
-    path = os.path.split(path)[0]+'tests/exampledata/'
-    holo = hp.process.normalize(hp.load(path + 'image0001.npy', optics=optics))
+    path = os.path.join(os.path.split(path)[0],'tests', 'exampledata')
+    holo = hp.process.normalize(hp.load(os.path.join(path, 'image0001.npy'),
+                                        optics=optics))
     
     s = Sphere(n=1.59+1e-4j, r=8.5e-7, x=.567e-5, y=.576e-5, z=15e-6)
     alpha = .6
     lb = Sphere.make_from_parameter_list([1.0, 1e-4, 1e-8, 0., 0., 0.]), .1
     ub = Sphere.make_from_parameter_list([2.0, 1e-4, 1e-5, 1e-5, 1e-5, 1e-4]), 1.0
 
-    fitresult = fit(holo, (s,alpha), hp.model.theory.Mie, hp.minimizer.nmpfit,
+    fitresult = fit(holo, (s,alpha), hp.model.theory.Mie, 'nmpfit',
                     lb, ub)
 
     assert_array_almost_equal(fitresult * [1,10**4,10**7,
@@ -99,7 +100,7 @@ def test_fit_superposition():
     lb = SphereCluster([lb1, lb1]), .1
     ub = SphereCluster([ub1, ub1]), 1
 
-    fitresult = fit(holo, (sc, alpha), hp.model.theory.Mie, hp.minimizer.nmpfit,
+    fitresult = fit(holo, (sc, alpha), hp.model.theory.Mie, 'nmpfit',
                     lb, ub)
 
     gold = np.array([1.5891, 1.000, 6.500, 1.560, 1.440, 1.500, 1.5891, 1.000, 6.50,

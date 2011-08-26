@@ -37,7 +37,7 @@ from holopy.optics import Optics
 import minimizers.nmpfit_adapter as minimizer
 from holopy.model.errors import UnrealizableScatterer
 
-def fit(holo, initial_guess, theory, minimizer, lower_bound=None,
+def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
         upper_bound=None):
     """
     Find a scatterer which best recreates the given holo
@@ -105,7 +105,7 @@ def fit(holo, initial_guess, theory, minimizer, lower_bound=None,
 
     residual = make_residual(holo, scatterer, theory, scale, fixed)
 
-    result = minimizer.minimize(guess, residual, lb=lower_bound, ub=upper_bound)
+    result = minimize(residual, minimizer, guess, lower_bound, upper_bound)
 
     
     # put back in the fixed values 
@@ -154,7 +154,95 @@ def make_residual(holo, scatterer, theory, scale=None, fixed = []):
 
     return residual
 
+def minimize(residual, algorithm='nmpfit', guess=None, lb=None , ub=None,
+             quiet = False, plot = True, ftol = 1e-10, xtol = 1e-10, gtol =
+             1e-10, damp = 0, maxiter = 100, err=None):
+    """
+    Minmized a function (as defined by residual)
+
+    Parameters
+    ----------
+    residual : F(parameters) -> ndarray(derivatives)
+        The residual function to be minimized
+    algorithm : string
+        The fitting algorithm to use: valid options are nmpfit, ralg,
+        scipy_leastsq, scipy_lbfgsb, scipy_slsqp, or galileo
+    guess : ndarray(parameters)
+        Initial guess for the fitter.  Must be provided unless you are using a
+        global algorithm
+    lb, ub : ndarray(parameters)
+        Lower and upper bounds on the parameters.  Must be provided if you are
+        using a global algorithm
+    quiet : bool
+        Should the fitting algorithm output its internal feedback information?
+    plot : bool
+        Should the fitting algorthim show a plot of its convergence (not
+        available on all fitters
+    ftol, xtol, gtol, damp, maxiter, err: float, float, float, float, int, bool
+        nmpfit specific parameters
+
+    Notes
+    -----
+    All parameters after quiet are specific to specific fitting algorithms, and
+    will not be used if you don't select an appropriate fitting algorithm.
+
+    Does on demand importing of fitters since external fitting libraries may not
+    be present.  
+    """
+
+    openopt_nllsq = ['scipy_leastsq']
+    openopt_nlp = ['ralg', 'scipy_lbfgsb', 'scipy_slsqp']
+    openopt_global = ['galileo']
+
+    if algorithm == 'nmpfit':
+        from holopy.third_party import nmpfit
+        def resid_wrapper(p, fjac=None):
+            status = 0
+            return [status, residual(p)]
+
+        parinfo = []
+        for i, par in enumerate(guess):
+            parinfo.append({'limited' : [True, True],
+                            'limits' : [lb[i], ub[i]],
+                            'value' : par})
+
+        fitresult = nmpfit.mpfit(resid_wrapper, parinfo=parinfo, ftol = ftol,
+                                 xtol = xtol, gtol = gtol, damp = damp,
+                             maxiter = maxiter, quiet = quiet)
+        if not quiet:
+            print(fitresult.fnorm)
+        
+        return fitresult.params
+
+    # Openopt fitters
+    openopt_nllsq = ['scipy_leastsq']
+    openopt_nlp = ['ralg', 'scipy_lbfgsb', 'scipy_slsqp']
+    openopt_global = ['galileo']
+    openopt = openopt_nllsq + openopt_nlp + openopt_global
     
+    if algorithm in openopt:
+        import openopt
+        def resid_wrap(p):
+            resid = residual(p)
+            return np.dot(resid, resid)
+        if algorithm in openopt_nlp:
+            p = openopt.NLP(resid_wrap, guess, lb=lb, ub=ub, iprint=iprint, plot=plot)
+        elif algorithm in openopt_global:
+            p = openopt.GLP(resid_wrap, guess, lb=lb, ub=ub, iprint=iprint, plot=plot)
+        elif algorithm in openopt_nllsq:
+            p = openopt.NLLSP(residual, guess, lb=lb, ub=ub, iprint=iprint, plot=plot)
+
+        r = p.solve(algorithm)
+        return r.xf
+
+    else:
+        raise MinimizerNotFound(algorithm)
+
+class MinimizerNotFound(Exception):
+    def __init__(self, algorithm):
+        self.algorthim = algorithm
+    def __str__(self):
+        return "{0} is not a valid fitting algorithm".format(self.algorthim)
 
 # Legacy code, figure out what of this should stay
 def fit_deck(input_deck):
