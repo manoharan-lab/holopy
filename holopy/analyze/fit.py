@@ -38,7 +38,7 @@ from holopy.optics import Optics
 from holopy.model.errors import UnrealizableScatterer
 
 def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
-        upper_bound=None):
+        upper_bound=None, plot=False):
     """
     Find a scatterer which best recreates the given holo
 
@@ -53,7 +53,10 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
     minimizer : holopy.minmizer.Minimizer
         The minimizer to use to refine the scatterer to agree with the hologram
     lower_bound, upper_bound : :class:`holopy.model.scatterer.Scatterer`, alpha
-        The minimum and maximum values which the scatterer can vary        
+        The minimum and maximum values which the scatterer can vary
+    plot : bool
+         Whether to show a convergence plot (not available with all fitting
+         algorithms)
 
     Notes
     -----
@@ -105,7 +108,8 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
 
     residual = make_residual(holo, scatterer, theory, scale, fixed)
 
-    result = minimize(residual, minimizer, guess, lower_bound, upper_bound)
+    result = minimize(residual, minimizer, guess, lower_bound, upper_bound,
+                      plot=plot)
 
     
     # put back in the fixed values 

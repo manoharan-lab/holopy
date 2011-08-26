@@ -73,6 +73,26 @@ def test_fit_mie_single():
     assert_array_almost_equal(fitresult * [1,10**4,10**7,
             10**6,10**6,10**5,10], gold_single, decimal=2)
 
+@attr('medium')
+@with_setup(setup=setup_optics, teardown=teardown_optics)
+def test_fit_mie_single_ralg():
+    path = os.path.abspath(hp.__file__)
+    path = os.path.join(os.path.split(path)[0],'tests', 'exampledata')
+    holo = hp.process.normalize(hp.load(os.path.join(path, 'image0001.npy'),
+                                        optics=optics))
+    
+    s = Sphere(n=1.59+1e-4j, r=8.5e-7, x=.567e-5, y=.576e-5, z=15e-6)
+    alpha = .6
+    lb = Sphere.make_from_parameter_list([1.0, 1e-4, 1e-8, 0., 0., 0.]), .1
+    ub = Sphere.make_from_parameter_list([2.0, 1e-4, 1e-5, 1e-5, 1e-5, 1e-4]), 1.0
+
+    fitresult = fit(holo, (s,alpha), hp.model.theory.Mie, 'ralg',
+                    lb, ub, plot=False)
+
+    assert_array_almost_equal(fitresult * [1,10**4,10**7,
+            10**6,10**6,10**5,10], gold_single, decimal=2)
+
+    
 @attr('slow')
 def test_fit_superposition():
     # Make a test hologram
@@ -94,14 +114,13 @@ def test_fit_superposition():
     s2 = Sphere(n=1.5891+1e-4j, r = .65e-6, center=(3.42e-05, 3.17e-05, 10e-6))
     sc = SphereCluster([s1, s2])
     alpha = .629
-
+    
     lb1 = Sphere(1+1e-4j, 1e-8, 0, 0, 0)
     ub1 = Sphere(2+1e-4j, 1e-5, 1e-4, 1e-4, 1e-4)
     lb = SphereCluster([lb1, lb1]), .1
     ub = SphereCluster([ub1, ub1]), 1
 
-    fitresult = fit(holo, (sc, alpha), hp.model.theory.Mie, 'nmpfit',
-                    lb, ub)
+    fitresult = fit(holo, (sc, alpha), hp.model.theory.Mie, 'nmpfit', lb, ub)
 
     gold = np.array([1.5891, 1.000, 6.500, 1.560, 1.440, 1.500, 1.5891, 1.000, 6.50,
                   3.420, 3.170, 1.000, 6.26])
