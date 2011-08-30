@@ -31,7 +31,7 @@ import os
 import string
 from nose.plugins.attrib import attr
 
-from holopy.model.scatterer import Sphere, SphereCluster
+from scatterpy.scatterer import Sphere, SphereCluster
 from holopy.analyze.fit import fit
 
 def setup_optics():

@@ -33,9 +33,9 @@ from holopy.hologram import Hologram
 from holopy import Optics
 from holopy.utility.helpers import _ensure_array, _ensure_pair
 
-from holopy.model.scatterer import Sphere, SphereCluster, Composite
-from holopy.model.errors import TheoryNotCompatibleError
-from holopy.model.theory.scatteringtheory import ScatteringTheory, ElectricField
+from scatterpy.scatterer import Sphere, SphereCluster, Composite
+from scatterpy.errors import TheoryNotCompatibleError
+from scatterpy.theory.scatteringtheory import ScatteringTheory, ElectricField
 from mie_f.mieangfuncs import singleholo
 from mie_f.miescatlib import nstop, scatcoeffs
 
@@ -114,7 +114,7 @@ class Multisphere(ScatteringTheory):
 
         Parameters
         ----------
-        scatterer : :mod:`holopy.model.scatterer` object
+        scatterer : :mod:`scatterpy.scatterer` object
             scatterer or list of scatterers to compute field for
 
         Returns
@@ -150,7 +150,7 @@ class Multisphere(ScatteringTheory):
         
         Parameters
         ----------
-        scatterer : :mod:`holopy.model.scatterer` object
+        scatterer : :mod:`scatterpy.scatterer` object
             scatterer or list of scatterers to compute field for
         alpha : scaling value for intensity of reference wave
 

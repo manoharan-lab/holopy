@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 '''
-Test fortran-based Mie calculations and python interface.  
+Test T-matrix sphere cluster calculations and python interface.  
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
@@ -25,24 +25,15 @@ import sys
 import os
 hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
 sys.path.append(hp_dir)
-import numpy as np
-from numpy.linalg import norm
-import os
-import string
-import pylab
 
-from nose.tools import raises, assert_raises, assert_true
-from numpy.testing import assert_, assert_equal, \
-    assert_array_almost_equal, assert_array_equal, assert_almost_equal
-from nose.tools import with_setup
+from numpy.testing import assert_equal
+
+
 from nose.plugins.attrib import attr
 
 import holopy
-from holopy.model.scatterer import Sphere, SphereCluster
-from holopy.model.theory import mie
-from holopy.model.theory import Mie
 
-
+from scatterpy.theory.multisphere import Multisphere
 
 # define optical train
 wavelen = 658e-9
@@ -73,17 +64,31 @@ z = 15e-6
 imshape = 128
 
 @attr('fast')
-def test_mie_polarization():
+def test_construction():
+    # test constructor to make sure it works properly and calls base
+    # class constructor properly
+    theory = Multisphere(imshape=128, optics=xoptics, niter=100, eps=1e-6,
+                         meth=0, qeps1=1e-5, qeps2=1e-8)
+
+    assert_equal(theory.imshape, (128,128))
+    assert_equal(theory.optics.wavelen, wavelen)
+    assert_equal(theory.niter, 100)
+    assert_equal(theory.eps, 1e-6)
+    assert_equal(theory.meth, 0)
+    assert_equal(theory.qeps1, 1e-5)
+    assert_equal(theory.qeps2, 1e-8)
+
+"""
+def test_polarization():
     # test holograms for orthogonal polarizations; make sure they're
     # not the same, nor too different from one another.
-    sphere = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius, 
-                    x=x, y=y, z=z)
-    xmodel = Mie(imshape = imshape, optics=xoptics)
-    ymodel = Mie(imshape = imshape, optics=yoptics)
-
-    xholo = xmodel.calc_holo(sphere, alpha=scaling_alpha)
-    yholo = ymodel.calc_holo(sphere, alpha=scaling_alpha)
-
+    xholo = mie.forward_holo(imshape, xoptics, n_particle_real,
+                             n_particle_imag, radius, x, y, z,
+                             scaling_alpha)
+    yholo = mie.forward_holo(imshape, yoptics, n_particle_real,
+                             n_particle_imag, radius, x, y, z,
+                             scaling_alpha)
+    
     # the two arrays should not be equal
     try:
         assert_array_almost_equal(xholo, yholo)
@@ -97,17 +102,17 @@ def test_mie_polarization():
     assert_almost_equal(xholo.min(), yholo.min())
     return xholo, yholo
 
-@attr('fast')
 def test_single_sphere():
-    # single sphere hologram (only tests that functions return)
-    sphere = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius, 
-                    x=x, y=y, z=z)
-    model = Mie(imshape = imshape, optics=xoptics)
+    # single spheres hologram (only tests that functions return)
+    holo = mie.forward_holo(imshape, xoptics, n_particle_real,
+                            n_particle_imag, radius, x, y, z, 
+                            scaling_alpha)
 
-    holo = model.calc_holo(sphere, alpha=scaling_alpha)
-    field = model.calc_field(sphere)
+    xfield, yfield, zfield = mie.calc_mie_fields(imshape, xoptics,
+                                                 n_particle_real,
+                                                 n_particle_imag,
+                                                 radius, x, y, z)
 
-@attr('fast')
 def test_linearity():
     # look at superposition of scattering from two point particles;
     # make sure that this is sum of holograms from individual point
@@ -118,19 +123,27 @@ def test_linearity():
     y2 = y*2
     z2 = z*2
     scaling_alpha = 1.0
+
     r = 1e-2*wavelen    # something much smaller than wavelength
 
-    sphere1 = Sphere(n=n_particle_real + n_particle_imag*1j, r=r, 
-                     x=x, y=y, z=z)
-    sphere2 = Sphere(n=n_particle_real + n_particle_imag*1j, r=r, 
-                     x=x2, y=y2, z=z2)
+    nrarr = np.array([n_particle_real, n_particle_real])
+    niarr = np.array([n_particle_imag, n_particle_imag])
+    rarr = np.array([r, r])
+    xarr = np.array([x, x2])
+    yarr = np.array([y, y2])
+    zarr = np.array([z, z2])
 
-    sc = SphereCluster(spheres = [sphere1, sphere2])
-    model = Mie(imshape=imshape, optics=xoptics)
-    
-    holo_1 = model.calc_holo(sphere1, alpha=scaling_alpha)
-    holo_2 = model.calc_holo(sphere2, alpha=scaling_alpha)
-    holo_super = model.calc_holo(sc)
+    holo_1 = mie.forward_holo(imshape, xoptics, nrarr[0],
+                              niarr[0], rarr[0], 
+                              xarr[0], yarr[0], zarr[0],  
+                              scaling_alpha)
+    holo_2 = mie.forward_holo(imshape, xoptics, nrarr[1],
+                              niarr[1], rarr[1], 
+                              xarr[1], yarr[1], zarr[1],  
+                              scaling_alpha)
+    holo_super = mie.forward_holo(imshape, xoptics, nrarr,
+                                     niarr, rarr, xarr, yarr, zarr, 
+                                     scaling_alpha)
 
     # make sure we're not just looking at uniform arrays (could
     # happen if the size is set too small)
@@ -143,15 +156,14 @@ def test_linearity():
                              " looks suspiciously close to having" +
                              " no fringes")
 
-    # Test linearity by subtracting off individual holograms.
-    # This should recover the other hologram
+    # test linearity by subtracting off individual holograms
+    # should recover the other hologram
     assert_array_almost_equal(holo_super - holo_1 + 1, holo_2)
     assert_array_almost_equal(holo_super - holo_2 + 1, holo_1)
 
     # uncomment to debug
     #return holo_1, holo_2, holo_super
 
-@attr('fast')
 def test_nonlinearity():
     # look at superposition of scattering from two large particles;
     # make sure that this is *not equal* to sum of holograms from
@@ -162,19 +174,27 @@ def test_nonlinearity():
     y2 = y*2
     z2 = z*2
     scaling_alpha = 1.0
+
     r = wavelen    # order of wavelength
 
-    sphere1 = Sphere(n=n_particle_real + n_particle_imag*1j, r=r, 
-                     x=x, y=y, z=z)
-    sphere2 = Sphere(n=n_particle_real + n_particle_imag*1j, r=r, 
-                     x=x2, y=y2, z=z2)
+    nrarr = np.array([n_particle_real, n_particle_real])
+    niarr = np.array([n_particle_imag, n_particle_imag])
+    rarr = np.array([r, r])
+    xarr = np.array([x, x2])
+    yarr = np.array([y, y2])
+    zarr = np.array([z, z2])
 
-    sc = SphereCluster(spheres = [sphere1, sphere2])
-    model = Mie(imshape=imshape, optics=xoptics)
-    
-    holo_1 = model.calc_holo(sphere1, alpha=scaling_alpha)
-    holo_2 = model.calc_holo(sphere2, alpha=scaling_alpha)
-    holo_super = model.calc_holo(sc)
+    holo_1 = mie.forward_holo(imshape, xoptics, nrarr[0],
+                              niarr[0], rarr[0], 
+                              xarr[0], yarr[0], zarr[0],  
+                              scaling_alpha)
+    holo_2 = mie.forward_holo(imshape, xoptics, nrarr[1],
+                              niarr[1], rarr[1], 
+                              xarr[1], yarr[1], zarr[1],  
+                              scaling_alpha)
+    holo_super = mie.forward_holo(imshape, xoptics, nrarr,
+                                     niarr, rarr, xarr, yarr, zarr, 
+                                     scaling_alpha)
 
     # test nonlinearity by subtracting off individual holograms
     try:
@@ -189,22 +209,22 @@ def test_nonlinearity():
     # uncomment to debug
     #return holo_1, holo_2, holo_super
 
-@attr('fast')
 def test_two_spheres_samez():
     # put a second sphere in the same plane as the first.  This only
     # tests that the function returns.
     x2 = x*2
     y2 = y*2
     z2 = z
-    sphere1 = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius, 
-                     x=x, y=y, z=z)
-    sphere2 = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius, 
-                     x=x2, y=y2, z=z2)
 
-    sc = SphereCluster(spheres = [sphere1, sphere2])
-    model = Mie(imshape=imshape, optics=xoptics)
-    
-    holo = model.calc_holo(sc, alpha=scaling_alpha)
+    nrarr = np.array([n_particle_real, n_particle_real])
+    niarr = np.array([n_particle_imag, n_particle_imag])
+    rarr = np.array([radius, radius])
+    xarr = np.array([x, x2])
+    yarr = np.array([y, y2])
+    zarr = np.array([z, z2])
+    holo = mie.forward_holo(imshape, xoptics, nrarr,
+                            niarr, rarr, xarr, yarr, zarr, 
+                            scaling_alpha)
 
     # uncomment to debug
     #return holo
@@ -223,10 +243,9 @@ def test_multiple_spheres():
     niarr = np.ones(N)*n_particle_imag
     narr = nrarr + 1j*niarr
 
-    sc = SphereCluster(n = nrarr + niarr*1j, r = rarr, x=xarr, y=yarr,
-                       z=zarr)
-    model = Mie(imshape=imshape, optics=xoptics)
-    holo = model.calc_holo(sc, alpha=scaling_alpha)
-
+    holo = mie.forward_holo(imshape, xoptics, nrarr,
+                            niarr, rarr, xarr, yarr, zarr, 
+                            scaling_alpha)
     # uncomment to debug
     #return holo
+"""

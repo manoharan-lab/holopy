@@ -32,9 +32,9 @@ from mie_f.miescatlib import nstop, scatcoeffs
 
 from holopy import Optics
 from holopy.hologram import Hologram
-from holopy.model.errors import TheoryNotCompatibleError, UnrealizableScatterer
-from holopy.model.scatterer import Sphere, Composite
-from holopy.model.theory.scatteringtheory import ScatteringTheory, ElectricField
+from scatterpy.errors import TheoryNotCompatibleError, UnrealizableScatterer
+from scatterpy.scatterer import Sphere, Composite
+from scatterpy.theory.scatteringtheory import ScatteringTheory, ElectricField
 from holopy.utility.helpers import _ensure_array
 
 
@@ -78,12 +78,12 @@ class Mie(ScatteringTheory):
 
         Parameters
         ----------
-        scatterer : :mod:`holopy.model.scatterer` object
+        scatterer : :mod:`scatterpy.scatterer` object
             scatterer or list of scatterers to compute field for
 
         Returns
         -------
-        field : :class:`holopy.model.theory.scatteringtheory.ElectricField`with shape `imshape`
+        field : :class:`scatterpy.theory.scatteringtheory.ElectricField`with shape `imshape`
             scattered electric field
 
         Notes
@@ -126,7 +126,7 @@ class Mie(ScatteringTheory):
         
         Parameters
         ----------
-        scatterer : :mod:`holopy.model.scatterer` object
+        scatterer : :mod:`scatterpy.scatterer` object
             scatterer or list of scatterers to compute field for
         alpha : scaling value for intensity of reference wave
 

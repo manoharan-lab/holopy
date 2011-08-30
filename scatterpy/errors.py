@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 """
-Exceptions used in model module.  These are separated out from the
+Exceptions used in scatterpy module.  These are separated out from the
 other exceptions in other parts of holopy to keep things modular.
 
 .. moduleauthor :: Vinothan N. Manoharan <vnm@seas.harvard.edu>

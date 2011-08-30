@@ -25,9 +25,9 @@ of scatterers, using various scattering theories.
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
-from scatterer.sphere import Sphere
-from scatterer.spherecluster import SphereCluster
-from scatterer.composite import Composite
+from .scatterer.sphere import Sphere
+from .scatterer.spherecluster import SphereCluster
+from .scatterer.composite import Composite
 import theory.mie as mie
 import theory.tmatrix_dimer as tmatrix_dimer
 import theory.tmatrix_trimer as tmatrix_trimer

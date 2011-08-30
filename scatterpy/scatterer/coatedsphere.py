@@ -23,7 +23,7 @@ Defines CoatedSphere, a scattering primitive
 '''
 
 import numpy as np
-from holopy.model.scatterer import Scatterer
+from scatterpy.scatterer import Scatterer
 
 class CoatedSphere(Scatterer):
     '''

@@ -23,8 +23,8 @@ Defines Sphere, a scattering primitive
 '''
 
 import numpy as np
-from holopy.model.scatterer import Scatterer
-from holopy.model.errors import ScattererDefinitionError
+from scatterpy.scatterer import Scatterer
+from scatterpy.errors import ScattererDefinitionError
 
 class Sphere(Scatterer):
     '''

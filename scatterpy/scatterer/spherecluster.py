@@ -25,7 +25,7 @@ Defines SphereCluster, a Composite scatterer consisting of Spheres
 import numpy as np
 from sphere import Sphere
 from composite import Composite
-from holopy.model.errors import ScattererDefinitionError
+from scatterpy.errors import ScattererDefinitionError
 
 class SphereCluster(Composite):
     '''

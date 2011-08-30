@@ -34,7 +34,7 @@ import os
 import string
 from nose.plugins.attrib import attr
 
-from holopy.model.scatterer import Sphere, SphereCluster, Composite
+from scatterpy.scatterer import Sphere, SphereCluster, Composite
 
 def setup_optics():
     # set up optics class for use in several test functions
@@ -61,7 +61,7 @@ def test_fit_mie_single():
     path = string.rstrip(path, chars='__init__.pyc')+'tests/exampledata/'
     holo = normalize(holopy.load(path + 'image0001.npy'))
     
-    sc = holopy.model.scatterer.Sphere(n=1.59, r=8.5e-7, x=.567e-5, y=.576e-5, z=15e-6)
+    sc = scatterpy.scatterer.Sphere(n=1.59, r=8.5e-7, x=.567e-5, y=.576e-5, z=15e-6)
 
     minimizer = holopy.minimizer.nmpfit()
 
@@ -70,7 +70,7 @@ def test_fit_mie_single():
 
     # Do we specify the initial guess for alpha with the theory?  It doesn't
     # quite make sense here, but it makes less sense other places - tgd
-    theory = holopy.model.theory.Mie(holo.shape)
+    theory = scatterpy.theory.Mie(holo.shape)
     
 
     fitresult = fit(holo, sc, theory, minimizer, constraints)
@@ -84,7 +84,7 @@ def test_fit_dimer():
     sc = Cluster(com=[17.3e-6,17.3e-6,20.7e-6], n1=1.59, n2=1.59, r1=.65e-6,
                  r2=.65e-6, gap=10e-9, beta=-28.5, gamma=-14.87)
 
-    theory = holopy.model.theory.TMatrix(holo.shape)
+    theory = scatterpy.theory.TMatrix(holo.shape)
 
 
     minimizer = holopy.minimizer.nmpfit()
@@ -108,7 +108,7 @@ def test_fit_superposition():
     sc = Composite(Sphere(n=1.59, r=8.5e-7, x=.567e-5, y=.576e-5, z=15e-6),
                    Sphere(n=1.59, r=8.5e-7, x=.587e-5, y=.586e-5, z=16e-6))
 
-    theory = holopy.model.theory.Mie(holo.shape)
+    theory = scatterpy.theory.Mie(holo.shape)
 
     minmizer = holopy.minimizer.nmpfit()
 
@@ -123,7 +123,7 @@ def test_fit_general():
                    CoatedSphere(n1=1.59, n2=1.4, r1=6.5e-7, r2=1e-6, x=.567e-5,
                                 y=.576e-5, z=15e-6))
 
-    theory = holopy.model.theory.RayleighGansDiscritize(holo.shape,
+    theory = scatterpy.theory.RayleighGansDiscritize(holo.shape,
                                                         grid=[100,100,100])
 
     minmizer = holopy.minimizer.Genetic()

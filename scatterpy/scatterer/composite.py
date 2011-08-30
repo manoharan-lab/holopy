@@ -25,7 +25,7 @@ scatterers (e.g. two trimers).
 '''
 
 from sphere import Sphere
-from holopy.model.scatterer import Scatterer
+from scatterpy.scatterer import Scatterer
 
 class Composite(Scatterer):
     '''

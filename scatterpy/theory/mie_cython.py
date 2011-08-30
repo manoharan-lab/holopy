@@ -35,8 +35,8 @@ from holopy.hologram import Hologram
 from holopy import Optics
 from holopy.utility.helpers import _ensure_array, _ensure_pair
 from holopy.io.fit_io import _split_particle_number, _get_num_particles
-from holopy.model.scatterer import Sphere, SphereCluster, Composite
-from holopy.model.errors import TheoryNotCompatibleError
+from scatterpy.scatterer import Sphere, SphereCluster, Composite
+from scatterpy.errors import TheoryNotCompatibleError
 
 import warnings
 warnings.warn('mie_cython is deprecated; use the mie module instead')
@@ -85,7 +85,7 @@ class Mie():
 
         Parameters
         ----------
-        scatterer : :mod:`holopy.model.scatterer` object
+        scatterer : :mod:`scatterpy.scatterer` object
             scatterer or list of scatterers to compute field for
 
         Returns
@@ -153,7 +153,7 @@ class Mie():
 
         Parameters
         ----------
-        scatterer : :mod:`holopy.model.scatterer` object
+        scatterer : :mod:`scatterpy.scatterer` object
             scatterer or list of scatterers to compute field for
         alpha : scaling value for intensity
 
@@ -172,7 +172,7 @@ class Mie():
         
         Parameters
         ----------
-        scatterer : :mod:`holopy.model.scatterer` object
+        scatterer : :mod:`scatterpy.scatterer` object
             scatterer or list of scatterers to compute field for
         alpha : scaling value for intensity of reference wave
 

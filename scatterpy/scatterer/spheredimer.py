@@ -23,7 +23,7 @@ Defines SphereDimer, a scatterer consisting of two Spheres
 '''
 
 import numpy as np
-from holopy.model.scatterer import Scatterer
+from scatterpy.scatterer import Scatterer
 
 class SphereDimer(Scatterer):
     '''

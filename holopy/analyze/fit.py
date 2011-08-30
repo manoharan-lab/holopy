@@ -35,7 +35,7 @@ import numpy as np
 from holopy.optics import Optics
 
 #import minimizers.nmpfit_adapter as minimizer
-from holopy.model.errors import UnrealizableScatterer
+from scatterpy.errors import UnrealizableScatterer
 
 def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
         upper_bound=None, plot=False):
@@ -46,13 +46,13 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
     ----------
     holo : :class:`holopy.hologram.Hologram` object
         The hologram to fit to
-    initial_guess : (:class:`holopy.model.scatterer.Scatterer`, alpha)
+    initial_guess : (:class:`scatterpy.scatterer.Scatterer`, alpha)
         An initial guess at the scatterer which formed the hologram.  
-    theory : :class:`holopy.model.theory.scatteringtheory.ScatteringTheory`
+    theory : :class:`scatterpy.theory.scatteringtheory.ScatteringTheory`
         The scattering theory to use in computing holograms of the scatterer
     minimizer : holopy.minmizer.Minimizer
         The minimizer to use to refine the scatterer to agree with the hologram
-    lower_bound, upper_bound : :class:`holopy.model.scatterer.Scatterer`, alpha
+    lower_bound, upper_bound : :class:`scatterpy.scatterer.Scatterer`, alpha
         The minimum and maximum values which the scatterer can vary
     plot : bool
          Whether to show a convergence plot (not available with all fitting
@@ -127,9 +127,9 @@ def make_residual(holo, scatterer, theory, scale=None, fixed = []):
     ----------
     holo : :class:`holopy.hologram.Hologram` object
         The hologram to fit to
-    theory : :class:`holopy.model.theory.scatteringtheory.ScatteringTheory`
+    theory : :class:`scatterpy.theory.scatteringtheory.ScatteringTheory`
         The scattering theory to use in computing holograms of the scatterer
-    initial_guess : :class:`holopy.model.scatterer.Scatterer`
+    initial_guess : :class:`scatterpy.scatterer.Scatterer`
         The scatter which models the hologram
     scale: :class:`numpy.ndarray`
         Factors to rescale each parameter before computing a hologram

@@ -28,8 +28,8 @@ import string
 import pylab
 
 import holopy
-from holopy.model.theory import tmatrix_dimer
-from holopy.model.scatterer import SphereDimer
+from scatterpy.theory import tmatrix_dimer
+from scatterpy.scatterer import SphereDimer
 from holopy.third_party import nmpfit
 from holopy.process import normalize
 

@@ -25,9 +25,10 @@ import string
 import pylab
 
 import holopy
-from holopy.model.theory import mie
+from scatterpy.theory import mie
 from holopy.third_party import nmpfit
 from holopy.process import normalize
+from nose.plugins.attrib import attr
 
 from openopt import NLP, NLLSP, GLP
 # tested with openopt and DerApproximator 0.33, installed using
@@ -122,6 +123,7 @@ def residual(x):
     return np.dot(resid,resid)
     #return resid
 
+@attr('slow')
 def test_openopt():
     p = NLP(residual, x0, lb=lb, ub=ub,
             iprint=1, plot=True)

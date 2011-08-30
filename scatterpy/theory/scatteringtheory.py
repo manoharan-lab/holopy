@@ -80,7 +80,7 @@ class ScatteringTheory(object):
 
         Parameters
         ----------
-        scatterer : :mod:`holopy.model.scatterer` object
+        scatterer : :mod:`scatterpy.scatterer` object
             scatterer or list of scatterers to compute field for
 
         Returns
@@ -105,7 +105,7 @@ class ScatteringTheory(object):
 
         Parameters
         ----------
-        scatterers : list of :mod:`holopy.model.scatterer` objects
+        scatterers : list of :mod:`scatterpy.scatterer` objects
             list of scatterers to compute field for
 
         Notes
@@ -138,7 +138,7 @@ class ScatteringTheory(object):
 
         Parameters
         ----------
-        scatterer : :mod:`holopy.model.scatterer` object
+        scatterer : :mod:`scatterpy.scatterer` object
             scatterer or list of scatterers to compute field for
         xfield, yfield, zfield : array (optional)
             Components of scattered field
@@ -169,7 +169,7 @@ class ScatteringTheory(object):
         
         Parameters
         ----------
-        scatterer : :mod:`holopy.model.scatterer` object
+        scatterer : :mod:`scatterpy.scatterer` object
             scatterer or list of scatterers to compute field for
         alpha : scaling value for intensity of reference wave
 
@@ -195,7 +195,7 @@ def interfere_at_detector(e1, e2):
 
     Parameters
     ----------
-    e1, e2: :class:`holopy.model.theory.scatteringtheory.ElectricField`
+    e1, e2: :class:`scatterpy.theory.scatteringtheory.ElectricField`
         The two electric fields to superimpose
 
     Returns

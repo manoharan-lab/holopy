@@ -25,20 +25,13 @@ is complete.
 '''
 
 import numpy as np
-import os
-import string
-import pylab
 
-from nose.tools import raises, assert_raises
-from numpy.testing import assert_, assert_equal, assert_array_almost_equal
-from nose.tools import with_setup
+from numpy.testing import assert_array_almost_equal
 
 import holopy
-from holopy.model.theory import mie
-from holopy.model.theory import Mie
-from holopy.model.scatterer import Sphere, SphereCluster
-from holopy.third_party import nmpfit
-from holopy.process import normalize
+from scatterpy.theory import mie
+from scatterpy.theory import Mie
+from scatterpy.scatterer import Sphere, SphereCluster
 
 # define optical train
 wavelen = 658e-9

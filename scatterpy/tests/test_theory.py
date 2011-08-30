@@ -21,24 +21,19 @@ Test construction and manipulation of scattering theory objects.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
-import numpy as np
 import holopy
-import nose
-from nose.tools import raises, assert_raises
-from numpy.testing import (assert_, assert_equal, assert_almost_equal,
-                           assert_array_almost_equal, assert_allclose)
+from nose.tools import assert_raises
+from numpy.testing import (assert_, assert_almost_equal,
+                           assert_allclose)
 from nose.tools import with_setup
-import os
-import string
 from nose.plugins.attrib import attr
 
-from holopy.model.scatterer import Sphere, CoatedSphere
-from holopy.model.scatterer import Composite, SphereCluster
+from scatterpy.scatterer import Sphere, CoatedSphere
+from scatterpy.scatterer import Composite, SphereCluster
 
-from holopy.model.theory import Mie
-from holopy.model.calculate import calc_field, calc_holo, calc_intensity
-from holopy import Optics
-from holopy.model.errors import TheoryNotCompatibleError
+from scatterpy.theory import Mie
+from scatterpy.calculate import calc_field, calc_holo, calc_intensity
+from scatterpy.errors import TheoryNotCompatibleError
 from holopy.optics import (WavelengthNotSpecified, PixelScaleNotSpecified,
                            MediumIndexNotSpecified)
 

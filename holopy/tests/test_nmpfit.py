@@ -25,10 +25,10 @@ import string
 import pylab
 
 import holopy
-#from holopy.model.theory import mie_fortran as mie
-from holopy.model.theory import mie
-from holopy.model.theory import Mie
-from holopy.model.scatterer import Sphere, SphereCluster
+#from scatterpy.theory import mie_fortran as mie
+from scatterpy.theory import mie
+from scatterpy.theory import Mie
+from scatterpy.scatterer import Sphere, SphereCluster
 from holopy.third_party import nmpfit
 from holopy.process import normalize
 

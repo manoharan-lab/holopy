@@ -22,18 +22,15 @@ Test construction and manipulation of Scatterer objects.
 '''
 
 import numpy as np
-import holopy
-import nose
 from nose.tools import raises, assert_raises
-from numpy.testing import assert_, assert_equal, assert_almost_equal, assert_array_almost_equal
-import os
-import string
+from numpy.testing import assert_, assert_equal, assert_almost_equal
 from nose.plugins.attrib import attr
 
-from holopy.model.scatterer import Sphere, CoatedSphere
-from holopy.model.scatterer import Composite, SphereCluster
-from holopy.model.errors import ScattererDefinitionError
-#from holopy.model.scatterer import SphereDimer
+from scatterpy.scatterer import Sphere, CoatedSphere
+from scatterpy.scatterer import Composite, SphereCluster
+from scatterpy.errors import ScattererDefinitionError
+#from scatterpy
+#.scatterer import SphereDimer
 
 @attr('fast')
 def test_Sphere_construction():
