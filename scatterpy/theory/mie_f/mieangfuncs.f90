@@ -189,7 +189,7 @@
               prefactor = ci / kr * exp(ci * kr) ! Bohren & Huffman formalism
               signarr = (/ 1.0, -1.0 /) ! accounts for escatperp = -escatphi
               escat_sph = prefactor * matmul(asm_scat, einc_sph) * signarr
-
+              
               ! convert to rectangular
               call fieldstocart(escat_sph, theta, phi, escat_rect)
               es_x(i, j) = escat_rect(1)
@@ -228,6 +228,7 @@
         complex (kind = 8), dimension(2, 2) :: asm_scat
         complex (kind = 8), dimension(2) :: escat_sph
         complex (kind = 8), dimension(3) :: escat_rect
+        data ci/(0.d0, 1.d0)/
 
         do j = 1, n_phi, 1
            do i = 1, n_theta, 1
@@ -240,12 +241,11 @@
             
               ! calculate the amplitude scattering matrix
               call asm_mie_fullradial(nstop, asbs, sphcoords, asm_scat)
-
               call incfield(einc(1), einc(2), phi, einc_sph)
               prefactor = ci / kr * exp(ci * kr) ! Bohren & Huffman formalism
               signarr = (/ 1.0, -1.0 /) ! accounts for escatperp = -escatphi
               escat_sph = prefactor * matmul(asm_scat, einc_sph) * signarr
-
+              
               ! convert to rectangular
               call fieldstocart(escat_sph, theta, phi, escat_rect)
               es_x(i, j) = escat_rect(1)

@@ -74,7 +74,7 @@ else:
 # Declare the extension object
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
-    config = Configuration('mie', parent_package, top_path)
+    config = Configuration('mie', parent_package, top_path, optional=True)
     config.add_extension('MFE',
                          [pyx_sources], include_dirs = ['.']
                          )
