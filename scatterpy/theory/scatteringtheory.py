@@ -187,6 +187,29 @@ class ScatteringTheory(object):
         return Hologram(interfere_at_detector(scat * alpha, ref),
                         optics=self.optics)
 
+    def _spherical_grid(self, x, y, z):
+        """
+        Parameters
+        ----------
+        x, y, z : real
+            Center of the spherical coordinate system
+
+        Returns
+        -------
+        theta, phi: 1-D array
+            Angles
+        r : 2-D array
+            Distances (normalized by wavevector)
+        """
+        px, py = self.optics.pixel
+        xdim, ydim = self.imshape
+        x = np.mgrid[0:xdim]*px - x
+        y = np.mgrid[0:ydim]*py - y
+        theta = np.arctan2(np.sqrt(x**2+y**2), z)
+        phi = np.arctan2(y, x)
+        r = np.sqrt(x.reshape(x.size,1)**2 + y.reshape(1,y.size)**2 + z**2)
+        return theta, phi, r*self.optics.wavevec
+        
 #TODO: Should this be a method of the Electric field class? - tgd 2011-08-15
 def interfere_at_detector(e1, e2):
     """

@@ -95,11 +95,9 @@ class Mie(ScatteringTheory):
         def sphere_field(s):
             scat_coeffs = self._scat_coeffs(s)
             
-            # TODO: convert to calling in spherical coordinates
             # mieangfuncs.f90 works with everything dimensionless.
-            gridx, gridy = self._grid()
-            e_x, e_y, e_z = mieangfuncs.mie_fields(gridx, gridy, 
-                                                   s.center*self.optics.wavevec,
+            theta, phi, kr = self._spherical_grid(s.x, s.y, s.z)
+            e_x, e_y, e_z = mieangfuncs.mie_fields_sph(theta, phi, kr,
                                                    scat_coeffs,
                                                    self.optics.polarization)
 
@@ -145,12 +143,12 @@ class Mie(ScatteringTheory):
 
         if isinstance(scatterer, Sphere):
             scat_coeffs = self._scat_coeffs(scatterer)
-            
-            gridx, gridy = self._grid()
 
-            holo = singleholo(gridx, gridy,
-                              scatterer.center * self.optics.wavevec,
-                              scat_coeffs, alpha, self.optics.polarization)
+            theta, phi, kr = self._spherical_grid(s.x, s.y, s.z)
+
+            # TODO: convert to calling in spherical coordinates
+            holo = singleholo(theta, phi, kr, scat_coeffs, alpha,
+                              self.optics.polarization)
             
         else:   # call base class calc_holo
             holo = ScatteringTheory.calc_holo(self, scatterer, 
@@ -158,10 +156,11 @@ class Mie(ScatteringTheory):
 
         return Hologram(holo, optics = self.optics)
 
+    # TODO: remove this function once self.calc_holo no longer needs it
     def _grid(self):
         px, py = self.optics.pixel
         xdim, ydim = self.imshape
-        return (self.optics.wavevec*np.mgrid[0:xdim]*py,
+        return (self.optics.wavevec*np.mgrid[0:xdim]*px,
                 self.optics.wavevec*np.mgrid[0:ydim]*py)
 
     def _scat_coeffs(self, s):
