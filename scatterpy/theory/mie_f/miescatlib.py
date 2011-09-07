@@ -136,6 +136,22 @@ def cross_sections(an, bn):
     return array([csca, cext, cback], dtype = 'float64') # contents are real
 
 
+def rad_pressure_xsect(an, bn):
+    '''
+    Calculates radiation pressure efficiency C_pr. For a sphere, the radiation 
+    pressure force (in Mie scattering) is  
+    
+    F = (n_med I_0 C_pr) / c
+
+    Note that C_pr = C_ext - <cos \theta> C_sca.
+
+    See van de Hulst, p. 14. We omit a factor of 2 \pi / k^2.
+    '''
+    xsects = cross_sections(an, bn)
+    avg_cos_theta = asymmetry_parameter(an, bn)
+    return xsects[1] - avg_cos_theta * xsects[0]
+    
+
 def ascatmatrix_mie(theta, a_l, b_l):
     '''
     Calculate nonzero (diagonal) elements of the amplitude scattering matrix
