@@ -82,9 +82,9 @@ def test_Mie_single():
     fields = theory.calc_field(sc)
     assert_allclose([fields.x_comp.sum(), fields.y_comp.sum(),
                      fields.z_comp.sum()],
-                    [(-0.083472463089860685+0.012770539644076111j),
-                     (-3.9082981023926409-22.567322348753319j),
-                     (-0.56230133684984218+2.768094495730304j)])
+                     [-6.92794586e-03+0.08415903j,  
+                      -2.28585806e+01-1.42972922j,
+                      2.56233512e+00+1.18868358j])
     assert_allclose([fields.x_comp.std(),
                      fields.y_comp.std(),fields.z_comp.std()],
                     [0.0024371296061972384,

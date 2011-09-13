@@ -135,6 +135,7 @@
               kz = kcoords(3)
               theta = sphcoords(2)
               phi = sphcoords(3)
+
               
               call asmfr(amn, nodrt, theta, phi+gamma, kr, ascatmat)
               asreshape = reshape(cshift(ascatmat, shift = 1), (/ 2, 2 /), &
@@ -202,7 +203,7 @@
         end
 
 
-      subroutine mie_fields_sph(n_theta, n_phi, thetagrid, phigrid, krgrid, &
+      subroutine mie_fields_sph(n_rows, n_cols, grid, &
            asbs, nstop, einc, es_x, es_y, es_z)
         ! Calculate Mie fields, using a grid of spherical coordinates
         ! thetagrid: 1D array of the polar spherical coordinate
@@ -212,13 +213,14 @@
         ! asbs: Mie coefficients
         ! einc: polarization
         implicit none
-        integer, intent(in) :: n_theta, n_phi, nstop
-        real (kind = 8), intent(in), dimension(n_theta) :: thetagrid
-        real (kind = 8), intent(in), dimension(n_phi) :: phigrid
-        real (kind = 8), intent(in), dimension(n_theta, n_phi) :: krgrid
+        integer, intent(in) :: n_rows, n_cols, nstop
+        real (kind = 8), intent(in), dimension(n_rows, n_cols, 3) :: grid
+!        real (kind = 8), intent(in), dimension(n_theta) :: thetagrid
+!        real (kind = 8), intent(in), dimension(n_phi) :: phigrid
+!        real (kind = 8), intent(in), dimension(n_theta, n_phi) :: krgrid
         complex (kind = 8), intent(in), dimension(2, nstop) :: asbs
         real (kind = 8), intent(in), dimension(2) :: einc
-        complex (kind = 8), intent(out), dimension(n_theta, n_phi) :: es_x, &
+        complex (kind = 8), intent(out), dimension(n_rows, n_cols) :: es_x, &
              es_y, es_z
         integer i, j
         real (kind = 8) :: kr, theta, phi
@@ -230,11 +232,11 @@
         complex (kind = 8), dimension(3) :: escat_rect
         data ci/(0.d0, 1.d0)/
 
-        do j = 1, n_phi, 1
-           do i = 1, n_theta, 1
-              kr = krgrid(i, j)
-              theta = thetagrid(i)
-              phi = phigrid(j)
+        do j = 1, n_cols, 1
+           do i = 1, n_rows, 1
+              kr = grid(i, j, 1)
+              theta = grid(i, j, 2)
+              phi = grid(i, j, 3)
               sphcoords(1) = kr
               sphcoords(2) = theta
               sphcoords(3) = phi

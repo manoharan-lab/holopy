@@ -160,6 +160,7 @@ class ScatteringTheory(object):
         them twice during calc_holo()
         """
         field = self.calc_field(scatterer)
+        return abs(field.x_comp)**2 + abs(field.y_comp)**2
         return interfere_at_detector(field, field)
 
     def calc_holo(self, scatterer, alpha=1.0):
@@ -203,12 +204,15 @@ class ScatteringTheory(object):
         """
         px, py = self.optics.pixel
         xdim, ydim = self.imshape
-        x = np.mgrid[0:xdim]*px - x
-        y = np.mgrid[0:ydim]*py - y
-        theta = np.arctan2(np.sqrt(x**2+y**2), z)
+        xg, yg = np.ogrid[0:xdim, 0:ydim]
+        x = xg*px - x
+        y = yg*py - y
+        r = np.sqrt(x**2 + y**2 + z**2)
+        theta = np.arctan2(np.sqrt(x**2 + y**2), z)
         phi = np.arctan2(y, x)
-        r = np.sqrt(x.reshape(x.size,1)**2 + y.reshape(1,y.size)**2 + z**2)
-        return theta, phi, r*self.optics.wavevec
+        # get phi between 0 and 2pi
+        phi = phi + 2*np.pi * (phi < 0)
+        return np.dstack((r*self.optics.wavevec, theta, phi))
         
 #TODO: Should this be a method of the Electric field class? - tgd 2011-08-15
 def interfere_at_detector(e1, e2):
@@ -233,8 +237,10 @@ def interfere_at_detector(e1, e2):
     # but we choose phase angle = 0 at z=0, so phase = 1
     # which gives 2*real(xfield)
 
-    return (abs(e1.x_comp**2) + abs(e1.y_comp**2) + abs(e2.x_comp**2) +
-            abs(e2.y_comp**2) + 2 * np.real(e1.x_comp*e2.x_comp) +
+
+    return (abs(e1.x_comp)**2 + abs(e1.y_comp)**2 +
+            abs(e2.x_comp)**2 + abs(e2.y_comp)**2 +
+            2 * np.real(e1.x_comp*e2.x_comp) +
             2 * np.real(e1.y_comp*e2.y_comp))
 
 
@@ -254,47 +260,39 @@ class ElectricField(object):
     ----------
     x_field, y_field, z_field : complex :class:`numpy.ndarray`
         Fields in each cartesian firection
-    z_ref: float (distance)
+        z_ref: float (distance)
         Z position of 0 phase (phase reference)
     wavelen: float (distance)
         wavelength of the light this field represents, this should be the
         wavelength in medium if a non unity index medium is present
     """
-
     def __init__(self, x_field, y_field, z_field, z_ref, wavelen):
-        self.x_comp = x_field
-        self.y_comp = y_field
-        self.z_comp = z_field
-        self.z_ref = z_ref
+        # Store the original z in case we later want to access it, but we will
+        # now shift everything to store at z=0
+        self.orig_z = z_ref
+        # shift all electric fields to reference to z=0 (usually this is a
+        # detector).  This simplifies all computations involving electric fields
+        phase =  np.exp(-1j*np.pi*2*z_ref/wavelen)
+        self.x_comp = x_field * phase
+        self.y_comp = y_field * phase
+        self.z_comp = z_field * phase
         self.wavelen = wavelen
 
     def __add__(self, other):
         """
-        Superpositon of electric fields.  Phase shifts as necessary to give all
-        fields the same reference phase.
+        Superpositon of electric fields.  
         """
-        
+
         if self.wavelen != other.wavelen:
             raise InvalidElectricFieldComputation(
                 "Superposition of fields with different wavelengths is not " +
                 "implemented")
         
-        
-        def phase_shift(z):
-            # - sign is needed to adjust phase to 0, since our z is opposite the
-            # propagation direction we have to backpropagate fields to get them
-            # to the origin.  
-            return np.exp(-1j*np.pi*2*z/self.wavelen)
-        
-        new_x = (self.x_comp * phase_shift(self.z_ref) +
-                 other.x_comp * phase_shift(other.z_ref))
-        new_y = (self.y_comp * phase_shift(self.z_ref) +
-                 other.y_comp * phase_shift(other.z_ref))
-        new_z = (self.z_comp * phase_shift(self.z_ref) +
-                 other.z_comp * phase_shift(other.z_ref))
+        new_x = self.x_comp + other.x_comp
+        new_y = self.y_comp + other.y_comp
+        new_z = self.z_comp + other.z_comp
 
-        # We phase shifted all of the fields to reference against 0, so the
-        # field returned has z_ref=0
+        # We are already z=0 referenced, so z_ref=0 for the new ElectricField
         return ElectricField(new_x, new_y, new_z, 0.0, self.wavelen)
 
     def __rmul__(self, other):
@@ -305,4 +303,4 @@ class ElectricField(object):
                 "multiplication by nonscalar values not yet implemented")
 
         return ElectricField(self.x_comp * other, self.y_comp * other,
-                             self.z_comp * other, self.z_ref, self.wavelen)
+                             self.z_comp * other, 0.0, self.wavelen)

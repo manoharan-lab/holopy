@@ -37,12 +37,6 @@ from scatterpy.scatterer import Sphere, Composite
 from scatterpy.theory.scatteringtheory import ScatteringTheory, ElectricField
 from holopy.utility.helpers import _ensure_array
 
-
-
-
-par_ordering = ['n_particle_real', 'n_particle_imag', 'radius', 'x',
-                'y', 'z', 'scaling_alpha'] 
-
 class Mie(ScatteringTheory):
     """
     Class that contains methods and parameters for calculating
@@ -96,10 +90,11 @@ class Mie(ScatteringTheory):
             scat_coeffs = self._scat_coeffs(s)
             
             # mieangfuncs.f90 works with everything dimensionless.
-            theta, phi, kr = self._spherical_grid(s.x, s.y, s.z)
-            e_x, e_y, e_z = mieangfuncs.mie_fields_sph(theta, phi, kr,
-                                                   scat_coeffs,
-                                                   self.optics.polarization)
+            e_x, e_y, e_z = mieangfuncs.mie_fields_sph(self._spherical_grid(s.x,
+                                                                            s.y,
+                                                                            s.z),
+                                                       scat_coeffs,
+                                                       self.optics.polarization)
 
             return ElectricField(e_x, e_y, e_z, s.z, self.optics.med_wavelen)
         
@@ -117,51 +112,61 @@ class Mie(ScatteringTheory):
             return self.superpose(spheres)
         else: raise TheoryNotCompatibleError(self, scatterer)
 
-    def calc_holo(self, scatterer, alpha=1.0):
-        """
-        Calculate hologram formed by interference between scattered
-        fields and a reference wave
-        
-        Parameters
-        ----------
-        scatterer : :mod:`scatterpy.scatterer` object
-            scatterer or list of scatterers to compute field for
-        alpha : scaling value for intensity of reference wave
-
-        Returns
-        -------
-        holo : :class:`holopy.hologram.Hologram` object
-            Calculated hologram from the given distribution of spheres
-
-        Notes
-        -----
-        For a single particle, this code uses a fast Fortran
-        subroutine to calculate the hologram.  Otherwise it uses the
-        Fortran subroutine for calculating the fields from each
-        particle, then superposes them using numpy.
-        """
-
-        if isinstance(scatterer, Sphere):
-            scat_coeffs = self._scat_coeffs(scatterer)
-
-            theta, phi, kr = self._spherical_grid(s.x, s.y, s.z)
-
-            # TODO: convert to calling in spherical coordinates
-            holo = singleholo(theta, phi, kr, scat_coeffs, alpha,
-                              self.optics.polarization)
-            
-        else:   # call base class calc_holo
-            holo = ScatteringTheory.calc_holo(self, scatterer, 
-                                              alpha=alpha)
-
-        return Hologram(holo, optics = self.optics)
-
-    # TODO: remove this function once self.calc_holo no longer needs it
-    def _grid(self):
-        px, py = self.optics.pixel
-        xdim, ydim = self.imshape
-        return (self.optics.wavevec*np.mgrid[0:xdim]*px,
-                self.optics.wavevec*np.mgrid[0:ydim]*py)
+# Disable this function for now since the fast fortran subroutine does not
+# handle spherical coordinates yet.  This will cause fallback to the method
+# which uses the spherical coordinates calc_fields version.  
+#
+# TODO: make a spherical coordinates version of the singleholo fortran function
+# and switch to using it
+#    def calc_holo(self, scatterer, alpha=1.0):
+#        """
+#        Calculate hologram formed by interference between scattered
+#        fields and a reference wave
+#        
+#        Parameters
+#        ----------
+#        scatterer : :mod:`scatterpy.scatterer` object
+#            scatterer or list of scatterers to compute field for
+#        alpha : scaling value for intensity of reference wave
+#
+#        Returns
+#        -------
+#        holo : :class:`holopy.hologram.Hologram` object
+#            Calculated hologram from the given distribution of spheres
+#
+#        Notes
+#        -----
+#        For a single particle, this code uses a fast Fortran
+#        subroutine to calculate the hologram.  Otherwise it uses the
+#        Fortran subroutine for calculating the fields from each
+#        particle, then superposes them using numpy.
+#        """
+#
+#        if isinstance(scatterer, Sphere):
+#            scat_coeffs = self._scat_coeffs(scatterer)
+#
+#            theta, phi, kr = self._spherical_grid(scatterer.x, scatterer.y, scatterer.z)
+#
+#            # TODO: convert to calling in spherical coordinates
+#            gridx, gridy = self._grid()
+#
+#            holo = singleholo(gridx, gridy,
+#                              scatterer.center * self.optics.wavevec,
+#                              scat_coeffs, alpha, self.optics.polarization)
+#            
+#        else:   # call base class calc_holo
+#            holo = ScatteringTheory.calc_holo(self, scatterer, 
+#                                              alpha=alpha)
+#
+#        return Hologram(holo, optics = self.optics)
+#
+#        
+#    # TODO: remove this function once self.calc_holo no longer needs it
+#    def _grid(self):
+#        px, py = self.optics.pixel
+#        xdim, ydim = self.imshape
+#        return (self.optics.wavevec*np.mgrid[0:xdim]*px,
+#                self.optics.wavevec*np.mgrid[0:ydim]*py)
 
     def _scat_coeffs(self, s):
         x_p = self.optics.wavevec * s.r
@@ -195,6 +200,9 @@ class Mie(ScatteringTheory):
 
 # TODO: Need to refactor fitting code so that it no longer relies on
 # the legacy functions below.  Then remove.
+par_ordering = ['n_particle_real', 'n_particle_imag', 'radius', 'x',
+                'y', 'z', 'scaling_alpha'] 
+        
 def _scaled_by_k(param_name):
     pars = ['radius', 'x', 'y', 'z']
     return param_name in pars
