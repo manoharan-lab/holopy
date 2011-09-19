@@ -206,18 +206,24 @@
       subroutine mie_fields_sph(n_rows, n_cols, grid, &
            asbs, nstop, einc, es_x, es_y, es_z)
         ! Calculate Mie fields, using a grid of spherical coordinates
-        ! thetagrid: 1D array of the polar spherical coordinate
-        ! phigrid: 1D array of the azimuthal spherical coordinate
-        ! krgrid: (n_theta x n_phi) grid containing non-dimensional radial
-        ! coordinate
-        ! asbs: Mie coefficients
-        ! einc: polarization
+        ! Parameters
+        ! ----------
+        ! grid: array (n_rows x n_cols x 3)
+        !    grid containing non-dimensional radial (kr), theta and phi coordinates
+        ! asbs: complex array (2, nstop) complex
+        !     Mie coefficients miescatlib.scatcoeffs(x_p, m_p, nstop)
+        ! nstop: int
+        !     Expansion order (from miescatlib.nstop(x_p))
+        ! einc: real array (2)
+        !     polarization (from optics.polarization)
+        !
+        ! Returns
+        ! -------
+        ! es_x, es_y, es_z: array, shape = n_rows x n_cols
+        !     The three electric field components in the plane defined by grid
         implicit none
         integer, intent(in) :: n_rows, n_cols, nstop
         real (kind = 8), intent(in), dimension(n_rows, n_cols, 3) :: grid
-!        real (kind = 8), intent(in), dimension(n_theta) :: thetagrid
-!        real (kind = 8), intent(in), dimension(n_phi) :: phigrid
-!        real (kind = 8), intent(in), dimension(n_theta, n_phi) :: krgrid
         complex (kind = 8), intent(in), dimension(2, nstop) :: asbs
         real (kind = 8), intent(in), dimension(2) :: einc
         complex (kind = 8), intent(out), dimension(n_rows, n_cols) :: es_x, &
@@ -243,6 +249,7 @@
             
               ! calculate the amplitude scattering matrix
               call asm_mie_fullradial(nstop, asbs, sphcoords, asm_scat)
+              ! asm_scat is the amplitude scattering matrix
               call incfield(einc(1), einc(2), phi, einc_sph)
               prefactor = ci / kr * exp(ci * kr) ! Bohren & Huffman formalism
               signarr = (/ 1.0, -1.0 /) ! accounts for escatperp = -escatphi

@@ -161,7 +161,6 @@ class ScatteringTheory(object):
         """
         field = self.calc_field(scatterer)
         return abs(field.x_comp)**2 + abs(field.y_comp)**2
-        return interfere_at_detector(field, field)
 
     def calc_holo(self, scatterer, alpha=1.0):
         """
@@ -188,6 +187,22 @@ class ScatteringTheory(object):
         return Hologram(interfere_at_detector(scat * alpha, ref),
                         optics=self.optics)
 
+
+    def fields_from_scat_matr(self, scat_matr, kr):
+        prefactor = 1.0j * np.exp(1.0j*kr)
+        # Correct for fact that escatperp = -escatphi
+        sign_correction = 1.0-1.0j
+
+        e = (prefactor[:,np.newaxis] * np.dot(scat_matr,
+                                                   self.optics.polarization) *
+                  sign_correction)
+
+        ex = e[:,0].reshape(self.imshape)
+        ey = e[:,1].reshape(self.imshape)
+        
+        return ElectricField(ex, ey, 0, 0, self.optics.med_wavelen)
+
+    
     def _spherical_grid(self, x, y, z):
         """
         Parameters
