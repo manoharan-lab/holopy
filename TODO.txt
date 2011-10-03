@@ -1,6 +1,3 @@
-- make functions and classes conform to Python style guidelines:
-  http://www.python.org/dev/peps/pep-0008/
+Remove use of assert_allclose (or decide that we require newer version of numpy)
 
-- replace tiffinfo code with portable code from PIL (look at
-  TiffImagePlugin.py and TiffTags.py from PIL)
-
+Clean up scatterpy imports (some are breaking on becca's computer)

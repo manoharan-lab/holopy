@@ -38,7 +38,7 @@ from holopy.optics import Optics
 from scatterpy.errors import UnrealizableScatterer
 
 def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
-        upper_bound=None, plot=False):
+        upper_bound=None, plot=False, minimizer_params={}):
     """
     Find a scatterer which best recreates the given holo
 
@@ -115,7 +115,7 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
     residual = make_residual(holo, scatterer, theory, scale, fixed)
 
     result = minimize(residual, minimizer, guess, lower_bound, upper_bound,
-                      parameter_names = names, plot=plot)
+                      parameter_names = names, **minimizer_params)
 
     
     # put back in the fixed values 
@@ -165,7 +165,7 @@ def make_residual(holo, scatterer, theory, scale=None, fixed = []):
     return residual
 
 def minimize(residual, algorithm='nmpfit', guess=None, lb=None , ub=None,
-             quiet = False, parameter_names = None, plot = True, ftol = 1e-10, xtol = 1e-10, gtol =
+             quiet = False, parameter_names = None, plot = False, ftol = 1e-10, xtol = 1e-10, gtol =
              1e-10, damp = 0, maxiter = 100, err=None):
     """
     Minmized a function (as defined by residual)
