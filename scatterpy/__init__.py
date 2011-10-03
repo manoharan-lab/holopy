@@ -30,4 +30,4 @@ from .scatterer.spherecluster import SphereCluster
 from .scatterer.composite import Composite
 import theory.mie as mie
 import theory.tmatrix_dimer as tmatrix_dimer
-import theory.tmatrix_trimer as tmatrix_trimer
+#import theory.tmatrix_trimer as tmatrix_trimer

@@ -28,7 +28,7 @@ field.
 import numpy as np
 import mie_f.mieangfuncs as mieangfuncs
 import mie_f.scsmfo_min as scsmfo_min
-import holopy.optics as optics
+from holopy import optics
 from holopy.hologram import Hologram
 from holopy.utility.helpers import _ensure_pair
 

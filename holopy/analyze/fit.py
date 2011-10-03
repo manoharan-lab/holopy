@@ -76,11 +76,16 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
 
     scatterer, alpha = initial_guess
     def unpack_bound(b):
-        return np.append(b[0].get_parameter_list(), b[1])
+        return np.append(b[0].parameter_list, b[1])
     if lower_bound:
         lower_bound = unpack_bound(lower_bound)
     if upper_bound:
         upper_bound = unpack_bound(upper_bound)
+
+    # check that the initial guess lies within the bounds
+    guess_list = unpack_bound(initial_guess)
+    if (guess_list > upper_bound).any() or (guess_list < lower_bound).any():
+        raise GuessOutOfBounds
         
     if isinstance(theory, type):
         # allow the user to pass the type, we instantiate it here
@@ -88,7 +93,7 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
 
     # Rescale parameters so that the minimizer is working with all parameter
     # values ~ 1
-    scale = scatterer.get_parameter_list()
+    scale = scatterer.parameter_list
     scale = np.append(scale, alpha)
     # since we pick the intial guess as the scaling factor, our initial guess to
     # the minimizer will be all ones
@@ -103,13 +108,14 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
 
     lower_bound = np.delete(lower_bound/scale, fixed)
     upper_bound = np.delete(upper_bound/scale, fixed)
+    names = np.delete(scatterer.parameter_names_list.append('alpha'), fixed)
 
     guess = np.ones(len(lower_bound))
 
     residual = make_residual(holo, scatterer, theory, scale, fixed)
 
     result = minimize(residual, minimizer, guess, lower_bound, upper_bound,
-                      plot=plot)
+                      parameter_names = names, plot=plot)
 
     
     # put back in the fixed values 
@@ -159,7 +165,7 @@ def make_residual(holo, scatterer, theory, scale=None, fixed = []):
     return residual
 
 def minimize(residual, algorithm='nmpfit', guess=None, lb=None , ub=None,
-             quiet = False, plot = True, ftol = 1e-10, xtol = 1e-10, gtol =
+             quiet = False, parameter_names = None, plot = True, ftol = 1e-10, xtol = 1e-10, gtol =
              1e-10, damp = 0, maxiter = 100, err=None):
     """
     Minmized a function (as defined by residual)
@@ -206,6 +212,11 @@ def minimize(residual, algorithm='nmpfit', guess=None, lb=None , ub=None,
 
         parinfo = []
         for i, par in enumerate(guess):
+            d = {'limited' : [True, True],
+                            'limits' : [lb[i], ub[i]],
+                            'value' : par}
+            if parameter_names:
+                d['parname'] = parameter_names[i]
             parinfo.append({'limited' : [True, True],
                             'limits' : [lb[i], ub[i]],
                             'value' : par})
@@ -251,6 +262,9 @@ class MinimizerNotFound(Exception):
         self.algorthim = algorithm
     def __str__(self):
         return "{0} is not a valid fitting algorithm".format(self.algorthim)
+
+class GuessOutOfBounds(Exception):
+    pass
 
 # Legacy code, figure out what of this should stay
 def fit_deck(input_deck):

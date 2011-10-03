@@ -33,7 +33,8 @@ class Scatterer(object):
     def __init__(self):
         raise NotImplementedError
 
-    def get_parameter_list(self):
+    @property
+    def parameter_list(self):
         """
         Return's the scatterer's parameters as an 1d array in a defined order.
         This form is suitable for passing to a minimizer
@@ -43,7 +44,8 @@ class Scatterer(object):
         """
         raise NotImplementedError
 
-    def get_parameter_names_list(self):
+    @property
+    def parameter_names_list(self):
         """
         returns the list of names of the parameters, in the same order as the
         parameter_list() function

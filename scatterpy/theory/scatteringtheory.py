@@ -62,8 +62,7 @@ class ScatteringTheory(object):
     theta(j))
     """
 
-    def __init__(self, imshape=(256, 256), thetas=None, phis=None,
-                 optics=None): 
+    def __init__(self, optics, imshape=(256,256), thetas=None, phis=None): 
         self.imshape = _ensure_pair(imshape)
         self.thetas = thetas
         self.phis = phis

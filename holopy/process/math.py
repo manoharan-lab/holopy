@@ -23,6 +23,7 @@ Misc utility functions to make coding more convenient
 
 import scipy.fftpack as fftpack
 from holopy.utility.helpers import _preserve_holo_type
+from numpy import sin, cos
 
 
 @_preserve_holo_type
@@ -107,3 +108,31 @@ def ifft(a, overwrite=False, shift=True):
             return fftpack.ifft2(a, overwrite_x=overwrite)
     
 
+def rotation_matrix(theta, phi, psi):
+    """
+    Return a 3d rotation matrix
+
+    Parameters
+    ----------
+    theta, phi, psi: angles (radians)
+        Rotation angles about x, y, z axes
+        
+    Returns
+    -------
+    rot: array(3,3)
+        Rotation matrix, to rotate a vertor x, use np.dot(x, rot)
+        
+    Notes
+    -----
+    http://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
+        
+    """
+    return [[cos(theta)*cos(psi), -cos(phi)*sin(psi)+sin(phi)*sin(theta)*cos(psi),
+        sin(phi)*sin(psi)+cos(phi)*sin(theta)*cos(psi)],
+       [cos(theta)*sin(psi), cos(theta)*cos(psi)+sin(phi)*sin(theta)*sin(psi),
+        -sin(phi)*cos(psi)+cos(phi)*sin(theta)],
+       [-sin(theta), sin(phi)*cos(theta), cos(phi)*cos(theta)]]
+
+
+
+        

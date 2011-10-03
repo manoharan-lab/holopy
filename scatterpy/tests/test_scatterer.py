@@ -65,7 +65,7 @@ def test_Sphere_construct_array():
 def test_Sphere_construct_params():
     params = np.array([1.59, 1e-4, 5e-7, 1e-6, -1e-6, 10e-6])
     s = Sphere.make_from_parameter_list(params)
-    assert_equal(s.get_parameter_list(), params)
+    assert_equal(s.parameter_list, params)
     
 @attr('fast')
 def test_CoatedSphere_construction():
@@ -178,7 +178,7 @@ def test_SphereCluster_construct_params():
     params = [1.5891, 0.0001, 6.7e-07, 1.56e-05, 1.44e-05, 1.5e-05, 1.5891,
               0.0001, 6.5e-07, 3.42e-05, 3.17e-05, 1.0e-05]
     s = SphereCluster.make_from_parameter_list(params)
-    assert_equal(s.get_parameter_list(), params) 
+    assert_equal(s.parameter_list, params) 
     
 @attr('fast')
 def test_SphereCluster_contains_only_spheres():

@@ -61,16 +61,20 @@ class Sphere(Scatterer):
         else:
             self.center = np.array([x, y, z])
 
+    parameter_names_list = ['n.real', 'n.imag', 'r', 'x', 'y', 'z']
+
     def __repr__(self):
         '''
         Outputs the object parameters in a way that can be typed into
         the python interpreter
         '''
         return "{c}(center={center}, n={n}, r={r})".format(
-            c=self.__class__.__name__, center=repr(self.center), n=self.n,
+            c=self.__class__.__name__, center=repr(list(self.center)), n=self.n,
             r=self.r)
 
-    def get_parameter_list(self):
+    
+    @property
+    def parameter_list(self):
         """
         Return sphere parameters in order: n, r, x, y, z
         """
