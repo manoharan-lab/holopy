@@ -37,8 +37,16 @@ from holopy.optics import Optics
 #import minimizers.nmpfit_adapter as minimizer
 from scatterpy.errors import UnrealizableScatterer
 
+def cost_subtract(holo, calc):
+    return holo - calc
+
+def cost_rectified(holo, calc):
+    return abs(holo-1) - abs(calc-1)
+
+
 def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
-        upper_bound=None, plot=False, minimizer_params={}):
+        upper_bound=None, plot=False, minimizer_params={},
+        residual_cost=cost_subtract):
     """
     Find a scatterer which best recreates the given holo
 
@@ -108,11 +116,13 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
 
     lower_bound = np.delete(lower_bound/scale, fixed)
     upper_bound = np.delete(upper_bound/scale, fixed)
-    names = np.delete(scatterer.parameter_names_list.append('alpha'), fixed)
-
+    
+    names = np.delete(scatterer.parameter_names_list + ['alpha'], fixed)
+    
     guess = np.ones(len(lower_bound))
 
-    residual = make_residual(holo, scatterer, theory, scale, fixed)
+    residual = make_residual(holo, scatterer, theory, scale, fixed,
+                             residual_cost)
 
     result = minimize(residual, minimizer, guess, lower_bound, upper_bound,
                       parameter_names = names, **minimizer_params)
@@ -122,9 +132,13 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
     for v in fixed:
         result = np.insert(result, v, 1.0)
 
-    return scale * result
+    res = scale*result
+        
+    return scatterer.make_from_parameter_list(res[:-1]), res[-1]
 
-def make_residual(holo, scatterer, theory, scale=None, fixed = []):
+
+def make_residual(holo, scatterer, theory, scale=1.0, fixed = [],
+                  cost_func=cost_subtract):
     """
     Construct a residual function suitable for fitting scatterer to holo using
     theory
@@ -154,13 +168,10 @@ def make_residual(holo, scatterer, theory, scale=None, fixed = []):
             calculated = theory.calc_holo(this_scatterer, p[-1])
         except UnrealizableScatterer:
             print("Fitter asked for a value which the scattering theory " +
-                  "thought was unphysical, returning NaN")
+                  "thought was unphysical or uncomputable, returning NaN")
             return np.nan
 
-        derivatives = holo - calculated
-        resid = derivatives.ravel()
-
-        return resid
+        return cost_func(holo, calculated).ravel()
 
     return residual
 
@@ -204,6 +215,7 @@ def minimize(residual, algorithm='nmpfit', guess=None, lb=None , ub=None,
     openopt_nlp = ['ralg', 'scipy_lbfgsb', 'scipy_slsqp']
     openopt_global = ['galileo']
 
+    
     if algorithm == 'nmpfit':
         from holopy.third_party import nmpfit
         def resid_wrapper(p, fjac=None):
@@ -215,11 +227,9 @@ def minimize(residual, algorithm='nmpfit', guess=None, lb=None , ub=None,
             d = {'limited' : [True, True],
                             'limits' : [lb[i], ub[i]],
                             'value' : par}
-            if parameter_names:
+            if parameter_names is not None:
                 d['parname'] = parameter_names[i]
-            parinfo.append({'limited' : [True, True],
-                            'limits' : [lb[i], ub[i]],
-                            'value' : par})
+            parinfo.append(d)
 
         fitresult = nmpfit.mpfit(resid_wrapper, parinfo=parinfo, ftol = ftol,
                                  xtol = xtol, gtol = gtol, damp = damp,
