@@ -124,8 +124,9 @@ class ScatteringTheory(object):
         the phase angle of the incident field is 0 at z=0
         """
 
-        field = self.calc_field(scatterers[0])
-        for s in scatterers[1:]:
+        field = ElectricField(np.zeros(self.imshape), np.zeros(self.imshape),
+                              np.zeros(self.imshape), 0, self.optics.med_wavelen)
+        for s in scatterers:
             field += self.calc_field(s)
 
         return field

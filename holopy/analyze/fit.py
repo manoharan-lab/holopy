@@ -90,10 +90,15 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
     if upper_bound:
         upper_bound = unpack_bound(upper_bound)
 
+    names = scatterer.parameter_names_list + ['alpha']
+
+
     # check that the initial guess lies within the bounds
     guess_list = unpack_bound(initial_guess)
     if (guess_list > upper_bound).any() or (guess_list < lower_bound).any():
-        raise GuessOutOfBounds
+        names = np.array(names)
+        raise GuessOutOfBounds(low=names[guess_list<lower_bound],
+                               high=names[guess_list>upper_bound]) 
         
     if isinstance(theory, type):
         # allow the user to pass the type, we instantiate it here
@@ -114,10 +119,10 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
         if scale[i] == lower_bound[i] and scale[i] == upper_bound[i]:
             fixed.append(i)
 
+    names = np.delete(names, fixed)
+
     lower_bound = np.delete(lower_bound/scale, fixed)
     upper_bound = np.delete(upper_bound/scale, fixed)
-    
-    names = np.delete(scatterer.parameter_names_list + ['alpha'], fixed)
     
     guess = np.ones(len(lower_bound))
 
@@ -274,7 +279,13 @@ class MinimizerNotFound(Exception):
         return "{0} is not a valid fitting algorithm".format(self.algorthim)
 
 class GuessOutOfBounds(Exception):
-    pass
+    def __init__(self, low, high):
+        self.high = high
+        self.low = low
+    def __str__(self):
+        return "Parameters out of range: {0} are below the minimum bounds, and \
+{1} are above the maximum bounds".format(self.low, self.high)
+
 
 # Legacy code, figure out what of this should stay
 def fit_deck(input_deck):
