@@ -24,6 +24,7 @@ Misc utility functions to make coding more convenient
 import scipy.fftpack as fftpack
 from holopy.utility.helpers import _preserve_holo_type
 from numpy import sin, cos
+import numpy as np
 
 
 @_preserve_holo_type
@@ -106,8 +107,11 @@ def ifft(a, overwrite=False, shift=True):
                                  overwrite_x=overwrite)
         else:
             return fftpack.ifft2(a, overwrite_x=overwrite)
-    
 
+def rotate_points(points, theta, phi, psi):
+    rot = rotation_matrix(theta, phi, psi)
+    return [np.dot(rot, c) for c in points]
+        
 def rotation_matrix(theta, phi, psi):
     """
     Return a 3d rotation matrix
