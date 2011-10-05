@@ -30,9 +30,18 @@ class Scatterer(object):
     abstract base class for scatterers
 
     """
+
     def __init__(self):
         raise NotImplementedError
 
+    def valid(self):
+        '''
+        Have this scatterer check that it is valid (things like no overlaps
+        '''
+        # We default to just returning True subclasses that implement overlap
+        # checking or other validity constraints override this
+        return True
+    
     @property
     def parameter_list(self):
         """

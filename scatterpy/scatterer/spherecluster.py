@@ -26,6 +26,7 @@ import numpy as np
 from sphere import Sphere
 from composite import Composite
 from scatterpy.errors import ScattererDefinitionError
+from holopy.process.math import cartesian_distance
 
 class SphereCluster(Composite):
     '''
@@ -109,6 +110,13 @@ class SphereCluster(Composite):
                         repr(s) + " is not a Sphere", self)
             self.scatterers = spheres
 
+    def valid(self):
+        for s1 in self.scatterers:
+            for s2 in self.scatterers:
+                if cartesian_distance(s1.center, s2.center) < (s1.r + s2.r):
+                    return False
+
+        return True
 
     def __repr__(self):
         return "{c}(spheres={spheres})".format(c=self.__class__.__name__,
@@ -144,8 +152,6 @@ class SphereCluster(Composite):
                     params[i*sphere_params:(i+1)*sphere_params]))
         return cls(s)
     
-    # convenience functions, defined so you can write, e.g., sc.n
-    # instead of sc.get_n()
     @property
     def n(self):
         return [s.n for s in self.scatterers]

@@ -136,3 +136,6 @@ def rotation_matrix(theta, phi, psi):
        [cos(theta)*sin(psi), cos(phi)*cos(psi)+sin(phi)*sin(theta)*sin(psi),
         -sin(phi)*cos(psi)+cos(phi)*sin(theta)*sin(psi)],
        [-sin(theta), sin(phi)*cos(theta), cos(phi)*cos(theta)]]
+
+def cartesian_distance(p1, p2):
+    return np.sqrt(np.dot(np.array(p1), np.array(p2)))

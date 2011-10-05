@@ -109,6 +109,10 @@ class Mie(ScatteringTheory):
                 for s in spheres:
                     if not isinstance(s, Sphere):
                         raise TheoryNotCompatibleError(self, s)
+            # TODO: this needs to be somewhere more general, but putting it here
+            # for now
+            if not scatterer.valid():
+                raise UnrealizableScatterer(self, scatterer, "Spheres overlap")
             # if it passes, superpose the fields
             return self.superpose(spheres)
         else: raise TheoryNotCompatibleError(self, scatterer)
@@ -190,14 +194,6 @@ class Mie(ScatteringTheory):
         kcoords = self.optics.wavevec * s.center
         return m_p, x_p, kcoords
 
-    def _check_scatterer(self, s):
-        if s.r < 0:
-            raise UnrealizableScatterer(self, s, "radius is negative")
-        m_p, x_p, kcoords = self._nondimensionalize(s)
-        if x_p > 1e3:
-            raise UnrealizableScatterer(self, s, "radius too large, field "+
-                                        "calculation would take forever")
-        
 
 # TODO: Need to refactor fitting code so that it no longer relies on
 # the legacy functions below.  Then remove.
