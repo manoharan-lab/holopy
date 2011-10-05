@@ -111,9 +111,11 @@ class SphereCluster(Composite):
             self.scatterers = spheres
 
     def valid(self):
-        for s1 in self.scatterers:
-            for s2 in self.scatterers:
+        for i, s1 in enumerate(self.scatterers):
+            for j in range(i+1, len(self.scatterers)):
+                s2= self.scatterers[j]
                 if cartesian_distance(s1.center, s2.center) < (s1.r + s2.r):
+                    print cartesian_distance(s1.center, s2.center)
                     return False
 
         return True
@@ -154,26 +156,27 @@ class SphereCluster(Composite):
     
     @property
     def n(self):
-        return [s.n for s in self.scatterers]
+        return np.array([s.n for s in self.scatterers])
     @property
     def n_real(self):
-        return [s.n.real for s in self.scatterers]
+        return np.array([s.n.real for s in self.scatterers])
     @property
     def n_imag(self):
-        return [s.n.imag for s in self.scatterers]
+        return np.array([s.n.imag for s in self.scatterers])
     @property
     def r(self):
-        return [s.r for s in self.scatterers]
+        return np.array([s.r for s in self.scatterers])
     @property
     def x(self):
-        return [s.x for s in self.scatterers]
+        return np.array([s.x for s in self.scatterers])
     @property
     def y(self):
-        return [s.y for s in self.scatterers]
+        return np.array([s.y for s in self.scatterers])
     @property
     def z(self):
-        return [s.z for s in self.scatterers]
+        return np.array([s.z for s in self.scatterers])
     @property
     def centers(self):
-        return [s.center for s in self.scatterers]
+        return np.array([s.center for s in self.scatterers])
 
+#def rotate(

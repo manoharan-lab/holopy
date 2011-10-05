@@ -174,7 +174,8 @@ def make_residual(holo, scatterer, theory, scale=1.0, fixed = [],
         except UnrealizableScatterer:
             print("Fitter asked for a value which the scattering theory " +
                   "thought was unphysical or uncomputable, returning NaN")
-            return np.nan
+            error = np.NaN*np.ones(holo.size)
+            return error
 
         return cost_func(holo, calculated).ravel()
 
@@ -225,6 +226,7 @@ def minimize(residual, algorithm='nmpfit', guess=None, lb=None , ub=None,
         from holopy.third_party import nmpfit
         def resid_wrapper(p, fjac=None):
             status = 0
+            resid = residual(p)
             return [status, residual(p)]
 
         parinfo = []
