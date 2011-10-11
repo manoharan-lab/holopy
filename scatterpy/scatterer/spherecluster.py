@@ -26,7 +26,7 @@ import numpy as np
 from sphere import Sphere
 from composite import Composite
 from scatterpy.errors import ScattererDefinitionError
-from holopy.process.math import cartesian_distance
+from holopy.process.math import cartesian_distance, rotate_points
 
 class SphereCluster(Composite):
     '''
@@ -115,7 +115,6 @@ class SphereCluster(Composite):
             for j in range(i+1, len(self.scatterers)):
                 s2= self.scatterers[j]
                 if cartesian_distance(s1.center, s2.center) < (s1.r + s2.r):
-                    print cartesian_distance(s1.center, s2.center)
                     return False
 
         return True
@@ -179,4 +178,47 @@ class SphereCluster(Composite):
     def centers(self):
         return np.array([s.center for s in self.scatterers])
 
-#def rotate(
+def rotate(cluster, theta, phi, psi):
+    com = cluster.centers.mean(0)
+        
+    return SphereCluster([Sphere(n=s.n, r=s.r, center =
+                                 com+rotate_points(s.center-com, theta,
+                                                   phi, psi)) for s in
+                          cluster.scatterers])
+
+
+class RotatedSphereCluster(SphereCluster):
+    def __init__(self, orig_cluster, theta, phi, psi, com = None):
+        self.com = orig_cluster.centers.mean(0)
+        self.orig_cluster = SphereCluster([Sphere(n=s.n, r=s.r, center =
+                                                  s.center-self.com) for s in
+                                          orig_cluster.scatterers])
+        # overwrite whatever com the particle originally had
+        if com is not None:
+            self.com = com
+        self.theta = theta
+        self.phi = phi
+        self.psi = psi
+
+
+    @property
+    def scatterers(self):
+        return [Sphere(n=s.n, r=s.r,
+                       center = self.com + rotate_points(s.center, self.theta,
+                                                         self.phi, self.psi))
+                for s in self.orig_cluster.scatterers]
+
+    @property
+    def parameter_names_list(self):
+        return ['com_x', 'com_y', 'com_z', 'theta', 'phi', 'psi']
+
+    @property
+    def parameter_list(self):
+        return np.array([self.com[0], self.com[1], self.com[2], self.theta, self.phi, self.psi])
+
+    # not a classmethod because the parameter list does not have enough
+    # information to make a new one, need to reference an existing
+    # RotatedSphereCluster to get a value for orig_cluster
+    def make_from_parameter_list(self, params):
+        return RotatedSphereCluster(self.orig_cluster, params[1], params[2],
+                                    params[3], params[0])

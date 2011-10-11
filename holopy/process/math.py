@@ -109,8 +109,11 @@ def ifft(a, overwrite=False, shift=True):
             return fftpack.ifft2(a, overwrite_x=overwrite)
 
 def rotate_points(points, theta, phi, psi):
+    points = np.array(points)
     rot = rotation_matrix(theta, phi, psi)
-    return [np.dot(rot, c) for c in points]
+    if points.ndim == 1:
+        return np.dot(rot, points)
+    return np.array([np.dot(rot, c) for c in points])
         
 def rotation_matrix(theta, phi, psi):
     """
@@ -131,11 +134,11 @@ def rotation_matrix(theta, phi, psi):
     http://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
         
     """
-    return [[cos(theta)*cos(psi), -cos(phi)*sin(psi)+sin(phi)*sin(theta)*cos(psi),
+    return np.array([[cos(theta)*cos(psi), -cos(phi)*sin(psi)+sin(phi)*sin(theta)*cos(psi),
         sin(phi)*sin(psi)+cos(phi)*sin(theta)*cos(psi)],
        [cos(theta)*sin(psi), cos(phi)*cos(psi)+sin(phi)*sin(theta)*sin(psi),
         -sin(phi)*cos(psi)+cos(phi)*sin(theta)*sin(psi)],
-       [-sin(theta), sin(phi)*cos(theta), cos(phi)*cos(theta)]]
+       [-sin(theta), sin(phi)*cos(theta), cos(phi)*cos(theta)]])
 
 def cartesian_distance(p1, p2):
     return np.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2+(p1[2]-p2[2])**2)
