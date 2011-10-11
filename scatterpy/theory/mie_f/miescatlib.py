@@ -149,7 +149,7 @@ def rad_pressure_xsect(an, bn):
     '''
     xsects = cross_sections(an, bn)
     avg_cos_theta = asymmetry_parameter(an, bn)
-    return xsects[1] - avg_cos_theta * xsects[0]
+    return xsects[1] - avg_cos_theta * 2. # due to scalings
     
 
 def ascatmatrix_mie(theta, a_l, b_l):

@@ -326,6 +326,85 @@
         end
 
 
+      subroutine tmatrix_fields_sph(n_rows, n_cols, sph_coords_grid, amn, &
+           lmax, euler_gamma, inc_pol, es_x, es_y, es_z)
+        ! Calculate scattered fields from a cluster of non-overlapping spheres,
+        ! given field coefficients calculated from superposition T-matrix code
+        ! scsmfo1b, on an input grid of spherical coordinates.
+        !
+        ! Parameters
+        ! ----------
+        ! sph_coords_grid: array (n_rows x n_cols x 3)
+        !     grid containing non-dimensional radial (kr), theta and phi 
+        !     coordinates
+        ! amn: complex array (2,lmax*(lmax+2),2)
+        !     Coefficients for scattered field expansion (from 
+        !     scsmfo_min.amncalc(), truncated)
+        ! lmax: int
+        !     Expansion order (from scsmfo_min.amncalc())
+        ! euler_gamma: real
+        !     Euler angle gamma to rotate cluster frame into laboratory frame.
+        ! inc_pol: real array (2)
+        !     polarization (from optics.polarization)
+        !
+        ! Returns
+        ! -------
+        ! es_x, es_y, es_z: array, shape = n_rows x n_cols
+        !     The three electric field components on the surface defined by grid
+        implicit none
+        integer, intent(in) :: n_rows, n_cols, lmax
+        real (kind = 8), intent(in), dimension(n_rows, n_cols, 3) :: & 
+             sph_coords_grid
+        complex (kind = 8), intent(in), dimension(2,lmax*(lmax+2),2) :: amn
+        real (kind = 8), intent(in) :: euler_gamma
+        real (kind = 8), dimension(2), intent(in) :: inc_pol
+        complex (kind = 8), intent(out), dimension(n_rows, n_cols) :: es_x, &
+             es_y, es_z
+        integer :: i, j
+        real (kind = 8) :: kr, theta, phi
+        real (kind = 8), dimension(2) :: einc_sph, signarr
+        complex (kind = 8) :: prefactor, ci
+        complex (kind = 8), dimension(3) :: escat_rect
+        complex (kind = 8), dimension(2) :: escat_sph
+        complex (kind = 8), dimension(4) :: ascatmat
+        complex (kind = 8), dimension(2,2) :: asreshape
+        data ci/(0.d0, 1.d0)/
+
+        ! Main loop over grid points, columns first
+        do  j = 1, n_cols, 1
+           do i = 1, n_rows, 1
+
+              ! calculate amplitude scattering matrix from amn coefficients
+              ! code in uts_scsmfo.for
+              kr = sph_coords_grid(i, j, 1)
+              theta = sph_coords_grid(i, j, 2)
+              phi = sph_coords_grid(i, j, 3)
+              call asmfr(amn, lmax, theta, phi + euler_gamma, kr, ascatmat)
+
+              ! fudge factor of -0.5 for agreement with single sphere case
+              asreshape = reshape(cshift(ascatmat, shift = 1), (/ 2, 2 /), &
+                   order = (/ 2, 1 /)) * (-0.5)
+
+              ! calculate scattered fields in spherical coordinates
+              ! convert polarization to spherical coords
+              call incfield(inc_pol(1), inc_pol(2), phi, einc_sph)
+              prefactor = ci / kr * exp(ci * kr) ! Bohren & Huffman formalism
+              signarr = (/ 1.0, -1.0 /) ! accounts for escatperp = -escatphi
+              escat_sph = prefactor * matmul(asreshape, einc_sph) * signarr
+
+              ! convert to rectangular
+              call fieldstocart(escat_sph, theta, phi, escat_rect)
+              es_x(i, j) = escat_rect(1)
+              es_y(i, j) = escat_rect(2)
+              es_z(i, j) = escat_rect(3)
+
+           end do
+        end do
+
+        return
+        end
+
+
       subroutine asm_mie_fullradial(nstop, asbs, sphcoords, asm_out)
         ! perform summations to calculate amplitude scattering matrix
         ! with full radial dependence, compatible with B/H formalism
