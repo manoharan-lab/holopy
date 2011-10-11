@@ -98,7 +98,11 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
     if (guess_list > upper_bound).any() or (guess_list < lower_bound).any():
         names = np.array(names)
         raise GuessOutOfBounds(low=names[guess_list<lower_bound],
-                               high=names[guess_list>upper_bound]) 
+                               high=names[guess_list>upper_bound])
+    if not scatterer.valid():
+        raise UnrealizableScatterer(self, scatterer, "Scatterer contains overlapping particles,\
+    this is probably not physical")
+    
         
     if isinstance(theory, type):
         # allow the user to pass the type, we instantiate it here
@@ -173,8 +177,8 @@ def make_residual(holo, scatterer, theory, scale=1.0, fixed = [],
             calculated = theory.calc_holo(this_scatterer, p[-1])
         except UnrealizableScatterer:
             print("Fitter asked for a value which the scattering theory " +
-                  "thought was unphysical or uncomputable, returning NaN")
-            error = np.NaN*np.ones(holo.size)
+                  "thought was unphysical or uncomputable, returning large residual")
+            error = 1e12*np.ones(holo.size)
             return error
 
         return cost_func(holo, calculated).ravel()
