@@ -34,9 +34,9 @@ class Scatterer(object):
     def __init__(self):
         raise NotImplementedError
 
-    def valid(self):
+    def _validate(self):
         '''
-        Have this scatterer check that it is valid (things like no overlaps
+        Have this scatterer check that it is valid (things like no overlaps)
         '''
         # We default to just returning True subclasses that implement overlap
         # checking or other validity constraints override this

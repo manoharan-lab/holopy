@@ -59,13 +59,13 @@ def teardown_optics():
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_Mie_construction():
-    theory = Mie()
+    theory = Mie(optics)
     assert_(theory.imshape == (256,256))
-    theory = Mie(imshape=(100,100))
+    theory = Mie(optics, imshape=(100,100))
     assert_(theory.imshape == (100,100))
 
     # test with single value instead of tuple
-    theory = Mie(imshape=128)
+    theory = Mie(optics, imshape=128)
     assert_(theory.imshape == (128,128))
 
     # construct with optics
@@ -96,16 +96,18 @@ def test_Mie_single():
     holo = theory.calc_holo(sc)
     assert_almost_equal(holo.sum(), 16370.390727161264)
     assert_almost_equal(holo.std(), 0.061010648908953205)
-    
-    # this shouldn't work because the theory doesn't know the pixel
-    # scale or medium index
-    theory = Mie(imshape=128)
-    assert_raises(WavelengthNotSpecified, lambda:
-                      theory.calc_field(sc))
-    assert_raises(WavelengthNotSpecified, lambda:
-                      theory.calc_intensity(sc)) 
-    assert_raises(WavelengthNotSpecified, lambda:
-                      theory.calc_holo(sc)) 
+
+    # TODO: These tests no strictly longer apply because optics is a mandatory
+    # parameter of theory, modify or remove
+#    # this shouldn't work because the theory doesn't know the pixel
+#    # scale or medium index
+#    theory = Mie(imshape=128)
+#    assert_raises(WavelengthNotSpecified, lambda:
+#                      theory.calc_field(sc))
+#    assert_raises(WavelengthNotSpecified, lambda:
+#                      theory.calc_intensity(sc)) 
+#    assert_raises(WavelengthNotSpecified, lambda:
+#                      theory.calc_holo(sc)) 
 
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)

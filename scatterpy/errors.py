@@ -22,6 +22,17 @@ other exceptions in other parts of holopy to keep things modular.
 .. moduleauthor :: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 """
 
+class InvalidScatterer(Exception):
+    pass
+
+class InvalidScattererSphereOverlap(InvalidScatterer):
+    def __init__(self, scatterer, overlaps):
+        self.scatterer = scatterer
+        self.overlaps = overlaps
+    def __str__(self):
+        return "{0} has overlaps between spheres: {1}".format(self.scatterer,
+                                                              self.overlaps)
+
 class ScattererDefinitionError(Exception):
     def __init__(self, message, scatterer):
         self.message = message

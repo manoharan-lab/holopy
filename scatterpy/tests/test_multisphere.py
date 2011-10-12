@@ -27,6 +27,7 @@ import numpy as np
 hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
 sys.path.append(hp_dir)
 
+from nose.tools import assert_raises
 from numpy.testing import assert_equal, assert_array_almost_equal, assert_almost_equal
 
 
@@ -37,6 +38,7 @@ import holopy
 from scatterpy.theory.multisphere import Multisphere
 from scatterpy.theory.mie import Mie
 from scatterpy.scatterer import Sphere, SphereCluster
+from scatterpy.errors import UnrealizableScatterer
 
 # define optical train
 wavelen = 658e-9
@@ -124,7 +126,24 @@ def test_2_sph():
     assert_almost_equal(holo.mean(), 0.9955420925817654)
     assert_almost_equal(holo.std(), 0.09558537595025796)
 
+@attr('fast')
+def test_invalid():
+    sc = SphereCluster(spheres=[Sphere(center=[7.1, 7e-6, 10e-6],
+                                       n=1.5811+1e-4j, r=5e-07),
+                                Sphere(center=[6e-6, 7e-6, 10e-6],
+                                       n=1.5811+1e-4j, r=5e-07)])
+
+    theory = Multisphere(xoptics, imshape)
+
+    assert_raises(UnrealizableScatterer, lambda: theory.calc_holo(sc))
     
+    sc = SphereCluster(spheres=[Sphere(center=[7.1, 7e-6, 10e-6],
+                                       n=1.5811+1e-4j, r=5e-01),
+                                Sphere(center=[6e-6, 7e-6, 10e-6],
+                                       n=1.5811+1e-4j, r=5e-07)])
+    
+    assert_raises(UnrealizableScatterer, lambda: theory.calc_holo(sc))
+
 
 """
 def test_single_sphere():

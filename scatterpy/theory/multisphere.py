@@ -129,8 +129,16 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
         
         if not isinstance(scatterer, SphereCluster):
             raise TheoryNotCompatibleError(self, scatterer)
-        if not scatterer.valid():
-            raise UnrealizableScatterer(self, scatterer, "Spheres overlap")
+
+        # check that the parameters are in a range where the multisphere
+        # expansion will work
+        for s in scatterer.scatterers:
+            if s.r < 0:
+                raise UnrealizableScatterer(self, s, "radius is negative")
+            if s.r * self.optics.wavevec > 1e3:
+                raise UnrealizableScatterer(self, s, "radius too large, field "+
+                                            "calculation would take forever")
+            
 
         centers = scatterer.centers
 
@@ -140,6 +148,11 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
         centers *= self.optics.wavevec
 
         m = scatterer.n / self.optics.index
+
+        if (centers > 1e4).any():
+            raise UnrealizableScatterer(self, scatterer, "Particle seperation \
+ too large, calculation would take forever")
+        
         
         _, lmax, amn0 = scsmfo_min.amncalc(1, centers[:,0], centers[:,1],
                                            centers[:,2], m.real, m.imag,

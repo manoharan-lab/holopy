@@ -109,10 +109,6 @@ class Mie(ScatteringTheory):
                 for s in spheres:
                     if not isinstance(s, Sphere):
                         raise TheoryNotCompatibleError(self, s)
-            # TODO: this needs to be somewhere more general, but putting it here
-            # for now
-            if not scatterer.valid():
-                raise UnrealizableScatterer(self, scatterer, "Spheres overlap")
             # if it passes, superpose the fields
             return self.superpose(spheres)
         else: raise TheoryNotCompatibleError(self, scatterer)

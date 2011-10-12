@@ -99,8 +99,6 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
         names = np.array(names)
         raise GuessOutOfBounds(low=names[guess_list<lower_bound],
                                high=names[guess_list>upper_bound])
-    if not scatterer.valid():
-        raise ScattererOverlap()
     
         
     if isinstance(theory, type):
@@ -168,16 +166,23 @@ def make_residual(holo, scatterer, theory, scale=1.0, fixed = [],
         for v in fixed:
             p = np.insert(p, v, 1.0)
         p = p*scale
+
+        error = 1e12*np.ones(holo.size)
+
         # alpha should always be the last parameter, we prune it because the
         # scatterer doesn't want to know about it
-        this_scatterer = scatterer.make_from_parameter_list(p[:-1])
+        try:
+            this_scatterer = scatterer.make_from_parameter_list(p[:-1])
+        except InvalidScattererSphereOverlap as o:
+            print(o)
+            return error
+            
 
         try:
             calculated = theory.calc_holo(this_scatterer, p[-1])
         except UnrealizableScatterer:
             print("Fitter asked for a value which the scattering theory " +
                   "thought was unphysical or uncomputable, returning large residual")
-            error = 1e12*np.ones(holo.size)
             return error
 
         return cost_func(holo, calculated).ravel()

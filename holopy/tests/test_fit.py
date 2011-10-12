@@ -56,29 +56,31 @@ def teardown_optics():
 
 gold_single = np.array([1.582, 1.000, 6.484, 5.534, 5.792, 1.415, 6.497])
 
-@attr('fast')
-@with_setup(setup=setup_optics, teardown=teardown_optics)
-def test_overlap_rejection():
-    path = os.path.abspath(hp.__file__)
-    path = os.path.join(os.path.split(path)[0],'tests', 'exampledata')
-    holo = hp.process.normalize(hp.load(os.path.join(path, 'image0001.npy'),
-                                        optics=optics))
-    
-    sc = SphereCluster([Sphere(n=1.59+1e-4j, r=8.5e-7, x=.567e-5, y=.576e-5,
-                               z=15e-6),
-                        Sphere(n=1.59+1e-4j, r=8.5e-7, x=.667e-5, y=.576e-5,
-                               z=15e-6)]), .6
-    lb = SphereCluster([Sphere(n=1.59+1e-4j, r=8.5e-7, x=.56e-5, y=.57e-5,
-                               z=10e-6),
-                        Sphere(n=1.59+1e-4j, r=8.5e-7, x=.66e-5, y=.57e-5,
-                               z=10e-6)]), .1
-    ub = SphereCluster([Sphere(n=1.59+1e-4j, r=8.5e-7, x=.57e-5, y=.58e-5,
-                               z=20e-6),
-                        Sphere(n=1.59+1e-4j, r=8.5e-7, x=.67e-5, y=.58e-5,
-                               z=20e-6)]), 1
-
-    assert_raises(ScattererOverlap, lambda: fit(holo, sc, scatterpy.theory.Mie,
-                                                'nmpfit', lb, ub))
+# TODO: This test is obseleted by checking for overlap in scatterer definition.
+# Check if there is anything important in it, then remove. 
+#@attr('fast')
+#@with_setup(setup=setup_optics, teardown=teardown_optics)
+#def test_overlap_rejection():
+#    path = os.path.abspath(hp.__file__)
+#    path = os.path.join(os.path.split(path)[0],'tests', 'exampledata')
+#    holo = hp.process.normalize(hp.load(os.path.join(path, 'image0001.npy'),
+#                                        optics=optics))
+#    
+#    sc = SphereCluster([Sphere(n=1.59+1e-4j, r=8.5e-7, x=.567e-5, y=.576e-5,
+#                               z=15e-6),
+#                        Sphere(n=1.59+1e-4j, r=8.5e-7, x=.667e-5, y=.576e-5,
+#                               z=15e-6)]), .6
+#    lb = SphereCluster([Sphere(n=1.59+1e-4j, r=8.5e-7, x=.56e-5, y=.57e-5,
+#                               z=10e-6),
+#                        Sphere(n=1.59+1e-4j, r=8.5e-7, x=.66e-5, y=.57e-5,
+#                               z=10e-6)]), .1
+#    ub = SphereCluster([Sphere(n=1.59+1e-4j, r=8.5e-7, x=.57e-5, y=.58e-5,
+#                               z=20e-6),
+#                        Sphere(n=1.59+1e-4j, r=8.5e-7, x=.67e-5, y=.58e-5,
+#                               z=20e-6)]), 1
+#
+#    assert_raises(ScattererOverlap, lambda: fit(holo, sc, scatterpy.theory.Mie,
+#                                                'nmpfit', lb, ub))
 
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
