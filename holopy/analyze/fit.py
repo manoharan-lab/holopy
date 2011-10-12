@@ -35,7 +35,7 @@ import numpy as np
 from holopy.optics import Optics
 
 #import minimizers.nmpfit_adapter as minimizer
-from scatterpy.errors import UnrealizableScatterer
+from scatterpy.errors import UnrealizableScatterer, ScattererOverlap
 
 def cost_subtract(holo, calc):
     return holo - calc
@@ -100,8 +100,7 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
         raise GuessOutOfBounds(low=names[guess_list<lower_bound],
                                high=names[guess_list>upper_bound])
     if not scatterer.valid():
-        raise UnrealizableScatterer(self, scatterer, "Scatterer contains overlapping particles,\
-    this is probably not physical")
+        raise ScattererOverlap()
     
         
     if isinstance(theory, type):

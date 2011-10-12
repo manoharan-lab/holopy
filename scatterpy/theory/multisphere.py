@@ -129,6 +129,8 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
         
         if not isinstance(scatterer, SphereCluster):
             raise TheoryNotCompatibleError(self, scatterer)
+        if not scatterer.valid():
+            raise UnrealizableScatterer(self, scatterer, "Spheres overlap")
 
         centers = scatterer.centers
 

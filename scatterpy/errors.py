@@ -31,6 +31,12 @@ class ScattererDefinitionError(Exception):
                 self.scatterer.__class__.__name__ +
                 ".\n" + self.message)
 
+
+class ScattererOverlap(Exception):
+    def __str__(self):
+        return "Scatterer contains overlapping particles, this is in general \
+not physical."
+
 class TheoryNotCompatibleError(Exception):
     def __init__(self, theory, scatterer):
         self.theory = theory
