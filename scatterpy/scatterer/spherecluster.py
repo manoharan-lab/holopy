@@ -139,7 +139,7 @@ class SphereCluster(Composite):
         spheres = self.get_component_list()
         names = []
         for i, sphere in enumerate(spheres):
-            names.extend(['sphere_{}.{}'.format(i, name) for name in
+            names.extend(['sphere_{0}.{1}'.format(i, name) for name in
                             sphere.parameter_names_list])
         return names
 

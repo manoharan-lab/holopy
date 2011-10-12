@@ -29,4 +29,4 @@ holograms.
 
 from mie import Mie
 from dda import DDA
-from multisphere import Multisphere
+#from multisphere import Multisphere
