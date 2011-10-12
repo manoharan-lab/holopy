@@ -23,10 +23,11 @@ Test T-matrix sphere cluster calculations and python interface.
 
 import sys
 import os
+import numpy as np
 hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
 sys.path.append(hp_dir)
 
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_array_almost_equal, assert_almost_equal
 
 
 from nose.plugins.attrib import attr
@@ -34,6 +35,8 @@ from nose.plugins.attrib import attr
 import holopy
 
 from scatterpy.theory.multisphere import Multisphere
+from scatterpy.theory.mie import Mie
+from scatterpy.scatterer import Sphere, SphereCluster
 
 # define optical train
 wavelen = 658e-9
@@ -78,17 +81,20 @@ def test_construction():
     assert_equal(theory.qeps1, 1e-5)
     assert_equal(theory.qeps2, 1e-8)
 
-"""
+
 def test_polarization():
     # test holograms for orthogonal polarizations; make sure they're
     # not the same, nor too different from one another.
-    xholo = mie.forward_holo(imshape, xoptics, n_particle_real,
-                             n_particle_imag, radius, x, y, z,
-                             scaling_alpha)
-    yholo = mie.forward_holo(imshape, yoptics, n_particle_real,
-                             n_particle_imag, radius, x, y, z,
-                             scaling_alpha)
-    
+
+    sphere = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius, 
+                    x=x, y=y, z=z)
+    sc = SphereCluster([sphere])
+    xmodel = Multisphere(imshape = imshape, optics=xoptics)
+    ymodel = Multisphere(imshape = imshape, optics=yoptics)
+
+    xholo = xmodel.calc_holo(sc, alpha=scaling_alpha)
+    yholo = ymodel.calc_holo(sc, alpha=scaling_alpha)
+
     # the two arrays should not be equal
     try:
         assert_array_almost_equal(xholo, yholo)
@@ -101,7 +107,26 @@ def test_polarization():
     assert_almost_equal(xholo.max(), yholo.max())
     assert_almost_equal(xholo.min(), yholo.min())
     return xholo, yholo
+    
 
+def test_2_sph():
+    sc = SphereCluster(spheres=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
+                                       n=1.5811+1e-4j, r=5e-07),
+                                Sphere(center=[6e-6, 7e-6, 10e-6],
+                                       n=1.5811+1e-4j, r=5e-07)])
+
+
+    theory = Multisphere(xoptics, imshape)
+
+    holo = theory.calc_holo(sc, .6)
+
+    assert_almost_equal(holo.max(), 1.4140292298443309)
+    assert_almost_equal(holo.mean(), 0.9955420925817654)
+    assert_almost_equal(holo.std(), 0.09558537595025796)
+
+    
+
+"""
 def test_single_sphere():
     # single spheres hologram (only tests that functions return)
     holo = mie.forward_holo(imshape, xoptics, n_particle_real,
@@ -248,4 +273,5 @@ def test_multiple_spheres():
                             scaling_alpha)
     # uncomment to debug
     #return holo
+
 """

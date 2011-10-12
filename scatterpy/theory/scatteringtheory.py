@@ -73,6 +73,15 @@ class ScatteringTheory(object):
         else:
             self.optics = optics
 
+    def __repr__(self):
+        # if not overriden this will return a dump of all the variables in the
+        # class's dict.  This is probably right for enough subclasses that it is
+        # worth implementing.  Any class where that is not a valid
+        # representation should override this method.  
+        return "{0}({1})".format(self.__class__.__name__,
+                                 ','.join(["{0[0]}={0[1]}".format(c) for c in
+                                           self.__dict__.iteritems()]))
+
     def calc_field(self, scatterer):
         """
         Calculate fields.  Implemented in derived classes only.

@@ -23,6 +23,7 @@ dependence of spherical Hankel functions for the scattered field.
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
 import numpy as np
@@ -32,6 +33,8 @@ import mie_f.miescatlib as miescatlib
 from holopy.hologram import Hologram
 from holopy import Optics
 from holopy.utility.helpers import _ensure_array, _ensure_pair
+
+from scatterpy.errors import UnrealizableScatterer
 
 from scatterpy.scatterer import Sphere, SphereCluster, Composite
 from scatterpy.errors import TheoryNotCompatibleError
@@ -77,7 +80,7 @@ class Multisphere(ScatteringTheory):
     According to Mackowski's manual for SCSMFO1B.FOR [1]_ and later
     papers [2]_, the biconjugate gradient is generally the most
     efficient method for solving the interaction equations, especially
-    for dense arrays of identical spheres.  Order-of-scattering may
+p c    for dense arrays of identical spheres.  Order-of-scattering may
     converge better for non-identical spheres.
 
     References
@@ -93,8 +96,8 @@ class Multisphere(ScatteringTheory):
     DOI: 10.1016/j.jqsrt.2011.02.019. 
     """
 
-    def __init__(self, imshape=(256, 256), thetas=None, phis=None,
-                 optics=None,  niter=200, eps=1e-6, meth=1, qeps1=1e-5, 
+    def __init__(self, optics, imshape=(256, 256), thetas=None, phis=None,
+                 niter=200, eps=1e-6, meth=1, qeps1=1e-5, 
                  qeps2=1e-8): 
 
         # call base class constructor
@@ -122,62 +125,50 @@ class Multisphere(ScatteringTheory):
         xfield, yfield, zfield : complex arrays with shape `imshape`
             x, y, z components of scattered fields
 
-        Notes
-        -----
-        For multiple particles, this code superposes the fields
-        calculated from each particle (using calc_mie_fields()). 
         """
-        if isinstance(scatterer, Sphere):
-            spheres = [scatterer]
-        elif isinstance(scatterer, Composite):
-            spheres = scatterer.get_component_list()
-            # compatibility check: verify that the cluster only contains
-            # spheres 
-            if not scatterer.contains_only_spheres():
-                for s in spheres:
-                    if not isinstance(s, Sphere):
-                        raise TheoryNotCompatibleError(self, s)
-            # if it passes, superpose the fields
-        else: raise TheoryNotCompatibleError(self, scatterer)
-
-        xfield, yfield, zfield = calc_multisphere_fields(spheres)
-        return xfield, yfield, zfield
-
-    def calc_holo(self, scatterer, alpha=1.0):
-        """
-        Calculate hologram formed by interference between scattered
-        fields and a reference wave
         
-        Parameters
-        ----------
-        scatterer : :mod:`scatterpy.scatterer` object
-            scatterer or list of scatterers to compute field for
-        alpha : scaling value for intensity of reference wave
+        if not isinstance(scatterer, SphereCluster):
+            raise TheoryNotCompatibleError(self, scatterer)
 
-        Returns
-        -------
-        holo : :class:`holopy.hologram.Hologram` object
-            Calculated hologram from the given distribution of spheres
+        centers = scatterer.centers
 
-        Notes
-        -----
-        For a single particle, this code uses a fast Fortran
-        subroutine to calculate the hologram.  Otherwise it uses the
-        Fortran subroutine for calculating the fields from each
-        particle, then superposes them using numpy.
-        """
+        # switch to centroid weighted coordinate system tmatrix code expects
+        centers -= centers.mean(0)
+        # now nondimensionalize
+        centers *= self.optics.wavevec
 
-        if isinstance(scatterer, Sphere):
-            s = scatterer
-            holo = forward_holo(self.imshape, self.optics,
-                                s.n.real, s.n.imag, s.r, 
-                                s.x, s.y, s.z, alpha)
-        else:   # call base class calc_holo
-            holo = ScatteringTheory.calc_holo(self, scatterer, 
-                                              alpha=alpha)
+        m = scatterer.n / self.optics.index
+        
+        _, lmax, amn0 = scsmfo_min.amncalc(1, centers[:,0], centers[:,1],
+                                           centers[:,2], m.real, m.imag,
+                                           scatterer.r * self.optics.wavevec,
+                                           self.niter, self.eps, self.qeps1,
+                                           self.qeps2, self.meth, (0,0))
 
-        return Hologram(holo, optics = self.optics)
+        # chop off unused parts of amn0, the fortran code currently has a hard
+        # coded number of parameters so it will return too many coefficients.
+        # We truncate here to reduce the length of stuff we have to compute with
+        # later.  
+        limit = lmax**2 + 2*lmax
+        amn = amn0[:, 0:limit, :]
 
+        e_x, e_y, e_z = mieangfuncs.tmatrix_fields_sph(self._spherical_grid(
+                scatterer.x.mean(), scatterer.y.mean(), scatterer.z.mean()),
+                                                       amn, lmax, 0,
+                                                       self.optics.polarization)
+        if np.isnan(e_x[0,0]):
+            raise TMatrixFieldNaN()
+
+        return ElectricField(e_x, e_y, e_z, scatterer.z.mean(),
+                             self.optics.med_wavelen) 
+
+
+class TMatrixFieldNaN(UnrealizableScatterer):
+    def __str__(self):
+        return "T-matrix field is NaN, this probably represents a failure of \
+the code to converge, check your scatterer."
+
+    
 # TODO: Need to refactor fitting code so that it no longer relies on
 # the legacy functions below.  Then remove.
 par_ordering = ['n_particle_real_1',  'n_particle_real_2', 
