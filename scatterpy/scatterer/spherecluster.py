@@ -127,7 +127,7 @@ class SphereCluster(Composite):
 
     def __repr__(self):
         return "{c}(spheres={spheres})".format(c=self.__class__.__name__,
-                                       spheres=repr(self.get_component_list()))
+                                       spheres=self.scatterers)
 
     @property
     def parameter_list(self):
@@ -208,7 +208,10 @@ class RotatedSphereCluster(SphereCluster):
         self.phi = phi
         self.psi = psi
 
-
+    def __repr__(self):
+        return "{s.__class__.__name__}(theta={s.theta}, phi={s.phi}, \
+psi={s.psi}, com={s.com}, orig_cluster={o})".format(s=self, o=repr(self.orig_cluster))
+        
     @property
     def scatterers(self):
         return [Sphere(n=s.n, r=s.r,
