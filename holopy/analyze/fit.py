@@ -43,6 +43,22 @@ def cost_subtract(holo, calc):
 def cost_rectified(holo, calc):
     return abs(holo-1) - abs(calc-1)
 
+class FitResult(object):
+    def __init__(self, scatterer, alpha, fnorm, status):
+        self.scatterer = scatterer
+        self.alpha = alpha
+        self.fnorm = fnorm
+        self.status = status
+    def __getitem__(self, index):
+        if index == 1:
+            return self.scatterer
+        if index == 2:
+            return self.alpha
+        raise KeyError
+    def __repr__(self):
+        return "{s.__class__.__name__}(scatterer={s.scatterer}, \
+ alpha={s.alpha}, fnorm={s.fnorm}, status={s.status})".format(s=self)
+
 
 def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
         upper_bound=None, plot=False, minimizer_params={},
@@ -130,7 +146,7 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
     residual = make_residual(holo, scatterer, theory, scale, fixed,
                              residual_cost)
 
-    result = minimize(residual, minimizer, guess, lower_bound, upper_bound,
+    result, fnorm, status = minimize(residual, minimizer, guess, lower_bound, upper_bound,
                       parameter_names = names, **minimizer_params)
 
     
@@ -140,7 +156,8 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
 
     res = scale*result
         
-    return scatterer.make_from_parameter_list(res[:-1]), res[-1]
+    return FitResult(scatterer.make_from_parameter_list(res[:-1]), res[-1],
+    fnorm, status)
 
 
 def make_residual(holo, scatterer, theory, scale=1.0, fixed = [],
@@ -252,7 +269,7 @@ def minimize(residual, algorithm='nmpfit', guess=None, lb=None , ub=None,
         if not quiet:
             print(fitresult.fnorm)
         
-        return fitresult.params
+        return fitresult.params, fitresult.fnorm, fitresult.status
 
     # Openopt fitters
     openopt_nllsq = ['scipy_leastsq']
