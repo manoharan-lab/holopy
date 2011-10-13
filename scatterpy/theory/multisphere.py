@@ -155,7 +155,13 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
         
         
         _, lmax, amn0 = scsmfo_min.amncalc(1, centers[:,0], centers[:,1],
-                                           centers[:,2], m.real, m.imag,
+                                           # The fortran code uses oppositely
+                                           # directed z axis (they have laser
+                                           # propagation as positive, we have it
+                                           # negative), so we multiply the z
+                                           # coordinate by -1 to correct for
+                                           # that.  
+                                           -1.0 * centers[:,2], m.real, m.imag,
                                            scatterer.r * self.optics.wavevec,
                                            self.niter, self.eps, self.qeps1,
                                            self.qeps2, self.meth, (0,0))
