@@ -46,7 +46,7 @@ def cost_rectified(holo, calc):
 
 def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
         upper_bound=None, plot=False, minimizer_params={},
-        residual_cost=cost_subtract):
+        residual_cost=cost_subtract, step = None):
     """
     Find a scatterer which best recreates the given holo
 
@@ -89,6 +89,8 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
         lower_bound = unpack_bound(lower_bound)
     if upper_bound:
         upper_bound = unpack_bound(upper_bound)
+    if step is not None:
+        step = unpack_bound(step)
 
     names = scatterer.parameter_names_list + ['alpha']
 
@@ -126,6 +128,8 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
 
     lower_bound = np.delete(lower_bound/scale, fixed)
     upper_bound = np.delete(upper_bound/scale, fixed)
+    if step is not None:
+        step = np.delete(step/scale, fixed)
     
     guess = np.ones(len(lower_bound))
 
@@ -133,7 +137,8 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
                              residual_cost)
 
     result = minimize(residual, minimizer, guess, lower_bound, upper_bound,
-                      parameter_names = names, **minimizer_params)
+                      parameter_names = names, step = step, 
+                      **minimizer_params)
 
     
     # put back in the fixed values 
@@ -186,7 +191,7 @@ def make_residual(holo, scatterer, theory, scale=1.0, fixed = [],
 
 def minimize(residual, algorithm='nmpfit', guess=None, lb=None , ub=None,
              quiet = False, parameter_names = None, plot = False, ftol = 1e-10, xtol = 1e-10, gtol =
-             1e-10, damp = 0, maxiter = 100, err=None):
+             1e-10, damp = 0, maxiter = 100, err=None, step = None):
     """
     Minmized a function (as defined by residual)
 
@@ -235,8 +240,10 @@ def minimize(residual, algorithm='nmpfit', guess=None, lb=None , ub=None,
         parinfo = []
         for i, par in enumerate(guess):
             d = {'limited' : [True, True],
-                            'limits' : [lb[i], ub[i]],
-                            'value' : par}
+                 'limits' : [lb[i], ub[i]],
+                 'value' : par}
+            if step is not None:
+                d['step'] = step[i]
             if parameter_names is not None:
                 d['parname'] = parameter_names[i]
             parinfo.append(d)
