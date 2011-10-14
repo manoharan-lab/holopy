@@ -35,7 +35,7 @@ import numpy as np
 from holopy.optics import Optics
 
 #import minimizers.nmpfit_adapter as minimizer
-from scatterpy.errors import UnrealizableScatterer, ScattererOverlap
+from scatterpy.errors import UnrealizableScatterer, ScattererOverlap, InvalidScattererSphereOverlap
 
 def cost_subtract(holo, calc):
     return holo - calc
@@ -50,9 +50,9 @@ class FitResult(object):
         self.fnorm = fnorm
         self.status = status
     def __getitem__(self, index):
-        if index == 1:
+        if index == 0:
             return self.scatterer
-        if index == 2:
+        if index == 1:
             return self.alpha
         raise KeyError
     def __repr__(self):
@@ -197,7 +197,6 @@ def make_residual(holo, scatterer, theory, scale=1.0, fixed = [],
             print(o)
             return error
             
-
         try:
             calculated = theory.calc_holo(this_scatterer, p[-1])
         except UnrealizableScatterer:

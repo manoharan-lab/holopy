@@ -141,7 +141,6 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
                 raise UnrealizableScatterer(self, s, "radius too large, field "+
                                             "calculation would take forever")
             
-
         centers = scatterer.centers
 
         # switch to centroid weighted coordinate system tmatrix code expects
@@ -152,7 +151,7 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
         m = scatterer.n / self.optics.index
 
         if (centers > 1e4).any():
-            raise UnrealizableScatterer(self, scatterer, "Particle seperation \
+            raise UnrealizableScatterer(self, scatterer, "Particle separation \
  too large, calculation would take forever")
         
         
