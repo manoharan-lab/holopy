@@ -51,6 +51,13 @@ class CoatedSphere(Scatterer):
 
     '''
 
+    @property
+    def r(self):
+        # when someone asks us for r, they want to know our physical size, so
+        # give them our larger radius
+        return self.r2
+    
+
     def __init__(self, n1 = 1.59, n2 = 1.33, r1 = 0.5e-6, r2 = 1e-6, 
                  x = 0.0, y = 0.0, z = 0.0, center = None):
         self.n1 = n1

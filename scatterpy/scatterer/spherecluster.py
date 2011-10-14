@@ -110,11 +110,10 @@ class SphereCluster(Composite):
                         repr(s) + " is not a Sphere", self)
             self.scatterers = spheres
 
-        self._validate()
-
-    def _validate(self):
+    def validate(self):
         overlaps = []
         for i, s1 in enumerate(self.scatterers):
+            s1.validate()
             for j in range(i+1, len(self.scatterers)):
                 s2= self.scatterers[j]
                 if cartesian_distance(s1.center, s2.center) < (s1.r + s2.r):
@@ -158,7 +157,6 @@ class SphereCluster(Composite):
             s.append(Sphere.make_from_parameter_list(
                     params[i*sphere_params:(i+1)*sphere_params]))
         sc = cls(s)
-        sc._validate()
         return sc
     
     @property

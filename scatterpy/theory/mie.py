@@ -65,7 +65,7 @@ class Mie(ScatteringTheory):
     """
 
     # don't need to define __init__() because we'll use the base class
-    # constructor 
+    # constructor
 
     def calc_field(self, scatterer):
         """
@@ -87,6 +87,8 @@ class Mie(ScatteringTheory):
         calculated from each particle (using calc_mie_fields()). 
         """
 
+        scatterer.validate()
+        
         def sphere_field(s):
             scat_coeffs = self._scat_coeffs(s)
             

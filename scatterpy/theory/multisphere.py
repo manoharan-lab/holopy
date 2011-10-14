@@ -130,6 +130,8 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
         if not isinstance(scatterer, SphereCluster):
             raise TheoryNotCompatibleError(self, scatterer)
 
+        scatterer.validate()
+
         # check that the parameters are in a range where the multisphere
         # expansion will work
         for s in scatterer.scatterers:

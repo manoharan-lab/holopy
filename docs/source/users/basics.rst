@@ -19,10 +19,14 @@ the top left corner as shown below. The x-axis runs vertically down,
 the y-axis runs horizontally to the right, and the z-axis points out
 of the screen, toward you.
 
+In sample space, we choose the z axis so that distances from the camera/focal plane are positive (have positive z coordinates).  The price we pay for this choice is that the propagation direction of the illumination light is then negative.  
+
 .. image:: ../images/HolopyCoordinateSystem.png
     :scale: 40 %
     :alt: Coordinate system used in holopy.
 
+
+	
 
 Units
 -----

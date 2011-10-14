@@ -209,11 +209,3 @@ def test_SphereCluster_construction_typechecking():
                       r2=1e-6,
                       center=[-5e-6, 0,0])
     sc = SphereCluster(spheres=[s1, s2, s3, cs])
-
-@attr('fast')
-@raises(InvalidScattererSphereOverlap)
-def test_overlap_rejection():
-    sc = SphereCluster(spheres=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
-                                       n=1.5811+1e-4j, r=5),
-                                Sphere(center=[6e-6, 7e-6, 10e-6],
-                                       n=1.5811+1e-4j, r=5e-07)])
