@@ -199,7 +199,7 @@ def make_residual(holo, scatterer, theory, scale=1.0, fixed = [],
             
         try:
             calculated = theory.calc_holo(this_scatterer, p[-1])
-        except UnrealizableScatterer:
+        except (UnrealizableScatterer, InvalidScatterer):
             print("Fitter asked for a value which the scattering theory " +
                   "thought was unphysical or uncomputable, returning large residual")
             return error
