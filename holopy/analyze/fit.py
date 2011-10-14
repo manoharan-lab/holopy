@@ -35,7 +35,8 @@ import numpy as np
 from holopy.optics import Optics
 
 #import minimizers.nmpfit_adapter as minimizer
-from scatterpy.errors import UnrealizableScatterer, ScattererOverlap, InvalidScattererSphereOverlap
+from scatterpy.errors import (UnrealizableScatterer, ScattererOverlap,
+                              InvalidScattererSphereOverlap, InvalidScatterer)
 
 def cost_subtract(holo, calc):
     return holo - calc
