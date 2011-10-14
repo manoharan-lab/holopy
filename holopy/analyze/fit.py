@@ -100,6 +100,9 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
     """
 
     scatterer, alpha = initial_guess
+
+    scatterer.validate()
+    
     def unpack_bound(b):
         return np.append(b[0].parameter_list, b[1])
     if lower_bound:
@@ -188,21 +191,24 @@ def make_residual(holo, scatterer, theory, scale=1.0, fixed = [],
             p = np.insert(p, v, 1.0)
         p = p*scale
 
+        for i, name in enumerate(scatterer.parameter_names_list+['alpha']):
+            print('{0}: {1}'.format(name, p[i]))
+
         error = 1e12*np.ones(holo.size)
 
         # alpha should always be the last parameter, we prune it because the
         # scatterer doesn't want to know about it
-        try:
-            this_scatterer = scatterer.make_from_parameter_list(p[:-1])
-        except InvalidScattererSphereOverlap as o:
-            print(o)
-            return error
+        this_scatterer = scatterer.make_from_parameter_list(p[:-1])
             
         try:
             calculated = theory.calc_holo(this_scatterer, p[-1])
-        except (UnrealizableScatterer, InvalidScatterer):
-            print("Fitter asked for a value which the scattering theory " +
-                  "thought was unphysical or uncomputable, returning large residual")
+        except (UnrealizableScatterer, InvalidScatterer) as e:
+            if isinstance(e, InvalidScattererSphereOverlap):
+                print("Hologram computation attempted with overlapping \
+spheres, returning large residual")
+            else:
+                print("Fitter asked for a value which the scattering theory \
+thought was unphysical or uncomputable, returning large residual")
             return error
 
         return cost_func(holo, calculated).ravel()
@@ -210,8 +216,9 @@ def make_residual(holo, scatterer, theory, scale=1.0, fixed = [],
     return residual
 
 def minimize(residual, algorithm='nmpfit', guess=None, lb=None , ub=None,
-             quiet = False, parameter_names = None, plot = False, ftol = 1e-10, xtol = 1e-10, gtol =
-             1e-10, damp = 0, maxiter = 100, err=None, step = None):
+             quiet = False, parameter_names = None, plot = False, ftol = 1e-10,
+             xtol = 1e-10, gtol = 1e-10, damp = 0, maxiter = 100, err=None, step
+             = None):
     """
     Minmized a function (as defined by residual)
 
