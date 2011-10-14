@@ -139,6 +139,8 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
                 raise UnrealizableScatterer(self, s, "radius too large, field "+
                                             "calculation would take forever")
             
+        # check for sphere overlap here
+        scatterer._validate()
 
         centers = scatterer.centers
 

@@ -110,7 +110,7 @@ class SphereCluster(Composite):
                         repr(s) + " is not a Sphere", self)
             self.scatterers = spheres
 
-        self._validate()
+#        self._validate()
 
     def _validate(self):
         overlaps = []

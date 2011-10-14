@@ -184,13 +184,12 @@ def test_fit_multisphere_noisydimer_slow():
                                         optics=optics))
     
     # gold results
-    gold = np.array([1.603, 1.000, 6.857, 1.642, 1.725, 2.127, 1.603, 1.000, 
-                     6.964, 1.758, 1.753, 2.058, 1.000])
+    gold = np.array([1.603, 1.000, 6.857, 1.642, 1.725, 2.058, 1.603, 1.000, 
+                     6.964, 1.758, 1.753, 2.127, 1.000])
     
     # initial guess
-    s1 = Sphere(n=1.6026+1e-5j, r = .6856e-6, center=(1.64155e-05, 1.7247e-05, 21.2698e-6))
-#    s2 = Sphere(n=s1.n, r = .69e-6, center=(1.758e-05, 1.753e-05, 20.582e-6))
-    s2 = Sphere(n=s1.n, r = .6961e-6, center=(1.758e-05, 1.753e-05, 20.582e-6))
+    s1 = Sphere(n=1.6026+1e-5j, r = .6856e-6, center=(1.64155e-05, 1.7247e-05, 20.582e-6))
+    s2 = Sphere(n=s1.n, r = .695e-6, center=(1.758e-05, 1.753e-05, 21.2698e-6))
     sc = SphereCluster([s1, s2])
     alpha = 0.99
 
