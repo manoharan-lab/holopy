@@ -152,7 +152,7 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
         m = scatterer.n / self.optics.index
 
         if (centers > 1e4).any():
-            raise UnrealizableScatterer(self, scatterer, "Particle seperation \
+            raise UnrealizableScatterer(self, scatterer, "Particle separation \
  too large, calculation would take forever")
         
         
