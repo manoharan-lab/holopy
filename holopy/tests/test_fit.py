@@ -98,14 +98,11 @@ def test_fit_mie_single():
     fitresult = fit(holo, (s,alpha), scatterpy.theory.Mie, 'nmpfit',
                     lb, ub)
 
-    fit_sphere = fitresult[0]
-    fit_alpha = fitresult[1]
-    fitres_unpacked = np.array([fit_sphere.n.real, fit_sphere.n.imag, 
-                                fit_sphere.r, fit_sphere.x, fit_sphere.y, 
-                                fit_sphere.z, fit_alpha])
-
-    assert_array_almost_equal(fitres_unpacked * [1,10**4,10**7,
-            10**6,10**6,10**5,10], gold_single, decimal=2)
+    assert_array_almost_equal(np.concatenate((fitresult[0].parameter_list, 
+                                             np.array([fitresult[1]]))) * 
+                                             np.array([1,10**4,10**7,
+                                                       10**6,10**6,10**5,10]), 
+                                             gold_single, decimal=2)
 
 
 @attr('medium')
@@ -218,6 +215,64 @@ def test_fit_multisphere_noisydimer_slow():
     assert_array_almost_equal(fitres_unpacked * [1, 10**5, 10**7, 10**5, 10**5,
                                            10**5,1,10**5, 10**7, 10**5,10**5,
                                            10**5, 1], gold, decimal=2)
+
+
+@attr('slow')
+def test_six_mie_superposition():
+    '''
+    Right now Mie Superposition is only being tested for 2 simulated particles.
+    Test against real data fitted by calling nmpfit directly.
+    This links to data on the group share.
+
+    Original data file: /group/manoharan/jerome/jf072511/13/image0095.tif
+    with bg jerome/jf072611/bg_13.npy
+
+    fnorm should be 6.216
+
+    Very slow -- takes about an hour to run.
+    '''
+    optics = hp.Optics(wavelen = 662.3e-9, polarization = [0., 1.0], 
+                       divergence = 0., pixel_scale = [0.10678e-6, 0.10678e-6],
+                       index = 1.4105)
+    holo = hp.load('/group/manoharan/holopy/test_image_six_droplet.npy', 
+                   optics = optics)
+    gold = np.array([1.5186, 1.0, 4.7205, 1.3798, 1.5089, 1.3256, 
+                     1.5186, 1.0, 4.7205, 1.4461, 1.2384, 1.5213,
+                     1.5186, 1.0, 4.7205, 1.5164, 1.4277, 1.6675,
+                     1.5186, 1.0, 4.7205, 1.4045, 1.5979, 1.4805,
+                     1.5186, 1.0, 4.7205, 1.4152, 1.4171, 1.2691,
+                     1.5186, 1.0, 4.7205, 1.7079, 1.5628, 1.4302, 2.3607])
+
+    sc1 = np.array([1., 1e4, 1e7, 1e5, 1e5, 1e5])
+    scale = np.concatenate((sc1, sc1, sc1, sc1, sc1, sc1, np.array([10.])))
+    
+    # set up initial guess
+    s1 = Sphere(n = 1.515+1e-4j, r = 0.472e-6, center = (1.38e-05, 1.51e-05, 
+                                                         1.33e-5))
+    s2 = Sphere(n = s1.n, r = s1.r, center = (1.45e-5, 1.24e-5, 1.52e-5))
+    s3 = Sphere(n = s1.n, r = s1.r, center = (1.52e-5, 1.43e-5, 1.67e-5))
+    s4 = Sphere(n = s1.n, r = s1.r, center = (1.40e-5, 1.60e-5, 1.48e-5))
+    s5 = Sphere(n = s1.n, r = s1.r, center = (1.42e-5, 1.42e-5, 1.27e-5))
+    s6 = Sphere(n = s1.n, r = s1.r, center = (1.71e-5, 1.56e-5, 1.43e-5))
+    sc = SphereCluster([s1, s2, s3, s4, s5, s6])
+    alpha = 0.24
+
+    # bounds and step
+    lb1 = Sphere(1+1e-4j, 1e-8, 0, 0, 0)
+    ub1 = Sphere(2+1e-4j, 1e-5, 1e-4, 1e-4, 1e-4)
+    lb2 = Sphere(s1.n, s1.r, 0, 0, 0)
+    ub2 = Sphere(s1.n, s1.r, 1e-4, 1e-4, 1e-4)
+    lb = SphereCluster([lb1, lb2, lb2, lb2, lb2, lb2]), .1
+    ub = SphereCluster([ub1, ub2, ub2, ub2, ub2, ub2]), 1. 
+    step1 = Sphere(1e-4+1e-4j, 1e-7, 0, 0, 0)
+    step = SphereCluster([step1, step1, step1, step1, step1, step1]), 0
+
+    fitresult = fit(holo, (sc, alpha), scatterpy.theory.Mie, 'nmpfit', 
+                    lb, ub, step = step)       
+    fitres_unpacked = np.concatenate((fitresult[0].parameter_list, 
+                                      np.array([fitresult[1]])))
+
+    assert_array_almost_equal(fitres_unpacked * scale, gold, decimal=2)
 
     
 '''
