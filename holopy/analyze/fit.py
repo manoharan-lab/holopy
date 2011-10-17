@@ -129,28 +129,37 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
 
     # Rescale parameters so that the minimizer is working with all parameter
     # values ~ 1
-    scale = scatterer.parameter_list
-    scale = np.append(scale, alpha)
-    # since we pick the intial guess as the scaling factor, our initial guess to
-    # the minimizer will be all ones
 
+    scale = np.zeros(guess_list.size)
+    for i in range(len(scale)):
+        scale[i] = guess_list[i]
+        # if any parameters have an initial value of 0, this way of chosing scale
+        # will not work, so instead use one based on the range of allowed values
+        if abs(scale[i]) < 1e-12:
+            scale[i] = (upper_bound[i] - lower_bound[i])/10
+        # finally, if the parameter is also fixed, then we just set scale = 1.0
+        if abs(scale[i]) < 1e-12:
+            scale[i]=1.0
+
+    names = ["{0} (/ {1})".format(names[i], scale[i]) for i in range(len(scale))]
+            
     fixed = []
     for i in range(len(scale)):
         # if the lower_bound == scale == upper_bound the user wants this value
         # fixed, some fittters will not handle this case nicely, so we pull the
         # parameter from the list and add it back at the end.  
-        if scale[i] == lower_bound[i] and scale[i] == upper_bound[i]:
+        if lower_bound[i] == upper_bound[i]:
             fixed.append(i)
 
     names = np.delete(names, fixed)
 
     lower_bound = np.delete(lower_bound/scale, fixed)
     upper_bound = np.delete(upper_bound/scale, fixed)
+    guess = np.delete(guess_list/scale, fixed)
+
     if step is not None:
         step = np.delete(step/scale, fixed)
     
-    guess = np.ones(len(lower_bound))
-
     residual = make_residual(holo, scatterer, theory, scale, fixed,
                              residual_cost)
 
@@ -191,15 +200,18 @@ def make_residual(holo, scatterer, theory, scale=1.0, fixed = [],
             p = np.insert(p, v, 1.0)
         p = p*scale
 
-        for i, name in enumerate(scatterer.parameter_names_list+['alpha']):
-            print('{0}: {1}'.format(name, p[i]))
-
         error = 1e12*np.ones(holo.size)
 
         # alpha should always be the last parameter, we prune it because the
         # scatterer doesn't want to know about it
         this_scatterer = scatterer.make_from_parameter_list(p[:-1])
-            
+
+        try:
+            this_scatterer.validate()
+        except InvalidScatterer as e:
+            print("Attempt to overlap scatterers, rejecting with large error")
+            return error
+        
         try:
             calculated = theory.calc_holo(this_scatterer, p[-1])
         except (UnrealizableScatterer, InvalidScatterer) as e:
@@ -306,7 +318,7 @@ def minimize(residual, algorithm='nmpfit', guess=None, lb=None , ub=None,
             p = openopt.NLLSP(residual, guess, lb=lb, ub=ub, iprint=iprint, plot=plot)
 
         r = p.solve(algorithm)
-        return r.xf
+        return r.xf, r.ff, -1
 
     else:
         raise MinimizerNotFound(algorithm)

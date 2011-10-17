@@ -141,12 +141,9 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
                 raise UnrealizableScatterer(self, s, "radius too large, field "+
                                             "calculation would take forever")
             
-        centers = scatterer.centers
-
         # switch to centroid weighted coordinate system tmatrix code expects
-        centers -= centers.mean(0)
-        # now nondimensionalize
-        centers *= self.optics.wavevec
+        # and nondimensionalize
+        centers = (scatterer.centers - scatterer.centers.mean(0)) * self.optics.wavevec
 
         m = scatterer.n / self.optics.index
 
@@ -179,7 +176,7 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
                                                        amn, lmax, 0,
                                                        self.optics.polarization)
         if np.isnan(e_x[0,0]):
-            raise TMatrixFieldNaN()
+            raise TMatrixFieldNaN(self, scatterer, '')
 
         return ElectricField(e_x, e_y, e_z, scatterer.z.mean(),
                              self.optics.med_wavelen) 

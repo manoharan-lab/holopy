@@ -126,7 +126,7 @@ class SphereCluster(Composite):
 
     def __repr__(self):
         return "{c}(spheres={spheres})".format(c=self.__class__.__name__,
-                                       spheres=self.scatterers)
+                                       spheres=repr(self.scatterers))
 
     @property
     def parameter_list(self):
@@ -229,5 +229,5 @@ psi={s.psi}, com={s.com}, orig_cluster={o})".format(s=self, o=repr(self.orig_clu
     # information to make a new one, need to reference an existing
     # RotatedSphereCluster to get a value for orig_cluster
     def make_from_parameter_list(self, params):
-        return RotatedSphereCluster(self.orig_cluster, params[1], params[2],
-                                    params[3], params[0])
+        return RotatedSphereCluster(self.orig_cluster, params[3], params[4],
+                                    params[5], (params[0], params[1], params[2]))
