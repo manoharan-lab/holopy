@@ -26,7 +26,7 @@ determining an initial parameter guess for hologram fitting.
 
 import scipy
 import numpy
-from scipy import arange, around, array, int16, zeros, sqrt
+from scipy import arange, around, array, int16, zeros, sqrt, ndimage
 
 def center_find(image, scale=.5):
     """
