@@ -32,6 +32,7 @@ from .analyze.reconstruct import reconstruct
 from .analyze.fit import fit, get_target, get_initial_guess, get_fit_result
 import process
 from .io.image_io import load
+from .vis import show
 
 __version__ = 'unknown'
 try:
