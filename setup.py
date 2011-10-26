@@ -46,7 +46,6 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('holopy.io')
     config.add_subpackage('scatterpy')
     config.add_subpackage('scatterpy.theory')
-    config.add_subpackage('scatterpy.theory.mie_c')
     config.add_subpackage('scatterpy.theory.mie_f')
     config.add_subpackage('scatterpy.scatterer')
     config.add_subpackage('holopy.process')
