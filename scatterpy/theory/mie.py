@@ -186,13 +186,6 @@ class Mie(ScatteringTheory):
         lmax = miescatlib.nstop(x_p)
         return  miescatlib.scatcoeffs(x_p, m_p, lmax)
 
-    def _nondimensionalize(self, s):
-        m_p = s.n / self.optics.index
-        x_p = self.optics.wavevec * s.r
-        kcoords = self.optics.wavevec * s.center
-        return m_p, x_p, kcoords
-
-
 # TODO: Need to refactor fitting code so that it no longer relies on
 # the legacy functions below.  Then remove.
 par_ordering = ['n_particle_real', 'n_particle_imag', 'radius', 'x',

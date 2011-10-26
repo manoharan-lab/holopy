@@ -27,7 +27,7 @@ this you may see a small lag on your first plot.
 """
 
 import holopy as hp
-from scatterpy.scatterer import SphereCluster
+import scatterpy
 
 class VisualizationNotImplemented(Exception):
     def __init__(self, o):
@@ -52,7 +52,7 @@ def show(o):
     to import all of mayavi just to load holopy)
     """
     
-    if isinstance(o, SphereCluster):
+    if isinstance(o, scatterpy.scatterer.SphereCluster):
         import vis3d
         vis3d.show_sphere_cluster(o)
     elif isinstance(o, (hp.Hologram, hp.analyze.reconstruct.Reconstruction)):

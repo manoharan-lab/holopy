@@ -328,3 +328,6 @@ class ElectricField(object):
 
         return ElectricField(self.x_comp * other, self.y_comp * other,
                              self.z_comp * other, 0.0, self.wavelen)
+
+    def _array(self):
+        return np.dstack((self.x_comp, self.y_comp, self.z_comp))

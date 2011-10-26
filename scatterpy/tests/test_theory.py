@@ -21,36 +21,25 @@ Test construction and manipulation of scattering theory objects.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
-import holopy
 from nose.tools import assert_raises
 from numpy.testing import (assert_, assert_almost_equal,
                            assert_allclose)
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
 
-from scatterpy.scatterer import Sphere, CoatedSphere
-from scatterpy.scatterer import Composite, SphereCluster
+from scatterpy.scatterer import Sphere, CoatedSphere, SphereCluster
 
 from scatterpy.theory import Mie
-from scatterpy.calculate import calc_field, calc_holo, calc_intensity
 from scatterpy.errors import TheoryNotCompatibleError
-from holopy.optics import (WavelengthNotSpecified, PixelScaleNotSpecified,
-                           MediumIndexNotSpecified)
+
+import common
+    
 
 # nose setup/teardown methods
 def setup_optics():
     # set up optics class for use in several test functions
     global optics
-    wavelen = 658e-9
-    polarization = [0., 1.0]
-    divergence = 0
-    pixel_scale = [.1151e-6, .1151e-6]
-    index = 1.33
-    
-    optics = holopy.optics.Optics(wavelen=wavelen, index=index,
-                                  pixel_scale=pixel_scale,
-                                  polarization=polarization,
-                                  divergence=divergence)
+    optics = common.optics
     
 def teardown_optics():
     global optics

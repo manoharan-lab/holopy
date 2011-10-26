@@ -19,43 +19,40 @@
 Test fortran-based Mie calculations and python interface.  
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
+.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
 import sys
 import os
 hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
 sys.path.append(hp_dir)
-import numpy as np
+from nose.tools import with_setup
 
 from numpy.testing import assert_array_almost_equal, assert_almost_equal
 from nose.plugins.attrib import attr
 
-import holopy
 from scatterpy.scatterer import Sphere, SphereCluster
 from scatterpy.theory import Mie
 
+import common
+from common import compare_to_data
 
 
-# define optical train
-wavelen = 658e-9
-ypolarization = [0., 1.0] # y-polarized
-xpolarization = [1.0, 0.] # x-polarized
-divergence = 0
-pixel_scale = [.1151e-6, .1151e-6]
-index = 1.33
+# nose setup/teardown methods
+def setup_model():
+    # set up optics class for use in several test functions
+    global xoptics, yoptics, xmodel, ymodel
+    xoptics, yoptics = common.xoptics, common.yoptics
+    xmodel = Mie(imshape = imshape, optics=xoptics)
+    ymodel = Mie(imshape = imshape, optics=yoptics)
 
-yoptics = holopy.optics.Optics(wavelen=wavelen, index=index,
-                              pixel_scale=pixel_scale,
-                              polarization=ypolarization,
-                              divergence=divergence)
-
-xoptics = holopy.optics.Optics(wavelen=wavelen, index=index,
-                              pixel_scale=pixel_scale,
-                              polarization=xpolarization,
-                              divergence=divergence)
+def teardown_model():
+    global xoptics, yoptics, xmodel, ymodel
+    del xoptics, yoptics, xmodel, ymodel
 
 scaling_alpha = .6
 radius = .85e-6
+n = 1.59+1e-4j
 n_particle_real = 1.59
 n_particle_imag = 1e-4
 x = .576e-05
@@ -65,13 +62,23 @@ z = 15e-6
 imshape = 128
 
 @attr('fast')
+@with_setup(setup=setup_model, teardown=teardown_model)
+def test_single_sphere():
+    # single sphere hologram (only tests that functions return)
+    sphere = Sphere(n=n, r=radius, x=x, y=y, z=z)
+
+    holo = xmodel.calc_holo(sphere, alpha=scaling_alpha)
+    field = xmodel.calc_field(sphere)
+
+    compare_to_data(holo, 'gold_single_holo')
+    compare_to_data(field, 'gold_single_field')
+
+@attr('fast')
+@with_setup(setup=setup_model, teardown=teardown_model)
 def test_mie_polarization():
     # test holograms for orthogonal polarizations; make sure they're
     # not the same, nor too different from one another.
-    sphere = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius, 
-                    x=x, y=y, z=z)
-    xmodel = Mie(imshape = imshape, optics=xoptics)
-    ymodel = Mie(imshape = imshape, optics=yoptics)
+    sphere = Sphere(n=n, r=radius, x=x, y=y, z=z)
 
     xholo = xmodel.calc_holo(sphere, alpha=scaling_alpha)
     yholo = ymodel.calc_holo(sphere, alpha=scaling_alpha)
@@ -90,16 +97,7 @@ def test_mie_polarization():
     return xholo, yholo
 
 @attr('fast')
-def test_single_sphere():
-    # single sphere hologram (only tests that functions return)
-    sphere = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius, 
-                    x=x, y=y, z=z)
-    model = Mie(imshape = imshape, optics=xoptics)
-
-    holo = model.calc_holo(sphere, alpha=scaling_alpha)
-    field = model.calc_field(sphere)
-
-@attr('fast')
+@with_setup(setup=setup_model, teardown=teardown_model)
 def test_linearity():
     # look at superposition of scattering from two point particles;
     # make sure that this is sum of holograms from individual point
@@ -110,15 +108,13 @@ def test_linearity():
     y2 = y*2
     z2 = z*2
     scaling_alpha = 1.0
-    r = 1e-2*wavelen    # something much smaller than wavelength
+    r = 1e-2*xoptics.wavelen    # something much smaller than wavelength
 
-    sphere1 = Sphere(n=n_particle_real + n_particle_imag*1j, r=r, 
-                     x=x, y=y, z=z)
-    sphere2 = Sphere(n=n_particle_real + n_particle_imag*1j, r=r, 
-                     x=x2, y=y2, z=z2)
+    sphere1 = Sphere(n=n, r=r, x=x, y=y, z=z)
+    sphere2 = Sphere(n=n, r=r, x=x2, y=y2, z=z2)
 
     sc = SphereCluster(spheres = [sphere1, sphere2])
-    model = Mie(imshape=imshape, optics=xoptics)
+    model = xmodel
     
     holo_1 = model.calc_holo(sphere1, alpha=scaling_alpha)
     holo_2 = model.calc_holo(sphere2, alpha=scaling_alpha)
@@ -144,6 +140,7 @@ def test_linearity():
     #return holo_1, holo_2, holo_super
 
 @attr('fast')
+@with_setup(setup=setup_model, teardown=teardown_model)
 def test_nonlinearity():
     # look at superposition of scattering from two large particles;
     # make sure that this is *not equal* to sum of holograms from
@@ -154,15 +151,13 @@ def test_nonlinearity():
     y2 = y*2
     z2 = z*2
     scaling_alpha = 1.0
-    r = wavelen    # order of wavelength
+    r = xoptics.wavelen    # order of wavelength
 
-    sphere1 = Sphere(n=n_particle_real + n_particle_imag*1j, r=r, 
-                     x=x, y=y, z=z)
-    sphere2 = Sphere(n=n_particle_real + n_particle_imag*1j, r=r, 
-                     x=x2, y=y2, z=z2)
+    sphere1 = Sphere(n=n, r=r, x=x, y=y, z=z)
+    sphere2 = Sphere(n=n, r=r, x=x2, y=y2, z=z2)
 
     sc = SphereCluster(spheres = [sphere1, sphere2])
-    model = Mie(imshape=imshape, optics=xoptics)
+    model = xmodel
     
     holo_1 = model.calc_holo(sphere1, alpha=scaling_alpha)
     holo_2 = model.calc_holo(sphere2, alpha=scaling_alpha)
@@ -182,21 +177,24 @@ def test_nonlinearity():
     #return holo_1, holo_2, holo_super
 
 @attr('fast')
+@with_setup(setup=setup_model, teardown=teardown_model)
 def test_two_spheres_samez():
     # put a second sphere in the same plane as the first.  This only
     # tests that the function returns.
     x2 = x*2
     y2 = y*2
     z2 = z
-    sphere1 = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius, 
-                     x=x, y=y, z=z)
-    sphere2 = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius, 
-                     x=x2, y=y2, z=z2)
+    sphere1 = Sphere(n=n, r=radius, x=x, y=y, z=z)
+    sphere2 = Sphere(n=n, r=radius, x=x2, y=y2, z=z2)
 
     sc = SphereCluster(spheres = [sphere1, sphere2])
-    model = Mie(imshape=imshape, optics=xoptics)
+    model = xmodel
     
     holo = model.calc_holo(sc, alpha=scaling_alpha)
+    intensity = model.calc_intensity(sc)
+
+    compare_to_data(holo, 'gold_two_spheres_samez_holo')
+    compare_to_data(intensity, 'gold_two_spheres_samez_intensity')
 
     # uncomment to debug
     #return holo

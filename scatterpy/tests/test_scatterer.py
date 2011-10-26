@@ -26,11 +26,15 @@ from nose.tools import raises, assert_raises
 from numpy.testing import assert_, assert_equal, assert_almost_equal
 from nose.plugins.attrib import attr
 
-from scatterpy.scatterer import Sphere, CoatedSphere
+from scatterpy.scatterer import Sphere, CoatedSphere, Scatterer
 from scatterpy.scatterer import Composite, SphereCluster
 from scatterpy.errors import ScattererDefinitionError, InvalidScattererSphereOverlap
 #from scatterpy
 #.scatterer import SphereDimer
+
+@attr('fast')
+def test_Scatterer_construction():
+    assert_raises(NotImplementedError, lambda:  Scatterer())
 
 @attr('fast')
 def test_Sphere_construction():
@@ -60,6 +64,8 @@ def test_Sphere_construct_array():
     center = np.array([1e-6, -1e-6, 10e-6])
     s = Sphere(n = 1.59+0.0001j, r = 5e-7, center = center)
     assert_equal(s.center, center)
+
+    assert_raises(ScattererDefinitionError, lambda: Sphere(center=1e-6))
 
 @attr('fast')
 def test_Sphere_construct_params():
