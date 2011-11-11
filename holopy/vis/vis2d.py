@@ -98,7 +98,10 @@ def show(im, i=0, t=0, phase = False):
        
     """
 
-    optics = im.optics
+    if hasattr(im, 'optics'):
+        optics = im.optics
+    else:
+        optics = None
     if np.iscomplexobj(im):
         if phase:
             im = np.angle(im)

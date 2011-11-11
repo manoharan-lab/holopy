@@ -27,6 +27,7 @@ this you may see a small lag on your first plot.
 """
 
 import holopy as hp
+import numpy
 import scatterpy
 
 class VisualizationNotImplemented(Exception):
@@ -55,7 +56,7 @@ def show(o):
     if isinstance(o, scatterpy.scatterer.SphereCluster):
         import vis3d
         vis3d.show_sphere_cluster(o)
-    elif isinstance(o, (hp.Hologram, hp.analyze.reconstruct.Reconstruction)):
+    elif isinstance(o, (hp.Hologram, hp.analyze.reconstruct.Reconstruction, numpy.ndarray)):
         import vis2d
         vis2d.show(o)
     else:

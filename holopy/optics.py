@@ -133,6 +133,8 @@ class Optics(object):
     @property
     def pixel(self):
         try:
+            if self.pixel_scale == None or _ensure_pair(self.pixel_scale) == _ensure_pair(None):
+                raise PixelScaleNotSpecifiedb
             return _ensure_pair(self.pixel_scale)
         except AttributeError:
             raise PixelScaleNotSpecified
