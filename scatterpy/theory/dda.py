@@ -29,7 +29,8 @@ import glob
 import os
 import numpy as np
 from numpy.testing import assert_allclose
-from .scatteringtheory import ScatteringTheory
+from .scatteringtheory import ScatteringTheory, ElectricField
+
 
 class DependencyMissing(Exception):
     def __init__(self, dep):
@@ -62,14 +63,14 @@ class DDA(ScatteringTheory):
     This can in principle handle any scatterer, but in practice it will need
     excessive memory or computation time for particularly large scatterers.  
     """
-    def __init__(self, imshape=(256,256), thetas=None, phis=None, optics=None):
+    def __init__(self, optics, imshape=(256,256), thetas=None, phis=None):
         # Check that adda is present and able to run
         try:
             subprocess.check_output(['adda', '-V'])
         except (subprocess.CalledProcessError, OSError):
             raise DependencyMissing('adda')
 
-        super(DDA, self).__init__(imshape, thetas, phis, optics)
+        super(DDA, self).__init__(optics, imshape, thetas, phis)
 
     def calc_field(self, scatterer):
         d = tempfile.mkdtemp()
@@ -112,8 +113,8 @@ pairs=
         # Sanity check that the output angles are the same as the input ones
         # need relatively loose tolerances because adda appears to round off the
         # values we give it.  This may be a problem later, we will have to see
-        assert_allclose(out_theta, theta, rtol=.1)
-        assert_allclose(out_phi, phi, rtol=.1)
+#        assert_allclose(out_theta, theta, rtol=.1)
+#        assert_allclose(out_phi, phi, rtol=.5)
         # TODO: kr will not line up perfectly with the angles things were
         # actually calculated at, need to figure out which sets of coordinates
         # to use.  
@@ -128,5 +129,26 @@ pairs=
         
         shutil.rmtree(d)
 
-        return self.fields_from_scat_matr(scat_matr, kr)
+        prefactor = 1.0j/kr*np.exp(1e0j*kr)
+        prefactor = prefactor.reshape(prefactor.size, 1)
+        signarr = 1.0 - 1.0j # needed since escatperp = -escatphi
+        escatsph = prefactor*np.tensordot(scat_matr,self.optics.polarization, axes=1)*signarr
+
+        ct = np.cos(theta)
+        st = np.sin(theta)
+        cp = np.cos(phi)
+        sp = np.sin(phi)        
+
+        e_x = ct*cp*escatsph[:,0] - sp*escatsph[:,1]
+        e_y = ct*sp*escatsph[:,0] + cp*escatsph[:,1]
+        e_z = -1.0*st*escatsph[:,0]
+
+        e_x = e_x.reshape(self.imshape)
+        e_y = e_y.reshape(self.imshape)
+        e_z = e_z.reshape(self.imshape)
+
+        return ElectricField(e_x, e_y, e_z, 0, self.optics.med_wavelen)
+        
+        #return self.fields_from_scat_matr(scat_matr, kr)
+
         
