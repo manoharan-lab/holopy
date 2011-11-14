@@ -32,6 +32,7 @@ reference beam to the Optics class constructor.
 
 import numpy as np
 import copy
+from types import NoneType
 from .utility.helpers import _ensure_pair
 
 class Optics(object):
@@ -133,8 +134,9 @@ class Optics(object):
     @property
     def pixel(self):
         try:
-            if self.pixel_scale == None or _ensure_pair(self.pixel_scale) == _ensure_pair(None):
-                raise PixelScaleNotSpecifiedb
+            if self.pixel_scale.__class__ == NoneType or \
+                    _ensure_pair(self.pixel_scale)[1].__class__ == NoneType:
+                raise PixelScaleNotSpecified
             return _ensure_pair(self.pixel_scale)
         except AttributeError:
             raise PixelScaleNotSpecified

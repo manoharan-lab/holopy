@@ -227,7 +227,7 @@ def test_six_mie_superposition():
     Original data file: /group/manoharan/jerome/jf072511/13/image0095.tif
     with bg jerome/jf072611/bg_13.npy
 
-    fnorm should be 6.216
+    fnorm should be 6.216.  (Updated: got a better fit w/lower fnorm).
 
     Very slow -- takes about an hour to run.
     '''
@@ -236,12 +236,12 @@ def test_six_mie_superposition():
                        index = 1.4105)
     holo = hp.load('/group/manoharan/holopy/test_image_six_droplet.npy', 
                    optics = optics)
-    gold = np.array([1.5186, 1.0, 4.7205, 1.3798, 1.5089, 1.3256, 
-                     1.5186, 1.0, 4.7205, 1.4461, 1.2384, 1.5213,
-                     1.5186, 1.0, 4.7205, 1.5164, 1.4277, 1.6675,
-                     1.5186, 1.0, 4.7205, 1.4045, 1.5979, 1.4805,
-                     1.5186, 1.0, 4.7205, 1.4152, 1.4171, 1.2691,
-                     1.5186, 1.0, 4.7205, 1.7079, 1.5628, 1.4302, 2.3607])
+    gold = np.array([1.526, 1.0, 4.372, 1.3798, 1.5089, 1.3256, 
+                     1.526, 1.0, 4.372, 1.4461, 1.2384, 1.5213,
+                     1.526, 1.0, 4.372, 1.5164, 1.4277, 1.6675,
+                     1.526, 1.0, 4.372, 1.4045, 1.5979, 1.4805,
+                     1.526, 1.0, 4.372, 1.4152, 1.4171, 1.2691,
+                     1.526, 1.0, 4.372, 1.7079, 1.5628, 1.4302, 2.3607])
 
     sc1 = np.array([1., 1e4, 1e7, 1e5, 1e5, 1e5])
     scale = np.concatenate((sc1, sc1, sc1, sc1, sc1, sc1, np.array([10.])))
