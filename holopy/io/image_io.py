@@ -25,6 +25,7 @@ image file formats used for holograms.
 
 import numpy as np
 import scipy as sp
+import holopy as hp
 import Image
 import os
 import glob
@@ -33,7 +34,6 @@ from holopy.third_party.tifffile import TIFFfile
 from holopy.optics import Optics
 from holopy.hologram import Hologram
 from holopy.utility.errors import NotImplementedError, LoadError, NoFilesFound
-from holopy import process
 from holopy.io.yaml_io import load_yaml
 
 def load(im, optics=None, bg=None, bg_type='subtract',
@@ -133,7 +133,7 @@ def load(im, optics=None, bg=None, bg_type='subtract',
         bg = Hologram(bg)
 
     if isinstance(bg, Hologram):
-        return process.background(holo, bg, bg_type)
+        return hp.process.background(holo, bg, bg_type)
     else:
         return holo
 

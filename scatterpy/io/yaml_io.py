@@ -28,10 +28,14 @@ import yaml
 import numpy as np
 
 def save(outf, obj):
-    yaml.dump(obj, file(outf, 'w'))
+    if isinstance(outf, basestring):
+        outf = file(outf, 'w')
+    yaml.dump(obj, outf)
 
 def load(inf):
-    yaml.load(file(inf))
+    if isinstance(inf, basestring):
+        inf = file(inf)
+    return yaml.load(inf)
 
 
 # Represent 1d ndarrays as lists in yaml files because it makes them much
@@ -50,7 +54,7 @@ yaml.add_representer(np.ndarray, ndarray_representer)
 class SerializableMetaclass(yaml.YAMLObjectMetaclass):
     def __init__(cls, name, bases, kwds):
         super(SerializableMetaclass, cls).__init__(name, bases, kwds)
-        cls.yaml_loader.add_constructor(cls.yaml_tag, cls.from_yaml)
+        cls.yaml_loader.add_constructor('!{0}'.format(cls.__name__), cls.from_yaml)
         cls.yaml_dumper.add_representer(cls, cls.to_yaml)
 
 

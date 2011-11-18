@@ -23,7 +23,7 @@ Test construction and manipulation of scattering theory objects.
 
 from nose.tools import assert_raises
 from numpy.testing import (assert_, assert_almost_equal,
-                           assert_allclose)
+                           assert_allclose, assert_equal)
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
 
@@ -49,17 +49,17 @@ def teardown_optics():
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_Mie_construction():
     theory = Mie(optics)
-    assert_(theory.imshape == (256,256))
+    assert_equal(theory.imshape, (256,256))
     theory = Mie(optics, imshape=(100,100))
-    assert_(theory.imshape == (100,100))
+    assert_equal(theory.imshape , (100,100))
 
     # test with single value instead of tuple
     theory = Mie(optics, imshape=128)
-    assert_(theory.imshape == (128,128))
+    assert_equal(theory.imshape , (128,128))
 
     # construct with optics
     theory = Mie(imshape=256, optics=optics)
-    assert_(theory.optics.index == 1.33)
+    assert_equal(theory.optics.index, 1.33)
 
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
