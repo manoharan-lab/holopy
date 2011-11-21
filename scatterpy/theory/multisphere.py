@@ -29,18 +29,12 @@ dependence of spherical Hankel functions for the scattered field.
 import numpy as np
 import mie_f.mieangfuncs as mieangfuncs
 import mie_f.scsmfo_min as scsmfo_min
-import mie_f.miescatlib as miescatlib
-from holopy.hologram import Hologram
-from holopy import Optics
-from holopy.utility.helpers import _ensure_array, _ensure_pair
 
 from scatterpy.errors import UnrealizableScatterer
 
-from scatterpy.scatterer import Sphere, SphereCluster, Composite
+from scatterpy.scatterer import SphereCluster
 from scatterpy.errors import TheoryNotCompatibleError
 from scatterpy.theory.scatteringtheory import ScatteringTheory, ElectricField
-from mie_f.mieangfuncs import singleholo
-from mie_f.miescatlib import nstop, scatcoeffs
 
 class Multisphere(ScatteringTheory):
     """

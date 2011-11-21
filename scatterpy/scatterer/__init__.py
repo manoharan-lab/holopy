@@ -25,7 +25,7 @@ as Clusters.
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
-from scatterpy.io.yaml_io import Serializable
+from holopy.io.yaml_io import Serializable
 
 class Scatterer(Serializable):
     """

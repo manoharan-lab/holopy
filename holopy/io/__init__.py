@@ -23,8 +23,9 @@ just holograms.
 .. moduleauthor:: Thomas G. Dimiduk <tdiimduk@physics.harvard.edu>
 """
 
+from yaml_io import save, load_yaml
 from image_io import load, save_image
-from yaml_io import load_yaml
 import image_io
 import fit_io
 import yaml_io
+

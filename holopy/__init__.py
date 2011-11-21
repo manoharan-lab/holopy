@@ -22,6 +22,9 @@ analyze digital holograms
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
+import process
+import analyze
+import io
 
 
 # import some names into the top level namespace so we can use,
@@ -30,7 +33,6 @@ from .hologram import Hologram, subimage
 from .optics import Optics
 from .analyze.reconstruct import reconstruct
 from .analyze.fit import fit, get_target, get_initial_guess, get_fit_result
-import process
 from .io.image_io import load
 from .vis import show
 

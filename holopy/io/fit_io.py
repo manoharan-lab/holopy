@@ -16,13 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 
+import holopy as hp
 from .yaml_io import load_yaml
 from .image_io import load
 import yaml_io
 import time
 import yaml
 import os.path
-from holopy.optics import Optics
 from holopy.utility.helpers import _ensure_array, _mkdir_p, _copy_file
 from holopy.utility import errors
 from holopy.analyze.minimizers.nmpfit_adapter import NmpfitParam, TiedNmpfitParam
@@ -40,7 +40,7 @@ class FitInputDeck(object):
         self.deck_location = os.path.split(filename)[0]
         self.model = _choose_model(self)
         self.fit_params = load_yaml(self._get_filename('fit_file'))
-        self.optics = Optics(**load_yaml(self._get_filename('optics_file')))
+        self.optics = hp.Optics(**load_yaml(self._get_filename('optics_file')))
         self.results_directory = os.path.join(self.deck_location,
                                               self['results_directory'])
         self.optics.index = self._yaml['medium_index']

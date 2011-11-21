@@ -26,12 +26,23 @@ import holopy as hp
 import tempfile
 from numpy.testing import assert_, assert_allclose, assert_equal
 
+def assert_read_matches_write(o):
+    tempf = tempfile.TemporaryFile()
+    hp.io.save(tempf, o)
+    tempf.flush()
+    tempf.seek(0)
+    loaded = hp.io.yaml_io.load(tempf)
+    assert_obj_equal(o, loaded)
+
 def assert_obj_equal(o1, o2):
     d1, d2 = o1.__dict__, o2.__dict__
     assert_equal(sorted(d1.keys()), sorted(d2.keys()))
     for key, val in d1.iteritems():
-        if isinstance(val, hp.Optics):
+        if isinstance(val, hp.io.yaml_io.Serializable):
             assert_obj_equal(val, d2[key])
+        elif isinstance(val, tuple):
+            for i, v in enumerate(val):
+                assert_obj_equal(v, d2[key][i])
         else:
             try:
                 assert_equal(val, d2[key])
@@ -41,18 +52,8 @@ def assert_obj_equal(o1, o2):
 def test_theory_io():
     t = scatterpy.theory.Multisphere(hp.Optics(wavelen=.66, index=1.33,
                                                pixel_scale=.1))
-    tempf = tempfile.TemporaryFile()
-    scatterpy.io.save(tempf, t)
-    tempf.flush()
-    tempf.seek(0)
-    loaded = scatterpy.io.load(tempf)
-    assert_obj_equal(t, loaded)
+    assert_read_matches_write(t)
 
 def test_scatterer_io():
     s = scatterpy.Sphere()
-    tempf = tempfile.TemporaryFile()
-    scatterpy.io.save(tempf, s)
-    tempf.flush()
-    tempf.seek(0)
-    loaded = scatterpy.io.load(tempf)
-    assert_obj_equal(s, loaded)
+    assert_read_matches_write(s)
