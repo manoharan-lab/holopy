@@ -332,10 +332,10 @@ def impulse_response(shape, optics, d):
 
     d = d.reshape([1, 1, d.size])
 
-    max_m = int(np.max(xdim**2*dx**2/np.abs(d)/wavelen/2))+1
-    max_n = int(np.max(ydim**2*dy**2/np.abs(d)/wavelen/2))+1
-    max_m = min(xdim, max_m*2)/2
-    max_n = min(ydim, max_n*2)/2
+    # TODO BUG: this will fail for odd hologram shapes (but I am not worrying
+    # about this because in practice we never use them - tgd 2011-11-21) 
+    max_m = xdim/2
+    max_n = ydim/2
 
     m, n = np.ogrid[-max_m:max_m,-max_n:max_n]
     m = m.reshape([m.shape[0], 1, 1])
