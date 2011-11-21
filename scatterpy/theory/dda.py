@@ -148,7 +148,5 @@ pairs=
         e_z = e_z.reshape(self.imshape)
 
         return ElectricField(e_x, e_y, e_z, 0, self.optics.med_wavelen)
-        
-        #return self.fields_from_scat_matr(scat_matr, kr)
 
         

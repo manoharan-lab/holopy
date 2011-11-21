@@ -100,9 +100,9 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
             dim_im = n
             holo = holo.sum(axis=0)
             
-    G = trans_func([m, n], holo.optics.pixel_scale, holo.optics.med_wavelen, d,
-                   squeeze=False, gradient_filter=gradient_filter,
-                   recon_in_zx_plane=rec_zx_plane, zprojection=project_along_z)
+    G = trans_func([m, n], holo.optics, d, squeeze=False,
+                   gradient_filter=gradient_filter,
+                   recon_in_zx_plane=rec_zx_plane, zprojection=project_along_z) 
     # Half dimensions of the psf, they will be used to define the area
     # on which it is applied
     mm, nn = [dim/2 for dim in G.shape[:2]]
@@ -150,7 +150,7 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
     else:
         return ifft(ft, overwrite=True)
 
-def trans_func(shape, pixel, wavelen, d, cfsp=0, squeeze=True,
+def trans_func(shape, optics, d, cfsp=0, squeeze=True,
                gradient_filter=0, recon_in_zx_plane=False, 
                zprojection=False):
     """
@@ -165,10 +165,8 @@ def trans_func(shape, pixel, wavelen, d, cfsp=0, squeeze=True,
     ----------
     shape : (int, int)
        maximum dimensions of the transfer function
-    pixel : (float, float)
-       effective pixel dimensions
-    wavelen : float
-       recording wavelength
+    optics : :class:`holopy.optics.Optics`
+       Optics object with pixel and wavelength information
     d : float or list of floats
        reconstruction distance.  If list or array, this function will
        return an array of transfer functions, one for each distance 
@@ -205,11 +203,9 @@ def trans_func(shape, pixel, wavelen, d, cfsp=0, squeeze=True,
     """
     d = np.array([d])
 
-    pixel = _ensure_pair(pixel)
-    shape = _ensure_pair(shape)
-       
-    dx, dy = pixel
-    xdim, ydim = shape
+    dx, dy = optics.pixel
+    wavelen = optics.med_wavelen
+    xdim, ydim = _ensure_pair(shape)
 
     if recon_in_zx_plane:
         #first determine which axis to use along x-y (that is, x or y)
@@ -298,3 +294,53 @@ def trans_func(shape, pixel, wavelen, d, cfsp=0, squeeze=True,
     else:
         return g
 
+
+def impulse_response(shape, optics, d):
+    """
+    Calculates the impulse response response at a distance d
+
+    Parameters
+    ----------
+    shape : (int, int)
+       maximum dimensions of the transfer function
+    optics : :class:`holopy.optics.Optics`
+       Optics object with pixel and wavelength information
+    d : float or list of floats
+       reconstruction distance.  If list or array, this function will
+       return an array of transfer functions, one for each distance
+
+    Returns
+    -------
+    trans_func : np.ndarray
+       The calculated transfer function.  This will be at most as large as
+       shape, but may be smaller if the frequencies outside that are zero    
+
+    References
+    ----------
+    .. [1] Schnars and Juptner, Digital recording and numerical
+    reconstruction of holograms (Meas. Sci. Technol. 13 2002), equation 3.18 (pg
+    R91)
+
+
+    """
+
+    d = np.array([d])
+
+    dx, dy = optics.pixel
+    wavelen = optics.med_wavelen
+    xdim, ydim = _ensure_pair(shape)
+
+    d = d.reshape([1, 1, d.size])
+
+    max_m = int(np.max(xdim**2*dx**2/np.abs(d)/wavelen/2))+1
+    max_n = int(np.max(ydim**2*dy**2/np.abs(d)/wavelen/2))+1
+    max_m = min(xdim, max_m*2)/2
+    max_n = min(ydim, max_n*2)/2
+
+    m, n = np.ogrid[-max_m:max_m,-max_n:max_n]
+    m = m.reshape([m.shape[0], 1, 1])
+    n = n.reshape([1, n.shape[1], 1])
+    
+    root = np.sqrt(d**2 + (m*dx)**2 + (n*dy)**2)
+
+    return 1.0j/wavelen * np.exp(-1.0j*optics.wavevec*root)/root
