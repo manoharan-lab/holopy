@@ -24,9 +24,10 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 import numpy as np
-from holopy import Optics
+import holopy as hp
 from holopy.hologram import Hologram
 from holopy.utility.helpers import _ensure_pair
+from holopy.io.yaml_io import Serializable
 
 class NotImplementedError(Exception):
     def __init__(self, method, theory, message=None):
@@ -37,10 +38,10 @@ class NotImplementedError(Exception):
         return ("Method " + self.method + " not implemented in theory " + 
                 self.theory + ". " + self.message)
 
-class ScatteringTheory(object):
+class ScatteringTheory(Serializable):
     """
     Base class for scattering theories
-
+    
     Attributes
     ----------
     imshape : float or tuple (optional)
@@ -67,9 +68,7 @@ class ScatteringTheory(object):
         self.thetas = thetas
         self.phis = phis
         if isinstance(optics, dict):
-            optics = Optics(**optics)
-        elif optics is None:
-            self.optics = Optics()
+            optics = hp.Optics(**optics)
         else:
             self.optics = optics
 

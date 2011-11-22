@@ -25,13 +25,19 @@ as Clusters.
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
-class Scatterer(object):
+from holopy.io.yaml_io import Serializable
+
+class Scatterer(Serializable):
     """
     abstract base class for scatterers
 
     """
-
+    yaml_tag = u'!Scatterer'
+    
     def __init__(self):
+        raise NotImplementedError
+
+    def __repr__(self):
         raise NotImplementedError
 
     def validate(self):

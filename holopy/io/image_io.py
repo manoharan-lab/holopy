@@ -25,15 +25,14 @@ image file formats used for holograms.
 
 import numpy as np
 import scipy as sp
+import holopy as hp
 import Image
 import os
 import glob
 from scipy.misc.pilutil import fromimage
 from holopy.third_party.tifffile import TIFFfile
-from holopy.optics import Optics
 from holopy.hologram import Hologram
 from holopy.utility.errors import NotImplementedError, LoadError, NoFilesFound
-from holopy import process
 from holopy.io.yaml_io import load_yaml
 
 def load(im, optics=None, bg=None, bg_type='subtract',
@@ -81,12 +80,12 @@ def load(im, optics=None, bg=None, bg_type='subtract',
             # pixel_scale: [3.4e-7, 3.4e-7]
             #
             # would be a minimal file that would work
-            optics = Optics(**load_yaml(optics))
+            optics = hp.Optics(**load_yaml(optics))
         except LoadError as er:
             print("Could not load optics file: %s" % er.filename)
-        if not isinstance(optics, Optics):
+        if not isinstance(optics, hp.Optics):
             print("Optics not provided, loading hologram without physical reference")
-            optics = Optics(wavelen=1, pixel_scale=(1, 1))
+            optics = hp.Optics(wavelen=1, pixel_scale=(1, 1))
             
     def _guess_extension(filename):
         # most images will be tif files, this lets the user not
@@ -133,7 +132,7 @@ def load(im, optics=None, bg=None, bg_type='subtract',
         bg = Hologram(bg)
 
     if isinstance(bg, Hologram):
-        return process.background(holo, bg, bg_type)
+        return hp.process.background(holo, bg, bg_type)
     else:
         return holo
 

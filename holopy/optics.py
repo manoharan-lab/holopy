@@ -34,8 +34,9 @@ import numpy as np
 import copy
 from types import NoneType
 from .utility.helpers import _ensure_pair
+from .io.yaml_io import Serializable
 
-class Optics(object):
+class Optics(Serializable):
     """
     Contains details about the source, detector, and optical train used
     to generate a hologram.
@@ -83,7 +84,7 @@ class Optics(object):
         # magnification
 
         # detector parameters
-        self.pixel_size = np.array(pixel_size)
+        self.pixel_size = _ensure_pair(pixel_size)
         if pixel_scale is None:
             if train is not None:
                 # calculate from optical train
@@ -94,7 +95,7 @@ class Optics(object):
             else:
                 self.pixel_scale = None
         else:
-            self.pixel_scale = np.array(pixel_scale)
+            self.pixel_scale = _ensure_pair(pixel_scale)
 
     @property
     def index(self):
@@ -166,7 +167,7 @@ class Optics(object):
     
     def __repr__(self):
         def f(x):
-            if x is None or x.shape is ():
+            if x is None or (hasattr(x, 'shape') and  x.shape is ()):
                 return 'None'
             return list(x)
         return "{s.__class__.__name__}(wavelen={s.wavelen}, index={s._index}, \

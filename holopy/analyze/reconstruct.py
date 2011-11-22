@@ -34,11 +34,10 @@ import numpy as np
 import scipy as sp
 import scipy.signal
 import os
-from holopy.process.math import fft
-from holopy.utility.helpers import _ensure_pair
+from holopy.process.math import fft, ifft
 import io
-from holopy.analyze.propagate import propagate
-from holopy.utility.helpers import _ensure_pair
+from holopy.analyze.propagate import propagate, impulse_response
+from holopy.utility.helpers import _ensure_pair, _ensure_array
 
 class VoxelNotDefined(Exception):
     def __init__(self, msg):
@@ -282,3 +281,12 @@ def reconstruct(holo, distances, fourier_mask=None, gradient_filter=None,
     r.gradient_filter_dz = gradient_filter
     return r
 
+def deconvolved_reconstruction(holo, distances, chi=0.01):
+    distances = _ensure_array(distances)
+    
+    r = propagate(holo, distances)
+    I = abs(r)**2
+    h = impulse_response(holo.shape, holo.optics, distances)
+    K = abs(h)**2
+    I = ifft(fft(I)/(fft(K)+chi))
+    return I

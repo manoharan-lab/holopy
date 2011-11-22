@@ -31,7 +31,6 @@ import numpy as np
 from mie_f.mieangfuncs import singleholo
 from mie_f.miescatlib import nstop, scatcoeffs
 
-from holopy import Optics
 from holopy.hologram import Hologram
 from scatterpy.errors import TheoryNotCompatibleError, UnrealizableScatterer
 from scatterpy.scatterer import Sphere, Composite

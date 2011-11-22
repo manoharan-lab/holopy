@@ -26,13 +26,13 @@ Routines for fitting a hologram to an exact solution given an input deck.
 
 import sys
 import os
+import time
 hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
 sys.path.append(hp_dir)
 from scipy import sin, cos, array, pi, sqrt, arcsin, arccos, real, dot
-from holopy.io import fit_io
-from holopy.io.yaml_io import load_yaml
+from holopy.io.yaml_io import load_yaml, Serializable
+
 import numpy as np
-from holopy.optics import Optics
 
 #import minimizers.nmpfit_adapter as minimizer
 from scatterpy.errors import (UnrealizableScatterer, ScattererOverlap,
@@ -44,12 +44,14 @@ def cost_subtract(holo, calc):
 def cost_rectified(holo, calc):
     return abs(holo-1) - abs(calc-1)
 
-class FitResult(object):
-    def __init__(self, scatterer, alpha, fnorm, status):
+class FitResult(Serializable):
+    def __init__(self, scatterer, alpha, chisq, status, time, minimizer_info):
         self.scatterer = scatterer
         self.alpha = alpha
-        self.fnorm = fnorm
+        self.chisq = chisq
         self.status = status
+        self.time = time
+        self.minimizer_info = minimizer_info,
     def __getitem__(self, index):
         if index == 0:
             return self.scatterer
@@ -58,12 +60,60 @@ class FitResult(object):
         raise KeyError
     def __repr__(self):
         return "{s.__class__.__name__}(scatterer={s.scatterer}, \
- alpha={s.alpha}, fnorm={s.fnorm}, status={s.status})".format(s=self)
+alpha={s.alpha}, chisq={s.chisq}, status={s.status}, time={s.time}, \
+minimizer_info={s.minimizer_info})".format(s=self)
 
-
+class FitSetup(Serializable):
+    """
+    Stores paramaters of how a fit was run
+    """
+    
+    def __init__(self, initial_guess, theory, minimizer, lower_bound,
+        upper_bound, step, minimizer_params, residual_cost):
+        """
+        
+        Arguments:
+        :param holo: 
+        :type holo: 
+        
+        :param initial_guess: 
+        :type initial_guess: 
+        
+        :param theory: 
+        :type theory: 
+        
+        :param minimizer: 
+        :type minimizer: 
+        
+        :param lower_bound: 
+        :type lower_bound: 
+        
+        :param upper_bound: 
+        :type upper_bound: 
+        
+        :param step: 
+        :type step: 
+        
+        :param minimizer_params: 
+        :type minimizer_params: 
+        
+        :param residual_cost: 
+        :type residual_cost: 
+        
+        """
+        self.holo = holo
+        self.initial_guess = initial_guess
+        self.theory = theory
+        self.minimizer = minimizer
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
+        self.step = step
+        self.minimizer_params = minimizer_params
+        self.residual_cost = residual_cost
+        
 def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
-        upper_bound=None, plot=False, minimizer_params={},
-        residual_cost=cost_subtract, step = None):
+        upper_bound=None, step = None, plot=False, minimizer_params={},
+        residual_cost=cost_subtract):
     """
     Find a scatterer which best recreates the given holo
 
@@ -98,6 +148,7 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
     n-dimensional parameter space describing the scatterer.  
     
     """
+    time_start = time.time()
 
     scatterer, alpha = initial_guess
 
@@ -163,17 +214,22 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
     residual = make_residual(holo, scatterer, theory, scale, fixed,
                              residual_cost)
 
-    result, fnorm, status = minimize(residual, minimizer, guess, lower_bound, upper_bound,
-                      parameter_names = names, step = step, **minimizer_params)
+    result, fnorm, status, minimizer_info = minimize(residual, minimizer, guess,
+                                                     lower_bound, upper_bound,
+                                                     parameter_names = names,
+                                                     step = step,
+                                                     **minimizer_params)
     
     # put back in the fixed values 
     for v in fixed:
         result = np.insert(result, v, 1.0)
 
     res = scale*result
+    time_stop = time.time()
         
     return FitResult(scatterer.make_from_parameter_list(res[:-1]), res[-1],
-    fnorm, status)
+                     fnorm/(holo.shape[0]*holo.shape[1]), status,
+                     time_stop-time_start, minimizer_info)
 
 
 def make_residual(holo, scatterer, theory, scale=1.0, fixed = [],
@@ -293,7 +349,7 @@ def minimize(residual, algorithm='nmpfit', guess=None, lb=None , ub=None,
         if not quiet:
             print(fitresult.fnorm)
         
-        return fitresult.params, fitresult.fnorm, fitresult.status
+        return fitresult.params, fitresult.fnorm, fitresult.status < 4, fitresult
 
     # Openopt fitters
     openopt_nllsq = ['scipy_leastsq']
@@ -318,7 +374,7 @@ def minimize(residual, algorithm='nmpfit', guess=None, lb=None , ub=None,
             p = openopt.NLLSP(residual, guess, lb=lb, ub=ub, iprint=iprint, plot=plot)
 
         r = p.solve(algorithm)
-        return r.xf, r.ff, -1
+        return r.xf, r.ff, True, r
 
     else:
         raise MinimizerNotFound(algorithm)
@@ -560,7 +616,7 @@ def get_fit_result(fit_yaml):
         Hologram corresponding to best fit
     '''
     fit = load_yaml(fit_yaml)
-    opt = Optics(**fit['optics'])
+    opt = hp.Optics(**fit['optics'])
 
     model = fit_io._choose_model(fit['model'])
     

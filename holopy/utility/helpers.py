@@ -35,11 +35,13 @@ def _ensure_array(x):
         return np.array(x)
 
 def _ensure_pair(x):
+    if x is None:
+        return None
     try:
         x[1]
-        return x
+        return np.array(x)
     except (IndexError, TypeError):
-        return x, x
+        return np.array([x, x])
 
 def _preserve_holo_type(func):
     """

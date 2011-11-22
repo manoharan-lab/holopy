@@ -27,9 +27,72 @@ analysis procedures.
 """
 
 import numpy as np
+import holopy
 import yaml
 import os
-from holopy.utility.errors import LoadError
+
+def save(outf, obj):
+    if isinstance(outf, basestring):
+        outf = file(outf, 'w')
+    yaml.dump(obj, outf)
+
+def load(inf):
+    if isinstance(inf, basestring):
+        inf = file(inf)
+    return yaml.load(inf)
+
+
+# Represent 1d ndarrays as lists in yaml files because it makes them much
+# prettier
+def ndarray_representer(dumper, data):
+    return dumper.represent_list(data.tolist())
+#    if data.ndim == 1:
+#        return dumper.represent_list([float(a) for a in data])
+#    if data.ndim == 2:
+        
+#    else:
+#        raise NotImplementedError
+
+yaml.add_representer(np.ndarray, ndarray_representer)
+
+# represent tuples as lists because yaml doesn't have tuples
+def tuple_representer(dumper, data):
+    return dumper.represent_list(list(data))
+yaml.add_representer(tuple, tuple_representer)
+
+# represent numpy types as things that will print more cleanly
+def complex_representer(dumper, data):
+    return dumper.represent_scalar('!complex', repr(data.tolist()))
+yaml.add_representer(np.complex128, complex_representer)
+def complex_constructor(loader, node):
+    return eval(node.value)
+yaml.add_constructor('!complex', complex_constructor)
+def numpy_float_representer(dumper, data):
+    return dumper.represent_float(float(data))
+yaml.add_representer(np.float64, numpy_float_representer)
+
+# Metaclass black magic to eliminate need for adding yaml_tag lines to classes
+class SerializableMetaclass(yaml.YAMLObjectMetaclass):
+    def __init__(cls, name, bases, kwds):
+        super(SerializableMetaclass, cls).__init__(name, bases, kwds)
+        cls.yaml_loader.add_constructor('!{0}'.format(cls.__name__), cls.from_yaml)
+        cls.yaml_dumper.add_representer(cls, cls.to_yaml)
+
+
+class Serializable(yaml.YAMLObject):
+    """
+    Base class for any object that wants a nice clean yaml output
+    """
+    __metaclass__ = SerializableMetaclass
+    
+    def to_yaml(cls, dumper, data):
+
+        return dumper.represent_yaml_object('!{0}'.format(data.__class__.__name__), data, cls,
+                                            flow_style=cls.yaml_flow_style)
+    to_yaml = classmethod(to_yaml)
+
+
+
 
 def load_yaml(filename):
     """

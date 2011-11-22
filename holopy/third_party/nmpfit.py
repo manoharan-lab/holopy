@@ -637,7 +637,9 @@ import types
 #
 #     **********
 
-class mpfit:
+from holopy.io.yaml_io import Serializable
+
+class mpfit(Serializable):
     def __init__(self, fcn, xall=None, functkw={}, parinfo=None,
                                             ftol=1.e-10, xtol=1.e-10, gtol=1.e-10,
                                             damp=0., maxiter=200, factor=100., nprint=1,
@@ -2296,7 +2298,7 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
 
         return(r)
 
-class machar:
+class machar(Serializable):
     def __init__(self, double=1):
         if (double == 0):
             self.machep = 1.19209e-007
