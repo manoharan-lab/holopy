@@ -97,3 +97,5 @@ class BentTrimer(SphereCluster):
             s = Sphere(n = n[i], r = r[i], center = centers[i])
             self.scatterers.append(s)
 
+    # TODO:
+    # Override parameter_list, parameter_names_list, make_from_parameter_list
