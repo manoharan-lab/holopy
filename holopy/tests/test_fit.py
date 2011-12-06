@@ -306,7 +306,7 @@ def test_tie():
     tie1 = Sphere(n=0+0j, r = None, center=[1, None, None])
     tie = SphereCluster([tie1, tie1]), None
     
-    fitresult = fit(holo, ig, theory, 'ralg', lb, ub, tie = tie) 
+    fitresult = fit(holo, ig, theory, 'nmpfit', lb, ub, tie = tie) 
     #fitresult = fit(holo, ig, theory, 'nmpfit', lb, ub, tie = None)
 
     assert_array_almost_equal(fitresult[0].parameter_list, sc.parameter_list)

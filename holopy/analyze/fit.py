@@ -330,14 +330,17 @@ class ParameterManager(object):
                                                               
         self.scale = np.zeros(self._initial_guess.size)
         for i in range(len(self.scale)):
-            self.scale[i] = self._initial_guess[i]
-            # if any parameters have an initial value of 0, this way of chosing scale
-            # will not work, so instead use one based on the range of allowed values
-            if abs(self.scale[i]) < 1e-12:
-                self.scale[i] = (self._upper_bound[i] - self._lower_bound[i])/10
-                # finally, if the parameter is also fixed, then we just set scale = 1.0
-            if abs(self.scale[i]) < 1e-12:
-                self.scale[i]=1.0
+            if self.fixed[i]:
+                # fixed parameters never go into the minimizer, so don't bother
+                # rescaling them
+                self.scale[i] = 1.0
+            else:
+                self.scale[i] = self._initial_guess[i]
+                # if any parameters have an initial value of 0, this way of chosing scale
+                # will not work, so instead use one based on the range of allowed values
+                if abs(self.scale[i]) < 1e-12:
+                    self.scale[i] = (self._upper_bound[i] - self._lower_bound[i])/10
+
 
     @property
     def step(self):
@@ -420,8 +423,10 @@ class ParameterManager(object):
                     while i not in self.tie_groups[group][1]:
                         group += 1
                     values = np.insert(values, i, tie_values[group])
+                elif self.fixed[i]:
+                    values = np.insert(values, i, self._initial_guess[i])
                 else:
-                    values = np.insert(values, i, 1.0)
+                    raise ParameterSpecificationError(self.names(prune=False)[i])
 
         return (self.scale * values)
 
