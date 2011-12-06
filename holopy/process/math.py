@@ -115,30 +115,47 @@ def rotate_points(points, theta, phi, psi):
         return np.dot(rot, points)
     return np.array([np.dot(rot, c) for c in points])
         
-def rotation_matrix(theta, phi, psi):
+def rotation_matrix(alpha, beta, gamma, radians = True):
     """
     Return a 3d rotation matrix
 
     Parameters
     ----------
-    theta, phi, psi: angles (radians)
-        Rotation angles about x, y, z axes
-        
+    alpha, beta, gamma: float 
+        Euler rotation angles in z, y, z convention
+    radians: boolean
+        Default True; treats input angles in radians
+     
     Returns
     -------
     rot: array(3,3)
-        Rotation matrix, to rotate a vertor x, use np.dot(x, rot)
+        Rotation matrix, to rotate a vector x, use np.dot(x, rot)
         
     Notes
     -----
-    http://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
+    The Euler angles rotate a vector (in the active picture) by alpha
+    counterclockwise about the fixed lab z axis, beta counterclockwise about
+    the lab y axis, and by gamma about the lab z axis.  Counterclockwise is 
+    defined as viewed from the origin, looking in the positive direction
+    along an axis.  This is for compatability with the passive picture adopted
+    by SCSMFO.
         
     """
-    return np.array([[cos(theta)*cos(psi), -cos(phi)*sin(psi)+sin(phi)*sin(theta)*cos(psi),
-        sin(phi)*sin(psi)+cos(phi)*sin(theta)*cos(psi)],
-       [cos(theta)*sin(psi), cos(phi)*cos(psi)+sin(phi)*sin(theta)*sin(psi),
-        -sin(phi)*cos(psi)+cos(phi)*sin(theta)*sin(psi)],
-       [-sin(theta), sin(phi)*cos(theta), cos(phi)*cos(theta)]])
+    if not radians:
+        alpha *= np.pi/180.
+        beta *= np.pi/180.
+        gamma *= np.pi/180.
+
+    ca = cos(alpha)
+    sa = sin(alpha)
+    cb = cos(beta)
+    sb = sin(beta)
+    cg = cos(gamma)
+    sg = sin(gamma)
+
+    return np.array([ca*cb*cg - sa*sg, sa*cb*cg + ca*sg, -sb*cg,
+                     -ca*cb*sg - sa*cg, -sa*cb*sg + ca*cg, sb*sg,
+                     ca*sb, sa*sb, cb]).reshape((3,3)) # row major
 
 def cartesian_distance(p1, p2):
     return np.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2+(p1[2]-p2[2])**2)

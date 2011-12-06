@@ -194,7 +194,7 @@ def rotate(cluster, theta, phi, psi):
 
 
 class RotatedSphereCluster(SphereCluster):
-    def __init__(self, orig_cluster, theta, phi, psi, com = None):
+    def __init__(self, orig_cluster, alpha, beta, gamma, com = None):
         self.com = orig_cluster.centers.mean(0)
         self.orig_cluster = SphereCluster([Sphere(n=s.n, r=s.r, center =
                                                   s.center-self.com) for s in
@@ -202,9 +202,9 @@ class RotatedSphereCluster(SphereCluster):
         # overwrite whatever com the particle originally had
         if com is not None:
             self.com = com
-        self.theta = theta
-        self.phi = phi
-        self.psi = psi
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
 
     def __repr__(self):
         return "{s.__class__.__name__}(theta={s.theta}, phi={s.phi}, \
@@ -213,17 +213,18 @@ psi={s.psi}, com={s.com}, orig_cluster={o})".format(s=self, o=repr(self.orig_clu
     @property
     def scatterers(self):
         return [Sphere(n=s.n, r=s.r,
-                       center = self.com + rotate_points(s.center, self.theta,
-                                                         self.phi, self.psi))
+                       center = self.com + rotate_points(s.center, self.alpha,
+                                                         self.beta, self.gamma))
                 for s in self.orig_cluster.scatterers]
 
     @property
     def parameter_names_list(self):
-        return ['com_x', 'com_y', 'com_z', 'theta', 'phi', 'psi']
+        return ['com_x', 'com_y', 'com_z', 'alpha', 'beta', 'gamma']
 
     @property
     def parameter_list(self):
-        return np.array([self.com[0], self.com[1], self.com[2], self.theta, self.phi, self.psi])
+        return np.array([self.com[0], self.com[1], self.com[2], self.alpha, 
+                         self.beta, self.gamma])
 
     # not a classmethod because the parameter list does not have enough
     # information to make a new one, need to reference an existing
