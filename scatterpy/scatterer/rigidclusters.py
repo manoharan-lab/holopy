@@ -23,7 +23,7 @@ Defines specific rigid sphere cluster geometries.
 '''
 
 import numpy as np
-from numpy import array, sin, cos, dot, zeros, pi
+from numpy import array, sin, cos, dot, zeros, pi, ones, sqrt, arccos
 from holopy.process.math import rotation_matrix
 from sphere import Sphere
 from spherecluster import SphereCluster
@@ -130,3 +130,202 @@ class BentTrimer(SphereCluster):
         arg_arr= np.concatenate((params[3:6], params[12:]))
         return cls(n, r, *arg_arr)
         
+
+class RigidCluster(SphereCluster):
+    '''
+    Base class for regular rigid clusters where we will specify rotation about
+    the geometric center rather than a specific particle.
+
+    Geometrical regularity requires r to be identical for every particle, and
+    requires the gap to be identical between every pair of adjacent particles.
+
+    Subclasses (specific cluster geometries) need to call 
+    RigidCluster.__init__() in their constructor. They also need to provide
+    a @property reference_geometry. This should be a (n x 3) ndarray,
+    where the nth row contains the x, y, and z coordinates of the nth particle
+    in units of (r + gap/2).
+
+    Euler angles follow the SCSMFO zyz convention.
+
+    Attributes added to SphereCluster
+    ---------------------------------
+    n_spheres : int
+        Number of spheres in cluster
+    x_com : float
+    y_com : float
+    z_com : float
+        x, y, z coords of cluster center of mass
+    euler_alpha : float
+        Euler angle for rotation about z axis, degrees
+    euler_beta : float
+        Euler angle for rotation about y axis, degrees
+    euler_gamma : float
+        Euler angle for rotation about z axis, degrees
+    gap : float
+        Gap distance between particle edges.
+    reference_geometry : ndarray (n x 3)
+        Reference configuration of cluster.
+
+    '''
+    def __init__(self, n_spheres = None, n = None, r = None, x_com = None, 
+                 y_com = None, z_com = None, euler_alpha = None, 
+                 euler_beta = None, euler_gamma = None, gap = None):
+        '''
+        Parameters:
+        n_spheres : int
+        n : float or ndarray(n_spheres)
+        r : float
+        '''
+        # initialize 
+        self.n_spheres = n_spheres
+        n = array(n)
+        if n.size == 1: # scalar
+            n = n * ones(self.n_spheres)
+        else:
+            try:
+                n = n.reshape(self.n_spheres)
+            except ValueError:
+                raise ScattererDefinitionError('Wrong number of n specified', 
+                                               self)
+        #print 'Made it here'
+        self.x_com = x_com
+        self.y_com = y_com
+        self.z_com = z_com
+        self.euler_alpha = euler_alpha
+        self.euler_beta = euler_beta
+        self.euler_gamma = euler_gamma
+        self.gap = gap
+
+        # compute reference geometry
+        ref_positions = self.reference_geometry * (r + self.gap/2.)
+        # compute rotation matrix and transform particle coords
+        rot_mat = rotation_matrix(self.euler_alpha, self.euler_beta, 
+                                  self.euler_gamma, False)
+        # add displacement of com
+        com_shift = array([self.x_com, self.y_com, self.z_com])
+        centers = np.array([dot(rot_mat, pcoords) + com_shift for pcoords in
+                            ref_positions])
+
+        # make SphereCluster
+        self.scatterers = []
+        for i in range(self.n_spheres):
+            s = Sphere(n = n[i], r = r, center = centers[i])
+            self.scatterers.append(s)
+
+    @property
+    def reference_geometry(self):
+        raise NotImplementedError
+
+    @property
+    def parameter_names_list(self):
+        '''
+        [sphere_i.nreal, sphere_i.nimag, r, x_com, y_com, z_com, ea, eb, eg,
+        gap]
+        '''
+        parnames = []
+        # add n for each sphere
+        for i in xrange(self.n_spheres):
+            parnames.append('sphere_' + str(i) + '.n.real')
+            parnames.append('sphere_' + str(i) + '.n.imag')
+        parnames.extend(['r', 'x_com', 'y_com', 'z_com', 'euler_alpha', 
+                         'euler_beta', 'euler_gamma', 'gap'])
+        return parnames
+
+    @property
+    def parameter_list(self):
+        parlist = array([])
+        spheres = self.get_component_list()
+        for sphere in spheres: # indices
+            parlist = np.append(parlist, sphere.parameter_list[0:2])
+        parlist = np.append(parlist, array([self.r[0], self.x_com, self.y_com,
+                                            self.z_com, self.euler_alpha, 
+                                            self.euler_beta, self.euler_gamma, 
+                                            self.gap]))
+        return parlist
+
+    @classmethod
+    def make_from_parameter_list(cls, params):
+        n_spheres = (params.size - 8)/2. # 8 parameters besides indices
+        n = params[0:2*n_spheres:2] + 1j*params[1:2*n_spheres:2]
+        return cls(n, *params[2*n_spheres:])
+
+
+class Tetrahedron(RigidCluster):
+    def __init__(self, n = None, r = None, x_com = None, 
+                 y_com = None, z_com = None, euler_alpha = None, 
+                 euler_beta = None, euler_gamma = None, gap = None):
+        RigidCluster.__init__(self, n_spheres = 4, n = n,
+                              r = r, x_com = x_com, y_com = y_com,
+                              z_com = z_com, euler_alpha = euler_alpha,
+                              euler_beta = euler_beta, 
+                              euler_gamma = euler_gamma, gap = gap)
+    
+    @property
+    def reference_geometry(self):
+        '''
+        This is different from Becca's definition (and from JF's prior 
+        reference configuration) because it makes the symmetry more manifest.
+        Projected onto the x-z plane, the particle projections lie on the 
+        x and z axes.
+        '''
+        sphere_0 = array([-1., 0., sqrt(2.)/2.])
+        sphere_1 = array([1., 0., sqrt(2.)/2.])
+        sphere_2 = array([0., 1., -sqrt(2.)/2.])
+        sphere_3 = array([0., -1., -sqrt(2.)/2.])
+        return array([sphere_0, sphere_1, sphere_2, sphere_3]) 
+    
+
+class TrigonalBipyramid(RigidCluster):
+    def __init__(self, n = None, r = None, x_com = None, 
+                 y_com = None, z_com = None, euler_alpha = None, 
+                 euler_beta = None, euler_gamma = None, gap = None):
+        RigidCluster.__init__(self, n_spheres = 5, n = n,
+                              r = r, x_com = x_com, y_com = y_com,
+                              z_com = z_com, euler_alpha = euler_alpha,
+                              euler_beta = euler_beta, 
+                              euler_gamma = euler_gamma, gap = gap)
+
+    @property
+    def reference_geometry(self):
+        '''
+        Particles 1, 2, 3 lie in the y-z plane; particles 0 and 4 on the x-axis.
+        '''
+        sphere_0 = array([-2*sqrt(2./3.), 0., 0.])
+        sphere_1 = array([0., 0., 2.*sqrt(3.)/3.])
+        sphere_2 = array([0., 1., -sqrt(3.)/3.])
+        sphere_3 = array([0., -1., -sqrt(3.)/3.])
+        sphere_4 = array([2*sqrt(2./3.), 0., 0.])
+        return array([sphere_0, sphere_1, sphere_2, sphere_3, sphere_4])
+
+
+class Polytetrahedron(RigidCluster):
+    def __init__(self, n = None, r = None, x_com = None, 
+                 y_com = None, z_com = None, euler_alpha = None, 
+                 euler_beta = None, euler_gamma = None, gap = None):
+        RigidCluster.__init__(self, n_spheres = 6, n = n,
+                              r = r, x_com = x_com, y_com = y_com,
+                              z_com = z_com, euler_alpha = euler_alpha,
+                              euler_beta = euler_beta, 
+                              euler_gamma = euler_gamma, gap = gap)
+
+    @property
+    def reference_geometry(self):
+        '''
+        Particles 0-3 have the same relative positions as in the tetrahedron.
+        Particles 4 and 5 have y = 0.  We have particles 0, 1, 4, and 5 with
+        y = 0 (we project these onto the x-z plane to calculate the geometry),
+        and particles 2 and 3 have x = 0.
+        '''
+        # Because the geometry is messy, don't get z-COM yet.
+        x = (3.*arccos(1./3.) - pi)/2.
+        sphere_0 = array([-1., 0, sqrt(2.)])
+        sphere_1 = array([1., 0, sqrt(2.)])
+        sphere_2 = array([0, 1., 0])
+        sphere_3 = array([0, -1., 0])
+        sphere_4 = array([-cos(x), 0, -sin(x)]) * sqrt(3.)
+        sphere_5 = array([cos(x), 0, -sin(x)]) * sqrt(3.)
+        spheres = array([sphere_0, sphere_1, sphere_2, sphere_3, sphere_4,
+                         sphere_5])
+        # calculate the offset needed such that the z-centroid = 0
+        z_off = spheres[:,2].sum()/6. 
+        return spheres - array([0, 0, z_off])
