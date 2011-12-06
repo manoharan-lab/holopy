@@ -186,17 +186,15 @@ def test_fit_multisphere_noisydimer_slow():
     
     # initial guess
     s1 = Sphere(n=1.6026+1e-5j, r = .6856e-6, center=(1.64155e-05, 1.7247e-05, 20.582e-6))
-    s2 = Sphere(n=s1.n, r = .695e-6, center=(1.758e-05, 1.753e-05, 21.2698e-6))
+    s2 = Sphere(n=1.6026+1e-5j, r = .695e-6, center=(1.758e-05, 1.753e-05, 21.2698e-6))
     sc = SphereCluster([s1, s2])
     alpha = 0.99
 
     lb1 = Sphere(1+1e-5j, 1e-8, 0, 0, 0)
     ub1 = Sphere(2+1e-5j, 1e-5, 1e-4, 1e-4, 1e-4)
-    lb2 = Sphere(s1.n, 1e-8, 0, 0, 0)
-    ub2 = Sphere(s1.n, 1e-5, 1e-4, 1e-4, 1e-4)
     step1 = Sphere(1e-4+1e-4j, 1e-8, 0, 0, 0)
-    lb = SphereCluster([lb1, lb2]), .1
-    ub = SphereCluster([ub1, ub2]), 1    
+    lb = SphereCluster([lb1, lb1]), .1
+    ub = SphereCluster([ub1, ub1]), 1    
     step = SphereCluster([step1, step1]), 0
 
     fitresult = fit(holo, (sc, alpha), 
@@ -243,36 +241,34 @@ def test_six_mie_superposition():
                      1.526, 1.0, 4.372, 1.4152, 1.4171, 1.2691,
                      1.526, 1.0, 4.372, 1.7079, 1.5628, 1.4302, 2.3607])
 
-    sc1 = np.array([1., 1e4, 1e7, 1e5, 1e5, 1e5])
-    scale = np.concatenate((sc1, sc1, sc1, sc1, sc1, sc1, np.array([10.])))
-    
     # set up initial guess
     s1 = Sphere(n = 1.515+1e-4j, r = 0.472e-6, center = (1.38e-05, 1.51e-05, 
                                                          1.33e-5))
-    s2 = Sphere(n = s1.n, r = s1.r, center = (1.45e-5, 1.24e-5, 1.52e-5))
-    s3 = Sphere(n = s1.n, r = s1.r, center = (1.52e-5, 1.43e-5, 1.67e-5))
-    s4 = Sphere(n = s1.n, r = s1.r, center = (1.40e-5, 1.60e-5, 1.48e-5))
-    s5 = Sphere(n = s1.n, r = s1.r, center = (1.42e-5, 1.42e-5, 1.27e-5))
-    s6 = Sphere(n = s1.n, r = s1.r, center = (1.71e-5, 1.56e-5, 1.43e-5))
+    s2 = Sphere(n = 1.515+1e-4j, r = 0.472e-6, center = (1.45e-5, 1.24e-5, 1.52e-5))
+    s3 = Sphere(n = 1.515+1e-4j, r = 0.472e-6, center = (1.52e-5, 1.43e-5, 1.67e-5))
+    s4 = Sphere(n = 1.515+1e-4j, r = 0.472e-6, center = (1.40e-5, 1.60e-5, 1.48e-5))
+    s5 = Sphere(n = 1.515+1e-4j, r = 0.472e-6, center = (1.42e-5, 1.42e-5, 1.27e-5))
+    s6 = Sphere(n = 1.515+1e-4j, r = 0.472e-6, center = (1.71e-5, 1.56e-5, 1.43e-5))
     sc = SphereCluster([s1, s2, s3, s4, s5, s6])
     alpha = 0.24
 
     # bounds and step
     lb1 = Sphere(1+1e-4j, 1e-8, 0, 0, 0)
     ub1 = Sphere(2+1e-4j, 1e-5, 1e-4, 1e-4, 1e-4)
-    lb2 = Sphere(s1.n, s1.r, 0, 0, 0)
-    ub2 = Sphere(s1.n, s1.r, 1e-4, 1e-4, 1e-4)
-    lb = SphereCluster([lb1, lb2, lb2, lb2, lb2, lb2]), .1
-    ub = SphereCluster([ub1, ub2, ub2, ub2, ub2, ub2]), 1. 
+    lb = SphereCluster([lb1, lb1, lb1, lb1, lb1, lb1]), .1
+    ub = SphereCluster([ub1, ub1, ub1, ub1, ub1, ub1]), 1. 
     step1 = Sphere(1e-4+1e-4j, 1e-7, 0, 0, 0)
     step = SphereCluster([step1, step1, step1, step1, step1, step1]), 0
 
+    tie1 = Sphere(n = 1, r = 2, center = None)
+    tie = SphereCluster([tie1, tie1, tie1, tie1, tie1, tie1]), None
+
     fitresult = fit(holo, (sc, alpha), scatterpy.theory.Mie, 'nmpfit', 
-                    lb, ub, step = step)       
+                    lb, ub, step = step, tie=tie)       
     fitres_unpacked = np.concatenate((fitresult[0].parameter_list, 
                                       np.array([fitresult[1]])))
 
-    assert_array_almost_equal(fitres_unpacked * scale, gold, decimal=2)
+    assert_array_almost_equal(fitres_unpacked, gold, decimal=2)
 
     
 '''
@@ -283,4 +279,34 @@ def test_fit_cluster():
 
     sc = hp.model.scatterer.Cluster(
 '''
+
+@attr('slow')
+def test_tie():
+    s1 = Sphere(n=1.59, r = .5, center=(10,10,10))
+    s2 = Sphere(n=1.59, r = .5, center=(10,11,11))
+    sc = SphereCluster([s1, s2])
+
+    optics = hp.Optics(wavelen=.66, index=1.33, pixel_scale=.1)
+    theory = scatterpy.theory.Mie(optics)
+
+    holo = theory.calc_holo(sc)
+
+    igs1 = Sphere(n=1.59, r = .5, center=(10.1,10,10))
+    igs2 = Sphere(n=1.59, r = .5, center=(10.1,11,11))
+    ig = SphereCluster([igs1, igs2]), 1
+
+    lb1 = Sphere(n=1.59, r = .5, center=(10,10,10))
+    lb2 = Sphere(n=1.59, r = .5, center=(10,11,11))
+    lb = SphereCluster([lb1, lb2]), 1
     
+    ub1 = Sphere(n=1.59, r = .5, center=(10.5,10,10))
+    ub2 = Sphere(n=1.59, r = .5, center=(10.5,11,11))
+    ub = SphereCluster([ub1, ub2]), 1
+
+    tie1 = Sphere(n=0+0j, r = None, center=[1, None, None])
+    tie = SphereCluster([tie1, tie1]), None
+    
+    fitresult = fit(holo, ig, theory, 'ralg', lb, ub, tie = tie) 
+    #fitresult = fit(holo, ig, theory, 'nmpfit', lb, ub, tie = None)
+
+    assert_array_almost_equal(fitresult[0].parameter_list, sc.parameter_list)

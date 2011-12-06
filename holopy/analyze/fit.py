@@ -46,7 +46,7 @@ def cost_rectified(holo, calc):
 
         
 def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
-        upper_bound=None, step = None, tie_spec = None, plot=False, minimizer_params={},
+        upper_bound=None, step = None, tie = None, plot=False, minimizer_params={},
         residual_cost=cost_subtract):
     """
     Find a scatterer which best recreates the given holo
@@ -65,9 +65,9 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
         The minimum and maximum values which the scatterer can vary
     step: (:class:`scatterpy.scatterer.Scatterer`, alpha)
         Step size for each parameter for the minimizer
-    tie_spec: :class:`scatterpy.scatterer.Scatterer`
+    tie: :class:`scatterpy.scatterer.Scatterer`
         Scattering object specifying parameters to tie together, parameters with
-        a value of None are not tied, any parameters with the same value are
+        a value of 0 or None are not tied, any parameters with the same value are
         tied together (so specify p1 = 1, p2 = 1 for example to tie parameters
         p1 and p2 together)
     plot : bool
@@ -97,7 +97,7 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
     scatterer.validate()
 
     manager = ParameterManager(initial_guess, lower_bound, upper_bound, step,
-                               tie_spec)
+                               tie)
     
     if isinstance(theory, type):
         # allow the user to pass the type, we instantiate it here
@@ -271,7 +271,7 @@ class ParameterManager(object):
     """
     
     def __init__(self, initial_guess, lower_bound=None, upper_bound=None,
-                 step=None, tie_spec=None):
+                 step=None, tie=None):
         """
         
         Arguments:
@@ -284,8 +284,8 @@ class ParameterManager(object):
         :param upper_bound: 
         :type upper_bound: 
         
-        :param tie_spec: 
-        :type tie_spec: 
+        :param tie: 
+        :type tie: 
         
         """
         def unpack_bound(b):
@@ -297,31 +297,36 @@ class ParameterManager(object):
         self._names = initial_guess[0].parameter_names_list + ['alpha']
         self._lower_bound = unpack_bound(lower_bound)
         self._upper_bound = unpack_bound(upper_bound)
-        if tie_spec is not None:
-            self.tie_spec = tie_spec.parameter_list
-        else:
-            self.tie_spec = None
+        self.tie = unpack_bound(tie)
+        self._step = unpack_bound(step)
 
-        if step is not None:
-            self._step = step.parameter_list
-        else:
-            self._step = None
+        tie_groups = {}
+        if self.tie is not None:
+            for i, p in enumerate(self.tie):
+                if p is not None and p != 0:
+                    if tie_groups.has_key(p):
+                        tie_groups[p].append(i)
+                    else:
+                        tie_groups[p] = [i]
 
-#        self.tie_groups = []
-#        for i, p in enumerate(self.tie_spec):
-#            if p not in self.tie_groups:
+        self.tie_groups = list(tie_groups.iteritems())
                 
 
         # check that the initial guess lies within the bounds
         if ((self._initial_guess > self._upper_bound).any() or
             (self._initial_guess < self._lower_bound).any()):
-            names = np.array(self.names())
+            names = np.array(self.names(prune=False))
             raise GuessOutOfBounds(low=names[self._initial_guess<self._lower_bound],
                                    high=names[self._initial_guess>self._upper_bound])
 
-        self.unusual = (np.array(self._lower_bound) == np.array(self._upper_bound))
- #       unusual = ((np.array(self.lower_bound) == np.array(self.upper_bound))
- #                     or np.array([p is not None for p in self.tie_spec)))
+        self.fixed = (np.array(self._lower_bound) == np.array(self._upper_bound))
+        if self.tie is None:
+            self.tied = [False for i in range(len(self._initial_guess))]
+        else:
+            self.tied = np.array([not (p is None or p == 0.0) for p in self.tie])
+        self.unusual = np.logical_or(self.fixed, self.tied)
+
+            
                                                               
         self.scale = np.zeros(self._initial_guess.size)
         for i in range(len(self.scale)):
@@ -329,7 +334,7 @@ class ParameterManager(object):
             # if any parameters have an initial value of 0, this way of chosing scale
             # will not work, so instead use one based on the range of allowed values
             if abs(self.scale[i]) < 1e-12:
-                self.scale[i] = (self.upper_bound[i] - self.lower_bound[i])/10
+                self.scale[i] = (self._upper_bound[i] - self._lower_bound[i])/10
                 # finally, if the parameter is also fixed, then we just set scale = 1.0
             if abs(self.scale[i]) < 1e-12:
                 self.scale[i]=1.0
@@ -362,15 +367,31 @@ class ParameterManager(object):
         """
         return self._to_minimizer(self._initial_guess)
 
-    def _prune(self, p):
+    def _prune(self, p, check=True):
+        # figure out the members of each tied group
+        tie_values = []
+        for group, members in self.tie_groups:
+            value = p[members[0]]
+            for i in members[1:]:
+                if p[i] != value and check:
+                    raise TiedParameterValuesNotEqual(self._names[members[0]],
+                                                      value,
+                                                      self._names[i], p[i])
+            tie_values.append(value)
+        
+        # pull out all the fixed and tied parameters
         pruned = []
         for i, v in enumerate(p):
             if not self.unusual[i]:
                 pruned.append(v)
-        return pruned
+
+        # now add back in one parameter for each tie group
+        return tie_values + pruned
     
     def _to_minimizer(self, p):
-        return self._prune(p/self.scale)
+        if None not in p:
+            p = p/self.scale
+        return self._prune(p)
     
     def from_minimizer_list(self, minimizer_list):
         """
@@ -389,25 +410,44 @@ class ParameterManager(object):
             List of parameters suitable for passing to
             scatterer.make_from_parameter_list
         """
-        result = minimizer_list
-        print(len(result))
+        tie_values = minimizer_list[0:len(self.tie_groups)]
+        values = minimizer_list[len(self.tie_groups):]
+
         for i, v in enumerate(self.unusual):
-            print(i, v)
             if v:
-                print('inserting at point {0}'.format(i))
-                result = np.insert(result, i, 1.0)
+                if self.tied[i] != 0 and self.tied[i] is not None:
+                    group = 0
+                    while i not in self.tie_groups[group][1]:
+                        group += 1
+                    values = np.insert(values, i, tie_values[group])
+                else:
+                    values = np.insert(values, i, 1.0)
 
-        print(len(result))
-        return (self.scale * result)
+        return (self.scale * values)
 
-    def names(self, with_scaling=False):
+    def names(self, with_scaling=False, prune=True):
         if with_scaling:
             names =  ["{0} (/ {1})".format(self._names[i], self.scale[i]) for i
                       in range(len(self.scale))]
         else:
             names = self._names
-        return self._prune(names)
+        if prune:
+            return self._prune(names, check=False)
+        else:
+            return names
 
+class TiedParameterValuesNotEqual(Exception):
+    def __init__(self, p1, v1, p2, v2):
+        self.p1 = p1
+        self.v1 = v1
+        self.p2 = p2
+        self.v2 = v2
+    def __str__(self):
+        return "Parameters: {0} and {2} have their values tied but have \
+different values: ({1} and {3}) specified, this is not allowed".format(self.p1,
+                                                                      self.v1,
+                                                                      self.p2,
+                                                                      self.v2)
 
 class FitResult(Serializable):
     def __init__(self, scatterer, alpha, chisq, status, time, minimizer_info):
