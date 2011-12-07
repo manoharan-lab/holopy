@@ -260,17 +260,14 @@ def reconstruct(holo, distances, fourier_mask=None, gradient_filter=None,
     """
     # This lets us always assume distances is an array, if we are
     # reconstructing at only a single distance, then we just have a 1
-    # element array 
-    if np.isscalar(distances):
-        distances = np.array([distances])
-
+    # element array
+    distances = _ensure_array(distances)
+    
     name = holo.name
         
     if fourier_mask:
         fourier_mask = fourier_mask(holo.shape)
-    else:
-        fourier_mask = None
-
+        
     r = Reconstruction(propagate(holo, distances,
                                  fourier_filter=fourier_mask,
                                  squeeze=False,
@@ -289,4 +286,4 @@ def deconvolved_reconstruction(holo, distances, chi=0.01):
     h = impulse_response(holo.shape, holo.optics, distances)
     K = abs(h)**2
     I = ifft(fft(I)/(fft(K)+chi))
-    return I
+    return Reconstruction(I, holo=holo, distances = distances, name = holo.name)

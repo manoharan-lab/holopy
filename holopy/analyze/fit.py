@@ -44,6 +44,416 @@ def cost_subtract(holo, calc):
 def cost_rectified(holo, calc):
     return abs(holo-1) - abs(calc-1)
 
+        
+def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
+        upper_bound=None, step = None, tie = None, plot=False, minimizer_params={},
+        residual_cost=cost_subtract):
+    """
+    Find a scatterer which best recreates the given holo
+
+    Parameters
+    ----------
+    holo : :class:`holopy.hologram.Hologram` object
+        The hologram to fit to
+    initial_guess : (:class:`scatterpy.scatterer.Scatterer`, alpha)
+        An initial guess at the scatterer which formed the hologram.  
+    theory : :class:`scatterpy.theory.scatteringtheory.ScatteringTheory`
+        The scattering theory to use in computing holograms of the scatterer
+    minimizer : holopy.minmizer.Minimizer
+        The minimizer to use to refine the scatterer to agree with the hologram
+    lower_bound, upper_bound : (:class:`scatterpy.scatterer.Scatterer`, alpha)
+        The minimum and maximum values which the scatterer can vary
+    step: (:class:`scatterpy.scatterer.Scatterer`, alpha)
+        Step size for each parameter for the minimizer
+    tie: :class:`scatterpy.scatterer.Scatterer`
+        Scattering object specifying parameters to tie together, parameters with
+        a value of 0 or None are not tied, any parameters with the same value are
+        tied together (so specify p1 = 1, p2 = 1 for example to tie parameters
+        p1 and p2 together)
+    plot : bool
+         Whether to show a convergence plot (not available with all fitting
+         algorithms)
+         
+
+    Notes
+    -----
+    You must choose a scattering theory which is compatible with the scatterer
+    you specified.
+
+    The initial guess fixes the number and type of scatterers, only their
+    numerical parameters will be varied to fit the hologram.
+
+    lower_bound and upper_bound should be scatterers of the same character as
+    initial_guess.  Each of their parameters is treated individually as a limit
+    on the space the fitter will explore.  Thus you can think of the two
+    scatterers as describing the lower right and upper left corners of the
+    n-dimensional parameter space describing the scatterer.  
+    
+    """
+    time_start = time.time()
+
+    scatterer, alpha = initial_guess
+
+    scatterer.validate()
+
+    manager = ParameterManager(initial_guess, lower_bound, upper_bound, step,
+                               tie)
+    
+    if isinstance(theory, type):
+        # allow the user to pass the type, we instantiate it here
+        theory = theory(imshape = holo.shape, optics = holo.optics)
+
+    
+    residual = make_residual(holo, scatterer, theory, manager, residual_cost)
+
+    result, fnorm, status, minimizer_info = minimize(residual, manager,
+                                                     minimizer,
+                                                     **minimizer_params) 
+    
+
+    result = manager.from_minimizer_list(result)
+
+    time_stop = time.time()
+        
+    return FitResult(scatterer.make_from_parameter_list(result[:-1]), result[-1],
+                     fnorm/(holo.shape[0]*holo.shape[1]), status,
+                     time_stop-time_start, minimizer_info)
+
+        
+        
+
+def make_residual(holo, scatterer, theory, parameter_manager,
+                  cost_func=cost_subtract):
+    """
+    Construct a residual function suitable for fitting scatterer to holo using
+    theory
+
+    Parameters
+    ----------
+    holo : :class:`holopy.hologram.Hologram` object
+        The hologram to fit to
+    theory : :class:`scatterpy.theory.scatteringtheory.ScatteringTheory`
+        The scattering theory to use in computing holograms of the scatterer
+    initial_guess : :class:`scatterpy.scatterer.Scatterer`
+        The scatter which models the hologram
+    """
+
+    def residual(p, **keywords):
+        p = parameter_manager.from_minimizer_list(p)
+
+        # alpha should always be the last parameter, we prune it because the
+        # scatterer doesn't want to know about it
+        this_scatterer = scatterer.make_from_parameter_list(p[:-1])
+
+        try:
+            this_scatterer.validate()
+        except InvalidScatterer as e:
+            print("Attempt to overlap scatterers, rejecting with large error")
+            return error
+        
+        try:
+            calculated = theory.calc_holo(this_scatterer, p[-1])
+        except (UnrealizableScatterer, InvalidScatterer) as e:
+            if isinstance(e, InvalidScattererSphereOverlap):
+                print("Hologram computation attempted with overlapping \
+spheres, returning large residual")
+            else:
+                print("Fitter asked for a value which the scattering theory \
+thought was unphysical or uncomputable, returning large residual")
+            return error
+
+        return cost_func(holo, calculated).ravel()
+
+    return residual
+
+def minimize(residual, parameter_manager, algorithm='nmpfit', quiet = False,
+             plot = False, ftol = 1e-10, xtol = 1e-10, gtol = 1e-10, damp = 0,
+             maxiter = 100, err=None):
+    """
+    Minmized a function (as defined by residual)
+
+    Parameters
+    ----------
+    residual : F(parameters) -> ndarray(derivatives)
+        The residual function to be minimized
+    algorithm : string
+        The fitting algorithm to use: valid options are nmpfit, ralg,
+        scipy_leastsq, scipy_lbfgsb, scipy_slsqp, or galileo
+    guess : ndarray(parameters)
+        Initial guess for the fitter.  Must be provided unless you are using a
+        global algorithm
+    lb, ub : ndarray(parameters)
+        Lower and upper bounds on the parameters.  Must be provided if you are
+        using a global algorithm
+    quiet : bool
+        Should the fitting algorithm output its internal feedback information?
+    plot : bool
+        Should the fitting algorthim show a plot of its convergence (not
+        available on all fitters
+    ftol, xtol, gtol, damp, maxiter, err: float, float, float, float, int, bool
+        nmpfit specific parameters
+
+    Notes
+    -----
+    All parameters after quiet are specific to specific fitting algorithms, and
+    will not be used if you don't select an appropriate fitting algorithm.
+
+    Does on demand importing of fitters since external fitting libraries may not
+    be present.  
+    """
+
+    openopt_nllsq = ['scipy_leastsq']
+    openopt_nlp = ['ralg', 'scipy_lbfgsb', 'scipy_slsqp']
+    openopt_global = ['galileo']
+
+    ub = parameter_manager.upper_bound
+    lb = parameter_manager.lower_bound
+    guess = parameter_manager.initial_guess
+    
+    if algorithm == 'nmpfit':
+        step = parameter_manager.step
+        parameter_names = parameter_manager.names(with_scaling=True)
+        from holopy.third_party import nmpfit
+        def resid_wrapper(p, fjac=None):
+            status = 0
+            resid = residual(p)
+            return [status, residual(p)]
+
+        parinfo = []
+        for i, par in enumerate(guess):
+            d = {'limited' : [True, True],
+                 'limits' : [lb[i], ub[i]],
+                 'value' : par}
+            if step is not None:
+                d['step'] = step[i]
+            if parameter_names is not None:
+                d['parname'] = parameter_names[i]
+            parinfo.append(d)
+
+        fitresult = nmpfit.mpfit(resid_wrapper, parinfo=parinfo, ftol = ftol,
+                                 xtol = xtol, gtol = gtol, damp = damp,
+                             maxiter = maxiter, quiet = quiet)
+        if not quiet:
+            print(fitresult.fnorm)
+        
+        return fitresult.params, fitresult.fnorm, fitresult.status < 4, fitresult
+
+    # Openopt fitters
+    openopt_nllsq = ['scipy_leastsq']
+    openopt_nlp = ['ralg', 'scipy_lbfgsb', 'scipy_slsqp']
+    openopt_global = ['galileo']
+    openopt = openopt_nllsq + openopt_nlp + openopt_global
+    
+    if algorithm in openopt:
+        import openopt
+        if quiet:
+            iprint = 0
+        else:
+            iprint = 1
+        def resid_wrap(p):
+            resid = residual(p)
+            return np.dot(resid, resid)
+        if algorithm in openopt_nlp:
+            p = openopt.NLP(resid_wrap, guess, lb=lb, ub=ub, iprint=iprint, plot=plot)
+        elif algorithm in openopt_global:
+            p = openopt.GLP(resid_wrap, guess, lb=lb, ub=ub, iprint=iprint, plot=plot)
+        elif algorithm in openopt_nllsq:
+            p = openopt.NLLSP(residual, guess, lb=lb, ub=ub, iprint=iprint, plot=plot)
+
+        r = p.solve(algorithm)
+        return r.xf, r.ff, True, r
+
+    else:
+        raise MinimizerNotFound(algorithm)
+
+class ParameterManager(object):
+    """
+    """
+    
+    def __init__(self, initial_guess, lower_bound=None, upper_bound=None,
+                 step=None, tie=None):
+        """
+        
+        Arguments:
+        :param initial_guess: 
+        :type initial_guess: 
+        
+        :param lower_bound: 
+        :type lower_bound: 
+        
+        :param upper_bound: 
+        :type upper_bound: 
+        
+        :param tie: 
+        :type tie: 
+        
+        """
+        def unpack_bound(b):
+            if b is None:
+                return None
+            return np.append(b[0].parameter_list, b[1])
+
+        self._initial_guess = unpack_bound(initial_guess)
+        self._names = initial_guess[0].parameter_names_list + ['alpha']
+        self._lower_bound = unpack_bound(lower_bound)
+        self._upper_bound = unpack_bound(upper_bound)
+        self.tie = unpack_bound(tie)
+        self._step = unpack_bound(step)
+
+        tie_groups = {}
+        if self.tie is not None:
+            for i, p in enumerate(self.tie):
+                if p is not None and p != 0:
+                    if tie_groups.has_key(p):
+                        tie_groups[p].append(i)
+                    else:
+                        tie_groups[p] = [i]
+
+        self.tie_groups = list(tie_groups.iteritems())
+                
+
+        # check that the initial guess lies within the bounds
+        if ((self._initial_guess > self._upper_bound).any() or
+            (self._initial_guess < self._lower_bound).any()):
+            names = np.array(self.names(prune=False))
+            raise GuessOutOfBounds(low=names[self._initial_guess<self._lower_bound],
+                                   high=names[self._initial_guess>self._upper_bound])
+
+        self.fixed = (np.array(self._lower_bound) == np.array(self._upper_bound))
+        if self.tie is None:
+            self.tied = [False for i in range(len(self._initial_guess))]
+        else:
+            self.tied = np.array([not (p is None or p == 0.0) for p in self.tie])
+        self.unusual = np.logical_or(self.fixed, self.tied)
+
+            
+                                                              
+        self.scale = np.zeros(self._initial_guess.size)
+        for i in range(len(self.scale)):
+            if self.fixed[i]:
+                # fixed parameters never go into the minimizer, so don't bother
+                # rescaling them
+                self.scale[i] = 1.0
+            else:
+                self.scale[i] = self._initial_guess[i]
+                # if any parameters have an initial value of 0, this way of chosing scale
+                # will not work, so instead use one based on the range of allowed values
+                if abs(self.scale[i]) < 1e-12:
+                    self.scale[i] = (self._upper_bound[i] - self._lower_bound[i])/10
+
+
+    @property
+    def step(self):
+        if self._step is None:
+            return None
+        return self._to_minimizer(self._step)
+
+    @property
+    def upper_bound(self):
+        return self._to_minimizer(self._upper_bound)
+
+    @property
+    def lower_bound(self):
+        return self._to_minimizer(self._lower_bound)
+
+    @property
+    def initial_guess(self):
+        """
+        Marshal the parameters for the minimizer, rescaling and removing fixed
+        parameters and accounting for tied parameters
+
+        Returns
+        -------
+        minimizer_list: list
+            List of parameters suitable for passing to minimize
+        
+        """
+        return self._to_minimizer(self._initial_guess)
+
+    def _prune(self, p, check=True):
+        # figure out the members of each tied group
+        tie_values = []
+        for group, members in self.tie_groups:
+            value = p[members[0]]
+            for i in members[1:]:
+                if p[i] != value and check:
+                    raise TiedParameterValuesNotEqual(self._names[members[0]],
+                                                      value,
+                                                      self._names[i], p[i])
+            tie_values.append(value)
+        
+        # pull out all the fixed and tied parameters
+        pruned = []
+        for i, v in enumerate(p):
+            if not self.unusual[i]:
+                pruned.append(v)
+
+        # now add back in one parameter for each tie group
+        return tie_values + pruned
+    
+    def _to_minimizer(self, p):
+        if None not in p:
+            p = p/self.scale
+        return self._prune(p)
+    
+    def from_minimizer_list(self, minimizer_list):
+        """
+        Put back in parameters and undo rescalings to get back to the real
+        physical form
+
+        Parameters
+        ----------
+        minimizer_list: list
+            List of parameters from the minimizer (should be scaled and
+            organized as from self.minimizer_list
+
+        Returns
+        -------
+        parameter_list: list
+            List of parameters suitable for passing to
+            scatterer.make_from_parameter_list
+        """
+        tie_values = minimizer_list[0:len(self.tie_groups)]
+        values = minimizer_list[len(self.tie_groups):]
+
+        for i, v in enumerate(self.unusual):
+            if v:
+                if self.tied[i] != 0 and self.tied[i] is not None:
+                    group = 0
+                    while i not in self.tie_groups[group][1]:
+                        group += 1
+                    values = np.insert(values, i, tie_values[group])
+                elif self.fixed[i]:
+                    values = np.insert(values, i, self._initial_guess[i])
+                else:
+                    raise ParameterSpecificationError(self.names(prune=False)[i])
+
+        return (self.scale * values)
+
+    def names(self, with_scaling=False, prune=True):
+        if with_scaling:
+            names =  ["{0} (/ {1})".format(self._names[i], self.scale[i]) for i
+                      in range(len(self.scale))]
+        else:
+            names = self._names
+        if prune:
+            return self._prune(names, check=False)
+        else:
+            return names
+
+class TiedParameterValuesNotEqual(Exception):
+    def __init__(self, p1, v1, p2, v2):
+        self.p1 = p1
+        self.v1 = v1
+        self.p2 = p2
+        self.v2 = v2
+    def __str__(self):
+        return "Parameters: {0} and {2} have their values tied but have \
+different values: ({1} and {3}) specified, this is not allowed".format(self.p1,
+                                                                      self.v1,
+                                                                      self.p2,
+                                                                      self.v2)
+
 class FitResult(Serializable):
     def __init__(self, scatterer, alpha, chisq, status, time, minimizer_info):
         self.scatterer = scatterer
@@ -110,275 +520,8 @@ class FitSetup(Serializable):
         self.step = step
         self.minimizer_params = minimizer_params
         self.residual_cost = residual_cost
-        
-def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
-        upper_bound=None, step = None, plot=False, minimizer_params={},
-        residual_cost=cost_subtract):
-    """
-    Find a scatterer which best recreates the given holo
-
-    Parameters
-    ----------
-    holo : :class:`holopy.hologram.Hologram` object
-        The hologram to fit to
-    initial_guess : (:class:`scatterpy.scatterer.Scatterer`, alpha)
-        An initial guess at the scatterer which formed the hologram.  
-    theory : :class:`scatterpy.theory.scatteringtheory.ScatteringTheory`
-        The scattering theory to use in computing holograms of the scatterer
-    minimizer : holopy.minmizer.Minimizer
-        The minimizer to use to refine the scatterer to agree with the hologram
-    lower_bound, upper_bound : :class:`scatterpy.scatterer.Scatterer`, alpha
-        The minimum and maximum values which the scatterer can vary
-    plot : bool
-         Whether to show a convergence plot (not available with all fitting
-         algorithms)
-
-    Notes
-    -----
-    You must choose a scattering theory which is compatible with the scatterer
-    you specified.
-
-    The initial guess fixes the number and type of scatterers, only their
-    numerical parameters will be varied to fit the hologram.
-
-    lower_bound and upper_bound should be scatterers of the same character as
-    initial_guess.  Each of their parameters is treated individually as a limit
-    on the space the fitter will explore.  Thus you can think of the two
-    scatterers as describing the lower right and upper left corners of the
-    n-dimensional parameter space describing the scatterer.  
-    
-    """
-    time_start = time.time()
-
-    scatterer, alpha = initial_guess
-
-    scatterer.validate()
-    
-    def unpack_bound(b):
-        return np.append(b[0].parameter_list, b[1])
-    if lower_bound:
-        lower_bound = unpack_bound(lower_bound)
-    if upper_bound:
-        upper_bound = unpack_bound(upper_bound)
-    if step is not None:
-        step = unpack_bound(step)
-
-    names = scatterer.parameter_names_list + ['alpha']
-
-
-    # check that the initial guess lies within the bounds
-    guess_list = unpack_bound(initial_guess)
-    if (guess_list > upper_bound).any() or (guess_list < lower_bound).any():
-        names = np.array(names)
-        raise GuessOutOfBounds(low=names[guess_list<lower_bound],
-                               high=names[guess_list>upper_bound])
-    
-        
-    if isinstance(theory, type):
-        # allow the user to pass the type, we instantiate it here
-        theory = theory(imshape = holo.shape, optics = holo.optics)
-
-    # Rescale parameters so that the minimizer is working with all parameter
-    # values ~ 1
-
-    scale = np.zeros(guess_list.size)
-    for i in range(len(scale)):
-        scale[i] = guess_list[i]
-        # if any parameters have an initial value of 0, this way of chosing scale
-        # will not work, so instead use one based on the range of allowed values
-        if abs(scale[i]) < 1e-12:
-            scale[i] = (upper_bound[i] - lower_bound[i])/10
-        # finally, if the parameter is also fixed, then we just set scale = 1.0
-        if abs(scale[i]) < 1e-12:
-            scale[i]=1.0
-
-    names = ["{0} (/ {1})".format(names[i], scale[i]) for i in range(len(scale))]
-            
-    fixed = []
-    for i in range(len(scale)):
-        # if the lower_bound == scale == upper_bound the user wants this value
-        # fixed, some fittters will not handle this case nicely, so we pull the
-        # parameter from the list and add it back at the end.  
-        if lower_bound[i] == upper_bound[i]:
-            fixed.append(i)
-
-    names = np.delete(names, fixed)
-
-    lower_bound = np.delete(lower_bound/scale, fixed)
-    upper_bound = np.delete(upper_bound/scale, fixed)
-    guess = np.delete(guess_list/scale, fixed)
-
-    if step is not None:
-        step = np.delete(step/scale, fixed)
-    
-    residual = make_residual(holo, scatterer, theory, scale, fixed,
-                             residual_cost)
-
-    result, fnorm, status, minimizer_info = minimize(residual, minimizer, guess,
-                                                     lower_bound, upper_bound,
-                                                     parameter_names = names,
-                                                     step = step,
-                                                     **minimizer_params)
-    
-    # put back in the fixed values 
-    for v in fixed:
-        result = np.insert(result, v, 1.0)
-
-    res = scale*result
-    time_stop = time.time()
-        
-    return FitResult(scatterer.make_from_parameter_list(res[:-1]), res[-1],
-                     fnorm/(holo.shape[0]*holo.shape[1]), status,
-                     time_stop-time_start, minimizer_info)
-
-
-def make_residual(holo, scatterer, theory, scale=1.0, fixed = [],
-                  cost_func=cost_subtract):
-    """
-    Construct a residual function suitable for fitting scatterer to holo using
-    theory
-
-    Parameters
-    ----------
-    holo : :class:`holopy.hologram.Hologram` object
-        The hologram to fit to
-    theory : :class:`scatterpy.theory.scatteringtheory.ScatteringTheory`
-        The scattering theory to use in computing holograms of the scatterer
-    initial_guess : :class:`scatterpy.scatterer.Scatterer`
-        The scatter which models the hologram
-    scale: :class:`numpy.ndarray`
-        Factors to rescale each parameter before computing a hologram
-    """
-
-    def residual(p, **keywords):
-        # put back in the fixed values 
-        for v in fixed:
-            p = np.insert(p, v, 1.0)
-        p = p*scale
-
-        error = 1e12*np.ones(holo.size)
-
-        # alpha should always be the last parameter, we prune it because the
-        # scatterer doesn't want to know about it
-        this_scatterer = scatterer.make_from_parameter_list(p[:-1])
-
-        try:
-            this_scatterer.validate()
-        except InvalidScatterer as e:
-            print("Attempt to overlap scatterers, rejecting with large error")
-            return error
-        
-        try:
-            calculated = theory.calc_holo(this_scatterer, p[-1])
-        except (UnrealizableScatterer, InvalidScatterer) as e:
-            if isinstance(e, InvalidScattererSphereOverlap):
-                print("Hologram computation attempted with overlapping \
-spheres, returning large residual")
-            else:
-                print("Fitter asked for a value which the scattering theory \
-thought was unphysical or uncomputable, returning large residual")
-            return error
-
-        return cost_func(holo, calculated).ravel()
-
-    return residual
-
-def minimize(residual, algorithm='nmpfit', guess=None, lb=None , ub=None,
-             quiet = False, parameter_names = None, plot = False, ftol = 1e-10,
-             xtol = 1e-10, gtol = 1e-10, damp = 0, maxiter = 100, err=None, step
-             = None):
-    """
-    Minmized a function (as defined by residual)
-
-    Parameters
-    ----------
-    residual : F(parameters) -> ndarray(derivatives)
-        The residual function to be minimized
-    algorithm : string
-        The fitting algorithm to use: valid options are nmpfit, ralg,
-        scipy_leastsq, scipy_lbfgsb, scipy_slsqp, or galileo
-    guess : ndarray(parameters)
-        Initial guess for the fitter.  Must be provided unless you are using a
-        global algorithm
-    lb, ub : ndarray(parameters)
-        Lower and upper bounds on the parameters.  Must be provided if you are
-        using a global algorithm
-    quiet : bool
-        Should the fitting algorithm output its internal feedback information?
-    plot : bool
-        Should the fitting algorthim show a plot of its convergence (not
-        available on all fitters
-    ftol, xtol, gtol, damp, maxiter, err: float, float, float, float, int, bool
-        nmpfit specific parameters
-
-    Notes
-    -----
-    All parameters after quiet are specific to specific fitting algorithms, and
-    will not be used if you don't select an appropriate fitting algorithm.
-
-    Does on demand importing of fitters since external fitting libraries may not
-    be present.  
-    """
-
-    openopt_nllsq = ['scipy_leastsq']
-    openopt_nlp = ['ralg', 'scipy_lbfgsb', 'scipy_slsqp']
-    openopt_global = ['galileo']
 
     
-    if algorithm == 'nmpfit':
-        from holopy.third_party import nmpfit
-        def resid_wrapper(p, fjac=None):
-            status = 0
-            resid = residual(p)
-            return [status, residual(p)]
-
-        parinfo = []
-        for i, par in enumerate(guess):
-            d = {'limited' : [True, True],
-                 'limits' : [lb[i], ub[i]],
-                 'value' : par}
-            if step is not None:
-                d['step'] = step[i]
-            if parameter_names is not None:
-                d['parname'] = parameter_names[i]
-            parinfo.append(d)
-
-        fitresult = nmpfit.mpfit(resid_wrapper, parinfo=parinfo, ftol = ftol,
-                                 xtol = xtol, gtol = gtol, damp = damp,
-                             maxiter = maxiter, quiet = quiet)
-        if not quiet:
-            print(fitresult.fnorm)
-        
-        return fitresult.params, fitresult.fnorm, fitresult.status < 4, fitresult
-
-    # Openopt fitters
-    openopt_nllsq = ['scipy_leastsq']
-    openopt_nlp = ['ralg', 'scipy_lbfgsb', 'scipy_slsqp']
-    openopt_global = ['galileo']
-    openopt = openopt_nllsq + openopt_nlp + openopt_global
-    
-    if algorithm in openopt:
-        import openopt
-        if quiet:
-            iprint = 0
-        else:
-            iprint = 1
-        def resid_wrap(p):
-            resid = residual(p)
-            return np.dot(resid, resid)
-        if algorithm in openopt_nlp:
-            p = openopt.NLP(resid_wrap, guess, lb=lb, ub=ub, iprint=iprint, plot=plot)
-        elif algorithm in openopt_global:
-            p = openopt.GLP(resid_wrap, guess, lb=lb, ub=ub, iprint=iprint, plot=plot)
-        elif algorithm in openopt_nllsq:
-            p = openopt.NLLSP(residual, guess, lb=lb, ub=ub, iprint=iprint, plot=plot)
-
-        r = p.solve(algorithm)
-        return r.xf, r.ff, True, r
-
-    else:
-        raise MinimizerNotFound(algorithm)
-
 class MinimizerNotFound(Exception):
     def __init__(self, algorithm):
         self.algorthim = algorithm
