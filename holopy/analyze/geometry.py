@@ -93,7 +93,7 @@ def angles(cluster, degrees=True):
         ang=ang/np.pi*180.0
     return ang #ang[a,b,c] is the acute angle abc as used in geometry (be in the middle)
 
-def make_tricluster(index,radius,gap):
+def make_tricluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
     """
     Parameters
     ----------
@@ -103,24 +103,31 @@ def make_tricluster(index,radius,gap):
         Radius if particles.
     gap:
         Space to add between the particles.
+    xcom:
+        Center of mass x-coordinate
+    ycom:
+        Center of mass y-coordinate
+    zcom:
+        Center of mass z-coordinate
         
     Notes
     -----
     Returns a sphere cluster of three particles forming an equilateral triangle
-    centered on (0,0,0).
+    centered on a given center of mass.
     
     """
     #currently restricted to all identical spheres
-    xs = [1/sqrt(3)*(radius+gap/2.0),1/sqrt(3)*(radius+gap/2.0),-2/sqrt(3)*(radius+gap/2.0)]
-    ys = [-radius-gap/2.0,radius+gap/2.0,0]
-    zs = np.zeros(3)
+    xs = np.array([1/sqrt(3)*(radius+gap/2.0),
+        1/sqrt(3)*(radius+gap/2.0),-2/sqrt(3)*(radius+gap/2.0)])+xcom
+    ys = np.array([-radius-gap/2.0,radius+gap/2.0,0])+ycom
+    zs = np.array(np.zeros(3))+zcom
     triangle = SphereCluster([
         Sphere(n=index, r = radius, center = (xs[0], ys[0], zs[0])),
         Sphere(n=index, r = radius, center = (xs[1], ys[1], zs[1])),
         Sphere(n=index, r = radius, center = (xs[2], ys[2], zs[2]))])
     return triangle
 
-def make_sqcluster(index,radius,gap):
+def make_sqcluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
     """
     Parameters
     ----------
@@ -130,16 +137,22 @@ def make_sqcluster(index,radius,gap):
         Radius if particles.
     gap:
         Space to add between the particles.
+    xcom:
+        Center of mass x-coordinate
+    ycom:
+        Center of mass y-coordinate
+    zcom:
+        Center of mass z-coordinate
         
     Notes
     -----
     Returns a sphere cluster of four particles forming a square
-    centered on (0,0,0).
+    centered on a given center of mass.
     """
     #currently restricted to all identical spheres
-    xs = [-radius-gap/2.0,-radius-gap/2.0,radius+gap/2.0,radius+gap/2.0]
-    ys = [-radius-gap/2.0, radius+gap/2.0,-radius-gap/2.0,radius+gap/2.0]
-    zs = [a,a,a,b]
+    xs = np.array([-radius-gap/2.0,-radius-gap/2.0,radius+gap/2.0,radius+gap/2.])+xcom
+    ys = np.array([-radius-gap/2.0, radius+gap/2.0,-radius-gap/2.0,radius+gap/2.0])+ycom
+    zs = np.array([0,0,0,0])+zcom
     square = SphereCluster([
         Sphere(n=index, r = radius, center = (xs[0], ys[0], zs[0])),
         Sphere(n=index, r = radius, center = (xs[1], ys[1], zs[1])),
@@ -147,7 +160,7 @@ def make_sqcluster(index,radius,gap):
         Sphere(n=index, r = radius, center = (xs[3], ys[3], zs[3]))])
     return square
 
-def make_tetracluster(index,radius,gap):
+def make_tetracluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
     """
     Parameters
     ----------
@@ -157,16 +170,25 @@ def make_tetracluster(index,radius,gap):
         Radius if particles.
     gap:
         Space to add between the particles.
+    xcom:
+        Center of mass x-coordinate
+    ycom:
+        Center of mass y-coordinate
+    zcom:
+        Center of mass z-coordinate
         
     Notes
     -----
     Returns a sphere cluster of four particles forming a tetrahedron
-    centered on (0,0,0).
+    centered on a given center of mass.
     """
     #currently restricted to all identical spheres
-    xs = [1/sqrt(3)*(radius+gap/2.0),1/sqrt(3)*(radius+gap/2.0),-2/sqrt(3)*(radius+gap/2.0),0]
-    ys = [-radius-gap/2.0,radius+gap/2.0,0,0]
-    zs = [-(1/4.0)*sqrt(2/3.0)*(2*radius+gap),-(1/4.0)*sqrt(2/3.0)*(2*radius+gap),-(1/4.0)*sqrt(2/3.0)*(2*radius+gap),(3/4.0)*sqrt(2/3.0)*(2*radius+gap)]
+    xs = np.array([1/sqrt(3)*(radius+gap/2.0),1/sqrt(3)*(radius+gap/2.0),
+        -2/sqrt(3)*(radius+gap/2.0),0])+xcom
+    ys = np.array([-radius-gap/2.0,radius+gap/2.0,0,0])+ycom
+    zs = np.array([-(1/4.0)*sqrt(2/3.0)*(2*radius+gap),
+        -(1/4.0)*sqrt(2/3.0)*(2*radius+gap),-(1/4.0)*sqrt(2/3.0)*(2*radius+gap),
+        (3/4.0)*sqrt(2/3.0)*(2*radius+gap)])+zcom
     tetra = SphereCluster([
         Sphere(n=index, r = radius, center = (xs[0], ys[0], zs[0])),
         Sphere(n=index, r = radius, center = (xs[1], ys[1], zs[1])),
@@ -174,7 +196,7 @@ def make_tetracluster(index,radius,gap):
         Sphere(n=index, r = radius, center = (xs[3], ys[3], zs[3]))])
     return tetra
 
-def make_tribipyrcluster(index,radius,gap):
+def make_tribipyrcluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
     """
     Parameters
     ----------
@@ -184,11 +206,17 @@ def make_tribipyrcluster(index,radius,gap):
         Radius if particles.
     gap:
         Space to add between the particles.
+    xcom:
+        Center of mass x-coordinate
+    ycom:
+        Center of mass y-coordinate
+    zcom:
+        Center of mass z-coordinate
         
     Notes
     -----
     Returns a sphere cluster of five particles forming a triagonal bipyramid
-    centered on (0,0,0).
+    centered on a given center of mass.
     """
     #currently restricted to all identical spheres
     xs = [1/sqrt(3)*(radius+gap/2.0),1/sqrt(3)*(radius+gap/2.0),-2/sqrt(3)*(radius+gap/2.0),0,0]
@@ -202,7 +230,7 @@ def make_tribipyrcluster(index,radius,gap):
         Sphere(n=index, r = radius, center = (xs[4], ys[4], zs[4]))])
     return triangularbipyramid
 
-def make_octacluster(index,radius,gap):
+def make_octacluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
     """
     Parameters
     ----------
@@ -212,16 +240,22 @@ def make_octacluster(index,radius,gap):
         Radius if particles.
     gap:
         Space to add between the particles.
+    xcom:
+        Center of mass x-coordinate
+    ycom:
+        Center of mass y-coordinate
+    zcom:
+        Center of mass z-coordinate
         
     Notes
     -----
     Returns a sphere cluster of six particles forming an octahedron
-    centered on (0,0,0).
+    centered on a given center of mass.
     """
     #currently restricted to all identical spheres
-    xs = [-radius-gap/2.0,-radius-gap/2.0,radius+gap/2.0,radius+gap/2.0,0,0]
-    ys = [-radius-gap/2.0, radius+gap/2.0,-radius-gap/2.0,radius+gap/2.0,0,0]
-    zs = [0,0,0,0,1/sqrt(2)*(2*radius+gap),-1/sqrt(2)*(2*radius+gap)]
+    xs = np.array([-radius-gap/2.0,-radius-gap/2.0,radius+gap/2.0,radius+gap/2.0,0,0])+xcom
+    ys = np.array([-radius-gap/2.0, radius+gap/2.0,-radius-gap/2.0,radius+gap/2.0,0,0])+ycom
+    zs = np.array([0,0,0,0,1/sqrt(2)*(2*radius+gap),-1/sqrt(2)*(2*radius+gap)])+zcom
     octahedron = SphereCluster([
         Sphere(n=index, r = radius, center = (xs[0], ys[0], zs[0])),
         Sphere(n=index, r = radius, center = (xs[1], ys[1], zs[1])),
@@ -231,7 +265,7 @@ def make_octacluster(index,radius,gap):
         Sphere(n=index, r = radius, center = (xs[5], ys[5], zs[5]))])
     return octahedron
 
-def make_cubecluster(index,radius,gap):
+def make_cubecluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
     """
     Parameters
     ----------
@@ -241,19 +275,25 @@ def make_cubecluster(index,radius,gap):
         Radius if particles.
     gap:
         Space to add between the particles.
+    xcom:
+        Center of mass x-coordinate
+    ycom:
+        Center of mass y-coordinate
+    zcom:
+        Center of mass z-coordinate
         
     Notes
     -----
     Returns a sphere cluster of eight particles forming a cube
-    centered on (0,0,0).
+    centered on a given center of mass.
     """
     #currently restricted to all identical spheres
-    xs = [-radius-gap/2.0,-radius-gap/2.0,radius+gap/2.0,radius+gap/2.0,
-            -radius-gap/2.0,-radius-gap/2.0,radius+gap/2.0,radius+gap/2.0]
-    ys = [-radius-gap/2.0, radius+gap/2.0,-radius-gap/2.0,radius+gap/2.0,
-            -radius-gap/2.0, radius+gap/2.0,-radius-gap/2.0,radius+gap/2.0]
-    zs = [-radius-gap/2.0,-radius-gap/2.0,-radius-gap/2.0,-radius-gap/2.0,
-            radius+gap/2.0,radius+gap/2.0,radius+gap/2.0,radius+gap/2.0]
+    xs = np.array([-radius-gap/2.0,-radius-gap/2.0,radius+gap/2.0,radius+gap/2.0,
+            -radius-gap/2.0,-radius-gap/2.0,radius+gap/2.0,radius+gap/2.0])+xcom
+    ys = np.array([-radius-gap/2.0, radius+gap/2.0,-radius-gap/2.0,radius+gap/2.0,
+            -radius-gap/2.0, radius+gap/2.0,-radius-gap/2.0,radius+gap/2.0])+ycom
+    zs = np.array([-radius-gap/2.0,-radius-gap/2.0,-radius-gap/2.0,-radius-gap/2.0,
+            radius+gap/2.0,radius+gap/2.0,radius+gap/2.0,radius+gap/2.0])+zcom
     cube = SphereCluster([
         Sphere(n=index, r = radius, center = (xs[0], ys[0], zs[0])),
         Sphere(n=index, r = radius, center = (xs[1], ys[1], zs[1])),
@@ -265,6 +305,52 @@ def make_cubecluster(index,radius,gap):
         Sphere(n=index, r = radius, center = (xs[7], ys[7], zs[7]))])
     return cube
 
+def make_polytetracluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
+    """
+    Parameters
+    ----------
+    index:
+        Index of refraction of particles.
+    radius:
+        Radius if particles.
+    gap:
+        Space to add between the particles.
+    xcom:
+        Center of mass of the middle tetrahedron x-coordinate
+    ycom:
+        Center of mass of the middle tetrahedron x-coordinate
+    zcom:
+        Center of mass of the middle tetrahedron x-coordinate
+        
+    Notes
+    -----
+    Returns a sphere cluster of six particles forming a polytetrahedron
+    centered on a given center of mass of the middle tetrahedron.
+    """
+    #currently restricted to all identical spheres
+    #side length= 2*sqrt(2), needs to be 2*r+gap
+    #1 and 3 have exactly the same distance to all the others
+    xs = np.array([-1/(sqrt(2))*(radius+gap/2.0),
+        1/(sqrt(2))*(radius+gap/2.0),1/(sqrt(2))*(radius+gap/2.0),
+        -1/(sqrt(2))*(radius+gap/2.0),5/3.0/sqrt(2)*(radius+gap/2.0),
+        -5/3.0/sqrt(2)*(radius+gap/2.0)])+xcom
+    ys = np.array([1/(sqrt(2))*(radius+gap/2.0),
+        1/(sqrt(2))*(radius+gap/2.0),-1/(sqrt(2))*(radius+gap/2.0),
+        -1/(sqrt(2))*(radius+gap/2.0),-5/3.0/sqrt(2)*(radius+gap/2.0),
+        5/3.0/sqrt(2)*(radius+gap/2.0)])+ycom
+    zs = np.array([1/(sqrt(2))*(radius+gap/2.0),
+        -1/(sqrt(2))*(radius+gap/2.0),1/(sqrt(2))*(radius+gap/2.0),
+        -1/(sqrt(2))*(radius+gap/2.0),-5/3.0/sqrt(2)*(radius+gap/2.0),
+        -5/3.0/sqrt(2)*(radius+gap/2.0)])+zcom
+    polytetra = SphereCluster([
+        Sphere(n=index, r = radius, center = (xs[0], ys[0], zs[0])),
+        Sphere(n=index, r = radius, center = (xs[1], ys[1], zs[1])),
+        Sphere(n=index, r = radius, center = (xs[2], ys[2], zs[2])),
+        Sphere(n=index, r = radius, center = (xs[3], ys[3], zs[3])),
+        Sphere(n=index, r = radius, center = (xs[4], ys[4], zs[4])),
+        Sphere(n=index, r = radius, center = (xs[5], ys[5], zs[5]))])
+    return polytetra
+
 def viewcluster(cluster):
     #this is not elegant, but lets you look at the cluster from three angles
     #to check if it is the cluster you wanted
@@ -272,19 +358,22 @@ def viewcluster(cluster):
     dist = distances(cluster)
     pyplot.figure(figsize=[14,4])
     pyplot.subplot(1,3,1)
-    l=pyplot.plot(cluster.centers[:,0],cluster.centers[:,1],'ro')
+    l = pyplot.plot(cluster.centers[:,0]-cluster.centers[:,0].mean(),
+        cluster.centers[:,1]-cluster.centers[:,1].mean(),'ro')
     pyplot.setp(l, 'markersize', 60)
     pyplot.xlim(-dist.max(),dist.max())
     pyplot.ylim(-dist.max(),dist.max())
     pyplot.subplot(1,3,2)
-    l=pyplot.plot(cluster.centers[:,0],cluster.centers[:,2],'ro')
+    l = pyplot.plot(cluster.centers[:,0]-cluster.centers[:,0].mean(),
+        cluster.centers[:,2]-cluster.centers[:,2].mean(),'ro')
     pyplot.setp(l, 'markersize', 60)
     pyplot.xlim(min(pyplot.xlim()[0],pyplot.ylim()[0]),max(pyplot.xlim()[1],pyplot.ylim()[1]))
     pyplot.ylim(min(pyplot.xlim()[0],pyplot.ylim()[0]),max(pyplot.xlim()[1],pyplot.ylim()[1]))
     pyplot.xlim(-dist.max(),dist.max())
     pyplot.ylim(-dist.max(),dist.max())
     pyplot.subplot(1,3,3)
-    l=pyplot.plot(cluster.centers[:,1],cluster.centers[:,2],'ro')
+    l = pyplot.plot(cluster.centers[:,1]-cluster.centers[:,1].mean(),
+        cluster.centers[:,2]-cluster.centers[:,2].mean(),'ro')
     pyplot.setp(l, 'markersize', 60)
     pyplot.xlim(min(pyplot.xlim()[0],pyplot.ylim()[0]),max(pyplot.xlim()[1],pyplot.ylim()[1]))
     pyplot.ylim(min(pyplot.xlim()[0],pyplot.ylim()[0]),max(pyplot.xlim()[1],pyplot.ylim()[1]))
