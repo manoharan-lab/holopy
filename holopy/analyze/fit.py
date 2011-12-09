@@ -144,6 +144,7 @@ def make_residual(holo, scatterer, theory, parameter_manager,
         # alpha should always be the last parameter, we prune it because the
         # scatterer doesn't want to know about it
         this_scatterer = scatterer.make_from_parameter_list(p[:-1])
+        error = 1.e12
 
         try:
             this_scatterer.validate()
