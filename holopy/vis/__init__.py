@@ -29,8 +29,6 @@ this you may see a small lag on your first plot.
 import holopy as hp
 import numpy
 import scatterpy
-import vis3d
-import vis2d
 
 class VisualizationNotImplemented(Exception):
     def __init__(self, o):
