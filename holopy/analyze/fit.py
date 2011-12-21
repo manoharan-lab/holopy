@@ -336,7 +336,7 @@ class ParameterManager(object):
                 # rescaling them
                 self.scale[i] = 1.0
             else:
-                self.scale[i] = self._initial_guess[i]
+                self.scale[i] = abs(self._initial_guess[i])
                 # if any parameters have an initial value of 0, this way of chosing scale
                 # will not work, so instead use one based on the range of allowed values
                 if abs(self.scale[i]) < 1e-12:
