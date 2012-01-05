@@ -144,13 +144,13 @@ def make_residual(holo, scatterer, theory, parameter_manager,
         # alpha should always be the last parameter, we prune it because the
         # scatterer doesn't want to know about it
         this_scatterer = scatterer.make_from_parameter_list(p[:-1])
-        error = 1.e12
+        error = np.ones(holo.shape)*1.e12
 
         try:
             this_scatterer.validate()
         except InvalidScatterer as e:
             print("Attempt to overlap scatterers, rejecting with large error")
-            return error
+            return cost_func(holo, error).ravel()
         
         try:
             calculated = theory.calc_holo(this_scatterer, p[-1])
@@ -161,7 +161,7 @@ spheres, returning large residual")
             else:
                 print("Fitter asked for a value which the scattering theory \
 thought was unphysical or uncomputable, returning large residual")
-            return error
+            return cost_func(holo, error).ravel()
 
         return cost_func(holo, calculated).ravel()
 

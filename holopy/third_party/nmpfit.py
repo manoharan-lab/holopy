@@ -1363,7 +1363,7 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
             self.fnorm = self.enorm(fvec)
 
         if ((self.fnorm != None) and (fnorm1 != None)):
-            self.fnorm = max([self.fnorm, fnorm1])
+            self.fnorm = max([self.fnorm, fnorm1]) #TODO: why this line?
             self.fnorm = self.fnorm**2.
 
         self.covar = None
