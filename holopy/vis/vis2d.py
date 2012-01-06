@@ -29,10 +29,9 @@ class plotter:
             im = self.im
         if self.im.ndim is 3:
             im = self.im[...,self.i]
-            self.ax.set_title('image {0}'.format(self.i))
         elif self.im.ndim is 4:
             im = self.im[...,self.i,self.j]
-            self._title()
+        self._title()
 
 #        pylab.show()
 
@@ -77,6 +76,8 @@ class plotter:
         if hasattr(self.im, 'distances'):
             self.ax.set_title("z={0},i={1}".format(self.im.distances[self.i],
                                                    self.i))
+        else:
+            self.ax.set_title("image {0}".format(self.i))
         
 def show(im, i=0, t=0, phase = False):
     """
