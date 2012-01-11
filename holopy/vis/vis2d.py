@@ -5,6 +5,8 @@ New custom display functions for holograms and reconstructions.
 """
 
 import numpy as np
+import holopy as hp
+from scatterpy.theory import Multisphere
 import pylab
 from holopy.utility.helpers import _ensure_pair
 
@@ -109,3 +111,46 @@ def show(im, i=0, t=0, phase = False):
             im = np.abs(im)
     
     plotter(im, i, t, optics)
+
+
+def infocuscheck(hologram, scatterer, offset = 0):
+    """
+    Display a raw hologram, a calculated hologram, and reconstructions
+    of both.
+
+    Parameters
+    ----------
+    hologram : hologram object
+       Hologram to be shown
+    scatterer : scatterer object
+       Scattering object to calculate hologram from
+    offset : float
+       Offset from reconstructing at the z-distance given by the
+       mean z-distance of the scatterer.
+       
+    """
+    distance = scatterer.centers[:,2].mean()+offset
+    #reconstruct the hologram
+    r = hp.reconstruct(hologram,distance)
+    #reconstruct the scatterer
+    theory = Multisphere(hologram.optics,[256,256])
+    tmat = theory.calc_holo(scatterer)
+    r2 = hp.reconstruct(tmat,distance)
+    #show the holograms and reconstructions  
+    pylab.figure()
+    scalemin = min(abs(r[:,:,0,0]).min(), abs(r2[:,:,0,0]).min())
+    scalemax = max(abs(r[:,:,0,0]).max(), abs(r2[:,:,0,0]).max())
+    pylab.subplot(2,2,1)
+    pylab.imshow(hologram)
+    pylab.gray()
+    pylab.title('Hologram')
+    pylab.subplot(2,2,2)
+    pylab.imshow(tmat)
+    pylab.title('Calculated from Scatterer')
+    pylab.subplot(2,2,3)
+    pylab.imshow(abs(r[:,:,0,0]),vmin = scalemin,vmax = scalemax)
+    pylab.title(str(distance))
+    pylab.subplot(2,2,4)
+    pylab.imshow(abs(r2[:,:,0,0]),vmin = scalemin,vmax = scalemax)
+    pylab.title(str(distance))
+    pylab.show()
