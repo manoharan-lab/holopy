@@ -38,7 +38,7 @@ class VisualizationNotImplemented(Exception):
             self.o.__class__.__name__)
     
 
-def show(o):
+def show(o,color=(0,0,1)):
     """
     Visualize a scatterer, hologram, or reconstruction
 
@@ -55,7 +55,7 @@ def show(o):
     
     if isinstance(o, scatterpy.scatterer.SphereCluster):
         import vis3d
-        vis3d.show_sphere_cluster(o)
+        vis3d.show_sphere_cluster(o,color)
     elif isinstance(o, (hp.Hologram, hp.analyze.reconstruct.Reconstruction, numpy.ndarray)):
         import vis2d
         vis2d.show(o)
