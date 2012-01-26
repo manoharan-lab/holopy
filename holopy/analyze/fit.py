@@ -114,13 +114,18 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
     result = manager.from_minimizer_list(result)
 
     time_stop = time.time()
-        
-    return FitResult(scatterer.make_from_parameter_list(result[:-1]), result[-1],
-                     fnorm/(holo.shape[0]*holo.shape[1]), status,
-                     time_stop-time_start, minimizer_info)
 
-        
-        
+    # Calculate R^2 here, otherwise FitResult has to know about the theory
+    # used to fit.
+    fit_scatterer = scatterer.make_from_parameter_list(result[:-1])
+    fit_alpha = result[-1]
+    fit_holo = theory.calc_holo(fit_scatterer, fit_alpha)
+    Rsquared = 1 - ((holo - fit_holo)**2).sum()/((holo - holo.mean())**2).sum()
+    
+    return FitResult(fit_scatterer, fit_alpha, 
+                     fnorm/(holo.shape[0]*holo.shape[1]), status,
+                     time_stop-time_start, minimizer_info, Rsquared)
+
 
 def make_residual(holo, scatterer, theory, parameter_manager,
                   cost_func=cost_subtract):
@@ -456,10 +461,12 @@ different values: ({1} and {3}) specified, this is not allowed".format(self.p1,
                                                                       self.v2)
 
 class FitResult(Serializable):
-    def __init__(self, scatterer, alpha, chisq, status, time, minimizer_info):
+    def __init__(self, scatterer, alpha, chisq, status, time, 
+                 minimizer_info, rsq = None):
         self.scatterer = scatterer
         self.alpha = alpha
         self.chisq = chisq
+        self.rsq = rsq
         self.status = status
         self.time = time
         self.minimizer_info = minimizer_info,
@@ -470,9 +477,14 @@ class FitResult(Serializable):
             return self.alpha
         raise KeyError
     def __repr__(self):
-        return "{s.__class__.__name__}(scatterer={s.scatterer}, \
-alpha={s.alpha}, chisq={s.chisq}, status={s.status}, time={s.time}, \
-minimizer_info={s.minimizer_info})".format(s=self)
+        try:
+            return "{s.__class__.__name__}(scatterer={s.scatterer}, \
+alpha={s.alpha}, chisq={s.chisq}, rsq={s.rsq}, status={s.status}, \
+time={s.time}, minimizer_info={s.minimizer_info})".format(s=self)
+        except AttributeError:
+            return "{s.__class__.__name__}(scatterer={s.scatterer}, \
+alpha={s.alpha}, chisq={s.chisq}, status={s.status}, \
+time={s.time}, minimizer_info={s.minimizer_info})".format(s=self)
 
 class FitSetup(Serializable):
     """
