@@ -45,16 +45,20 @@ class plotter:
 
     def click(self, event):
         if event.ydata is not None and event.xdata is not None:
-            pixel =  self.optics.pixel
+            coord = np.array((event.ydata, event.xdata))
+
+            pixel = None
+            if hasattr(self.im, 'optics'):
+                pixel =  self.optics.pixel
+            if pixel == None and hasattr(self.im, 'holo'):
+                pixel = self.im.holo.optics.pixel
+
+            distance = None
             if hasattr(self.im, 'distances'):
-                print('({0}, {1}, {2}), ({3}, {4}, {5})'.format(
-                        event.ydata*pixel[0], event.xdata*pixel[1],
-                        self.im.distances[self.i], int(round(event.ydata)),
-                        int(round(event.xdata)), self.i))
-            else:
-                print('({0}, {1}), ({2}, {3})'.format(
-                        event.ydata*pixel[0], event.xdata*pixel[1], int(round(event.ydata)),
-                        int(round(event.xdata))))
+                distance = self.im.distances[self.i]
+
+            print('{0}, {1}'.format(tuple(coord.round().astype('int')),
+                                    tuple(np.append(coord * pixel, distance))))
 
 
     def __call__(self, event):
