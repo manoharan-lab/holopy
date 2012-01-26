@@ -6,7 +6,8 @@ Levenberg-Marquardt minimizer obtained from
 http://stsdas.stsci.edu/pyraf/stscidocs/pytools_pkg/pytools_api/pytools.nmpfit-module.html
 
 The source code above was modified by Jerome Fung (fung@physics.harvard.edu) to
-be independent of the rest of the stsci_python package, since holopy does not 
+be independent of the rest of the stsci_python package, since holopy does 
+ 
 use Numeric. 
 '''
 
@@ -1363,7 +1364,7 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
             self.fnorm = self.enorm(fvec)
 
         if ((self.fnorm != None) and (fnorm1 != None)):
-            self.fnorm = max([self.fnorm, fnorm1])
+            self.fnorm = max([self.fnorm, fnorm1]) #TODO: why this line?
             self.fnorm = self.fnorm**2.
 
         self.covar = None

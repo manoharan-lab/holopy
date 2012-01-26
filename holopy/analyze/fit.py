@@ -114,13 +114,18 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
     result = manager.from_minimizer_list(result)
 
     time_stop = time.time()
-        
-    return FitResult(scatterer.make_from_parameter_list(result[:-1]), result[-1],
-                     fnorm/(holo.shape[0]*holo.shape[1]), status,
-                     time_stop-time_start, minimizer_info)
 
-        
-        
+    # Calculate R^2 here, otherwise FitResult has to know about the theory
+    # used to fit.
+    fit_scatterer = scatterer.make_from_parameter_list(result[:-1])
+    fit_alpha = result[-1]
+    fit_holo = theory.calc_holo(fit_scatterer, fit_alpha)
+    Rsquared = 1 - ((holo - fit_holo)**2).sum()/((holo - holo.mean())**2).sum()
+    
+    return FitResult(fit_scatterer, fit_alpha, 
+                     fnorm/(holo.shape[0]*holo.shape[1]), status,
+                     time_stop-time_start, minimizer_info, Rsquared)
+
 
 def make_residual(holo, scatterer, theory, parameter_manager,
                   cost_func=cost_subtract):
@@ -144,13 +149,13 @@ def make_residual(holo, scatterer, theory, parameter_manager,
         # alpha should always be the last parameter, we prune it because the
         # scatterer doesn't want to know about it
         this_scatterer = scatterer.make_from_parameter_list(p[:-1])
-        error = 1.e12
+        error = np.ones(holo.shape)*1.e12
 
         try:
             this_scatterer.validate()
         except InvalidScatterer as e:
             print("Attempt to overlap scatterers, rejecting with large error")
-            return error
+            return cost_func(holo, error).ravel()
         
         try:
             calculated = theory.calc_holo(this_scatterer, p[-1])
@@ -161,7 +166,7 @@ spheres, returning large residual")
             else:
                 print("Fitter asked for a value which the scattering theory \
 thought was unphysical or uncomputable, returning large residual")
-            return error
+            return cost_func(holo, error).ravel()
 
         return cost_func(holo, calculated).ravel()
 
@@ -336,7 +341,7 @@ class ParameterManager(object):
                 # rescaling them
                 self.scale[i] = 1.0
             else:
-                self.scale[i] = self._initial_guess[i]
+                self.scale[i] = abs(self._initial_guess[i])
                 # if any parameters have an initial value of 0, this way of chosing scale
                 # will not work, so instead use one based on the range of allowed values
                 if abs(self.scale[i]) < 1e-12:
@@ -456,10 +461,12 @@ different values: ({1} and {3}) specified, this is not allowed".format(self.p1,
                                                                       self.v2)
 
 class FitResult(Serializable):
-    def __init__(self, scatterer, alpha, chisq, status, time, minimizer_info):
+    def __init__(self, scatterer, alpha, chisq, status, time, 
+                 minimizer_info, rsq = None):
         self.scatterer = scatterer
         self.alpha = alpha
         self.chisq = chisq
+        self.rsq = rsq
         self.status = status
         self.time = time
         self.minimizer_info = minimizer_info,
@@ -470,9 +477,14 @@ class FitResult(Serializable):
             return self.alpha
         raise KeyError
     def __repr__(self):
-        return "{s.__class__.__name__}(scatterer={s.scatterer}, \
-alpha={s.alpha}, chisq={s.chisq}, status={s.status}, time={s.time}, \
-minimizer_info={s.minimizer_info})".format(s=self)
+        try:
+            return "{s.__class__.__name__}(scatterer={s.scatterer}, \
+alpha={s.alpha}, chisq={s.chisq}, rsq={s.rsq}, status={s.status}, \
+time={s.time}, minimizer_info={s.minimizer_info})".format(s=self)
+        except AttributeError:
+            return "{s.__class__.__name__}(scatterer={s.scatterer}, \
+alpha={s.alpha}, chisq={s.chisq}, status={s.status}, \
+time={s.time}, minimizer_info={s.minimizer_info})".format(s=self)
 
 class FitSetup(Serializable):
     """

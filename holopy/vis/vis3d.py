@@ -5,10 +5,10 @@ try:
 except ImportError:
     from enthought.mayavi import mlab
 
-def show_sphere_cluster(s):
+def show_sphere_cluster(s,color):
     # I think scale factor needs to be 2 because mayavi probably interprets 4th
     # argument as a diameter, we keep track of radii
-    mlab.points3d(s.x, s.y, s.z, s.r, scale_factor=2.0, resolution=32)
+    mlab.points3d(s.x, s.y, s.z, s.r, scale_factor=2.0, resolution=32, color=color)
 
 def volume_contour(d, voxel):
     vol = mlab.pipeline.scalar_field(d)
