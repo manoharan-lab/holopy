@@ -31,15 +31,18 @@ import mie_f.mieangfuncs as mieangfuncs
 import mie_f.scsmfo_min as scsmfo_min
 
 from scatterpy.errors import UnrealizableScatterer
-
 from scatterpy.scatterer import SphereCluster
 from scatterpy.errors import TheoryNotCompatibleError
 from scatterpy.theory.scatteringtheory import ScatteringTheory, ElectricField
+from holopy.process.math import cartesian_distance
+from scipy import reshape, arange
 
-class Multisphere(ScatteringTheory):
+class MultisphereApprox(ScatteringTheory):
     """
     Class that contains methods and parameters for calculating
-    scattering using T-matrix superposition method.
+    scattering using T-matrix superposition method. When spheres are
+    in overlapping positions, this code calculates the scattering for
+    spheres shrunken such that they no longer overlap.
 
     Attributes
     ----------
@@ -124,8 +127,6 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
         if not isinstance(scatterer, SphereCluster):
             raise TheoryNotCompatibleError(self, scatterer)
 
-        scatterer.validate()
-
         # check that the parameters are in a range where the multisphere
         # expansion will work
         for s in scatterer.scatterers:
@@ -134,7 +135,35 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
             if s.r * self.optics.wavevec > 1e3:
                 raise UnrealizableScatterer(self, s, "radius too large, field "+
                                             "calculation would take forever")
-
+        
+        # modify the particle radii to remove any overlaps
+        # this allows a complete scattering calculation which approximates the true scattering
+        overlaps = []
+        for i, s1 in enumerate(scatterer.scatterers):
+            for j in range(i+1, len(scatterer.scatterers)):
+                s2 = scatterer.scatterers[j]
+                if cartesian_distance(s1.center, s2.center) < (s1.r + s2.r):
+                    overlaps.append((i, j))
+                    
+        radii = scatterer.r
+        print radii
+        
+        counter = 0
+        while len(overlaps) >> 0 and counter < 1000:
+            badones = reshape(overlaps, len(overlaps)*2)
+            badones = list(set(badones) & set(arange(len(scatterer.scatterers))))
+            radii[badones] = radii[badones]*.99
+            # check for overlaps again
+            overlaps = []
+            for i, s1 in enumerate(scatterer.scatterers):
+                s1.validate()
+                for j in range(i+1, len(scatterer.scatterers)):
+                    s2 = scatterer.scatterers[j]
+                    if cartesian_distance(s1.center, s2.center) < (radii[i] + radii[j]):
+                        overlaps.append((i, j))
+            counter = counter+1
+            print radii
+            
         # switch to centroid weighted coordinate system tmatrix code expects
         # and nondimensionalize
         centers = (scatterer.centers - scatterer.centers.mean(0)) * self.optics.wavevec
@@ -154,7 +183,7 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
                                            # coordinate by -1 to correct for
                                            # that.  
                                            -1.0 * centers[:,2], m.real, m.imag,
-                                           scatterer.r * self.optics.wavevec,
+                                           radii * self.optics.wavevec,
                                            self.niter, self.eps, self.qeps1,
                                            self.qeps2, self.meth, (0,0))
 
