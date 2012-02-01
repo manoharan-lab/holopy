@@ -61,6 +61,8 @@ c ******************************************************************
       complex*16 amn(2,nbd,npd,2),amn0(2,nbtd,2)
       complex*16 pmn(2,nbd,npd),pp(2,nbd,2),amnlt(2,nod,nbd)
       real*8 drot(nrotd,nrd),dbet(-1:1,0:nbd)
+      real*8 max_err
+      integer status
       complex*16 ephi,anpt(2,nbtd),amnl(2,ntrad,nrd),
      1           ek(nod,nrd),ealpha(-nod:nod)
       common/consts/bcof(0:nbc,0:nbc),fnr(0:2*nbc)
@@ -246,6 +248,9 @@ c
 
       nodrtmax=0
 
+c Iterative solution for both polarizations begins here
+      max_err = 0.
+
       do k=1,2
          print*, 'Solving for incident state ', k
         
@@ -267,6 +272,8 @@ c
          if(niter.ne.0) then
             call itersoln(npart,nodr,nblk,eps,niter,
      1        meth,itest,ek,drot,amnl,an1,pmn,amn(1,1,1,k),iter,err)
+c max_err gets checked at the end for convergence
+            max_err = max(max_err, err)
             itermax=max(itermax,iter)
          endif
 
@@ -317,7 +324,12 @@ c
       enddo
 
       print*, ' Cluster expansion order: ', nodrtmax
-      
+
+c Check convergence: is the maximum error from iteration less than eps?
+      status = 0
+      if (max_err.lt.eps) status = 1
+      print*, status
+
       return
       end
 c
