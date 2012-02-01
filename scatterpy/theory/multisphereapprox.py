@@ -174,19 +174,31 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
             raise UnrealizableScatterer(self, scatterer, "Particle separation \
  too large, calculation would take forever")
         
-        
-        _, lmax, amn0 = scsmfo_min.amncalc(1, centers[:,0], centers[:,1],
-                                           # The fortran code uses oppositely
-                                           # directed z axis (they have laser
-                                           # propagation as positive, we have it
-                                           # negative), so we multiply the z
-                                           # coordinate by -1 to correct for
-                                           # that.  
-                                           -1.0 * centers[:,2], m.real, m.imag,
-                                           radii * self.optics.wavevec,
-                                           self.niter, self.eps, self.qeps1,
-                                           self.qeps2, self.meth, (0,0))
+        _, lmax, amn0, converged = scsmfo_min.amncalc(1, centers[:,0], 
+                                                      centers[:,1],
+                                                      # The fortran code uses 
+                                                      # oppositely
+                                                      # directed z axis 
+                                                      # (they have laser
+                                                      # propagation as positive,
+                                                      # we have it
+                                                      # negative), so we 
+                                                      # multiply the z
+                                                      # coordinate by -1 to 
+                                                      # correct for that.  
+                                                      -1.0 * centers[:,2], 
+                                                      m.real, m.imag,
+                                                      scatterer.r * 
+                                                      self.optics.wavevec,
+                                                      self.niter, self.eps, 
+                                                      self.qeps1,
+                                                      self.qeps2, self.meth, 
+                                                      (0,0))
 
+        # converged == 1 if the SCSMFO iterative solver converged
+        # f2py converts F77 LOGICAL to int
+        # TODO: check this variable?
+        
         # chop off unused parts of amn0, the fortran code currently has a hard
         # coded number of parameters so it will return too many coefficients.
         # We truncate here to reduce the length of stuff we have to compute with
