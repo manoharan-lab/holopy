@@ -20,7 +20,7 @@ c calculation of cluster T matrix via iteration scheme
 c
       subroutine amncalc(inew,npart,xp,yp,zp,sni,ski,xi,nodr,
      1            nodrtmax,niter,eps,qeps1,qeps2,meth,
-     1            ea, amn0)
+     1            ea, amn0, status)
 c Intended to be called from Python.
 c Inputs:
 c inew (legacy, for program control -- set to 1)
@@ -38,9 +38,10 @@ c qeps2 (cluster error tolerance)
 c meth (set to 1 to use order of scattering)
 c ea (array of cluster Euler alpha and beta, degrees)
 c Outputs:
-c nodr: array of single sphere expansion orders
-c nodrtmax: max order of cluster VSH expansion
+c nodr (array of single sphere expansion orders)
+c nodrtmax (max order of cluster VSH expansion)
 c amn0 (2 x 5040 x 2 array of amn coefficients, listed in a compactified way)
+c status (logical, true if iterative solver converges)
 c *****************************************************************
 c Note: If amn0 is used from Python as an argument to subroutines for
 c hologram calculation in mieangfuncs.f90, it is necessary to truncate
@@ -61,13 +62,15 @@ c ******************************************************************
       complex*16 amn(2,nbd,npd,2),amn0(2,nbtd,2)
       complex*16 pmn(2,nbd,npd),pp(2,nbd,2),amnlt(2,nod,nbd)
       real*8 drot(nrotd,nrd),dbet(-1:1,0:nbd)
+      real*8 max_err
+      logical*4 status
       complex*16 ephi,anpt(2,nbtd),amnl(2,ntrad,nrd),
      1           ek(nod,nrd),ealpha(-nod:nod)
       common/consts/bcof(0:nbc,0:nbc),fnr(0:2*nbc)
       data ci/(0.d0,1.d0)/
 Cf2py intent(in) inew, npart, xp, yp, zp, sni, ski, xi, niter
 Cf2py intent(in) eps, qeps1, qeps2, meth, ea
-Cf2py intent(out) nodr, nodrtmax, amn0
+Cf2py intent(out) nodr, nodrtmax, amn0, status
       
 c calculate constants in common block /consts/
       do n=1,2*nbc
@@ -246,6 +249,9 @@ c
 
       nodrtmax=0
 
+c Iterative solution for both polarizations begins here
+      max_err = 0.
+
       do k=1,2
          print*, 'Solving for incident state ', k
         
@@ -267,6 +273,8 @@ c
          if(niter.ne.0) then
             call itersoln(npart,nodr,nblk,eps,niter,
      1        meth,itest,ek,drot,amnl,an1,pmn,amn(1,1,1,k),iter,err)
+c max_err gets checked at the end for convergence
+            max_err = max(max_err, err)
             itermax=max(itermax,iter)
          endif
 
@@ -317,7 +325,11 @@ c
       enddo
 
       print*, ' Cluster expansion order: ', nodrtmax
-      
+
+c Check convergence: is the maximum error from iteration less than eps?
+      status = .false.
+      if (max_err.lt.eps) status = .true.
+
       return
       end
 c
