@@ -64,19 +64,20 @@ class plotter:
 
 
     def __call__(self, event):
-        old_i = self.i
-        old_j = self.j
-        if event.key=='right':
-            self.i = min(self.im.shape[2]-1, self.i+1)
-        elif event.key == 'left':
-            self.i = max(0, self.i-1)
-        elif event.key == 'up':
-            self.j = min(self.im.shape[3]-1, self.j+1)
-        elif event.key == 'down':
-            self.j = max(0, self.j-1)
-        if old_i != self.i or old_j != self.j:
-            self.draw()
-            self.fig.canvas.draw()
+        if len(self.im.shape) > 2:
+            old_i = self.i
+            old_j = self.j
+            if event.key=='right':
+                self.i = min(self.im.shape[2]-1, self.i+1)
+            elif event.key == 'left':
+                self.i = max(0, self.i-1)
+            elif event.key == 'up':
+                self.j = min(self.im.shape[3]-1, self.j+1)
+            elif event.key == 'down':
+                self.j = max(0, self.j-1)
+            if old_i != self.i or old_j != self.j:
+                self.draw()
+                self.fig.canvas.draw()
 
     def _title(self):
         if hasattr(self.im, 'distances'):
