@@ -28,12 +28,12 @@ hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
 sys.path.append(hp_dir)
 from nose.tools import with_setup
 
-from numpy.testing import assert_array_almost_equal, assert_almost_equal
+from numpy.testing import assert_array_almost_equal, assert_almost_equal, assert_raises
 from nose.plugins.attrib import attr
 
 from scatterpy.scatterer import Sphere, SphereCluster
 from scatterpy.theory import Mie
-
+from scatterpy.theory.mie import UnrealizableScatterer
 import common
 from common import compare_to_data
 
@@ -72,6 +72,19 @@ def test_single_sphere():
 
     compare_to_data(holo, 'gold_single_holo')
     compare_to_data(field, 'gold_single_field')
+
+    # now test some invalid scatterers and confirm that it rejects calculating
+    # for them
+
+    # Negative radius
+    assert_raises(UnrealizableScatterer, lambda:
+                       xmodel.calc_holo(Sphere(r = -1e-6)))
+    # large radius (calculation not attempted because it would take forever
+    assert_raises(UnrealizableScatterer, lambda:
+                       xmodel.calc_holo(Sphere(r=1)))
+ 
+
+                   
 
 @attr('fast')
 @with_setup(setup=setup_model, teardown=teardown_model)

@@ -158,25 +158,3 @@ pairs=
                                                 self.optics.polarization, alpha)
 
         return hp.Hologram(pixels.reshape(self.imshape), optics = self.optics)
-
-#        prefactor = 1.0j/kr*np.exp(1e0j*kr)
-#        prefactor = prefactor.reshape(prefactor.size, 1)
-#        signarr = 1.0 - 1.0j # needed since escatperp = -escatphi
-#        escatsph = prefactor*np.tensordot(scat_matr,self.optics.polarization, axes=1)*signarr
-
-        ct = np.cos(theta)
-        st = np.sin(theta)
-        cp = np.cos(phi)
-        sp = np.sin(phi)        
-
-        e_x = ct*cp*escatsph[:,0] - sp*escatsph[:,1]
-        e_y = ct*sp*escatsph[:,0] + cp*escatsph[:,1]
-        e_z = -1.0*st*escatsph[:,0]
-
-        e_x = e_x.reshape(self.imshape)
-        e_y = e_y.reshape(self.imshape)
-        e_z = e_z.reshape(self.imshape)
-
-        return ElectricField(e_x, e_y, e_z, 0, self.optics.med_wavelen)
-
-        

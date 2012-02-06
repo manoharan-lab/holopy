@@ -121,8 +121,10 @@ def test_fit_mie_single_ralg():
     fitresult = fit(holo, (s,alpha), scatterpy.theory.Mie, 'ralg',
                     lb, ub, plot=False)
 
-    assert_array_almost_equal(fitresult * [1,10**4,10**7,
-            10**6,10**6,10**5,10], gold_single, decimal=2)
+    assert_array_almost_equal(np.concatenate(fitresult.scatterer.parameter_list,
+            np.array([fitresult.alpha])) * [1,10**4,10**7,
+                                            10**6,10**6,10**5,10], gold_single,
+                              decimal=2)
 
     
 @attr('slow')

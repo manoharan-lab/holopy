@@ -32,7 +32,7 @@ import io
 from .hologram import Hologram, subimage
 from .optics import Optics
 from .analyze.reconstruct import reconstruct
-from .analyze.fit import fit, get_target, get_initial_guess, get_fit_result
+from .analyze.fit import fit
 from .io.image_io import load
 from .vis import show
 
