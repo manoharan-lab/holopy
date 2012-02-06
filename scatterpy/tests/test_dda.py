@@ -21,9 +21,6 @@ Tests adda based DDA calculations
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
-# Disabled until DDA is closer to working
-
-'''
 import holopy
 from nose.tools import assert_raises
 from numpy.testing import (assert_, assert_almost_equal,
@@ -45,10 +42,10 @@ from holopy.optics import (WavelengthNotSpecified, PixelScaleNotSpecified,
 def setup_optics():
     # set up optics class for use in several test functions
     global optics
-    wavelen = 658e-9
+    wavelen = 658e-3
     polarization = [0., 1.0]
     divergence = 0
-    pixel_scale = [.1151e-6, .1151e-6]
+    pixel_scale = [.1151, .1151]
     index = 1.33
     
     optics = holopy.optics.Optics(wavelen=wavelen, index=index,
@@ -63,14 +60,14 @@ def teardown_optics():
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_construction():
-    theory = DDA()
-    assert_(theory.imshape == (256,256))
-    theory = DDA(imshape=(100,100))
-    assert_(theory.imshape == (100,100))
+    theory = DDA(optics)
+    assert_((theory.imshape == (256,256)).all())
+    theory = DDA(optics, imshape=(100,100))
+    assert_((theory.imshape == (100,100)).all())
 
     # test with single value instead of tuple
-    theory = DDA(imshape=128)
-    assert_(theory.imshape == (128,128))
+    theory = DDA(optics, imshape=128)
+    assert_((theory.imshape == (128,128)).all())
 
     # construct with optics
     theory = DDA(imshape=256, optics=optics)
@@ -79,22 +76,11 @@ def test_DDA_construction():
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_single():
-    sc = Sphere(n=1.59, r=5e-7, x=1e-6, y=-1e-6, z=10e-6)
+    sc = Sphere(n=1.59, r=3e-1, x=1, y=-1, z=20)
     dda = DDA(imshape=128, optics=optics)
     mie = Mie(imshape=128, optics=optics)
 
-    mie_fields = mie.calc_field(sc)
-    dda_fields = dda.calc_field(sc)
-
-    assert_allclose(mie_fields.x_comp, dda_fields.x_comp)
-    assert_allclose(mie_fields.y_comp, dda_fields.y_comp)
-    assert_allclose(mie_fields.z_comp, dda_fields.z_comp)
-
-    mie_intensity = mie.calc_intensity(sc)
-    dda_intensity = dda.calc_intensity(sc)
-    assert_allclose(mie_intensity, dda_intensity)
-
     mie_holo = mie.calc_holo(sc)
     dda_holo = dda.calc_holo(sc)
-    assert_allclose(mie_holo, dda_holo)
-'''
+    assert_allclose(mie_holo, dda_holo, rtol=.0011)
+

@@ -22,14 +22,20 @@ ADDA (http://code.google.com/p/a-dda/) to do DDA calculations.
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
+#TODO: Adda currently fails if you call it with things specified in meters
+#(values are too small), so we should probably nondimensionalize before talking
+#to adda.  
+
 import subprocess
 import tempfile
 import shutil
 import glob
 import os
 import numpy as np
-from numpy.testing import assert_allclose
+#from numpy.testing import assert_allclose
+import holopy as hp
 from .scatteringtheory import ScatteringTheory, ElectricField
+from .mie_f import mieangfuncs
 
 
 class DependencyMissing(Exception):
@@ -60,6 +66,8 @@ class DDA(ScatteringTheory):
 
     Notes
     -----
+    Does not handle near fields.  This introduces ~5% error at 10 microns.
+    
     This can in principle handle any scatterer, but in practice it will need
     excessive memory or computation time for particularly large scatterers.  
     """
@@ -72,18 +80,11 @@ class DDA(ScatteringTheory):
 
         super(DDA, self).__init__(optics, imshape, thetas, phis)
 
-    def calc_field(self, scatterer):
-        d = tempfile.mkdtemp()
-        
-        grid = self._spherical_grid(*scatterer.center)
-        theta = grid[...,1].ravel()
-        phi = grid[...,2].ravel()
-        kr = grid[...,0].ravel()
-
-        angles = np.vstack((theta, phi)).transpose()
-
+    def _write_adda_angles_file(self, theta, phi, kr, temp_dir):
+        # adda expects degrees, so convert
+        angles = np.vstack((theta, phi)).transpose() * 180/np.pi
         # Leave filename hardcoded for now since it is the default name for adda
-        outf = file(os.path.join(d, 'scat_params.dat'), 'w')
+        outf = file(os.path.join(temp_dir, 'scat_params.dat'), 'w')
 
         # write the header on the scattering angles file
         header = """global_type=pairs
@@ -95,12 +96,29 @@ pairs=
         np.savetxt(outf, angles)
         outf.close()
 
-        # TODO, have it actually look at the scatterer 
-        subprocess.check_call(['adda', '-scat_matr', 'ampl',
-                               '-store_scat_grid'], cwd=d)
+    def calc_holo(self, scatterer, alpha=1.0):
+        temp_dir = tempfile.mkdtemp()
+        
+        grid = self._spherical_grid(*scatterer.center)
+        theta = grid[...,1].ravel()
+        phi = grid[...,2].ravel()
+        kr = grid[...,0].ravel()
 
+        self._write_adda_angles_file(theta, phi, kr, temp_dir)
+        
+        # TODO, have it actually look at the scatterer
+
+        
+        # TODO: this only works for spheres at the moment
+        subprocess.check_call(['adda', '-scat_matr', 'ampl', '-store_scat_grid',
+                               '-lambda', str(self.optics.med_wavelen),
+                               '-eq_rad', str(scatterer.r), '-m',
+                               str(scatterer.n.real/self.optics.index),
+                               str(scatterer.n.imag/self.optics.index)],
+                              cwd=temp_dir)
+        
         # Go into the results directory, there should only be one run
-        result_dir = glob.glob(os.path.join(d, 'run000*'))[0]
+        result_dir = glob.glob(os.path.join(temp_dir, 'run000*'))[0]
 
         adda_result = np.loadtxt(os.path.join(result_dir, 'ampl_scatgrid'),
                                  skiprows=1)
@@ -126,13 +144,25 @@ pairs=
         # Now arrange them into a scattering matrix, see Bohren and Huffman p63
         # eq 3.12
         scat_matr = np.array([[s[:,1], s[:,2]], [s[:,3], s[:,0]]]).transpose()
-        
-        shutil.rmtree(d)
+        # TODO: check normalization
 
-        prefactor = 1.0j/kr*np.exp(1e0j*kr)
-        prefactor = prefactor.reshape(prefactor.size, 1)
-        signarr = 1.0 - 1.0j # needed since escatperp = -escatphi
-        escatsph = prefactor*np.tensordot(scat_matr,self.optics.polarization, axes=1)*signarr
+        
+        #shutil.rmtree(temp_dir)
+        print(temp_dir)
+        
+        pixels = np.zeros_like(kr)
+        for i in range(len(kr)):
+            pixels[i] = mieangfuncs.paraxholocl(kr[i], scatterer.z *
+                                                self.optics.wavevec,
+                                                theta[i], phi[i], scat_matr[i],
+                                                self.optics.polarization, alpha)
+
+        return hp.Hologram(pixels.reshape(self.imshape), optics = self.optics)
+
+#        prefactor = 1.0j/kr*np.exp(1e0j*kr)
+#        prefactor = prefactor.reshape(prefactor.size, 1)
+#        signarr = 1.0 - 1.0j # needed since escatperp = -escatphi
+#        escatsph = prefactor*np.tensordot(scat_matr,self.optics.polarization, axes=1)*signarr
 
         ct = np.cos(theta)
         st = np.sin(theta)
