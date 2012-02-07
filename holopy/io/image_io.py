@@ -195,23 +195,25 @@ def _read(filename, channel=0):
     LoadError
         if there is a problem loading a file
     """
-
     # check file extension
     extension = os.path.splitext(filename)[1]
+
+    might_be_color = True
+    
     if extension in ['.npy', '.npz']:
         # numpy format
         return np.load(filename)
     elif extension in ['.tif', '.TIF', '.tiff', '.TIFF']:
         # check for nonstandard TIFF file (e.g. 12-bit, which PIL
         # can't open)  
-        arr = _read_tiff(filename)
+        arr, might_be_color = _read_tiff(filename)
     else:
         # try PIL
         im = Image.open(filename)
         arr = fromimage(im).astype('d')
 
     # pick out only one channel of a color image
-    if len(arr.shape) > 2:
+    if len(arr.shape) > 2 and might_be_color:
         if channel >= arr.shape[2]:
             raise LoadError(filename,
                             "The image doesn't have a channel number " + channel)
@@ -244,8 +246,14 @@ def _read_tiff(filename):
     (should fix this in the future so that all tiffs can be opened by
     tifffile)
     """
-
     tif = TIFFfile(filename)
+
+    if len(tif.pages) > 1:
+        try:
+            return tif.asarray().transpose(), False
+        except Exception:
+            print('failed to read multipage tiff, attempting to read a single page')
+    
     # assuming a one-page tiff here...
     depth = tif[0].tags.bits_per_sample.value
     width = tif[0].tags.image_width.value
@@ -272,7 +280,7 @@ def _read_tiff(filename):
         arr = tif.asarray().astype('d')
         tif.close()
 
-    return arr
+    return arr, True
 
 def _read_tiff_12bit(filename, size):
     """
@@ -285,7 +293,7 @@ def _read_tiff_12bit(filename, size):
     size : Integer
         number of pixels along one dimension (assumed square)
 
-    """
+        """
     f = open(filename, 'rb')
     data = f.read()
     

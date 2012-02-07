@@ -36,7 +36,8 @@ import numpy as np
 import holopy as hp
 from .scatteringtheory import ScatteringTheory, ElectricField
 from .mie_f import mieangfuncs
-
+from scatterpy.errors import TheoryNotCompatibleError
+from scatterpy.scatterer import Sphere, GeneralScatterer
 
 class DependencyMissing(Exception):
     def __init__(self, dep):
@@ -96,6 +97,28 @@ pairs=
         np.savetxt(outf, angles)
         outf.close()
 
+    def _run_adda_sphere(self, scatterer, optics, temp_dir):
+        subprocess.check_call(['adda', '-scat_matr', 'ampl', '-store_scat_grid',
+                               '-lambda', str(optics.med_wavelen),
+                               '-eq_rad', str(scatterer.r), '-m',
+                               str(scatterer.n.real/optics.index),
+                               str(scatterer.n.imag/optics.index)],
+                              cwd=temp_dir)
+
+    def _run_adda_general(self, scatterer, optics, temp_dir):
+        ms = []
+        for n in scatterer.n:
+            ms.append(str(n.real/optics.index))
+            ms.append(str(n.imag/optics.index))
+
+        # TODO: figure out how/if to specify size
+        
+        subprocess.check_call(['adda', '-scat_matr', 'ampl', '-store_scat_grid',
+                               '-m']+ms, cwd=temp_dir)
+
+        # TODO: figure out how adda is doing recentering and if we need to
+        # adjust for that
+
     def calc_holo(self, scatterer, alpha=1.0):
         temp_dir = tempfile.mkdtemp()
         
@@ -106,16 +129,12 @@ pairs=
 
         self._write_adda_angles_file(theta, phi, kr, temp_dir)
         
-        # TODO, have it actually look at the scatterer
-
-        
-        # TODO: this only works for spheres at the moment
-        subprocess.check_call(['adda', '-scat_matr', 'ampl', '-store_scat_grid',
-                               '-lambda', str(self.optics.med_wavelen),
-                               '-eq_rad', str(scatterer.r), '-m',
-                               str(scatterer.n.real/self.optics.index),
-                               str(scatterer.n.imag/self.optics.index)],
-                              cwd=temp_dir)
+        if isinstance(scatterer, Sphere):
+            self._run_adda_sphere(scatterer, self.optics, temp_dir)
+        elif isinstance(scatterer, GeneralScatterer):
+            self._run_adda_general(scatterer, self.optics, temp_dir)
+        else:
+            raise TheoryNotCompatibleError(self, scatterer)
         
         # Go into the results directory, there should only be one run
         result_dir = glob.glob(os.path.join(temp_dir, 'run000*'))[0]
