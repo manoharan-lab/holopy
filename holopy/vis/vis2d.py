@@ -80,11 +80,16 @@ class plotter:
                 self.fig.canvas.draw()
 
     def _title(self):
+        titlestring = ""
         if hasattr(self.im, 'distances'):
-            self.ax.set_title("z={0},i={1}".format(self.im.distances[self.i],
-                                                   self.i))
+            titlestring += "z={0},i={1}".format(self.im.distances[self.i],
+                                                self.i)
+        elif hasattr(self.im, 'filenames'):
+            titlestring += self.im.filenames[self.i]
         else:
-            self.ax.set_title("image {0}".format(self.i))
+            titlestring += "image {0}".format(self.i)
+
+        self.ax.set_title(titlestring)
         
 def show(im, i=0, t=0, phase = False):
     """

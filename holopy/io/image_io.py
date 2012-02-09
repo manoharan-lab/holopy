@@ -131,6 +131,8 @@ def load(im, optics=None, bg=None, bg_type='subtract',
     if isinstance(bg, np.ndarray):
         bg = Hologram(bg)
 
+    holo.filenames = filenames
+
     if isinstance(bg, Hologram):
         return hp.process.background(holo, bg, bg_type)
     else:
