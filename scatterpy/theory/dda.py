@@ -31,6 +31,7 @@ import tempfile
 import shutil
 import glob
 import os
+import time
 import numpy as np
 #from numpy.testing import assert_allclose
 import holopy as hp
@@ -111,15 +112,20 @@ pairs=
             ms.append(str(n.real/optics.index))
             ms.append(str(n.imag/optics.index))
 
+        shape = scatterer.write_adda_file(temp_dir)
+            
         # TODO: figure out how/if to specify size
-        
+
         subprocess.check_call(['adda', '-scat_matr', 'ampl', '-store_scat_grid',
+                               '-shape', 'read', shape.name,
                                '-m']+ms, cwd=temp_dir)
 
         # TODO: figure out how adda is doing recentering and if we need to
         # adjust for that
 
     def calc_holo(self, scatterer, alpha=1.0):
+        time_start = time.time()
+        
         temp_dir = tempfile.mkdtemp()
         
         grid = self._spherical_grid(*scatterer.center)
@@ -175,5 +181,8 @@ pairs=
                                                 self.optics.wavevec,
                                                 theta[i], phi[i], scat_matr[i],
                                                 self.optics.polarization, alpha)
+
+        h = hp.Hologram(pixels.reshape(self.imshape), optics = self.optics)
+        h.calculation_time = time.time() - time_start
 
         return hp.Hologram(pixels.reshape(self.imshape), optics = self.optics)
