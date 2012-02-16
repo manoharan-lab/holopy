@@ -33,8 +33,7 @@ from holopy.utility.helpers import _ensure_pair
 # so that we can do things other than convolution
 
 def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
-              gradient_filter=False, rec_zx_plane=False, 
-              project_along_z=False):
+              gradient_filter=False, project_along_z=False):
     """
     Propagates a hologram a distance d along the optical axis.
 
@@ -66,10 +65,6 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
        For each distance, compute a second propagation a distance
        gradient_filter away and subtract.  This enhances contrast of
        rapidly varying features 
-    rec_zx_plane : Boolean (optional)
-       Set to True to reconstruct a plane along the z-dimension, this will
-       average along the shorter dimension in x and y and return a 2d
-       array of (x or y),  z 
     project_along_z : Boolean (optional)
        Set to True to reconstruct a projection of z-slices, d should be an
        array of distances, return will be a sum of reconstructions at those
@@ -89,20 +84,10 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
     """
     
     m, n = holo.shape[:2]
-    # To quickly reconstruct along the z-direction, we'll take a 1D slide
-    # of the hologram and reconstruct over a range of z.
-    # To get the 1D hologram, we'll sum over the shortest axis. 
-    if rec_zx_plane:
-        if m > n:
-            dim_im = m
-            holo = holo.sum(axis=1)
-        else:
-            dim_im = n
-            holo = holo.sum(axis=0)
             
     G = trans_func([m, n], holo.optics, d, squeeze=False,
                    gradient_filter=gradient_filter,
-                   recon_in_zx_plane=rec_zx_plane, zprojection=project_along_z)
+                   zprojection=project_along_z)
     
     # Half dimensions of the psf, they will be used to define the area
     # on which it is applied
@@ -116,23 +101,6 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
     if fourier_filter is not None:
         ft *= fourier_filter
 
-    if rec_zx_plane:
-        ft = np.repeat(ft[:, np.newaxis,...], G.shape[1], axis=1)
-
-        ft[(dim_im/2-mm):(dim_im/2+mm),:] *= G[:(mm*2), :]
-        # Transfer function may not cover the whole image, any values
-        # outside it need to be set to zero to make the reconstruction
-        # correct
-        ft[0:dim_im/2-mm,...] = 0
-        ft[dim_im/2+mm:m,...] = 0
-
-        ift = sp.zeros_like(ft)
-
-        for i in range(0, ft.shape[1]):
-            ift[:,i] = ifft(ft[:,i], overwrite=True)
-            
-        return ift
-        
     if ft.ndim is 2:
         ft = ft.reshape(ft.shape[0], ft.shape[1], 1)
     ft = np.repeat(ft[:, :, np.newaxis,...], G.shape[2], axis=2)
@@ -152,8 +120,7 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
         return ifft(ft, overwrite=True)
 
 def trans_func(shape, optics, d, cfsp=0, squeeze=True,
-               gradient_filter=0, recon_in_zx_plane=False, 
-               zprojection=False):
+               gradient_filter=0, zprojection=False):
     """
     Calculates the optical transfer function to use in reconstruction
 
@@ -181,9 +148,6 @@ def trans_func(shape, optics, d, cfsp=0, squeeze=True,
     gradient_filter : float (optional)
        Subtract a second transfer function a distance gradint_filter
        from each z 
-    recon_in_zx_plane : Boolean (optional)
-       Calculate a 2d transfer function along z and (x or y) [pick the
-       larger dimension].   
     zprojection : Boolean (optional)
        Set to True to return a sum of the transfer functions at
        distances z, used to calculate a projected hologram 
@@ -207,34 +171,6 @@ def trans_func(shape, optics, d, cfsp=0, squeeze=True,
     dx, dy = optics.pixel
     wavelen = optics.med_wavelen
     xdim, ydim = _ensure_pair(shape)
-
-    if recon_in_zx_plane:
-        #first determine which axis to use along x-y (that is, x or y)
-        if xdim > ydim:
-            xy_length = xdim
-            d_xy = dx
-        else:
-            xy_length = ydim
-            d_xy = dy
-
-        d = d.reshape([1, d.size])
-        
-        #max_xy = int(np.min(xy_length**2*d_xy**2/d/wavelen/2))+1
-
-        #max_xy = min(xy_length,max_xy*2)/2
-        
-        max_xy = xy_length/2.
-
-        m_xy = sp.arange(-max_xy, max_xy)
-        m_xy = m_xy.reshape(m_xy.size, 1)
-        
-        root = 1.+0j - (wavelen*m_xy/xy_length/d_xy)**2
-
-        g = np.exp(1j*2*np.pi*d/wavelen*np.sqrt(root))
-
-        g = g*(root>=0)
-
-        return g
 
     d = d.reshape([1, 1, d.size])
     

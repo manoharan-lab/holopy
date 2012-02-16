@@ -192,7 +192,7 @@ class Reconstruction(np.ndarray):
 
 
 def reconstruct(holo, distances, fourier_filter=None, gradient_filter=None,
-                recon_along_xz=False,zprojection=False):
+                zprojection=False):
     """
     Reconstructs a hologram at the given distance or distances
 
@@ -222,9 +222,6 @@ def reconstruct(holo, distances, fourier_filter=None, gradient_filter=None,
        Use a gradient filter - subtract a reconstruction spaced a distance
        gradient_filter from the reconstruction to suppress slowly varying
        features
-    recon_along_xz : bool
-       If True reconstruct a 1d slice along z.  Will sum along the
-       shorter of x or y.
     zprojection : bool
        If True the transfer matrix for all distances will be added together
        and a single image returned
@@ -270,7 +267,6 @@ def reconstruct(holo, distances, fourier_filter=None, gradient_filter=None,
                                  fourier_filter=fourier_filter,
                                  squeeze=False,
                                  gradient_filter=gradient_filter, 
-                                 rec_zx_plane=recon_along_xz,
                                  project_along_z=zprojection),
                        holo=holo, distances=distances, name=name)
     r.gradient_filter_dz = gradient_filter
