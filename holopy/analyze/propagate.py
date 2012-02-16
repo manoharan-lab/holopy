@@ -102,7 +102,8 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
             
     G = trans_func([m, n], holo.optics, d, squeeze=False,
                    gradient_filter=gradient_filter,
-                   recon_in_zx_plane=rec_zx_plane, zprojection=project_along_z) 
+                   recon_in_zx_plane=rec_zx_plane, zprojection=project_along_z)
+    
     # Half dimensions of the psf, they will be used to define the area
     # on which it is applied
     mm, nn = [dim/2 for dim in G.shape[:2]]

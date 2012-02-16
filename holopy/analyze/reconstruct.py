@@ -31,11 +31,8 @@ techniques.
 """
 
 import numpy as np
-import scipy as sp
 import scipy.signal
-import os
 from holopy.process.math import fft, ifft
-import io
 from holopy.analyze.propagate import propagate, impulse_response
 from holopy.utility.helpers import _ensure_pair, _ensure_array
 
@@ -194,7 +191,7 @@ class Reconstruction(np.ndarray):
         return new_rec       
 
 
-def reconstruct(holo, distances, fourier_mask=None, gradient_filter=None,
+def reconstruct(holo, distances, fourier_filter=None, gradient_filter=None,
                 recon_along_xz=False,zprojection=False):
     """
     Reconstructs a hologram at the given distance or distances
@@ -218,7 +215,7 @@ def reconstruct(holo, distances, fourier_mask=None, gradient_filter=None,
     
     Other Parameters
     ----------------
-    fourier_mask : function(holo.shape)
+    fourier_filter : function(holo.shape)
        Function generating a fourier mask which you want applied to
        reconstrutions.  Default is None, meaning don't apply a mask
     gradient_filter : length (float)
@@ -265,17 +262,20 @@ def reconstruct(holo, distances, fourier_mask=None, gradient_filter=None,
     
     name = holo.name
         
-    if fourier_mask:
-        fourier_mask = fourier_mask(holo.shape)
+    if fourier_filter:
+        fourier_filter_func = fourier_filter
+        fourier_filter = fourier_filter(holo)
         
     r = Reconstruction(propagate(holo, distances,
-                                 fourier_filter=fourier_mask,
+                                 fourier_filter=fourier_filter,
                                  squeeze=False,
                                  gradient_filter=gradient_filter, 
                                  rec_zx_plane=recon_along_xz,
                                  project_along_z=zprojection),
                        holo=holo, distances=distances, name=name)
     r.gradient_filter_dz = gradient_filter
+    if fourier_filter is not None:
+        r.fourier_filter = fourier_filter_func
     return r
 
 def deconvolved_reconstruction(holo, distances, chi=0.01):
@@ -287,3 +287,37 @@ def deconvolved_reconstruction(holo, distances, chi=0.01):
     K = abs(h)**2
     I = ifft(fft(I)/(fft(K)+chi))
     return Reconstruction(I, holo=holo, distances = distances, name = holo.name)
+
+class dic_filter(object):
+    """
+    :param dr: The vector shear to introduce
+    :type dr: (float, float, float)
+
+    :param b: phase bias
+    :type b: float
+
+    References
+    ----------
+    J Lobera and J M Coupland "Contrast enhancing techniques in digital
+    holographic microscopy." Measurement Science and Technology (2008) p8. 
+    """
+
+    def __init__(self, dr, b = 0):
+        self.dr = _ensure_pair(dr)
+        self.b = b
+
+    def __call__(self, holo):
+        return self.filter(holo)
+
+    def filter(self, holo):
+        shape = holo.shape
+        kx, ky = np.ogrid[[slice(-i/2, i/2) for i in shape]]
+        kx = kx * 2*np.pi/(shape[0]*holo.optics.pixel[0])
+        ky = ky * 2*np.pi/(shape[1]*holo.optics.pixel[1])
+        phi = kx* self.dr[0] + ky * self.dr[1] + self.b
+        return np.cos(phi/2)
+
+    def __repr__(self):
+        return  "{0}({1}, b={2})".format(self.__class__.__name__, list(self.dr),
+                                         self.b)
+
