@@ -55,7 +55,8 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
     d : float
        Distance to propagate, in meters
     ft : ndarray<complex> (optional)
-       Fourier transform of image to propagate
+       Fourier transform of image to propagate, if given, ft will be used
+       instead of holo
     fourier_filter : ndarray<complex> (optional)
        Fourier filter to apply to reconstructed data
     squeeze : Boolean (optional)
@@ -118,6 +119,23 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
         return np.squeeze(ifft(ft, overwrite=True))
     else:
         return ifft(ft, overwrite=True)
+
+def apply_trans_func(ft, G):
+    mm, nn = [dim/2 for dim in G.shape[:2]]
+    m, n = ft.shape[:2]
+    
+    ft[(m/2-mm):(m/2+mm),(n/2-nn):(n/2+nn)] *= G[:(mm*2),:(nn*2)]
+    
+    # Transfer function may not cover the whole image, any values
+    # outside it need to be set to zero to make the reconstruction
+    # correct
+    ft[0:n/2-nn,...] = 0
+    ft[n/2+nn:n,...] = 0
+    ft[:,0:m/2-mm,...] = 0
+    ft[:,m/2+mm:m,...] = 0
+
+    return ft
+
 
 def trans_func(shape, optics, d, cfsp=0, squeeze=True,
                gradient_filter=0, zprojection=False):
