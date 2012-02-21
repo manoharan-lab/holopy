@@ -21,7 +21,9 @@ Tests adda based DDA calculations
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
+
 import holopy
+import numpy as np
 from nose.tools import assert_raises
 from numpy.testing import (assert_, assert_almost_equal,
                            assert_allclose)
@@ -32,11 +34,13 @@ from scatterpy.scatterer import Sphere, CoatedSphere
 from scatterpy.scatterer import Composite, SphereCluster
 
 from scatterpy.theory import Mie, DDA
+import scatterpy
 from scatterpy.calculate import calc_field, calc_holo, calc_intensity
 from scatterpy.errors import TheoryNotCompatibleError
 from holopy.optics import (WavelengthNotSpecified, PixelScaleNotSpecified,
                            MediumIndexNotSpecified)
 
+import os.path
 
 # nose setup/teardown methods
 def setup_optics():
@@ -73,14 +77,55 @@ def test_DDA_construction():
     theory = DDA(imshape=256, optics=optics)
     assert_(theory.optics.index == 1.33)
 
-@attr('fast')
+@attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
-def test_DDA_single():
-    sc = Sphere(n=1.59, r=3e-1, x=1, y=-1, z=20)
+def test_DDA_sphere():
+    sc = Sphere(n=1.59, r=3e-1, x=1, y=-1, z=30)
     dda = DDA(imshape=128, optics=optics)
     mie = Mie(imshape=128, optics=optics)
 
     mie_holo = mie.calc_holo(sc)
     dda_holo = dda.calc_holo(sc)
-    assert_allclose(mie_holo, dda_holo, rtol=.0011)
+    assert_allclose(mie_holo, dda_holo, rtol=.0015)
 
+@attr('slow')
+@with_setup(setup=setup_optics, teardown=teardown_optics)
+def test_DDA_general():
+    # test that DDA general gets the same results as DDA sphere as a basic
+    # sanity check of dda
+
+    n = 1.59
+    center = (1, 1, 30)
+    r = .3
+    
+    sc = Sphere(n=n, r=r, center = center)
+    dda = DDA(imshape=128, optics=optics)
+
+    sphere_holo = dda.calc_holo(sc)
+
+    geom = np.loadtxt(os.path.join(dda._last_result_dir, 'sphere.geom'),
+                      skiprows=3)
+
+    # hardcode size for now.  This is available in the log of the adda output,
+    # so we could get it with a parser, but this works for now, not that it
+    # could change if we change the size of the scatterer (and thus lead to a
+    # fail)
+    # FAIL HINT: grid size hardcoded, check that it is what dda sphere outputs
+    dpl_dia = 16
+    
+    sphere = np.zeros((dpl_dia,dpl_dia,dpl_dia))
+
+    for point in geom:
+        x, y, z = point
+        sphere[x, y, z] = 1
+
+    sphere = sphere.astype('float') * n
+    
+    dpl = 13.2569 # dpl_dia * optics.med_wavelen / (r*2)
+    dpl = dpl_dia * optics.med_wavelen / (r*2)
+    
+    s = scatterpy.scatterer.general.GeneralScatterer(sphere, center, dpl)
+
+    gen_holo = dda.calc_holo(s)
+
+    assert_allclose(sphere_holo, gen_holo, rtol=1e-3)

@@ -30,7 +30,7 @@ class GeneralScatterer(Scatterer):
     """
     """
     
-    def __init__(self, voxels, center, voxel_spacing):
+    def __init__(self, voxels, center, voxels_per_wavelen):
         """
         
         Arguments:
@@ -45,6 +45,7 @@ class GeneralScatterer(Scatterer):
         self.voxels = voxels
         self.n_bins = 10
         self.center = center
+        self.voxels_per_wavelen = voxels_per_wavelen
         
         # leave off the last element of the linspace because nothing will be
         # larger than it, and the first element because we treat things in the
@@ -112,7 +113,7 @@ class GeneralScatterer(Scatterer):
 
     @property
     def n(self):
-        return self.bin_indicies
+        return [b for b in self.bin_indicies if b != 0]
 
 
     @property

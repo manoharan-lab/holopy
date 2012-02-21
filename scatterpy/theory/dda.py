@@ -89,35 +89,65 @@ class DDA(ScatteringTheory):
         outf = file(os.path.join(temp_dir, 'scat_params.dat'), 'w')
 
         # write the header on the scattering angles file
-        header = """global_type=pairs
-N={0}
-pairs=
-""".format(len(phi))
-        outf.write(header)
+        header = ["global_type=pairs", "N={0}".format(len(phi)), "pairs="]
+        outf.write('\n'.join(header)+'\n')
         # Now write all the angles
         np.savetxt(outf, angles)
         outf.close()
 
-    def _run_adda_sphere(self, scatterer, optics, temp_dir):
+    def _run_adda(self, scatterer, optics, temp_dir):
+        cmd = ['adda']
+        cmd.extend(['-scat_matr', 'ampl'])
+        cmd.extend(['-store_scat_grid'])
+        cmd.extend(['-lambda', str(optics.med_wavelen)])
+        cmd.extend(['-save_geom'])
+
+        if isinstance(scatterer, Sphere):
+            scat_args =  self._adda_sphere(scatterer, self.optics, temp_dir)
+        elif isinstance(scatterer, GeneralScatterer):
+            scat_args = self._adda_general(scatterer, self.optics, temp_dir)
+        else:
+            raise TheoryNotCompatibleError(self, scatterer)
+
+        cmd.extend(scat_args)
+
+        subprocess.check_call(cmd, cwd=temp_dir)
+        
+    def _adda_sphere(self, scatterer, optics, temp_dir):
+        cmd = []
+        cmd.extend(['-eq_rad', str(scatterer.r)])
+        cmd.extend(['-m', str(scatterer.n.real/optics.index),
+                    str(scatterer.n.imag/optics.index)])
+
+        return cmd
+        
         subprocess.check_call(['adda', '-scat_matr', 'ampl', '-store_scat_grid',
                                '-lambda', str(optics.med_wavelen),
-                               '-eq_rad', str(scatterer.r), '-m',
+                               '-eq_rad', str(scatterer.r), '-save_geom', '-m',
                                str(scatterer.n.real/optics.index),
                                str(scatterer.n.imag/optics.index)],
                               cwd=temp_dir)
 
-    def _run_adda_general(self, scatterer, optics, temp_dir):
+    def _adda_general(self, scatterer, optics, temp_dir):
         ms = []
         for n in scatterer.n:
             ms.append(str(n.real/optics.index))
             ms.append(str(n.imag/optics.index))
 
         shape = scatterer.write_adda_file(temp_dir)
-            
-        # TODO: figure out how/if to specify size
 
+        cmd = []
+        cmd.extend(['-shape', 'read', shape.name])
+        cmd.extend(['-dpl', str(scatterer.voxels_per_wavelen)])
+        cmd.extend(['-m'])
+        cmd.extend(ms)
+
+        return cmd
+        
         subprocess.check_call(['adda', '-scat_matr', 'ampl', '-store_scat_grid',
                                '-shape', 'read', shape.name,
+                               '-dpl', str(scatterer.voxels_per_wavelen),
+                               '-save_geom',
                                '-m']+ms, cwd=temp_dir)
 
         # TODO: figure out how adda is doing recentering and if we need to
@@ -127,6 +157,7 @@ pairs=
         time_start = time.time()
         
         temp_dir = tempfile.mkdtemp()
+        print(temp_dir)
         
         grid = self._spherical_grid(*scatterer.center)
         theta = grid[...,1].ravel()
@@ -134,16 +165,12 @@ pairs=
         kr = grid[...,0].ravel()
 
         self._write_adda_angles_file(theta, phi, kr, temp_dir)
-        
-        if isinstance(scatterer, Sphere):
-            self._run_adda_sphere(scatterer, self.optics, temp_dir)
-        elif isinstance(scatterer, GeneralScatterer):
-            self._run_adda_general(scatterer, self.optics, temp_dir)
-        else:
-            raise TheoryNotCompatibleError(self, scatterer)
+
+        self._run_adda(scatterer, self.optics, temp_dir)
         
         # Go into the results directory, there should only be one run
         result_dir = glob.glob(os.path.join(temp_dir, 'run000*'))[0]
+        self._last_result_dir = result_dir
 
         adda_result = np.loadtxt(os.path.join(result_dir, 'ampl_scatgrid'),
                                  skiprows=1)
@@ -173,7 +200,6 @@ pairs=
 
         
         #shutil.rmtree(temp_dir)
-        print(temp_dir)
         
         pixels = np.zeros_like(kr)
         for i in range(len(kr)):
@@ -185,4 +211,5 @@ pairs=
         h = hp.Hologram(pixels.reshape(self.imshape), optics = self.optics)
         h.calculation_time = time.time() - time_start
 
-        return hp.Hologram(pixels.reshape(self.imshape), optics = self.optics)
+        
+        return h
