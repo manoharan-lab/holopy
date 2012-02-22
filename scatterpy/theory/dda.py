@@ -38,7 +38,7 @@ import holopy as hp
 from .scatteringtheory import ScatteringTheory, ElectricField
 from .mie_f import mieangfuncs
 from scatterpy.errors import TheoryNotCompatibleError
-from scatterpy.scatterer import Sphere, GeneralScatterer
+from scatterpy.scatterer import Sphere, CoatedSphere, GeneralScatterer
 
 class DependencyMissing(Exception):
     def __init__(self, dep):
@@ -104,6 +104,8 @@ class DDA(ScatteringTheory):
 
         if isinstance(scatterer, Sphere):
             scat_args =  self._adda_sphere(scatterer, self.optics, temp_dir)
+        elif isinstance(scatterer, CoatedSphere):
+            scat_args = self._adda_coated(scatterer, self.optics, temp_dir)
         elif isinstance(scatterer, GeneralScatterer):
             scat_args = self._adda_general(scatterer, self.optics, temp_dir)
         else:
@@ -120,14 +122,18 @@ class DDA(ScatteringTheory):
                     str(scatterer.n.imag/optics.index)])
 
         return cmd
-        
-        subprocess.check_call(['adda', '-scat_matr', 'ampl', '-store_scat_grid',
-                               '-lambda', str(optics.med_wavelen),
-                               '-eq_rad', str(scatterer.r), '-save_geom', '-m',
-                               str(scatterer.n.real/optics.index),
-                               str(scatterer.n.imag/optics.index)],
-                              cwd=temp_dir)
 
+    def _adda_coated(self, scatterer, optics, temp_dir):
+        cmd = []
+        cmd.extend(['-eq_rad', str(scatterer.r2)])
+        cmd.extend(['-shape', 'coated', str(scatterer.r1/scatterer.r2)])
+        cmd.extend(['-m', str(scatterer.n1.real/optics.index),
+                    str(scatterer.n1.imag/optics.index),
+                    str(scatterer.n2.real/optics.index),
+                    str(scatterer.n2.imag/optics.index)])
+
+        return cmd
+        
     def _adda_general(self, scatterer, optics, temp_dir):
         ms = []
         for n in scatterer.n:
@@ -143,13 +149,6 @@ class DDA(ScatteringTheory):
         cmd.extend(ms)
 
         return cmd
-        
-        subprocess.check_call(['adda', '-scat_matr', 'ampl', '-store_scat_grid',
-                               '-shape', 'read', shape.name,
-                               '-dpl', str(scatterer.voxels_per_wavelen),
-                               '-save_geom',
-                               '-m']+ms, cwd=temp_dir)
-
         # TODO: figure out how adda is doing recentering and if we need to
         # adjust for that
 

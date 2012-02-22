@@ -121,8 +121,11 @@ def test_DDA_general():
 
     sphere = sphere.astype('float') * n
     
-    dpl = 13.2569 # dpl_dia * optics.med_wavelen / (r*2)
-    dpl = dpl_dia * optics.med_wavelen / (r*2)
+    dpl = 13.2569
+
+    # this would nominally be the correct way to determine dpl, but because of
+    #volume correction within adda, this is not as accurate (only 
+    #dpl = dpl_dia * optics.med_wavelen / (r*2)
     
     s = scatterpy.scatterer.general.GeneralScatterer(sphere, center, dpl)
 
