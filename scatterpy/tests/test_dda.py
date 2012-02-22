@@ -132,3 +132,18 @@ def test_DDA_general():
     gen_holo = dda.calc_holo(s)
 
     assert_allclose(sphere_holo, gen_holo, rtol=1e-3)
+
+
+@with_setup(setup=setup_optics, teardown=teardown_optics)
+def test_DDA_coated():
+    cs = scatterpy.scatterer.coatedsphere.Shell(
+        center=[7.141442573813124, 7.160766866147957, 11.095409800342143],
+        n1=(1.27121212428+0j), n2=(1.49+0j), t=0.0055, r=0.1)
+
+    dda = DDA(imshape=128, optics=optics)
+    lmie = scatterpy.theory.LayeredMie(imshape=128, optics=optics)
+
+    lmie_holo = lmie.calc_holo(cs)
+    dda_holo = dda.calc_holo(cs)
+
+    assert_allclose(lmie_holo, dda_holo, rtol = 5e-5)

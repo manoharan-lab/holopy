@@ -127,10 +127,12 @@ class DDA(ScatteringTheory):
         cmd = []
         cmd.extend(['-eq_rad', str(scatterer.r2)])
         cmd.extend(['-shape', 'coated', str(scatterer.r1/scatterer.r2)])
-        cmd.extend(['-m', str(scatterer.n1.real/optics.index),
-                    str(scatterer.n1.imag/optics.index),
-                    str(scatterer.n2.real/optics.index),
-                    str(scatterer.n2.imag/optics.index)])
+        # A-DDA thinks of it as a sphere with an inclusion, so their first index
+        # (the sphere) is our second, the outer layer.  
+        cmd.extend(['-m', str(scatterer.n2.real/optics.index),
+                    str(scatterer.n2.imag/optics.index),
+                    str(scatterer.n1.real/optics.index),
+                    str(scatterer.n1.imag/optics.index)])
 
         return cmd
         

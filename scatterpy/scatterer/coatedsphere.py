@@ -20,6 +20,7 @@
 Defines CoatedSphere, a scattering primitive
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
+.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
 import numpy as np
@@ -68,6 +69,9 @@ class CoatedSphere(Scatterer):
         else:
             self.center = np.array([x, y, z])
 
+    parameter_names_list = ['n1.real', 'n1.imag', 'n2.real', 'n2.imag', 'r1',
+                            'r2', 'x', 'y', 'z'] 
+
     def __repr__(self):
         '''
         Outputs the object parameters in a way that can be typed into
@@ -86,3 +90,51 @@ class CoatedSphere(Scatterer):
     @property
     def z(self):
         return self.center[2]
+
+    @property
+    def parameter_list(self):
+        return np.array([self.n1.real, self.n1.imag, self.n2.real, self.n2.imag,
+                         self.r1, self.r2, self.x, self.y, self.z])
+
+    
+    
+    @classmethod
+    def make_from_parameter_list(cls, params):
+        n1 = params[0] + 1.0j * params[1]
+        n2 = params[2] + 1.0j * params[3]
+        return cls(n1, n2, *params[4:])
+
+class Shell(CoatedSphere):
+    """
+    A CoatedSphere that you specify in terms of thickness and radus instead of
+    two radii
+    """
+    def __init__(self, n1, n2, t, r, x = 0.0, y = 0.0, z = 0.0, center = None):
+        super(Shell, self).__init__(n1, n2, r-t, r, x, y, z, center)
+
+    parameter_names_list = ['n1.real', 'n1.imag', 'n2.real', 'n2.imag', 't',
+                            'r', 'x', 'y', 'z'] 
+
+
+    @property
+    def t(self):
+        return self.r2 - self.r1
+
+    @property
+    def parameter_list(self):
+        return np.array([self.n1.real, self.n1.imag, self.n2.real, self.n2.imag,
+                        self.r2-self.r1, self.r2, self.x, self.y, self.z])
+
+#    @classmethod
+#    def make_from_parameter_list(cls, params):
+#        print(params)
+#        n1 = params[0] + 1.0j * params[1]
+#        n2 = params[2] + 1.0j * params[3]
+#        return cls(n1, n2, params[5]-params[4], params[4], *params[6:])
+    
+    def __repr__(self):
+        '''
+        Outputs the object parameters in a way that can be typed into
+        the python interpreter
+        '''
+        return "{c}(center={center}, n1={n1}, n2={n2}, t={t}, r={r})".format(c=self.__class__.__name__, center=repr(self.center), n1=self.n1, n2=self.n2, t=self.t, r=self.r)
