@@ -57,7 +57,6 @@ class CoatedSphere(Scatterer):
         # give them our larger radius
         return self.r2
     
-
     def __init__(self, n1 = 1.59, n2 = 1.33, r1 = 0.5e-6, r2 = 1e-6, 
                  x = 0.0, y = 0.0, z = 0.0, center = None):
         self.n1 = n1
@@ -75,3 +74,15 @@ class CoatedSphere(Scatterer):
         the python interpreter
         '''
         return "{c}(center={center}, n1={n1}, n2={n2}, r1={r1}, r2={r2})".format(c=self.__class__.__name__, center=repr(self.center), n1=self.n1, n2=self.n2, r1=self.r1, r2=self.r2)
+
+    # convenience functions, defined so you can write, e.g., sc.n
+    # instead of sc.get_n()
+    @property
+    def x(self):
+        return self.center[0]
+    @property
+    def y(self):
+        return self.center[1]
+    @property
+    def z(self):
+        return self.center[2]
