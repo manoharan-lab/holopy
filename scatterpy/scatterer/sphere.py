@@ -25,8 +25,9 @@ Defines Sphere, a scattering primitive
 import numpy as np
 from scatterpy.scatterer import Scatterer
 from scatterpy.errors import ScattererDefinitionError
+from .ellipsoid import SingleCenterScatterer
 
-class Sphere(Scatterer):
+class Sphere(SingleCenterScatterer):
     '''
     Contains optical and geometrical properties of a sphere, a
     scattering primitive
@@ -52,14 +53,7 @@ class Sphere(Scatterer):
                  center = None):
         self.n = n
         self.r = r
-        if center is not None:
-            if np.isscalar(center) or len(center) != 3:
-                raise ScattererDefinitionError(
-                    "center specified as {0}, center should be specified as (x,"
-                    " y, z)".format(center), self)
-            self.center = np.array(center)
-        else:
-            self.center = np.array([x, y, z])
+        super(Sphere, self).__init__(x, y, z, center)
 
     parameter_names_list = ['n.real', 'n.imag', 'r', 'x', 'y', 'z']
 
@@ -86,14 +80,3 @@ class Sphere(Scatterer):
         n = params[0] + 1.0j * params[1]
         return cls(n, *params[2:])
 
-    # convenience functions, defined so you can write, e.g., sc.n
-    # instead of sc.get_n()
-    @property
-    def x(self):
-        return self.center[0]
-    @property
-    def y(self):
-        return self.center[1]
-    @property
-    def z(self):
-        return self.center[2]

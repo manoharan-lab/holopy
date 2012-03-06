@@ -22,7 +22,7 @@ Tests adda based DDA calculations
 '''
 
 
-import holopy
+import holopy as hp
 import numpy as np
 from nose.tools import assert_raises
 from numpy.testing import (assert_, assert_almost_equal,
@@ -52,7 +52,7 @@ def setup_optics():
     pixel_scale = [.1151, .1151]
     index = 1.33
     
-    optics = holopy.optics.Optics(wavelen=wavelen, index=index,
+    optics = hp.optics.Optics(wavelen=wavelen, index=index,
                                   pixel_scale=pixel_scale,
                                   polarization=polarization,
                                   divergence=divergence)
@@ -147,3 +147,13 @@ def test_DDA_coated():
     dda_holo = dda.calc_holo(cs)
 
     assert_allclose(lmie_holo, dda_holo, rtol = 5e-5)
+
+@with_setup(setup=setup_optics, teardown=teardown_optics)
+def test_Ellipsoid_dda():
+    e = scatterpy.scatterer.Ellipsoid(1.5, .5, .1, .1, 1, -1, 10)
+    dda = scatterpy.theory.DDA(hp.Optics(wavelen=.66, pixel_scale=.1, index=1.33), 100)
+    h = dda.calc_holo(e)
+
+    assert_almost_equal(h.max(), 1.3152766077267062)
+    assert_almost_equal(h.mean(), 0.99876620628942114)
+    assert_almost_equal(h.std(), 0.06453155384119547)

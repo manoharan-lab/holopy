@@ -157,6 +157,7 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
                      -ca*cb*sg - sa*cg, -sa*cb*sg + ca*cg, sb*sg,
                      ca*sb, sa*sb, cb]).reshape((3,3)) # row major
 
+# TODO: make this handle 2d
 def cartesian_distance(p1, p2):
     return np.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2+(p1[2]-p2[2])**2)
 

@@ -37,8 +37,10 @@ class Scatterer(Serializable):
     def __init__(self):
         raise NotImplementedError
 
-    def __repr__(self):
-        raise NotImplementedError
+    #    def __repr__(self):
+    #    return '{0}()'
+    
+    #     raise NotImplementedError
 
     def validate(self):
         """
@@ -99,3 +101,4 @@ from spheredimer import SphereDimer
 from rigidclusters import BentTrimer
 from general import GeneralScatterer
 from movingsphere import MovingSphere
+from ellipsoid import Ellipsoid

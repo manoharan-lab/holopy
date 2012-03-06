@@ -26,6 +26,8 @@ ADDA (http://code.google.com/p/a-dda/) to do DDA calculations.
 #(values are too small), so we should probably nondimensionalize before talking
 #to adda.  
 
+from __future__ import division
+
 import subprocess
 import tempfile
 import shutil
@@ -38,7 +40,8 @@ import holopy as hp
 from .scatteringtheory import ScatteringTheory, ElectricField
 from .mie_f import mieangfuncs
 from scatterpy.errors import TheoryNotCompatibleError
-from scatterpy.scatterer import Sphere, CoatedSphere, GeneralScatterer
+import scatterpy
+
 
 class DependencyMissing(Exception):
     def __init__(self, dep):
@@ -102,12 +105,14 @@ class DDA(ScatteringTheory):
         cmd.extend(['-lambda', str(optics.med_wavelen)])
         cmd.extend(['-save_geom'])
 
-        if isinstance(scatterer, Sphere):
+        if isinstance(scatterer, scatterpy.scatterer.Sphere):
             scat_args =  self._adda_sphere(scatterer, self.optics, temp_dir)
-        elif isinstance(scatterer, CoatedSphere):
+        elif isinstance(scatterer, scatterpy.scatterer.CoatedSphere):
             scat_args = self._adda_coated(scatterer, self.optics, temp_dir)
-        elif isinstance(scatterer, GeneralScatterer):
+        elif isinstance(scatterer, scatterpy.scatterer.GeneralScatterer):
             scat_args = self._adda_general(scatterer, self.optics, temp_dir)
+        elif isinstance(scatterer, scatterpy.scatterer.Ellipsoid):
+            scat_args = self._adda_ellipsiod(scatterer, self.optics, temp_dir)
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
@@ -118,6 +123,16 @@ class DDA(ScatteringTheory):
     def _adda_sphere(self, scatterer, optics, temp_dir):
         cmd = []
         cmd.extend(['-eq_rad', str(scatterer.r)])
+        cmd.extend(['-m', str(scatterer.n.real/optics.index),
+                    str(scatterer.n.imag/optics.index)])
+
+        return cmd
+
+    def _adda_ellipsiod(self, scatterer, optics, temp_dir):
+        cmd = []
+        cmd.extend(['-eq_rad', str(scatterer.r[0])])
+        cmd.extend(['-shape', 'ellipsoid'])
+        cmd.extend([str(r_i/scatterer.r[0]) for r_i in scatterer.r[1:]])
         cmd.extend(['-m', str(scatterer.n.real/optics.index),
                     str(scatterer.n.imag/optics.index)])
 
