@@ -30,12 +30,12 @@ import time
 hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
 sys.path.append(hp_dir)
 from scipy import sin, cos, array, pi, sqrt, arcsin, arccos, real, dot
-from holopy.io.yaml_io import load_yaml, Serializable
+from holopy.io.yaml_io import Serializable
 
 import numpy as np
 
 #import minimizers.nmpfit_adapter as minimizer
-from scatterpy.errors import (UnrealizableScatterer, ScattererOverlap,
+from scatterpy.errors import (UnrealizableScatterer,
                               InvalidScattererSphereOverlap, InvalidScatterer)
 
 def cost_subtract(holo, calc):

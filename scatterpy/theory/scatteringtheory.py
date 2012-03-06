@@ -29,15 +29,6 @@ from holopy.hologram import Hologram
 from holopy.utility.helpers import _ensure_pair
 from holopy.io.yaml_io import Serializable
 
-class NotImplementedError(Exception):
-    def __init__(self, method, theory, message=None):
-        self.message = message
-        self.method = method
-        self.theory = theory
-    def __str__(self):
-        return ("Method " + self.method + " not implemented in theory " + 
-                self.theory + ". " + self.message)
-
 class ScatteringTheory(Serializable):
     """
     Base class for scattering theories
@@ -68,7 +59,7 @@ class ScatteringTheory(Serializable):
         self.thetas = thetas
         self.phis = phis
         if isinstance(optics, dict):
-            optics = hp.Optics(**optics)
+            self.optics = hp.Optics(**optics)
         else:
             self.optics = optics
 
@@ -97,11 +88,10 @@ class ScatteringTheory(Serializable):
 
         Raises
         ------
-        NotImplemented : if calc_field is undefined in the derived class 
+        IncompleteTheory : if calc_field is undefined in the derived class 
         """
 
-        raise NotImplementedError(self.calc_field().__name__,
-                             self.__class__.__name__) 
+        raise NotImplementedError
 
     # TODO: is this function still needed?  The new ElectricField class makes it
     # essentially trivial -tgd 2011-08-12
@@ -195,22 +185,6 @@ class ScatteringTheory(Serializable):
         return Hologram(interfere_at_detector(scat * alpha, ref),
                         optics=self.optics)
 
-
-    def fields_from_scat_matr(self, scat_matr, kr):
-        prefactor = 1.0j * np.exp(1.0j*kr)
-        # Correct for fact that escatperp = -escatphi
-        sign_correction = 1.0-1.0j
-
-        e = (prefactor[:,np.newaxis] * np.dot(scat_matr,
-                                                   self.optics.polarization) *
-                  sign_correction)
-
-        ex = e[:,0].reshape(self.imshape)
-        ey = e[:,1].reshape(self.imshape)
-        
-        return ElectricField(ex, ey, 0, 0, self.optics.med_wavelen)
-
-    
     def _spherical_grid(self, x, y, z):
         """
         Parameters
@@ -272,7 +246,7 @@ class InvalidElectricFieldComputation(Exception):
     def __init__(self, reason):
         self.reason = reason
     def __str__(self):
-        "Invalid Electric Computation: " + self.reason
+        return "Invalid Electric Computation: " + self.reason
     
 class ElectricField(object):
     """
@@ -319,7 +293,7 @@ class ElectricField(object):
         return ElectricField(new_x, new_y, new_z, 0.0, self.wavelen)
 
     def __rmul__(self, other):
-        return self.__mult__(self, other)
+        return self.__mul__(other)
     def __mul__(self, other):
         if not np.isscalar(other):
             raise InvalidElectricFieldComputation(

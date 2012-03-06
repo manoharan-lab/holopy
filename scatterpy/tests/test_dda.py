@@ -35,7 +35,6 @@ from scatterpy.scatterer import Composite, SphereCluster
 
 from scatterpy.theory import Mie, DDA
 import scatterpy
-from scatterpy.calculate import calc_field, calc_holo, calc_intensity
 from scatterpy.errors import TheoryNotCompatibleError
 from holopy.optics import (WavelengthNotSpecified, PixelScaleNotSpecified,
                            MediumIndexNotSpecified)

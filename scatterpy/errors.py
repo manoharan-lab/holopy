@@ -30,7 +30,7 @@ class InvalidScattererSphereOverlap(InvalidScatterer):
         self.scatterer = scatterer
         self.overlaps = overlaps
     def __str__(self):
-        return "{0} has overlaps between spheres: {1}".format(self.scatterer,
+        return "{0} has overlaps between spheres: {1}".format(repr(self.scatterer),
                                                               self.overlaps)
 
 class ScattererDefinitionError(Exception):
@@ -41,12 +41,6 @@ class ScattererDefinitionError(Exception):
         return ("Error defining scatterer object of type " + 
                 self.scatterer.__class__.__name__ +
                 ".\n" + self.message)
-
-
-class ScattererOverlap(Exception):
-    def __str__(self):
-        return "Scatterer contains overlapping particles, this is in general \
-not physical."
 
 class TheoryNotCompatibleError(Exception):
     def __init__(self, theory, scatterer):

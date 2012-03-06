@@ -21,6 +21,7 @@ Test construction and manipulation of scattering theory objects.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
+import numpy as np
 from nose.tools import assert_raises
 from numpy.testing import (assert_, assert_almost_equal,
                            assert_allclose, assert_equal)
@@ -30,10 +31,12 @@ from nose.plugins.attrib import attr
 from scatterpy.scatterer import Sphere, CoatedSphere, SphereCluster
 
 from scatterpy.theory import Mie
+from scatterpy.theory.scatteringtheory import (ScatteringTheory, ElectricField,
+                                               InvalidElectricFieldComputation)
 from scatterpy.errors import TheoryNotCompatibleError
 
 import common
-    
+from common import ErrorExpected    
 
 # nose setup/teardown methods
 def setup_optics():
@@ -60,6 +63,12 @@ def test_Mie_construction():
     # construct with optics
     theory = Mie(imshape=256, optics=optics)
     assert_equal(theory.optics.index, 1.33)
+
+    # construct with a dict as optics
+    theory = Mie({'wavelen': .66, 'pixel_scale': .1, 'index': 1.33})
+
+    assert_(repr(theory), 'Mie(optics=Optics(wavelen=0.66, index=1.33, polarization=[1.0, 0.0], divergence=0.0, pixel_size=None, train=None, mag=None, pixel_scale=[0.10000000000000001, 0.10000000000000001]),thetas=None,imshape=[256 256],phis=None)')
+    
 
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
@@ -126,6 +135,12 @@ def test_Mie_multiple():
     assert_almost_equal(holo.std(), 0.21107984880858663)
 
     # should throw exception when fed a coated sphere
+    try:
+        theory.calc_field(CoatedSphere())
+        raise ErrorExpected('mie should reject a CoatedSphere')
+    except TheoryNotCompatibleError as e:
+        assert_(str(e), "The implementation of the Mie scattering theory doesn't know how to handle scatterers of type CoatedSphere")
+
     assert_raises(TheoryNotCompatibleError, lambda: 
                   theory.calc_field(CoatedSphere()))
     assert_raises(TheoryNotCompatibleError, lambda: 
@@ -141,3 +156,35 @@ def test_Mie_multiple():
     assert_raises(TheoryNotCompatibleError, lambda: 
                   theory.calc_holo(sc))
 
+@with_setup(setup=setup_optics, teardown=teardown_optics)
+def test_abstract_theory():
+    theory = ScatteringTheory(optics)
+
+    assert_raises(NotImplementedError, lambda : theory.calc_field(Sphere()))
+
+
+def test_ElectricField():
+    x = np.ones((5, 5))
+    y = np.ones((5, 5))
+    z = np.ones((5, 5))
+
+    e1 = ElectricField(x, y, z, 0, .66)
+    e2 = ElectricField(x, y, z, 0, .7)
+
+    try:
+        e3 = e1 * e1
+        raise ErrorExpected('Electric fields should not be able to multiply '
+                            'nonscalars')
+    except InvalidElectricFieldComputation as e:
+        assert_(str(e), 'Invalid Electric Computation: multiplication by '
+                'nonscalar values not yet implemented')
+
+    try:
+        e3 = e1 + e2
+        raise ErrorExpected('Electric fields should not allow addition with '
+                            'different wavelengths')
+    except InvalidElectricFieldComputation as e:
+        assert_(str(e), 'Invalid Electric Computation: Superposition of fields '
+                'with different wavelengths is not implemented')
+
+    assert_(e1 * 2.0, 2.0 * e1)

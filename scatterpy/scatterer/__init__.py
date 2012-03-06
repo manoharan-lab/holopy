@@ -37,11 +37,6 @@ class Scatterer(Serializable):
     def __init__(self):
         raise NotImplementedError
 
-    #    def __repr__(self):
-    #    return '{0}()'
-    
-    #     raise NotImplementedError
-
     def validate(self):
         """
         Check that a scatterer is physically realistic.  Theories should call
@@ -74,14 +69,6 @@ class Scatterer(Serializable):
         """
         raise NotImplementedError
 
-    @property
-    def parameter_names_list(self):
-        """
-        returns the list of names of the parameters, in the same order as the
-        parameter_list() function
-        """
-
-    
     @classmethod
     def make_from_parameter_list(cls, params):
         """

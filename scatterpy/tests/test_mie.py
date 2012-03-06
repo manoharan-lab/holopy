@@ -28,14 +28,15 @@ hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
 sys.path.append(hp_dir)
 from nose.tools import with_setup
 
-from numpy.testing import assert_array_almost_equal, assert_almost_equal, assert_raises
+from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
+                           assert_raises, assert_)
 from nose.plugins.attrib import attr
 
 from scatterpy.scatterer import Sphere, SphereCluster
 from scatterpy.theory import Mie
 from scatterpy.theory.mie import UnrealizableScatterer
 import common
-from common import compare_to_data
+from common import compare_to_data, ErrorExpected
 
 
 # nose setup/teardown methods
@@ -77,9 +78,14 @@ def test_single_sphere():
     # for them
 
     # Negative radius
-    assert_raises(UnrealizableScatterer, lambda:
-                       xmodel.calc_holo(Sphere(r = -1e-6)))
+    try:
+        xmodel.calc_holo(Sphere(r = -1e-6))
+        raise ErrorExpected('Mie should reject negative radii')
+    except UnrealizableScatterer as e:
+        assert_(str(e), "Cannot compute scattering with Mie scattering theory for a scatterer of type Sphere because: radius is negative")
+
     # large radius (calculation not attempted because it would take forever
+
     assert_raises(UnrealizableScatterer, lambda:
                        xmodel.calc_holo(Sphere(r=1)))
  
