@@ -184,6 +184,10 @@ class SphereCluster(Composite):
     def centers(self):
         return np.array([s.center for s in self.scatterers])
 
+    @property
+    def center(self):
+        return self.centers.mean(0)
+
 def rotate(cluster, theta, phi, psi):
     com = cluster.centers.mean(0)
         

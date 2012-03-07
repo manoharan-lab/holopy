@@ -113,6 +113,8 @@ class DDA(ScatteringTheory):
             scat_args = self._adda_general(scatterer, self.optics, temp_dir)
         elif isinstance(scatterer, scatterpy.scatterer.Ellipsoid):
             scat_args = self._adda_ellipsiod(scatterer, self.optics, temp_dir)
+        elif isinstance(scatterer, scatterpy.scatterer.SphereCluster):
+            scat_args = self._adda_bisphere(scatterer, self.optics, temp_dir)
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
@@ -138,6 +140,28 @@ class DDA(ScatteringTheory):
 
         return cmd
 
+    def _adda_bisphere(self, scatterer, optics, temp_dir):
+        # A-DDA bisphere only takes a pair of identical spheres.  We could handle
+        # more complicated things by voxelating ourselves, but they are better
+        # than us at voxelating, so lets use their restrictions for now.  
+        if (len(scatterer.r) != 2 or scatterer.r[0] != scatterer.r[1] or
+            scatterer.n[0] != scatterer.n[1]):
+            raise UnrealizableScatterer(self, scatterer, 'adda bisphere only '
+                                        'works for 2 identical spheres')
+
+        sep = hp.process.math.cartesian_distance(*scatterer.centers)
+        
+        cmd = []
+        #        cmd.extend(['-size',
+        #        str(scatterer.r[0]/self.optics.med_wavelen)])
+        cmd.extend(['-eq_rad', str(scatterer.r[0])])
+        cmd.extend(['-shape', 'bisphere', str(sep/(scatterer.r[0]*2))])
+        cmd.extend(['-m', str(scatterer.n[0].real/optics.index),
+                    str(scatterer.n[0].imag/optics.index)])
+
+        return cmd
+        
+    
     def _adda_coated(self, scatterer, optics, temp_dir):
         cmd = []
         cmd.extend(['-eq_rad', str(scatterer.r2)])
