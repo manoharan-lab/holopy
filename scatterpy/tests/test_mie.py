@@ -71,8 +71,8 @@ def test_single_sphere():
     holo = xmodel.calc_holo(sphere, alpha=scaling_alpha)
     field = xmodel.calc_field(sphere)
 
-    compare_to_data(holo, 'gold_single_holo')
-    compare_to_data(field, 'gold_single_field')
+    common.verify(holo, 'single_holo')
+    common.verify(field, 'single_field')
 
     # now test some invalid scatterers and confirm that it rejects calculating
     # for them
@@ -212,8 +212,11 @@ def test_two_spheres_samez():
     holo = model.calc_holo(sc, alpha=scaling_alpha)
     intensity = model.calc_intensity(sc)
 
-    compare_to_data(holo, 'gold_two_spheres_samez_holo')
-    compare_to_data(intensity, 'gold_two_spheres_samez_intensity')
+    common.verify(holo, 'two_spheres_samez_holo')
+    common.verify(intensity, 'two_spheres_samez_intensity')
+    
+    #    compare_to_data(holo, 'gold_two_spheres_samez_holo')
+    #compare_to_data(intensity, 'gold_two_spheres_samez_intensity')
 
     # uncomment to debug
     #return holo

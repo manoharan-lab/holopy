@@ -2,9 +2,11 @@ import holopy
 import os
 import numpy
 import re
+import yaml
 from scatterpy.theory.scatteringtheory import ElectricField
 
-from numpy.testing import assert_array_almost_equal, assert_almost_equal
+from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
+                           assert_allclose)
 
 
 wavelen = 658e-9
@@ -35,11 +37,24 @@ class DataNotPresent(Exception):
     def __str__(self):
         return "External data file {0} not found".format(self.name)
 
+def verify(result, name):
+    gold_name = os.path.join('gold', 'gold_'+name)
+    if os.path.exists(gold_name + '.npy'):
+        gold = numpy.load(gold_name + '.npy')
+        if isinstance(result, ElectricField):
+            assert_allclose(result._array(), gold)
+        else:
+            assert_allclose(result, gold)
+
+    gold = yaml.load(file(gold_name+'.yaml'))
+
+    for key, val in gold.iteritems():
+        assert_almost_equal(getattr(result, key)(), val)
     
 def get_data(name):
     name = name + '.npy'
     try:
-        return numpy.load(os.path.join('ext_data',name))
+        return numpy.load(os.path.join('golds',name))
     except IOError:
         raise DataNotPresent(name)
 
@@ -49,7 +64,6 @@ def compare_to_data(calc, name):
         gold = get_data(name)
     except DataNotPresent as e:
         print e
-#        return
 
     if isinstance(calc, ElectricField):
         assert_array_almost_equal(calc._array(), gold)

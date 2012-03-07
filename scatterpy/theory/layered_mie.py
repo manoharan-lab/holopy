@@ -29,7 +29,7 @@ import mie_f.mieangfuncs as mieangfuncs
 import numpy as np
 from mie_f.mieangfuncs import mie_fields_sph
 from mie_f.multilayer_sphere_lib import scatcoeffs_multi
-
+import scatterpy
 from holopy.hologram import Hologram
 from scatterpy.errors import TheoryNotCompatibleError, UnrealizableScatterer
 from scatterpy.scatterer import CoatedSphere
