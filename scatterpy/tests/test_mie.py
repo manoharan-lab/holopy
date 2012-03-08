@@ -41,26 +41,32 @@ from common import compare_to_data, ErrorExpected
 
 # nose setup/teardown methods
 def setup_model():
+    global xoptics, yoptics, xmodel, ymodel, scaling_alpha, radius, n
+    global n_particle_real, n_particle_imag, x, y, z
+
+    scaling_alpha = .6
+    radius = .85e-6
+    n = 1.59+1e-4j
+    n_particle_real = 1.59
+    n_particle_imag = 1e-4
+    x = .576e-05
+    y = .576e-05
+    z = 15e-6
+
+    imshape = 128
+    
     # set up optics class for use in several test functions
-    global xoptics, yoptics, xmodel, ymodel
     xoptics, yoptics = common.xoptics, common.yoptics
     xmodel = Mie(imshape = imshape, optics=xoptics)
     ymodel = Mie(imshape = imshape, optics=yoptics)
 
 def teardown_model():
-    global xoptics, yoptics, xmodel, ymodel
-    del xoptics, yoptics, xmodel, ymodel
+    global xoptics, yoptics, xmodel, ymodel, scaling_alpha, radius, n
+    global n_particle_real, n_particle_imag, x, y, z
+    del xoptics, yoptics, xmodel, ymodel, scaling_alpha, radius, n
+    del n_particle_real, n_particle_imag, x, y, z
 
-scaling_alpha = .6
-radius = .85e-6
-n = 1.59+1e-4j
-n_particle_real = 1.59
-n_particle_imag = 1e-4
-x = .576e-05
-y = .576e-05
-z = 15e-6
 
-imshape = 128
 
 @attr('fast')
 @with_setup(setup=setup_model, teardown=teardown_model)

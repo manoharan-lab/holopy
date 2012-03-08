@@ -49,7 +49,11 @@ def verify(result, name):
     gold = yaml.load(file(gold_name+'.yaml'))
 
     for key, val in gold.iteritems():
-        assert_almost_equal(getattr(result, key)(), val)
+        if isinstance(result, ElectricField):
+            comp, check = key.split('.')
+            assert_almost_equal(getattr(getattr(result, comp), check)(), val)
+        else:
+            assert_almost_equal(getattr(result, key)(), val)
     
 def get_data(name):
     name = name + '.npy'
@@ -75,3 +79,36 @@ class ErrorExpected(Exception):
         self.msg = msg
     def __str__(self):
         return "Expected an Error:" + self.msg
+
+def make_golds(result, name):
+    '''
+    Make new golds for a test
+
+    Parameters
+    ----------
+    result: Hologram or ElectricField
+        A result that you want to make the new gold (try to make sure it is
+        correct)
+    name: string
+        The name for the result (this should be something like the test name)
+    '''
+    
+    gold_name = 'gold_'+name
+    numpy.save(gold_name+'.npy', result)
+
+    gold_dict = {}
+
+    checks = ['min', 'max', 'mean', 'std']
+
+
+    for check in checks:
+        if isinstance(result, ElectricField):
+            comps = ['x_comp', 'y_comp', 'z_comp']
+            for comp in comps:
+                res = getattr(getattr(result, comp), check)()
+                gold_dict['{0}.{1}'.format(comp, check)] = res
+        else:
+            gold_dict[check] = getattr(result, check)()
+
+    yaml.dump(gold_dict, file(gold_name+'.yaml','w'))
+        

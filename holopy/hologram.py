@@ -149,6 +149,14 @@ class Hologram(np.ndarray):
         # return a new hologram, now divorced from its optical train
         return Hologram(new_image, self.optics.resample(1.0/factor),
                         self.time_scale, name)
+
+    def std(self):
+        '''
+        wrapper on numpy.std to get type handling correct (numpy.std returns a
+        0-len array hologram, it should just return a number)
+        '''
+        res = super(Hologram, self).std()
+        return res.max()
     
 
 def subimage(im, center=None, size=None):
