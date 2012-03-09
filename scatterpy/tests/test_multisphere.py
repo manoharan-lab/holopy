@@ -38,36 +38,49 @@ import holopy
 from scatterpy.theory.multisphere import Multisphere
 from scatterpy.theory.mie import Mie
 from scatterpy.scatterer import Sphere, SphereCluster
-from scatterpy.errors import UnrealizableScatterer
+from scatterpy.errors import UnrealizableScatterer, TheoryNotCompatibleError
+import scatterpy
 
-# define optical train
-wavelen = 658e-9
-ypolarization = [0., 1.0] # y-polarized
-xpolarization = [1.0, 0.] # x-polarized
-divergence = 0
-pixel_scale = [.1151e-6, .1151e-6]
-index = 1.33
 
-yoptics = holopy.optics.Optics(wavelen=wavelen, index=index,
-                              pixel_scale=pixel_scale,
-                              polarization=ypolarization,
-                              divergence=divergence)
+def setup():
+    global xoptics, yoptics, scaling_alpha, radius, n_particle_imag
+    global n_particle_real, x, y, z, imshape, wavelen
+    
+    # define optical train
+    wavelen = 658e-9
+    ypolarization = [0., 1.0] # y-polarized
+    xpolarization = [1.0, 0.] # x-polarized
+    divergence = 0
+    pixel_scale = [.1151e-6, .1151e-6]
+    index = 1.33
 
-xoptics = holopy.optics.Optics(wavelen=wavelen, index=index,
-                              pixel_scale=pixel_scale,
-                              polarization=xpolarization,
-                              divergence=divergence)
+    yoptics = holopy.optics.Optics(wavelen=wavelen, index=index,
+                                   pixel_scale=pixel_scale,
+                                   polarization=ypolarization,
+                                   divergence=divergence)
 
-scaling_alpha = .6
-radius = .85e-6
-n_particle_real = 1.59
-n_particle_imag = 1e-4
-x = .576e-05
-y = .576e-05
-z = 15e-6
+    xoptics = holopy.optics.Optics(wavelen=wavelen, index=index,
+                                   pixel_scale=pixel_scale,
+                                   polarization=xpolarization,
+                                   divergence=divergence)
 
-imshape = 128
+    scaling_alpha = .6
+    radius = .85e-6
+    n_particle_real = 1.59
+    n_particle_imag = 1e-4
+    x = .576e-05
+    y = .576e-05
+    z = 15e-6
 
+    imshape = 128
+
+def teardown():
+    global xoptics, yoptics, scaling_alpha, radius, n_particle_imag
+    global n_particle_real, x, y, z, imshape, wavelen
+
+    del xoptics, yoptics, scaling_alpha, radius, n_particle_imag
+    del n_particle_real, x, y, z, imshape, wavelen
+    
 @attr('fast')
 def test_construction():
     # test constructor to make sure it works properly and calls base
@@ -144,6 +157,13 @@ def test_invalid():
     
     assert_raises(UnrealizableScatterer, lambda: theory.calc_holo(sc))
 
+    sc.scatterers[0].r = -1
+
+    assert_raises(UnrealizableScatterer, lambda: theory.calc_holo(sc))
+
+    cs = scatterpy.scatterer.CoatedSphere()
+
+    assert_raises(TheoryNotCompatibleError, lambda: theory.calc_holo(cs))
 
 """
 def test_single_sphere():

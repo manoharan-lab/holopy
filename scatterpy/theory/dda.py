@@ -109,7 +109,7 @@ class DDA(ScatteringTheory):
             scat_args =  self._adda_sphere(scatterer, self.optics, temp_dir)
         elif isinstance(scatterer, scatterpy.scatterer.CoatedSphere):
             scat_args = self._adda_coated(scatterer, self.optics, temp_dir)
-        elif isinstance(scatterer, scatterpy.scatterer.GeneralScatterer):
+        elif isinstance(scatterer, scatterpy.scatterer.VoxelatedScatterer):
             scat_args = self._adda_general(scatterer, self.optics, temp_dir)
         elif isinstance(scatterer, scatterpy.scatterer.Ellipsoid):
             scat_args = self._adda_ellipsiod(scatterer, self.optics, temp_dir)

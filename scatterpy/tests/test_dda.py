@@ -89,8 +89,8 @@ def test_DDA_sphere():
 
 @attr('slow')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
-def test_DDA_general():
-    # test that DDA general gets the same results as DDA sphere as a basic
+def test_DDA_voxelated():
+    # test that DDA voxelated gets the same results as DDA sphere as a basic
     # sanity check of dda
 
     n = 1.59
@@ -126,7 +126,7 @@ def test_DDA_general():
     #volume correction within adda, this is not as accurate (only 
     #dpl = dpl_dia * optics.med_wavelen / (r*2)
     
-    s = scatterpy.scatterer.general.GeneralScatterer(sphere, center, dpl)
+    s = scatterpy.scatterer.voxelated.VoxelatedScatterer(sphere, center, dpl)
 
     gen_holo = dda.calc_holo(s)
 
