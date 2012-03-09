@@ -16,3 +16,9 @@ Makefile
 .spyderproject
 commit.txt
 .out
+scatterpy/tests/gold/gold_shell.npy
+scatterpy/tests/gold/gold_single_field.npy
+scatterpy/tests/gold/gold_single_holo.npy
+scatterpy/tests/gold/gold_two_spheres_samez_holo.npy
+scatterpy/tests/gold/gold_two_spheres_samez_intensity.npy
+scatterpy/tests/gold/golds.tgz
