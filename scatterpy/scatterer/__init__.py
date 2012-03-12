@@ -22,64 +22,10 @@ scattering primitives such as Spheres, and more complex objects such
 as Clusters.
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
-.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
+.. moduleauthor:: Thomas G. Dimiduk <tdimidusk@physics.harvard.edu>
 '''
 
-from holopy.io.yaml_io import Serializable
-
-class Scatterer(Serializable):
-    """
-    abstract base class for scatterers
-
-    """
-    yaml_tag = u'!Scatterer'
-    
-    def __init__(self):
-        raise NotImplementedError
-
-    def validate(self):
-        """
-        Check that a scatterer is physically realistic.  Theories should call
-        this function before attempting computation with a scatterer.  
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        -------
-        True is scatterer is valid
-
-        Raises
-        ------
-        InvalidScatterer or subclass if the scatterer is unphysical for some reason
-        """
-        # We default to just returning True subclasses that implement overlap
-        # checking or other validity constraints override this
-        return True
-    
-    @property
-    def parameter_list(self):
-        """
-        Return's the scatterer's parameters as an 1d array in a defined order.
-        This form is suitable for passing to a minimizer
-
-        Note: if the scatter has complex values (like index of refraction) they
-        need to be split into two seperate variables
-        """
-        raise NotImplementedError
-
-    @classmethod
-    def make_from_parameter_list(cls, params):
-        """
-        Make a new scatterer from a parameter list of the form reterned by
-        parameter_list().
-        """
-        raise NotImplementedError
-
-
-
-
+from abstract_scatterer import Scatterer
 from sphere import Sphere
 from coatedsphere import CoatedSphere
 from composite import Composite
@@ -89,3 +35,4 @@ from rigidclusters import BentTrimer
 from voxelated import VoxelatedScatterer
 from movingsphere import MovingSphere
 from ellipsoid import Ellipsoid
+

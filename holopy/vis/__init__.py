@@ -26,38 +26,5 @@ this you may see a small lag on your first plot.
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
-import holopy as hp
-import numpy
-import scatterpy
+from show import show
 
-class VisualizationNotImplemented(Exception):
-    def __init__(self, o):
-        self.o = o
-    def __str__(self):
-        return "Visualization of object of type: {0} not implemented".format(
-            self.o.__class__.__name__)
-    
-
-def show(o,color=(0,0,1)):
-    """
-    Visualize a scatterer, hologram, or reconstruction
-
-    Parameters
-    ----------
-    o: :class:`scatterpy.scatterer.Scatterer`, :class:`holopy.hologram.Hologram`, or :class:`holopy.analyze.reconstruct.Reconstruction`
-       Object to visualize
-
-    Notes
-    -----
-    Loads plotting library the first time it is required (so that we don't have
-    to import all of mayavi just to load holopy)
-    """
-    
-    if isinstance(o, scatterpy.scatterer.SphereCluster):
-        import vis3d
-        vis3d.show_sphere_cluster(o,color)
-    elif isinstance(o, (hp.Hologram, hp.analyze.reconstruct.Reconstruction, numpy.ndarray)):
-        import vis2d
-        vis2d.show(o)
-    else:
-        raise VisualizationNotImplemented(o)
