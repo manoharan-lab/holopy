@@ -21,6 +21,8 @@ Defines SphereCluster, a Composite scatterer consisting of Spheres
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
+# COVERAGE: I think all uncovered code is either unreachable or due likely to be
+# refactored away
 
 import numpy as np
 from sphere import Sphere
@@ -95,6 +97,7 @@ class SphereCluster(Composite):
                 for i in range(N):
                     try:
                         s = Sphere(n=n[i], r=r[i], center=centers[i])
+                    # TODO: Can we get a test to hit this code? 
                     except IndexError:
                         raise ScattererDefinitionError(
                             "n, r, x, y, and z should all be "+

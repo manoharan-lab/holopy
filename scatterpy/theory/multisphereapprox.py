@@ -36,6 +36,7 @@ from scatterpy.errors import TheoryNotCompatibleError
 from scatterpy.theory.scatteringtheory import ScatteringTheory, ElectricField
 from holopy.process.math import cartesian_distance
 from scipy import reshape, arange
+from scatterpy.theory.multisphere import TMatrixFieldNaN
 
 class MultisphereApprox(ScatteringTheory):
     """
@@ -216,8 +217,3 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
         return ElectricField(e_x, e_y, e_z, scatterer.z.mean(),
                              self.optics.med_wavelen) 
 
-
-class TMatrixFieldNaN(UnrealizableScatterer):
-    def __str__(self):
-        return "T-matrix field is NaN, this probably represents a failure of \
-the code to converge, check your scatterer."

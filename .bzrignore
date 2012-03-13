@@ -25,3 +25,4 @@ scatterpy/tests/gold/golds.tgz
 scatterpy/tests/gold/gold_mie_multiple_fields.npy
 scatterpy/tests/gold/gold_mie_multiple_holo.npy
 scatterpy/tests/gold/gold_smear.npy
+scatterpy/tests/gold/gold_2_sphere_allow_overlap.npy

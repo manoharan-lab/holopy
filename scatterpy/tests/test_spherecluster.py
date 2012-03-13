@@ -66,6 +66,7 @@ def test_SphereCluster_construction():
     sc.y
     sc.z
     sc.centers
+    sc.center
     
     # construct from arrays
     na = np.array(n)

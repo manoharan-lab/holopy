@@ -182,6 +182,7 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
                 scatterer.x.mean(), scatterer.y.mean(), scatterer.z.mean()),
                                                        amn, lmax, 0,
                                                        self.optics.polarization)
+        # TODO: Test this.  How do we intentionally get NaN's out of tmatrix?
         if np.isnan(e_x[0,0]):
             raise TMatrixFieldNaN(self, scatterer, '')
 

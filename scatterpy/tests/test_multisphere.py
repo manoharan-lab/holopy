@@ -29,17 +29,18 @@ sys.path.append(hp_dir)
 
 from nose.tools import assert_raises, with_setup
 from numpy.testing import assert_equal, assert_array_almost_equal, assert_almost_equal
-
+from scatterpy.errors import InvalidScattererSphereOverlap
 
 from nose.plugins.attrib import attr
 
 import holopy
 
-from scatterpy.theory.multisphere import Multisphere
-from scatterpy.theory.mie import Mie
+from scatterpy.theory import Multisphere, MultisphereApprox
+from scatterpy.theory.multisphere import TMatrixFieldNaN
 from scatterpy.scatterer import Sphere, SphereCluster
 from scatterpy.errors import UnrealizableScatterer, TheoryNotCompatibleError
 import scatterpy
+import common
 
 
 def setup_model():
@@ -169,6 +170,37 @@ def test_invalid():
 
     assert_raises(TheoryNotCompatibleError, theory.calc_holo, cs)
 
+@with_setup(setup=setup_model, teardown=teardown_model)
+def test_overlap():
+    sc = SphereCluster(spheres=[Sphere(center=[3e-6, 3e-6, 10e-6], n=1.59,
+            r=.5e-6), Sphere(center=[3.4e-6, 3e-6, 10e-6], n=1.59, r=.5e-6)])
+
+
+    theory = Multisphere(xoptics, imshape)
+
+    # regular Multisphere will refuse to calculate an overlapping scatterer
+    assert_raises(InvalidScattererSphereOverlap, theory.calc_holo, sc)
+
+    theory = MultisphereApprox(xoptics, imshape)
+
+    assert_raises(TMatrixFieldNaN, theory.calc_holo, sc)
+
+    # MultisphereApprox will happily try, but for this overlap it will fail
+    with assert_raises(TMatrixFieldNaN) as cm:
+        holo = theory.calc_holo(sc)
+        assert_equal(str(cm.exception, "T-matrix field is NaN, this probably "
+                     "represents a failure of the code to converge, check your "
+                     "scatterer."))
+
+    # but it should succeed with a small overlab
+    sc = SphereCluster(spheres=[Sphere(center=[3e-6, 3e-6, 10e-6], n=1.59,
+            r=.5e-6), Sphere(center=[3.9e-6, 3.e-6, 10e-6], n=1.59, r=.5e-6)])
+    holo = theory.calc_holo(sc)
+
+    common.verify(holo, '2_sphere_allow_overlap')
+    
+
+    
 """
 def test_single_sphere():
     # single spheres hologram (only tests that functions return)

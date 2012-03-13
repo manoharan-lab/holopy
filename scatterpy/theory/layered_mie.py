@@ -25,12 +25,12 @@ TODO: think about generalizing this to do clusters of coated particles.
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
-import mie_f.mieangfuncs as mieangfuncs
+
+#COVERAGE: All uncovered code is probably going to be refactored away
+
 import numpy as np
 from mie_f.mieangfuncs import mie_fields_sph
 from mie_f.multilayer_sphere_lib import scatcoeffs_multi
-import scatterpy
-from holopy.hologram import Hologram
 from scatterpy.errors import TheoryNotCompatibleError, UnrealizableScatterer
 from scatterpy.scatterer import CoatedSphere
 from scatterpy.theory.scatteringtheory import ScatteringTheory, ElectricField
