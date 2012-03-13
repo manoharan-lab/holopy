@@ -22,8 +22,9 @@ Defines SphereDimer, a scatterer consisting of two Spheres
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
-import numpy as np
 from scatterpy.scatterer import Scatterer
+
+# TODO: Eliminate?  currently this does nothing different than sphereclusters
 
 class SphereDimer(Scatterer):
     '''

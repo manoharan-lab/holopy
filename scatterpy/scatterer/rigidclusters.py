@@ -22,6 +22,8 @@ Defines specific rigid sphere cluster geometries.
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 '''
 
+#COVERAGE: This file is on its way out in refactoring
+
 import numpy as np
 from numpy import array, sin, cos, dot, zeros, pi, ones, sqrt, arccos
 from holopy.process.math import rotation_matrix

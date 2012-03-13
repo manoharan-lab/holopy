@@ -23,12 +23,12 @@ Test construction and manipulation of Scatterer objects.
 
 import numpy as np
 from nose.tools import raises, assert_raises
-from numpy.testing import assert_, assert_equal, assert_almost_equal
+from numpy.testing import assert_equal
 from nose.plugins.attrib import attr
 
-from scatterpy.scatterer import Sphere, CoatedSphere, Scatterer
-from scatterpy.scatterer import Composite, SphereCluster
-from scatterpy.errors import ScattererDefinitionError , InvalidScattererSphereOverlap
+from scatterpy.scatterer import (Sphere, CoatedSphere, Scatterer, Ellipsoid,
+                                 Composite, MovingSphere)
+from scatterpy.errors import ScattererDefinitionError
 
 @attr('fast')
 def test_Scatterer_construction():
@@ -48,6 +48,11 @@ def test_Sphere_construction():
                  "Sphere.\nInvalid center specification, neither valid center "
                  "tuple or x, y, z values supplied")
 
+def test_Ellipsoid_construction():
+    s = Ellipsoid(n = 1.57, r = (1, 2, 3), center = (3, 2, 1))
+
+    assert_equal(str(s), 'Ellipsoid(n=1.57, r=[1, 2, 3], center=[3, 2, 1])')
+    
 @attr('fast')
 def test_Sphere_construct_list():
     # specify center as list
@@ -138,4 +143,11 @@ def test_abstract_scatterer():
                   [1, 2, 3]) 
 
 
-    
+@attr('fast')
+def test_MovingSphere():
+    s = MovingSphere(center=(1e-6, -1e-6, 10e-6), v_x = 1.0, int_time=10e-6)
+    # test an odd number of smear steps
+    MovingSphere(center=(1e-6, -1e-6, 10e-6), v_x = 1.0, int_time=10e-6, n_smear=11)
+    assert_equal(repr(s), 'MovingSphere(center=[9.9999999999999995e-07, '
+                 '-9.9999999999999995e-07, 1.0000000000000001e-05], n=1.59, '
+                 'r=5e-07)')

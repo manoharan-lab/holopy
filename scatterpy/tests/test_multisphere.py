@@ -27,7 +27,7 @@ import numpy as np
 hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
 sys.path.append(hp_dir)
 
-from nose.tools import assert_raises
+from nose.tools import assert_raises, with_setup
 from numpy.testing import assert_equal, assert_array_almost_equal, assert_almost_equal
 
 
@@ -42,7 +42,7 @@ from scatterpy.errors import UnrealizableScatterer, TheoryNotCompatibleError
 import scatterpy
 
 
-def setup():
+def setup_model():
     global xoptics, yoptics, scaling_alpha, radius, n_particle_imag
     global n_particle_real, x, y, z, imshape, wavelen
     
@@ -74,7 +74,7 @@ def setup():
 
     imshape = 128
 
-def teardown():
+def teardown_model():
     global xoptics, yoptics, scaling_alpha, radius, n_particle_imag
     global n_particle_real, x, y, z, imshape, wavelen
 
@@ -82,6 +82,7 @@ def teardown():
     del n_particle_real, x, y, z, imshape, wavelen
     
 @attr('fast')
+@with_setup(setup=setup_model, teardown=teardown_model)
 def test_construction():
     # test constructor to make sure it works properly and calls base
     # class constructor properly
@@ -97,6 +98,7 @@ def test_construction():
     assert_equal(theory.qeps2, 1e-8)
 
 
+@with_setup(setup=setup_model, teardown=teardown_model)
 def test_polarization():
     # test holograms for orthogonal polarizations; make sure they're
     # not the same, nor too different from one another.
@@ -124,6 +126,7 @@ def test_polarization():
     return xholo, yholo
     
 
+@with_setup(setup=setup_model, teardown=teardown_model)
 def test_2_sph():
     sc = SphereCluster(spheres=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07),
@@ -140,6 +143,7 @@ def test_2_sph():
     assert_almost_equal(holo.std(), 0.09558537595025796)
 
 @attr('fast')
+@with_setup(setup=setup_model, teardown=teardown_model)
 def test_invalid():
     sc = SphereCluster(spheres=[Sphere(center=[7.1, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07),

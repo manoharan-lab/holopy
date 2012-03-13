@@ -29,17 +29,14 @@ TODO: a general MovingScatterer class?
 import mie_f.mieangfuncs as mieangfuncs
 import mie_f.miescatlib as miescatlib
 import numpy as np
-from mie_f.mieangfuncs import singleholo
-from mie_f.miescatlib import nstop, scatcoeffs
 
 from holopy.hologram import Hologram
 from scatterpy.errors import TheoryNotCompatibleError, UnrealizableScatterer
-from scatterpy.scatterer import Sphere, Composite
+from scatterpy.scatterer import Sphere
 from scatterpy.scatterer.movingsphere import MovingSphere
 from scatterpy.theory.scatteringtheory import ScatteringTheory, ElectricField
 from scatterpy.theory.scatteringtheory import interfere_at_detector
 #from scatterpy.theory.scatteringtheory import Mie
-from holopy.utility.helpers import _ensure_array
 
 class MieSmear(ScatteringTheory):
     """
@@ -108,7 +105,7 @@ class MieSmear(ScatteringTheory):
             return sphere_field(scatterer, scat_coeffs)
         else: raise TheoryNotCompatibleError(self, scatterer)
 
-    def calc_holo(self, scatterer, alpha):
+    def calc_holo(self, scatterer, alpha=1.0):
         '''
         Superpose hologram intensities from each of the constituent spheres.
         Divide by number of smeared spheres.

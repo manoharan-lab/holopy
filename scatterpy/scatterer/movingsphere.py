@@ -28,10 +28,10 @@ from its components.
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 '''
 
+#COVERAGE: All lines not covered by tests should be on their way out in refactor
+
 from scatterpy.scatterer.sphere import Sphere
-from scatterpy.scatterer import Scatterer
 from scatterpy.scatterer.composite import Composite
-#from spherecluster import SphereCluster
 import numpy as np
 from numpy import arange, floor
 

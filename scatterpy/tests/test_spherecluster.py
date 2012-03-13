@@ -56,6 +56,17 @@ def test_SphereCluster_construction():
     assert_((sc.n == n).all() and (sc.r == r).all() and (sc.x == x).all() and 
             (sc.y == y).all() and (sc.z == z).all())
 
+
+    # test attribute access
+    sc.n
+    sc.n_real
+    sc.n_imag
+    sc.r
+    sc.x
+    sc.y
+    sc.z
+    sc.centers
+    
     # construct from arrays
     na = np.array(n)
     ra = np.array(r)

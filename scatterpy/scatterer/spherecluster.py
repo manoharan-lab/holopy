@@ -188,6 +188,9 @@ class SphereCluster(Composite):
     def center(self):
         return self.centers.mean(0)
 
+# TODO: Move this code out of scatterer? It sort of has more to do with how
+# clusters move than pure geometry
+    
 def rotate(cluster, theta, phi, psi):
     com = cluster.centers.mean(0)
         

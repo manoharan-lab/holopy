@@ -1,12 +1,12 @@
 import holopy
 import os
 import numpy
-import re
 import yaml
 from scatterpy.theory.scatteringtheory import ElectricField
 
 from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
                            assert_allclose)
+import numpy.testing
 
 
 wavelen = 658e-9
@@ -28,6 +28,15 @@ xoptics = holopy.optics.Optics(wavelen=wavelen, index=index,
 
 optics=yoptics
 
+def assert_allclose(actual, desired, err_msg='', verbose=True):
+    if isinstance(actual, ElectricField):
+        actual = actual._array()
+    if isinstance(desired, ElectricField):
+        desired = desired._array()
+        
+    numpy.testing.assert_allclose(actual, desired, err_msg=err_msg,
+                        verbose=verbose)
+
 class DataNotPresent(Exception):
     def __init__(self, name):
         self.name = name
@@ -41,10 +50,7 @@ def verify(result, name):
     gold_name = os.path.join('gold', 'gold_'+name)
     if os.path.exists(gold_name + '.npy'):
         gold = numpy.load(gold_name + '.npy')
-        if isinstance(result, ElectricField):
-            assert_allclose(result._array(), gold)
-        else:
-            assert_allclose(result, gold)
+        assert_allclose(result, gold)
 
     gold = yaml.load(file(gold_name+'.yaml'))
 
