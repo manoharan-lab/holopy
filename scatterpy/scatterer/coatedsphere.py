@@ -24,8 +24,10 @@ Defines CoatedSphere, a scattering primitive
 '''
 
 import numpy as np
-from scatterpy.scatterer import Scatterer
 from scatterpy.scatterer.ellipsoid import SingleCenterScatterer
+
+#TODO: failed tests are all things I think we are refactoring away -
+# tgd 2012-03-13
 
 class CoatedSphere(SingleCenterScatterer):
     '''
