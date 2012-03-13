@@ -37,15 +37,6 @@ def assert_allclose(actual, desired, err_msg='', verbose=True):
     numpy.testing.assert_allclose(actual, desired, err_msg=err_msg,
                         verbose=verbose)
 
-class DataNotPresent(Exception):
-    def __init__(self, name):
-        self.name = name
-    def message(self, context):
-        return "External data not present, skipping correctness testing for \
-{0}".format(context)
-    def __str__(self):
-        return "External data file {0} not found".format(self.name)
-
 def verify(result, name):
     gold_name = os.path.join('gold', 'gold_'+name)
     if os.path.exists(gold_name + '.npy'):
@@ -61,24 +52,6 @@ def verify(result, name):
         else:
             assert_almost_equal(getattr(result, key)(), val)
     
-def get_data(name):
-    name = name + '.npy'
-    try:
-        return numpy.load(os.path.join('golds',name))
-    except IOError:
-        raise DataNotPresent(name)
-
-
-def compare_to_data(calc, name):
-    try:
-        gold = get_data(name)
-    except DataNotPresent as e:
-        print e
-
-    if isinstance(calc, ElectricField):
-        assert_array_almost_equal(calc._array(), gold)
-    else:
-        assert_array_almost_equal(calc, gold)
 
 def make_golds(result, name):
     '''
@@ -94,7 +67,10 @@ def make_golds(result, name):
     '''
     
     gold_name = 'gold_'+name
-    numpy.save(gold_name+'.npy', result)
+    if isinstance(result, ElectricField):
+        numpy.save(gold_name+'.npy', result._array())
+    else:
+        numpy.save(gold_name+'.npy', result)
 
     gold_dict = {}
 

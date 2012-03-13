@@ -22,3 +22,6 @@ scatterpy/tests/gold/gold_single_holo.npy
 scatterpy/tests/gold/gold_two_spheres_samez_holo.npy
 scatterpy/tests/gold/gold_two_spheres_samez_intensity.npy
 scatterpy/tests/gold/golds.tgz
+scatterpy/tests/gold/gold_mie_multiple_fields.npy
+scatterpy/tests/gold/gold_mie_multiple_holo.npy
+scatterpy/tests/gold/gold_smear.npy

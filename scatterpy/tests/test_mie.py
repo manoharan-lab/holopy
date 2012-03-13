@@ -41,8 +41,6 @@ from scatterpy.theory import Mie
 from scatterpy.theory.mie import UnrealizableScatterer
 from scatterpy.errors import TheoryNotCompatibleError
 import common
-from common import compare_to_data
-
 
 # nose setup/teardown methods
 def setup_model():
@@ -124,35 +122,8 @@ def test_single_sphere():
                  "radius is negative")
 
     # large radius (calculation not attempted because it would take forever
-
     assert_raises(UnrealizableScatterer, xmodel.calc_holo, Sphere(r=1))
  
-
-
-@attr('fast')
-@with_setup(setup=setup_model, teardown=teardown_model)
-def test_Mie_single():
-    # try it with a single sphere first
-    sc = Sphere(n=1.59, r=5e-7, x=1e-6, y=-1e-6, z=10e-6)
-    theory = Mie(imshape=128, optics=optics)
-
-    fields = theory.calc_field(sc)
-    assert_allclose([fields.x_comp.sum(), fields.y_comp.sum(),
-                     fields.z_comp.sum()],
-                     [-6.92794586e-03+0.08415903j,  
-                      -2.28585806e+01-1.42972922j,
-                      2.56233512e+00+1.18868358j])
-    assert_allclose([fields.x_comp.std(),
-                     fields.y_comp.std(),fields.z_comp.std()],
-                    [0.0024371296061972384,
-                     0.044179364188274006,
-                     0.012691656014223607])
-    
-    theory.calc_intensity(sc)
-    
-    holo = theory.calc_holo(sc)
-    assert_almost_equal(holo.sum(), 16370.390727161264)
-    assert_almost_equal(holo.std(), 0.061010648908953205)
 
 
 @attr('fast')
@@ -165,22 +136,12 @@ def test_Mie_multiple():
     theory = Mie(imshape=128, optics=optics)
 
     fields = theory.calc_field(sc)
-    assert_allclose([fields.x_comp.sum(), fields.y_comp.sum(),
-                     fields.z_comp.sum()],
-                    [(0.0071378971541543289+0.082689606560838652j),
-                     (-490.32038052262499-3.1134313018817421j),
-                     (2.336770696224467+1.2237755614295063j)])
-    assert_allclose([fields.x_comp.std(),
-                     fields.y_comp.std(),fields.z_comp.std()],
-                    [0.01040974038137019,
-                     0.23932970855985464,
-                     0.047290610049841725])
-    
+
+    common.verify(fields, 'mie_multiple_fields')
     theory.calc_intensity(sc)
 
     holo = theory.calc_holo(sc)
-    assert_almost_equal(holo.sum(), 16358.263330873539)
-    assert_almost_equal(holo.std(), 0.21107984880858663)
+    common.verify(holo, 'mie_multiple_holo')
 
     # should throw exception when fed a coated sphere
     with assert_raises(TheoryNotCompatibleError) as cm:
@@ -301,32 +262,6 @@ def test_nonlinearity():
 
     # uncomment to debug
     #return holo_1, holo_2, holo_super
-
-@attr('fast')
-@with_setup(setup=setup_model, teardown=teardown_model)
-def test_two_spheres_samez():
-    # put a second sphere in the same plane as the first.  This only
-    # tests that the function returns.
-    x2 = x*2
-    y2 = y*2
-    z2 = z
-    sphere1 = Sphere(n=n, r=radius, x=x, y=y, z=z)
-    sphere2 = Sphere(n=n, r=radius, x=x2, y=y2, z=z2)
-
-    sc = SphereCluster(spheres = [sphere1, sphere2])
-    model = xmodel
-    
-    holo = model.calc_holo(sc, alpha=scaling_alpha)
-    intensity = model.calc_intensity(sc)
-
-    common.verify(holo, 'two_spheres_samez_holo')
-    common.verify(intensity, 'two_spheres_samez_intensity')
-    
-    #    compare_to_data(holo, 'gold_two_spheres_samez_holo')
-    #compare_to_data(intensity, 'gold_two_spheres_samez_intensity')
-
-    # uncomment to debug
-    #return holo
 
 @attr('fast')
 @with_setup(setup=setup_model, teardown=teardown_model)
