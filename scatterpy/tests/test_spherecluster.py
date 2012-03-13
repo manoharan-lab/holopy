@@ -30,7 +30,6 @@ from nose.plugins.attrib import attr
 from scatterpy.scatterer import Sphere, CoatedSphere, Scatterer
 from scatterpy.scatterer import Composite, SphereCluster
 from scatterpy.errors import ScattererDefinitionError, InvalidScattererSphereOverlap
-from common import ErrorExpected
 
 
 @attr('fast')
@@ -68,12 +67,12 @@ def test_SphereCluster_construction():
             (sc.y == y).all() and (sc.z == z).all())
 
     # __init__ should throw an exception if arrays are wrong sizes
-    assert_raises(ScattererDefinitionError, lambda:
-                      SphereCluster(n=n, r=r, x=x, y=y, z=0))
-    assert_raises(ScattererDefinitionError, lambda: 
-                  SphereCluster(n=n, r=r, centers=[0,0,0]))
-    assert_raises(ScattererDefinitionError, lambda:
-                  SphereCluster(n=n, r=r[:-1], x=x, y=y, z=z))
+    assert_raises(ScattererDefinitionError, SphereCluster, n=n, r=r, x=x, y=y,
+                  z=0) 
+    assert_raises(ScattererDefinitionError, SphereCluster, n=n, r=r,
+                  centers=[0,0,0])
+    assert_raises(ScattererDefinitionError, SphereCluster, n=n, r=r[:-1], x=x,
+                  y=y, z=z)
     
     
     # should be okay if all arrays are the same size
@@ -81,10 +80,10 @@ def test_SphereCluster_construction():
     assert_((sc.n == n).all() and (sc.r == r).all())
     assert_equal(sc.centers[0], np.ones(3))
     # but throw error if they're different
-    assert_raises(ScattererDefinitionError, lambda: 
-                  SphereCluster(n=n, r=r, centers=np.ones((3,3))))
-    assert_raises(ScattererDefinitionError, lambda: 
-                  SphereCluster(n=n, r=r, centers=np.ones((5,3))))
+    assert_raises(ScattererDefinitionError, SphereCluster, n=n, r=r,
+                  centers=np.ones((3,3)))
+    assert_raises(ScattererDefinitionError, SphereCluster, n=n, r=r,
+                  centers=np.ones((5,3)))
 
     # test for single sphere only
     sc = SphereCluster(n=1.59, r=1e-6, 
@@ -140,10 +139,15 @@ def test_SphereCluster_construction_typechecking():
 def test_SphereCluster_ovelap_checking():
     s1 = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
     sc = SphereCluster([s1, s1, s1])
-    try:
-       sc.validate()
-       raise ErrorExpected('cluster with overlaping spheres should fail validation')
-    except InvalidScattererSphereOverlap as e:
-        assert_(str(e), "SphereCluster(spheres=[Sphere(center=[9.9999999999999995e-07, -9.9999999999999995e-07, 1.0000000000000001e-05], n=1.59, r=5e-07), Sphere(center=[9.9999999999999995e-07, -9.9999999999999995e-07, 1.0000000000000001e-05], n=1.59, r=5e-07), Sphere(center=[9.9999999999999995e-07, -9.9999999999999995e-07, 1.0000000000000001e-05], n=1.59, r=5e-07)]) has overlaps between spheres: [(0, 1), (0, 2), (1, 2)]")
 
+    with assert_raises(InvalidScattererSphereOverlap) as cm:
+        sc.validate()
+    assert_equal(str(cm.exception), "SphereCluster(spheres=[Sphere(center="
+                 "[9.9999999999999995e-07, -9.9999999999999995e-07, "
+                 "1.0000000000000001e-05], n=1.59, r=5e-07), Sphere(center="
+                 "[9.9999999999999995e-07, -9.9999999999999995e-07, "
+                 "1.0000000000000001e-05], n=1.59, r=5e-07), Sphere(center="
+                 "[9.9999999999999995e-07, -9.9999999999999995e-07, "
+                 "1.0000000000000001e-05], n=1.59, r=5e-07)]) has overlaps "
+                 "between spheres: [(0, 1), (0, 2), (1, 2)]")
 

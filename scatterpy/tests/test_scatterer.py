@@ -28,12 +28,11 @@ from nose.plugins.attrib import attr
 
 from scatterpy.scatterer import Sphere, CoatedSphere, Scatterer
 from scatterpy.scatterer import Composite, SphereCluster
-from scatterpy.errors import ScattererDefinitionError, InvalidScattererSphereOverlap
-from common import ErrorExpected
+from scatterpy.errors import ScattererDefinitionError , InvalidScattererSphereOverlap
 
 @attr('fast')
 def test_Scatterer_construction():
-    assert_raises(NotImplementedError, lambda:  Scatterer())
+    assert_raises(NotImplementedError, Scatterer)
 
 @attr('fast')
 def test_Sphere_construction():
@@ -42,6 +41,12 @@ def test_Sphere_construction():
     # index can be complex
     s = Sphere(n = 1.59+0.0001j, r = 5e-7)
     s = Sphere()
+
+    with assert_raises(ScattererDefinitionError) as cm:
+        Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = None)
+    assert_equal(str(cm.exception), "Error defining scatterer object of type "
+                 "Sphere.\nInvalid center specification, neither valid center "
+                 "tuple or x, y, z values supplied")
 
 @attr('fast')
 def test_Sphere_construct_list():
@@ -64,11 +69,11 @@ def test_Sphere_construct_array():
     s = Sphere(n = 1.59+0.0001j, r = 5e-7, center = center)
     assert_equal(s.center, center)
 
-    try:
+    with assert_raises(ScattererDefinitionError) as cm:
         Sphere(center = 1)
-        raise ErrorExpected('Sphere with only 1 center coordinate is not valid')
-    except ScattererDefinitionError as e:
-            assert_(str(e), "Error defining scatterer object of type Sphere. center specified as 1, center should be specified as (x, y, z)")
+    assert_equal(str(cm.exception), "Error defining scatterer object of type "
+                 "Sphere.\ncenter specified as 1, center should be specified "
+                 "as (x, y, z)")
 
 @attr('fast')
 def test_Sphere_construct_params():
@@ -128,6 +133,9 @@ def test_abstract_scatterer():
     
     s = Dummy()
 
-    assert_raises(NotImplementedError, lambda : s.parameter_list)
-    assert_raises(NotImplementedError,
-                  lambda : Scatterer.make_from_parameter_list([1, 2, 3]))
+    assert_raises(NotImplementedError, lambda: s.parameter_list)
+    assert_raises(NotImplementedError, Scatterer.make_from_parameter_list,
+                  [1, 2, 3]) 
+
+
+    

@@ -36,7 +36,6 @@ from scatterpy.theory.scatteringtheory import (ScatteringTheory, ElectricField,
 from scatterpy.errors import TheoryNotCompatibleError
 
 import common
-from common import ErrorExpected    
 
 # nose setup/teardown methods
 def setup_optics():
@@ -95,17 +94,6 @@ def test_Mie_single():
     assert_almost_equal(holo.sum(), 16370.390727161264)
     assert_almost_equal(holo.std(), 0.061010648908953205)
 
-    # TODO: These tests no strictly longer apply because optics is a mandatory
-    # parameter of theory, modify or remove
-#    # this shouldn't work because the theory doesn't know the pixel
-#    # scale or medium index
-#    theory = Mie(imshape=128)
-#    assert_raises(WavelengthNotSpecified, lambda:
-#                      theory.calc_field(sc))
-#    assert_raises(WavelengthNotSpecified, lambda:
-#                      theory.calc_intensity(sc)) 
-#    assert_raises(WavelengthNotSpecified, lambda:
-#                      theory.calc_holo(sc)) 
 
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
@@ -135,32 +123,27 @@ def test_Mie_multiple():
     assert_almost_equal(holo.std(), 0.21107984880858663)
 
     # should throw exception when fed a coated sphere
-    try:
+    with assert_raises(TheoryNotCompatibleError) as cm:
         theory.calc_field(CoatedSphere())
-        raise ErrorExpected('mie should reject a CoatedSphere')
-    except TheoryNotCompatibleError as e:
-        assert_(str(e), "The implementation of the Mie scattering theory doesn't know how to handle scatterers of type CoatedSphere")
-
-    assert_raises(TheoryNotCompatibleError, lambda: 
-                  theory.calc_field(CoatedSphere()))
-    assert_raises(TheoryNotCompatibleError, lambda: 
-                  theory.calc_intensity(CoatedSphere()))
-    assert_raises(TheoryNotCompatibleError, lambda: 
-                  theory.calc_holo(CoatedSphere()))
+    assert_equal(str(cm.exception), "The implementation of the Mie scattering "
+                 "theory doesn't know how to handle scatterers of type "
+                 "CoatedSphere")
+    
+    assert_raises(TheoryNotCompatibleError, theory.calc_field, CoatedSphere())
+    assert_raises(TheoryNotCompatibleError, theory.calc_intensity,
+                  CoatedSphere())
+    assert_raises(TheoryNotCompatibleError, theory.calc_holo, CoatedSphere())
     # and when the list of scatterers includes a coated sphere
     sc.add(CoatedSphere())
-    assert_raises(TheoryNotCompatibleError, lambda: 
-                  theory.calc_field(sc))
-    assert_raises(TheoryNotCompatibleError, lambda: 
-                  theory.calc_intensity(sc))
-    assert_raises(TheoryNotCompatibleError, lambda: 
-                  theory.calc_holo(sc))
+    assert_raises(TheoryNotCompatibleError, theory.calc_field, sc)
+    assert_raises(TheoryNotCompatibleError, theory.calc_intensity, sc)
+    assert_raises(TheoryNotCompatibleError, theory.calc_holo, sc)
 
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_abstract_theory():
     theory = ScatteringTheory(optics)
 
-    assert_raises(NotImplementedError, lambda : theory.calc_field(Sphere()))
+    assert_raises(NotImplementedError, theory.calc_field, Sphere())
 
 
 def test_ElectricField():
@@ -171,20 +154,15 @@ def test_ElectricField():
     e1 = ElectricField(x, y, z, 0, .66)
     e2 = ElectricField(x, y, z, 0, .7)
 
-    try:
-        e3 = e1 * e1
-        raise ErrorExpected('Electric fields should not be able to multiply '
-                            'nonscalars')
-    except InvalidElectricFieldComputation as e:
-        assert_(str(e), 'Invalid Electric Computation: multiplication by '
-                'nonscalar values not yet implemented')
+    with assert_raises(InvalidElectricFieldComputation) as cm:
+        e1 * e1
+    assert_equal(str(cm.exception), "Invalid Electric Computation: "
+                 "multiplication by nonscalar values not yet implemented")
 
-    try:
-        e3 = e1 + e2
-        raise ErrorExpected('Electric fields should not allow addition with '
-                            'different wavelengths')
-    except InvalidElectricFieldComputation as e:
-        assert_(str(e), 'Invalid Electric Computation: Superposition of fields '
-                'with different wavelengths is not implemented')
+    with assert_raises(InvalidElectricFieldComputation) as cm:
+        e1 + e2
+    assert_equal(str(cm.exception), "Invalid Electric Computation: "
+                 "Superposition of fields with different wavelengths is not "
+                 "implemented")
 
     assert_(e1 * 2.0, 2.0 * e1)

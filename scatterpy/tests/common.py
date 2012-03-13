@@ -74,12 +74,6 @@ def compare_to_data(calc, name):
     else:
         assert_array_almost_equal(calc, gold)
 
-class ErrorExpected(Exception):
-    def __init__(self, msg):
-        self.msg = msg
-    def __str__(self):
-        return "Expected an Error:" + self.msg
-
 def make_golds(result, name):
     '''
     Make new golds for a test

@@ -148,22 +148,22 @@ def test_invalid():
 
     theory = Multisphere(xoptics, imshape)
 
-    assert_raises(UnrealizableScatterer, lambda: theory.calc_holo(sc))
+    assert_raises(UnrealizableScatterer, theory.calc_holo, sc)
     
     sc = SphereCluster(spheres=[Sphere(center=[7.1, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-01),
                                 Sphere(center=[6e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07)])
     
-    assert_raises(UnrealizableScatterer, lambda: theory.calc_holo(sc))
+    assert_raises(UnrealizableScatterer, theory.calc_holo, sc)
 
     sc.scatterers[0].r = -1
 
-    assert_raises(UnrealizableScatterer, lambda: theory.calc_holo(sc))
+    assert_raises(UnrealizableScatterer, theory.calc_holo, sc)
 
     cs = scatterpy.scatterer.CoatedSphere()
 
-    assert_raises(TheoryNotCompatibleError, lambda: theory.calc_holo(cs))
+    assert_raises(TheoryNotCompatibleError, theory.calc_holo, cs)
 
 """
 def test_single_sphere():
