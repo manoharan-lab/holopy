@@ -27,7 +27,8 @@ from numpy.testing import assert_equal
 from nose.plugins.attrib import attr
 
 from scatterpy.scatterer import (Sphere, CoatedSphere, Scatterer, Ellipsoid,
-                                 Composite, MovingSphere)
+                                 Composite, MovingSphere, abstract_scatterer)
+
 from scatterpy.errors import ScattererDefinitionError
 
 @attr('fast')
@@ -44,9 +45,9 @@ def test_Sphere_construction():
 
     with assert_raises(ScattererDefinitionError) as cm:
         Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = None)
-    assert_equal(str(cm.exception), "Error defining scatterer object of type "
-                 "Sphere.\nInvalid center specification, neither valid center "
-                 "tuple or x, y, z values supplied")
+    assert_equal(str(cm.exception), 'Error defining scatterer object of type '
+                 'Sphere.\ncenter specified as x=1e-06, y=-1e-06, z=None, '
+                 'center should be specified as (x, y, z)')
 
 def test_Ellipsoid_construction():
     s = Ellipsoid(n = 1.57, r = (1, 2, 3), center = (3, 2, 1))
@@ -151,3 +152,26 @@ def test_MovingSphere():
     assert_equal(repr(s), 'MovingSphere(center=[9.9999999999999995e-07, '
                  '-9.9999999999999995e-07, 1.0000000000000001e-05], n=1.59, '
                  'r=5e-07)')
+
+@attr('fast')
+def test_xyzTriple():
+    xyzTriple = abstract_scatterer.xyzTriple
+    # Three ways to init an xyzTriple, should all give the same result
+    c_1 = xyzTriple(1, 2, 3)
+    c_2 = xyzTriple(x=1, y=2, z=3)
+    c_3 = xyzTriple(xyz = (1, 2, 3))
+
+    assert_equal(c_1, c_2)
+    assert_equal(c_3, c_1)
+
+    # Now confirm that it rejects bad input
+    with assert_raises(abstract_scatterer.InvalidxyzTriple) as cm:
+        xyzTriple(1)
+    assert_equal(str(cm.exception), "Specification of xyzTriple(x=1, "
+                 "y=None, z=None) is not valid, should be specified as "
+                 "(x, y, z)")
+    assert_raises(abstract_scatterer.InvalidxyzTriple, xyzTriple, xyz = 1)
+    assert_raises(abstract_scatterer.InvalidxyzTriple, xyzTriple, xyz = [1])
+
+    assert_equal(c_1.parameters, {'x': 1, 'y': 2, 'z' : 3})
+    assert_equal(c_1.parameters_prefix('r'), {'r_x': 1, 'r_y': 2, 'r_z' : 3})

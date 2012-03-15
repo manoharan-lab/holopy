@@ -28,7 +28,6 @@ import holopy as hp
 from numpy.testing import assert_array_almost_equal
 from nose.tools import with_setup, assert_raises
 import os
-import string
 from nose.plugins.attrib import attr
 
 from scatterpy.scatterer import Sphere, SphereCluster

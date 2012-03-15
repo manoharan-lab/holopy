@@ -26,6 +26,7 @@ defined center.
 import numpy as np
 from scatterpy.scatterer import Scatterer
 from scatterpy.errors import ScattererDefinitionError
+from scatterpy.scatterer.abstract_scatterer import xyzTriple, InvalidxyzTriple
 
 class SingleCenterScatterer(Scatterer):
     """
@@ -40,25 +41,11 @@ class SingleCenterScatterer(Scatterer):
     """
     
     def __init__(self, x = None, y = None, z = None, center = None):
-        self.center = self._construct_xyz_tuple(x, y, z, center, 'center')
-
-    def _construct_xyz_tuple(self, x, y, z, xyz, name_for_errors='parameter'):
-        """
-        supports allowing users to specify values along the three axes either as
-        individual function arguments x, y, z, or as a single tuple, xyz
-        """
-        if xyz is not None:
-            if np.isscalar(xyz) or len(xyz) != 3:
-                raise ScattererDefinitionError(
-                    "{1} specified as {0}, {1} should be specified as (x,"
-                    " y, z)".format(xyz, name_for_errors), self)
-            return np.array(xyz)
-        elif (x is not None) and (y is not None) and (z is not None):
-            return np.array([x, y, z])
-        else:
-            raise ScattererDefinitionError(
-                "Invalid {0} specification, neither valid {0} tuple or "
-                "x, y, z values supplied".format(name_for_errors), self)
+        try:
+            self.center = xyzTriple(x, y, z, center)
+        except InvalidxyzTriple as e:
+            raise ScattererDefinitionError("center specified as {0}, center "
+                "should be specified as (x, y, z)".format(e.xyz), self)
 
     @property
     def x(self):
@@ -92,7 +79,7 @@ class Ellipsoid(SingleCenterScatterer):
     def __init__(self, n, r_x=None, r_y=None, r_z=None, x=None, y=None, z=None,
                  r=None, center=None):
         self.n = n
-        self.r = self._construct_xyz_tuple(r_x, r_y, r_z, r, 'r')
+        self.r = xyzTriple(r_x, r_y, r_z, r)
         
         super(Ellipsoid, self).__init__(x, y, z, center)
 
