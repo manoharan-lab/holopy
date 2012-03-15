@@ -107,6 +107,11 @@ class Scatterer(Serializable):
         # This will need to be overriden for subclasses that do anything
         # complicated with parameters
         return cls.__init__(**parameters)
+
+    def __repr__(self):
+        return "{0}({1})".format(self.__class__.__name__,
+                                 ', '.join(['='.join([str(p) for p in par]) for
+                                            par in self.parameters.items()]))
     
     @property
     def parameter_list(self):
@@ -158,6 +163,9 @@ class xyzTriple(np.ndarray):
         for i, c in enumerate(('x', 'y', 'z')):
             p['{0}_{1}'.format(prefix, c)] = self[i]
         return p
+
+    def __str__(self):
+        return str(list(self))
         
 
 class InvalidxyzTriple(Exception):

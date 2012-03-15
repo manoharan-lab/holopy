@@ -27,8 +27,8 @@ from nose.tools import raises, assert_raises
 from numpy.testing import assert_, assert_equal, assert_almost_equal
 from nose.plugins.attrib import attr
 
-from scatterpy.scatterer import Sphere, CoatedSphere, Scatterer
-from scatterpy.scatterer import Composite, SphereCluster
+from scatterpy.scatterer import Sphere, CoatedSphere
+from scatterpy.scatterer import SphereCluster
 from scatterpy.errors import ScattererDefinitionError, InvalidScattererSphereOverlap
 
 

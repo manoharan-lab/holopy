@@ -65,13 +65,6 @@ class CoatedSphere(SingleCenterScatterer):
     parameter_names_list = ['n1.real', 'n1.imag', 'n2.real', 'n2.imag', 'r1',
                             'r2', 'x', 'y', 'z'] 
 
-    def __repr__(self):
-        '''
-        Outputs the object parameters in a way that can be typed into
-        the python interpreter
-        '''
-        return "{c}(center={center}, n1={n1}, n2={n2}, r1={r1}, r2={r2})".format(c=self.__class__.__name__, center=repr(self.center), n1=self.n1, n2=self.n2, r1=self.r1, r2=self.r2)
-
     @property
     def parameter_list(self):
         return np.array([self.n1.real, self.n1.imag, self.n2.real, self.n2.imag,

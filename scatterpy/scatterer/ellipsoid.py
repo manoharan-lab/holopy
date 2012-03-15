@@ -82,8 +82,3 @@ class Ellipsoid(SingleCenterScatterer):
         self.r = xyzTriple(r_x, r_y, r_z, r)
         
         super(Ellipsoid, self).__init__(x, y, z, center)
-
-    def __repr__(self):
-        return ('{0}(n={n}, r={r}, center={center})'.format(
-            self.__class__.__name__, n=self.n, r = list(self.r),  center =
-            list(self.center))) 

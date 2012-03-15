@@ -57,15 +57,6 @@ class Sphere(SingleCenterScatterer):
 
     parameter_names_list = ['n.real', 'n.imag', 'r', 'x', 'y', 'z']
 
-    def __repr__(self):
-        '''
-        Outputs the object parameters in a way that can be typed into
-        the python interpreter
-        '''
-        return "{c}(center={center}, n={n}, r={r})".format(
-            c=self.__class__.__name__, center=repr(list(self.center)), n=self.n,
-            r=self.r)
-
     
     @property
     def parameter_list(self):
