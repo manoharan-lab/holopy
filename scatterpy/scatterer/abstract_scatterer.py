@@ -22,7 +22,7 @@ The abstract base class for all scattering objects
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 from collections import OrderedDict
-
+from itertools import chain
 
 import numpy as np
 import yaml
@@ -61,6 +61,7 @@ class Scatterer(Serializable):
         # checking or other validity constraints override this
         return True
 
+
     @property
     def parameters(self):
         """
@@ -84,8 +85,20 @@ class Scatterer(Serializable):
         # we return an OrderedDict to make it easer to keep parameters in the
         # same order in cases where a list of parameters is needed and will be
         # later passed to Scatterer.from_parameters
-    
-        return OrderedDict(sorted(self.__dict__.items(), key = lambda t: t[0]))
+
+        sub_pars = []
+        
+        for key, par in self.__dict__.iteritems():
+            if hasattr(par, 'parameters'):
+                sub_pars.append((('center.{0}'.format(p[0]), p[1]) for p in
+                            par.parameters.iteritems()))
+            elif np.iscomplex(par):
+                sub_pars.append([('{0}.real'.format(key), par.real),
+                                 ('{0}.imag'.format(key), par.imag)])
+            else:
+                sub_pars.append([(key, par)])
+
+        return OrderedDict(sorted(chain(*sub_pars), key = lambda t: t[0]))
 
 
     @classmethod
@@ -106,12 +119,25 @@ class Scatterer(Serializable):
         """
         # This will need to be overriden for subclasses that do anything
         # complicated with parameters
-        return cls.__init__(**parameters)
+
+        collected = {}
+
+        for key, val in parameters.iteritems():
+            tok = key.split('.', 1)
+            if len(tok) > 1:
+                if collected.get(tok[0]):
+                    collected[tok[0]][tok[1]] = val
+                else:
+                    collected[tok[0]] = {tok[1] : val}
+            else:
+                collected[key] = val
+
+        return cls(**collected)
 
     def __repr__(self):
-        return "{0}({1})".format(self.__class__.__name__,
-                                 ', '.join(['='.join([str(p) for p in par]) for
-                                            par in self.parameters.items()]))
+        return "{0}({1})".format(self.__class__.__name__, ', '.join(
+            ['='.join([str(p) for p in par]) for par in
+             sorted(self.__dict__.iteritems())])) 
     
     @property
     def parameter_list(self):
@@ -141,6 +167,8 @@ class xyzTriple(np.ndarray):
         if xyz is not None:
             if np.isscalar(xyz) or len(xyz) != 3:
                 raise InvalidxyzTriple(repr(xyz))
+            if isinstance(xyz, dict):
+                xyz = [xyz['x'], xyz['y'], xyz['z']]
         elif (x is not None) and (y is not None) and (z is not None):
             xyz =  np.array([x, y, z])
         else:
@@ -154,15 +182,21 @@ class xyzTriple(np.ndarray):
     def __array_wrap__(self, out_arr, context=None):
         return np.ndarray.__array_wrap__(self, out_arr, context)
 
+
+    @property
+    def x(self):
+        return self[0]
+    @property
+    def y(self):
+        return self[1]
+    @property
+    def z(self):
+        return self[2]
+    
+    
     @property
     def parameters(self):
-        return {'x': self[0], 'y': self[1], 'z': self[2]}
-
-    def parameters_prefix(self, prefix):
-        p = {}
-        for i, c in enumerate(('x', 'y', 'z')):
-            p['{0}_{1}'.format(prefix, c)] = self[i]
-        return p
+        return {'x': self.x, 'y': self.y, 'z': self.z}
 
     def __str__(self):
         return str(list(self))

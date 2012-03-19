@@ -23,7 +23,6 @@ defined center.
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
-import numpy as np
 from scatterpy.scatterer import Scatterer
 from scatterpy.errors import ScattererDefinitionError
 from scatterpy.scatterer.abstract_scatterer import xyzTriple, InvalidxyzTriple

@@ -21,6 +21,8 @@ Test construction and manipulation of Scatterer objects.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
+from collections import OrderedDict
+
 import numpy as np
 from nose.tools import raises, assert_raises
 from numpy.testing import assert_equal
@@ -52,7 +54,7 @@ def test_Sphere_construction():
 def test_Ellipsoid_construction():
     s = Ellipsoid(n = 1.57, r = (1, 2, 3), center = (3, 2, 1))
 
-    assert_equal(str(s), 'Ellipsoid(center=[3, 2, 1], n=1.57, r=[1, 2, 3])')
+    assert_equal(str(s), 'Ellipsoid(r=[1, 2, 3], center=[3, 2, 1], n=1.57)')
     
 @attr('fast')
 def test_Sphere_construct_list():
@@ -82,10 +84,20 @@ def test_Sphere_construct_array():
                  "as (x, y, z)")
 
 @attr('fast')
-def test_Sphere_construct_params():
+def test_Sphere_parameters():
+    s = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
+    assert_equal(s.parameters, OrderedDict([('center.x',
+    9.9999999999999995e-07), ('center.y', -9.9999999999999995e-07),
+    ('center.z', 1.0000000000000001e-05), ('n', 1.59), ('r', 5e-07)]))
+
+    sp = Sphere.from_parameters(s.parameters)
+    assert s.r == sp.r
+    assert s.n == s.n
+    assert_equal(s.center, sp.center)
+    
     params = np.array([1.59, 1e-4, 5e-7, 1e-6, -1e-6, 10e-6])
-    s = Sphere.make_from_parameter_list(params)
-    assert_equal(s.parameter_list, params)
+    s2 = s.make_from_parameter_list(params)
+    assert_equal(s2.parameter_list, params)
     
 @attr('fast')
 def test_CoatedSphere_construction():
@@ -175,3 +187,4 @@ def test_xyzTriple():
 
     assert_equal(c_1.parameters, {'x': 1, 'y': 2, 'z' : 3})
     assert_equal(c_1.parameters_prefix('r'), {'r_x': 1, 'r_y': 2, 'r_z' : 3})
+

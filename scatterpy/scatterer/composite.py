@@ -24,6 +24,9 @@ scatterers (e.g. two trimers).
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
+from collections import OrderedDict
+
+import scatterpy
 from sphere import Sphere
 from scatterpy.scatterer import Scatterer
 
@@ -68,6 +71,38 @@ class Composite(Scatterer):
                 components.append(s)
         return components
 
+    @property
+    def parameters(self):
+        d = {}
+        for i, scatterer in enumerate(self.scatterers):
+            for key, par in scatterer.parameters.iteritems():
+                d['{0}:{1}.{2}'.format(i, scatterer.__class__.__name__, key)] = par
+        return OrderedDict(sorted(d.items(), key = lambda t: t[0]))
+
+    @classmethod
+    def from_parameters(cls, parameters):
+        collected = []
+        types = []
+        for key, val in parameters.iteritems():
+            n, spec = key.split(':', 1)
+            n = int(n)
+            scat_type, par = spec.split('.', 1)
+            if len(collected) > n:
+                collected[n][par] = val
+                assert types[n] == scat_type
+            else:
+                # this is only correct if the parameters are in order, but that
+                # should always be true
+                collected.append({par:val})
+                types.append(scat_type)
+
+        scatterers = []
+        for i, scat_type in enumerate(types):
+            scatterers.append(getattr(scatterpy.scatterer,
+                              scat_type).from_parameters(collected[i]))
+
+        return cls(scatterers)
+    
     def contains_only_spheres(self):
         """
         Returns True if the Composite object contains only spheres.
