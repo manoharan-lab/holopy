@@ -123,15 +123,6 @@ class BentTrimer(SphereCluster):
         parlist = np.append(parlist, other_params)
         return parlist
 
-    @classmethod
-    def make_from_parameter_list(cls, params):
-        n = array([params[0], params[6], params[9]]) + 1j * array([params[1],
-                                                                   params[7],
-                                                                   params[10]])
-        r = array([params[2], params[8], params[11]])
-        arg_arr= np.concatenate((params[3:6], params[12:]))
-        return cls(n, r, *arg_arr)
-        
 
 class RigidCluster(SphereCluster):
     '''
@@ -244,12 +235,6 @@ class RigidCluster(SphereCluster):
                                             self.euler_beta, self.euler_gamma, 
                                             self.gap]))
         return parlist
-
-    @classmethod
-    def make_from_parameter_list(cls, params):
-        n_spheres = (params.size - 8)/2. # 8 parameters besides indices
-        n = params[0:2*n_spheres:2] + 1j*params[1:2*n_spheres:2]
-        return cls(n, *params[2*n_spheres:])
 
 
 class Tetrahedron(RigidCluster):

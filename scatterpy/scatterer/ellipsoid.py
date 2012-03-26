@@ -63,7 +63,7 @@ class Ellipsoid(SingleCenterScatterer):
 
     Parameters
     ----------
-    n: float
+    n: complex
         Index of refraction
     r_x, r_y, r_z : float
         x, y, z semi-axes
@@ -77,7 +77,7 @@ class Ellipsoid(SingleCenterScatterer):
     
     def __init__(self, n, r_x=None, r_y=None, r_z=None, x=None, y=None, z=None,
                  r=None, center=None):
-        self.n = n
+        self.n = complex(n)
         self.r = xyzTriple(r_x, r_y, r_z, r)
         
         super(Ellipsoid, self).__init__(x, y, z, center)

@@ -36,7 +36,7 @@ class Sphere(SingleCenterScatterer):
     ----------
     n : float or complex
         Index of refraction of sphere
-    r : float
+    r : complex
         Radius of sphere
     x : float
         x-component of center
@@ -51,23 +51,7 @@ class Sphere(SingleCenterScatterer):
 
     def __init__(self, n = 1.59, r = 0.5e-6, x = 0.0, y = 0.0, z = 0.0, 
                  center = None):
-        self.n = n
+        self.n = complex(n)
         self.r = r
         super(Sphere, self).__init__(x, y, z, center)
-
-    parameter_names_list = ['n.real', 'n.imag', 'r', 'x', 'y', 'z']
-
-    
-    @property
-    def parameter_list(self):
-        """
-        Return sphere parameters in order: n, r, x, y, z
-        """
-        return np.array([self.n.real, self.n.imag, self.r, self.x, self.y,
-                         self.z])
-
-    @classmethod
-    def make_from_parameter_list(cls, params):
-        n = params[0] + 1.0j * params[1]
-        return cls(n, *params[2:])
 

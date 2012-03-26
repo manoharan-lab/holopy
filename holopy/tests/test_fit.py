@@ -23,10 +23,14 @@ Don't expect these tests to pass for a while
 
 '''
 
+from collections import OrderedDict
+
 import numpy as np
 import holopy as hp
-from numpy.testing import assert_array_almost_equal
-from nose.tools import with_setup, assert_raises
+import scatterpy
+from numpy.testing import (assert_array_almost_equal, assert_allclose,
+                           assert_approx_equal)
+from nose.tools import with_setup, assert_raises, assert_equal
 import os
 from nose.plugins.attrib import attr
 
@@ -52,7 +56,24 @@ def teardown_optics():
     global optics
     del optics
 
-gold_single = np.array([1.582, 1.000, 6.484, 5.534, 5.792, 1.415, 6.497])
+gold_single = OrderedDict((('center.x', 5.534e-6),
+               ('center.y', 5.792e-6),
+               ('center.z', 1.415e-5),
+               ('n.imag', 1e-4),
+               ('n.real', 1.582),
+               ('r', 6.484e-7)))
+gold_alpha = .6497
+               
+def assert_parameters_allclose(actual, desired, rtol=1e-3):
+    if isinstance(actual, scatterpy.scatterer.Scatterer):
+        actual = actual.parameters
+    if isinstance(actual, dict):
+        actual = np.array([p[1] for p in actual.iteritems()])
+    if isinstance(desired, scatterpy.scatterer.Scatterer):
+        desired = desired.parameters
+    if isinstance(desired, dict):
+        desired = np.array([p[1] for p in desired.iteritems()])
+    assert_allclose(actual, desired, rtol=rtol)
 
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
@@ -64,19 +85,16 @@ def test_fit_mie_single():
     
     s = Sphere(n=1.59+1e-4j, r=8.5e-7, x=.567e-5, y=.576e-5, z=15e-6)
     alpha = .6
-    lb = Sphere.make_from_parameter_list([1.0, 1e-4, 1e-8, 0., 0., 0.]), .1
-    ub = Sphere.make_from_parameter_list([2.0, 1e-4, 1e-5, 1e-5, 1e-5, 1e-4]), 1.0
+    lb = Sphere(center=[0.0, 0.0, 0.0], n=(1+0.0001j), r=1e-08), .1
+    ub = Sphere(center=[1.0e-05, 1.0e-05, 0.0001], n=(2+0.0001j), r=1e-05), 1.0
 
     fitresult = fit(holo, (s,alpha), scatterpy.theory.Mie, 'nmpfit',
                     lb, ub)
 
-    assert_array_almost_equal(np.concatenate((fitresult[0].parameter_list, 
-                                             np.array([fitresult[1]]))) * 
-                                             np.array([1,10**4,10**7,
-                                                       10**6,10**6,10**5,10]), 
-                                             gold_single, decimal=2)
-
-
+    assert_approx_equal(fitresult.alpha, gold_alpha, significant=4)
+    
+    assert_parameters_allclose(fitresult.scatterer, gold_single)
+    
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_fit_mie_single_ralg():
@@ -87,17 +105,15 @@ def test_fit_mie_single_ralg():
     
     s = Sphere(n=1.59+1e-4j, r=8.5e-7, x=.567e-5, y=.576e-5, z=15e-6)
     alpha = .6
-    lb = Sphere.make_from_parameter_list([1.0, 1e-4, 1e-8, 0., 0., 0.]), .1
-    ub = Sphere.make_from_parameter_list([2.0, 1e-4, 1e-5, 1e-5, 1e-5, 1e-4]), 1.0
+    lb = Sphere(center=[0.0, 0.0, 0.0], n=(1+0.0001j), r=1e-08), .1
+    ub = Sphere(center=[1.0e-05, 1.0e-05, 0.0001], n=(2+0.0001j), r=1e-05), 1.0
 
-    fitresult = fit(holo, (s,alpha), scatterpy.theory.Mie, 'ralg',
-                    lb, ub, plot=False)
+    fitresult = fit(holo, (s,alpha), scatterpy.theory.Mie, 'ralg', lb, ub,
+    plot=False)
 
-    assert_array_almost_equal(np.concatenate(fitresult.scatterer.parameter_list,
-            np.array([fitresult.alpha])) * [1,10**4,10**7,
-                                            10**6,10**6,10**5,10], gold_single,
-                              decimal=2)
-
+    assert_approx_equal(fitresult.alpha, gold_alpha, significant=4)
+    
+    assert_parameters_allclose(fitresult.scatterer.parameters, gold_single)
     
 @attr('slow')
 def test_fit_superposition():
@@ -130,17 +146,28 @@ def test_fit_superposition():
 
     fit_sc = fitresult[0]
     fit_alpha = fitresult[1]
-    fitres_unpacked = np.array([fit_sc.n[0].real, fit_sc.n[0].imag, 
-                                fit_sc.r[0], fit_sc.x[0], fit_sc.y[0],
-                                fit_sc.z[0], fit_sc.n[1].real, fit_sc.n[1].imag,
-                                fit_sc.r[1], fit_sc.x[1], fit_sc.y[1], 
-                                fit_sc.z[1], fit_alpha])
+    #    fitres_unpacked = np.array([fit_sc.n[0].real, fit_sc.n[0].imag, 
+    #                            fit_sc.r[0], fit_sc.x[0], fit_sc.y[0],
+    #                            fit_sc.z[0], fit_sc.n[1].real, fit_sc.n[1].imag,
+    #                            fit_sc.r[1], fit_sc.x[1], fit_sc.y[1], 
+    #                            fit_sc.z[1], fit_alpha])
 
-    gold = np.array([1.5891, 1.000, 6.500, 1.560, 1.440, 1.500, 1.5891, 1.000, 6.50,
-                  3.420, 3.170, 1.000, 6.29])
-    assert_array_almost_equal(fitres_unpacked * [1, 10**4, 10**7, 10**5, 10**5,
-                                           10**5,1,10**4, 10**7, 10**5,10**5,
-                                           10**5, 10], gold, decimal=2)
+
+    assert_parameters_allclose(fit_sc, sc)
+    
+    gold = np.array([1.56e-5, 1.44e-5, 1.5e-5, 1e-4, 1.5891, 6.5e-7, 3.420e-5,
+                     3.170e-5, 1e-5, 1e-4, 1.5891, 6.5e-7])
+    gold_alpha = .629
+
+    assert_approx_equal(fit_alpha, gold_alpha, significant=2)
+    assert_parameters_allclose(fit_sc, gold)
+    
+    #    gold = np.array([1.5891, 1.000, 6.500, 1.560, 1.440, 1.500, 1.5891, 1.000, 6.50,
+    #                 3.420, 3.170, 1.000, 6.29])
+
+    #assert_array_almost_equal(fitres_unpacked * [1, 10**4, 10**7, 10**5, 10**5,
+    #                                       10**5,1,10**4, 10**7, 10**5,10**5,
+    #                                       10**5, 10], gold, decimal=2)
 
 
 @attr('slow')
@@ -178,18 +205,20 @@ def test_fit_multisphere_noisydimer_slow():
 
     fit_sc = fitresult[0]
     fit_alpha = fitresult[1]
-    fitres_unpacked = np.array([fit_sc.n[0].real, fit_sc.n[0].imag, 
-                                fit_sc.r[0], fit_sc.x[0], fit_sc.y[0],
-                                fit_sc.z[0], fit_sc.n[1].real, fit_sc.n[1].imag,
-                                fit_sc.r[1], fit_sc.x[1], fit_sc.y[1], 
-                                fit_sc.z[1], fit_alpha])
 
-    assert_array_almost_equal(fitres_unpacked * [1, 10**5, 10**7, 10**5, 10**5,
-                                           10**5,1,10**5, 10**7, 10**5,10**5,
-                                           10**5, 1], gold, decimal=2)
+    gold = np.array([1.642e-5, 1.725e-5, 2.058e-5, 1e-5, 1.603, 6.857e-7, 
+                     1.758e-5, 1.753e-5, 2.127e-5, 1e-5, 1.603, 6.964e-7])
+
+    assert_parameters_allclose(fit_sc, gold, rtol=1e-2)
+    assert_approx_equal(fit_alpha, 1.0, significant=2)
+
+    #    assert_array_almost_equal(fitres_unpacked * [1971, 10**5, 10**7, 10**5, 10**5,
+    #                                       10**5,1,10**5, 10**7, 10**5,10**5,
+    #                                       10**5, 1], gold, decimal=2)
 
 
 @attr('slow')
+@attr('glacial')
 def test_six_mie_superposition():
     '''
     Right now Mie Superposition is only being tested for 2 simulated particles.
@@ -283,4 +312,85 @@ def test_tie():
     fitresult = fit(holo, ig, theory, 'nmpfit', lb, ub, tie = tie) 
     #fitresult = fit(holo, ig, theory, 'nmpfit', lb, ub, tie = None)
 
-    assert_array_almost_equal(fitresult[0].parameter_list, sc.parameter_list)
+    assert_parameters_allclose(fitresult.scatterer, sc)
+
+@attr('fast')
+@with_setup(setup=setup_optics, teardown=teardown_optics)
+def test_ParameterManager():
+    s = Sphere(n=1.59+1e-4j, r=8.5e-7, x=.567e-5, y=.576e-5, z=15e-6)
+    alpha = .6
+    lb = Sphere(center=[0.0, 0.0, 0.0], n=(1+0.0001j), r=1e-08), .1
+    ub = (Sphere(center=[1e-05, 1e-05, 0.0001], n=(2+0.0001j), r=1e-05), 1.0)
+
+    pm = hp.analyze.fit.ParameterManager((s, alpha), lb, ub)
+
+    params, alpha2 = pm.interpret_minimizer_list(pm.initial_guess)
+
+    assert alpha == alpha2
+    
+    assert_equal(params,{'center.x': 5.6699999999999999e-06,
+                         'center.y': 5.7599999999999999e-06,
+                         'center.z': 1.5e-05,
+                         'n.imag': 0.0001,
+                         'n.real': 1.5900000000000001,
+                         'r': 8.5000000000000001e-07})
+
+
+@attr('fast')
+def test_parameter_munging():
+    s1 = Sphere(n=1.59+1e-4j, r = .5, center=(10,10,10))
+    s2 = Sphere(n=1.59, r = .5, center=(10,11,11))
+    sc = SphereCluster([s1, s2])
+
+    
+    lb1 = Sphere(n=1+1e-4, r = .4, center=(10,10,10))
+    lb2 = Sphere(n=1, r = .4, center=(10,11,11))
+    lb = SphereCluster([lb1, lb2]), .1
+    
+    ub1 = Sphere(n=1.59+1e-4j, r = .6, center=(10.5,10,10))
+    ub2 = Sphere(n=1.59, r = .6, center=(10.5,11,11))
+    ub = SphereCluster([ub1, ub2]), 1
+
+    pm = hp.analyze.fit.ParameterManager((sc, .6), lb, ub)
+
+    guess = pm.initial_guess
+
+    pars, alpha = pm.interpret_minimizer_list(guess)
+
+    minimizer_scatterer = SphereCluster.from_parameters(pars)
+    
+    assert_equal(sc.scatterers[0].r, minimizer_scatterer.scatterers[0].r)
+    assert_equal(sc.scatterers[1].r, minimizer_scatterer.scatterers[1].r)
+    assert_equal(sc.scatterers[0].n, minimizer_scatterer.scatterers[0].n)
+    assert_equal(sc.scatterers[1].n, minimizer_scatterer.scatterers[1].n)
+    assert_array_almost_equal(sc.scatterers[0].center, minimizer_scatterer.scatterers[0].center)
+    assert_array_almost_equal(sc.scatterers[1].center, minimizer_scatterer.scatterers[1].center)
+    
+    assert_equal(alpha, .6)
+
+    s1 = Sphere(n=1.5891+1e-4j, r = .65e-6, center=(1.56e-05, 1.44e-05, 15e-6))
+    s2 = Sphere(n=1.5891+1e-4j, r = .65e-6, center=(3.42e-05, 3.17e-05, 10e-6))
+    sc = SphereCluster([s1, s2])
+    alpha = .629
+    
+    lb1 = Sphere(1+1e-4j, 1e-8, 0, 0, 0)
+    ub1 = Sphere(2+1e-4j, 1e-5, 1e-4, 1e-4, 1e-4)
+    lb = SphereCluster([lb1, lb1]), .1
+    ub = SphereCluster([ub1, ub1]), 1
+
+    pm = hp.analyze.fit.ParameterManager((sc, .6), lb, ub)
+
+    guess = pm.initial_guess
+
+    pars, alpha = pm.interpret_minimizer_list(guess)
+
+    minimizer_scatterer = SphereCluster.from_parameters(pars)
+    
+    assert_equal(sc.scatterers[0].r, minimizer_scatterer.scatterers[0].r)
+    assert_equal(sc.scatterers[1].r, minimizer_scatterer.scatterers[1].r)
+    assert_equal(sc.scatterers[0].n, minimizer_scatterer.scatterers[0].n)
+    assert_equal(sc.scatterers[1].n, minimizer_scatterer.scatterers[1].n)
+    assert_array_almost_equal(sc.scatterers[0].center, minimizer_scatterer.scatterers[0].center)
+    assert_array_almost_equal(sc.scatterers[1].center, minimizer_scatterer.scatterers[1].center)
+    
+    assert_equal(alpha, .6)

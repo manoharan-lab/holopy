@@ -131,37 +131,7 @@ class SphereCluster(Composite):
         return "{c}(spheres={spheres})".format(c=self.__class__.__name__,
                                        spheres=repr(self.scatterers))
 
-    @property
-    def parameter_list(self):
-        """
-        Return sphere parameters in order: n, r, x, y, z
-        """
-        spheres = self.get_component_list()
-        parlist = spheres[0].parameter_list
-        for sphere in spheres[1:]:
-            parlist = np.append(parlist, sphere.parameter_list)
-        return parlist
 
-    @property
-    def parameter_names_list(self):
-        spheres = self.get_component_list()
-        names = []
-        for i, sphere in enumerate(spheres):
-            names.extend(['sphere_{0}.{1}'.format(i, name) for name in
-                            sphere.parameter_names_list])
-        return names
-
-    @classmethod
-    def make_from_parameter_list(cls, params):
-        sphere_params = 6
-        num_spheres = len(params)/sphere_params
-        s = []
-        for i in range(num_spheres):
-            s.append(Sphere.make_from_parameter_list(
-                    params[i*sphere_params:(i+1)*sphere_params]))
-        sc = cls(s)
-        return sc
-    
     @property
     def n(self):
         return np.array([s.n for s in self.scatterers])

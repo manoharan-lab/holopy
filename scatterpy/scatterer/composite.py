@@ -81,20 +81,19 @@ class Composite(Scatterer):
 
     @classmethod
     def from_parameters(cls, parameters):
-        collected = []
-        types = []
+        n_scatterers = len(set([p.split(':')[0] for p in parameters.keys()]))
+        collected = [{} for i in range(n_scatterers)]
+        types = [None] * n_scatterers
         for key, val in parameters.iteritems():
             n, spec = key.split(':', 1)
             n = int(n)
             scat_type, par = spec.split('.', 1)
-            if len(collected) > n:
-                collected[n][par] = val
+
+            collected[n][par] = val
+            if types[n]:
                 assert types[n] == scat_type
             else:
-                # this is only correct if the parameters are in order, but that
-                # should always be true
-                collected.append({par:val})
-                types.append(scat_type)
+                types[n] = scat_type
 
         scatterers = []
         for i, scat_type in enumerate(types):

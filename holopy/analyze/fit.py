@@ -111,14 +111,14 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
                                                      **minimizer_params) 
     
 
-    result = manager.from_minimizer_list(result)
+    fit_parameters, fit_alpha = manager.interpret_minimizer_list(result)
 
     time_stop = time.time()
 
     # Calculate R^2 here, otherwise FitResult has to know about the theory
     # used to fit.
-    fit_scatterer = scatterer.make_from_parameter_list(result[:-1])
-    fit_alpha = result[-1]
+    fit_scatterer = scatterer.from_parameters(fit_parameters)
+
     fit_holo = theory.calc_holo(fit_scatterer, fit_alpha)
     Rsquared = 1 - ((holo - fit_holo)**2).sum()/((holo - holo.mean())**2).sum()
     
@@ -144,11 +144,11 @@ def make_residual(holo, scatterer, theory, parameter_manager,
     """
 
     def residual(p, **keywords):
-        p = parameter_manager.from_minimizer_list(p)
+        parameters, alpha = parameter_manager.interpret_minimizer_list(p)
 
         # alpha should always be the last parameter, we prune it because the
         # scatterer doesn't want to know about it
-        this_scatterer = scatterer.make_from_parameter_list(p[:-1])
+        this_scatterer = scatterer.from_parameters(parameters)
         error = np.ones(holo.shape)*1.e12
 
         try:
@@ -158,7 +158,7 @@ def make_residual(holo, scatterer, theory, parameter_manager,
             return cost_func(holo, error).ravel()
         
         try:
-            calculated = theory.calc_holo(this_scatterer, p[-1])
+            calculated = theory.calc_holo(this_scatterer, alpha)
         except (UnrealizableScatterer, InvalidScatterer) as e:
             if isinstance(e, InvalidScattererSphereOverlap):
                 print("Hologram computation attempted with overlapping \
@@ -294,18 +294,20 @@ class ParameterManager(object):
         :type tie: 
         
         """
+
         def unpack_bound(b):
             if b is None:
                 return None
-            return np.append(b[0].parameter_list, b[1])
+            return np.append([p[1] for p in b[0].parameters.iteritems()], b[1])
 
         self._initial_guess = unpack_bound(initial_guess)
-        self._names = initial_guess[0].parameter_names_list + ['alpha']
+        self._names = initial_guess[0].parameters.keys() + ['alpha']
         self._lower_bound = unpack_bound(lower_bound)
         self._upper_bound = unpack_bound(upper_bound)
         self.tie = unpack_bound(tie)
         self._step = unpack_bound(step)
 
+        
         tie_groups = {}
         if self.tie is not None:
             for i, p in enumerate(self.tie):
@@ -402,7 +404,7 @@ class ParameterManager(object):
             p = p/self.scale
         return self._prune(p)
     
-    def from_minimizer_list(self, minimizer_list):
+    def interpret_minimizer_list(self, minimizer_list):
         """
         Put back in parameters and undo rescalings to get back to the real
         physical form
@@ -415,9 +417,11 @@ class ParameterManager(object):
 
         Returns
         -------
-        parameter_list: list
-            List of parameters suitable for passing to
-            scatterer.make_from_parameter_list
+        parameters: dict
+            dict of parameters suitable for passing to
+            scatterer.from_parameters
+        alpha: float
+            Fitted scaling alpha
         """
         tie_values = minimizer_list[0:len(self.tie_groups)]
         values = minimizer_list[len(self.tie_groups):]
@@ -434,6 +438,10 @@ class ParameterManager(object):
                 else:
                     raise ParameterSpecificationError(self.names(prune=False)[i])
 
+        descaled = self.scale * values
+        parameters = dict(zip(self._names, descaled))
+        alpha = parameters.pop('alpha')
+        return parameters, alpha
         return (self.scale * values)
 
     def names(self, with_scaling=False, prune=True):

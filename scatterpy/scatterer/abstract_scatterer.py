@@ -92,7 +92,7 @@ class Scatterer(Serializable):
             if hasattr(par, 'parameters'):
                 sub_pars.append((('center.{0}'.format(p[0]), p[1]) for p in
                             par.parameters.iteritems()))
-            elif np.iscomplex(par):
+            elif isinstance(par, complex):
                 sub_pars.append([('{0}.real'.format(key), par.real),
                                  ('{0}.imag'.format(key), par.imag)])
             else:
@@ -132,32 +132,25 @@ class Scatterer(Serializable):
             else:
                 collected[key] = val
 
-        return cls(**collected)
+        built = {}
+        for key, val in collected.iteritems():
+            if isinstance(val, dict):
+                if sorted(val.keys()) == ['x', 'y', 'z']:
+                    built[key] = [val['x'], val['y'], val['z']]
+                elif sorted(val.keys()) == ['imag', 'real']:
+                    built[key] = val['real'] + 1.0j * val['imag']
+                else:
+                    built[key] = val
+            else:
+                built[key] = val
+
+        return cls(**built)
 
     def __repr__(self):
         return "{0}({1})".format(self.__class__.__name__, ', '.join(
             ['='.join([str(p) for p in par]) for par in
              sorted(self.__dict__.iteritems())])) 
     
-    @property
-    def parameter_list(self):
-        """
-        Return's the scatterer's parameters as an 1d array in a defined order.
-        This form is suitable for passing to a minimizer
-
-        Note: if the scatter has complex values (like index of refraction) they
-        need to be split into two seperate variables
-        """
-        raise NotImplementedError
-
-    @classmethod
-    def make_from_parameter_list(cls, params):
-        """
-        Make a new scatterer from a parameter list of the form reterned by
-        parameter_list().
-        """
-        raise NotImplementedError
-
 
 class xyzTriple(np.ndarray):
     """

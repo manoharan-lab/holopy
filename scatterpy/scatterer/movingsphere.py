@@ -102,10 +102,6 @@ class MovingSphere(Sphere, Composite):
         return ['n.real', 'n.imag', 'r', 'x', 'y', 'z', 'v_x', 'v_y', 'v_z',
                 'int_time', 'n_smear']
 
-    @classmethod
-    def make_from_parameter_list(cls, params):
-        n = params[0] + 1.j * params[1]
-        return cls(n, *params[2:])
 
 
         

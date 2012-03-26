@@ -54,7 +54,7 @@ def test_Sphere_construction():
 def test_Ellipsoid_construction():
     s = Ellipsoid(n = 1.57, r = (1, 2, 3), center = (3, 2, 1))
 
-    assert_equal(str(s), 'Ellipsoid(r=[1, 2, 3], center=[3, 2, 1], n=1.57)')
+    assert_equal(str(s), 'Ellipsoid(center=[3, 2, 1], n=(1.57+0j), r=[1, 2, 3])')
     
 @attr('fast')
 def test_Sphere_construct_list():
@@ -85,19 +85,16 @@ def test_Sphere_construct_array():
 
 @attr('fast')
 def test_Sphere_parameters():
-    s = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
+    s = Sphere(n = 1.59+1e-4j, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
     assert_equal(s.parameters, OrderedDict([('center.x',
-    9.9999999999999995e-07), ('center.y', -9.9999999999999995e-07),
-    ('center.z', 1.0000000000000001e-05), ('n', 1.59), ('r', 5e-07)]))
+    9.9999999999999995e-07), ('center.y', -9.9999999999999995e-07), ('center.z',
+    1.0000000000000001e-05), ('n.imag', 0.0001), ('n.real', 1.59), ('r',
+    5e-07)]))
 
     sp = Sphere.from_parameters(s.parameters)
-    assert s.r == sp.r
-    assert s.n == s.n
+    assert_equal(s.r, sp.r)
+    assert_equal(s.n, sp.n)
     assert_equal(s.center, sp.center)
-    
-    params = np.array([1.59, 1e-4, 5e-7, 1e-6, -1e-6, 10e-6])
-    s2 = s.make_from_parameter_list(params)
-    assert_equal(s2.parameter_list, params)
     
 @attr('fast')
 def test_CoatedSphere_construction():
@@ -141,28 +138,13 @@ def test_Composite_construction():
     comp3 = Composite(scatterers=[comp2, cs])
     print comp3
 
-
-@attr('fast')
-def test_abstract_scatterer():
-
-    class Dummy(Scatterer):
-        def __init__(self):
-            pass
-    
-    s = Dummy()
-
-    assert_raises(NotImplementedError, lambda: s.parameter_list)
-    assert_raises(NotImplementedError, Scatterer.make_from_parameter_list,
-                  [1, 2, 3]) 
-
-
 @attr('fast')
 def test_MovingSphere():
     s = MovingSphere(center=(1e-6, -1e-6, 10e-6), v_x = 1.0, int_time=10e-6)
     # test an odd number of smear steps
     MovingSphere(center=(1e-6, -1e-6, 10e-6), v_x = 1.0, int_time=10e-6, n_smear=11)
     assert_equal(repr(s), 'MovingSphere(center=[9.9999999999999995e-07, '
-                 '-9.9999999999999995e-07, 1.0000000000000001e-05], n=1.59, '
+                 '-9.9999999999999995e-07, 1.0000000000000001e-05], n=(1.59+0j), '
                  'r=5e-07)')
 
 @attr('fast')
@@ -186,5 +168,4 @@ def test_xyzTriple():
     assert_raises(abstract_scatterer.InvalidxyzTriple, xyzTriple, xyz = [1])
 
     assert_equal(c_1.parameters, {'x': 1, 'y': 2, 'z' : 3})
-    assert_equal(c_1.parameters_prefix('r'), {'r_x': 1, 'r_y': 2, 'r_z' : 3})
 
