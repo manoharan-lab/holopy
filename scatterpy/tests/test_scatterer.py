@@ -98,15 +98,13 @@ def test_Sphere_parameters():
     
 @attr('fast')
 def test_CoatedSphere_construction():
-    cs = CoatedSphere(n1=1.59, n2=1.59, r1=5e-7, r2=1e-6, x=1e-6, 
+    cs = CoatedSphere(n=(1.59, 1.59), r=(5e-7, 1e-6), x=1e-6, 
                       y=-1e-6, z=10e-6) 
-    cs = CoatedSphere(n1=1.59, n2=1.33, r1=5e-7, r2=1e-6)
+    cs = CoatedSphere(n=(1.59, 1.33), r=(5e-7, 1e-6))
     # index can be complex
-    cs = CoatedSphere(n1 = 1.59+0.0001j, n2=1.33+0.0001j, r1=5e-7,
-                      r2=1e-6) 
+    cs = CoatedSphere(n = (1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6))
     center = np.array([1e-6, -1e-6, 10e-6])
-    cs = CoatedSphere(n1 = 1.59+0.0001j, n2=1.33+0.0001j, r1=5e-7, 
-                      r2=1e-6,
+    cs = CoatedSphere(n = (1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6),
                       center = center) 
     cs = CoatedSphere()
 
@@ -123,8 +121,7 @@ def test_Composite_construction():
     comp_spheres = Composite(scatterers=[s1, s2, s3])
 
     # heterogeneous composite
-    cs = CoatedSphere(n1 = 1.59+0.0001j, n2=1.33+0.0001j, r1=5e-7, 
-                      r2=1e-6,
+    cs = CoatedSphere(n=(1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6),
                       center=[-5e-6, 0,0])
     comp = Composite(scatterers=[s1, s2, s3, cs])
 

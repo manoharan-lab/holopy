@@ -34,9 +34,9 @@ class Sphere(SingleCenterScatterer):
 
     Attributes
     ----------
-    n : float or complex
+    n : complex
         Index of refraction of sphere
-    r : complex
+    r : float
         Radius of sphere
     x : float
         x-component of center

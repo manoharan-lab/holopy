@@ -35,7 +35,7 @@ from nose.plugins.attrib import attr
 
 import scatterpy
 from scatterpy.scatterer import (Sphere, SphereCluster, MovingSphere,
-                                 CoatedSphere)
+                                 CoatedSphere, Ellipsoid)
 from scatterpy.theory import Mie
 
 from scatterpy.theory.mie import UnrealizableScatterer
@@ -143,19 +143,20 @@ def test_Mie_multiple():
     holo = theory.calc_holo(sc)
     common.verify(holo, 'mie_multiple_holo')
 
-    # should throw exception when fed a coated sphere
+    # should throw exception when fed a ellipsoid
+    el = Ellipsoid(n = 1.59, r = (1e-6, 2e-6, 3e-6), center=[8e-6,5e-6,5e-6])
     with assert_raises(TheoryNotCompatibleError) as cm:
-        theory.calc_field(CoatedSphere())
+        theory.calc_field(el)
     assert_equal(str(cm.exception), "The implementation of the Mie scattering "
                  "theory doesn't know how to handle scatterers of type "
-                 "CoatedSphere")
+                 "Ellipsoid")
     
-    assert_raises(TheoryNotCompatibleError, theory.calc_field, CoatedSphere())
+    assert_raises(TheoryNotCompatibleError, theory.calc_field, el)
     assert_raises(TheoryNotCompatibleError, theory.calc_intensity,
-                  CoatedSphere())
-    assert_raises(TheoryNotCompatibleError, theory.calc_holo, CoatedSphere())
+                  el)
+    assert_raises(TheoryNotCompatibleError, theory.calc_holo, el)
     # and when the list of scatterers includes a coated sphere
-    sc.add(CoatedSphere())
+    sc.add(el)
     assert_raises(TheoryNotCompatibleError, theory.calc_field, sc)
     assert_raises(TheoryNotCompatibleError, theory.calc_intensity, sc)
     assert_raises(TheoryNotCompatibleError, theory.calc_holo, sc)

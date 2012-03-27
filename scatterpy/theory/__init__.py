@@ -31,5 +31,4 @@ from mie import Mie
 from dda import DDA
 from multisphere import Multisphere
 from multisphereapprox import MultisphereApprox
-from layered_mie import LayeredMie
 from mie_smear import MieSmear

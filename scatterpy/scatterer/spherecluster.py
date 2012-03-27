@@ -119,13 +119,14 @@ class SphereCluster(Composite):
             s1.validate()
             for j in range(i+1, len(self.scatterers)):
                 s2= self.scatterers[j]
-                if cartesian_distance(s1.center, s2.center) < (s1.r + s2.r):
+                if cartesian_distance(s1.center, s2.center) < (np.max(s1.r) + np.max(s2.r)):
                     overlaps.append((i, j))
 
         if overlaps:
             raise InvalidScattererSphereOverlap(self, overlaps)
 
         return True
+
 
     def __repr__(self):
         return "{c}(spheres={spheres})".format(c=self.__class__.__name__,

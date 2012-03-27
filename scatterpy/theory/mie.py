@@ -27,13 +27,10 @@ scattered field.
 '''
 import mie_f.mieangfuncs as mieangfuncs
 import mie_f.miescatlib as miescatlib
-import numpy as np
-from mie_f.mieangfuncs import singleholo
-from mie_f.miescatlib import nstop, scatcoeffs
+from mie_f.multilayer_sphere_lib import scatcoeffs_multi
 
-from holopy.hologram import Hologram
 from scatterpy.errors import TheoryNotCompatibleError, UnrealizableScatterer
-from scatterpy.scatterer import Sphere, Composite
+from scatterpy.scatterer import Sphere, CoatedSphere, Composite
 from scatterpy.theory.scatteringtheory import ScatteringTheory, ElectricField
 from holopy.utility.helpers import _ensure_array
 
@@ -86,8 +83,6 @@ class Mie(ScatteringTheory):
         calculated from each particle (using calc_mie_fields()). 
         """
 
-        scatterer.validate()
-        
         def sphere_field(s):
             scat_coeffs = self._scat_coeffs(s)
             
@@ -100,7 +95,7 @@ class Mie(ScatteringTheory):
 
             return ElectricField(e_x, e_y, e_z, s.z, self.optics.med_wavelen)
         
-        if isinstance(scatterer, Sphere):
+        if isinstance(scatterer, (Sphere, CoatedSphere)):
             return sphere_field(scatterer)
         elif isinstance(scatterer, Composite):
             spheres = scatterer.get_component_list()
@@ -108,9 +103,11 @@ class Mie(ScatteringTheory):
             # spheres 
             if not scatterer.contains_only_spheres():
                 for s in spheres:
-                    if not isinstance(s, Sphere):
+                    if not isinstance(s, (Sphere, CoatedSphere)):
                         raise TheoryNotCompatibleError(self, s)
             # if it passes, superpose the fields
+            scatterer.validate()
+    
             return self.superpose(spheres)
         else: raise TheoryNotCompatibleError(self, scatterer)
 
@@ -170,18 +167,23 @@ class Mie(ScatteringTheory):
 #        return (self.optics.wavevec*np.mgrid[0:xdim]*px,
 #                self.optics.wavevec*np.mgrid[0:ydim]*py)
 
-    def _scat_coeffs(self, s):
-        x_p = self.optics.wavevec * s.r
-        m_p = s.n / self.optics.index
 
+
+    def _scat_coeffs(self, s):
+        x_arr = self.optics.wavevec * _ensure_array(s.r)
+        m_arr = _ensure_array(s.n) / self.optics.index
+    
         # Check that the scatterer is in a range we can compute for
-        if x_p < 0:
+        if x_arr.min() < 0:
             raise UnrealizableScatterer(self, s, "radius is negative")
-        if x_p > 1e3:
+        if x_arr.max() > 1e3:
             raise UnrealizableScatterer(self, s, "radius too large, field "+
                                         "calculation would take forever")
         
-        # Calculate maximum order lmax of Mie series expansion.
-        lmax = miescatlib.nstop(x_p)
-        return  miescatlib.scatcoeffs(x_p, m_p, lmax)
-
+        if len(x_arr) == 1 and len(m_arr) == 1:
+            # Could just use scatcoeffs_multi here, but jerome is in favor of
+            # keeping the simpler single layer code here 
+            lmax = miescatlib.nstop(x_arr[0])
+            return  miescatlib.scatcoeffs(x_arr[0], m_arr[0], lmax)
+        else:
+            return scatcoeffs_multi(m_arr, x_arr)

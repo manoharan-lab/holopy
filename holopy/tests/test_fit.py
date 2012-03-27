@@ -210,6 +210,8 @@ def test_fit_multisphere_noisydimer_slow():
                      1.758e-5, 1.753e-5, 2.127e-5, 1e-5, 1.603, 6.964e-7])
 
     assert_parameters_allclose(fit_sc, gold, rtol=1e-2)
+    # TODO: This test fails, alpha comes back as .9899..., where did the gold
+    # come from?  
     assert_approx_equal(fit_alpha, 1.0, significant=2)
 
     #    assert_array_almost_equal(fitres_unpacked * [1971, 10**5, 10**7, 10**5, 10**5,

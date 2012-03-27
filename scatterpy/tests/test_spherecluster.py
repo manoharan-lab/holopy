@@ -137,8 +137,7 @@ def test_SphereCluster_construction_typechecking():
     s1 = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
     s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,0,0])
-    cs = CoatedSphere(n1 = 1.59+0.0001j, n2=1.33+0.0001j, r1=5e-7, 
-                      r2=1e-6,
+    cs = CoatedSphere(n=(1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6),
                       center=[-5e-6, 0,0])
     sc = SphereCluster(spheres=[s1, s2, s3, cs])
 

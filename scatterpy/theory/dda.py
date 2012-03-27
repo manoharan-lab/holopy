@@ -164,14 +164,14 @@ class DDA(ScatteringTheory):
     
     def _adda_coated(self, scatterer, optics, temp_dir):
         cmd = []
-        cmd.extend(['-eq_rad', str(scatterer.r2)])
-        cmd.extend(['-shape', 'coated', str(scatterer.r1/scatterer.r2)])
+        cmd.extend(['-eq_rad', str(scatterer.r[1])])
+        cmd.extend(['-shape', 'coated', str(scatterer.r[0]/scatterer.r[1])])
         # A-DDA thinks of it as a sphere with an inclusion, so their first index
         # (the sphere) is our second, the outer layer.  
-        cmd.extend(['-m', str(scatterer.n2.real/optics.index),
-                    str(scatterer.n2.imag/optics.index),
-                    str(scatterer.n1.real/optics.index),
-                    str(scatterer.n1.imag/optics.index)])
+        cmd.extend(['-m', str(scatterer.n[1].real/optics.index),
+                    str(scatterer.n[1].imag/optics.index),
+                    str(scatterer.n[0].real/optics.index),
+                    str(scatterer.n[0].imag/optics.index)])
 
         return cmd
         

@@ -75,9 +75,12 @@ class Ellipsoid(SingleCenterScatterer):
         specifies coordinates of center of the scatterer
     """
     
-    def __init__(self, n, r_x=None, r_y=None, r_z=None, x=None, y=None, z=None,
+    def __init__(self, n=None, r_x=None, r_y=None, r_z=None, x=None, y=None, z=None,
                  r=None, center=None):
-        self.n = complex(n)
+        if n is not None:
+            self.n = complex(n)
+        else:
+            self.n = None
         self.r = xyzTriple(r_x, r_y, r_z, r)
         
         super(Ellipsoid, self).__init__(x, y, z, center)

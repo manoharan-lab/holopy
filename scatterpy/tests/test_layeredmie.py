@@ -35,19 +35,20 @@ from nose.plugins.attrib import attr
 import common
 
 
-from scatterpy.scatterer.coatedsphere import Shell
+from scatterpy.scatterer.coatedsphere import CoatedSphere
 from scatterpy.theory import Mie
 
 
 @attr('medium')
 def test_Shell():
-    s = Shell(center=[7.141442573813124, 7.160766866147957, 11.095409800342143],
-              n1=(1.27121212428+0j), n2=(1.49+0j), t=0.0055, r=0.960957713253)
+    s = CoatedSphere(center=[7.141442573813124, 7.160766866147957, 11.095409800342143],
+              n=[(1.27121212428+0j), (1.49+0j)], r=[0.960957713253-0.0055,
+                                                    0.960957713253]) 
 
     optics = hp.Optics(wavelen=0.658, index=1.36, polarization=[1.0, 0.0],
               pixel_scale=[0.071332999999999994, 0.071332999999999994])
     
-    th = scatterpy.theory.LayeredMie(optics, 200)
+    th = Mie(optics, 200)
 
     h = th.calc_holo(s, 0.4826042444701572)
 

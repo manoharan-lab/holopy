@@ -135,12 +135,12 @@ def test_DDA_voxelated():
 
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_coated():
-    cs = scatterpy.scatterer.coatedsphere.Shell(
+    cs = scatterpy.scatterer.CoatedSphere(
         center=[7.141442573813124, 7.160766866147957, 11.095409800342143],
-        n1=(1.27121212428+0j), n2=(1.49+0j), t=0.0055, r=0.1)
+        n=[(1.27121212428+0j), (1.49+0j)], r=[.1-0.0055, 0.1])
 
     dda = DDA(imshape=128, optics=optics)
-    lmie = scatterpy.theory.LayeredMie(imshape=128, optics=optics)
+    lmie = scatterpy.theory.Mie(imshape=128, optics=optics)
 
     lmie_holo = lmie.calc_holo(cs)
     dda_holo = dda.calc_holo(cs)
