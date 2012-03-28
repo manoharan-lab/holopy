@@ -36,83 +36,23 @@ class SphereCluster(Composite):
 
     Attributes
     ----------
-    spheres : list
-        Interparticle gap distance ( = 0 at hard-sphere contact.) 
-    n : array-like
-        indices of refraction of each sphere
-    x : array-like
-        x-position of each sphere 
-    y : array-like
-        y-position of each sphere
-    z : array-like
-        z-position of each sphere
-    centers : Nx3 array (optional)
-        array of sphere positions
+    spheres : list of Spheres
+        Spheres which will make up the cluster
 
     Notes
     -----
-    Inherited from Composite.  You can specify the list of spheres in
-    two ways: by giving a list of Sphere objects, or by giving lists
-    of `n`, `r`, `x`, `y`, and `z`.  You can also specify the
-    positions of the spheres in `centers`, an Nx3 array.  If you
-    specify a list of Sphere objects, the arguments `n`, `r`, `x`,
-    `y`, `z` and `centers` are ignored.
     '''
 
-    def __init__(self, spheres=None, n=None, r=None, x=None, y=None,
-                 z=None, centers=None):
-        if spheres is None:
-            self.scatterers = []
-            # find number of spheres from n
-            N = np.size(np.array(n))
-            # below is a bunch of stuff that checks for all sorts of
-            # errors that can occur when initializing.  This is
-            # because the constructor needs to process several
-            # different ways of specifying the cluster
-            if n is not None:
-                try:
-                    n = np.array(n).reshape(N)
-                    r = np.array(r).reshape(N)
-                except ValueError:
-                    raise ScattererDefinitionError(
-                        "r must be the same size as n", self)
-                if centers is not None:
-                    centers = np.array(centers)
-                    try:
-                        centers = centers.reshape((N, 3))
-                    except ValueError:
-                        raise ScattererDefinitionError(
-                            "parameter 'centers' must have Nx3 elements", 
-                            self)
-                else:
-                    try: 
-                        x = np.array(x).reshape(N)
-                        y = np.array(y).reshape(N)
-                        z = np.array(z).reshape(N)
-                        centers = np.array([x, y, z]).transpose()
-                    except ValueError:
-                        raise ScattererDefinitionError(
-                            "n, r, x, y, and z should all be of length N",
-                            self)
-                for i in range(N):
-                    try:
-                        s = Sphere(n=n[i], r=r[i], center=centers[i])
-                    # TODO: Can we get a test to hit this code? 
-                    except IndexError:
-                        raise ScattererDefinitionError(
-                            "n, r, x, y, and z should all be "+
-                            "of length N.", self)
-                    self.scatterers.append(s)
-        else: 
-            # make sure all components are spheres
-            for s in spheres:
-                if not isinstance(s, Sphere):
-                    raise ScattererDefinitionError(
-                        "SphereCluster expects all component " +
-                        "scatterers to be Spheres.\n" + 
-                        repr(s) + " is not a Sphere", self)
-            self.scatterers = spheres
-
+    def __init__(self, spheres):
+        # make sure all components are spheres
+        for s in spheres:
+            if not isinstance(s, Sphere):
+                raise ScattererDefinitionError(
+                    "SphereCluster expects all component " +
+                    "scatterers to be Spheres.\n" + 
+                    repr(s) + " is not a Sphere", self)
+        self.scatterers = spheres
+            
     def validate(self):
         overlaps = []
         for i, s1 in enumerate(self.scatterers):

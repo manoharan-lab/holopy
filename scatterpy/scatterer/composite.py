@@ -102,21 +102,6 @@ class Composite(Scatterer):
 
         return cls(scatterers)
     
-    def contains_only_spheres(self):
-        """
-        Returns True if the Composite object contains only spheres.
-        Used mainly for error checking by models that can only handle
-        spheres
-        """
-        # if there aren't any components defined, return False
-        if not self.get_component_list():
-            return False
-        # check through each component
-        for scatterer in self.get_component_list():
-            if not isinstance(scatterer, Sphere):
-                return False
-        return True
-
     def _prettystr(self, level, indent="  "):
         '''
         Generate pretty string representation of object by recursion.
