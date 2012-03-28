@@ -101,10 +101,9 @@ class Mie(ScatteringTheory):
             spheres = scatterer.get_component_list()
             # compatibility check: verify that the cluster only contains
             # spheres 
-            if not scatterer.contains_only_spheres():
-                for s in spheres:
-                    if not isinstance(s, (Sphere, CoatedSphere)):
-                        raise TheoryNotCompatibleError(self, s)
+            for s in spheres:
+                if not isinstance(s, (Sphere, CoatedSphere)):
+                    raise TheoryNotCompatibleError(self, s)
             # if it passes, superpose the fields
             scatterer.validate()
     
