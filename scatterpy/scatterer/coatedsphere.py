@@ -24,6 +24,7 @@ Defines CoatedSphere, a scattering primitive
 '''
 
 import numpy as np
+from holopy.utility.helpers import _ensure_array
 from scatterpy.scatterer.ellipsoid import SingleCenterScatterer
 
 #TODO: failed tests are all things I think we are refactoring away -
@@ -54,20 +55,11 @@ class CoatedSphere(SingleCenterScatterer):
         specifies coordinates of center of sphere
 
     '''
-    def __init__(self, n1 = 1.59, n2 = 1.33, r1 = 0.5e-6, r2 = 1e-6, 
-                 x = 0.0, y = 0.0, z = 0.0, center = None):
-        self.n1 = complex(n1)
-        self.n2 = complex(n2)
-        self.r1 = r1
-        self.r2 = r2
+    def __init__(self, n = 1.59, r = 0.5e-6, x = 0.0, y = 0.0, z = 0.0, 
+                 center = None):
+        self.n = _ensure_array(n).astype('complex')
+        self.r = _ensure_array(r)
         super(CoatedSphere, self).__init__(x, y, z, center)
-
-
-    @property
-    def r(self):
-        # when someone asks us for r, they want to know our physical size, so
-        # give them our larger radius
-        return self.r2
     
 
 class Shell(CoatedSphere):
