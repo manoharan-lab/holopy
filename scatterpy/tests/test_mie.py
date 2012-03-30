@@ -101,7 +101,7 @@ def test_Mie_construction():
 @with_setup(setup=setup_model, teardown=teardown_model)
 def test_single_sphere():
     # single sphere hologram (only tests that functions return)
-    sphere = Sphere(n=n, r=radius, x=x, y=y, z=z)
+    sphere = Sphere(n=n, r=radius, center=(x, y, z))
 
     holo = xmodel.calc_holo(sphere, alpha=scaling_alpha)
     field = xmodel.calc_field(sphere)
@@ -129,7 +129,7 @@ def test_single_sphere():
 @attr('fast')
 @with_setup(setup=setup_model, teardown=teardown_model)
 def test_Mie_multiple():
-    s1 = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
+    s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
     s2 = Sphere(n = 1.59, r = 1e-6, center=[8e-6,5e-6,5e-6])
     s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,10e-6,3e-6])
     sc = SphereCluster(spheres=[s1, s2, s3])
@@ -166,7 +166,7 @@ def test_Mie_multiple():
 def test_mie_polarization():
     # test holograms for orthogonal polarizations; make sure they're
     # not the same, nor too different from one another.
-    sphere = Sphere(n=n, r=radius, x=x, y=y, z=z)
+    sphere = Sphere(n=n, r=radius, center=(x, y, z))
 
     xholo = xmodel.calc_holo(sphere, alpha=scaling_alpha)
     yholo = ymodel.calc_holo(sphere, alpha=scaling_alpha)
@@ -198,8 +198,8 @@ def test_linearity():
     scaling_alpha = 1.0
     r = 1e-2*xoptics.wavelen    # something much smaller than wavelength
 
-    sphere1 = Sphere(n=n, r=r, x=x, y=y, z=z)
-    sphere2 = Sphere(n=n, r=r, x=x2, y=y2, z=z2)
+    sphere1 = Sphere(n=n, r=r, center = (x, y, z))
+    sphere2 = Sphere(n=n, r=r, center = (x2, y2, z2))
 
     sc = SphereCluster(spheres = [sphere1, sphere2])
     model = xmodel
@@ -241,8 +241,8 @@ def test_nonlinearity():
     scaling_alpha = 1.0
     r = xoptics.wavelen    # order of wavelength
 
-    sphere1 = Sphere(n=n, r=r, x=x, y=y, z=z)
-    sphere2 = Sphere(n=n, r=r, x=x2, y=y2, z=z2)
+    sphere1 = Sphere(n=n, r=r, center = (x, y, z))
+    sphere2 = Sphere(n=n, r=r, center = (x2, y2, z2))
 
     sc = SphereCluster(spheres = [sphere1, sphere2])
     model = xmodel

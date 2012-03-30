@@ -56,10 +56,9 @@ class MovingSphere(Sphere, Composite):
           between frames.
     '''
 
-    def __init__(self, n = 1.59, r = 0.5e-6, x = 0.0, y = 0.0, z = 0.0,
-                 v_x = 0.0, v_y = 0.0, v_z = 0.0, int_time = 1e-6, 
-                 n_smear = 10, center = None):
-        Sphere.__init__(self, n, r, x, y, z, center)
+    def __init__(self, n = 1.59, r = 0.5e-6, v_x = 0.0, v_y = 0.0, v_z = 0.0,
+                 int_time = 1e-6, n_smear = 10, center = (0.0, 0.0, 0.0)):
+        Sphere.__init__(self, n, r, center)
         self.v_x = v_x
         self.v_y = v_y
         self.v_z = v_z
@@ -74,7 +73,7 @@ class MovingSphere(Sphere, Composite):
         self.x_centers = self.center[0] + n_step * v_x * dt
         self.y_centers = self.center[1] + n_step * v_y * dt
         self.z_centers = self.center[2] + n_step * v_z * dt
-        self.scatterers = [Sphere(n, r, xc, yc, zc) for (xc, yc, zc) in 
+        self.scatterers = [Sphere(n, r, center) for center in 
                            zip(self.x_centers, self.y_centers, self.z_centers)]
 
     def __repr__(self):

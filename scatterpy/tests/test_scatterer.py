@@ -39,22 +39,23 @@ def test_Scatterer_construction():
 
 @attr('fast')
 def test_Sphere_construction():
-    s = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
+    s = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
     s = Sphere(n = 1.59, r = 5e-7)
     # index can be complex
     s = Sphere(n = 1.59+0.0001j, r = 5e-7)
     s = Sphere()
 
     with assert_raises(ScattererDefinitionError) as cm:
-        Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = None)
+        Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, None))
     assert_equal(str(cm.exception), 'Error defining scatterer object of type '
-                 'Sphere.\ncenter specified as x=1e-06, y=-1e-06, z=None, '
+                 'Sphere.\ncenter specified as (1e-06, -1e-06, None), '
                  'center should be specified as (x, y, z)')
 
-def test_Ellipsoid_construction():
+def test_Ellipsoid():
     s = Ellipsoid(n = 1.57, r = (1, 2, 3), center = (3, 2, 1))
 
     assert_equal(str(s), 'Ellipsoid(center=[3, 2, 1], n=(1.57+0j), r=[1, 2, 3])')
+
     
 @attr('fast')
 def test_Sphere_construct_list():
@@ -85,7 +86,7 @@ def test_Sphere_construct_array():
 
 @attr('fast')
 def test_Sphere_parameters():
-    s = Sphere(n = 1.59+1e-4j, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
+    s = Sphere(n = 1.59+1e-4j, r = 5e-7, center=(1e-6, -1e-6, 10e-6))
     assert_equal(s.parameters, OrderedDict([('center.x',
     9.9999999999999995e-07), ('center.y', -9.9999999999999995e-07), ('center.z',
     1.0000000000000001e-05), ('n.imag', 0.0001), ('n.real', 1.59), ('r',
@@ -98,8 +99,7 @@ def test_Sphere_parameters():
     
 @attr('fast')
 def test_CoatedSphere_construction():
-    cs = CoatedSphere(n=(1.59, 1.59), r=(5e-7, 1e-6), x=1e-6, 
-                      y=-1e-6, z=10e-6) 
+    cs = CoatedSphere(n=(1.59, 1.59), r=(5e-7, 1e-6), center=(1e-6, -1e-6, 10e-6))
     cs = CoatedSphere(n=(1.59, 1.33), r=(5e-7, 1e-6))
     # index can be complex
     cs = CoatedSphere(n = (1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6))
@@ -108,6 +108,10 @@ def test_CoatedSphere_construction():
                       center = center) 
     cs = CoatedSphere()
 
+def test_CoatedSphere_parameters():
+    cs = CoatedSphere(n = (1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6))
+    #    assert_equal(cs.parameters, OrderedDict())
+
 @attr('fast')
 def test_Composite_construction():
     # empty composite
@@ -115,7 +119,7 @@ def test_Composite_construction():
     print comp_empty.get_component_list()
     
     # composite of multiple spheres
-    s1 = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
+    s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
     s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,0,0])
     comp_spheres = Composite(scatterers=[s1, s2, s3])
@@ -148,21 +152,7 @@ def test_MovingSphere():
 def test_xyzTriple():
     xyzTriple = abstract_scatterer.xyzTriple
     # Three ways to init an xyzTriple, should all give the same result
-    c_1 = xyzTriple(1, 2, 3)
-    c_2 = xyzTriple(x=1, y=2, z=3)
-    c_3 = xyzTriple(xyz = (1, 2, 3))
+    c = xyzTriple(xyz = (1, 2, 3))
 
-    assert_equal(c_1, c_2)
-    assert_equal(c_3, c_1)
-
-    # Now confirm that it rejects bad input
-    with assert_raises(abstract_scatterer.InvalidxyzTriple) as cm:
-        xyzTriple(1)
-    assert_equal(str(cm.exception), "Specification of xyzTriple(x=1, "
-                 "y=None, z=None) is not valid, should be specified as "
-                 "(x, y, z)")
-    assert_raises(abstract_scatterer.InvalidxyzTriple, xyzTriple, xyz = 1)
-    assert_raises(abstract_scatterer.InvalidxyzTriple, xyzTriple, xyz = [1])
-
-    assert_equal(c_1.parameters, {'x': 1, 'y': 2, 'z' : 3})
+    assert_equal(c.parameters, {'x': 1, 'y': 2, 'z' : 3})
 

@@ -105,7 +105,7 @@ def test_polarization():
     # not the same, nor too different from one another.
 
     sphere = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius, 
-                    x=x, y=y, z=z)
+                    center =(x, y, z))
     sc = SphereCluster([sphere])
     xmodel = Multisphere(imshape = imshape, optics=xoptics)
     ymodel = Multisphere(imshape = imshape, optics=yoptics)

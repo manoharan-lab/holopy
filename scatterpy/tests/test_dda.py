@@ -79,7 +79,7 @@ def test_DDA_construction():
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_sphere():
-    sc = Sphere(n=1.59, r=3e-1, x=1, y=-1, z=30)
+    sc = Sphere(n=1.59, r=3e-1, center=(1, -1, 30))
     dda = DDA(imshape=128, optics=optics)
     mie = Mie(imshape=128, optics=optics)
 
@@ -149,7 +149,7 @@ def test_DDA_coated():
 
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_Ellipsoid_dda():
-    e = scatterpy.scatterer.Ellipsoid(1.5, .5, .1, .1, 1, -1, 10)
+    e = scatterpy.scatterer.Ellipsoid(1.5, r = (.5, .1, .1), center = (1, -1, 10))
     dda = scatterpy.theory.DDA(hp.Optics(wavelen=.66, pixel_scale=.1, index=1.33), 100)
     h = dda.calc_holo(e)
 

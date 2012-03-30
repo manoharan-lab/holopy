@@ -83,7 +83,7 @@ def test_fit_mie_single():
     holo = hp.process.normalize(hp.load(os.path.join(path, 'image0001.npy'),
                                         optics=optics))
     
-    s = Sphere(n=1.59+1e-4j, r=8.5e-7, x=.567e-5, y=.576e-5, z=15e-6)
+    s = Sphere(n=1.59+1e-4j, r=8.5e-7, center = (.567e-5, .576e-5, 15e-6))
     alpha = .6
     lb = Sphere(center=[0.0, 0.0, 0.0], n=(1+0.0001j), r=1e-08), .1
     ub = Sphere(center=[1.0e-05, 1.0e-05, 0.0001], n=(2+0.0001j), r=1e-05), 1.0
@@ -103,7 +103,7 @@ def test_fit_mie_single_ralg():
     holo = hp.process.normalize(hp.load(os.path.join(path, 'image0001.npy'),
                                         optics=optics))
     
-    s = Sphere(n=1.59+1e-4j, r=8.5e-7, x=.567e-5, y=.576e-5, z=15e-6)
+    s = Sphere(n=1.59+1e-4j, r=8.5e-7, center=(.567e-5, .576e-5, 15e-6))
     alpha = .6
     lb = Sphere(center=[0.0, 0.0, 0.0], n=(1+0.0001j), r=1e-08), .1
     ub = Sphere(center=[1.0e-05, 1.0e-05, 0.0001], n=(2+0.0001j), r=1e-05), 1.0
@@ -319,7 +319,7 @@ def test_tie():
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_ParameterManager():
-    s = Sphere(n=1.59+1e-4j, r=8.5e-7, x=.567e-5, y=.576e-5, z=15e-6)
+    s = Sphere(n=1.59+1e-4j, r=8.5e-7, center = (.567e-5, .576e-5, 15e-6))
     alpha = .6
     lb = Sphere(center=[0.0, 0.0, 0.0], n=(1+0.0001j), r=1e-08), .1
     ub = (Sphere(center=[1e-05, 1e-05, 0.0001], n=(2+0.0001j), r=1e-05), 1.0)
@@ -375,8 +375,8 @@ def test_parameter_munging():
     sc = SphereCluster([s1, s2])
     alpha = .629
     
-    lb1 = Sphere(1+1e-4j, 1e-8, 0, 0, 0)
-    ub1 = Sphere(2+1e-4j, 1e-5, 1e-4, 1e-4, 1e-4)
+    lb1 = Sphere(1+1e-4j, 1e-8, (0, 0, 0))
+    ub1 = Sphere(2+1e-4j, 1e-5, (1e-4, 1e-4, 1e-4))
     lb = SphereCluster([lb1, lb1]), .1
     ub = SphereCluster([ub1, ub1]), 1
 

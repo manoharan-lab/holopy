@@ -156,16 +156,15 @@ class xyzTriple(np.ndarray):
     """
     
     """
-    def __new__(cls, x=None, y=None, z=None, xyz=None):
-        if xyz is not None:
-            if np.isscalar(xyz) or len(xyz) != 3:
+    def __new__(cls, xyz=None):
+        if np.isscalar(xyz) or len(xyz) != 3:
+            raise InvalidxyzTriple(repr(xyz))
+        for i in xyz:
+            if i is None:
                 raise InvalidxyzTriple(repr(xyz))
-            if isinstance(xyz, dict):
-                xyz = [xyz['x'], xyz['y'], xyz['z']]
-        elif (x is not None) and (y is not None) and (z is not None):
-            xyz =  np.array([x, y, z])
-        else:
-            raise InvalidxyzTriple('x={0}, y={1}, z={2}'.format(x, y, z))
+        if isinstance(xyz, dict):
+            xyz = [xyz['x'], xyz['y'], xyz['z']]
+
 
         return np.asarray(xyz).view(cls)
 
@@ -193,7 +192,6 @@ class xyzTriple(np.ndarray):
 
     def __str__(self):
         return str(list(self))
-        
 
 class InvalidxyzTriple(Exception):
     def __init__(self, xyz):

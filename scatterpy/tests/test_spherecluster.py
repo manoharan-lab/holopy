@@ -38,7 +38,7 @@ from scatterpy.errors import ScattererDefinitionError, InvalidScattererSphereOve
 def test_SphereCluster_construction():
     
     # cluster of multiple spheres
-    s1 = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
+    s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
     s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,0,0])
     sc = SphereCluster(spheres=[s1, s2, s3])
@@ -62,7 +62,7 @@ def test_SphereCluster_construction():
 def test_SphereCluster_construction_typechecking():
     # heterogeneous composite should raise exception, since a
     # sphere cluster must contain only Spheres
-    s1 = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
+    s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
     s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,0,0])
     cs = CoatedSphere(n=(1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6),
@@ -71,7 +71,7 @@ def test_SphereCluster_construction_typechecking():
 
 @attr('fast')
 def test_SphereCluster_ovelap_checking():
-    s1 = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
+    s1 = Sphere(n = 1.59, r = 5e-7, center=(1e-6, -1e-6, 10e-6))
     sc = SphereCluster([s1, s1, s1])
 
     with assert_raises(InvalidScattererSphereOverlap) as cm:
@@ -87,7 +87,7 @@ def test_SphereCluster_ovelap_checking():
 
 
 def test_SphereCluster_parameters():
-    s1 = Sphere(n = 1.59, r = 5e-7, x = 1e-6, y = -1e-6, z = 10e-6)
+    s1 = Sphere(n = 1.59, r = 5e-7, center=[1e-6, -1e-6, 10e-6])
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
     sc = SphereCluster(spheres = [s1, s2])
 

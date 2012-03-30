@@ -33,15 +33,13 @@ class SingleCenterScatterer(Scatterer):
 
     Attributes
     ----------
-    x, y, z : float
-        x, y, z-component of center
-    center : 3-tuple, list or numpy array (optional)
+    center : 3-tuple, list or numpy array
         specifies coordinates of center of the scatterer
     """
     
-    def __init__(self, x = None, y = None, z = None, center = None):
+    def __init__(self, center = None):
         try:
-            self.center = xyzTriple(x, y, z, center)
+            self.center = xyzTriple(center)
         except InvalidxyzTriple as e:
             raise ScattererDefinitionError("center specified as {0}, center "
                 "should be specified as (x, y, z)".format(e.xyz), self)
@@ -65,22 +63,17 @@ class Ellipsoid(SingleCenterScatterer):
     ----------
     n: complex
         Index of refraction
-    r_x, r_y, r_z : float
-        x, y, z semi-axes
-    x, y, z : float
-        x,y,z-component of center
     r: float or (float, float, float)
         x, y, z semi-axes of the ellipsiod
-    center : 3-tuple, list or numpy array (optional)
+    center : 3-tuple, list or numpy array
         specifies coordinates of center of the scatterer
     """
     
-    def __init__(self, n=None, r_x=None, r_y=None, r_z=None, x=None, y=None, z=None,
-                 r=None, center=None):
+    def __init__(self, n=None, r=None, center=None):
         if n is not None:
             self.n = complex(n)
         else:
             self.n = None
-        self.r = xyzTriple(r_x, r_y, r_z, r)
+        self.r = xyzTriple(r)
         
-        super(Ellipsoid, self).__init__(x, y, z, center)
+        super(Ellipsoid, self).__init__(center)

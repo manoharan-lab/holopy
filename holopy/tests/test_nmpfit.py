@@ -129,8 +129,7 @@ def residfunct(p, fjac = None):
     #                              p[4], p[5])
 
     # below uses new class-based interface to mie calculation
-    sphere = Sphere(n=p[0]+n_particle_imag*1j, r=p[1], x=p[2], y=p[3], 
-                    z=p[4])
+    sphere = Sphere(n=p[0]+n_particle_imag*1j, r=p[1], center = p[2:5])
     calculated = theory.calc_holo(sphere, alpha=p[5])
 
     status = 0

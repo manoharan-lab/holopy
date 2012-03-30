@@ -49,9 +49,8 @@ class Sphere(SingleCenterScatterer):
 
     '''
 
-    def __init__(self, n = 1.59, r = 0.5e-6, x = 0.0, y = 0.0, z = 0.0, 
-                 center = None):
+    def __init__(self, n = 1.59, r = 0.5e-6, center = (0, 0, 0)):
         self.n = complex(n)
         self.r = r
-        super(Sphere, self).__init__(x, y, z, center)
+        super(Sphere, self).__init__(center)
 

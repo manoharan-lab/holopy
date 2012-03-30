@@ -55,11 +55,10 @@ class CoatedSphere(SingleCenterScatterer):
         specifies coordinates of center of sphere
 
     '''
-    def __init__(self, n = 1.59, r = 0.5e-6, x = 0.0, y = 0.0, z = 0.0, 
-                 center = None):
+    def __init__(self, n = 1.59, r = 0.5e-6, center = (0.0, 0.0, 0.0)):
         self.n = _ensure_array(n).astype('complex')
         self.r = _ensure_array(r)
-        super(CoatedSphere, self).__init__(x, y, z, center)
+        super(CoatedSphere, self).__init__(center)
     
 
 class Shell(CoatedSphere):
@@ -67,9 +66,9 @@ class Shell(CoatedSphere):
     A CoatedSphere that you specify in terms of thickness and radus instead of
     two radii
     """
-    def __init__(self, n1, n2, t, r, x = 0.0, y = 0.0, z = 0.0, center = None):
+    def __init__(self, n1, n2, t, r, center = (0.0, 0.0, 0.0)):
         inner_r = r-t
-        super(Shell, self).__init__(n1, n2, inner_r, r, x, y, z, center)
+        super(Shell, self).__init__(n1, n2, inner_r, r, center)
 
     parameter_names_list = ['n1.real', 'n1.imag', 'n2.real', 'n2.imag', 't',
                             'r', 'x', 'y', 'z'] 
