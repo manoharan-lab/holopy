@@ -24,7 +24,7 @@ Test file IO of scatterpy objects
 import scatterpy
 import holopy as hp
 import tempfile
-from numpy.testing import assert_, assert_allclose, assert_equal
+from numpy.testing import assert_allclose, assert_equal
 
 def assert_read_matches_write(o):
     tempf = tempfile.TemporaryFile()
@@ -35,6 +35,8 @@ def assert_read_matches_write(o):
     assert_obj_equal(o, loaded)
 
 def assert_obj_equal(o1, o2):
+    if o1 == o2:
+        return True
     d1, d2 = o1.__dict__, o2.__dict__
     assert_equal(sorted(d1.keys()), sorted(d2.keys()))
     for key, val in d1.iteritems():

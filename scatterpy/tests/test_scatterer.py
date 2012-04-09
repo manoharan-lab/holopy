@@ -54,7 +54,7 @@ def test_Sphere_construction():
 def test_Ellipsoid():
     s = Ellipsoid(n = 1.57, r = (1, 2, 3), center = (3, 2, 1))
 
-    assert_equal(str(s), 'Ellipsoid(center=[3, 2, 1], n=(1.57+0j), r=[1, 2, 3])')
+    assert_equal(str(s), 'Ellipsoid(center=(3, 2, 1), n=(1.57+0j), r=(1, 2, 3))')
 
     
 @attr('fast')
@@ -154,15 +154,6 @@ def test_MovingSphere():
     s = MovingSphere(center=(1e-6, -1e-6, 10e-6), v_x = 1.0, int_time=10e-6)
     # test an odd number of smear steps
     MovingSphere(center=(1e-6, -1e-6, 10e-6), v_x = 1.0, int_time=10e-6, n_smear=11)
-    assert_equal(repr(s), 'MovingSphere(center=[9.9999999999999995e-07, '
-                 '-9.9999999999999995e-07, 1.0000000000000001e-05], n=(1.59+0j), '
-                 'r=5e-07)')
-
-@attr('fast')
-def test_xyzTriple():
-    xyzTriple = abstract_scatterer.xyzTriple
-    # Three ways to init an xyzTriple, should all give the same result
-    c = xyzTriple(xyz = (1, 2, 3))
-
-    assert_equal(c.parameters, {'x': 1, 'y': 2, 'z' : 3})
+    assert_equal(repr(s), 'MovingSphere(center=[1e-06, -1e-06, 1e-05], '
+                 'n=(1.59+0j), r=5e-07)')
 

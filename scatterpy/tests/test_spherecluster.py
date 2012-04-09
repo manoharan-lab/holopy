@@ -76,14 +76,12 @@ def test_SphereCluster_ovelap_checking():
 
     with assert_raises(InvalidScattererSphereOverlap) as cm:
         sc.validate()
-    assert_equal(str(cm.exception), "SphereCluster(spheres=[Sphere(center="
-                 "[9.9999999999999995e-07, -9.9999999999999995e-07, "
-                 "1.0000000000000001e-05], n=(1.59+0j), r=5e-07), Sphere(center="
-                 "[9.9999999999999995e-07, -9.9999999999999995e-07, "
-                 "1.0000000000000001e-05], n=(1.59+0j), r=5e-07), Sphere(center="
-                 "[9.9999999999999995e-07, -9.9999999999999995e-07, "
-                 "1.0000000000000001e-05], n=(1.59+0j), r=5e-07)]) has overlaps "
-                 "between spheres: [(0, 1), (0, 2), (1, 2)]")
+    assert_equal(str(cm.exception),
+        'SphereCluster(spheres=[Sphere(center=(1e-06, -1e-06, 1e-05), '
+        'n=(1.59+0j), r=5e-07), Sphere(center=(1e-06, -1e-06, 1e-05), '
+        'n=(1.59+0j), r=5e-07), Sphere(center=(1e-06, -1e-06, 1e-05), '
+        'n=(1.59+0j), r=5e-07)]) has overlaps between spheres: [(0, 1), (0, 2), '
+        '(1, 2)]')
 
 
 def test_SphereCluster_parameters():
@@ -91,11 +89,11 @@ def test_SphereCluster_parameters():
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
     sc = SphereCluster(spheres = [s1, s2])
 
-    assert_equal(sc.parameters, OrderedDict([('0:Sphere.center.x',
-    9.9999999999999995e-07), ('0:Sphere.center.y', -9.9999999999999995e-07),
-    ('0:Sphere.center.z', 1.0000000000000001e-05), ('0:Sphere.n.imag', 0.0),
-    ('0:Sphere.n.real', 1.59), ('0:Sphere.r', 5e-07), ('1:Sphere.center.x', 0),
-    ('1:Sphere.center.y', 0), ('1:Sphere.center.z', 0), ('1:Sphere.n.imag',
+    assert_equal(sc.parameters, OrderedDict([('0:Sphere.center[0]',
+    9.9999999999999995e-07), ('0:Sphere.center[1]', -9.9999999999999995e-07),
+    ('0:Sphere.center[2]', 1.0000000000000001e-05), ('0:Sphere.n.imag', 0.0),
+    ('0:Sphere.n.real', 1.59), ('0:Sphere.r', 5e-07), ('1:Sphere.center[0]', 0),
+    ('1:Sphere.center[1]', 0), ('1:Sphere.center[2]', 0), ('1:Sphere.n.imag',
     0.0), ('1:Sphere.n.real', 1.59), ('1:Sphere.r', 1e-06)]))
 
     sc2 = SphereCluster.from_parameters(sc.parameters)

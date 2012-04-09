@@ -163,61 +163,7 @@ class Scatterer(Serializable):
              sorted(self.__dict__.iteritems())])) 
     
 
-class xyzTriple(np.ndarray):
-    """
-    
-    """
-    def __new__(cls, xyz=None):
-        if np.isscalar(xyz) or len(xyz) != 3:
-            raise InvalidxyzTriple(repr(xyz))
-        for i in xyz:
-            if i is None:
-                raise InvalidxyzTriple(repr(xyz))
-        if isinstance(xyz, dict):
-            xyz = [xyz['x'], xyz['y'], xyz['z']]
-
-
-        return np.asarray(xyz).view(cls)
-
-    def __array_finalize__(self, obj):
-        pass
-
-    def __array_wrap__(self, out_arr, context=None):
-        return np.ndarray.__array_wrap__(self, out_arr, context)
-
-
-    @property
-    def x(self):
-        return self[0]
-    @property
-    def y(self):
-        return self[1]
-    @property
-    def z(self):
-        return self[2]
-    
-    
-    @property
-    def parameters(self):
-        return {'x': self.x, 'y': self.y, 'z': self.z}
-
-    def __str__(self):
-        return str(list(self))
-
-class InvalidxyzTriple(Exception):
-    def __init__(self, xyz):
-       self.xyz = xyz
-
-       
-    def __str__(self):
-       return ("Specification of xyzTriple({0}) is not valid, should be "
-                "specified as (x, y, z)".format(self.xyz))
-
-def xyzTriple_yaml_representer(dumper, data):
-    return dumper.represent_scalar(u'!xyzTriple', str(list(data)))
-yaml.add_representer(xyzTriple, xyzTriple_yaml_representer)
-
 def xyzTriple_yaml_constructor(loader, node):
     value = loader.construct_scalar(node)
-    return xyzTriple(xyz = [float(v) for v in value[1:-1].split(',')])
+    return [float(v) for v in value[1:-1].split(',')]
 yaml.add_constructor(u'!xyzTriple', xyzTriple_yaml_constructor)

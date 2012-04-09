@@ -23,9 +23,21 @@ defined center.
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
+import numpy as np
+
 from scatterpy.scatterer import Scatterer
 from scatterpy.errors import ScattererDefinitionError
-from scatterpy.scatterer.abstract_scatterer import xyzTriple, InvalidxyzTriple
+
+def isnumber(x):
+    try:
+        x + 1
+        return True
+    except TypeError:
+        return False
+
+def all_numbers(x):
+    return reduce(lambda rest, i: isnumber(i) and rest, x, True)
+    
 
 class SingleCenterScatterer(Scatterer):
     """
@@ -38,11 +50,11 @@ class SingleCenterScatterer(Scatterer):
     """
     
     def __init__(self, center = None):
-        try:
-            self.center = xyzTriple(center)
-        except InvalidxyzTriple as e:
+        if np.isscalar(center) or len(center) != 3 or not all_numbers(center):
             raise ScattererDefinitionError("center specified as {0}, center "
-                "should be specified as (x, y, z)".format(e.xyz), self)
+                "should be specified as (x, y, z)".format(center), self)
+        
+        self.center = center
 
     @property
     def x(self):
@@ -74,6 +86,12 @@ class Ellipsoid(SingleCenterScatterer):
             self.n = complex(n)
         else:
             self.n = None
-        self.r = xyzTriple(r)
+
+        if np.isscalar(center) or len(center) != 3 or not all_numbers(center):
+            raise ScattererDefinitionError("r specified as {0}, r should be "
+                                           "specified as (r_x, r_y, r_z)"
+                                           "".format(center), self)
+ 
+        self.r = r
         
         super(Ellipsoid, self).__init__(center)
