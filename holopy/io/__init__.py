@@ -26,6 +26,5 @@ just holograms.
 from yaml_io import save, load_yaml
 from image_io import load, save_image
 import image_io
-import fit_io
 import yaml_io
 

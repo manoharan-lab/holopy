@@ -87,8 +87,8 @@ def test_Sphere_construct_array():
 @attr('fast')
 def test_Sphere_parameters():
     s = Sphere(n = 1.59+1e-4j, r = 5e-7, center=(1e-6, -1e-6, 10e-6))
-    assert_equal(s.parameters, OrderedDict([('center.x',
-    9.9999999999999995e-07), ('center.y', -9.9999999999999995e-07), ('center.z',
+    assert_equal(s.parameters, OrderedDict([('center[0]',
+    9.9999999999999995e-07), ('center[1]', -9.9999999999999995e-07), ('center[2]',
     1.0000000000000001e-05), ('n.imag', 0.0001), ('n.real', 1.59), ('r',
     5e-07)]))
 
@@ -109,9 +109,19 @@ def test_CoatedSphere_construction():
     cs = CoatedSphere()
 
 def test_CoatedSphere_parameters():
-    cs = CoatedSphere(n = (1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6))
-    #    assert_equal(cs.parameters, OrderedDict())
+    cs = CoatedSphere(n = (1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6), center =
+                      (1, 2, 3))
+    assert_equal(cs.parameters, OrderedDict([('center[0]', 1), ('center[1]', 2),
+    ('center[2]', 3), ('n[0].imag', 0.0001), ('n[0].real', 1.5900000000000001),
+    ('n[1].imag', 0.0001), ('n[1].real', 1.3300000000000001), ('r[0]',
+    4.9999999999999998e-07), ('r[1]', 9.9999999999999995e-07)]))
 
+    cp = CoatedSphere.from_parameters(cs.parameters)
+
+    assert_equal(cs.r, cp.r)
+    assert_equal(cs.n, cp.n)
+    assert_equal(cs.center, cp.center)
+    
 @attr('fast')
 def test_Composite_construction():
     # empty composite

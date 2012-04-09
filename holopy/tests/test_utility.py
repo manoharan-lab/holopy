@@ -16,4 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 
-from holopy.third_party import nmpfit
+import numpy as np
+from numpy.testing import assert_equal
+from nose.plugins.attrib import attr
+
+from holopy.utility.helpers import _ensure_array
+
+
+@attr('fast')
+def test_ensure_array():
+    assert_equal(_ensure_array(1.0), np.array([1.0]))
+    assert_equal(_ensure_array([1.0]), np.array([1.0]))
+    assert_equal(_ensure_array(np.array([1.0])), np.array([1.0]))

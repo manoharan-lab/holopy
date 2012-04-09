@@ -330,9 +330,9 @@ def test_ParameterManager():
 
     assert alpha == alpha2
     
-    assert_equal(params,{'center.x': 5.6699999999999999e-06,
-                         'center.y': 5.7599999999999999e-06,
-                         'center.z': 1.5e-05,
+    assert_equal(params,{'center[0]': 5.6699999999999999e-06,
+                         'center[1]': 5.7599999999999999e-06,
+                         'center[2]': 1.5e-05,
                          'n.imag': 0.0001,
                          'n.real': 1.5900000000000001,
                          'r': 8.5000000000000001e-07})

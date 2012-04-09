@@ -21,7 +21,7 @@ The abstract base class for all scattering objects
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from itertools import chain
 
 import numpy as np
@@ -86,20 +86,19 @@ class Scatterer(Serializable):
         # same order in cases where a list of parameters is needed and will be
         # later passed to Scatterer.from_parameters
 
-        sub_pars = []
-        
-        for key, par in self.__dict__.iteritems():
-            if hasattr(par, 'parameters'):
-                sub_pars.append((('center.{0}'.format(p[0]), p[1]) for p in
-                            par.parameters.iteritems()))
-            elif isinstance(par, complex):
-                sub_pars.append([('{0}.real'.format(key), par.real),
-                                 ('{0}.imag'.format(key), par.imag)])
+        def expand(key, par):
+            if not np.isscalar(par):
+                subs = (expand('{0}[{1}]'.format(key, p[0]), p[1]) for p in enumerate(par)) 
+                return chain(*subs)
+            if isinstance(par, complex):
+                return [('{0}.real'.format(key), par.real),
+                        ('{0}.imag'.format(key), par.imag)]
             else:
-                sub_pars.append([(key, par)])
+                return [(key, par)]
 
-        return OrderedDict(sorted(chain(*sub_pars), key = lambda t: t[0]))
-
+        return OrderedDict(sorted(chain(*[expand(*p) for p in
+                                          self.__dict__.iteritems()]))) 
+    
 
     @classmethod
     def from_parameters(cls, parameters):
@@ -120,29 +119,41 @@ class Scatterer(Serializable):
         # This will need to be overriden for subclasses that do anything
         # complicated with parameters
 
-        collected = {}
+        collected = defaultdict(dict)
 
         for key, val in parameters.iteritems():
             tok = key.split('.', 1)
             if len(tok) > 1:
-                if collected.get(tok[0]):
-                    collected[tok[0]][tok[1]] = val
-                else:
-                    collected[tok[0]] = {tok[1] : val}
+                collected[tok[0]][tok[1]] = val
             else:
                 collected[key] = val
 
-        built = {}
+        collected_arrays = defaultdict(dict)
         for key, val in collected.iteritems():
-            if isinstance(val, dict):
-                if sorted(val.keys()) == ['x', 'y', 'z']:
-                    built[key] = [val['x'], val['y'], val['z']]
-                elif sorted(val.keys()) == ['imag', 'real']:
-                    built[key] = val['real'] + 1.0j * val['imag']
-                else:
-                    built[key] = val
+            tok = key.split('[', 1)
+            if len(key.split('[', 1)) > 1:
+                sub_key, n = key.split('[', 1)
+                n = int(n[:-1])
+                collected_arrays[sub_key][n] = val
             else:
-                built[key] = val
+                collected_arrays[key] = val
+
+        built = {}
+
+        def build(par):
+            if isinstance(par, dict):
+                if sorted(par.keys()) == ['imag', 'real']:
+                    return par['real'] + 1.0j * par['imag']
+                elif reduce(lambda x, i: isinstance(i, int) and x,
+                            par.keys(), True):
+
+                    d = [p[1] for p in sorted(par.iteritems(), key =
+                                                 lambda x: x[0])]
+                    return [build(p) for p in d]
+            return par
+            
+        for key, val in collected_arrays.iteritems():
+            built[key] = build(val)
 
         return cls(**built)
 
