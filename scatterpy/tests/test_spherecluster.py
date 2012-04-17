@@ -98,11 +98,40 @@ def test_SphereCluster_parameters():
 
     sc2 = SphereCluster.from_parameters(sc.parameters)
 
-    assert sc.scatterers[0].r == sc2.scatterers[0].r
-    assert sc.scatterers[1].r == sc2.scatterers[1].r
-    assert sc.scatterers[0].n == sc2.scatterers[0].n
-    assert sc.scatterers[1].n == sc2.scatterers[1].n
+    assert_equal(sc.scatterers[0].r, sc2.scatterers[0].r)
+    assert_equal(sc.scatterers[1].r, sc2.scatterers[1].r)
+    assert_equal(sc.scatterers[0].n, sc2.scatterers[0].n)
+    assert_equal(sc.scatterers[1].n, sc2.scatterers[1].n)
     assert_equal(sc.scatterers[0].center, sc2.scatterers[0].center)
     assert_equal(sc.scatterers[1].center, sc2.scatterers[1].center)
     
     
+def test_SphereCluster_translation():
+    s1 = Sphere(n = 1.59, r = 5, center=[1, -1, 10])
+    s2 = Sphere(n = 1.59, r = 1, center=[0,0,0])
+    sc = SphereCluster(spheres = [s1, s2])
+
+    sc2 = sc.translated(1, 1, 1)
+
+    assert_equal(sc.scatterers[0].r, sc2.scatterers[0].r)
+    assert_equal(sc.scatterers[1].r, sc2.scatterers[1].r)
+    assert_equal(sc.scatterers[0].n, sc2.scatterers[0].n)
+    assert_equal(sc.scatterers[1].n, sc2.scatterers[1].n)
+    assert_equal([2, 0, 11], sc2.scatterers[0].center)
+    assert_equal([1, 1, 1], sc2.scatterers[1].center)
+
+def test_SphereCluster_rotation():
+    s1 = Sphere(n = 1.59, r = 1, center = [1, 0, 0])
+    s2 = Sphere(n = 1.59, r = 1, center = [-1, 0, 1])
+    sc = SphereCluster(spheres = [s1, s2])
+
+    sc2 = sc.rotated(np.pi/2, 0, 0)
+
+    assert_equal(sc.scatterers[0].r, sc2.scatterers[0].r)
+    assert_equal(sc.scatterers[1].r, sc2.scatterers[1].r)
+    assert_equal(sc.scatterers[0].n, sc2.scatterers[0].n)
+    assert_equal(sc.scatterers[1].n, sc2.scatterers[1].n)
+    assert_almost_equal([0, -1, 0], sc2.scatterers[0].center)
+    assert_almost_equal([0, 1, 1], sc2.scatterers[1].center)
+    
+

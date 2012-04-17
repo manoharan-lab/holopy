@@ -17,10 +17,10 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-Proposal for new function structure for fitting in the form of tests.
+Test fitting and related infrastructure
 
-Don't expect these tests to pass for a while
-
+.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
+.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
 from collections import OrderedDict

@@ -25,9 +25,13 @@ scatterers (e.g. two trimers).
 '''
 
 from collections import OrderedDict
+from copy import copy
+
+import numpy as np
+
+from holopy.process.math import rotate_points
 
 import scatterpy
-from sphere import Sphere
 from scatterpy.scatterer import Scatterer
 
 class Composite(Scatterer):
@@ -121,3 +125,26 @@ class Composite(Scatterer):
         '''
         return self._prettystr(0)
 
+
+    def translated(self, x, y, z):
+        trans = [s.translated(x, y, z) for s in self.scatterers]
+        new = copy(self)
+        new.scatterers = trans
+        return new
+
+    def rotated(self, alpha, beta, gamma):
+        centers = np.array([s.center for s in self.scatterers])
+        com = centers.mean(0)
+        
+        new_centers = com + rotate_points(centers - com, alpha, beta, gamma)
+
+        scatterers = []
+
+        for i in range(len(self.scatterers)):
+            scatterers.append(self.scatterers[i].translated(
+                *(new_centers[i,:] - centers[i,:])).rotated(alpha, beta, gamma))
+
+        new = copy(self)
+        new.scatterers = scatterers
+
+        return new

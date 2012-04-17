@@ -23,14 +23,10 @@ Defines CoatedSphere, a scattering primitive
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
-import numpy as np
 from holopy.utility.helpers import _ensure_array
-from scatterpy.scatterer.ellipsoid import SingleCenterScatterer
+from .abstract_scatterer import SphericallySymmetricScatterer
 
-#TODO: failed tests are all things I think we are refactoring away -
-# tgd 2012-03-13
-
-class CoatedSphere(SingleCenterScatterer):
+class CoatedSphere(SphericallySymmetricScatterer):
     '''
     Contains optical and geometrical properties of a coated sphere, a
     scattering primitive.  Core and shell are concentric.

@@ -23,6 +23,7 @@ The abstract base class for all scattering objects
 '''
 from collections import OrderedDict, defaultdict
 from itertools import chain
+from copy import copy
 
 import numpy as np
 import yaml
@@ -30,16 +31,31 @@ import yaml
 from holopy.io.yaml_io import Serializable
 from scatterpy.errors import ScattererDefinitionError
 
+
 class Scatterer(Serializable):
     """
-    abstract base class for scatterers
+    Base class for scatterers
 
     """
-    yaml_tag = u'!Scatterer'
-    
     def __init__(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
+    def translated(self, x, y, z):
+        """
+        Make a copy of this scatterer translated to a new location
+
+        Parameters
+        ----------
+        x, y, z : float
+            Value of the translation along each axis
+
+        Returns
+        -------
+        translated : Scatterer
+            A copy of this scatterer translated to a new location
+        """
+        raise NotImplementedError()
+    
     def validate(self):
         """
         Check that a scatterer is physically realistic.  Theories should call
@@ -158,11 +174,75 @@ class Scatterer(Serializable):
         return cls(**built)
 
     def __repr__(self):
-        return "{0}({1})".format(self.__class__.__name__, ', '.join(
-            ['='.join([str(p) for p in par]) for par in
-             sorted(self.__dict__.iteritems())])) 
+        pars = []
+        for key, val in  sorted(self.__dict__.iteritems()):
+            if isinstance(val, np.ndarray):
+                pars.append('='.join((key, repr(list(val)))))
+            else:
+                pars.append('='.join((key, repr(val))))
+                
+        return "{0}({1})".format(self.__class__.__name__, ', '.join(pars))
+
+
+    def like_me(self, **overrides):
+        pars = dict(self.__dict__)
+        pars.update(overrides)
+
+        return self.__class__(**pars)
+
+def isnumber(x):
+    try:
+        x + 1
+        return True
+    except TypeError:
+        return False
+
+def all_numbers(x):
+    return reduce(lambda rest, i: isnumber(i) and rest, x, True)
+
+    
+class SingleScatterer(Scatterer):
+    def __init__(self, center = None):
+        if np.isscalar(center) or len(center) != 3 or not all_numbers(center):
+            raise ScattererDefinitionError("center specified as {0}, center "
+                "should be specified as (x, y, z)".format(center), self)
+        self.center = center
+
+    def translated(self, x, y, z):
+        """
+        Make a copy of this scatterer translated to a new location
+
+        Parameters
+        ----------
+        x, y, z : float
+            Value of the translation along each axis
+
+        Returns
+        -------
+        translated : Scatterer
+            A copy of this scatterer translated to a new location
+        """
+        new = copy(self)
+        new.center = self.center + np.array([x, y, z])
+        return new
+    @property
+    def x(self):
+        return self.center[0]
+    @property
+    def y(self):
+        return self.center[1]
+    @property
+    def z(self):
+        return self.center[2]        
+
+class SphericallySymmetricScatterer(SingleScatterer):
+    def rotated(self, alpha, beta, gamma):
+        return copy(self)
     
 
+    # Legacy, Deprecated.  Kept around in case anyone has files saved with
+    # xyzTriples, this should read thim into the new format, though I haven't
+    # tested it -tgd 2012-04-10
 def xyzTriple_yaml_constructor(loader, node):
     value = loader.construct_scalar(node)
     return [float(v) for v in value[1:-1].split(',')]

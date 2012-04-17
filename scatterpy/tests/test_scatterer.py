@@ -25,7 +25,7 @@ from collections import OrderedDict
 
 import numpy as np
 from nose.tools import raises, assert_raises
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_allclose
 from nose.plugins.attrib import attr
 
 from scatterpy.scatterer import (Sphere, CoatedSphere, Scatterer, Ellipsoid,
@@ -157,3 +157,22 @@ def test_MovingSphere():
     assert_equal(repr(s), 'MovingSphere(center=[1e-06, -1e-06, 1e-05], '
                  'n=(1.59+0j), r=5e-07)')
 
+
+@attr('fast')
+def test_like_me():
+    s = Sphere(n = 1.59, r = .5, center = (1, -1, 10))
+    s2 = s.like_me(center = (0, 2, 10))
+
+    assert_equal(s.r, s2.r)
+    assert_equal(s.n, s2.n)
+    assert_equal(s2.center, (0, 2, 10))
+
+
+@attr('fast')
+def test_translate():
+    s = Sphere(n = 1.59, r = .5, center = (0, 0, 0))
+    s2 = s.translated(1, 1, 1)
+    assert_equal(s.r, s2.r)
+    assert_equal(s.n, s2.n)
+    assert_allclose(s2.center, (1, 1, 1))
+    

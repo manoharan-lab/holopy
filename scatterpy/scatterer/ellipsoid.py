@@ -25,7 +25,7 @@ defined center.
 
 import numpy as np
 
-from scatterpy.scatterer import Scatterer
+from scatterpy.scatterer.abstract_scatterer import SingleScatterer, all_numbers
 from scatterpy.errors import ScattererDefinitionError
 
 def isnumber(x):
@@ -39,35 +39,7 @@ def all_numbers(x):
     return reduce(lambda rest, i: isnumber(i) and rest, x, True)
     
 
-class SingleCenterScatterer(Scatterer):
-    """
-    Base class for scattererers which are localized around some defined center.
-
-    Attributes
-    ----------
-    center : 3-tuple, list or numpy array
-        specifies coordinates of center of the scatterer
-    """
-    
-    def __init__(self, center = None):
-        if np.isscalar(center) or len(center) != 3 or not all_numbers(center):
-            raise ScattererDefinitionError("center specified as {0}, center "
-                "should be specified as (x, y, z)".format(center), self)
-        
-        self.center = center
-
-    @property
-    def x(self):
-        return self.center[0]
-    @property
-    def y(self):
-        return self.center[1]
-    @property
-    def z(self):
-        return self.center[2]        
-
-    
-class Ellipsoid(SingleCenterScatterer):
+class Ellipsoid(SingleScatterer):
     """
     Scattering object representing ellipsoidal scatterers
 

@@ -22,12 +22,9 @@ Defines Sphere, a scattering primitive
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
-import numpy as np
-from scatterpy.scatterer import Scatterer
-from scatterpy.errors import ScattererDefinitionError
-from .ellipsoid import SingleCenterScatterer
+from .abstract_scatterer import SphericallySymmetricScatterer
 
-class Sphere(SingleCenterScatterer):
+class Sphere(SphericallySymmetricScatterer):
     '''
     Contains optical and geometrical properties of a sphere, a
     scattering primitive
