@@ -42,7 +42,6 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('',parent_package,top_path)
     config.add_subpackage('holopy')
     config.add_subpackage('holopy.analyze')
-    config.add_subpackage('holopy.analyze.minimizers')
     config.add_subpackage('holopy.io')
     config.add_subpackage('scatterpy')
     config.add_subpackage('scatterpy.theory')
