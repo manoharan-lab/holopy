@@ -203,7 +203,7 @@ def reconstruct(holo, distances, fourier_filter=None, gradient_filter=None,
     ----------
     holo : :class:`holopy.hologram.Hologram`
        the hologram to reconstruct
-    distances : length (float) or array<length>
+    distances : float array(dtype=float)
        reconstruction distance(s)
 
     Returns
