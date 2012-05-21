@@ -1,5 +1,9 @@
+import numpy as np
+
 import scatterpy
-    
+from holopy.utility.helpers import _ensure_pair
+
+
 def fit(model, data, algorithm='nmpfit'):
     result = algorithm.minimize(model.parameters, model.cost_func(data))
     return result
@@ -65,23 +69,44 @@ class Model(object):
         
 class Minimizer(object):
     def __init__(self):
-        pass
+        self.algorithm = 'nmpfit'
 
     def minimize(self, parameters, cost_func):
-        pass
+        if self.algorithm == 'nmpfit':
+            from holopy.third_party import nmpfit
+            nmp_pars = []
+            for i, par in enumerate(parameters):
+
+                def resid_wrapper(p, fjac=None):
+                    status = 0
+                    return [status, cost_func(p)]
+    
+                d = {'parname': par.name}
+                if par.limit is not None:
+                    d['limited'] = [l is not None for l in par.limit]
+                    d['limits'] = par.limit
+                else:
+                    d['limited'] = [False, False]    
+                if par.guess is not None:
+                    d['value'] = par.guess
+                else:
+                    raise NeedInitialGuess()
+                nmp_pars.append(d)
+            fitresult = nmpfit.mpfit(resid_wrapper, parinfo=nmp_pars)
+            return fitresult.params
+
         
 
 class Parameter(object):
-    def __init__(self, guess = None, limits = None, name = None, misc = None):
+    def __init__(self, guess = None, limit = None, name = None, misc = None):
         self.name = name
         self.guess = guess
-        self.limits = limits
+        self.limit = limit
         self.misc = misc
         if guess is not None:
-            self.scale = guess
+            self.scale_factor = guess
         else:
-            
-        self.scale = #compute this
+            self.scale_factor = np.sqrt(limits[0]*limits[1])
 
     def scale(self, physical):
         """
@@ -96,7 +121,7 @@ class Parameter(object):
         scaled: np.array(dtype=float)
         """
 
-        return physical * self.scale
+        return physical * self.scale_factor
 
     def unscale(self, scaled):
         """
@@ -110,7 +135,7 @@ class Parameter(object):
         -------
         physical: np.array(dtype=float)
         """
-        return scaled / self.scale
+        return scaled / self.scale_factor
 
 
 class RigidSphereCluster(Model):
