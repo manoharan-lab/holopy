@@ -28,15 +28,16 @@ from .abstract_scatterer import SphericallySymmetricScatterer
 
 class CoatedSphere(SphericallySymmetricScatterer):
     '''
-    Contains optical and geometrical properties of a coated sphere, a
-    scattering primitive.  Core and shell are concentric.
-
+    Sphere with concentric layers of different index.  
+    
+    A CoatedSphere can contain any number of layers
+    
     Attributes
     ----------
     n : array(complex)
-        Index of refraction of shell
+        Indices of refraction of each layer, starting from center
     r : array(float)
-        Radius of core sphere
+        Radius of each layer, starting from the center
     center : 3-tuple, list or numpy array (optional)
         specifies coordinates of center of sphere
 
