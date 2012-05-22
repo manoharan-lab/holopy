@@ -24,7 +24,7 @@ sensible way.
 """
 
 import holopy as hp
-import numpy
+import numpy as np
 import scatterpy
 
 class VisualizationNotImplemented(Exception):
@@ -53,7 +53,12 @@ def show(o,color=(0,0,1)):
     if isinstance(o, scatterpy.scatterer.SphereCluster):
         import vis3d
         vis3d.show_sphere_cluster(o,color)
-    elif isinstance(o, (hp.Hologram, hp.analyze.reconstruct.Reconstruction, numpy.ndarray)):
+        return
+    
+    elif isinstance(o, (list, tuple)):
+        o = np.dstack(o)
+    if isinstance(o, (hp.Hologram, hp.analyze.reconstruct.Reconstruction,
+                        np.ndarray)):
         import vis2d
         vis2d.show(o)
     else:
