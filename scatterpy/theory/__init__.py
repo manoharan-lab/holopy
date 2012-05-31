@@ -31,4 +31,4 @@ from mie import Mie
 from dda import DDA
 from multisphere import Multisphere
 from multisphereapprox import MultisphereApprox
-
+from scatteringtheory import ScatteringTheory

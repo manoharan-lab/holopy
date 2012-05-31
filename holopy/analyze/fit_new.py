@@ -1,12 +1,21 @@
+import inspect
+
 import numpy as np
 
 import scatterpy
 from holopy.utility.helpers import _ensure_pair
+from holopy.io.yaml_io import Serializable
 
+
+class FitResult(Serializable):
+    def __init__(self, scatterer, alpha):
+        self.scatterer = scatterer
+        self.alpha = alpha
 
 def fit(model, data, algorithm='nmpfit'):
-    result = algorithm.minimize(model.parameters, model.cost_func(data))
-    return result
+    minimizer = Minimizer(algorithm)
+    result = minimizer.minimize(model.parameters, model.cost_func(data))
+    return model.make_scatterer_from_par_values(result)
 
 class Model(object):
     """
@@ -33,22 +42,26 @@ class Model(object):
         self.parameters = parameters
         self.theory = theory
         self.scatterer=scatterer
-        self._make_scatterer=make_scatterer
+        self.make_scatterer = make_scatterer
+        self.compare = lambda calc, data: (calc-data).ravel()
 
-    def make_scatterer(self, par_values):
-        if self._make_scatterer:
-            return self._make_scatterer(par_values)
-        else:
-            physical = {}
-            for i, parameter in enumerate(self.parameters):
-                physical[parameter.name] = parameter.unscale(par_values[i])
-            return self.scatterer.from_parameters(physical)
-
+    def make_scatterer_from_par_values(self, par_values):
+        all_pars = {}
+        for i, p in enumerate(self.parameters):
+            all_pars[p.name] = p.unscale(par_values[i])
+        for_scatterer = {}
+        for arg in inspect.getargspec(self.make_scatterer).args:
+            for_scatterer[arg] = all_pars[arg] 
+        return self.make_scatterer(**for_scatterer)
+        
     # TODO: add a make_optics function so that you can have parameters
     # affect optics things (fit to beam divergence, lens abberations, ...)
 
     def alpha(self, par_values):
-        return self.parameters[-1].unscale(par_values[-1])
+        for i, par in enumerate(self.parameters):
+            if par.name == 'alpha':
+                return par.unscale(par_values[i])
+        return None
     
     def cost_func(self, data): 
         if not isinstance(self.theory, scatterpy.theory.ScatteringTheory):
@@ -57,8 +70,9 @@ class Model(object):
             theory = self.theory
             
         def cost(par_values):
-            calc = theory.calc_holo(self.make_scatterer(par_values[:-1]), self.alpha(par_values))
-            return compare(calc, data)
+            calc = theory.calc_holo(self.make_scatterer_from_par_values(par_values),
+                             self.alpha(par_values))
+            return self.compare(calc, data)
         return cost
 
     # TODO: make a user overridabel cost function that gets physical parameters
@@ -68,8 +82,8 @@ class Model(object):
     # TODO: Allow a layer on top of theory to do things like moving sphere
         
 class Minimizer(object):
-    def __init__(self):
-        self.algorithm = 'nmpfit'
+    def __init__(self, algorithm='nmpfit'):
+        self.algorithm = algorithm
 
     def minimize(self, parameters, cost_func):
         if self.algorithm == 'nmpfit':
@@ -83,12 +97,12 @@ class Minimizer(object):
     
                 d = {'parname': par.name}
                 if par.limit is not None:
-                    d['limited'] = [l is not None for l in par.limit]
-                    d['limits'] = par.limit
+                    d['limited'] = [par.scale(l) is not None for l in par.limit]
+                    d['limits'] = par.scale(np.array(par.limit))
                 else:
                     d['limited'] = [False, False]    
                 if par.guess is not None:
-                    d['value'] = par.guess
+                    d['value'] = par.scale(par.guess)
                 else:
                     raise NeedInitialGuess()
                 nmp_pars.append(d)
@@ -98,7 +112,7 @@ class Minimizer(object):
         
 
 class Parameter(object):
-    def __init__(self, guess = None, limit = None, name = None, misc = None):
+    def __init__(self, name = None, guess = None, limit = None, misc = None):
         self.name = name
         self.guess = guess
         self.limit = limit
@@ -121,7 +135,7 @@ class Parameter(object):
         scaled: np.array(dtype=float)
         """
 
-        return physical * self.scale_factor
+        return physical / self.scale_factor
 
     def unscale(self, scaled):
         """
@@ -135,7 +149,7 @@ class Parameter(object):
         -------
         physical: np.array(dtype=float)
         """
-        return scaled / self.scale_factor
+        return scaled * self.scale_factor
 
 
 class RigidSphereCluster(Model):

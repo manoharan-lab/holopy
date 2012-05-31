@@ -38,6 +38,8 @@ from scatterpy.scatterer import Sphere, SphereCluster
 import scatterpy
 from holopy.analyze.fit import fit
 
+from common import assert_parameters_allclose
+
 def setup_optics():
     # set up optics class for use in several test functions
     global optics
@@ -63,17 +65,6 @@ gold_single = OrderedDict((('center.x', 5.534e-6),
                ('n.real', 1.582),
                ('r', 6.484e-7)))
 gold_alpha = .6497
-               
-def assert_parameters_allclose(actual, desired, rtol=1e-3):
-    if isinstance(actual, scatterpy.scatterer.Scatterer):
-        actual = actual.parameters
-    if isinstance(actual, dict):
-        actual = np.array([p[1] for p in actual.iteritems()])
-    if isinstance(desired, scatterpy.scatterer.Scatterer):
-        desired = desired.parameters
-    if isinstance(desired, dict):
-        desired = np.array([p[1] for p in desired.iteritems()])
-    assert_allclose(actual, desired, rtol=rtol)
 
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)

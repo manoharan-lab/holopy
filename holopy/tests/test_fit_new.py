@@ -30,6 +30,8 @@ from scatterpy.theory import Mie
 from scatterpy.scatterer import Sphere
 
 from holopy.analyze.fit_new import Parameter, Model, fit, Minimizer
+from common import assert_parameters_allclose
+
 
 def setup_optics():
     # set up optics class for use in several test functions
@@ -49,9 +51,9 @@ def teardown_optics():
     global optics
     del optics
 
-gold_single = OrderedDict((('center.x', 5.534e-6),
-               ('center.y', 5.792e-6),
-               ('center.z', 1.415e-5),
+gold_single = OrderedDict((('center[0]', 5.534e-6),
+               ('center[1]', 5.792e-6),
+               ('center[2]', 1.415e-5),
                ('n.imag', 1e-4),
                ('n.real', 1.582),
                ('r', 6.484e-7)))
@@ -60,7 +62,6 @@ gold_alpha = .6497
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_fit_mie_single():
-    return True
     path = os.path.abspath(hp.__file__)
     path = os.path.join(os.path.split(path)[0],'tests', 'exampledata')
     holo = hp.process.normalize(hp.load(os.path.join(path, 'image0001.npy'),
@@ -74,12 +75,14 @@ def test_fit_mie_single():
 
     
     def make_scatterer(x, y, z, r):
-        return Sphere(n=1.59+1e-4j, r = r, center = (x, y, z))
+        return Sphere(n=1.582+1e-4j, r = r, center = (x, y, z))
 
-    model = Model(parameters, Multisphere, make_scatterer=make_scatterer)
+    model = Model(parameters, Mie, make_scatterer=make_scatterer)
 
     result = fit(model, holo)
-    
+
+    assert_parameters_allclose(result, gold_single)
+
 @attr('fast')
 def test_parameter():
     par = Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5])
@@ -98,6 +101,42 @@ def test_model():
         return Sphere(n=1.59+1e-4j, r = r, center = (x, y, z))
 
     model = Model(parameters, Mie, make_scatterer=make_scatterer)
+
+    x, y, z, r = 1, 2, 3, 1
+    s = model.make_scatterer(x, y, z, r)
+
+    assert_parameters_allclose(s, Sphere(center=(x, y, z), n=(1.59+0.0001j),
+                                         r=r))
+
+    
+
+@with_setup(setup=setup_optics, teardown=teardown_optics)
+@attr('fast')
+def test_cost_func():
+    
+    parameters = [Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5]),
+        Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
+        Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
+        Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5]),
+        Parameter(name='alpha', guess=.6, limit = [.1, 1])]
+
+    def make_scatterer(x, y, z, r):
+        return Sphere(n=1.59+1e-4j, r = r, center = (x, y, z))
+
+    model = Model(parameters, Mie, make_scatterer=make_scatterer)
+
+
+    holo = Mie(optics, 100).calc_holo(Sphere(center = (.567e-5, .576e-5, 15e-6),
+                                             r = 8.5e-7, n = 1.59+1e-4j), .6)
+
+    cost_func = model.cost_func(holo)
+
+    cost = cost_func([p.scale(p.guess) for p in parameters])
+
+    assert_allclose(cost, np.zeros_like(cost), atol=1e-10)
+
+
+    
 
 @attr('fast')
 def test_minimizer():
