@@ -106,6 +106,12 @@ class Hologram(np.ndarray):
         # function on the hologram (for example, numpy.add), the
         # metadata will be transferred to the new object that is
         # created
+        if out_arr.ndim == 0:
+            # if the thing we are returning is 0 dimension (a single value) ie
+            # from .sum(), we want to return the number, not the number wrapped
+            # in a hologram
+            return out_arr.max()
+        
         return np.ndarray.__array_wrap__(self, out_arr, context)
 
     def resample(self, shape, window=None):
@@ -150,14 +156,6 @@ class Hologram(np.ndarray):
         return Hologram(new_image, self.optics.resample(1.0/factor),
                         self.time_scale, name)
 
-    def std(self):
-        '''
-        wrapper on numpy.std to get type handling correct (numpy.std returns a
-        0-len array hologram, it should just return a number)
-        '''
-        res = super(Hologram, self).std()
-        return res.max()
-    
 
 def subimage(im, center=None, size=None):
     """
