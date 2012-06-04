@@ -263,18 +263,6 @@ def test_nonlinearity():
 
     # uncomment to debug
     #return holo_1, holo_2, holo_super
-
-@attr('fast')
-@with_setup(setup=setup_model, teardown=teardown_model)
-def test_MovingSphere():
-    # 1 um particle, 10 us exposure 1 m/s speed
-    s = MovingSphere(center=(1e-6, 5e-6, 10e-6), v_x = 1.0, int_time=2e-6)
-
-    theory = scatterpy.theory.MieSmear(optics=optics, imshape=128)
-
-    h = theory.calc_holo(s)
-
-    common.verify(h, 'smear')
     
 
 

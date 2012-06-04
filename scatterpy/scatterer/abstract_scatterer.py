@@ -54,7 +54,7 @@ class Scatterer(Serializable):
         translated : Scatterer
             A copy of this scatterer translated to a new location
         """
-        raise NotImplementedError()
+        raise NotImplementedError() #pragma: no cover
     
     def validate(self):
         """

@@ -29,13 +29,14 @@ from numpy.testing import assert_equal, assert_allclose
 from nose.plugins.attrib import attr
 
 from scatterpy.scatterer import (Sphere, CoatedSphere, Scatterer, Ellipsoid,
-                                 Composite, MovingSphere, abstract_scatterer)
+                                 Composite, abstract_scatterer)
 
 from scatterpy.errors import ScattererDefinitionError
 
 @attr('fast')
-def test_Scatterer_construction():
+def test_AbstractScatterer():
     assert_raises(NotImplementedError, Scatterer)
+    
 
 @attr('fast')
 def test_Sphere_construction():
@@ -150,15 +151,6 @@ def test_Composite_construction():
     print comp3
 
 @attr('fast')
-def test_MovingSphere():
-    s = MovingSphere(center=(1e-6, -1e-6, 10e-6), v_x = 1.0, int_time=10e-6)
-    # test an odd number of smear steps
-    MovingSphere(center=(1e-6, -1e-6, 10e-6), v_x = 1.0, int_time=10e-6, n_smear=11)
-    assert_equal(repr(s), 'MovingSphere(center=[1e-06, -1e-06, 1e-05], '
-                 'n=(1.59+0j), r=5e-07)')
-
-
-@attr('fast')
 def test_like_me():
     s = Sphere(n = 1.59, r = .5, center = (1, -1, 10))
     s2 = s.like_me(center = (0, 2, 10))
@@ -175,4 +167,5 @@ def test_translate():
     assert_equal(s.r, s2.r)
     assert_equal(s.n, s2.n)
     assert_allclose(s2.center, (1, 1, 1))
+    
     
