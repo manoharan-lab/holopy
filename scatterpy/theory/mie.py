@@ -25,6 +25,7 @@ scattered field.
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
+import numpy as np
 import mie_f.mieangfuncs as mieangfuncs
 import mie_f.miescatlib as miescatlib
 from mie_f.multilayer_sphere_lib import scatcoeffs_multi
@@ -63,7 +64,7 @@ class Mie(ScatteringTheory):
     # don't need to define __init__() because we'll use the base class
     # constructor
 
-    def calc_field(self, scatterer):
+    def calc_field(self, scatterer, selection=None):
         """
         Calculate fields for single or multiple spheres
 
@@ -71,7 +72,9 @@ class Mie(ScatteringTheory):
         ----------
         scatterer : :mod:`scatterpy.scatterer` object
             scatterer or list of scatterers to compute field for
-
+        selection : array of integers (optional)
+            a mask with 1's in the locations of pixels where you
+            want to calculate the field, defaults to all pixels
         Returns
         -------
         field : :class:`scatterpy.theory.scatteringtheory.ElectricField`with shape `imshape`
@@ -82,21 +85,23 @@ class Mie(ScatteringTheory):
         For multiple particles, this code superposes the fields
         calculated from each particle (using calc_mie_fields()). 
         """
-
-        def sphere_field(s):
+        if selection == None:
+            selection = np.ones(self.imshape,dtype='int')
+        def sphere_field(s, selection=None):
             scat_coeffs = self._scat_coeffs(s)
-            
+
             # mieangfuncs.f90 works with everything dimensionless.
             e_x, e_y, e_z = mieangfuncs.mie_fields_sph(self._spherical_grid(s.x,
                                                                             s.y,
                                                                             s.z),
                                                        scat_coeffs,
+                                                       selection,
                                                        self.optics.polarization)
 
             return ElectricField(e_x, e_y, e_z, s.z, self.optics.med_wavelen)
         
         if isinstance(scatterer, (Sphere, CoatedSphere)):
-            return sphere_field(scatterer)
+            return sphere_field(scatterer, selection)
         elif isinstance(scatterer, Composite):
             spheres = scatterer.get_component_list()
             # compatibility check: verify that the cluster only contains
@@ -107,7 +112,7 @@ class Mie(ScatteringTheory):
             # if it passes, superpose the fields
             scatterer.validate()
     
-            return self.superpose(spheres)
+            return self.superpose(spheres, selection)
         else: raise TheoryNotCompatibleError(self, scatterer)
 
 # Disable this function for now since the fast fortran subroutine does not

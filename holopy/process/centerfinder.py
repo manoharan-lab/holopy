@@ -83,6 +83,7 @@ def image_gradient(image):
         y-components of intensity gradient
     """
     gradx = scipy.ndimage.sobel(image, axis = 0)
+    # - sign here from old Holopy coordinate convention? 
     grady = -1*scipy.ndimage.sobel(image, axis=1)
     return gradx, grady
 
@@ -127,10 +128,11 @@ def hough(x_deriv, y_deriv, scale=.25):
     #Edited by Rebecca Perry June 9, 2011 to change default scale and 
     #modify weighted averaging box size for centers close to the edges.
     
-    accumulator = zeros(x_deriv.shape)
-    dim = x_deriv.shape[0]
+    accumulator = zeros(x_deriv.shape, dtype = int)
+    dim_x = x_deriv.shape[0]
+    dim_y = x_deriv.shape[1]
     gradient_mag = sqrt(x_deriv**2 + y_deriv**2)
-    threshold = scale*gradient_mag.max()
+    threshold = scale * gradient_mag.max()
     
     points_to_vote = scipy.where(gradient_mag > threshold)
     points_to_vote = array([points_to_vote[0], points_to_vote[1]]).transpose()
@@ -139,22 +141,25 @@ def hough(x_deriv, y_deriv, scale=.25):
         # draw a line
         # add it to the accumulator
         slope = y_deriv[coords[0], coords[1]]/x_deriv[coords[0], coords[1]]
-        if abs(slope) > 1.:
-            line = around(coords[1] - slope*(arange(dim) - coords[0]))
-            acc_cols = int16(line[(array(line >= 0) * array(line < dim))])
-            acc_rows = arange(dim, dtype='int16')[(array(line >= 0) * 
-                                                   array(line < dim))]
+        if slope > 1. or slope < -1.:
+            # minus sign on slope from old convention?
+            rows = arange(dim_x, dtype = 'int16')
+            line = around(coords[1] - slope * (rows - coords[0]))
+            cols_to_use = (line >= 0) * (line < dim_y)
+            acc_cols = int16(line[cols_to_use])
+            acc_rows = rows[cols_to_use]
         else:
-            line = around(coords[0] - 1/slope * (arange(dim) - coords[1]))
-            acc_cols = arange(dim, dtype = 'int16')[(array(line >= 0) * 
-                                                     array(line < dim))]
-            acc_rows = int16(line[(array(line >= 0) * array(line < dim))])
-        
-        accumulator[acc_rows, acc_cols] = accumulator[acc_rows, acc_cols] + 1
+            cols = arange(dim_y, dtype = 'int16')
+            line = around(coords[0] - 1./slope * (cols - coords[1]))
+            rows_to_use = (line >= 0) * (line < dim_x)
+            acc_cols = cols[rows_to_use]
+            acc_rows = int16(line[rows_to_use])
+        accumulator[acc_rows, acc_cols] += 1
+
     #m is row number, n is column number
     [m, n]=scipy.unravel_index(accumulator.argmax(), accumulator.shape) 
     #brightness average around brightest pixel:
-    boxsize = min(10, m, n, dim-1-m, dim-1-n) #boxsize changes with closeness to image edge
+    boxsize = min(10, m, n, dim_x-1-m, dim_y-1-n) #boxsize changes with closeness to image edge
     small_sq = accumulator[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1] 
     #the part of the accumulator to average over
     rowNum, colNum = numpy.mgrid[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1]

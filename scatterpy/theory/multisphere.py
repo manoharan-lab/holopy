@@ -105,7 +105,7 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
         self.qeps1 = qeps1
         self.qeps2 = qeps2
 
-    def calc_field(self, scatterer):
+    def calc_field(self, scatterer, selection=None):
         """
         Calculate fields for single or multiple spheres
 
@@ -113,7 +113,10 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
         ----------
         scatterer : :mod:`scatterpy.scatterer` object
             scatterer or list of scatterers to compute field for
-
+        selection : array of integers (optional)
+            a mask with 1's in the locations of pixels where you
+            want to calculate the field, defaults to all pixels
+            
         Returns
         -------
         xfield, yfield, zfield : complex arrays with shape `imshape`
@@ -178,10 +181,13 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
         limit = lmax**2 + 2*lmax
         amn = amn0[:, 0:limit, :]
 
+        if selection == None:
+            selection = np.ones(self.imshape,dtype='int')
         e_x, e_y, e_z = mieangfuncs.tmatrix_fields_sph(self._spherical_grid(
                 scatterer.x.mean(), scatterer.y.mean(), scatterer.z.mean()),
                                                        amn, lmax, 0,
-                                                       self.optics.polarization)
+                                                       self.optics.polarization,
+                                                       selection)
         # TODO: Test this.  How do we intentionally get NaN's out of tmatrix?
         if np.isnan(e_x[0,0]):
             raise TMatrixFieldNaN(self, scatterer, '')

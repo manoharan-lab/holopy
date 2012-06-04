@@ -8,8 +8,9 @@ Holopy requires:
 
 * python 2.6 or 2.7
 * numpy
-* scypy
-* PyYAML
+* scipy
+* `PyYAML <http://pypi.python.org/pypi/PyYAML/>`_
+* `ordereddict <http://pypi.python.org/pypi/ordereddict>`_ (not required if you have python 2.7 or above)
 
 And for interactive use we suggest:
 

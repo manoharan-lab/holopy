@@ -72,7 +72,7 @@ class ScatteringTheory(Serializable):
                                  ','.join(["{0[0]}={0[1]}".format(c) for c in
                                            self.__dict__.iteritems()]))
 
-    def calc_field(self, scatterer):
+    def calc_field(self, scatterer, selection=None):
         """
         Calculate fields.  Implemented in derived classes only.
 
@@ -80,12 +80,15 @@ class ScatteringTheory(Serializable):
         ----------
         scatterer : :mod:`scatterpy.scatterer` object
             scatterer or list of scatterers to compute field for
+        
 
         Returns
         -------
         xfield, yfield, zfield : complex arrays with shape `imshape`
             x, y, z components of scattered fields
-
+        selection : array of integers (optional)
+            a mask with 1's in the locations of pixels where you
+            want to calculate the field, defaults to all pixels
         Raises
         ------
         IncompleteTheory : if calc_field is undefined in the derived class 
@@ -95,7 +98,7 @@ class ScatteringTheory(Serializable):
 
     # TODO: is this function still needed?  The new ElectricField class makes it
     # essentially trivial -tgd 2011-08-12
-    def superpose(self, scatterers):
+    def superpose(self, scatterers, selection=None):
         """
         Superpose fields from different scatterers, taking into
         account phase differences.
@@ -104,7 +107,9 @@ class ScatteringTheory(Serializable):
         ----------
         scatterers : list of :mod:`scatterpy.scatterer` objects
             list of scatterers to compute field for
-
+        selection : array on integers (optional)
+            a mask with 1's in the locations of pixels where you
+            want to calculate the field, defaults to all pixels
         Notes
         -----
         For multiple particles, this code superposes the fields
@@ -124,12 +129,14 @@ class ScatteringTheory(Serializable):
 
         field = ElectricField(np.zeros(self.imshape), np.zeros(self.imshape),
                               np.zeros(self.imshape), 0, self.optics.med_wavelen)
+        if selection == None:
+            selection = np.ones(self.imshape,dtype='int')        
         for s in scatterers:
-            field += self.calc_field(s)
+            field += self.calc_field(s, selection)
 
         return field
         
-    def calc_intensity(self, scatterer, 
+    def calc_intensity(self, scatterer, selection=None, 
                        xfield=None, yfield=None, zfield=None): 
         """
         Calculate intensity at focal plane (z=0)
@@ -138,6 +145,9 @@ class ScatteringTheory(Serializable):
         ----------
         scatterer : :mod:`scatterpy.scatterer` object
             scatterer or list of scatterers to compute field for
+        selection : array on integers (optional)
+            a mask with 1's in the locations of pixels where you
+            want to calculate the field, defaults to all pixels
         xfield, yfield, zfield : array (optional)
             Components of scattered field
 
@@ -157,10 +167,12 @@ class ScatteringTheory(Serializable):
         You can specify the fields to avoid the cost of calculating
         them twice during calc_holo()
         """
-        field = self.calc_field(scatterer)
+        if selection == None:
+            selection = np.ones(self.imshape,dtype='int')
+        field = self.calc_field(scatterer, selection)
         return abs(field.x_comp)**2 + abs(field.y_comp)**2
 
-    def calc_holo(self, scatterer, alpha=1.0):
+    def calc_holo(self, scatterer, alpha=1.0, selection=None):
         """
         Calculate hologram formed by interference between scattered
         fields and a reference wave
@@ -170,14 +182,18 @@ class ScatteringTheory(Serializable):
         scatterer : :mod:`scatterpy.scatterer` object
             scatterer or list of scatterers to compute field for
         alpha : scaling value for intensity of reference wave
+        selection : array of integers (optional)
+            a mask with 1's in the locations of pixels where you
+            want to calculate the field, defaults to all pixels
 
         Returns
         -------
         holo : :class:`holopy.hologram.Hologram` object
             Calculated hologram from the given distribution of spheres
         """
-
-        scat = self.calc_field(scatterer)
+        if selection == None:
+            selection = np.ones(self.imshape,dtype='int')
+        scat = self.calc_field(scatterer, selection)
         ref = ElectricField(self.optics.polarization[0],
                             self.optics.polarization[1], 0, 0,
                             self.optics.med_wavelen)
