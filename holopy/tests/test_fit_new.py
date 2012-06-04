@@ -18,6 +18,7 @@
 
 import os
 from collections import OrderedDict
+import tempfile
 
 import numpy as np
 
@@ -188,10 +189,14 @@ def test_serialization():
                                                                parameters[-1].guess)
 
     result = fit(model, holo)
-    hp.io.save('result.yaml', result)
 
+    temp = tempfile.NamedTemporaryFile()
+    hp.io.save(temp, result)
+
+    temp.flush()
+    temp.seek(0)
     
-    loaded = hp.io.yaml_io.load('result.yaml')
+    loaded = hp.io.yaml_io.load(temp)
 
     # manually put the make_scatterer function back in because save/load
     # currently does not handle them correctly.  This is a BUG, but not an easy
