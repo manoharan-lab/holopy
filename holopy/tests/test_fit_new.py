@@ -25,12 +25,12 @@ import holopy as hp
 
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose, assert_equal, assert_approx_equal
 from scatterpy.theory import Mie
 from scatterpy.scatterer import Sphere
 
 from holopy.analyze.fit_new import Parameter, Model, fit, Minimizer
-from common import assert_parameters_allclose
+from common import assert_parameters_allclose, assert_obj_close
 
 
 def setup_optics():
@@ -71,17 +71,20 @@ def test_fit_mie_single():
                   Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
                   Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
                   Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5]),
+                  Parameter(name='n', guess=1.59, limit = [1, 2]),
                   Parameter(name='alpha', guess=.6, limit = [.1, 1])]
 
     
-    def make_scatterer(x, y, z, r):
-        return Sphere(n=1.582+1e-4j, r = r, center = (x, y, z))
+    def make_scatterer(x, y, z, r, n):
+        return Sphere(n=n+1e-4j, r = r, center = (x, y, z))
 
     model = Model(parameters, Mie, make_scatterer=make_scatterer)
 
     result = fit(model, holo)
 
-    assert_parameters_allclose(result, gold_single)
+    assert_parameters_allclose(result.scatterer, gold_single)
+    assert_approx_equal(result.alpha, gold_alpha, significant=4)
+    assert_equal(model, result.model)
 
 @attr('fast')
 def test_parameter():
@@ -156,7 +159,43 @@ def test_minimizer():
 
     minimizer = Minimizer()
 
-    result = minimizer.minimize(parameters, cost_func)
+    result, converged, minimization_details = minimizer.minimize(parameters,
+                                                                 cost_func)
 
     assert_allclose([a, b, c], result)
+
+    assert_equal(converged, True)
+
+@attr('fast')
+@with_setup(setup=setup_optics, teardown=teardown_optics)
+def test_serialization():
+    parameters = [Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5]),
+                  Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
+                  Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
+                  Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5]),
+                  Parameter(name='n', guess=1.59, limit = [1, 2]),
+                  Parameter(name='alpha', guess=.6, limit = [.1, 1])]
     
+    def make_scatterer(x, y, z, r, n):
+        return Sphere(n=n+1e-4j, r = r, center = (x, y, z))
+
+    mie = Mie(optics, 100)
+
+    model = Model(parameters, Mie, make_scatterer=make_scatterer)
+
+    holo = mie.calc_holo(model.make_scatterer_from_par_values([p.guess for p in
+                                                               parameters]),
+                                                               parameters[-1].guess)
+
+    result = fit(model, holo)
+    hp.io.save('result.yaml', result)
+
+    
+    loaded = hp.io.yaml_io.load('result.yaml')
+
+    # manually put the make_scatterer function back in because save/load
+    # currently does not handle them correctly.  This is a BUG, but not an easy
+    # one to fix
+    loaded.model.make_scatterer = make_scatterer
+
+    assert_obj_close(result, loaded)

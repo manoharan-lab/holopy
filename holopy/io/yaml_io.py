@@ -30,6 +30,9 @@ import numpy as np
 import holopy
 import yaml
 import os
+import re
+import os.path
+import inspect
 
 def save(outf, obj):
     if isinstance(outf, basestring):
@@ -41,6 +44,28 @@ def load(inf):
         inf = file(inf)
     return yaml.load(inf)
 
+# Metaclass black magic to eliminate need for adding yaml_tag lines to classes
+class SerializableMetaclass(yaml.YAMLObjectMetaclass):
+    def __init__(cls, name, bases, kwds):
+        super(SerializableMetaclass, cls).__init__(name, bases, kwds)
+        cls.yaml_loader.add_constructor('!{0}'.format(cls.__name__), cls.from_yaml)
+        cls.yaml_dumper.add_representer(cls, cls.to_yaml)
+
+class Serializable(yaml.YAMLObject):
+    """
+    Base class for any object that wants a nice clean yaml output
+    """
+    __metaclass__ = SerializableMetaclass
+    
+    def to_yaml(cls, dumper, data):
+
+        return dumper.represent_yaml_object('!{0}'.format(data.__class__.__name__), data, cls,
+                                            flow_style=cls.yaml_flow_style)
+    to_yaml = classmethod(to_yaml)
+
+###################################################################
+# Custom Yaml Representers
+###################################################################
 
 # Represent 1d ndarrays as lists in yaml files because it makes them much
 # prettier
@@ -71,27 +96,62 @@ def numpy_float_representer(dumper, data):
     return dumper.represent_float(float(data))
 yaml.add_representer(np.float64, numpy_float_representer)
 
-# Metaclass black magic to eliminate need for adding yaml_tag lines to classes
-class SerializableMetaclass(yaml.YAMLObjectMetaclass):
-    def __init__(cls, name, bases, kwds):
-        super(SerializableMetaclass, cls).__init__(name, bases, kwds)
-        cls.yaml_loader.add_constructor('!{0}'.format(cls.__name__), cls.from_yaml)
-        cls.yaml_dumper.add_representer(cls, cls.to_yaml)
-
-
-class Serializable(yaml.YAMLObject):
-    """
-    Base class for any object that wants a nice clean yaml output
-    """
-    __metaclass__ = SerializableMetaclass
+#def FitResult_representer(dumper, data):
     
-    def to_yaml(cls, dumper, data):
 
-        return dumper.represent_yaml_object('!{0}'.format(data.__class__.__name__), data, cls,
-                                            flow_style=cls.yaml_flow_style)
-    to_yaml = classmethod(to_yaml)
+def class_representer(dumper, data):
+    if re.match('scatterpy.theory', data.__module__):
+        return dumper.represent_scalar('!theory', "{0}.{1}".format(data.__module__,
+                                   data.__name__))
+    else:
+        raise NotImplemented
+yaml.add_representer(SerializableMetaclass, class_representer)
+
+def class_loader(loader, node):
+    name = loader.construct_scalar(node)        
+
+    tok = name.split('.')
+
+    mod = __import__(tok[0])
+    for t in tok[1:]:
+        mod = mod.__getattribute__(t)
+
+    return mod
+    
+    # use os.path.splitext in a slightly nonstandard way, here we pick out the
+    # class name seperate from the module name, which happens to be equivalent
+    # to picking out the extension from a filename
+    module, obj = os.path.splitext(name)
+    # os.path.splitext leaves the dot, remove it
+    obj = obj[1:]
+
+    
+    
+    module = __import__(module)
+    return module.__getattribute__(obj)
+yaml.add_constructor(u'!theory', class_loader)
 
 
+def function_representer(dumper, data):
+    code = inspect.getsource(data)
+    code = code.split('\n',)
+    # first line will be function name, we don't want that
+    code = code[1].strip()
+    return dumper.represent_scalar('!function', code)
+# here I refer to function_representer.__class__ because I am not sure how else
+# to access the type of a fuction (function does not work)
+yaml.add_representer(function_representer.__class__, function_representer)
+
+# for now punt if we attempt to read in functions. 
+# make_scatterer in model is allowed to be any function, so we may encounter
+# them.  This constructor allows the read to succeed, but the function will be
+# absent.  
+# It is possible to read in functions from the file, but it is more than a
+# little subtle and kind of dangrous, so I want to think more about it before
+# doing it - tgd 2012-06-4
+def function_constructor(loader, node):
+    return None
+yaml.add_constructor('!function', function_constructor)
 
 
 def load_yaml(filename):

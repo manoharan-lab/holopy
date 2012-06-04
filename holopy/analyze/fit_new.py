@@ -1,4 +1,5 @@
 import inspect
+import time
 
 import numpy as np
 
@@ -13,11 +14,45 @@ class FitResult(Serializable):
         self.alpha = alpha
 
 def fit(model, data, algorithm='nmpfit'):
-    minimizer = Minimizer(algorithm)
-    result = minimizer.minimize(model.parameters, model.cost_func(data))
-    return model.make_scatterer_from_par_values(result)
+    time_start = time.time()
 
-class Model(object):
+    minimizer = Minimizer(algorithm)
+    fitted_pars, converged, minimizer_info =  minimizer.minimize(model.parameters, model.cost_func(data))
+    
+    fitted_scatterer = model.make_scatterer_from_par_values(fitted_pars)
+    fitted_alpha = model.alpha(fitted_pars)
+    theory = model.theory(data.optics, data.shape)
+    fitted_holo = theory.calc_holo(fitted_scatterer, fitted_alpha)
+    
+    chisq = float((((fitted_holo-data))**2).sum() / fitted_holo.size)
+    rsq = float(1 - ((data - fitted_holo)**2).sum()/((data - data.mean())**2).sum())
+
+    time_stop = time.time()
+
+    return FitResult(fitted_scatterer, fitted_alpha, chisq, rsq, converged,
+                     time_stop - time_start, model, minimizer, minimizer_info)
+
+class FitResult(Serializable):
+    def __init__(self, scatterer, alpha, chisq, rsq, converged, time, model,
+                 minimizer, minimization_details):
+        self.scatterer = scatterer
+        self.alpha = alpha
+        self.chisq = chisq
+        self.rsq = rsq
+        self.converged = converged
+        self.time = time
+        self.model = model
+        self.minimizer = minimizer
+        self.minimization_details = minimization_details
+        
+    def __repr__(self):
+        return ("{s.__class__.__name__}(scatterer={s.scatterer}, "
+                "alpha={s.alpha}, chisq={s.chisq}, rsq={s.rsq}, "
+                "converged={s.converged}, time={s.time}, model={s.model}, "
+                "minimizer={s.minimizer}, "
+                "minimization_details={s.minimization_details})".format(s=self))
+
+class Model(Serializable):
     """
     Representation of a model to fit to data
 
@@ -43,7 +78,6 @@ class Model(object):
         self.theory = theory
         self.scatterer=scatterer
         self.make_scatterer = make_scatterer
-        self.compare = lambda calc, data: (calc-data).ravel()
 
     def make_scatterer_from_par_values(self, par_values):
         all_pars = {}
@@ -57,6 +91,9 @@ class Model(object):
     # TODO: add a make_optics function so that you can have parameters
     # affect optics things (fit to beam divergence, lens abberations, ...)
 
+    def compare(self, calc, data):
+        return (calc-data).ravel()
+    
     def alpha(self, par_values):
         for i, par in enumerate(self.parameters):
             if par.name == 'alpha':
@@ -107,7 +144,10 @@ class Minimizer(object):
                     raise NeedInitialGuess()
                 nmp_pars.append(d)
             fitresult = nmpfit.mpfit(resid_wrapper, parinfo=nmp_pars)
-            return fitresult.params
+            converged = fitresult.status < 4
+            return fitresult.params, converged, fitresult
+    def __repr__(self):
+        return "Minimizer(algorithm='{0}')".format(self.algorithm)
 
         
 
@@ -151,6 +191,16 @@ class Parameter(object):
         """
         return scaled * self.scale_factor
 
+    def __repr__(self):
+        args = []
+        if self.guess is not None:
+            args.append('guess={0}'.format(self.guess))
+        if self.limit is not None:
+            args.append('limit={0}'.format(self.limit))
+        if self.misc is not None:
+            args.append('misc={0}'.format(self.misc))
+        return "Parameter(name='{0}', {1})".format(self.name, ', '.join(args))
+        
 
 class RigidSphereCluster(Model):
     def __init__(self, reference_scatterer, alpha, beta, gamma, x, y, z):

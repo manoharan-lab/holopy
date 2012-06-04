@@ -94,8 +94,6 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
 
     scatterer, alpha = initial_guess
 
-    scatterer.validate()
-
     manager = ParameterManager(initial_guess, lower_bound, upper_bound, step,
                                tie)
     
