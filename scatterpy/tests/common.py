@@ -1,4 +1,5 @@
 import holopy
+import scatterpy
 import os
 import numpy
 import yaml
@@ -38,7 +39,8 @@ def assert_allclose(actual, desired, err_msg='', verbose=True):
                         verbose=verbose)
 
 def verify(result, name):
-    gold_name = os.path.join('gold', 'gold_'+name)
+    scatterpy_location = os.path.split(os.path.abspath(scatterpy.__file__))[0]
+    gold_name = os.path.join(scatterpy_location, 'tests', 'gold', 'gold_'+name)
     if os.path.exists(gold_name + '.npy'):
         gold = numpy.load(gold_name + '.npy')
         assert_allclose(result, gold)
