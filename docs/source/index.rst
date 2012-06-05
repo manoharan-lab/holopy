@@ -27,6 +27,7 @@ The following features work and are well-tested:
   * Single spheres (based on the Lorenz-Mie solution) 
   * Sphere doublets (based on a T-Matrix approach)
   * Sphere trimers (based on a T-Matrix approach)
+  * Elipsoids and other complicated structures (based on the Discrete Dipole Approximation (DDA))
 
 * Fitting holograms to any of the above scattering models
 * Reconstructing 3D volumes from holograms

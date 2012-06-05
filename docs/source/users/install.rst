@@ -12,18 +12,26 @@ Holopy requires:
 * `PyYAML <http://pypi.python.org/pypi/PyYAML/>`_
 * `ordereddict <http://pypi.python.org/pypi/ordereddict>`_ (not required if you have python 2.7 or above)
 
-And for interactive use we suggest:
+The Discrete Dipole Approximation (DDA) calculations also require
+* `a-dda < http://code.google.com/p/a-dda/>`_
+
+For interactive use we suggest:
 
 * ipython (better python terminal)
 * matplotlib (plotting for python)
 * mayavi2 (if you want to do 3d plotting)
+
+Other optional dependencies for certain calculations:
+
+* `a-dda < http://code.google.com/p/a-dda/>`_ (Discrete Dipole calculations of arbitrary scatterers)
+* `OpenOpt <http://openopt.org>`_ (More minimizers)
 
 And to run the tests you need:
 
 * python-nose
 
 For windows users, the `Enthought Python Distribution <http://www.enthought.com/products/epd.php>`_
-should have everything you need for holopy and more. 
+should have everything you need for holopy and more (except a-dda). 
 
 If you want to build Holopy from source there are a few other python
 dependencies.  You will also need C and Fortran compilers.  Please see
@@ -49,7 +57,6 @@ to build:
 * a c compiler (gcc works)
 * numpy.distutils (should ship with numpy)
 * f2py (should ship with numpy)
-* cython (for building python extension modules written in C)
 * python development package (specifically python.h)
 
 If you want to generate the documentation, you'll also need
@@ -105,10 +112,10 @@ module when you import it.
 Testing
 -------
 Holopy comes with a suite of tests that will ensure that all everything has built correctly and it is able to preform all of the calculations it should be able to.
-To run these tests navigate to holopy/tests and run:
+To run these tests navigate to the root of the package and run:
 
 .. sourcecode:: bash
 
-    $ nosetests -a '!slow'
+    $ nosetests -a '!slow' scatterpy/tests holopy/tests
 
-If installed to the system directory, you will need to run the tests as root.  
+

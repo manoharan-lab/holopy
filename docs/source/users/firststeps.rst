@@ -31,14 +31,7 @@ numpy.ndarray). So, for example, to view it you can just use
 
 .. sourcecode:: ipython
 
-   In [3]: pylab.imshow(holo)
-
-If it's a grayscale image, it will probably look better with a
-grayscale colormap:
-
-.. sourcecode:: ipython
-
-   In [4]: pylab.gray()
+   In [3]: holopy.show(holo)
 
 You can do math or image processing operations on ``holo`` just like
 you would for a normal
@@ -67,8 +60,8 @@ same :class:`holopy.hologram.Hologram` object, as follows:
 .. sourcecode:: ipython
 
    In [1]: import holopy
-   In [2]: opts = holopy.optics.Optics(wavelen=658e-9, \
-                                        index=1.33, \
+   In [2]: opts = holopy.optics.Optics(wavelen=658e-9, 
+                                        index=1.33, 
                                         pixel_scale=[0.1e-6,0.1e-6])
    In [3]: holo = holopy.load('image0001.tif', optics=opts)
 
@@ -87,8 +80,8 @@ in the optical train:
 
 .. sourcecode:: ipython
 
-    In [3]: holo = holopy.load('image0001.tif', \
-	   			 bg='../bg01.tif', optics=opts)
+    In [3]: holo = holopy.load('image0001.tif', 
+	   			 optics=opts, bg='../bg01.tif')
 
 .. note::
 

@@ -4,10 +4,12 @@
 Calculating holograms
 *********************
 
-Scattering models
-=================
+The code for calculating holograms is split out into a separate package within holopy called :mod:`scatterpy`.  
 
-Holopy contains two different models for calculating holograms. Those are
+Scattering Theories: :mod:`scatterpy.theory`
+============================================
+
+Holopy contains two different scattering theories for calculating holograms. Those are
 
 :Mie:
 
@@ -21,22 +23,36 @@ Holopy contains two different models for calculating holograms. Those are
     approximation is a good one if the particles are sufficiently
     separated.
 
-:T-Matrix: 
+:Multisphere: 
 
     This model calculates the scattered field of a collection of
     particles through a numerical method that accounts for multiple
     scattering and near-field effects (see [Fung2011]_).  The T-Matrix
     approach is much more accurate than Mie superposition, but it is
-    more computationally intensive.  There are currently two choices
-    for the configuration of the spheres:
-
-        - dimers: two spherical particles
-        - trimers: three spherical particles
+    more computationally intensive.  The Multisphere code can handle
+	any	number of spheres
 
 
-Each model has a ``forward_holo`` function that will calculate a
+Each model has a ``calc_holo`` function that will calculate a
 hologram. Below we demonstrate how to calculate a hologram with each
 of the available models.
+
+Scatterer Objects: :mod:`scatterpy.scatterer`
+=============================================
+
+Scatterer objects are used to describe the geometry of objects that light scatters off.  They contain information about the position, size, and index of refraction of the scatterers.  The most commonly useful scatterers are
+
+:Sphere:
+
+    Describes a single sphere
+
+:SphereCluster:
+
+    A collection of multiple spheres
+
+:CoatedSphere:
+
+    A sphere with multiple layers each of a different index of refraction.
 
 Calculating holograms
 =====================
@@ -53,8 +69,8 @@ information has been stored in an instance of the
 :class:`holopy.optics.Optics` class called ``my_optics`` ::
 
     import holopy
-    from holopy.optics import Optics
-    my_optics = Optics(wavelen = 658e-9, \
+    from holopy import Optics
+    my_optics = Optics(wavelen = 658e-9, 
 			  index = 1.33, pixel_scale=[0.1e-6,0.1e-6])
 
 Alternatively, the optics information could be read from a yaml
@@ -70,122 +86,59 @@ Single sphere
 -------------
 
 Here we use the single sphere Mie calculations for computing the
-hologram.  The arguments to the ``forward_holo`` function are
+hologram.  We create a :class:`scatterpy.scatterer.sphere.Sphere` object to describe the sphere, and a :class:`scatterpy.theory.mie.Mie` object to do the calculation.  The arguments to the ``forward_holo`` function are
 specified in :meth:`holopy.model.mie_fortran.forward_holo`.  They
 include the size of the hologram we want to calculate (in pixels) and
-the properties and position of the particle::
+the properties and position of the particle ::
 
-    from holopy.model import mie
-    holo = mie.forward_holo(256, my_optics, \
-		 1.58, 0., 0.5e-6, 12.8e-6, 12.8e-6, 10e-6, 0.8)
-
+    from scatterpy.theory import Mie
+    from scatterpy.scatterer import Sphere
+    sphere = Sphere(center=(12.8e-6, 12.8e-6, 10e-6), n = 1.58, r = 0.5e-6)
+    mie_theory = Mie(my_optics, 256)
+    holo = mie_theory.calc_holo(sphere, 0.8)
+	
 .. note::
     All units in the above code sample are in meters. This will work
     out fine if the wavelength is also specified in meters. If you
-    wanted to do everything in pixels the same bit of code would look
-    like::
+    wanted to do everything in pixels you would instead define the	sphere as::
 
-        holo = mie.forward_holo(256, my_optics, \
-			 1.58, 0., 5, 128, 128, 100, 0.8)
+        sphere = Sphere(center(128, 128, 100), n = 1.58, r = 5)
 
     Provided that the wavelength of light was specified in units of
     pixels, this will calculate the same hologram as the previous
     example.
 
 
-Dimer of spheres
-----------------
+Cluster of Spheres
+------------------
 
-Dimers are more complicated. You can calculate the hologram from
-scattering by a dimer from knowing the positions in space of the two
-particles. But the dimer's position and orientation in space can also
-be described through:
+Calculating a hologram from a cluster of spheres is done in a very similar manner ::
 
-    * dimer's center of mass
-    * two angles describing the dimer's orientation
+    from scatterpy.scatterer import SphereCluster
+    s1 = Sphere(center=(12.8e-6, 12.8e-6, 10e-6), n = 1.58, r = 0.5e-6)
+    s2 = Sphere(center=(12e-6, 11e-6, 10e-6), n = 1.58, r = 0.5e-6)
+    cluster = SphereCluster([s1, s2])
+    holo = mie_theory.calc_holo(cluster, 0.8)
 
-        * beta
-        * gamma
+This will do the calculation with superposition of Mie solutions, if you want to solve the actual multisphere problem for higher accuracy you would instead use ::
 
-    * gap distance
+    from scatterpy.theory import Multisphere
+    multisphere_theory = Multisphere(optics, 256)
+    holo = multisphere_theory.calc_holo(cluster, 0.8)
 
-These properties of a dimer are described below. 
+Adding more spheres to the cluster is as simple as defining more sphere objects and passing a longer list of spheres to the :class:`scatterpy.scatterer.SphereCluster` constructor.
 
-Gap distance
-~~~~~~~~~~~~~~~~~~~~
+Coated Spheres
+--------------
 
-The center-to-center distance :math:`d` between the two particles making up the dimer is given
-by :math:`d = r_1 + r_2 + \epsilon_{gap}` where :math:`\epsilon_{gap}` is the gap distance and
-:math:`r_1` and :math:`r_2` are the radii of the two spheres.
+Coated (or layered) spheres can use the same Mie theory as normal spheres, Multisphere does not as yet work with coated spheres.  Coated spheres differ from normal spheres only in taking a list of indexes and radii corresponding to the layers ::
 
-Euler Angles
-~~~~~~~~~~~~
-
-See detailed description below.
-
-The parameters given to the dimer hologram calculating function,
-:meth:`holopy.model.tmatrix_dimer.forward_holo`, are:
-
-    * size of hologram
-    * instance of :class:`holopy.optics.Optics`
-    * real part of both particle's refractive index
-    * imaginary part of both particle's refractive index
-    * radius of both particles
-    * x-, y-, and z-coordinate of the dimer's center-of-mass
-    * the Euler angle beta describing dimer's orientation w.r.t. y-axis
-    * the Euler angle gamma describing dimer's orientation w.r.t. z-axis
-    * gap distance or separation parameter as described above
-    * scaling parameter, alpha, that scales the intensity of scattered field
-
-See :meth:`holopy.model.mie.forward_holo` for the ordering of those
-parameters. 
-
-Additionally, one can pass this function the following optional
-parameters:
-
-    * dictionary of T-matrix parameters
-    * ``old_coords`` can be set from default of False to True to set the origin 
-      (i.e., (0,0)) at the center of the image
-    * ``dimensional`` can be set from default of True to False to use parameters that have all been made
-      dimensionless by scaling with the wave vector
-
-While the code can take different values for the particles' real
-and imaginary refractive indices, if both particles have the same
-refractive index you can specify the second particle's real and imaginary
-indices as `None`. 
-
-Dimer example::
-
-    ipython -pylab
-    import holopy
-    import holopy.io
-    import holopy.model.tmatrix_dimer as tmatdimer
-    opt = holopy.Optics(**holopy.io.load_yaml('/my_data/60xWater.yaml'))
-    opt.index = 1.334
-    model = tmatdimer.forward_holo(300,opt,1.58,1.58,0.0001,0.0001, \
-                                   0.5, 0.5, 5e-6, 5e-6, 10e-6, 90, 90, 0.8)
-
-In the example above, a 300x300 hologram is calculated. For a dimer of two
-1 micron-diameter spheres of index 1.58. 
+    from scatterpy.scatterer import CoatedSphere
+    cs = CoatedSphere(center=(12.8e-6, 12.8e-6, 10e-6), n = (1.58, 1.42), r = (0.3e-6, 0.6e-6))
+    holo = mie_theory.calc_holo(cs, .8)
 
 
-Trimer of spheres
------------------
-
-The function :meth:`holopy.model.tmatrix_trimer.forward_holo` will calculate
-the hologram due to three touching spheres. Unlike the dimer case, there is
-no separation parameter as the particles must be in contact. Additionally, because
-the trimer lacks the symmetry of the dimer, three Euler angles must be
-used to describe its orientation. 
-
-Trimer example::
-
-    ipython -pylab
-    import holopy
-    import holopy.model.tmatrix_trimer as tmattrimer
-    opts = holopy.io.load_yaml('/my_data/60xWater.yaml')
-    h=tmattrimer.forward_holo(256, opts,1.2,0.0001,6.35,6.35,6.35,0,0,10e-6,0,0,0,.6)
-
+	
 Euler Angles
 ------------
 The Euler angle conventions used in holopy are based on the convention used by Daniel Mackowski's

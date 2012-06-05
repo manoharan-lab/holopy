@@ -6,85 +6,104 @@ Package :mod:`holopy`
 .. automodule:: holopy
     :members:
 
-The :mod:`holopy.hologram` module
+:mod:`holopy.hologram` module
 ---------------------------------
 .. automodule:: holopy.hologram
     :members:
 
-The :mod:`holopy.optics` module
+:mod:`holopy.optics` module
 -------------------------------
 .. automodule:: holopy.optics
     :members:
 
-The :mod:`holopy.io` module
+:mod:`holopy.io` module
 ---------------------------
 .. automodule:: holopy.io
     :members: load, save_image
 
-Image Processing: the :mod:`holopy.process` module
+Image Processing: :mod:`holopy.process` module
 ==================================================
 .. automodule:: holopy.process
     :members: 
 
-The :mod:`holopy.process.enhance` submodule
+:mod:`holopy.process.enhance` 
 -------------------------------------------
 .. automodule:: holopy.process.enhance
     :members:
 
-The :mod:`holopy.process.filter` submodule
+:mod:`holopy.process.filter` 
 ------------------------------------------
 .. automodule:: holopy.process.filter
     :members:        
 
-The :mod:`holopy.process.math` submodule
+:mod:`holopy.process.math` 
 ----------------------------------------
 .. automodule:: holopy.process.math
     :members:        
 
-The :mod:`holopy.process.centerfinder` submodule
+:mod:`holopy.process.centerfinder` 
 ------------------------------------------------
 .. automodule:: holopy.process.centerfinder
     :members:        
 
 
-Analyzing holograms: the :mod:`holopy.analyze` module
+Analyzing holograms: :mod:`holopy.analyze`
 =====================================================
 .. automodule:: holopy.analyze
     :members: 
 
-The :mod:`holopy.analyze.fit` submodule
+:mod:`holopy.analyze.fit` 
 ---------------------------------------
 .. automodule:: holopy.analyze.fit
     :members:
 
-The :mod:`holopy.analyze.propagate` submodule
+:mod:`holopy.analyze.propagate` 
 ---------------------------------------------
 .. automodule:: holopy.analyze.propagate
     :members:
 
-The :mod:`holopy.analyze.reconstruct` submodule
+:mod:`holopy.analyze.reconstruct` 
 -----------------------------------------------
 .. automodule:: holopy.analyze.reconstruct
     :members:
 
-Scattering models: the :mod:`holopy.model` module
-=================================================
-.. automodule:: holopy.model
-    :members: 
 
-The :mod:`holopy.model.mie_fortran` scattering model
-----------------------------------------------------
-.. automodule:: holopy.model.mie_fortran
+Package :mod:`scatterpy`
+========================
+.. automodule:: scatterpy
     :members:
 
-The :mod:`holopy.model.tmatrix_dimer` scattering model
-------------------------------------------------------
-.. automodule:: holopy.model.tmatrix_dimer
-    :members:
+Scatterer Descriptions: :mod:`scatterpy.scatterer`
+--------------------------------------------------
+.. automodule:: scatterpy.scatterer
+	:members:
 
-The :mod:`holopy.model.tmatrix_trimer` scattering model
--------------------------------------------------------
-.. automodule:: holopy.model.tmatrix_trimer
-    :members:
+:mod:`scatterpy.scatterer.sphere`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	   
+.. automodule:: scatterpy.scatterer.sphere
+	:members:
 
+:mod:`scatterpy.scatterer.spherecluster`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automodule:: scatterpy.scatterer.spherecluster
+	:members:
 
+:mod:`scatterpy.scatterer.coatedsphere`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automodule:: scatterpy.scatterer.coatedsphere
+	:members:
+	
+Scattering Theories: :mod:`scatterpy.theory`
+--------------------------------------------
+.. automodule:: scatterpy.theory
+	:members:
+
+:mod:`scatterpy.theory.mie`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automodule:: scatterpy.theory.mie
+	:members:
+
+:mod:`scatterpy.theory.multisphere`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automodule:: scatterpy.theory.multisphere
+	:members:
