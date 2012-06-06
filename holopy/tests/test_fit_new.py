@@ -26,11 +26,11 @@ import holopy as hp
 
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
-from numpy.testing import assert_allclose, assert_equal, assert_approx_equal
+from numpy.testing import assert_allclose, assert_equal, assert_approx_equal, assert_raises
 from scatterpy.theory import Mie
 from scatterpy.scatterer import Sphere
 
-from holopy.analyze.fit_new import Parameter, Model, fit, Minimizer
+from holopy.analyze.fit_new import Parameter, Model, fit, Minimizer, InvalidParameterSpecification
 from common import assert_parameters_allclose, assert_obj_close
 
 
@@ -112,7 +112,16 @@ def test_model():
     assert_parameters_allclose(s, Sphere(center=(x, y, z), n=(1.59+0.0001j),
                                          r=r))
 
+    # check that Model correctly returns None when asked for alpha on a
+    # parameter set that does not contain alpha
     
+    parameters = [Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5]),
+                  Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
+                  Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
+                  Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5])]
+    model = Model(parameters, Mie, make_scatterer=make_scatterer)
+
+    assert_equal(model.alpha([x, y, z, r]), None)
 
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 @attr('fast')
@@ -138,8 +147,6 @@ def test_cost_func():
     cost = cost_func([p.scale(p.guess) for p in parameters])
 
     assert_allclose(cost, np.zeros_like(cost), atol=1e-10)
-
-
     
 
 @attr('fast')
@@ -166,6 +173,9 @@ def test_minimizer():
     assert_allclose([a, b, c], result)
 
     assert_equal(converged, True)
+
+    with assert_raises(InvalidParameterSpecification):
+        minimizer.minimize([Parameter('a')])
 
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
@@ -204,3 +214,4 @@ def test_serialization():
     loaded.model.make_scatterer = make_scatterer
 
     assert_obj_close(result, loaded)
+
