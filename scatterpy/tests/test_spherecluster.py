@@ -74,15 +74,6 @@ def test_SphereCluster_ovelap_checking():
     s1 = Sphere(n = 1.59, r = 5e-7, center=(1e-6, -1e-6, 10e-6))
     sc = SphereCluster([s1, s1, s1])
 
-    with assert_raises(InvalidScattererSphereOverlap) as cm:
-        sc.validate()
-    assert_equal(str(cm.exception),
-        'SphereCluster(spheres=[Sphere(center=(1e-06, -1e-06, 1e-05), '
-        'n=(1.59+0j), r=5e-07), Sphere(center=(1e-06, -1e-06, 1e-05), '
-        'n=(1.59+0j), r=5e-07), Sphere(center=(1e-06, -1e-06, 1e-05), '
-        'n=(1.59+0j), r=5e-07)]) has overlaps between spheres: [(0, 1), (0, 2), '
-        '(1, 2)]')
-
 
 def test_SphereCluster_parameters():
     s1 = Sphere(n = 1.59, r = 5e-7, center=[1e-6, -1e-6, 10e-6])

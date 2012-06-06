@@ -127,13 +127,9 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
         if not isinstance(scatterer, SphereCluster):
             raise TheoryNotCompatibleError(self, scatterer)
 
-        scatterer.validate()
-
         # check that the parameters are in a range where the multisphere
         # expansion will work
         for s in scatterer.scatterers:
-            if s.r < 0:
-                raise UnrealizableScatterer(self, s, "radius is negative")
             if s.r * self.optics.wavevec > 1e3:
                 raise UnrealizableScatterer(self, s, "radius too large, field "+
                                             "calculation would take forever")
@@ -172,7 +168,8 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
 
         # converged == 1 if the SCSMFO iterative solver converged
         # f2py converts F77 LOGICAL to int
-        # TODO: check this variable?
+        if not converged:
+            raise ConvergenceFailureMultisphere()
 
         # chop off unused parts of amn0, the fortran code currently has a hard
         # coded number of parameters so it will return too many coefficients.
@@ -180,6 +177,9 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
         # later.  
         limit = lmax**2 + 2*lmax
         amn = amn0[:, 0:limit, :]
+
+        if np.isnan(amn).any():
+            raise MultisphereExpansionNaN()
 
         if selection == None:
             selection = np.ones(self.imshape,dtype='int')
@@ -200,3 +200,14 @@ class TMatrixFieldNaN(UnrealizableScatterer):
     def __str__(self):
         return "T-matrix field is NaN, this probably represents a failure of \
 the code to converge, check your scatterer."
+
+
+class MultisphereExpansionNaN(Exception):
+    def __str__(self):
+        return ("Internal expansion for Multisphere coefficients contains "
+                "NaN.  This probably means your scatterer is unphysical.")
+
+class ConvergenceFailureMultisphere(Exception):
+    def __str__(self):
+        return ("Multisphere calculations failed to converge, this probably means "
+                "your scatterer is unphysical, or possibly just huge")

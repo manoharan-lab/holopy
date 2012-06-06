@@ -52,6 +52,9 @@ def test_Sphere_construction():
                  'Sphere.\ncenter specified as (1e-06, -1e-06, None), '
                  'center should be specified as (x, y, z)')
 
+    with assert_raises(ScattererDefinitionError):
+        Sphere(n=1.59, r = -2, center = (1, 1, 1))
+
 def test_Ellipsoid():
     s = Ellipsoid(n = 1.57, r = (1, 2, 3), center = (3, 2, 1))
 

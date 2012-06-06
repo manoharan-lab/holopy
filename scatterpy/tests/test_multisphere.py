@@ -178,9 +178,6 @@ def test_overlap():
 
     theory = Multisphere(xoptics, imshape)
 
-    # regular Multisphere will refuse to calculate an overlapping scatterer
-    assert_raises(InvalidScattererSphereOverlap, theory.calc_holo, sc)
-
     theory = MultisphereApprox(xoptics, imshape)
 
     assert_raises(TMatrixFieldNaN, theory.calc_holo, sc)

@@ -23,6 +23,7 @@ Defines Sphere, a scattering primitive
 '''
 
 from .abstract_scatterer import SphericallySymmetricScatterer
+from scatterpy.errors import ScattererDefinitionError
 
 class Sphere(SphericallySymmetricScatterer):
     '''
@@ -51,3 +52,5 @@ class Sphere(SphericallySymmetricScatterer):
         self.r = r
         super(Sphere, self).__init__(center)
 
+        if self.r < 0:
+            raise ScattererDefinitionError("radius is negative", self)

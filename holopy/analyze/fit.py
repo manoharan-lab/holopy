@@ -150,12 +150,6 @@ def make_residual(holo, scatterer, theory, parameter_manager,
         error = np.ones(holo.shape)*1.e12
 
         try:
-            this_scatterer.validate()
-        except InvalidScatterer as e:
-            print("Attempt to overlap scatterers, rejecting with large error")
-            return cost_func(holo, error).ravel()
-        
-        try:
             calculated = theory.calc_holo(this_scatterer, alpha)
         except (UnrealizableScatterer, InvalidScatterer) as e:
             if isinstance(e, InvalidScattererSphereOverlap):

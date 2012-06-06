@@ -56,27 +56,6 @@ class Scatterer(Serializable):
         """
         raise NotImplementedError() #pragma: no cover
     
-    def validate(self):
-        """
-        Check that a scatterer is physically realistic.  Theories should call
-        this function before attempting computation with a scatterer.  
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        -------
-        True is scatterer is valid
-
-        Raises
-        ------
-        InvalidScatterer or subclass if the scatterer is unphysical for some reason
-        """
-        # We default to just returning True subclasses that implement overlap
-        # checking or other validity constraints override this
-        return True
-
 
     @property
     def parameters(self):
