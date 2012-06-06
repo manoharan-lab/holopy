@@ -10,14 +10,14 @@ The :func:`holopy.analyze.fit.fit_new` fits a model of the object to a given set
 
 	  The set of parameters the fitter should vary to attempt to match
 	  the hologram.  These are typically things like coordinates of
-	  spheres, radii, and indices's of refraction, but can be things
-	  like rotation angles of a cluster, inter-particle separations,
-	  or pretty much anything.
+	  spheres, radii, and indices of refraction. They might also
+	  include rotation angles of a cluster or inter-particle
+	  separations.
 
    :theory:
 
-	   The scattering theory that can be used to compute holograms of
-	   the scatterer for comparison with the data
+	   The scattering theory to be used to compute holograms for
+	   comparison with the data
 	   
    :scatterer generator:
 
@@ -27,21 +27,22 @@ The :func:`holopy.analyze.fit.fit_new` fits a model of the object to a given set
 
 :data:
 
-   The measure hologram which you are fitting the model to
+   The measured hologram to which you are fitting the model
 
 :algorithm (optional):
 
-   The fitting algorithm to use to fit the model.  This defaults to
-   the supplied nmpfit algorithm, but if you have OpenOpt installed
-   you can use fitters from that package as well.
+   The fitting algorithm.  This defaults to the supplied nmpfit
+   algorithm, but if you have OpenOpt installed you can use minimizers
+   from that package as well.
 
-Here lets compute a hologram and then fit it.  You could replace the
-hologram calculation with loading some real data ::
+Here let's compute a hologram and then fit it.  You can replace the
+calculated hologram with real data, if you like ::
 
    from holopy import Optics
    from holopy.analyze.fit_new import Model, Parameter, fit
    from scatterpy.scatterer import Sphere
    from scatterpy.theory import Mie
+
    optics = Optics(wavelen = .658, index = 1.33, pixel_scale=0.1)
    mie = Mie(optics, 100)
    s = Sphere(center = (10.2, 9.8, 10.3), r = .5, n = 1.58)
@@ -51,8 +52,10 @@ hologram calculation with loading some real data ::
                  Parameter('y', 10, [5, 15]),
                  Parameter('z', 10, [5, 15]),
                  Parameter('alpha', 1.0)]
+
    def make_scatterer(x, y, z):
        return Sphere(center = (x, y, z), n = 1.58, r = .5)
+
    model = Model(parameters, Mie, make_scatterer=make_scatterer)
    result = fit(model, holo)
 
@@ -65,14 +68,14 @@ the index of refraction and radius of the sphere.
 `result.model` and `result.minimizer` are the Model and Minimizer
 objects used in the fit, and `result.minimization_info` contains any
 further information the minimization algorithm returned about the
-minimization procedure (for nmpfit this is things like covariance
-matrixies). 
+minimization procedure (for nmpfit this includes things like covariance
+matrices). 
 
 You will most likely want to save the fit result ::
 
   holopy.save('result.yaml', result)
 
-This saves the entirety of information about the fit to a yaml text
+This saves all of the information about the fit to a yaml text
 file.  These files are reasonably human readable and can be loaded
 back as an object with ::
 

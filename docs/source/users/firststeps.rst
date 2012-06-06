@@ -24,9 +24,10 @@ imported correctly.  You can do this as follows
 
    In [2]: holo = holopy.load('image0001.tif')
 
-The function :func:`holopy.load` (which is an alias to :func:`holopy.io.load`
-returns an instance of the :class:`holopy.hologram.Hologram` class. But it can
-be treated just like an array of numbers (for experts: it is a subclass of
+The function :func:`holopy.load` (which is an alias to
+:func:`holopy.io.load` returns an instance of the
+:class:`holopy.hologram.Hologram` class. But it can be treated just
+like an array of numbers (for experts: it is a subclass of
 numpy.ndarray). So, for example, to view it you can just use
 
 .. sourcecode:: ipython
@@ -34,9 +35,8 @@ numpy.ndarray). So, for example, to view it you can just use
    In [3]: holopy.show(holo)
 
 You can do math or image processing operations on ``holo`` just like
-you would for a normal
-`numpy <http://numpy.scipy.org/>`_ array.  For example (note you need
-to ``import scipy`` for these to work)::
+you would for a normal `numpy <http://numpy.scipy.org/>`_ array.  For
+example (note you need to ``import scipy`` for these to work)::
 
     filtered_image = scipy.ndimage.uniform_filter(holo, [10,10])
     ffted_image = scipy.fftpack.fft2(holo)
@@ -51,7 +51,7 @@ tells us about how the hologram was created.  If we're going to
 reconstruct a 3D volume from the hologram, for instance, we won't
 be able to discern the length scales of anything in the reconstruction
 unless we know the wavelength.  The wavelength is an example of
-:dfn:`optical metadata`.  
+:dfn:`optical metadata`.
 
 In Holopy, this metadata is stored in a :class:`holopy.optics.Optics`
 object.  This object can then be stored along with the image data in the
@@ -122,5 +122,7 @@ yaml file. Such data can then be read into an instance of the
     In [5]: optics = holopy.optics.Optics(**holopy.load_yaml('optics_file.yaml'))
 	
 
-:func:`holopy.load()` will also accept the filename of an optics yaml file as the argument for the optics parameter and automatically load the yaml file.  
+:func:`holopy.load()` will also accept the filename of an optics yaml
+file as the argument for the optics parameter and automatically load
+the yaml file.
 

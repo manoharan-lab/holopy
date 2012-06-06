@@ -12,18 +12,15 @@ Holopy requires:
 * `PyYAML <http://pypi.python.org/pypi/PyYAML/>`_
 * `ordereddict <http://pypi.python.org/pypi/ordereddict>`_ (not required if you have python 2.7 or above)
 
-The Discrete Dipole Approximation (DDA) calculations also require
-* `a-dda < http://code.google.com/p/a-dda/>`_
-
 For interactive use we suggest:
 
 * ipython (better python terminal)
 * matplotlib (plotting for python)
 * mayavi2 (if you want to do 3d plotting)
 
-Other optional dependencies for certain calculations:
+Optional dependencies for certain calculations:
 
-* `a-dda < http://code.google.com/p/a-dda/>`_ (Discrete Dipole calculations of arbitrary scatterers)
+* `a-dda <http://code.google.com/p/a-dda/>`_ (Discrete Dipole calculations of arbitrary scatterers)
 * `OpenOpt <http://openopt.org>`_ (More minimizers)
 
 And to run the tests you need:
