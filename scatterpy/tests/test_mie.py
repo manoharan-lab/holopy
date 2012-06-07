@@ -34,8 +34,7 @@ from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
 from nose.plugins.attrib import attr
 
 import scatterpy
-from scatterpy.scatterer import (Sphere, SphereCluster, MovingSphere,
-                                 CoatedSphere, Ellipsoid)
+from scatterpy.scatterer import (Sphere, SphereCluster, CoatedSphere, Ellipsoid)
 from scatterpy.theory import Mie
 
 from scatterpy.theory.mie import UnrealizableScatterer

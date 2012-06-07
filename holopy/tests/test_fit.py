@@ -32,7 +32,7 @@ import numpy as np
 import holopy as hp
 import scatterpy
 from numpy.testing import (assert_array_almost_equal, assert_allclose,
-                           assert_approx_equal)
+                           assert_approx_equal, dec)
 from nose.tools import with_setup, assert_raises, assert_equal
 import os
 from nose.plugins.attrib import attr
@@ -88,7 +88,9 @@ def test_fit_mie_single():
     assert_approx_equal(fitresult.alpha, gold_alpha, significant=4)
     
     assert_parameters_allclose(fitresult.scatterer, gold_single)
-    
+
+
+@dec.skipif(True, "OpenOpt fits not reimplemented")
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_fit_mie_single_ralg():

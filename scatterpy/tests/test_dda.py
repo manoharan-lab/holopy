@@ -26,7 +26,7 @@ import holopy as hp
 import numpy as np
 from nose.tools import assert_raises
 from numpy.testing import (assert_, assert_almost_equal,
-                           assert_allclose)
+                           assert_allclose, dec)
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
 
@@ -34,12 +34,21 @@ from scatterpy.scatterer import Sphere, CoatedSphere
 from scatterpy.scatterer import Composite, SphereCluster
 
 from scatterpy.theory import Mie, DDA
+from scatterpy.theory.dda import DependencyMissing
 import scatterpy
 from scatterpy.errors import TheoryNotCompatibleError
 from holopy.optics import (WavelengthNotSpecified, PixelScaleNotSpecified,
                            MediumIndexNotSpecified)
 
 import os.path
+
+def missing_dependencies():
+    try:
+        DDA(None)
+    except DependencyMissing:
+        return True
+    return False
+    
 
 # nose setup/teardown methods
 def setup_optics():
@@ -60,6 +69,8 @@ def teardown_optics():
     global optics
     del optics
 
+
+@dec.skipif(missing_dependencies(), "a-dda not installed")
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_construction():
@@ -76,6 +87,7 @@ def test_DDA_construction():
     theory = DDA(imshape=256, optics=optics)
     assert_(theory.optics.index == 1.33)
 
+@dec.skipif(missing_dependencies(), "a-dda not installed")
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_sphere():
@@ -87,6 +99,7 @@ def test_DDA_sphere():
     dda_holo = dda.calc_holo(sc)
     assert_allclose(mie_holo, dda_holo, rtol=.0015)
 
+@dec.skipif(missing_dependencies(), "a-dda not installed")
 @attr('slow')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_voxelated():
@@ -133,6 +146,7 @@ def test_DDA_voxelated():
     assert_allclose(sphere_holo, gen_holo, rtol=1e-3)
 
 
+@dec.skipif(missing_dependencies(), "a-dda not installed")
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_coated():
     cs = scatterpy.scatterer.CoatedSphere(
@@ -147,6 +161,7 @@ def test_DDA_coated():
 
     assert_allclose(lmie_holo, dda_holo, rtol = 5e-5)
 
+@dec.skipif(missing_dependencies(), "a-dda not installed")
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_Ellipsoid_dda():
     e = scatterpy.scatterer.Ellipsoid(1.5, r = (.5, .1, .1), center = (1, -1, 10))
