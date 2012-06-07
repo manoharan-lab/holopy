@@ -11,7 +11,7 @@ def fit(model, data, algorithm='nmpfit'):
     time_start = time.time()
 
     minimizer = Minimizer(algorithm)
-    fitted_pars, converged, minimizer_info =  minimizer.minimize(model.parameters, model.cost_func(data))
+    fitted_pars, converged, minimizer_info =  minimizer.minimize(model.parameters, model.cost_func(data), model.selection)
     
     fitted_scatterer = model.make_scatterer_from_par_values(fitted_pars)
     fitted_alpha = model.alpha(fitted_pars)
@@ -60,6 +60,9 @@ class Model(Serializable):
         Scatterer to compute holograms of, ignored if make_scatterer is given
     make_scatterer: function(par_values) -> :class:`scatterpy.scatterer.AbstractScatterer`
         Function that returns a scatterer given parameters
+    selection : array of integers (optional)
+        An array with 1's in the locations of pixels where you
+        want to calculate the field, defaults to 1 at all pixels
 
     Notes
     -----
@@ -67,11 +70,12 @@ class Model(Serializable):
     make_scatterer function which can turn the parameters into a scatterer
     
     """
-    def __init__(self, parameters, theory, scatterer=None, make_scatterer=None):
+    def __init__(self, parameters, theory, scatterer=None, make_scatterer=None, selection=None):
         self.parameters = parameters
         self.theory = theory
         self.scatterer=scatterer
         self.make_scatterer = make_scatterer
+        self.selection = selection
 
     def make_scatterer_from_par_values(self, par_values):
         all_pars = {}
@@ -85,8 +89,10 @@ class Model(Serializable):
     # TODO: add a make_optics function so that you can have parameters
     # affect optics things (fit to beam divergence, lens abberations, ...)
 
-    def compare(self, calc, data):
-        return (calc-data).ravel()
+    def compare(self, calc, data, selection = None):
+        if selection == None:
+                selection = np.ones(data.shape,dtype='int')
+        return (calc*selection-data*selection).ravel()
     
     def alpha(self, par_values):
         for i, par in enumerate(self.parameters):
@@ -94,16 +100,18 @@ class Model(Serializable):
                 return par.unscale(par_values[i])
         return None
     
-    def cost_func(self, data): 
+    def cost_func(self, data, selection = None): 
         if not isinstance(self.theory, scatterpy.theory.ScatteringTheory):
             theory = self.theory(data.optics, data.shape)
         else:
             theory = self.theory
             
-        def cost(par_values):
+        def cost(par_values, selection=None):
+            if selection == None:
+                selection = np.ones(data.shape,dtype='int')
             calc = theory.calc_holo(self.make_scatterer_from_par_values(par_values),
-                             self.alpha(par_values))
-            return self.compare(calc, data)
+                             self.alpha(par_values), selection)
+            return self.compare(calc, data, selection)
         return cost
 
     # TODO: make a user overridabel cost function that gets physical parameters
@@ -122,15 +130,15 @@ class Minimizer(object):
     def __init__(self, algorithm='nmpfit'):
         self.algorithm = algorithm
 
-    def minimize(self, parameters, cost_func):
+    def minimize(self, parameters, cost_func, selection=None):
         if self.algorithm == 'nmpfit':
             from holopy.third_party import nmpfit
             nmp_pars = []
             for i, par in enumerate(parameters):
 
                 def resid_wrapper(p, fjac=None):
-                    status = 0
-                    return [status, cost_func(p)]
+                    status = 0                    
+                    return [status, cost_func(p, selection)]
     
                 d = {'parname': par.name}
                 if par.limit is not None:

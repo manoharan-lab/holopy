@@ -160,7 +160,7 @@ def test_minimizer():
     c = 3.4
     y = a*x**2 + b*x + c
 
-    def cost_func(par_values):
+    def cost_func(par_values, selection=None):
         a, b, c = par_values
         return a*x**2 + b*x + c - y
 
