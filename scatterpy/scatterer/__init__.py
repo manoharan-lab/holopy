@@ -35,6 +35,5 @@ from .spherecluster import SphereCluster
 from spheredimer import SphereDimer
 from rigidclusters import BentTrimer
 from voxelated import VoxelatedScatterer
-from movingsphere import MovingSphere
 from ellipsoid import Ellipsoid
 

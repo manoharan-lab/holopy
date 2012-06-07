@@ -22,7 +22,10 @@ Test construction and manipulation of Scatterer objects.
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 
 import numpy as np
 from nose.tools import raises, assert_raises

@@ -21,7 +21,11 @@ The abstract base class for all scattering objects
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 from itertools import chain
 from copy import copy
 

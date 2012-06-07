@@ -21,7 +21,10 @@ Test construction and manipulation of Scatterer objects.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict 
 
 import numpy as np
 from nose.tools import raises, assert_raises

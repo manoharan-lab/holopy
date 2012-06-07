@@ -17,7 +17,10 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except OrderedDict:
+    from ordereddict import OrderedDict
 import tempfile
 
 import numpy as np
