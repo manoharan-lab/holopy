@@ -23,6 +23,7 @@ Defines SphereCluster, a Composite scatterer consisting of Spheres
 '''
 # COVERAGE: I think all uncovered code is either unreachable or due likely to be
 # refactored away
+from __future__ import division
 
 import numpy as np
 from sphere import Sphere

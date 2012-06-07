@@ -25,6 +25,7 @@ analysis procedures.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 """
+from __future__ import division
 
 import numpy as np
 import holopy

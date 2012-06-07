@@ -22,6 +22,7 @@ Defines CoatedSphere, a scattering primitive
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
+from __future__ import division
 
 from holopy.utility.helpers import _ensure_array
 from .abstract_scatterer import SphericallySymmetricScatterer

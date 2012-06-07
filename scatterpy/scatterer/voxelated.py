@@ -20,6 +20,7 @@ Generalized scatterers, represented by discritizing space into voxels.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 """
+from __future__ import division
 
 import tempfile
 import numpy as np

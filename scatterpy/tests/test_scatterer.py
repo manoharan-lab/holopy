@@ -20,6 +20,7 @@ Test construction and manipulation of Scatterer objects.
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
+from __future__ import division
 
 try:
     from collections import OrderedDict

@@ -20,6 +20,7 @@ The tests here test basic reconstruction capability
 
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 '''
+from __future__ import division
 
 import sys
 import os

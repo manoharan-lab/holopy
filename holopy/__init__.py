@@ -22,6 +22,8 @@ analyze digital holograms
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
+from __future__ import division
+
 import process
 import analyze
 import io

@@ -23,6 +23,7 @@ determining an initial parameter guess for hologram fitting.
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 """
+from __future__ import division
 
 import scipy
 import numpy

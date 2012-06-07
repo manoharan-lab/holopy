@@ -21,6 +21,7 @@ Test fortran-based multilayered Mie calculations and python interface.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
+from __future__ import division
 
 import sys
 import os

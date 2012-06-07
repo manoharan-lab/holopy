@@ -26,6 +26,7 @@ holograms.
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
+from __future__ import division
 
 from mie import Mie
 from dda import DDA

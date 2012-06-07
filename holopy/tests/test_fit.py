@@ -22,6 +22,7 @@ Test fitting and related infrastructure
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
+from __future__ import division
 
 try:
     from collections import OrderedDict

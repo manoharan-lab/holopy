@@ -23,6 +23,7 @@ Routines for fitting a hologram to an exact solution given an input deck.
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 
 """
+from __future__ import division
 
 import sys
 import os

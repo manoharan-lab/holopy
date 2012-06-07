@@ -21,6 +21,7 @@ Routines for manipulating, reconstructing, and fitting holograms
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 """
+from __future__ import division
 
 import numpy as np
 import scipy.signal

@@ -20,5 +20,6 @@ Coding assistance functions and errors
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
+from __future__ import division
 import helpers
 import errors
