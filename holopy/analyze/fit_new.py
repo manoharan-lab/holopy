@@ -7,12 +7,6 @@ import scatterpy
 from holopy.utility.helpers import _ensure_pair
 from holopy.io.yaml_io import Serializable
 
-
-class FitResult(Serializable):
-    def __init__(self, scatterer, alpha):
-        self.scatterer = scatterer
-        self.alpha = alpha
-
 def fit(model, data, algorithm='nmpfit'):
     time_start = time.time()
 
@@ -50,7 +44,7 @@ class FitResult(Serializable):
                 "alpha={s.alpha}, chisq={s.chisq}, rsq={s.rsq}, "
                 "converged={s.converged}, time={s.time}, model={s.model}, "
                 "minimizer={s.minimizer}, "
-                "minimization_details={s.minimization_details})".format(s=self))
+                "minimization_details={s.minimization_details})".format(s=self))  #pragma: no cover
 
 class Model(Serializable):
     """
@@ -117,7 +111,13 @@ class Model(Serializable):
     # minimizer as possible).  
 
     # TODO: Allow a layer on top of theory to do things like moving sphere
-        
+
+class InvalidParameterSpecification(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+    def __str__(self):
+        return self.msg
+    
 class Minimizer(object):
     def __init__(self, algorithm='nmpfit'):
         self.algorithm = algorithm
@@ -141,7 +141,9 @@ class Minimizer(object):
                 if par.guess is not None:
                     d['value'] = par.scale(par.guess)
                 else:
-                    raise NeedInitialGuess()
+                    raise InvalidParameterSpecification("nmpfit requires an "
+                                                        "initial guess for all "
+                                                        "parameters")
                 nmp_pars.append(d)
             fitresult = nmpfit.mpfit(resid_wrapper, parinfo=nmp_pars)
             converged = fitresult.status < 4
@@ -159,8 +161,12 @@ class Parameter(object):
         self.misc = misc
         if guess is not None:
             self.scale_factor = guess
+        elif limit is not None:
+            self.scale_factor = np.sqrt(limit[0]*limit[1])
         else:
-            self.scale_factor = np.sqrt(limits[0]*limits[1])
+            raise InvalidParameterSpecification("In order to specify a parameter "
+                                                "you must provide at least an "
+                                                "initial guess or limit") 
 
     def scale(self, physical):
         """

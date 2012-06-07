@@ -110,8 +110,6 @@ class Mie(ScatteringTheory):
                 if not isinstance(s, (Sphere, CoatedSphere)):
                     raise TheoryNotCompatibleError(self, s)
             # if it passes, superpose the fields
-            scatterer.validate()
-    
             return self.superpose(spheres, selection)
         else: raise TheoryNotCompatibleError(self, scatterer)
 
@@ -178,8 +176,6 @@ class Mie(ScatteringTheory):
         m_arr = _ensure_array(s.n) / self.optics.index
     
         # Check that the scatterer is in a range we can compute for
-        if x_arr.min() < 0:
-            raise UnrealizableScatterer(self, s, "radius is negative")
         if x_arr.max() > 1e3:
             raise UnrealizableScatterer(self, s, "radius too large, field "+
                                         "calculation would take forever")

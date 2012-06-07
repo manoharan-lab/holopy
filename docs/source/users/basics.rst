@@ -19,7 +19,7 @@ the top left corner as shown below. The x-axis runs vertically down,
 the y-axis runs horizontally to the right, and the z-axis points out
 of the screen, toward you.
 
-In sample space, we choose the z axis so that distances from the camera/focal plane are positive (have positive z coordinates).  The price we pay for this choice is that the propagation direction of the illumination light is then negative.  
+In sample space, we choose the z axis so that distances to objects from the camera/focal plane are positive (have positive z coordinates).  The price we pay for this choice is that the propagation direction of the illumination light is then negative.  
 
 .. image:: ../images/HolopyCoordinateSystem.png
     :scale: 40 %
@@ -69,6 +69,13 @@ Routines for step 1 are in the :mod:`holopy.io` module, for steps 2
 and 4 in the :mod:`holopy.process` module, and for step 3 in the
 :mod:`holopy.analyze.reconstruct` modules.
 
+Calculation
+^^^^^^^^^^^
+
+   1) Describe geometry as :mod:`scatterpy.scatterer` object
+   2) Choose a :mod:`scatterpy.theory` object appropriate to the scatterer
+   3) calculate a hologram of the scatterer with the theory -> `holopy.hologram.Hologram` object
+	 
 Fitting
 ^^^^^^^
 

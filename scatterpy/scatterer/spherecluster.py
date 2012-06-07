@@ -27,7 +27,8 @@ Defines SphereCluster, a Composite scatterer consisting of Spheres
 import numpy as np
 from sphere import Sphere
 from composite import Composite
-from scatterpy.errors import ScattererDefinitionError, InvalidScattererSphereOverlap
+from scatterpy.errors import (ScattererDefinitionError,
+                              InvalidScattererSphereOverlap, warning)
 from holopy.process.math import cartesian_distance, rotate_points
 
 class SphereCluster(Composite):
@@ -52,22 +53,20 @@ class SphereCluster(Composite):
                     "scatterers to be Spheres.\n" + 
                     repr(s) + " is not a Sphere", self)
         self.scatterers = spheres
-            
-    def validate(self):
+
+        if self.has_overlaps:
+            warning("creating unphysical scatterer with overlapping spheres", self)
+
+    @property
+    def has_overlaps(self):
         overlaps = []
         for i, s1 in enumerate(self.scatterers):
-            s1.validate()
             for j in range(i+1, len(self.scatterers)):
                 s2= self.scatterers[j]
                 if cartesian_distance(s1.center, s2.center) < (np.max(s1.r) + np.max(s2.r)):
                     overlaps.append((i, j))
-
-        if overlaps:
-            raise InvalidScattererSphereOverlap(self, overlaps)
-
-        return True
-
-
+        return len(overlaps) > 0
+            
     def __repr__(self):
         return "{c}(spheres={spheres})".format(c=self.__class__.__name__,
                                        spheres=repr(self.scatterers))

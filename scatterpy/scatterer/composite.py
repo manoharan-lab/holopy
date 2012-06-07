@@ -24,7 +24,10 @@ scatterers (e.g. two trimers).
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 from copy import copy
 
 import numpy as np

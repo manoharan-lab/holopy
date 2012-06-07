@@ -114,13 +114,6 @@ def test_single_sphere():
     # now test some invalid scatterers and confirm that it rejects calculating
     # for them
 
-    # Negative radius
-    with assert_raises(UnrealizableScatterer) as cm:
-        xmodel.calc_holo(Sphere(r = -1e-6))
-    assert_equal(str(cm.exception), "Cannot compute scattering with Mie "
-                 "scattering theory for a scatterer of type Sphere because: "
-                 "radius is negative")
-
     # large radius (calculation not attempted because it would take forever
     assert_raises(UnrealizableScatterer, xmodel.calc_holo, Sphere(r=1))
  

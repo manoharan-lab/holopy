@@ -21,7 +21,10 @@ Test construction and manipulation of Scatterer objects.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict 
 
 import numpy as np
 from nose.tools import raises, assert_raises
@@ -51,6 +54,9 @@ def test_Sphere_construction():
     assert_equal(str(cm.exception), 'Error defining scatterer object of type '
                  'Sphere.\ncenter specified as (1e-06, -1e-06, None), '
                  'center should be specified as (x, y, z)')
+
+    with assert_raises(ScattererDefinitionError):
+        Sphere(n=1.59, r = -2, center = (1, 1, 1))
 
 def test_Ellipsoid():
     s = Ellipsoid(n = 1.57, r = (1, 2, 3), center = (3, 2, 1))

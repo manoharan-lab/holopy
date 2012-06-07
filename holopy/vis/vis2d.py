@@ -42,11 +42,10 @@ class plotter:
         if self.plot is not None:
             self.plot.set_array(im)
         else:
-            self.plot = self.ax.imshow(im, interpolation="nearest")
+            self.plot = self.ax.imshow(im, vmin=self.vmin, vmax=self.vmax,
+                                       interpolation="nearest")
         if not self.colorbar:
             self.colorbar = self.fig.colorbar(self.plot)
-#        self.ax.imshow(im, vmin=self.vmin, vmax=self.vmax,
-#                       interpolation="nearest")
 
     def click(self, event):
         if event.ydata is not None and event.xdata is not None:

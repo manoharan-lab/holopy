@@ -25,10 +25,10 @@ The following features work and are well-tested:
 * Calculating holograms from scattering models of:
 
   * Single spheres (based on the Lorenz-Mie solution) 
-  * Sphere doublets (based on a T-Matrix approach)
-  * Sphere trimers (based on a T-Matrix approach)
+  * Arbitrary clusters of spheres (using multisphere superposition or Mie superposition)
+  * Elipsoids and other complicated structures (based on the Discrete Dipole Approximation (DDA))
 
-* Fitting holograms to any of the above scattering models
+* Fitting any of the above scattering models to holograms
 * Reconstructing 3D volumes from holograms
 
 Holopy started as a project in the `Manoharan Lab at Harvard

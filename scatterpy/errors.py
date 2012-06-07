@@ -22,6 +22,11 @@ other exceptions in other parts of holopy to keep things modular.
 .. moduleauthor :: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 """
 
+# Defined as a seperate function to make it easier to redirect or quiet warnings
+# in the future
+def warning(msg, context=None):
+    print("WARNING:{0}".format(msg))
+
 class InvalidScatterer(Exception):
     pass
 

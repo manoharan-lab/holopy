@@ -153,28 +153,13 @@ def make_residual(holo, scatterer, theory, parameter_manager,
         # alpha should always be the last parameter, we prune it because the
         # scatterer doesn't want to know about it
         this_scatterer = scatterer.from_parameters(parameters)
-        error = np.ones(holo.shape)*1.e12
 
-        try:
-            this_scatterer.validate()
-        except InvalidScatterer as e:
-            print("Attempt to overlap scatterers, rejecting with large error")
-            calculated = theory.calc_holo(this_scatterer, p[-1], selection)
-            return cost_func(holo, calculated, selection).ravel()
-            #return cost_func(holo, error).ravel() #TODO becca's wierd edit
-        
         try:
             calculated = theory.calc_holo(this_scatterer, alpha, selection)
         except (UnrealizableScatterer, InvalidScatterer) as e:
-            if isinstance(e, InvalidScattererSphereOverlap):
-                print("Hologram computation attempted with overlapping \
-spheres, returning large residual")
-            else:
-                print("Fitter asked for a value which the scattering theory \
+            print("Fitter asked for a value which the scattering theory \
 thought was unphysical or uncomputable, returning large residual")
-            calculated = theory.calc_holo(this_scatterer, p[-1], selection)
-            return cost_func(holo, calculated, selection).ravel()
-            #return cost_func(holo, error, selection).ravel() #TODO becca's wierd edit
+            calculated = error = np.ones(holo.shape)*1.e12
 
         return cost_func(holo, calculated, selection).ravel()
 
