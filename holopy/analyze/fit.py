@@ -38,16 +38,21 @@ import numpy as np
 from scatterpy.errors import (UnrealizableScatterer,
                               InvalidScattererSphereOverlap, InvalidScatterer)
 
-def cost_subtract(holo, calc):
-    return holo - calc
-
-def cost_rectified(holo, calc):
-    return abs(holo-1) - abs(calc-1)
-
+def cost_subtract(holo, calc, selection=None):
+    if selection==None:
+        return holo - calc
+    else:
+        return selection*holo - selection*calc
+    
+def cost_rectified(holo, calc, selection=None):
+    if selection==None:
+        return abs(holo-1) - abs(calc-1)
+    else:
+        return abs(selection*holo-1) - abs(selection*calc-1)
         
 def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
         upper_bound=None, step = None, tie = None, plot=False, minimizer_params={},
-        residual_cost=cost_subtract):
+        residual_cost=cost_subtract, selection = None):
     """
     Find a scatterer which best recreates the given holo
 
@@ -102,7 +107,7 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
         theory = theory(imshape = holo.shape, optics = holo.optics)
 
     
-    residual = make_residual(holo, scatterer, theory, manager, residual_cost)
+    residual = make_residual(holo, scatterer, theory, manager, residual_cost, selection)
 
     result, fnorm, status, minimizer_info = minimize(residual, manager,
                                                      minimizer,
@@ -126,7 +131,7 @@ def fit(holo, initial_guess, theory, minimizer='nmpfit', lower_bound=None,
 
 
 def make_residual(holo, scatterer, theory, parameter_manager,
-                  cost_func=cost_subtract):
+                  cost_func=cost_subtract, selection=None):
     """
     Construct a residual function suitable for fitting scatterer to holo using
     theory
@@ -140,7 +145,8 @@ def make_residual(holo, scatterer, theory, parameter_manager,
     initial_guess : :class:`scatterpy.scatterer.Scatterer`
         The scatter which models the hologram
     """
-
+    if selection == None:
+        selection = np.ones(holo.shape,dtype='int')
     def residual(p, **keywords):
         parameters, alpha = parameter_manager.interpret_minimizer_list(p)
 
@@ -153,10 +159,12 @@ def make_residual(holo, scatterer, theory, parameter_manager,
             this_scatterer.validate()
         except InvalidScatterer as e:
             print("Attempt to overlap scatterers, rejecting with large error")
-            return cost_func(holo, error).ravel()
+            calculated = theory.calc_holo(this_scatterer, p[-1], selection)
+            return cost_func(holo, calculated, selection).ravel()
+            #return cost_func(holo, error).ravel() #TODO becca's wierd edit
         
         try:
-            calculated = theory.calc_holo(this_scatterer, alpha)
+            calculated = theory.calc_holo(this_scatterer, alpha, selection)
         except (UnrealizableScatterer, InvalidScatterer) as e:
             if isinstance(e, InvalidScattererSphereOverlap):
                 print("Hologram computation attempted with overlapping \
@@ -164,9 +172,11 @@ spheres, returning large residual")
             else:
                 print("Fitter asked for a value which the scattering theory \
 thought was unphysical or uncomputable, returning large residual")
-            return cost_func(holo, error).ravel()
+            calculated = theory.calc_holo(this_scatterer, p[-1], selection)
+            return cost_func(holo, calculated, selection).ravel()
+            #return cost_func(holo, error, selection).ravel() #TODO becca's wierd edit
 
-        return cost_func(holo, calculated).ravel()
+        return cost_func(holo, calculated, selection).ravel()
 
     return residual
 

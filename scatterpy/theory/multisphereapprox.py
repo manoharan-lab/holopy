@@ -146,7 +146,7 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
         for i, s1 in enumerate(scatterer.scatterers):
             for j in range(i+1, len(scatterer.scatterers)):
                 s2 = scatterer.scatterers[j]
-                if cartesian_distance(s1.center, s2.center) < (s1.r + s2.r):
+                if cartesian_distance(s1.center, s2.center) < (s1.r + s2.r - 100e-9):
                     overlaps.append((i, j))
                     
         radii = scatterer.r
@@ -160,7 +160,7 @@ p c    for dense arrays of identical spheres.  Order-of-scattering may
             # check for overlaps again
             overlaps = []
             for i, s1 in enumerate(scatterer.scatterers):
-                s1.validate()
+                #s1.validate()
                 for j in range(i+1, len(scatterer.scatterers)):
                     s2 = scatterer.scatterers[j]
                     if cartesian_distance(s1.center, s2.center) < (radii[i] + radii[j]):
