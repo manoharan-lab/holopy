@@ -20,6 +20,7 @@ Test file IO of scatterpy objects
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
+from __future__ import division
 
 import scatterpy
 import holopy as hp

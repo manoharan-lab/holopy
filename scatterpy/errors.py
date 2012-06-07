@@ -21,6 +21,7 @@ other exceptions in other parts of holopy to keep things modular.
 
 .. moduleauthor :: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 """
+from __future__ import division
 
 # Defined as a seperate function to make it easier to redirect or quiet warnings
 # in the future

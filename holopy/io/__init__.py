@@ -22,6 +22,7 @@ just holograms.
 
 .. moduleauthor:: Thomas G. Dimiduk <tdiimduk@physics.harvard.edu>
 """
+from __future__ import division
 
 from yaml_io import save, load_yaml
 from image_io import load, save_image

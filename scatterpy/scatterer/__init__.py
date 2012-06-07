@@ -24,6 +24,7 @@ as Clusters.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimidusk@physics.harvard.edu>
 '''
+from __future__ import division
 
 from abstract_scatterer import Scatterer
 import abstract_scatterer

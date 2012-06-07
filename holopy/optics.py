@@ -29,6 +29,7 @@ reference beam to the Optics class constructor.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 
 """
+from __future__ import division
 
 import numpy as np
 import copy

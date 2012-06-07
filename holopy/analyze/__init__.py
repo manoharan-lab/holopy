@@ -21,6 +21,7 @@ Fitting, reconstructing, and other analysis routines.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 # add your name to the author list if you make changes
+from __future__ import division
 
 import fit
 import propagate

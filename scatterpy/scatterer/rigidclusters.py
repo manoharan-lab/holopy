@@ -21,6 +21,7 @@ Defines specific rigid sphere cluster geometries.
 
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 '''
+from __future__ import division
 
 #COVERAGE: This file is on its way out in refactoring
 

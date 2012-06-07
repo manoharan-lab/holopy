@@ -29,6 +29,7 @@ techniques.
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.havard.edu>
 .. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
 """
+from __future__ import division
 
 import numpy as np
 import scipy.signal

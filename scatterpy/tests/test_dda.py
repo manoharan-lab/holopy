@@ -20,6 +20,7 @@ Tests adda based DDA calculations
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
+from __future__ import division
 
 
 import holopy as hp

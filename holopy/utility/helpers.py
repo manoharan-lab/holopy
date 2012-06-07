@@ -20,6 +20,7 @@ Misc utility functions to make coding more convenient
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
+from __future__ import division
 
 import os
 import shutil

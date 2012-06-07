@@ -21,6 +21,7 @@ The abstract base class for all scattering objects
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
+from __future__ import division
 from collections import defaultdict
 try:
     from collections import OrderedDict

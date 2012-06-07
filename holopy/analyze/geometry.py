@@ -21,6 +21,7 @@ Routines for common calculations and transformations of groups of spheres.
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 
 """
+from __future__ import division
 
 import numpy as np
 from numpy import sqrt

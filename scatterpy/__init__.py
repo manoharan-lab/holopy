@@ -25,6 +25,8 @@ of scatterers, using various scattering theories.
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
+from __future__ import division
+
 from .scatterer.sphere import Sphere
 from .scatterer.spherecluster import SphereCluster
 from .scatterer.composite import Composite

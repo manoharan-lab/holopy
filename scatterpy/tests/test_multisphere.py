@@ -20,6 +20,7 @@ Test T-matrix sphere cluster calculations and python interface.
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
+from __future__ import division
 
 import sys
 import os

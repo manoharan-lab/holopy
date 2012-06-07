@@ -24,6 +24,7 @@ or detrending
 .. moduleauthor:: Tom G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 """
+from __future__ import division
 
 import scipy
 import numpy as np

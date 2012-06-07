@@ -25,6 +25,7 @@ reconstructions.
 .. moduleauthor:: Tom G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 '''
+from __future__ import division
 
 from .enhance import *
 from .filter import *

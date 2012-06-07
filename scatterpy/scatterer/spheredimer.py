@@ -21,6 +21,7 @@ Defines SphereDimer, a scatterer consisting of two Spheres
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
+from __future__ import division
 
 from scatterpy.scatterer import Scatterer
 

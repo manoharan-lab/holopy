@@ -18,6 +18,7 @@
 '''
 Test fitting a hologram using nmpfit without any wrapping
 '''
+from __future__ import division
 
 import numpy as np
 import os

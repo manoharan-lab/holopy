@@ -22,6 +22,7 @@ image file formats used for holograms.
 .. moduleauthor:: Jerome Fung <jfung@physics.harvard.edu>
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 """
+from __future__ import division
 
 import numpy as np
 import scipy as sp

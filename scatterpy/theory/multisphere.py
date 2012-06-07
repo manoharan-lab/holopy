@@ -25,6 +25,7 @@ dependence of spherical Hankel functions for the scattered field.
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
+from __future__ import division
 
 import numpy as np
 import mie_f.mieangfuncs as mieangfuncs

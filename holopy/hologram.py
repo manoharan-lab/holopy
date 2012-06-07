@@ -21,9 +21,11 @@ Routines for manipulating, reconstructing, and fitting holograms
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 """
+from __future__ import division
 
 import numpy as np
 import scipy.signal
+from types import NoneType
 from holopy.utility import errors
 
 class Hologram(np.ndarray):
@@ -42,6 +44,9 @@ class Hologram(np.ndarray):
         optical train parameters
     time_scale : float or list of float (optional)
         time betwen frames or list of times of each frame
+    from_origin : numpy.ndarray (2) (optional)
+        upper left corner of hologram: (0,0) unless hologram is
+        subimaged from a larger hologram
 
     Notes
     -----
@@ -58,7 +63,8 @@ class Hologram(np.ndarray):
 
     # Normally we'd use an __init__ method, but subclassing ndarray
     # requires a __new__ method and an __array_finalize__ method
-    def __new__(cls, arr, optics=None, time_scale=None, name=None):
+    def __new__(cls, arr, optics = None, time_scale = None, name = None,
+                from_origin = None):
         if isinstance(arr, np.ndarray):
             # Input array is an already formed ndarray instance
             input_array = arr.copy()
@@ -76,7 +82,13 @@ class Hologram(np.ndarray):
         obj.optics = optics
         obj.time_scale = time_scale
         obj.name = name
-        
+   
+        # origin from which the image comes; reset if subimaged
+        if from_origin.__class__ is NoneType:
+            obj.from_origin = np.zeros(2, dtype = 'int')
+        else:
+            obj.from_origin = from_origin
+
         # Finally, we must return the newly created object:
         return obj
 
@@ -234,6 +246,7 @@ def subimage(im, center=None, size=None):
     # might go wrong if lx,ly are not divisible by 2, but they
     # probably will be, so I am not worrying about it
     return Hologram(im[x0:x1, y0:y1, ...], optics=im.optics,
-                    time_scale=im.time_scale, name=n)
+                    time_scale=im.time_scale, name=n, 
+                    from_origin = np.array([x0, y0]))
 
 
