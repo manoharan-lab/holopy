@@ -30,6 +30,7 @@ import holopy as hp
 import Image
 import os
 import glob
+import warnings
 from scipy.misc.pilutil import fromimage
 from holopy.third_party.tifffile import TIFFfile
 from holopy.hologram import Hologram
@@ -223,7 +224,7 @@ def _read(filename, channel=0):
         else:
             arr = arr[:, :, channel]
     elif channel > 0:
-        print "Warning: not a color image (channel number ignored)"
+        warnings.warn("Warning: not a color image (channel number ignored)")
 
     # we choose a convention that the large dimension of an image is
     # always x 

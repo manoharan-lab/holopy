@@ -34,7 +34,9 @@ from nose.plugins.attrib import attr
 
 from scatterpy.scatterer import Sphere, CoatedSphere
 from scatterpy.scatterer import SphereCluster
-from scatterpy.errors import ScattererDefinitionError, InvalidScattererSphereOverlap
+from scatterpy.errors import (ScattererDefinitionError,
+                              InvalidScattererSphereOverlap)
+import warnings
 
 
 @attr('fast')
@@ -75,7 +77,9 @@ def test_SphereCluster_construction_typechecking():
 @attr('fast')
 def test_SphereCluster_ovelap_checking():
     s1 = Sphere(n = 1.59, r = 5e-7, center=(1e-6, -1e-6, 10e-6))
-    sc = SphereCluster([s1, s1, s1])
+    with warnings.catch_warnings(True) as w:
+        sc = SphereCluster([s1, s1, s1])
+        assert len(w) > 0
 
 
 def test_SphereCluster_parameters():
@@ -105,7 +109,7 @@ def test_SphereCluster_translation():
     s2 = Sphere(n = 1.59, r = 1, center=[0,0,0])
     sc = SphereCluster(spheres = [s1, s2])
 
-    sc2 = sc.translated(1, 1, 1)
+    sc2 = sc.translate(1, 1, 1)
 
     assert_equal(sc.scatterers[0].r, sc2.scatterers[0].r)
     assert_equal(sc.scatterers[1].r, sc2.scatterers[1].r)
@@ -119,7 +123,7 @@ def test_SphereCluster_rotation():
     s2 = Sphere(n = 1.59, r = 1, center = [-1, 0, 1])
     sc = SphereCluster(spheres = [s1, s2])
 
-    sc2 = sc.rotated(np.pi/2, 0, 0)
+    sc2 = sc.rotate(np.pi/2, 0, 0)
 
     assert_equal(sc.scatterers[0].r, sc2.scatterers[0].r)
     assert_equal(sc.scatterers[1].r, sc2.scatterers[1].r)

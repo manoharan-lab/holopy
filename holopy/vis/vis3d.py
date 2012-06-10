@@ -26,8 +26,8 @@ from __future__ import division
 from matplotlib import cm
 from numpy import arange
 
-# Mayavi moved namespaces in the upgrade to 2.4, this try black will allow using
-# either the new or old namespace.
+# Mayavi moved namespaces in the upgrade to 2.4. This try block will
+# allow using either the new or old namespace.
 try:
     from mayavi import mlab
 except ImportError:

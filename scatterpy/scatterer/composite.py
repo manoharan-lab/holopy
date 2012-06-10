@@ -120,7 +120,7 @@ class Composite(Scatterer):
             if isinstance(s, self.__class__):
                 out = out + s._prettystr(level+1)
             else:
-                out = out + (level+1)*indent + s.__class__.__name__ + '\n'
+                out = out + (level+1)*indent + s.__str__() + '\n'
         return out
         
     def __str__(self):
@@ -130,13 +130,13 @@ class Composite(Scatterer):
         return self._prettystr(0)
 
 
-    def translated(self, x, y, z):
-        trans = [s.translated(x, y, z) for s in self.scatterers]
+    def translate(self, x, y, z):
+        trans = [s.translate(x, y, z) for s in self.scatterers]
         new = copy(self)
         new.scatterers = trans
         return new
 
-    def rotated(self, alpha, beta, gamma):
+    def rotate(self, alpha, beta, gamma):
         centers = np.array([s.center for s in self.scatterers])
         com = centers.mean(0)
         
@@ -145,8 +145,8 @@ class Composite(Scatterer):
         scatterers = []
 
         for i in range(len(self.scatterers)):
-            scatterers.append(self.scatterers[i].translated(
-                *(new_centers[i,:] - centers[i,:])).rotated(alpha, beta, gamma))
+            scatterers.append(self.scatterers[i].translate(
+                *(new_centers[i,:] - centers[i,:])).rotate(alpha, beta, gamma))
 
         new = copy(self)
         new.scatterers = scatterers

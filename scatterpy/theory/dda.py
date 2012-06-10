@@ -61,10 +61,10 @@ class DDA(ScatteringTheory):
         Size of grid to calculate scattered fields or
         intensities. This is the shape of the image that calc_field or
         calc_intensity will return
-    phis : array 
+    phi : array 
         Specifies azimuthal scattering angles to calculate (incident
         direction is z)
-    thetas : array 
+    theta : array 
         Specifies polar scattering angles to calculate
     optics : :class:`holopy.optics.Optics` object
         specifies optical train    
@@ -76,14 +76,14 @@ class DDA(ScatteringTheory):
     This can in principle handle any scatterer, but in practice it will need
     excessive memory or computation time for particularly large scatterers.  
     """
-    def __init__(self, optics, imshape=(256,256), thetas=None, phis=None):
+    def __init__(self, optics, imshape=(256,256), theta=None, phi=None):
         # Check that adda is present and able to run
         try:
             subprocess.check_output(['adda', '-V'])
         except (subprocess.CalledProcessError, OSError):
             raise DependencyMissing('adda')
 
-        super(DDA, self).__init__(optics, imshape, thetas, phis)
+        super(DDA, self).__init__(optics, imshape, theta, phi)
 
     def _write_adda_angles_file(self, theta, phi, kr, temp_dir):
         # adda expects degrees, so convert

@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 """
-Generalized scatterers, represented by discritizing space into voxels.  
+Generalized scatterers, represented by discretizing space into voxels.  
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 """
@@ -29,6 +29,7 @@ from holopy.process.math import rotation_matrix
 
 class VoxelatedScatterer(Scatterer):
     """
+    TODO: need a docstring
     """
     
     def __init__(self, voxels, center, voxels_per_wavelen):
@@ -234,7 +235,8 @@ class Pacman(SphereIntersection):
         
         s = Sphere(n, r, center=center)
         
-        offset = np.dot(rotation_matrix(0, bite_beta, bite_gamma), [0, 0, bite_offset])
+        offset = np.dot(rotation_matrix(0, bite_beta, bite_gamma), 
+                        [0, 0, bite_offset])
 
         s2 = Sphere(None, bite_r, center=s.center+offset)
 

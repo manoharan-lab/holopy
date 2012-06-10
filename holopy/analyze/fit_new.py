@@ -97,7 +97,8 @@ class Model(Serializable):
     make_scatterer function which can turn the parameters into a scatterer
     
     """
-    def __init__(self, parameters, theory, scatterer=None, make_scatterer=None, selection=None):
+    def __init__(self, parameters, theory, scatterer=None, 
+                 make_scatterer=None, selection=None):
         self.parameters = parameters
         self.theory = theory
         self.scatterer=scatterer
@@ -136,14 +137,15 @@ class Model(Serializable):
         def cost(par_values, selection=None):
             if selection == None:
                 selection = np.ones(data.shape,dtype='int')
-            calc = theory.calc_holo(self.make_scatterer_from_par_values(par_values),
-                             self.alpha(par_values), selection)
+            calc = theory.calc_holo(
+                self.make_scatterer_from_par_values(par_values),
+                self.alpha(par_values), selection)
             return self.compare(calc, data, selection)
         return cost
 
-    # TODO: make a user overridabel cost function that gets physical parameters
-    # so that the unscaling happens only in one place (and as close to the
-    # minimizer as possible).  
+    # TODO: make a user overridable cost function that gets physical
+    # parameters so that the unscaling happens only in one place (and
+    # as close to the minimizer as possible).
 
     # TODO: Allow a layer on top of theory to do things like moving sphere
 
@@ -253,7 +255,7 @@ class RigidSphereCluster(Model):
         unscaled = []
         for i, val in enumerate(par_values):
             unscaled.append(self.parameters[i].unscale(val))
-        return self.reference_scatterer.rotated(unscaled[:3]).translated(unscaled[3:6])
+        return self.reference_scatterer.rotate(unscaled[:3]).translate(unscaled[3:6])
 
 
 # Archiving:

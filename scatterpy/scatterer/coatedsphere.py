@@ -36,9 +36,9 @@ class CoatedSphere(SphericallySymmetricScatterer):
     Attributes
     ----------
     n : array(complex)
-        Indices of refraction of each layer, starting from center
+        Indices of refraction of each layer, starting from the core
     r : array(float)
-        Radius of each layer, starting from the center
+        Outer radius of the each layer, starting from the core
     center : 3-tuple, list or numpy array (optional)
         specifies coordinates of center of sphere
 

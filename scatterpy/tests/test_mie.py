@@ -27,8 +27,9 @@ import os
 hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
 sys.path.append(hp_dir)
 from nose.tools import with_setup, assert_raises
-from numpy.testing import assert_equal
 
+import numpy as np
+from numpy.testing import assert_equal
 from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
                            assert_raises, assert_allclose)
 from nose.plugins.attrib import attr
@@ -92,7 +93,7 @@ def test_Mie_construction():
     assert_equal(repr(theory), "Mie(optics=Optics(wavelen=0.66, index=1.33, "
     "polarization=[1.0, 0.0], divergence=0.0, pixel_size=None, train=None, "
     "mag=None, pixel_scale=[0.10000000000000001, 0.10000000000000001]),"
-    "thetas=None,imshape=[256 256],phis=None)")
+    "theta=None,imshape=[256 256],phi=None)")
     
 
 
@@ -255,29 +256,3 @@ def test_nonlinearity():
 
     # uncomment to debug
     #return holo_1, holo_2, holo_super
-    
-
-
-# TODO: disabled because random sphere arrangement is getting overlaps. Fix this test
-
-#def test_multiple_spheres():
-#    # test superposition from many spheres.  This only tests that the
-#    # function returns
-#    N = 10
-#    # this generates some random coordinates distributed uniformly
-#    # across the image
-#    xarr = np.random.random(N)*imshape*pixel_scale[0]
-#    yarr = np.random.random(N)*imshape*pixel_scale[0]
-#    zarr = np.random.random(N)*5e-6 + z # spread over 5-um in z
-#    rarr = np.ones(N)*radius
-#    nrarr = np.ones(N)*n_particle_real
-#    niarr = np.ones(N)*n_particle_imag
-#    narr = nrarr + 1j*niarr
-#
-#    sc = SphereCluster(n = nrarr + niarr*1j, r = rarr, x=xarr, y=yarr,
-#                       z=zarr)
-#    model = Mie(imshape=imshape, optics=xoptics)
-#    holo = model.calc_holo(sc, alpha=scaling_alpha)
-#
-#    # uncomment to debug
-#    #return holo

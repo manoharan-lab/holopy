@@ -36,8 +36,8 @@ from nose.plugins.attrib import attr
 
 import holopy
 
-from scatterpy.theory import Multisphere, MultisphereApprox
-from scatterpy.theory.multisphere import TMatrixFieldNaN
+from scatterpy.theory import Multisphere
+from scatterpy.theory.multisphere import TMatrixFieldNaN, MultisphereExpansionNaN
 from scatterpy.scatterer import Sphere, SphereCluster
 from scatterpy.errors import UnrealizableScatterer, TheoryNotCompatibleError
 import scatterpy
@@ -173,178 +173,26 @@ def test_invalid():
 
 @with_setup(setup=setup_model, teardown=teardown_model)
 def test_overlap():
-    sc = SphereCluster(spheres=[Sphere(center=[3e-6, 3e-6, 10e-6], n=1.59,
-            r=.5e-6), Sphere(center=[3.4e-6, 3e-6, 10e-6], n=1.59, r=.5e-6)])
-
+    # should raise a warning
+    with warnings.catch_warnings(True) as w:
+        sc = SphereCluster(spheres=[Sphere(center=[3e-6, 3e-6, 10e-6], 
+                                           n=1.59, r=.5e-6), 
+                                    Sphere(center=[3.4e-6, 3e-6, 10e-6], 
+                                           n=1.59, r=.5e-6)])
+        assert len(w) > 0
 
     theory = Multisphere(xoptics, imshape)
 
-    theory = MultisphereApprox(xoptics, imshape)
+    # should fail to converge
+    assert_raises(MultisphereExpansionNaN, theory.calc_holo, sc)
 
-    assert_raises(TMatrixFieldNaN, theory.calc_holo, sc)
-
-    # MultisphereApprox will happily try, but for this overlap it will fail
-    with assert_raises(TMatrixFieldNaN) as cm:
-        holo = theory.calc_holo(sc)
-        assert_equal(str(cm.exception, "T-matrix field is NaN, this probably "
-                     "represents a failure of the code to converge, check your "
-                     "scatterer."))
-
-    # but it should succeed with a small overlab
-    sc = SphereCluster(spheres=[Sphere(center=[3e-6, 3e-6, 10e-6], n=1.59,
-            r=.5e-6), Sphere(center=[3.9e-6, 3.e-6, 10e-6], n=1.59, r=.5e-6)])
+    # but it should succeed with a small overlap, after raising a warning
+    with warnings.catch_warnings(True) as w:
+        sc = SphereCluster(spheres=[Sphere(center=[3e-6, 3e-6, 10e-6], 
+                                           n=1.59, r=.5e-6), 
+                                    Sphere(center=[3.9e-6, 3.e-6, 10e-6], 
+                                           n=1.59, r=.5e-6)])
+        assert len(w) > 0
     holo = theory.calc_holo(sc)
 
     common.verify(holo, '2_sphere_allow_overlap')
-    
-
-    
-"""
-def test_single_sphere():
-    # single spheres hologram (only tests that functions return)
-    holo = mie.forward_holo(imshape, xoptics, n_particle_real,
-                            n_particle_imag, radius, x, y, z, 
-                            scaling_alpha)
-
-    xfield, yfield, zfield = mie.calc_mie_fields(imshape, xoptics,
-                                                 n_particle_real,
-                                                 n_particle_imag,
-                                                 radius, x, y, z)
-
-def test_linearity():
-    # look at superposition of scattering from two point particles;
-    # make sure that this is sum of holograms from individual point
-    # particles (scattered intensity should be negligible for this
-    # case)
-
-    x2 = x*2
-    y2 = y*2
-    z2 = z*2
-    scaling_alpha = 1.0
-
-    r = 1e-2*wavelen    # something much smaller than wavelength
-
-    nrarr = np.array([n_particle_real, n_particle_real])
-    niarr = np.array([n_particle_imag, n_particle_imag])
-    rarr = np.array([r, r])
-    xarr = np.array([x, x2])
-    yarr = np.array([y, y2])
-    zarr = np.array([z, z2])
-
-    holo_1 = mie.forward_holo(imshape, xoptics, nrarr[0],
-                              niarr[0], rarr[0], 
-                              xarr[0], yarr[0], zarr[0],  
-                              scaling_alpha)
-    holo_2 = mie.forward_holo(imshape, xoptics, nrarr[1],
-                              niarr[1], rarr[1], 
-                              xarr[1], yarr[1], zarr[1],  
-                              scaling_alpha)
-    holo_super = mie.forward_holo(imshape, xoptics, nrarr,
-                                     niarr, rarr, xarr, yarr, zarr, 
-                                     scaling_alpha)
-
-    # make sure we're not just looking at uniform arrays (could
-    # happen if the size is set too small)
-    try:
-        assert_array_almost_equal(holo_1, holo_2, decimal=12)
-    except AssertionError:
-        pass    # no way to do "assert array not equal" in numpy.testing
-    else:
-        raise AssertionError("Hologram computed for point particle" +
-                             " looks suspiciously close to having" +
-                             " no fringes")
-
-    # test linearity by subtracting off individual holograms
-    # should recover the other hologram
-    assert_array_almost_equal(holo_super - holo_1 + 1, holo_2)
-    assert_array_almost_equal(holo_super - holo_2 + 1, holo_1)
-
-    # uncomment to debug
-    #return holo_1, holo_2, holo_super
-
-def test_nonlinearity():
-    # look at superposition of scattering from two large particles;
-    # make sure that this is *not equal* to sum of holograms from
-    # individual scatterers (scattered intensity should be
-    # non-negligible for this case)
-
-    x2 = x*2
-    y2 = y*2
-    z2 = z*2
-    scaling_alpha = 1.0
-
-    r = wavelen    # order of wavelength
-
-    nrarr = np.array([n_particle_real, n_particle_real])
-    niarr = np.array([n_particle_imag, n_particle_imag])
-    rarr = np.array([r, r])
-    xarr = np.array([x, x2])
-    yarr = np.array([y, y2])
-    zarr = np.array([z, z2])
-
-    holo_1 = mie.forward_holo(imshape, xoptics, nrarr[0],
-                              niarr[0], rarr[0], 
-                              xarr[0], yarr[0], zarr[0],  
-                              scaling_alpha)
-    holo_2 = mie.forward_holo(imshape, xoptics, nrarr[1],
-                              niarr[1], rarr[1], 
-                              xarr[1], yarr[1], zarr[1],  
-                              scaling_alpha)
-    holo_super = mie.forward_holo(imshape, xoptics, nrarr,
-                                     niarr, rarr, xarr, yarr, zarr, 
-                                     scaling_alpha)
-
-    # test nonlinearity by subtracting off individual holograms
-    try:
-        assert_array_almost_equal(holo_super - holo_1 + 1, holo_2)
-    except AssertionError:
-        pass    # no way to do "assert array not equal" in numpy.testing
-    else:
-        raise AssertionError("Holograms computed for " +
-                             "wavelength-scale scatterers should " +
-                             "not superpose linearly")
-
-    # uncomment to debug
-    #return holo_1, holo_2, holo_super
-
-def test_two_spheres_samez():
-    # put a second sphere in the same plane as the first.  This only
-    # tests that the function returns.
-    x2 = x*2
-    y2 = y*2
-    z2 = z
-
-    nrarr = np.array([n_particle_real, n_particle_real])
-    niarr = np.array([n_particle_imag, n_particle_imag])
-    rarr = np.array([radius, radius])
-    xarr = np.array([x, x2])
-    yarr = np.array([y, y2])
-    zarr = np.array([z, z2])
-    holo = mie.forward_holo(imshape, xoptics, nrarr,
-                            niarr, rarr, xarr, yarr, zarr, 
-                            scaling_alpha)
-
-    # uncomment to debug
-    #return holo
-
-def test_multiple_spheres():
-    # test superposition from many spheres.  This only tests that the
-    # function returns
-    N = 10
-    # this generates some random coordinates distributed uniformly
-    # across the image
-    xarr = np.random.random(N)*imshape*pixel_scale[0]
-    yarr = np.random.random(N)*imshape*pixel_scale[0]
-    zarr = np.random.random(N)*5e-6 + z # spread over 5-um in z
-    rarr = np.ones(N)*radius
-    nrarr = np.ones(N)*n_particle_real
-    niarr = np.ones(N)*n_particle_imag
-    narr = nrarr + 1j*niarr
-
-    holo = mie.forward_holo(imshape, xoptics, nrarr,
-                            niarr, rarr, xarr, yarr, zarr, 
-                            scaling_alpha)
-    # uncomment to debug
-    #return holo
-
-"""

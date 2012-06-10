@@ -84,7 +84,7 @@ Scatterer Descriptions: :mod:`scatterpy.scatterer`
 	:members:
 
 :mod:`scatterpy.scatterer.spherecluster`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automodule:: scatterpy.scatterer.spherecluster
 	:members:
 
@@ -104,6 +104,6 @@ Scattering Theories: :mod:`scatterpy.theory`
 	:members:
 
 :mod:`scatterpy.theory.multisphere`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automodule:: scatterpy.theory.multisphere
 	:members:

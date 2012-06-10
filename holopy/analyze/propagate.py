@@ -165,7 +165,7 @@ def trans_func(shape, optics, d, cfsp=0, squeeze=True,
        Remove length 1 dimensions (so that if only one distance is
        specified trans_func will be a 2d array) 
     gradient_filter : float (optional)
-       Subtract a second transfer function a distance gradint_filter
+       Subtract a second transfer function a distance gradient_filter
        from each z 
     zprojection : Boolean (optional)
        Set to True to return a sum of the transfer functions at
@@ -269,14 +269,13 @@ def impulse_response(shape, optics, d):
     -------
     trans_func : np.ndarray
        The calculated transfer function.  This will be at most as large as
-       shape, but may be smaller if the frequencies outside that are zero    
+       shape, but may be smaller if the frequencies outside that are zero  
 
     References
     ----------
     .. [1] Schnars and Juptner, Digital recording and numerical
-    reconstruction of holograms (Meas. Sci. Technol. 13 2002), equation 3.18 (pg
-    R91)
-
+       reconstruction of holograms (Meas. Sci. Technol. 13 2002),
+       equation 3.18 (pg R91)
 
     """
 

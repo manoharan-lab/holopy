@@ -45,7 +45,7 @@ class Scatterer(Serializable):
     def __init__(self):
         raise NotImplementedError()
 
-    def translated(self, x, y, z):
+    def translate(self, x, y, z):
         """
         Make a copy of this scatterer translated to a new location
 
@@ -192,7 +192,7 @@ class SingleScatterer(Scatterer):
                 "should be specified as (x, y, z)".format(center), self)
         self.center = center
 
-    def translated(self, x, y, z):
+    def translate(self, x, y, z):
         """
         Make a copy of this scatterer translated to a new location
 
@@ -220,7 +220,7 @@ class SingleScatterer(Scatterer):
         return self.center[2]        
 
 class SphericallySymmetricScatterer(SingleScatterer):
-    def rotated(self, alpha, beta, gamma):
+    def rotate(self, alpha, beta, gamma):
         return copy(self)
     
 

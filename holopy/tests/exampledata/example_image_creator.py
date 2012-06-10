@@ -17,17 +17,16 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 """
 A script for generating and saving holograms to be used in unit tests.
-This also contains code for generating some reconstructiosn to test
+This also contains code for generating some reconstructions to test
 against.
 
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 """
+# TODO: needs to be updated to use 2.0 methods for calculating holograms
 
 import holopy
 import holopy.model.mie
-import holopy.model.tmatrix_dimer
-import holopy.model.tmatrix_trimer
 import scipy.ndimage
 import numpy.random
 import numpy as np

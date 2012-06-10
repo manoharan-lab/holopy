@@ -47,17 +47,17 @@ class Mie(ScatteringTheory):
         Size of grid to calculate scattered fields or
         intensities. This is the shape of the image that calc_field or
         calc_intensity will return
-    phis : array 
+    phi : array 
         Specifies azimuthal scattering angles to calculate (incident
         direction is z)
-    thetas : array 
+    theta : array 
         Specifies polar scattering angles to calculate
     optics : :class:`holopy.optics.Optics` object
         specifies optical train
 
     Notes
     -----
-    If phis and thetas are both 1-D vectors, the calc_ functions
+    If phi and theta are both 1-D vectors, the calc functions
     should return an array where result(i,j) = result(phi(i),
     theta(j))
     """

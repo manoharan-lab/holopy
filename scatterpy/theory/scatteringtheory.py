@@ -39,35 +39,36 @@ class ScatteringTheory(Serializable):
         Size of grid to calculate scattered fields or
         intensities. This is the shape of the image that calc_field or
         calc_intensity will return
-    phis : array 
+    phi : array 
         Specifies azimuthal scattering angles to calculate (incident
         direction is z)
-    thetas : array 
+    theta : array 
         Specifies polar scattering angles to calculate
     optics : :class:`holopy.optics.Optics` object
         specifies optical train
 
     Notes
     -----
-    If phis and thetas are both 1-D vectors, the calc_ functions
+    If phi and theta are both 1-D vectors, the calc_ functions
     should return an array where result(i,j) = result(phi(i),
     theta(j))
     """
 
-    def __init__(self, optics, imshape=(256,256), thetas=None, phis=None): 
+    def __init__(self, optics, imshape=(256,256), theta=None, phi=None): 
         self.imshape = _ensure_pair(imshape)
-        self.thetas = thetas
-        self.phis = phis
+        self.theta = theta
+        self.phi = phi
         if isinstance(optics, dict):
             self.optics = hp.Optics(**optics)
         else:
             self.optics = optics
 
     def __repr__(self):
-        # if not overriden this will return a dump of all the variables in the
-        # class's dict.  This is probably right for enough subclasses that it is
-        # worth implementing.  Any class where that is not a valid
-        # representation should override this method.  
+        # if not overriden this will return a dump of all the
+        # variables in the class's dict.  This is probably right for
+        # enough subclasses that it is worth implementing.  Any class
+        # where that is not a valid representation should override
+        # this method.
         return "{0}({1})".format(self.__class__.__name__,
                                  ','.join(["{0[0]}={0[1]}".format(c) for c in
                                            self.__dict__.iteritems()]))
@@ -80,7 +81,6 @@ class ScatteringTheory(Serializable):
         ----------
         scatterer : :mod:`scatterpy.scatterer` object
             scatterer or list of scatterers to compute field for
-        
 
         Returns
         -------
@@ -89,6 +89,7 @@ class ScatteringTheory(Serializable):
         selection : array of integers (optional)
             a mask with 1's in the locations of pixels where you
             want to calculate the field, defaults to all pixels
+
         Raises
         ------
         IncompleteTheory : if calc_field is undefined in the derived class 
@@ -96,8 +97,8 @@ class ScatteringTheory(Serializable):
 
         raise NotImplementedError
 
-    # TODO: is this function still needed?  The new ElectricField class makes it
-    # essentially trivial -tgd 2011-08-12
+    # TODO: is this function still needed?  The new ElectricField
+    # class makes it essentially trivial -tgd 2011-08-12
     def superpose(self, scatterers, selection=None):
         """
         Superpose fields from different scatterers, taking into
@@ -110,6 +111,7 @@ class ScatteringTheory(Serializable):
         selection : array on integers (optional)
             a mask with 1's in the locations of pixels where you
             want to calculate the field, defaults to all pixels
+
         Notes
         -----
         For multiple particles, this code superposes the fields
@@ -127,10 +129,12 @@ class ScatteringTheory(Serializable):
         the phase angle of the incident field is 0 at z=0
         """
 
-        field = ElectricField(np.zeros(self.imshape), np.zeros(self.imshape),
-                              np.zeros(self.imshape), 0, self.optics.med_wavelen)
+        field = ElectricField(np.zeros(self.imshape), 
+                              np.zeros(self.imshape),
+                              np.zeros(self.imshape), 0, 
+                              self.optics.med_wavelen)
         if selection == None:
-            selection = np.ones(self.imshape,dtype='int')        
+            selection = np.ones(self.imshape,dtype='int')
         for s in scatterers:
             field += self.calc_field(s, selection)
 

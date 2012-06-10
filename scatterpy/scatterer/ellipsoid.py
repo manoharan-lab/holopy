@@ -17,8 +17,7 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-Defines ellipsiods and a base class for all regular scatterers that have a well
-defined center.  
+Defines ellipsoidal scatterers.
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
@@ -46,10 +45,10 @@ class Ellipsoid(SingleScatterer):
 
     Parameters
     ----------
-    n: complex
+    n : complex
         Index of refraction
-    r: float or (float, float, float)
-        x, y, z semi-axes of the ellipsiod
+    r : float or (float, float, float)
+        x, y, z semi-axes of the ellipsoid
     center : 3-tuple, list or numpy array
         specifies coordinates of center of the scatterer
     """
@@ -61,8 +60,9 @@ class Ellipsoid(SingleScatterer):
             self.n = None
 
         if np.isscalar(center) or len(center) != 3 or not all_numbers(center):
-            raise ScattererDefinitionError("r specified as {0}, r should be "
-                                           "specified as (r_x, r_y, r_z)"
+            raise ScattererDefinitionError("center specified as {0}; "
+                                           "center should be "
+                                           "specified as (x, y, z)"
                                            "".format(center), self)
  
         self.r = r

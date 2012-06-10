@@ -29,8 +29,9 @@ import numpy as np
 from sphere import Sphere
 from composite import Composite
 from scatterpy.errors import (ScattererDefinitionError,
-                              InvalidScattererSphereOverlap, warning)
+                              InvalidScattererSphereOverlap)
 from holopy.process.math import cartesian_distance, rotate_points
+import warnings
 
 class SphereCluster(Composite):
     '''
@@ -56,7 +57,7 @@ class SphereCluster(Composite):
         self.scatterers = spheres
 
         if self.has_overlaps:
-            warning("creating unphysical scatterer with overlapping spheres", self)
+            warnings.warn("creating scatterer with overlapping spheres")
 
     @property
     def has_overlaps(self):
@@ -104,6 +105,11 @@ class SphereCluster(Composite):
 
 # TODO: Move this code out of scatterer? It sort of has more to do with how
 # clusters move than pure geometry
+
+# (VNM) as a way of generating a new SphereCluster, rotate is fine.  But
+# it should become a method (and override Scatterer.rotate()) rather
+# than a function.  I would propose moving this to Composite, where it
+# can be made more general and inheritable.
     
 def rotate(cluster, theta, phi, psi):
     com = cluster.centers.mean(0)
@@ -112,44 +118,3 @@ def rotate(cluster, theta, phi, psi):
                                  com+rotate_points(s.center-com, theta,
                                                    phi, psi)) for s in
                           cluster.scatterers])
-
-
-class RotatedSphereCluster(SphereCluster):
-    def __init__(self, orig_cluster, alpha, beta, gamma, com = None):
-        self.com = orig_cluster.centers.mean(0)
-        self.orig_cluster = SphereCluster([Sphere(n=s.n, r=s.r, center =
-                                                  s.center-self.com) for s in
-                                          orig_cluster.scatterers])
-        # overwrite whatever com the particle originally had
-        if com is not None:
-            self.com = com
-        self.alpha = alpha
-        self.beta = beta
-        self.gamma = gamma
-
-    def __repr__(self):
-        return "{s.__class__.__name__}(theta={s.theta}, phi={s.phi}, \
-psi={s.psi}, com={s.com}, orig_cluster={o})".format(s=self, o=repr(self.orig_cluster))
-        
-    @property
-    def scatterers(self):
-        return [Sphere(n=s.n, r=s.r,
-                       center = self.com + rotate_points(s.center, self.alpha,
-                                                         self.beta, self.gamma))
-                for s in self.orig_cluster.scatterers]
-
-    @property
-    def parameter_names_list(self):
-        return ['com_x', 'com_y', 'com_z', 'alpha', 'beta', 'gamma']
-
-    @property
-    def parameter_list(self):
-        return np.array([self.com[0], self.com[1], self.com[2], self.alpha, 
-                         self.beta, self.gamma])
-
-    # not a classmethod because the parameter list does not have enough
-    # information to make a new one, need to reference an existing
-    # RotatedSphereCluster to get a value for orig_cluster
-    def make_from_parameter_list(self, params):
-        return RotatedSphereCluster(self.orig_cluster, params[3], params[4],
-                                    params[5], (params[0], params[1], params[2]))

@@ -25,6 +25,8 @@ from __future__ import division
 
 #COVERAGE: This file is on its way out in refactoring
 
+# VNM: convert all of these to models rather than scatterers
+
 import numpy as np
 from numpy import array, sin, cos, dot, zeros, pi, ones, sqrt, arccos
 from holopy.process.math import rotation_matrix

@@ -48,10 +48,10 @@ class Multisphere(ScatteringTheory):
         Size of grid to calculate scattered fields or
         intensities. This is the shape of the image that calc_field or
         calc_intensity will return
-    phis : array 
+    phi : array 
         Specifies azimuthal scattering angles to calculate (incident
         direction is z)
-    thetas : array 
+    theta : array 
         Specifies polar scattering angles to calculate
     optics : :class:`holopy.optics.Optics` object
         specifies optical train
@@ -75,29 +75,30 @@ class Multisphere(ScatteringTheory):
     According to Mackowski's manual for SCSMFO1B.FOR [1]_ and later
     papers [2]_, the biconjugate gradient is generally the most
     efficient method for solving the interaction equations, especially
-p c    for dense arrays of identical spheres.  Order-of-scattering may
+    for dense arrays of identical spheres.  Order-of-scattering may
     converge better for non-identical spheres.
 
     References
-    ---------
-    [1] Daniel W. Mackowski, SCSMFO.FOR: Calculation of the Scattering
-    Properties for a Cluster of Spheres,
-    ftp://ftp.eng.auburn.edu/pub/dmckwski/scatcodes/scsmfo.ps 
+    ----------
+    .. [1] Daniel W. Mackowski, SCSMFO.FOR: Calculation of the Scattering
+       Properties for a Cluster of Spheres,
+       ftp://ftp.eng.auburn.edu/pub/dmckwski/scatcodes/scsmfo.ps 
 
-    [2] D.W. Mackowski, M.I. Mishchenko, A multiple sphere T-matrix
-    Fortran code for use on parallel computer clusters, Journal of
-    Quantitative Spectroscopy and Radiative Transfer, In Press,
-    Corrected Proof, Available online 11 March 2011, ISSN 0022-4073,
-    DOI: 10.1016/j.jqsrt.2011.02.019. 
+    .. [2] D.W. Mackowski, M.I. Mishchenko, A multiple sphere T-matrix
+       Fortran code for use on parallel computer clusters, Journal of
+       Quantitative Spectroscopy and Radiative Transfer, In Press,
+       Corrected Proof, Available online 11 March 2011, ISSN 0022-4073,
+       DOI: 10.1016/j.jqsrt.2011.02.019. 
+
     """
 
-    def __init__(self, optics, imshape=(256, 256), thetas=None, phis=None,
+    def __init__(self, optics, imshape=(256, 256), theta=None, phi=None,
                  niter=200, eps=1e-6, meth=1, qeps1=1e-5, 
                  qeps2=1e-8): 
 
         # call base class constructor
         ScatteringTheory.__init__(self, imshape=imshape,
-                                  thetas=thetas, phis=phis,
+                                  theta=theta, phi=phi,
                                   optics=optics) 
 
         self.niter = niter
