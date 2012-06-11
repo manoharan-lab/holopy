@@ -37,7 +37,7 @@ import numpy as np
 
 #import minimizers.nmpfit_adapter as minimizer
 from scatterpy.errors import (UnrealizableScatterer,
-                              InvalidScattererSphereOverlap, InvalidScatterer)
+                              InvalidScatterer)
 
 def cost_subtract(holo, calc, selection=None):
     if selection==None:

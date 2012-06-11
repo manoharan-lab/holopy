@@ -20,14 +20,12 @@ from __future__ import division
 import holopy
 import scatterpy
 import os
-import numpy
+import numpy as np
 import yaml
 from scatterpy.theory.scatteringtheory import ElectricField
 
-from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
-                           assert_allclose)
-import numpy.testing
 
+from numpy.testing import assert_almost_equal, assert_allclose, assert_equal
 
 wavelen = 658e-9
 ypolarization = [0., 1.0] # y-polarized
@@ -48,20 +46,12 @@ xoptics = holopy.optics.Optics(wavelen=wavelen, index=index,
 
 optics=yoptics
 
-def assert_allclose(actual, desired, err_msg='', verbose=True):
-    if isinstance(actual, ElectricField):
-        actual = actual._array()
-    if isinstance(desired, ElectricField):
-        desired = desired._array()
-        
-    numpy.testing.assert_allclose(actual, desired, err_msg=err_msg,
-                        verbose=verbose)
 
 def verify(result, name):
     scatterpy_location = os.path.split(os.path.abspath(scatterpy.__file__))[0]
     gold_name = os.path.join(scatterpy_location, 'tests', 'gold', 'gold_'+name)
     if os.path.exists(gold_name + '.npy'):
-        gold = numpy.load(gold_name + '.npy')
+        gold = np.load(gold_name + '.npy')
         assert_allclose(result, gold)
 
     gold = yaml.load(file(gold_name+'.yaml'))
@@ -89,9 +79,9 @@ def make_golds(result, name):
     
     gold_name = 'gold_'+name
     if isinstance(result, ElectricField):
-        numpy.save(gold_name+'.npy', result._array())
+        np.save(gold_name+'.npy', result._array())
     else:
-        numpy.save(gold_name+'.npy', result)
+        np.save(gold_name+'.npy', result)
 
     gold_dict = {}
 
@@ -109,3 +99,25 @@ def make_golds(result, name):
 
     yaml.dump(gold_dict, file(gold_name+'.yaml','w'))
         
+def assert_parameters_allclose(actual, desired, rtol=1e-3):
+    if isinstance(actual, scatterpy.scatterer.Scatterer):
+        actual = actual.parameters
+    if isinstance(actual, dict):
+        actual = np.array([p[1] for p in actual.iteritems()])
+    if isinstance(desired, scatterpy.scatterer.Scatterer):
+        desired = desired.parameters
+    if isinstance(desired, dict):
+        desired = np.array([p[1] for p in desired.iteritems()])
+    assert_allclose(actual, desired, rtol=rtol)
+
+def assert_obj_close(actual, desired, rtol=1e-3):
+    if isinstance(actual, (scatterpy.scatterer.Scatterer, dict)):
+        assert_parameters_allclose(actual, desired, rtol)
+    elif hasattr(actual, '__dict__'):
+        for key, val in actual.__dict__.iteritems():
+            assert_obj_close(getattr(actual, key), getattr(desired, key), rtol)
+    elif actual is not None and not np.isscalar(actual):
+        for i, item in enumerate(actual):
+            assert_obj_close(actual[i], desired[i], rtol)
+    else:
+        assert_equal(actual, desired)

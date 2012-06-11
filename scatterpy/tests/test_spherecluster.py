@@ -29,15 +29,14 @@ except ImportError:
 
 import numpy as np
 from nose.tools import raises, assert_raises
-from numpy.testing import assert_, assert_equal, assert_almost_equal
+from numpy.testing import assert_equal, assert_almost_equal
 from nose.plugins.attrib import attr
 
 from scatterpy.scatterer import Sphere, CoatedSphere
 from scatterpy.scatterer import SphereCluster
-from scatterpy.errors import (ScattererDefinitionError,
-                              InvalidScattererSphereOverlap)
-import warnings
+from scatterpy.errors import ScattererDefinitionError, OverlapWarning
 
+import warnings
 
 @attr('fast')
 def test_SphereCluster_construction():
@@ -65,7 +64,7 @@ def test_SphereCluster_construction():
 @attr('fast')
 @raises(ScattererDefinitionError)
 def test_SphereCluster_construction_typechecking():
-    # heterogeneous composite should raise exception, since a
+    # heterogeneous composite should raise exception, since a    
     # sphere cluster must contain only Spheres
     s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
@@ -78,6 +77,7 @@ def test_SphereCluster_construction_typechecking():
 def test_SphereCluster_ovelap_checking():
     s1 = Sphere(n = 1.59, r = 5e-7, center=(1e-6, -1e-6, 10e-6))
     with warnings.catch_warnings(True) as w:
+        warnings.simplefilter('always', OverlapWarning)
         sc = SphereCluster([s1, s1, s1])
         assert len(w) > 0
 
@@ -88,8 +88,8 @@ def test_SphereCluster_parameters():
     sc = SphereCluster(spheres = [s1, s2])
 
     assert_equal(sc.parameters, OrderedDict([('0:Sphere.center[0]',
-    9.9999999999999995e-07), ('0:Sphere.center[1]', -9.9999999999999995e-07),
-    ('0:Sphere.center[2]', 1.0000000000000001e-05), ('0:Sphere.n.imag', 0.0),
+    1e-6), ('0:Sphere.center[1]', -1e-6),
+    ('0:Sphere.center[2]', 1.0e-05), ('0:Sphere.n.imag', 0.0),
     ('0:Sphere.n.real', 1.59), ('0:Sphere.r', 5e-07), ('1:Sphere.center[0]', 0),
     ('1:Sphere.center[1]', 0), ('1:Sphere.center[2]', 0), ('1:Sphere.n.imag',
     0.0), ('1:Sphere.n.real', 1.59), ('1:Sphere.r', 1e-06)]))

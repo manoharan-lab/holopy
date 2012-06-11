@@ -28,10 +28,13 @@ from __future__ import division
 import numpy as np
 from sphere import Sphere
 from composite import Composite
-from scatterpy.errors import (ScattererDefinitionError,
-                              InvalidScattererSphereOverlap)
+from scatterpy.errors import OverlapWarning, ScattererDefinitionError
 from holopy.process.math import cartesian_distance, rotate_points
 import warnings
+
+# default to always warning the user about overlaps.  This can be overriden by
+# calling this function again with a different action.  
+warnings.simplefilter('always', OverlapWarning)
 
 class SphereCluster(Composite):
     '''
@@ -56,18 +59,18 @@ class SphereCluster(Composite):
                     repr(s) + " is not a Sphere", self)
         self.scatterers = spheres
 
-        if self.has_overlaps:
-            warnings.warn("creating scatterer with overlapping spheres")
+        if self.overlaps:
+            warnings.warn(OverlapWarning(self, self.overlaps))
 
     @property
-    def has_overlaps(self):
+    def overlaps(self):
         overlaps = []
         for i, s1 in enumerate(self.scatterers):
             for j in range(i+1, len(self.scatterers)):
                 s2= self.scatterers[j]
                 if cartesian_distance(s1.center, s2.center) < (np.max(s1.r) + np.max(s2.r)):
                     overlaps.append((i, j))
-        return len(overlaps) > 0
+        return overlaps
             
     def __repr__(self):
         return "{c}(spheres={spheres})".format(c=self.__class__.__name__,

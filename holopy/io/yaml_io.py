@@ -28,7 +28,6 @@ analysis procedures.
 from __future__ import division
 
 import numpy as np
-import holopy
 import yaml
 import os
 import re

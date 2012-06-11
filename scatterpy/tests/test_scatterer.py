@@ -120,9 +120,9 @@ def test_CoatedSphere_parameters():
     cs = CoatedSphere(n = (1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6), center =
                       (1, 2, 3))
     assert_equal(cs.parameters, OrderedDict([('center[0]', 1), ('center[1]', 2),
-    ('center[2]', 3), ('n[0].imag', 0.0001), ('n[0].real', 1.5900000000000001),
-    ('n[1].imag', 0.0001), ('n[1].real', 1.3300000000000001), ('r[0]',
-    4.9999999999999998e-07), ('r[1]', 9.9999999999999995e-07)]))
+    ('center[2]', 3), ('n[0].imag', 0.0001), ('n[0].real', 1.59),
+    ('n[1].imag', 0.0001), ('n[1].real', 1.33), ('r[0]',
+    5e-07), ('r[1]', 1e-6)]))
 
     cp = CoatedSphere.from_parameters(cs.parameters)
 

@@ -34,6 +34,7 @@ from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
                            assert_raises, assert_allclose)
 from nose.plugins.attrib import attr
 
+from holopy import Optics
 import scatterpy
 from scatterpy.scatterer import (Sphere, SphereCluster, CoatedSphere, Ellipsoid)
 from scatterpy.theory import Mie
@@ -90,10 +91,8 @@ def test_Mie_construction():
     # construct with a dict as optics
     theory = Mie({'wavelen': .66, 'pixel_scale': .1, 'index': 1.33})
 
-    assert_equal(repr(theory), "Mie(optics=Optics(wavelen=0.66, index=1.33, "
-    "polarization=[1.0, 0.0], divergence=0.0, pixel_size=None, train=None, "
-    "mag=None, pixel_scale=[0.10000000000000001, 0.10000000000000001]),"
-    "theta=None,imshape=[256 256],phi=None)")
+    common.assert_obj_close(theory, eval(repr(theory)))
+
     
 
 
@@ -170,7 +169,8 @@ def test_mie_polarization():
     except AssertionError:
         pass
     else:
-        raise AssertionError("Holograms computed for both x- and y-polarized light are too similar.")
+        raise AssertionError("Holograms computed for both x- and y-polarized "
+                             "light are too similar.")
 
     # but their max and min values should be close
     assert_almost_equal(xholo.max(), yholo.max())
@@ -250,8 +250,8 @@ def test_nonlinearity():
     except AssertionError:
         pass    # no way to do "assert array not equal" in numpy.testing
     else:
-        raise AssertionError("Holograms computed for " +
-                             "wavelength-scale scatterers should " +
+        raise AssertionError("Holograms computed for " 
+                             "wavelength-scale scatterers should " 
                              "not superpose linearly")
 
     # uncomment to debug

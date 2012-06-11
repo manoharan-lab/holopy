@@ -28,9 +28,9 @@ import numpy as np
 hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
 sys.path.append(hp_dir)
 
+import warnings
 from nose.tools import assert_raises, with_setup
 from numpy.testing import assert_equal, assert_array_almost_equal, assert_almost_equal
-from scatterpy.errors import InvalidScattererSphereOverlap
 
 from nose.plugins.attrib import attr
 
@@ -175,6 +175,7 @@ def test_invalid():
 def test_overlap():
     # should raise a warning
     with warnings.catch_warnings(True) as w:
+        warnings.simplefilter("always")
         sc = SphereCluster(spheres=[Sphere(center=[3e-6, 3e-6, 10e-6], 
                                            n=1.59, r=.5e-6), 
                                     Sphere(center=[3.4e-6, 3e-6, 10e-6], 
@@ -188,6 +189,7 @@ def test_overlap():
 
     # but it should succeed with a small overlap, after raising a warning
     with warnings.catch_warnings(True) as w:
+        warnings.simplefilter("always")
         sc = SphereCluster(spheres=[Sphere(center=[3e-6, 3e-6, 10e-6], 
                                            n=1.59, r=.5e-6), 
                                     Sphere(center=[3.9e-6, 3.e-6, 10e-6], 

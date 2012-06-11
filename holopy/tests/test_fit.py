@@ -42,7 +42,7 @@ from scatterpy.scatterer import Sphere, SphereCluster
 import scatterpy
 from holopy.analyze.fit import fit
 
-from common import assert_parameters_allclose
+from scatterpy.tests.common import assert_parameters_allclose
 
 def setup_optics():
     # set up optics class for use in several test functions

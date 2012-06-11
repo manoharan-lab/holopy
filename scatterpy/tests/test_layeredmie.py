@@ -47,7 +47,7 @@ def test_Shell():
                                                     0.960957713253]) 
 
     optics = hp.Optics(wavelen=0.658, index=1.36, polarization=[1.0, 0.0],
-              pixel_scale=[0.071332999999999994, 0.071332999999999994])
+              pixel_scale=[0.071333, 0.071333])
     
     th = Mie(optics, 200)
 

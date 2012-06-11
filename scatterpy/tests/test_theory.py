@@ -27,7 +27,7 @@ from numpy.testing import assert_equal
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
 from scatterpy.scatterer import Sphere
-from common import assert_allclose
+from scatterpy.tests.common import assert_obj_close
 
 from scatterpy.theory.scatteringtheory import (ScatteringTheory, ElectricField,
                                                InvalidElectricFieldComputation)
@@ -72,6 +72,6 @@ def test_ElectricField():
                  "Superposition of fields with different wavelengths is not "
                  "implemented")
 
-    assert_allclose(e1 * 2.0, 2.0 * e1)
+    assert_obj_close(e1 * 2.0, 2.0 * e1)
 
     

@@ -23,16 +23,20 @@ other exceptions in other parts of holopy to keep things modular.
 """
 from __future__ import division
 
+import warnings
+import exceptions
+
 class InvalidScatterer(Exception):
     pass
 
-class InvalidScattererSphereOverlap(InvalidScatterer):
+class OverlapWarning(exceptions.UserWarning):
     def __init__(self, scatterer, overlaps):
         self.scatterer = scatterer
         self.overlaps = overlaps
     def __str__(self):
         return "{0} has overlaps between spheres: {1}".format(repr(self.scatterer),
                                                               self.overlaps)
+warnings.simplefilter('always', OverlapWarning)
 
 class ScattererDefinitionError(Exception):
     def __init__(self, message, scatterer):
