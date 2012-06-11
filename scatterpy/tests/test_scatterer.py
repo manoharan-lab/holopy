@@ -50,19 +50,13 @@ def test_Sphere_construction():
     s = Sphere(n = 1.59+0.0001j, r = 5e-7)
     s = Sphere()
 
-    with assert_raises(ScattererDefinitionError) as cm:
-        Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, None))
-    assert_equal(str(cm.exception), 'Error defining scatterer object of type '
-                 'Sphere.\ncenter specified as (1e-06, -1e-06, None), '
-                 'center should be specified as (x, y, z)')
-
     with assert_raises(ScattererDefinitionError):
         Sphere(n=1.59, r = -2, center = (1, 1, 1))
 
 def test_Ellipsoid():
     s = Ellipsoid(n = 1.57, r = (1, 2, 3), center = (3, 2, 1))
 
-    assert_equal(str(s), 'Ellipsoid(center=(3, 2, 1), n=(1.57+0j), r=(1, 2, 3))')
+    assert_equal(str(s), 'Ellipsoid(center=(3, 2, 1), n=1.57, r=(1, 2, 3))')
 
     
 @attr('fast')

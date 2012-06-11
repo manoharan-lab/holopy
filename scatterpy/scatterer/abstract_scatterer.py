@@ -174,20 +174,9 @@ class Scatterer(Serializable):
 
         return self.__class__(**pars)
 
-def isnumber(x):
-    try:
-        x + 1
-        return True
-    except TypeError:
-        return False
-
-def all_numbers(x):
-    return reduce(lambda rest, i: isnumber(i) and rest, x, True)
-
-    
 class SingleScatterer(Scatterer):
     def __init__(self, center = None):
-        if np.isscalar(center) or len(center) != 3 or not all_numbers(center):
+        if np.isscalar(center) or len(center) != 3:
             raise ScattererDefinitionError("center specified as {0}, center "
                 "should be specified as (x, y, z)".format(center), self)
         self.center = center

@@ -25,7 +25,7 @@ from __future__ import division
 
 import numpy as np
 
-from scatterpy.scatterer.abstract_scatterer import SingleScatterer, all_numbers
+from scatterpy.scatterer.abstract_scatterer import SingleScatterer
 from scatterpy.errors import ScattererDefinitionError
 
 def isnumber(x):
@@ -54,15 +54,12 @@ class Ellipsoid(SingleScatterer):
     """
     
     def __init__(self, n=None, r=None, center=None):
-        if n is not None:
-            self.n = complex(n)
-        else:
-            self.n = None
+        self.n = n
 
-        if np.isscalar(center) or len(center) != 3 or not all_numbers(center):
-            raise ScattererDefinitionError("center specified as {0}; "
-                                           "center should be "
-                                           "specified as (x, y, z)"
+        if np.isscalar(r) or len(r) != 3:
+            raise ScattererDefinitionError("r specified as {0}; "
+                                           "r should be "
+                                           "specified as (r_x, r_y, r_z)"
                                            "".format(center), self)
  
         self.r = r

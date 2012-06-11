@@ -89,10 +89,9 @@ def test_SphereCluster_parameters():
 
     assert_equal(sc.parameters, OrderedDict([('0:Sphere.center[0]',
     1e-6), ('0:Sphere.center[1]', -1e-6),
-    ('0:Sphere.center[2]', 1.0e-05), ('0:Sphere.n.imag', 0.0),
-    ('0:Sphere.n.real', 1.59), ('0:Sphere.r', 5e-07), ('1:Sphere.center[0]', 0),
-    ('1:Sphere.center[1]', 0), ('1:Sphere.center[2]', 0), ('1:Sphere.n.imag',
-    0.0), ('1:Sphere.n.real', 1.59), ('1:Sphere.r', 1e-06)]))
+    ('0:Sphere.center[2]', 1.0e-05), ('0:Sphere.n', 1.59),  ('0:Sphere.r',
+    5e-07), ('1:Sphere.center[0]', 0), ('1:Sphere.center[1]', 0),
+    ('1:Sphere.center[2]', 0), ('1:Sphere.n', 1.59), ('1:Sphere.r', 1e-06)])) 
 
     sc2 = SphereCluster.from_parameters(sc.parameters)
 

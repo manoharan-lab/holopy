@@ -338,16 +338,16 @@ def test_ParameterManager():
 @attr('fast')
 def test_parameter_munging():
     s1 = Sphere(n=1.59+1e-4j, r = .5, center=(10,10,10))
-    s2 = Sphere(n=1.59, r = .5, center=(10,11,11))
+    s2 = Sphere(n=1.59+0j, r = .5, center=(10,11,11))
     sc = SphereCluster([s1, s2])
 
     
-    lb1 = Sphere(n=1+1e-4, r = .4, center=(10,10,10))
-    lb2 = Sphere(n=1, r = .4, center=(10,11,11))
+    lb1 = Sphere(n=1+1e-4j, r = .4, center=(10,10,10))
+    lb2 = Sphere(n=1+0j, r = .4, center=(10,11,11))
     lb = SphereCluster([lb1, lb2]), .1
     
     ub1 = Sphere(n=1.59+1e-4j, r = .6, center=(10.5,10,10))
-    ub2 = Sphere(n=1.59, r = .6, center=(10.5,11,11))
+    ub2 = Sphere(n=1.59+0j, r = .6, center=(10.5,11,11))
     ub = SphereCluster([ub1, ub2]), 1
 
     pm = hp.analyze.fit.ParameterManager((sc, .6), lb, ub)

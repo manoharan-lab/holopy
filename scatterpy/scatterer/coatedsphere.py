@@ -44,6 +44,6 @@ class CoatedSphere(SphericallySymmetricScatterer):
 
     '''
     def __init__(self, n = 1.59, r = 0.5e-6, center = (0.0, 0.0, 0.0)):
-        self.n = _ensure_array(n).astype('complex')
+        self.n = _ensure_array(n)
         self.r = _ensure_array(r)
         super(CoatedSphere, self).__init__(center)
