@@ -236,6 +236,10 @@ class ScatteringTheory(Serializable):
         # get phi between 0 and 2pi
         phi = phi + 2*np.pi * (phi < 0)
         return np.dstack((r*self.optics.wavevec, theta, phi))
+
+    def _calc_points(self, center, selection):
+        pass
+        
         
 #TODO: Should this be a method of the Electric field class? - tgd 2011-08-15
 def interfere_at_detector(e1, e2):
