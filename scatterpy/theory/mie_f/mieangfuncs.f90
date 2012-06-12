@@ -26,180 +26,101 @@
 ! At compile this must be linked with uts_scsmfo.for
 ! Functions are designed to be compiled with f2py and called from Python.
 
-! Common documentation for singleholo, tmdimerholo, and tmdimerholo_nf:
-! Functions intended to be used from Python.
-!
-! Input parameters:
-!    
-!    kxgrid: k*x coordinates of grid points (1-d array)
-!    kygrid: k*y coordinates of grid points
-!    kcoords: k*coordinates of cluster or sphere center
-!    asbs: array of shape (2, n) of a_n, b_n Mie coefficients (only singleholo)
-!    amn: array of amn cluster scattering coefficients (not in singleholo)
-!    gamma: Euler angle gamma, degrees (not in singleholo)
-!    alpha: scaling factor that should be close to 1
-!    einc: linear polarization vector of incident field
-!
-! Output parameters:
-!    hologram: calculated hologram
-
-
-      subroutine singleholo(n_rows, n_cols, kxgrid, kygrid, kcoords, asbs, &
-           nstop, alpha, einc, hologram)
-        ! Use Python to calculate scat. coeffs a_n and b_n once per frame
-        ! This function performs nested loop over pixels
+      subroutine calc_scat_field(kr, phi, ascatm, einc, escat_sph)
+        ! Do the matrix multiplication to calculate scattered field
+        ! from incident polarization and amplitude scattering matrix.
+        ! Parameters
+        ! ----------
+        ! kr: real 
+        !     dimensionless distance from scatterer to field point
+        ! phi: real
+        !     azimuthal spherical coordinate to field point
+        ! ascatm: complex array (2, 2)
+        !     Amplitude scattering matrix
+        ! einc: real array(2)
+        !     Incident polarization vector
+        ! 
+        ! Returns
+        ! -------
+        ! escat_sph: complex array (2)
+        !     Theta and phi spherical components of scattered field
         implicit none
-        integer, intent(in) :: nstop, n_rows, n_cols
-        integer i, j
-        real (kind = 8), dimension(n_rows, n_cols), intent(out) :: hologram
-        real (kind = 8), intent(in) :: alpha
+        real (kind = 8), intent(in) :: kr, phi
         real (kind = 8), intent(in), dimension(2) :: einc
-        complex (kind = 8), intent(in), dimension(2, nstop) :: asbs
-        real (kind = 8), dimension(3), intent(in) :: kcoords
-        real (kind = 8), dimension(n_rows) :: kxgrid
-        real (kind = 8), dimension(n_cols) :: kygrid
-        real (kind = 8), dimension(3) :: sphcoords
-        real (kind = 8) :: pixel, kr, kz, theta, phi
-        complex (kind = 8), dimension(2,2) :: asreshape
-        complex*16 ci
-        data ci/(0.d0,1.d0)/
-
-        ! the main loop over hologram points
-        do  j = 1, n_cols, 1
-           do i = 1, n_rows, 1
-              ! Get spherical coordinates of hologram point
-              call getsphercoords(kxgrid(i) - kcoords(1), &
-                   kygrid(j) - kcoords(2), kcoords(3), sphcoords)
-              kr = sphcoords(1)
-              kz = kcoords(3)
-              theta = sphcoords(2)
-              phi = sphcoords(3)
-
-              ! Calculate amplitude scattering matrix w/full radial dependence
-              call asm_mie_fullradial(nstop, asbs, sphcoords, asreshape)
-              ! Calculate intensity at hologram point from ASM
-              call paraxholocl(kr, kz, theta, phi, asreshape, einc, alpha, &
-                   pixel)
-              hologram(i,j) = pixel
-           end do
-        end do
-
-        return 
-        end
-
-
-      subroutine tmholo_nf(n_rows, n_cols, kxgrid, kygrid, kcoords, amn, &
-           nodrt, gamma, alpha, einc, hologram)
-      ! Intended faster replacement for TMatDimerHolo doing the loop in Fortran.
-      ! Loop over cluster hologram grid, calculated with near-field corrections.
-        implicit none
-        integer npd, notd, nod
-        include 'scfodim.for'
-        integer, parameter :: nbc = 4*notd+4
-        integer n_rows, n_cols, nodrt, i, j, n
-        real (kind = 8), dimension(n_rows, n_cols), intent(out) :: hologram
-        real*8 kcoords(3), sphcoords(3), gamma, einc(2), kxgrid(n_rows)
-        real*8 kygrid(n_cols)
-        real*8 pixel, kr, kz, theta, phi, alpha
-        ! use single vectors rather than redundant mgrid for x, y values
-        complex*16 amn(2,nodrt*(nodrt+2),2), ascatmat(4), asreshape(2,2)
-        real*8 bcof(0:nbc), fnr(0:2*nbc)
-        common/consts2/bcof,fnr
-! comments for use by f2py
-!f2py intent(in) n_rows
-!f2py intent(in) n_cols
-!f2py intent(in) kxgrid
-!f2py intent(in) kygrid
-!f2py intent(in) kcoords
-!f2py intent(in) amn
-!f2py intent(in) nodrt
-!f2py intent(in) gamma
-!f2py intent(in) alpha
-!f2py intent(in) einc
-
-        !  added by me to avoid common block, copied from scmsfo1b.for
-        do n=1,2*nbc
-           fnr(n)=dsqrt(dble(n))
-        enddo
-        !  make bcof rank 1 since we only need its diagonal elements
-        bcof(0)=1.d0
-        do n=0,nbc-1
-           bcof(n+1)=fnr(n+n+2)*fnr(n+n+1)*bcof(n)/fnr(n+1)/fnr(n+1)
-        enddo
-
-        do  j = 1, n_cols, 1
-           do i = 1, n_rows, 1
-              call getsphercoords(kxgrid(i) - kcoords(1), kygrid(j) - kcoords(2), &
-                   kcoords(3), sphcoords)
-              kr = sphcoords(1)
-              kz = kcoords(3)
-              theta = sphcoords(2)
-              phi = sphcoords(3)
-
-              
-              call asmfr(amn, nodrt, theta, phi+gamma, kr, ascatmat)
-              asreshape = reshape(cshift(ascatmat, shift = 1), (/ 2, 2 /), &
-                   order = (/ 2, 1 /)) * (-0.5)
-              call paraxholocl(kr, kz, theta, phi, asreshape, einc, alpha, pixel)
-              hologram(i,j) = pixel
-           end do
-        end do
+        complex (kind = 8), intent(in), dimension(2, 2) :: ascatm
+        complex (kind = 8), intent(out), dimension(2) :: escat_sph
+        real (kind = 8), dimension(2) :: signarr, einc_sph
+        complex (kind = 8) :: prefactor, ci
+        data ci/(0.d0, 1.d0)/
+        
+        ! convert polarization to spherical coords
+        call incfield(einc(1), einc(2), phi, einc_sph)
+        prefactor = ci / kr * exp(ci * kr) ! Bohren & Huffman formalism
+        signarr = (/ 1.0, -1.0 /) ! accounts for escatperp = -escatphi
+        escat_sph = prefactor * matmul(ascatm, einc_sph) * signarr
 
         return
         end
 
 
-      subroutine mie_fields(n_rows, n_cols, kxgrid, kygrid, kcoords, asbs, & 
-           nstop, einc, es_x, es_y, es_z)
-        ! Calculate Mie scattering fields to use for superposition holograms.
+      subroutine mie_fields(n_pts, calc_points, asbs, nstop, einc, es_x, &
+           es_y, es_z)
+        ! Calculate fields scattered by a sphere in the Lorenz-Mie solution,
+        ! at a list of selected points.  Use for hologram calculations or 
+        ! general scattering.
+        !
+        ! Function calls from Python may need to transpose calc_points.
+        !
+        ! Parameters
+        ! ----------
+        ! calc_points: array (3 x n_pts)
+        !     Array of points over which scattered field is calculated. Points
+        !     should be in spherical coordinates relative to scatterer: 
+        !     non-dimensional radial coordinate (kr), theta and phi.
+        ! asbs: complex array (2, nstop) 
+        !     Mie coefficients from miescatlib.scatcoeffs(x_p, m_p, nstop)
+        ! nstop: int
+        !     Expansion order (from miescatlib.nstop(x_p))
+        ! einc: real array (2)
+        !     polarization (from optics.polarization)
+        !
+        ! Returns
+        ! -------
+        ! es_x, es_y, es_z: complex array (n_pts) 
+        !     The three electric field components at points in calc_points
         implicit none
-        integer, intent(in) :: nstop, n_rows, n_cols
-        complex (kind = 8), intent(out), dimension(n_rows, n_cols) :: es_x, &
+        integer, intent(in) :: n_pts, nstop
+        real (kind = 8), intent(in), dimension(3, n_pts) :: calc_points
+        complex (kind = 8), intent(out), dimension(n_pts) :: es_x, &
              es_y, es_z
         complex (kind = 8), intent(in), dimension(2, nstop) :: asbs
         real (kind = 8), intent(in), dimension(2) :: einc ! polarization
-        real (kind = 8), intent(in), dimension(n_rows) :: kxgrid
-        real (kind = 8), intent(in), dimension(n_cols) :: kygrid
-        real (kind = 8), intent(in), dimension(3) :: kcoords
         real (kind = 8) :: kr, theta, phi
-        real (kind = 8), dimension(2) :: signarr, einc_sph
-        real (kind = 8), dimension(3) :: sphcoords
         complex (kind = 8), dimension(2,2) :: asm_scat
         complex (kind = 8), dimension(2) :: escat_sph
         complex (kind = 8), dimension(3) :: escat_rect
-        complex (kind = 8) :: prefactor, ci
-        integer :: i, j
-        data ci/(0.d0, 1.d0)/
+        integer :: i
+      
+        ! Main loop over hologram points. 
+        do i = 1, n_pts, 1
+           kr = calc_points(1, i)
+           theta = calc_points(2, i)
+           phi = calc_points(3, i)
 
-        ! Main loop over hologram points, columns first
-        do  j = 1, n_cols, 1
-           do i = 1, n_rows, 1
-              ! get spherical coordinates of hologram point relative to particle
-              call getsphercoords(kxgrid(i) - kcoords(1), &
-                   kygrid(j) - kcoords(2), kcoords(3), sphcoords)
-              kr = sphcoords(1)
-              theta = sphcoords(2)
-              phi = sphcoords(3)
+           ! calculate the amplitude scattering matrix
+           call asm_mie_fullradial(nstop, asbs, calc_points(:, i), asm_scat)
 
-              ! calculate the amplitude scattering matrix
-              call asm_mie_fullradial(nstop, asbs, sphcoords, asm_scat)
-
-              ! calculate scattered fields in spherical coordinates
-              ! convert polarization to spherical coords
-              call incfield(einc(1), einc(2), phi, einc_sph)
-              prefactor = ci / kr * exp(ci * kr) ! Bohren & Huffman formalism
-              signarr = (/ 1.0, -1.0 /) ! accounts for escatperp = -escatphi
-              escat_sph = prefactor * matmul(asm_scat, einc_sph) * signarr
-              
-              ! convert to rectangular
-              call fieldstocart(escat_sph, theta, phi, escat_rect)
-              es_x(i, j) = escat_rect(1)
-              es_y(i, j) = escat_rect(2)
-              es_z(i, j) = escat_rect(3)
-           end do
+           ! calculate scattered fields in spherical coordinates
+           call calc_scat_field(kr, phi, asm_scat, einc, escat_sph)
+           
+           ! convert to rectangular
+           call fieldstocart(escat_sph, theta, phi, escat_rect)
+           es_x(i) = escat_rect(1)
+           es_y(i) = escat_rect(2)
+           es_z(i) = escat_rect(3)
         end do
 
-        return 
+        return
         end
 
 
@@ -276,59 +197,70 @@
         end
 
 
-      subroutine tmatrix_fields(n_rows, n_cols, kxgrid, kygrid, kcoords, &
-           amn, lmax, euler_gamma, pol_vec, es_x, es_y, es_z)
+      subroutine tmatrix_fields(n_pts, calc_points, amn, lmax, euler_gamma, &
+           inc_pol, es_x, es_y, es_z)
+        ! Calculate fields scattered by a cluster of spheres using
+        ! D. Mackowski's code SCSMFO.
+        !
+        ! Function calls from Python may need to transpose calc_points.
+        !
+        ! Parameters
+        ! ----------
+        ! calc_points: array (3 x n_pts)
+        !     Array of points over which scattered field is calculated. Points
+        !     should be in spherical coordinates relative to scatterer COM: 
+        !     non-dimensional radial coordinate (kr), theta and phi.
+        ! amn: complex array (2, lmax * (lmax+2), 2) complex
+        !     Scattered field expansion coefficients calculated by 
+        !     scsmfo_min.amncalc(), stripped
+        ! lmax: int
+        !     Maximum order of scattered field expansion
+        ! euler_gamma: real
+        !     Euler angle gamma to rotate cluster frame into laboratory frame.
+        ! inc_pol: real array (2)
+        !     polarization (from optics.polarization)
+        !
+        ! Returns
+        ! -------
+        ! es_x, es_y, es_z: complex array (n_pts) 
+        !     The three electric field components at points in calc_points
+
         implicit none
-        integer, intent(in) :: n_rows, n_cols, lmax
-        real (kind = 8), intent(in), dimension(n_rows) :: kxgrid
-        real (kind = 8), intent(in), dimension(n_cols) :: kygrid
-        real (kind = 8), intent(in), dimension(3) :: kcoords
+        integer, intent(in) :: n_pts, lmax
+        real (kind = 8), intent(in), dimension(3, n_pts) :: calc_points
         complex (kind = 8), intent(in), dimension(2,lmax*(lmax+2),2) :: amn
         real (kind = 8), intent(in) :: euler_gamma
-        real (kind = 8), intent(in), dimension(2) :: pol_vec
-        complex (kind = 8), intent(out), dimension(n_rows, n_cols) :: es_x, &
+        real (kind = 8), intent(in), dimension(2) :: inc_pol
+        complex (kind = 8), intent(out), dimension(n_pts) :: es_x, &
              es_y, es_z
         complex (kind = 8), dimension(4) :: ascatmat
         complex (kind = 8), dimension(2,2) :: asreshape
-        real (kind = 8), dimension(3) :: sphcoords
-        real (kind = 8), dimension(2) :: einc_sph, signarr
         real (kind = 8) :: kr, theta, phi
-        complex (kind = 8) :: prefactor, ci
         complex (kind = 8), dimension(3) :: escat_rect
         complex (kind = 8), dimension(2) :: escat_sph
-        integer :: i, j
-        data ci/(0.d0, 1.d0)/
+        integer :: i
 
-        ! Main loop over desired hologram points, columns first
-        do  j = 1, n_cols, 1
-           do i = 1, n_rows, 1
-              ! get spherical coordinates of hologram point relative to cluster
-              call getsphercoords(kxgrid(i) - kcoords(1), &
-                   kygrid(j) - kcoords(2), kcoords(3), sphcoords)
-              kr = sphcoords(1)
-              theta = sphcoords(2)
-              phi = sphcoords(3)
+        ! Main loop over hologram points
+        do i = 1, n_pts, 1
+           kr = calc_points(1, i)
+           theta = calc_points(2, i)
+           phi = calc_points(3, i)
 
-              ! calculate amplitude scattering matrix from amn coefficients
-              ! code in uts_scsmfo.for
-              call asmfr(amn, lmax, theta, phi + euler_gamma, kr, ascatmat)
-              ! fudge factor of -0.5 for agreement with single sphere case
-              asreshape = reshape(cshift(ascatmat, shift = 1), (/ 2, 2 /), &
-                   order = (/ 2, 1 /)) * (-0.5) 
+           ! calculate amplitude scattering matrix from amn coefficients
+           ! subroutine asmfr is in uts_scsmfo.for 
+           call asmfr(amn, lmax, theta, phi + euler_gamma, kr, ascatmat)
+           ! fudge factor of -0.5 for agreement with single sphere case
+           asreshape = reshape(cshift(ascatmat, shift = 1), (/ 2, 2 /), &
+                order = (/ 2, 1 /)) * (-0.5) 
 
-              ! calculate scattered fields in spherical coordinates
-              ! convert polarization to spherical coords
-              call incfield(pol_vec(1), pol_vec(2), phi, einc_sph)
-              prefactor = ci / kr * exp(ci * kr) ! Bohren & Huffman formalism
-              signarr = (/ 1.0, -1.0 /) ! accounts for escatperp = -escatphi
-              escat_sph = prefactor * matmul(asreshape, einc_sph) * signarr
-
-              ! convert to rectangular
-              call fieldstocart(escat_sph, theta, phi, escat_rect)
-              es_x(i, j) = escat_rect(1)
-              es_y(i, j) = escat_rect(2)
-              es_z(i, j) = escat_rect(3)
-           end do
+           ! calculate scattered fields in spherical coordinates
+           call calc_scat_field(kr, phi, asreshape, inc_pol, escat_sph)
+       
+           ! convert to rectangular
+           call fieldstocart(escat_sph, theta, phi, escat_rect)
+           es_x(i) = escat_rect(1)
+           es_y(i) = escat_rect(2)
+           es_z(i) = escat_rect(3)
         end do
 
         return
@@ -534,7 +466,7 @@
         return
         end
 
-
+! Currently unused. Candidate for deletion?
       subroutine getsphercoords(x, y, z, sph)
 ! conversion of cartesian to spherical coordinates
 ! apparently it's ok to have integers as exponents of real numbers
