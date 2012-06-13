@@ -118,9 +118,10 @@ class Model(Serializable):
     # affect optics things (fit to beam divergence, lens abberations, ...)
 
     def compare(self, calc, data, selection = None):
-        if selection == None:
-                selection = np.ones(data.shape,dtype='int')
-        return (calc*selection-data*selection).ravel()
+        if selection==None:
+            return (data - calc).ravel()
+        else:
+            return (selection*data - selection*calc).ravel()
     
     def alpha(self, par_values):
         for i, par in enumerate(self.parameters):
@@ -135,8 +136,6 @@ class Model(Serializable):
             theory = self.theory
             
         def cost(par_values, selection=None):
-            if selection == None:
-                selection = np.ones(data.shape,dtype='int')
             calc = theory.calc_holo(
                 self.make_scatterer_from_par_values(par_values),
                 self.alpha(par_values), selection)

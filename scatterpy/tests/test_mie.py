@@ -115,7 +115,6 @@ def test_single_sphere():
 
     # large radius (calculation not attempted because it would take forever
     assert_raises(UnrealizableScatterer, xmodel.calc_holo, Sphere(r=1))
- 
 
 
 @attr('fast')
@@ -256,3 +255,14 @@ def test_nonlinearity():
 
     # uncomment to debug
     #return holo_1, holo_2, holo_super
+@attr('fast')
+@with_setup(setup=setup_model, teardown=teardown_model)
+def test_selection():
+    sphere = Sphere(n=n, r=radius, center=(x, y, z))
+    holo = xmodel.calc_holo(sphere, alpha=scaling_alpha)
+
+    selection = np.random.random((holo.shape)) > .9
+
+    subset_holo = xmodel.calc_holo(sphere, alpha=scaling_alpha, selection=selection)
+
+    assert_allclose(subset_holo[selection], holo[selection])

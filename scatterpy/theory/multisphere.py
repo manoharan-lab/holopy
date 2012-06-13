@@ -143,8 +143,8 @@ class Multisphere(ScatteringTheory):
         m = scatterer.n / self.optics.index
 
         if (centers > 1e4).any():
-            raise UnrealizableScatterer(self, scatterer, "Particle separation \
- too large, calculation would take forever")
+            raise UnrealizableScatterer(self, scatterer, "Particle separation "
+                                        "too large, calculation would take forever")
         
         
         _, lmax, amn0, converged = scsmfo_min.amncalc(1, centers[:,0], 
@@ -183,20 +183,15 @@ class Multisphere(ScatteringTheory):
         if np.isnan(amn).any():
             raise MultisphereExpansionNaN()
 
-        if selection == None:
-            selection = np.ones(self.imshape,dtype='int')
-        e_x, e_y, e_z = mieangfuncs.tmatrix_fields_sph(self._spherical_grid(
-                scatterer.x.mean(), scatterer.y.mean(), scatterer.z.mean()),
-                                                       amn, lmax, 0,
-                                                       self.optics.polarization,
-                                                       selection)
-        # TODO: Test this.  How do we intentionally get NaN's out of tmatrix?
-        if np.isnan(e_x[0,0]):
+        fields = mieangfuncs.tmatrix_fields(self._list_of_sph_coords(
+                scatterer.centers.mean(0), selection), amn, lmax, 0,
+                                            self.optics.polarization) 
+
+        
+        if np.isnan(fields[0][0]):
             raise TMatrixFieldNaN(self, scatterer, '')
 
-        return ElectricField(e_x, e_y, e_z, scatterer.z.mean(),
-                             self.optics.med_wavelen) 
-
+        return self._interpret_fields(fields, scatterer.z.mean(), selection)
 
 class TMatrixFieldNaN(UnrealizableScatterer):
     def __str__(self):

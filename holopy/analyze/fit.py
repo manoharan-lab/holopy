@@ -146,8 +146,6 @@ def make_residual(holo, scatterer, theory, parameter_manager,
     initial_guess : :class:`scatterpy.scatterer.Scatterer`
         The scatter which models the hologram
     """
-    if selection == None:
-        selection = np.ones(holo.shape,dtype='int')
     def residual(p, **keywords):
         parameters, alpha = parameter_manager.interpret_minimizer_list(p)
 

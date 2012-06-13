@@ -139,8 +139,6 @@ class ScatteringTheory(Serializable):
                               np.zeros(self.imshape),
                               np.zeros(self.imshape), 0, 
                               self.optics.med_wavelen)
-        if selection == None:
-            selection = np.ones(self.imshape,dtype='int')
         for s in scatterers:
             field += self.calc_field(s, selection)
 
@@ -177,8 +175,6 @@ class ScatteringTheory(Serializable):
         You can specify the fields to avoid the cost of calculating
         them twice during calc_holo()
         """
-        if selection == None:
-            selection = np.ones(self.imshape,dtype='int')
         field = self.calc_field(scatterer, selection)
         return abs(field.x_comp)**2 + abs(field.y_comp)**2
 
@@ -201,8 +197,6 @@ class ScatteringTheory(Serializable):
         holo : :class:`holopy.hologram.Hologram` object
             Calculated hologram from the given distribution of spheres
         """
-        if selection == None:
-            selection = np.ones(self.imshape,dtype='int')
         scat = self.calc_field(scatterer, selection)
         ref = ElectricField(self.optics.polarization[0],
                             self.optics.polarization[1], 0, 0,
@@ -237,8 +231,26 @@ class ScatteringTheory(Serializable):
         phi = phi + 2*np.pi * (phi < 0)
         return np.dstack((r*self.optics.wavevec, theta, phi))
 
-    def _calc_points(self, center, selection):
-        pass
+    def _list_of_sph_coords(self, center, selection=None):
+        points = self._spherical_grid(*center)
+        if selection is not None:
+            points = points[selection]
+        else:
+            points = points.reshape((self.imshape[0]*self.imshape[1], 3))
+
+        return points.T
+    
+        
+    def _interpret_fields(self, fields, z, selection = None):
+        if selection is not None:
+            new_fields = []
+            for i, field in enumerate(fields):
+                new_fields.append(np.zeros(self.imshape, dtype=field.dtype))
+                new_fields[i][selection] = field
+            fields = new_fields
+        else:        
+            fields = [f.reshape(self.imshape) for f in fields]
+        return ElectricField(*fields, z_ref = z, wavelen = self.optics.med_wavelen)           
         
         
 #TODO: Should this be a method of the Electric field class? - tgd 2011-08-15
@@ -269,7 +281,6 @@ def interfere_at_detector(e1, e2):
             abs(e2.x_comp)**2 + abs(e2.y_comp)**2 +
             2 * np.real(e1.x_comp*e2.x_comp) +
             2 * np.real(e1.y_comp*e2.y_comp))
-
 
     
 class InvalidElectricFieldComputation(Exception):

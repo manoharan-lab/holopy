@@ -123,7 +123,7 @@
         return
         end
 
-
+! deprecated
       subroutine mie_fields_sph(n_rows, n_cols, grid, &
            asbs, nstop, selection, einc, es_x, es_y, es_z)
         ! Calculate Mie fields, using a grid of spherical coordinates
@@ -266,7 +266,7 @@
         return
         end
 
-
+! depricated
       subroutine tmatrix_fields_sph(n_rows, n_cols, sph_coords_grid, amn, &
            lmax, euler_gamma, inc_pol, selection, es_x, es_y, es_z)
         ! Calculate scattered fields from a cluster of non-overlapping spheres,
@@ -399,7 +399,7 @@
         return
         end
 
-
+! deprecated
       subroutine paraxholocl(kr, kz, theta, phi, ascatm, polvec, alpha, holo)
 ! Subroutine to calculate hologram at a point given coordinates, S2, S1,
 ! polarization, and scaling coefficient alpha, using simplified paraxial

@@ -30,7 +30,8 @@ sys.path.append(hp_dir)
 
 import warnings
 from nose.tools import assert_raises, with_setup
-from numpy.testing import assert_equal, assert_array_almost_equal, assert_almost_equal
+from numpy.testing import (assert_equal, assert_array_almost_equal,
+                           assert_almost_equal, assert_allclose)
 
 from nose.plugins.attrib import attr
 
@@ -198,3 +199,21 @@ def test_overlap():
     holo = theory.calc_holo(sc)
 
     common.verify(holo, '2_sphere_allow_overlap')
+
+@attr('fast')
+@with_setup(setup=setup_model, teardown=teardown_model)
+def test_selection():
+    sc = SphereCluster(spheres=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
+                                       n=1.5811+1e-4j, r=5e-07),
+                                Sphere(center=[6e-6, 7e-6, 10e-6],
+                                       n=1.5811+1e-4j, r=5e-07)])
+    theory = Multisphere(xoptics, imshape)
+
+
+    holo = theory.calc_holo(sc, alpha=scaling_alpha)
+
+    selection = np.random.random((holo.shape)) > .9
+
+    subset_holo = theory.calc_holo(sc, alpha=scaling_alpha, selection=selection)
+
+    assert_allclose(subset_holo[selection], holo[selection])

@@ -49,8 +49,8 @@ Building
 In addition to the python packages above, you will need the following
 to build:
 
-* a fortran 90 compiler (gfortran works)
-* a fortran 77 compiler (gfortran works)
+* a fortran 90 compiler (gfortran works, but not version 4.6)
+* a fortran 77 compiler (gfortran works, but not version 4.6)
 * a c compiler (gcc works)
 * numpy.distutils (should ship with numpy)
 * f2py (should ship with numpy)

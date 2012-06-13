@@ -86,20 +86,16 @@ class Mie(ScatteringTheory):
         For multiple particles, this code superposes the fields
         calculated from each particle (using calc_mie_fields()). 
         """
-        if selection == None:
-            selection = np.ones(self.imshape,dtype='int')
+            
         def sphere_field(s, selection=None):
             scat_coeffs = self._scat_coeffs(s)
 
             # mieangfuncs.f90 works with everything dimensionless.
-            e_x, e_y, e_z = mieangfuncs.mie_fields_sph(self._spherical_grid(s.x,
-                                                                            s.y,
-                                                                            s.z),
-                                                       scat_coeffs,
-                                                       selection,
-                                                       self.optics.polarization)
+            fields = mieangfuncs.mie_fields(self._list_of_sph_coords(s.center, selection),
+                                            scat_coeffs,
+                                            self.optics.polarization)
+            return self._interpret_fields(fields, s.z, selection)
 
-            return ElectricField(e_x, e_y, e_z, s.z, self.optics.med_wavelen)
         
         if isinstance(scatterer, (Sphere, CoatedSphere)):
             return sphere_field(scatterer, selection)
@@ -113,63 +109,6 @@ class Mie(ScatteringTheory):
             # if it passes, superpose the fields
             return self.superpose(spheres, selection)
         else: raise TheoryNotCompatibleError(self, scatterer)
-
-# Disable this function for now since the fast fortran subroutine does not
-# handle spherical coordinates yet.  This will cause fallback to the method
-# which uses the spherical coordinates calc_fields version.  
-#
-# TODO: make a spherical coordinates version of the singleholo fortran function
-# and switch to using it
-#    def calc_holo(self, scatterer, alpha=1.0):
-#        """
-#        Calculate hologram formed by interference between scattered
-#        fields and a reference wave
-#        
-#        Parameters
-#        ----------
-#        scatterer : :mod:`scatterpy.scatterer` object
-#            scatterer or list of scatterers to compute field for
-#        alpha : scaling value for intensity of reference wave
-#
-#        Returns
-#        -------
-#        holo : :class:`holopy.hologram.Hologram` object
-#            Calculated hologram from the given distribution of spheres
-#
-#        Notes
-#        -----
-#        For a single particle, this code uses a fast Fortran
-#        subroutine to calculate the hologram.  Otherwise it uses the
-#        Fortran subroutine for calculating the fields from each
-#        particle, then superposes them using numpy.
-#        """
-#
-#        if isinstance(scatterer, Sphere):
-#            scat_coeffs = self._scat_coeffs(scatterer)
-#
-#            theta, phi, kr = self._spherical_grid(scatterer.x, scatterer.y, scatterer.z)
-#
-#            # TODO: convert to calling in spherical coordinates
-#            gridx, gridy = self._grid()
-#
-#            holo = singleholo(gridx, gridy,
-#                              scatterer.center * self.optics.wavevec,
-#                              scat_coeffs, alpha, self.optics.polarization)
-#            
-#        else:   # call base class calc_holo
-#            holo = ScatteringTheory.calc_holo(self, scatterer, 
-#                                              alpha=alpha)
-#
-#        return Hologram(holo, optics = self.optics)
-#
-#        
-#    # TODO: remove this function once self.calc_holo no longer needs it
-#    def _grid(self):
-#        px, py = self.optics.pixel
-#        xdim, ydim = self.imshape
-#        return (self.optics.wavevec*np.mgrid[0:xdim]*px,
-#                self.optics.wavevec*np.mgrid[0:ydim]*py)
-
 
 
     def _scat_coeffs(self, s):
@@ -188,3 +127,4 @@ class Mie(ScatteringTheory):
             return  miescatlib.scatcoeffs(x_arr[0], m_arr[0], lmax)
         else:
             return scatcoeffs_multi(m_arr, x_arr)
+        
