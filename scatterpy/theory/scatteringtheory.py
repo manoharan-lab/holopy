@@ -205,6 +205,25 @@ class ScatteringTheory(Serializable):
         return Hologram(interfere_at_detector(scat * alpha, ref),
                         optics=self.optics)
 
+    def calc_cross_sections(self, scatterer):
+        """
+        Calculate scattering, absorption, and extinction 
+        cross sections, and asymmetry parameter <cos \theta>. 
+        To be implemented by derived classes.
+
+        Parameters
+        ----------
+        scatterer : :mod:`scatterpy.scatterer` object
+            scatterer or list of scatterers to compute for
+
+        Returns
+        -------
+        cross_sections : array (4)
+            Dimensional scattering, absorption, and extinction 
+            cross sections, and <cos \theta>
+        """
+        raise NotImplementedError
+
     def _spherical_grid(self, x, y, z):
         """
         Parameters

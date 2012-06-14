@@ -20,7 +20,7 @@ from __future__ import division
 import os
 try:
     from collections import OrderedDict
-except OrderedDict:
+except ImportError:
     from ordereddict import OrderedDict
 import tempfile
 

@@ -37,6 +37,7 @@ complex arguments
 '''
 
 import scipy
+import numpy as np
 import mieangfuncs # use Fortran angular functions to avoid duplication
 
 from scipy import sin, cos, array
@@ -98,42 +99,44 @@ def nstop(x):
     return scipy.round_(scipy.absolute(x+4.05*x**(1./3.)+2))
 
 
-def asymmetry_parameter(an, bn):
+def asymmetry_parameter(al, bl):
     '''
     Inputs: an, bn coefficient arrays from Mie solution
     
     See discussion on Bohren & Huffman p. 120.
     The output of this function omits the prefactor of 4/(x^2 Q_sca).
     '''
-    nmax = an.shape[0]
-    n = scipy.arange(nmax) + 1
-    astarshift = scipy.concatenate((an.conj()[1:], scipy.zeros(1)))
-    bstarshift = scipy.concatenate((bn.conj()[1:], scipy.zeros(1)))
-    gterms = n * (n+2.) / (n+1.) * (an*astarshift + bn*bstarshift).real + (
-        2.*n + 1.) / (n*(n+1.)) * (an*bn.conj()).real
+    lmax = al.shape[0]
+    l = np.arange(lmax) + 1
+    selfterm = (l[:-1] * (l[:-1] + 2.) / (l[:-1] + 1.) * 
+                np.real(al[:-1] * np.conj(al[1:]) + 
+                        bl[:-1] * np.conj(bl[1:]))).sum()
+    crossterm = ((2. * l + 1.)/(l * (l + 1)) * 
+                 np.real(al * np.conj(bl))).sum()
+    return selfterm + crossterm
 
-    return gterms.sum()
 
-
-def cross_sections(an, bn): 
+def cross_sections(al, bl): 
     '''
-    Calculates scattering, extension, and radar backscattering cross sections
+    Calculates scattering and extinction cross sections
     given arrays of Mie scattering coefficients an and bn.
 
     See Bohren & Huffman eqns. 4.61 and 4.62.
 
     The output omits a scaling prefactor of 2 * pi / k^2.
     '''
-    nmax = an.shape[0] # determine number of terms in series
-    alts = 2*(scipy.arange(nmax)%2) - 1 # mod 2 division gets alternating signs
-    prefactor = 2*(scipy.arange(nmax)+1)+1
-    cscacoeffs = an.conj()*an + bn.conj()*bn
-    csca = (prefactor*cscacoeffs).sum()
-    cextcoeffs = (an+bn).real	
-    cext = (prefactor*cextcoeffs).sum()
-    cbackcoeffs = an - bn
-    cback = scipy.absolute((prefactor*alts*cbackcoeffs).sum())**2
-    return array([csca, cext, cback], dtype = 'float64') # contents are real
+    lmax = al.shape[0]
+
+    l = np.arange(lmax) + 1
+    prefactor = (2. * l + 1.) 
+    cscat = (prefactor * (np.abs(al)**2 + np.abs(bl)**2)).sum()
+    cext = (prefactor * np.real(al + bl)).sum()
+    
+    # see p. 122
+    alts = 2. * (np.arange(lmax) % 2) - 1
+    cback = np.abs((prefactor * alts * (al - bl)).sum())**2
+
+    return array([cscat, cext, cback])
 
 
 def rad_pressure_xsect(an, bn):
