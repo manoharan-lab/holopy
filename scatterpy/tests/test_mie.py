@@ -31,7 +31,7 @@ from nose.tools import with_setup, assert_raises
 import numpy as np
 from numpy.testing import assert_equal
 from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
-                           assert_raises, assert_allclose)
+                           assert_raises)
 from nose.plugins.attrib import attr
 
 from holopy import Optics
@@ -42,6 +42,7 @@ from scatterpy.theory import Mie
 from scatterpy.theory.mie import UnrealizableScatterer
 from scatterpy.errors import TheoryNotCompatibleError
 import common
+from .common import assert_allclose
 
 # nose setup/teardown methods
 def setup_model():

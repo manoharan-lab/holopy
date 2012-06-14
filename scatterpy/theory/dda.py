@@ -35,7 +35,6 @@ import glob
 import os
 import time
 import numpy as np
-#from numpy.testing import assert_allclose
 import holopy as hp
 from .scatteringtheory import ScatteringTheory, ElectricField
 from .mie_f import mieangfuncs

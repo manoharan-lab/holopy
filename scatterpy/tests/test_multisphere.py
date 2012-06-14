@@ -31,7 +31,7 @@ sys.path.append(hp_dir)
 import warnings
 from nose.tools import assert_raises, with_setup
 from numpy.testing import (assert_equal, assert_array_almost_equal,
-                           assert_almost_equal, assert_allclose)
+                           assert_almost_equal)
 
 from nose.plugins.attrib import attr
 
@@ -43,6 +43,7 @@ from scatterpy.scatterer import Sphere, SphereCluster
 from scatterpy.errors import UnrealizableScatterer, TheoryNotCompatibleError
 import scatterpy
 import common
+from .common import assert_allclose
 
 
 def setup_model():

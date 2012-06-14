@@ -30,14 +30,13 @@ import holopy as hp
 
 from nose.tools import with_setup, nottest
 from nose.plugins.attrib import attr
-from numpy.testing import (assert_allclose, assert_equal, assert_approx_equal,
-                           assert_raises, dec)
+from numpy.testing import assert_equal, assert_approx_equal, assert_raises, dec
 from scatterpy.theory import Mie, Multisphere
 from scatterpy.scatterer import Sphere, SphereCluster
 
 from holopy.analyze.fit_new import (par, Parameter, Model, fit, Minimizer,
                                     InvalidParameterSpecification, GuessOutOfBounds)
-from scatterpy.tests.common import assert_parameters_allclose, assert_obj_close
+from scatterpy.tests.common import assert_parameters_allclose, assert_obj_close, assert_allclose
 
 
 def setup_optics():

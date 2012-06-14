@@ -25,7 +25,22 @@ import yaml
 from scatterpy.theory.scatteringtheory import ElectricField
 
 
-from numpy.testing import assert_almost_equal, assert_allclose, assert_equal
+from numpy.testing import assert_almost_equal, assert_equal
+
+try:
+    from numpy.testing import assert_allclose
+except ImportError:
+    from numpy import allclose
+    def assert_allclose(actual, desired, rtol=1e-07, atol=0, err_msg='',
+                        verbose=True):
+        if not allclose(actual, desired, rtol=rtol, atol=atol):
+            raise AssertionError("""Assertion Error:
+Not equal to tolerance rtol={0}, atol={1}
+
+ actual: {2}
+ desired: {3}""".format(rtol, atol, actual, desired))
+
+        
 
 wavelen = 658e-9
 ypolarization = [0., 1.0] # y-polarized

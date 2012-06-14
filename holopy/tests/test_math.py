@@ -19,7 +19,8 @@ from __future__ import division
 import numpy as np
 from holopy.process import math
 from nose.plugins.attrib import attr
-from numpy.testing import assert_allclose
+
+from scatterpy.tests.common import assert_allclose
 
 import scipy.fftpack
 

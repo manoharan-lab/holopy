@@ -26,8 +26,7 @@ from __future__ import division
 import holopy as hp
 import numpy as np
 from nose.tools import assert_raises
-from numpy.testing import (assert_, assert_almost_equal,
-                           assert_allclose, dec)
+from numpy.testing import assert_, assert_almost_equal, dec
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
 
@@ -40,6 +39,8 @@ import scatterpy
 from scatterpy.errors import TheoryNotCompatibleError
 from holopy.optics import (WavelengthNotSpecified, PixelScaleNotSpecified,
                            MediumIndexNotSpecified)
+
+from .common import assert_allclose
 
 import os.path
 

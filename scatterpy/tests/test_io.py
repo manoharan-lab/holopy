@@ -25,7 +25,8 @@ from __future__ import division
 import scatterpy
 import holopy as hp
 import tempfile
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_equal
+from scatterpy.tests.common import assert_allclose
 
 def assert_read_matches_write(o):
     tempf = tempfile.TemporaryFile()

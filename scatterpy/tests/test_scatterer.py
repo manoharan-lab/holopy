@@ -29,13 +29,14 @@ except ImportError:
 
 import numpy as np
 from nose.tools import raises, assert_raises
-from numpy.testing import assert_equal, assert_allclose
+from numpy.testing import assert_equal
 from nose.plugins.attrib import attr
 
 from scatterpy.scatterer import (Sphere, CoatedSphere, Scatterer, Ellipsoid,
                                  Composite, abstract_scatterer)
 
 from scatterpy.errors import ScattererDefinitionError
+from .common import assert_allclose
 
 @attr('fast')
 def test_AbstractScatterer():
