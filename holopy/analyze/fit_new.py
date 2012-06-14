@@ -26,7 +26,7 @@ Routines for fitting a hologram to an exact solution
 from __future__ import division
 try:
     from collections import OrderedDict
-except OrderedDict:
+except ImportError:
     from ordereddict import OrderedDict
 import inspect
 import time

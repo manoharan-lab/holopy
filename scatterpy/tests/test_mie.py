@@ -27,6 +27,7 @@ import os
 hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
 sys.path.append(hp_dir)
 from nose.tools import with_setup, assert_raises
+import yaml
 
 import numpy as np
 from numpy.testing import assert_equal
@@ -267,3 +268,30 @@ def test_selection():
     subset_holo = xmodel.calc_holo(sphere, alpha=scaling_alpha, selection=selection)
 
     assert_allclose(subset_holo[selection], holo[selection])
+
+@attr('fast')
+@with_setup(setup = setup_model, teardown = teardown_model)
+def test_radiometric():
+    sphere = Sphere(n = n, r = radius, center = (x, y, z))
+    cross_sects = xmodel.calc_cross_sections(sphere)
+    # turn cross sections into efficiencies
+    cross_sects[0:3] = cross_sects[0:3] / (np.pi * radius**2)
+
+    # create a dict from the results
+    result = {}
+    result_keys = ['qscat', 'qabs', 'qext', 'costheta']
+    for key, val in zip(result_keys, cross_sects):
+        result[key] = val
+
+    scatterpy_location = os.path.split(os.path.abspath(scatterpy.__file__))[0]
+    gold_name = os.path.join(scatterpy_location, 'tests', 'gold', 
+                             'gold_mie_radiometric')
+    gold = yaml.load(file(gold_name + '.yaml'))
+
+    for key, val in gold.iteritems():
+        assert_almost_equal(getattr(result, key), val, decimal = 5)
+
+
+
+
+
