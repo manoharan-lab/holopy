@@ -88,7 +88,7 @@ def test_fit_mie_single():
 
     assert_approx_equal(fitresult.alpha, gold_alpha, significant=4)
     
-    assert_parameters_allclose(fitresult.scatterer, gold_single)
+    assert_parameters_allclose(fitresult.scatterer, gold_single, rtol = 1e-3)
 
 
 @dec.skipif(True, "OpenOpt fits not reimplemented")

@@ -24,14 +24,16 @@ Routines for fitting a hologram to an exact solution
 
 """
 from __future__ import division
-
+try:
+    from collections import OrderedDict
+except OrderedDict:
+    from ordereddict import OrderedDict
 import inspect
 import time
 
 import numpy as np
 
 import scatterpy
-from holopy.utility.helpers import _ensure_pair
 from holopy.io.yaml_io import Serializable
 
 def fit(model, data, algorithm='nmpfit'):
@@ -97,12 +99,53 @@ class Model(Serializable):
     make_scatterer function which can turn the parameters into a scatterer
     
     """
-    def __init__(self, parameters, theory, scatterer=None, 
-                 make_scatterer=None, selection=None):
-        self.parameters = parameters
+    def __init__(self, parameters, theory, make_scatterer=None, selection=None):
+
+        if isinstance(parameters, scatterpy.scatterer.Scatterer):
+            scatterer = parameters
+            
+            def setup_par(p):
+                name, par = p
+
+                if isinstance(par, Parameter):
+                    if par.fixed:
+                        # we represent fixed parameters by just their value
+                        return name, par.limit
+
+                    if par.name == None:
+                        par.name = name
+                        return name, par
+                else:
+                    # probably just a number, (ie fixed), so just return it
+                    return name, par
+                
+            parameters = [setup_par(p) for p in
+                          scatterer.parameters.iteritems()]
+
+            self.scatterer = scatterer.from_parameters(OrderedDict(parameters))
+
+            self.parameters = [p[1] for p in parameters if isinstance(p[1],
+            Parameter)]
+
+            def make_scatterer(par_values):
+                all_pars = {}
+                for i, p in enumerate(self.parameters):
+                    all_pars[p.name] = p.unscale(par_values[i])
+                
+                for_scatterer = self.scatterer.parameters
+                for par, val in all_pars.iteritems():
+                    for_scatterer[par] = val
+
+                return self.scatterer.from_parameters(for_scatterer)
+            self.make_scatterer = make_scatterer
+
+            
+        else:
+            self.parameters = parameters
+            self.scatterer = None
+            self.make_scatterer = make_scatterer
+            
         self.theory = theory
-        self.scatterer=scatterer
-        self.make_scatterer = make_scatterer
         self.selection = selection
 
     def make_scatterer_from_par_values(self, par_values):
@@ -153,6 +196,15 @@ class InvalidParameterSpecification(Exception):
         self.msg = msg
     def __str__(self):
         return self.msg
+
+class GuessOutOfBounds(InvalidParameterSpecification):
+    def __init__(self, parameter):
+        self.par = parameter
+    def __str__(self):
+        if self.par.fixed:
+            return "guess {s.guess} does not match fixed value {s.limit}".format(s=self.par)
+        return "guess {s.guess} is not within bounds {s.limit}".format(s=self.par)
+    
     
 class Minimizer(object):
     def __init__(self, algorithm='nmpfit'):
@@ -190,20 +242,37 @@ class Minimizer(object):
         
 
 class Parameter(object):
-    def __init__(self, name = None, guess = None, limit = None, misc = None):
+    def __init__(self, guess = None, limit = None, name = None, misc = None):
         self.name = name
         self.guess = guess
         self.limit = limit
         self.misc = misc
-        if guess is not None:
-            self.scale_factor = guess
-        elif limit is not None:
-            self.scale_factor = np.sqrt(limit[0]*limit[1])
+        
+        if self.fixed:
+            if guess is not None and guess != limit:
+                raise GuessOutOfBounds(self)
+            self.guess = limit
         else:
-            raise InvalidParameterSpecification("In order to specify a parameter "
-                                                "you must provide at least an "
-                                                "initial guess or limit") 
-
+            if limit is not None:
+                if guess > limit[1] or guess < limit[0]:
+                    raise GuessOutOfBounds(self)
+            if guess is not None:
+                self.scale_factor = guess
+            elif limit is not None:
+                self.scale_factor = np.sqrt(limit[0]*limit[1])
+            else:
+                raise InvalidParameterSpecification("In order to specify a parameter "
+                                                    "you must provide at least an "
+                                                    "initial guess or limit")
+    @property
+    def fixed(self):
+        if self.limit is not None:
+            try:
+                self.limit[1]
+            except TypeError:
+                return True
+        return False
+        
     def scale(self, physical):
         """
         Scales parameters to approximately unity
@@ -242,6 +311,10 @@ class Parameter(object):
         if self.misc is not None:
             args.append('misc={0}'.format(self.misc))
         return "Parameter(name='{0}', {1})".format(self.name, ', '.join(args))
+
+# provide a shortcut name for Parameter since users will have to type it a lot
+par = Parameter
+
         
 
 class RigidSphereCluster(Model):

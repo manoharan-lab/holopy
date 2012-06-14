@@ -99,7 +99,7 @@ def make_golds(result, name):
 
     yaml.dump(gold_dict, file(gold_name+'.yaml','w'))
         
-def assert_parameters_allclose(actual, desired, rtol=1e-3):
+def assert_parameters_allclose(actual, desired, rtol=1e-7, atol = 0):
     if isinstance(actual, scatterpy.scatterer.Scatterer):
         actual = actual.parameters
     if isinstance(actual, dict):
@@ -108,16 +108,32 @@ def assert_parameters_allclose(actual, desired, rtol=1e-3):
         desired = desired.parameters
     if isinstance(desired, dict):
         desired = np.array([p[1] for p in desired.iteritems()])
-    assert_allclose(actual, desired, rtol=rtol)
+    if actual.dtype == 'object':
+        # regular allclose will probably fail on objects, so if the scatterer
+        # contains objects (like say paramters), compare them with our assert_obj_close
+        assert_obj_close(actual, desired)
+    else:
+        assert_allclose(actual, desired, rtol=rtol, atol = atol)
 
-def assert_obj_close(actual, desired, rtol=1e-3):
+def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = None):
+    if context is None:
+        context = 'tested_object'
     if isinstance(actual, (scatterpy.scatterer.Scatterer, dict)):
-        assert_parameters_allclose(actual, desired, rtol)
+        assert_parameters_allclose(actual, desired, rtol, atol)
+    elif isinstance(actual, (list, tuple)):
+        assert_equal(len(actual), len(desired))
+        for i, item in enumerate(actual):
+            assert_obj_close(actual[i], desired[i], context =
+                             '{0}[{1}]'.format(context, i))
     elif hasattr(actual, '__dict__'):
         for key, val in actual.__dict__.iteritems():
-            assert_obj_close(getattr(actual, key), getattr(desired, key), rtol)
+            assert_obj_close(getattr(actual, key), getattr(desired, key), rtol,
+                             context = context+'.'+key)
     elif actual is not None and not np.isscalar(actual):
         for i, item in enumerate(actual):
-            assert_obj_close(actual[i], desired[i], rtol)
+            assert_obj_close(actual[i], desired[i], rtol, atol, context)
     else:
-        assert_equal(actual, desired)
+        try:
+            assert_equal(actual, desired)
+        except AssertionError as e:
+            raise AssertionError("\nIn {0}{1}".format(context, str(e)))

@@ -87,7 +87,7 @@ class Scatterer(Serializable):
         # later passed to Scatterer.from_parameters
 
         def expand(key, par):
-            if not np.isscalar(par):
+            if isinstance(par, (list, tuple, np.ndarray)):
                 subs = (expand('{0}[{1}]'.format(key, p[0]), p[1]) for p in enumerate(par)) 
                 return chain(*subs)
             if isinstance(par, complex):
