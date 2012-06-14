@@ -287,9 +287,8 @@ def test_radiometric():
     gold_name = os.path.join(scatterpy_location, 'tests', 'gold', 
                              'gold_mie_radiometric')
     gold = yaml.load(file(gold_name + '.yaml'))
-
     for key, val in gold.iteritems():
-        assert_almost_equal(getattr(result, key), val, decimal = 5)
+        assert_almost_equal(gold[key], val, decimal = 5)
 
 
 
