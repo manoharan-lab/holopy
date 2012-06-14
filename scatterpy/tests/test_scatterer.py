@@ -56,9 +56,10 @@ def test_Sphere_construction():
 
 def test_Ellipsoid():
     s = Ellipsoid(n = 1.57, r = (1, 2, 3), center = (3, 2, 1))
-
-    assert_equal(str(s), 'Ellipsoid(center=(3, 2, 1), n=1.57, r=(1, 2, 3))')
-
+    assert_equal(s.n, 1.57)
+    assert_equal(s.r, (1, 2, 3))
+    assert_equal(s.center, (3, 2, 1))
+    assert_equal(str(s)[0:9], 'Ellipsoid')
     
 @attr('fast')
 def test_Sphere_construct_list():
