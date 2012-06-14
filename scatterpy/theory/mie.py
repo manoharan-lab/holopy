@@ -110,7 +110,41 @@ class Mie(ScatteringTheory):
             return self.superpose(spheres, selection)
         else: raise TheoryNotCompatibleError(self, scatterer)
 
+    def calc_cross_sections(self, scatterer):
+        """
+        Calculate scattering, absorption, and extinction cross 
+        sections, and asymmetry parameter for spherically
+        symmetric scatterers.
 
+        Parameters
+        ----------
+        scatterer : :mod:`scatterpy.scatterer` object
+            spherically symmetric scatterer to compute for
+            (Calculation would need to be implemented in a radically
+            different way, via numerical quadrature, for sphere clusters)
+
+        Returns
+        -------
+        cross_sections : array (4)
+            Dimensional scattering, absorption, and extinction 
+            cross sections, and <cos \theta> 
+        """
+        if isinstance(scatterer, Composite):
+            raise UnrealizableScatterer(self, scatterer, 
+                                        "Use Multisphere to calculate " + 
+                                        "radiometric quantities")
+        albl = self._scat_coeffs(scatterer)
+       
+        cscat, cext, cback = miescatlib.cross_sections(albl[0], albl[1]) * \
+            (2. * np.pi / self.optics.wavevec**2)
+
+        cabs = cext - cscat # conservation of energy
+        
+        asym = 4. * np.pi / (self.optics.wavevec**2 * cscat) * \
+            miescatlib.asymmetry_parameter(albl[0], albl[1])
+
+        return np.array([cscat, cabs, cext, asym])
+        
     def _scat_coeffs(self, s):
         x_arr = self.optics.wavevec * _ensure_array(s.r)
         m_arr = _ensure_array(s.n) / self.optics.index
