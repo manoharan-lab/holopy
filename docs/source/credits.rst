@@ -11,6 +11,10 @@ Please see the following references:
 
 .. [Mackowski1996] D\. W\. Mackowski and M\. I\. Mishchenko, "Calculation of the T matrix and the scattering matrix for ensembles of spheres," *J. Opt. Soc. Am. A.* **13**, 2266-2278, (1996).
 
+.. [Yang2003] W\. Yang, "Improved recursive algorithm for light scattering by a multilayered sphere," *Applied Optics* **42**, 1710-1720, (2003).
+
+.. [Yurkin2011] M\. A\. Yurkin and A\. G\. Hoekstra, "The discrete-dipole-approximation code ADDA: Capabilities and known limitations," *J. Quant. Spectrosc. Radiat. Transfer* **112**, 2234-2247 (2011).
+
 If you use Holopy, we ask that you cite the articles above that are
 relevant to your application.  You can also cite:
 
