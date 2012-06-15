@@ -82,11 +82,12 @@ class Model(Serializable):
     Parameters
     ----------
     parameters: list(:class:`Parameter`)
-        The parameters which can be varied in this model
+        The parameters which can be varied in this model.  This list can include
+        a scatterer object containing parameters as variable values.  In this
+        case that scatterer will be used as a template for make_scatterer, and a
+        make_scatterer function does not need to be provided
     theory: :class:`scatterpy.theory.ScatteringTheory`
         The theory that should be used to compute holograms
-    scatterer: :class:`scatterpy.scatterer.AbstractScatterer`
-        Scatterer to compute holograms of, ignored if make_scatterer is given
     make_scatterer: function(par_values) -> :class:`scatterpy.scatterer.AbstractScatterer`
         Function that returns a scatterer given parameters
     selection : array of integers (optional)
@@ -100,62 +101,97 @@ class Model(Serializable):
     
     """
     def __init__(self, parameters, theory, make_scatterer=None, selection=None):
+        self._user_make_scatterer = make_scatterer
 
-        if isinstance(parameters, scatterpy.scatterer.Scatterer):
-            scatterer = parameters
-            
+        self.theory = theory
+        self.selection = selection
+
+
+        self.scatterer = None
+        self.make_scatterer = make_scatterer
+        self.parameters = []
+
+        def unpack_scatterer(scatterer):
             def setup_par(p):
                 name, par = p
-
                 if isinstance(par, Parameter):
                     if par.fixed:
                         # we represent fixed parameters by just their value
                         return name, par.limit
-
                     if par.name == None:
                         par.name = name
                         return name, par
                 else:
                     # probably just a number, (ie fixed), so just return it
                     return name, par
+            
+            parameters = [setup_par(p) for p in scatterer.parameters.iteritems()]
+            if self.scatterer is None:
+                self.scatterer = scatterer.from_parameters(dict(parameters))
+            else:
+                raise ModelDefinitionError(
+                   "A model cannot contain more than one scatterer.  If you want"
+                   "to include multiple scatterers include them in a single"
+                   "composite Scatterers")
+
+            return [p[1] for p in parameters if isinstance(p[1], Parameter)]
+
+        if isinstance(parameters, (list, tuple)):
+            for item in parameters:
+                if isinstance(item, scatterpy.scatterer.Scatterer):
+                    self.parameters.extend(unpack_scatterer(item))
+                elif isinstance(item, Parameter):
+                    self.parameters.append(item)
+                else:
+                    raise ModelDefinitionError(
+                        "{0} is not a valid parameter".format(item))
+        elif isinstance(parameters, scatterpy.scatterer.Scatterer):
+            self.parameters = unpack_scatterer(parameters)
+        elif isinstance(parameters, Parameter):
+            self.parameters = [parameters]
                 
-            parameters = [setup_par(p) for p in
-                          scatterer.parameters.iteritems()]
-
-            self.scatterer = scatterer.from_parameters(OrderedDict(parameters))
-
-            self.parameters = [p[1] for p in parameters if isinstance(p[1],
-            Parameter)]
-
-            def make_scatterer(par_values):
-                all_pars = {}
-                for i, p in enumerate(self.parameters):
-                    all_pars[p.name] = p.unscale(par_values[i])
-                
+        if self.scatterer is not None and make_scatterer is None:
+            def make_scatterer(pars):
                 for_scatterer = self.scatterer.parameters
-                for par, val in all_pars.iteritems():
+                par_dict = {}
+                if isinstance(pars, dict):
+                    par_dict = pars
+                else:
+                    for i, p in enumerate(self.parameters):
+                        par_dict[p.name] = pars[i] 
+                for par, val in par_dict.iteritems():
                     for_scatterer[par] = val
-
+                try:
+                    del for_scatterer['alpha']
+                except KeyError:
+                    pass
                 return self.scatterer.from_parameters(for_scatterer)
-            self.make_scatterer = make_scatterer
-
             
+            self.make_scatterer = make_scatterer
+        elif make_scatterer is not None:
+            self.make_scatterer = make_scatterer
         else:
-            self.parameters = parameters
-            self.scatterer = None
-            self.make_scatterer = make_scatterer
-            
-        self.theory = theory
-        self.selection = selection
+            raise ModelDefinitionError(
+                "You must either give a model a template scatterer in its "
+                "parameters, or provide a custom make_scatterer function.")
 
+        
+ 
+            
+            
     def make_scatterer_from_par_values(self, par_values):
         all_pars = {}
         for i, p in enumerate(self.parameters):
             all_pars[p.name] = p.unscale(par_values[i])
-        for_scatterer = {}
-        for arg in inspect.getargspec(self.make_scatterer).args:
-            for_scatterer[arg] = all_pars[arg] 
-        return self.make_scatterer(**for_scatterer)
+        if self._user_make_scatterer is not None:
+            for_scatterer = {}
+            for arg in inspect.getargspec(self.make_scatterer).args:
+                for_scatterer[arg] = all_pars[arg] 
+            # user make_scatterer functions will most likely take traditional
+            # function arguments, so we need reorganize for that
+            return self._user_make_scatterer(**for_scatterer)
+        else:
+            return self.make_scatterer(all_pars)
         
     # TODO: add a make_optics function so that you can have parameters
     # affect optics things (fit to beam divergence, lens abberations, ...)
@@ -170,7 +206,9 @@ class Model(Serializable):
         for i, par in enumerate(self.parameters):
             if par.name == 'alpha':
                 return par.unscale(par_values[i])
-        return None
+        # if the user does not provide alpha as a parameter, we just use 1.0,
+        # the default alpha for theories (which is hopefully what they want)
+        return 1.0
     
     def cost_func(self, data, selection = None): 
         if not isinstance(self.theory, scatterpy.theory.ScatteringTheory):
@@ -191,6 +229,12 @@ class Model(Serializable):
 
     # TODO: Allow a layer on top of theory to do things like moving sphere
 
+class ModelDefinitionError(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+    def __str__(self):
+        return self.msg
+    
 class InvalidParameterSpecification(Exception):
     def __init__(self, msg):
         self.msg = msg
