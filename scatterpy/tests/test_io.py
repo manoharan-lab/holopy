@@ -27,6 +27,7 @@ import holopy as hp
 import tempfile
 from numpy.testing import assert_equal
 from scatterpy.tests.common import assert_allclose
+from scatterpy.io import Serializable
 
 def assert_read_matches_write(o):
     tempf = tempfile.TemporaryFile()
@@ -42,7 +43,7 @@ def assert_obj_equal(o1, o2):
     d1, d2 = o1.__dict__, o2.__dict__
     assert_equal(sorted(d1.keys()), sorted(d2.keys()))
     for key, val in d1.iteritems():
-        if isinstance(val, hp.io.yaml_io.Serializable):
+        if isinstance(val, Serializable):
             assert_obj_equal(val, d2[key])
         elif isinstance(val, tuple):
             for i, v in enumerate(val):
@@ -59,5 +60,5 @@ def test_theory_io():
     assert_read_matches_write(t)
 
 def test_scatterer_io():
-    s = scatterpy.Sphere()
+    s = scatterpy.scatterer.Sphere()
     assert_read_matches_write(s)

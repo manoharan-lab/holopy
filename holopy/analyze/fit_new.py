@@ -34,7 +34,8 @@ import time
 import numpy as np
 
 import scatterpy
-from holopy.io.yaml_io import Serializable
+from scatterpy.io import Serializable
+
 
 def fit(model, data, algorithm='nmpfit'):
     time_start = time.time()
@@ -102,13 +103,12 @@ class Model(Serializable):
     """
     def __init__(self, parameters, theory, make_scatterer=None, selection=None):
         self._user_make_scatterer = make_scatterer
+        self.make_scatterer = make_scatterer
 
         self.theory = theory
         self.selection = selection
 
-
         self.scatterer = None
-        self.make_scatterer = make_scatterer
         self.parameters = []
 
         def unpack_scatterer(scatterer):
@@ -176,7 +176,20 @@ class Model(Serializable):
                 "parameters, or provide a custom make_scatterer function.")
 
         
- 
+    @property
+    def guess_scatterer(self):
+        pars = self.scatterer.parameters
+        for key, val in pars.iteritems():
+            if isinstance(val, Parameter):
+                pars[key] = val.guess
+        return self.scatterer.from_parameters(pars)
+        
+    @property
+    def guess_alpha(self):
+        for i, par in enumerate(self.parameters):
+            if par.name == 'alpha':
+                return par.guess
+        return 1.0
             
             
     def make_scatterer_from_par_values(self, par_values):

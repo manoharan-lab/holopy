@@ -26,13 +26,18 @@ analysis procedures.
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 """
 from __future__ import division
-
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 import numpy as np
 import yaml
 import os
 import re
 import os.path
 import inspect
+import scatterpy.io.serializable
+from holopy.analyze.fit_new import FitResult
 
 def save(outf, obj):
     if isinstance(outf, basestring):
@@ -43,25 +48,6 @@ def load(inf):
     if isinstance(inf, basestring):
         inf = file(inf)
     return yaml.load(inf)
-
-# Metaclass black magic to eliminate need for adding yaml_tag lines to classes
-class SerializableMetaclass(yaml.YAMLObjectMetaclass):
-    def __init__(cls, name, bases, kwds):
-        super(SerializableMetaclass, cls).__init__(name, bases, kwds)
-        cls.yaml_loader.add_constructor('!{0}'.format(cls.__name__), cls.from_yaml)
-        cls.yaml_dumper.add_representer(cls, cls.to_yaml)
-
-class Serializable(yaml.YAMLObject):
-    """
-    Base class for any object that wants a nice clean yaml output
-    """
-    __metaclass__ = SerializableMetaclass
-    
-    def to_yaml(cls, dumper, data):
-
-        return dumper.represent_yaml_object('!{0}'.format(data.__class__.__name__), data, cls,
-                                            flow_style=cls.yaml_flow_style)
-    to_yaml = classmethod(to_yaml)
 
 ###################################################################
 # Custom Yaml Representers
@@ -97,7 +83,9 @@ def numpy_float_representer(dumper, data):
 yaml.add_representer(np.float64, numpy_float_representer)
 
 #def FitResult_representer(dumper, data):
-    
+#    import ipdb; ipdb.set_trace()
+#    pass
+#yaml.add_representer(FitResult, FitResult_representer)
 
 def class_representer(dumper, data):
     if re.match('scatterpy.theory', data.__module__):
@@ -105,7 +93,7 @@ def class_representer(dumper, data):
                                    data.__name__))
     else:
         raise NotImplemented
-yaml.add_representer(SerializableMetaclass, class_representer)
+yaml.add_representer(scatterpy.io.serializable.SerializableMetaclass, class_representer)
 
 def class_loader(loader, node):
     name = loader.construct_scalar(node)        

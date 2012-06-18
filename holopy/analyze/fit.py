@@ -31,7 +31,7 @@ import time
 hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
 sys.path.append(hp_dir)
 from scipy import sin, cos, array, pi, sqrt, arcsin, arccos, real, dot
-from holopy.io.yaml_io import Serializable
+from scatterpy.io import Serializable
 
 import numpy as np
 

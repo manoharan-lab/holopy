@@ -638,7 +638,7 @@ import types
 #
 #     **********
 
-from holopy.io.yaml_io import Serializable
+from scatterpy.io import Serializable
 
 class mpfit(Serializable):
     def __init__(self, fcn, xall=None, functkw={}, parinfo=None,

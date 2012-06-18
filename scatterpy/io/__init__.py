@@ -15,17 +15,10 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
-'''
-Code to calculate fields, intensity, and holograms from various types
-of scatterers, using various scattering theories.  
+"""
+IO functionality needed by scatterpy
 
-.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
-.. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
-.. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
-.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
-'''
+.. moduleouthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
+"""
 from __future__ import division
-import io
-import theory
-import scatterer
+from serializable import Serializable

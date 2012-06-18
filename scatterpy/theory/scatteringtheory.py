@@ -27,7 +27,7 @@ import numpy as np
 import holopy as hp
 from holopy.hologram import Hologram
 from holopy.utility.helpers import _ensure_pair
-from holopy.io.yaml_io import Serializable
+from scatterpy.io import Serializable
 
 class ScatteringTheory(Serializable):
     """

@@ -35,7 +35,7 @@ import numpy as np
 import copy
 from types import NoneType
 from .utility.helpers import _ensure_pair
-from .io.yaml_io import Serializable
+from scatterpy.io import Serializable
 
 class Optics(Serializable):
     """

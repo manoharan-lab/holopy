@@ -360,28 +360,21 @@ def test_minimizer():
         minimizer.minimize([Parameter(name = 'a')], cost_func)
 
 
-@dec.knownfailureif(True, "serialization of make_scatterer not implemented yet")
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_serialization():
-    parameters = [Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5]),
-                  Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
-                  Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
-                  Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5]),
-                  Parameter(name='n', guess=1.59, limit = [1, 2]),
-                  Parameter(name='alpha', guess=.6, limit = [.1, 1])]
-    
-    def make_scatterer(x, y, z, r, n):
-        return Sphere(n=n+1e-4j, r = r, center = (x, y, z))
+    par_s = Sphere(center = (par(.567e-5, [0, 1e-5]), par(.576e-6, [0, 1e-5]),
+                                                           par(15e-6, [1e-5,
+                                                                       2e-5])),
+                   r = par(8.5e-7, [1e-8, 1e-5]), n = par(1.59, [1,2]))
+
+    alpha = par(.6, [.1, 1], 'alpha')
 
     mie = Mie(optics, 100)
 
-    model = Model(parameters, Mie, make_scatterer=make_scatterer)
+    model = Model((par_s, alpha), Mie)
 
-    holo = mie.calc_holo(
-        model.make_scatterer_from_par_values([p.guess for p in
-                                              parameters]),
-        parameters[-1].guess)
+    holo = mie.calc_holo(model.guess_scatterer, model.guess_alpha)
 
     result = fit(model, holo)
 
@@ -392,7 +385,7 @@ def test_serialization():
     temp.seek(0)
     
     loaded = hp.io.yaml_io.load(temp)
-    return
+
 
     # manually put the make_scatterer function back in because
     # save/load currently does not handle them correctly.  This is a

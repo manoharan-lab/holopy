@@ -33,7 +33,7 @@ from copy import copy
 import numpy as np
 import yaml
 
-from holopy.io.yaml_io import Serializable
+from scatterpy.io import Serializable
 from scatterpy.errors import ScattererDefinitionError
 
 
