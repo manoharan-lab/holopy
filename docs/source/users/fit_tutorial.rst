@@ -12,18 +12,21 @@ The :func:`holopy.analyze.fit.fit_new` fits a model of the object to a given set
 	  the hologram.  These are typically things like coordinates of
 	  spheres, radii, and indices of refraction. They might also
 	  include rotation angles of a cluster or inter-particle
-	  separations.
+	  separations.  For most basic use, you will do this by passing in
+	  a :class:`scatterpy.scatterer.Scatterer` object with
+	  :class:`holopy.analyze.fit_new.Parameter` objects instead of
+	  numbers for any values you want to vary in the fit.
 
    :theory:
 
 	   The scattering theory to be used to compute holograms for
 	   comparison with the data
 	   
-   :scatterer generator:
+   :scatterer generator (optional):
 
 	   A function that takes as its arguments the parameters and
 	   returns a scatterer which the theory can use to compute a
-	   hologram
+	   hologram.  
 
 :data:
 
@@ -39,7 +42,7 @@ Here let's compute a hologram and then fit it.  You can replace the
 calculated hologram with real data, if you like ::
 
    from holopy import Optics
-   from holopy.analyze.fit_new import Model, Parameter, fit
+   from holopy.analyze.fit_new import Model, par, fit
    from scatterpy.scatterer import Sphere
    from scatterpy.theory import Mie
 
@@ -47,16 +50,14 @@ calculated hologram with real data, if you like ::
    mie = Mie(optics, 100)
    s = Sphere(center = (10.2, 9.8, 10.3), r = .5, n = 1.58)
    holo = mie.calc_holo(s, 1.0)
+
+   par_s = Sphere(center = (par(guess = 10, limit = [5,15]), par(10, [5, 15]), par(10, [5, 15])),
+                  r = .5, n = 1.58)
    
-   parameters = [Parameter(name = 'x', guess = 10, limit = [5, 15]),
-                 Parameter('y', 10, [5, 15]),
-                 Parameter('z', 10, [5, 15]),
-                 Parameter('alpha', 1.0)]
 
-   def make_scatterer(x, y, z):
-       return Sphere(center = (x, y, z), n = 1.58, r = .5)
-
-   model = Model(parameters, Mie, make_scatterer=make_scatterer)
+   alpha = par(.6, [.1, 1], 'alpha')
+	   
+   model = Model((par_s, alpha), Mie)
    result = fit(model, holo)
 
 Here we specify the three spatial coordinates as parameters, and fix
