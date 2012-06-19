@@ -111,7 +111,7 @@ class DDA(ScatteringTheory):
         elif isinstance(scatterer, scatterpy.scatterer.VoxelatedScatterer):
             scat_args = self._adda_general(scatterer, self.optics, temp_dir)
         elif isinstance(scatterer, scatterpy.scatterer.Ellipsoid):
-            scat_args = self._adda_ellipsiod(scatterer, self.optics, temp_dir)
+            scat_args = self._adda_ellipsoid(scatterer, self.optics, temp_dir)
         elif isinstance(scatterer, scatterpy.scatterer.SphereCluster):
             scat_args = self._adda_bisphere(scatterer, self.optics, temp_dir)
         else:
@@ -129,7 +129,7 @@ class DDA(ScatteringTheory):
 
         return cmd
 
-    def _adda_ellipsiod(self, scatterer, optics, temp_dir):
+    def _adda_ellipsoid(self, scatterer, optics, temp_dir):
         cmd = []
         cmd.extend(['-eq_rad', str(scatterer.r[0])])
         cmd.extend(['-shape', 'ellipsoid'])

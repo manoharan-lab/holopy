@@ -36,13 +36,7 @@ class Sphere(SphericallySymmetricScatterer):
         Index of refraction of sphere
     r : float
         Radius of sphere
-    x : float
-        x-component of center
-    y : float
-        y-component of center
-    z : float
-        z-component of center
-    center : 3-tuple, list or numpy array (optional)
+    center : 3-tuple, list or numpy array
         specifies coordinates of center of sphere
 
     '''
