@@ -183,6 +183,15 @@ class Model(Serializable):
             if isinstance(val, Parameter):
                 pars[key] = val.guess
         return self.scatterer.from_parameters(pars)
+
+        
+    @property
+    def alpha_par(self):
+        for i, par in enumerate(self.parameters):
+            if par.name == 'alpha':
+                return par
+        return None
+            
         
     @property
     def guess_alpha(self):
@@ -190,7 +199,6 @@ class Model(Serializable):
             if par.name == 'alpha':
                 return par.guess
         return 1.0
-            
             
     def make_scatterer_from_par_values(self, par_values):
         all_pars = {}
@@ -263,7 +271,7 @@ class GuessOutOfBounds(InvalidParameterSpecification):
         return "guess {s.guess} is not within bounds {s.limit}".format(s=self.par)
     
     
-class Minimizer(object):
+class Minimizer(Serializable):
     def __init__(self, algorithm='nmpfit'):
         self.algorithm = algorithm
 
@@ -298,7 +306,7 @@ class Minimizer(object):
 
         
 
-class Parameter(object):
+class Parameter(Serializable):
     def __init__(self, guess = None, limit = None, name = None, misc = None):
         self.name = name
         self.guess = guess

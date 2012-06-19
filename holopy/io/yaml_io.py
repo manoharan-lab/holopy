@@ -37,7 +37,7 @@ import re
 import os.path
 import inspect
 import scatterpy.io.serializable
-from holopy.analyze.fit_new import FitResult
+from holopy.analyze.fit_new import FitResult, Model, Parameter
 
 def save(outf, obj):
     if isinstance(outf, basestring):
@@ -53,16 +53,21 @@ def load(inf):
 # Custom Yaml Representers
 ###################################################################
 
+# ordered_dump code is heavily inspired by the source of PyYAML's represent_mapping
+def ordered_dump(dumper, tag, data):
+    value = []
+    node = yaml.nodes.MappingNode(tag, value)
+    for key, item in data.iteritems():
+        node_key = dumper.represent_data(key)
+        node_value = dumper.represent_data(item)
+        value.append((node_key, node_value))
+
+    return node
+
 # Represent 1d ndarrays as lists in yaml files because it makes them much
 # prettier
 def ndarray_representer(dumper, data):
     return dumper.represent_list(data.tolist())
-#    if data.ndim == 1:
-#        return dumper.represent_list([float(a) for a in data])
-#    if data.ndim == 2:
-        
-#    else:
-#        raise NotImplementedError
 
 yaml.add_representer(np.ndarray, ndarray_representer)
 
@@ -82,10 +87,43 @@ def numpy_float_representer(dumper, data):
     return dumper.represent_float(float(data))
 yaml.add_representer(np.float64, numpy_float_representer)
 
-#def FitResult_representer(dumper, data):
-#    import ipdb; ipdb.set_trace()
-#    pass
-#yaml.add_representer(FitResult, FitResult_representer)
+def FitResult_representer(dumper, data):
+    dump_dict = OrderedDict()
+    dump_dict['scatterer'] = data.scatterer
+    dump_dict['alpha'] = data.alpha
+    dump_dict['rsq'] = data.rsq
+    dump_dict['chisq'] = data.chisq
+    dump_dict['converged'] = data.converged
+    dump_dict['time'] = data.time
+    dump_dict['model'] = data.model
+    dump_dict['minimizer'] = data.minimizer
+    dump_dict['minimization_details'] = data.minimization_details
+    return ordered_dump(dumper, '!FitResult', dump_dict)
+yaml.add_representer(FitResult, FitResult_representer)
+
+def model_representer(dumper, data):
+    dump_dict = OrderedDict()
+    if data._user_make_scatterer is None:
+        if data.alpha_par:
+            dump_dict['parameters'] = [data.scatterer, data.alpha_par]
+        else:
+            dump_dict['parameters'] = data.scatterer
+
+        dump_dict['theory'] = data.theory
+    else:
+        dump_dict['parameters'] = data.parameters
+        dump_dict['theory'] = data.theory
+        dump_dict['make_scatterer'] = data._user_make_scatterer
+        
+    dump_dict['selection'] = data.selection
+    return ordered_dump(dumper, '!Model', dump_dict)
+yaml.add_representer(Model, model_representer)
+
+#def model_loader(loader, node):
+#    data = loader.construct_mapping(node)
+#    import pdb; pdb.set_trace()
+#    return data
+#yaml.add_constructor('!Model', model_loader)
 
 def class_representer(dumper, data):
     if re.match('scatterpy.theory', data.__module__):
