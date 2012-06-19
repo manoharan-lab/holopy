@@ -23,14 +23,30 @@ Holopy contains several different scattering theories for calculating holograms:
     approximation is a good one if the particles are sufficiently
     separated.
 
+    This model can also calculate the exact scattered field from a 
+    spherically symmetric particle with an arbitrary number of layers
+    with differing refractive indices, using Yang's recursive
+    algorithm ([Yang2003]_).
+    
 :Multisphere: 
 
     This model calculates the scattered field of a collection of
     particles through a numerical method that accounts for multiple
-    scattering and near-field effects (see [Fung2011]_).  This
+    scattering and near-field effects (see [Fung2011]_, [Mackowski1996]_).  This
     approach is much more accurate than Mie superposition, but it is
     also more computationally intensive.  The Multisphere code can
     handle any number of spheres.
+
+:DDA:
+
+    This model (which requires `a-dda <http://code.google.com/p/a-dda/>`_ 
+    to be installed, can calculate the field scattered from (in principle)
+    an arbitrary scatterer. It uses the discrete dipole approximation, 
+    a numerical method that represents arbitrary scatterers as an array
+    of point dipoles and then self-consistently solves Maxwell's equations
+    to determine the scattered field. In practice, this model can be 
+    extremely computationally intensive, particularly if the size of the 
+    scatterer is larger than the wavelength of light.
 
 Each model has a ``calc_holo`` function that will calculate a
 hologram. Below we demonstrate how to calculate a hologram with each
@@ -90,9 +106,9 @@ Single sphere
 Here we use the single sphere Mie calculations for computing the
 hologram.  We create a :class:`scatterpy.scatterer.sphere.Sphere`
 object to describe the sphere, and a :class:`scatterpy.theory.mie.Mie`
-object to do the calculation.  The arguments to the ``forward_holo``
+object to do the calculation.  The arguments to the ``calc_holo``
 function are specified in
-:meth:`holopy.model.mie_fortran.forward_holo`.  They include the size
+:meth:`holopy.model.mie.calc_holo`.  They include the size
 of the hologram we want to calculate (in pixels) and the properties
 and position of the particle ::
 
@@ -195,26 +211,9 @@ arbitrary point in the cluster reference configuration and
 :math:`\mathbf{v}'''` is the vector to that point in the laboratory
 frame after the Euler rotations.
 
-For trimers, which are not axisymmetric, all three Euler angles are
-necessary. :math:`\alpha` and :math:`\gamma` are valid modulo
-:math:`360^\circ`; the code will give correct output regardless of the
-value of these angles.  :math:`\beta` is usually only considered valid
-from :math:`0^\circ` to :math:`180^\circ`; SCMSFO1B handles this by
-effectively considering the absolute value of :math:`\beta`. So,
-hologram calculations will produce the same output if given
-:math:`\beta` or :math:`-\beta`. This needs to be remembered in
-interpreting data produced by fitting.
-
-Dimers are axisymmetric and we can describe them with just two Euler
-angles, :math:`\beta` and :math:`\gamma`.  :math:`\gamma` behaves in
-the usual way. So that the fitter can explore a continuous parameter
-space, however, we have made negative values of :math:`\beta` valid
-*solely for dimers*. In particular, values of :math:`\beta` less than
-0 automatically have 180 added, and values of :math:`\beta` greater
-than 180 have 180 automatically subtracted. Behavior is then
-consistent between -180 and 360, with the caveat that if one is
-fitting holograms of two particles of dissimilar sizes, it is
-important not to hold both particle radii constant.
+While the range of Euler angles is often restricted, here we enforce
+no restriction on the allowed angles, but strictly follow the formula
+above.
 
 
 
