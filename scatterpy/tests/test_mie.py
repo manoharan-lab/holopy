@@ -43,7 +43,7 @@ from scatterpy.theory import Mie
 from scatterpy.theory.mie import UnrealizableScatterer
 from scatterpy.errors import TheoryNotCompatibleError
 import common
-from .common import assert_allclose
+from common import assert_allclose
 
 # nose setup/teardown methods
 def setup_model():

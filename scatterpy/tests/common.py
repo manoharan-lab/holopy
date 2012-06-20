@@ -67,7 +67,10 @@ def verify(result, name):
     gold_name = os.path.join(scatterpy_location, 'tests', 'gold', 'gold_'+name)
     if os.path.exists(gold_name + '.npy'):
         gold = np.load(gold_name + '.npy')
-        assert_allclose(result, gold)
+        arr = gold
+        if isinstance(result, ElectricField):
+            arr = np.dstack((result.x_comp, result.y_comp, result.z_comp))
+        assert_allclose(arr, gold)
 
     gold = yaml.load(file(gold_name+'.yaml'))
 

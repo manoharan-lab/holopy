@@ -43,7 +43,7 @@ from scatterpy.scatterer import Sphere, SphereCluster
 from scatterpy.errors import UnrealizableScatterer, TheoryNotCompatibleError
 import scatterpy
 import common
-from .common import assert_allclose
+from common import assert_allclose
 
 
 def setup_model():

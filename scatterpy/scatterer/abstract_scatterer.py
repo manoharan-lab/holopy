@@ -90,7 +90,7 @@ class Scatterer(Serializable):
             if isinstance(par, (list, tuple, np.ndarray)):
                 subs = (expand('{0}[{1}]'.format(key, p[0]), p[1]) for p in enumerate(par)) 
                 return chain(*subs)
-            if isinstance(par, complex):
+            if hasattr(par, 'imag') and par.imag != 0:
                 return [('{0}.real'.format(key), par.real),
                         ('{0}.imag'.format(key), par.imag)]
             else:

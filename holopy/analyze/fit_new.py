@@ -41,7 +41,7 @@ def fit(model, data, algorithm='nmpfit'):
     time_start = time.time()
 
     minimizer = Minimizer(algorithm)
-    fitted_pars, converged, minimizer_info =  minimizer.minimize(model.parameters, model.cost_func(data), model.selection)
+    fitted_pars, converged, minimizer_info = minimizer.minimize(model.parameters, model.cost_func(data), model.selection)
     
     fitted_scatterer = model.make_scatterer_from_par_values(fitted_pars)
     fitted_alpha = model.alpha(fitted_pars)
@@ -112,27 +112,30 @@ class Model(Serializable):
         self.parameters = []
 
         def unpack_scatterer(scatterer):
-            def setup_par(p):
-                name, par = p
-                if isinstance(par, Parameter):
-                    if par.fixed:
-                        # we represent fixed parameters by just their value
-                        return name, par.limit
-                    if par.name == None:
-                        par.name = name
-                        return name, par
+            parameters = []
+            for name, par in scatterer.parameters.iteritems():
+                def add_par(p, name):
+                    p.name = name
+                    if p.fixed:
+                        parameters.append((name, p.limit))
+                    else:
+                        parameters.append((name, p))
+                if isinstance(par, ComplexParameter):
+                    add_par(par.real, name+'.real')
+                    add_par(par.imag, name+'.imag')
+                elif isinstance(par, Parameter):
+                    add_par(par, name)
                 else:
                     # probably just a number, (ie fixed), so just return it
-                    return name, par
-            
-            parameters = [setup_par(p) for p in scatterer.parameters.iteritems()]
+                    parameters.append((name, par))
+
             if self.scatterer is None:
                 self.scatterer = scatterer.from_parameters(dict(parameters))
             else:
                 raise ModelDefinitionError(
                    "A model cannot contain more than one scatterer.  If you want"
                    "to include multiple scatterers include them in a single"
-                   "composite Scatterers")
+                   "composite Scatterer")
 
             return [p[1] for p in parameters if isinstance(p[1], Parameter)]
 
@@ -304,7 +307,6 @@ class Minimizer(Serializable):
     def __repr__(self):
         return "Minimizer(algorithm='{0}')".format(self.algorithm)
 
-        
 
 class Parameter(Serializable):
     def __init__(self, guess = None, limit = None, name = None, misc = None):
@@ -367,6 +369,54 @@ class Parameter(Serializable):
         """
         return scaled * self.scale_factor
 
+    def __add__(self, other):
+        # Compose a Parameter and a complex number or complex Parameter into a
+        # ComplexParameter
+        if isinstance(other, Parameter):
+            def imag_or_bust(val):
+                if val is None:
+                    return None
+                elif not np.isscalar(val):
+                    return [imag_or_bust(v) for v in val]
+                elif np.iscomplex(val):
+                    return val.imag
+                else:
+                    raise InvalidParameterSpecification(
+                        "Addition of parameters is only defined for composing "
+                        "complex parameters")
+
+            return ComplexParameter(self, Parameter(imag_or_bust(other.guess),
+                                                    imag_or_bust(other.limit),
+                                                    other.name,
+                                                    other.misc))
+        else:
+            return ComplexParameter(self, other.imag)
+
+    def __radd__(self, other):
+        return self.__add__(self, other)
+
+    def __mul__(self, other):
+        def mult(x):
+            # attempt multiplication of each element, if we fail, assume it was
+            # something like None or a string and we just want to return the
+            # value
+                
+            try:
+                if not np.isscalar:
+                    return np.array(x) * other
+                # try an addition first since strings have multiplication
+                # defined but we don't want to multiply them
+                x+2 
+                return x*other
+            except TypeError:
+                return x
+
+        return Parameter(mult(self.guess), mult(self.limit), self.name,
+                         self.misc)
+    
+    def __rmul__(self, other):
+        return self.__mul__(other)
+            
     def __repr__(self):
         args = []
         if self.guess is not None:
@@ -375,24 +425,26 @@ class Parameter(Serializable):
             args.append('limit={0}'.format(self.limit))
         if self.misc is not None:
             args.append('misc={0}'.format(self.misc))
-        return "Parameter(name='{0}', {1})".format(self.name, ', '.join(args))
+        return "Parameter(name={0}, {1})".format(repr(self.name), ', '.join(args))
+            
+# user in general will not be creating ComplexParameters, they are created when
+# you do something like: par(1.59) + 1e-4j or par(1.59) + par(1e-4j)
+class ComplexParameter(Parameter):
+    def __init__(self, real, imag, name = None):
+        self.real = real
+        self.imag = imag                              
+        self.name = name
+
+    @property
+    def guess(self):
+        return self.real.guess + self.imag.guess*1.0j
+
+    def __repr__(self):
+        return "{0} + {1}".format(self.real, 1.0j*self.imag)
+    
 
 # provide a shortcut name for Parameter since users will have to type it a lot
 par = Parameter
-
-        
-
-class RigidSphereCluster(Model):
-    def __init__(self, reference_scatterer, alpha, beta, gamma, x, y, z):
-        self.parameters = [alpha, beta, gamma, x, y, z]
-        self.theory = scatterpy.theory.Multisphere
-        self.reference_scatterer = reference_scatterer
-
-    def make_scatterer(self, par_values):
-        unscaled = []
-        for i, val in enumerate(par_values):
-            unscaled.append(self.parameters[i].unscale(val))
-        return self.reference_scatterer.rotate(unscaled[:3]).translate(unscaled[3:6])
 
 
 # Archiving:

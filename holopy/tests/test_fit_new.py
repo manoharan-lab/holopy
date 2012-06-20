@@ -107,18 +107,20 @@ def test_fit_mie_par_scatterer():
     
     s = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
                          par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
-               r = par(8.5e-7, (1e-8, 1e-5)), n = par(1.59, (1,2)))
+               r = par(8.5e-7, (1e-8, 1e-5)), n = par(1.59, (1,2))+1e-4j)
 
+    
     model = Model((s, par(.6, [.1,1], 'alpha')), Mie)
 
     result = fit(model, holo)
 
     # TODO: make new structure work with complex n
     gold_single = OrderedDict((('center[0]', 5.534e-6),
-               ('center[1]', 5.792e-6),
-               ('center[2]', 1.415e-5),
-               ('n.real', 1.582),
-               ('r', 6.484e-7))) 
+                               ('center[1]', 5.792e-6),
+                               ('center[2]', 1.415e-5),
+                               ('n.imag', 1e-4),
+                               ('n.real', 1.582),
+                               ('r', 6.484e-7))) 
     
     assert_parameters_allclose(result.scatterer, gold_single, rtol=1e-3)
     # TODO: see if we can get this back to 3 sig figs correct alpha
@@ -245,6 +247,16 @@ def test_parameter():
 
     with assert_raises(GuessOutOfBounds):
         Parameter(guess=1, limit=3)
+
+    # include a fixed complex index
+    pj = par(1.59) + 1e-4j
+    assert_equal(repr(pj), 'Parameter(name=None, guess=1.59) + 0.0001j')
+
+
+    # include a fitted complex index with a guess of 1e-4
+    pj2 = par(1.59) + par(1e-4j)
+    assert_equal(repr(pj2), ('Parameter(name=None, guess=1.59) + '
+                             'Parameter(name=None, guess=0.0001j)'))
     
 
 
@@ -281,7 +293,7 @@ def test_model():
 @attr('fast')
 def test_scatterer_based_model():
     s = Sphere(center = (par(guess=.567e-5),par(limit=.567e-5), par(15e-6, (1e-5, 2e-5))),
-               r = 8.5e-7, n = par(1.59, (1,2)))
+               r = 8.5e-7, n = par(1.59, (1,2))+1e-4j)
 
     
     model = Model(s, Mie)
@@ -289,17 +301,17 @@ def test_scatterer_based_model():
     assert_obj_close(model.parameters, [Parameter(name='center[0]', guess=5.67e-06),
                                     Parameter(name='center[2]', guess=1.5e-05,
                                               limit=(1e-05, 2e-05)),
-                                    Parameter(name='n', guess=1.59, limit=(1,
+                                    Parameter(name='n.real', guess=1.59, limit=(1,
                                     2))], context = 'model.parameters')
 
     s2 = Sphere(center=[Parameter(name='center[0]', guess=5.67e-06), 5.67e-06,
                         Parameter(name='center[2]', guess=1.5e-05, limit=(1e-05, 2e-05))],
-                n=Parameter(name='n', guess=1.59, limit=(1, 2)), r=8.5e-07)
+                n=Parameter(name='n.real', guess=1.59, limit=(1, 2))+1e-4j, r=8.5e-07)
 
 
     assert_obj_close(model.scatterer, s2, context = 'model.scatterer')
 
-    s3 = Sphere(center = (6e-6, 5.67e-6, 10e-6), n = 1.6, r = 8.5e-7)
+    s3 = Sphere(center = (6e-6, 5.67e-6, 10e-6), n = 1.6+1e-4j, r = 8.5e-7)
 
     assert_obj_close(model.make_scatterer((6e-6, 10e-6, 1.6)), s3, context = 'make_scatterer()')
     
@@ -385,20 +397,6 @@ def test_serialization():
     temp.seek(0)
     
     loaded = hp.io.yaml_io.load(temp)
-
-
-    # manually put the make_scatterer function back in because
-    # save/load currently does not handle them correctly.  This is a
-    # BUG, but not an easy one to fix
-    #loaded.model.make_scatterer = make_scatterer
-
-    # VNM: commented above line.  Test *should fail* until the bug is
-    # fixed.  Below should work when this bug is corrected.
-    # Alternative is to change the specification of the fit results
-    # so that it is clear that it will not serialize the
-    # make_scatterer function
-    loaded.model.make_scatterer_from_par_values([p.guess for p in
-                                                 parameters])
 
     assert_obj_close(result, loaded)
 
