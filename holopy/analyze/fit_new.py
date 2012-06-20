@@ -321,8 +321,16 @@ class Parameter(Serializable):
             self.guess = limit
         else:
             if limit is not None:
-                if guess > limit[1] or guess < limit[0]:
-                    raise GuessOutOfBounds(self)
+                try:
+                    if guess > limit[1] or guess < limit[0]:
+                        raise GuessOutOfBounds(self)
+                except TypeError:
+                    if (guess.real !=0 or limit[1].real != 0 or
+                        limit[0].real != 0):
+                        raise GuessOutOfBounds(self)
+                    if guess.imag > limit[1].imag or guess.imag < limit[0].imag:
+                        raise GuessOutOfBounds(self)
+            
             if guess is not None:
                 self.scale_factor = guess
             elif limit is not None:

@@ -257,7 +257,14 @@ def test_parameter():
     pj2 = par(1.59) + par(1e-4j)
     assert_equal(repr(pj2), ('Parameter(name=None, guess=1.59) + '
                              'Parameter(name=None, guess=0.0001j)'))
-    
+
+    pj3 = par(1j, [0j, 1j])
+
+    with assert_raises(GuessOutOfBounds):
+        par(1j, [1, 2j])
+
+    with assert_raises(GuessOutOfBounds):
+        par(2j, [.5j, 1j])
 
 
 @attr('fast')
