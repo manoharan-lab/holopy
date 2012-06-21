@@ -68,8 +68,14 @@ class SphereCluster(Composite):
         for i, s1 in enumerate(self.scatterers):
             for j in range(i+1, len(self.scatterers)):
                 s2= self.scatterers[j]
-                if cartesian_distance(s1.center, s2.center) < (np.max(s1.r) + np.max(s2.r)):
-                    overlaps.append((i, j))
+                try:
+                    if cartesian_distance(s1.center, s2.center) < (np.max(s1.r) + np.max(s2.r)):
+                        overlaps.append((i, j))
+                except:
+                    # if the coordinates are not something that we can do
+                    # arithmatic on, just pass for now, hopefully the overlap
+                    # will be caught later. 
+                    pass
         return overlaps
             
     def __repr__(self):
