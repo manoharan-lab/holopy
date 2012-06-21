@@ -25,8 +25,23 @@ analysis procedures.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 """
-
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
+import inspect
 import yaml
+
+# ordered_dump code is heavily inspired by the source of PyYAML's represent_mapping
+def ordered_dump(dumper, tag, data):
+    value = []
+    node = yaml.nodes.MappingNode(tag, value)
+    for key, item in data.iteritems():
+        node_key = dumper.represent_data(key)
+        node_value = dumper.represent_data(item)
+        value.append((node_key, node_value))
+
+    return node
 
 # Metaclass black magic to eliminate need for adding yaml_tag lines to classes
 class SerializableMetaclass(yaml.YAMLObjectMetaclass):
@@ -41,8 +56,28 @@ class Serializable(yaml.YAMLObject):
     """
     __metaclass__ = SerializableMetaclass
     
+    @classmethod
     def to_yaml(cls, dumper, data):
-
         return dumper.represent_yaml_object('!{0}'.format(data.__class__.__name__), data, cls,
                                             flow_style=cls.yaml_flow_style)
-    to_yaml = classmethod(to_yaml)
+    
+class SerializeByConstructor(Serializable):
+    @classmethod
+    def to_yaml(cls, dumper, data):
+        dump_dict = OrderedDict()
+
+        # just grabbing all of the constructor arguments that have a
+        # corresponding attribute is a correct serialization for many objects.
+        # Ones for which it is not will need to override to_yaml
+        for var in inspect.getargspec(cls.__init__).args[1:]:
+            if hasattr(data, var) and getattr(data, var) is not None:
+                dump_dict[var] = getattr(data, var)
+
+        return ordered_dump(dumper, '!{0}'.format(data.__class__.__name__), dump_dict)
+        return dumper.represent_mapping('!{0}'.format(data.__class__.__name__), dump_dict)
+
+    @classmethod
+    def from_yaml(cls, loader, node):
+        fields = loader.construct_mapping(node, deep=True)
+        return cls(**fields)
+        return loader.construct_yaml_object(node, cls)

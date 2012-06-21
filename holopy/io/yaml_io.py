@@ -31,6 +31,7 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 import numpy as np
+import holopy as hp
 import yaml
 import os
 import re
@@ -81,25 +82,12 @@ def complex_representer(dumper, data):
     return dumper.represent_scalar('!complex', repr(data.tolist()))
 yaml.add_representer(np.complex128, complex_representer)
 def complex_constructor(loader, node):
-    return eval(node.value)
+    return complex(node.value)
 yaml.add_constructor('!complex', complex_constructor)
 def numpy_float_representer(dumper, data):
     return dumper.represent_float(float(data))
 yaml.add_representer(np.float64, numpy_float_representer)
 
-def FitResult_representer(dumper, data):
-    dump_dict = OrderedDict()
-    dump_dict['scatterer'] = data.scatterer
-    dump_dict['alpha'] = data.alpha
-    dump_dict['rsq'] = data.rsq
-    dump_dict['chisq'] = data.chisq
-    dump_dict['converged'] = data.converged
-    dump_dict['time'] = data.time
-    dump_dict['model'] = data.model
-    dump_dict['minimizer'] = data.minimizer
-    dump_dict['minimization_details'] = data.minimization_details
-    return ordered_dump(dumper, '!FitResult', dump_dict)
-yaml.add_representer(FitResult, FitResult_representer)
 
 def model_representer(dumper, data):
     dump_dict = OrderedDict()
@@ -121,8 +109,8 @@ yaml.add_representer(Model, model_representer)
 
 #def model_loader(loader, node):
 #    data = loader.construct_mapping(node)
-#    import pdb; pdb.set_trace()
-#    return data
+#    import ipdb; ipdb.set_trace()
+#    return Model(**data)
 #yaml.add_constructor('!Model', model_loader)
 
 def class_representer(dumper, data):

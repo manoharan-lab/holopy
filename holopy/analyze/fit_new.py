@@ -34,7 +34,7 @@ import time
 import numpy as np
 
 import scatterpy
-from scatterpy.io import Serializable
+from scatterpy.io import SerializeByConstructor
 
 
 def fit(model, data, algorithm='nmpfit'):
@@ -56,7 +56,7 @@ def fit(model, data, algorithm='nmpfit'):
     return FitResult(fitted_scatterer, fitted_alpha, chisq, rsq, converged,
                      time_stop - time_start, model, minimizer, minimizer_info)
 
-class FitResult(Serializable):
+class FitResult(SerializeByConstructor):
     def __init__(self, scatterer, alpha, chisq, rsq, converged, time, model,
                  minimizer, minimization_details):
         self.scatterer = scatterer
@@ -76,7 +76,7 @@ class FitResult(Serializable):
                 "minimizer={s.minimizer}, "
                 "minimization_details={s.minimization_details})".format(s=self))  #pragma: no cover
 
-class Model(Serializable):
+class Model(SerializeByConstructor):
     """
     Representation of a model to fit to data
 
@@ -274,7 +274,7 @@ class GuessOutOfBounds(InvalidParameterSpecification):
         return "guess {s.guess} is not within bounds {s.limit}".format(s=self.par)
     
     
-class Minimizer(Serializable):
+class Minimizer(SerializeByConstructor):
     def __init__(self, algorithm='nmpfit'):
         self.algorithm = algorithm
 
@@ -308,7 +308,7 @@ class Minimizer(Serializable):
         return "Minimizer(algorithm='{0}')".format(self.algorithm)
 
 
-class Parameter(Serializable):
+class Parameter(SerializeByConstructor):
     def __init__(self, guess = None, limit = None, name = None, misc = None):
         self.name = name
         self.guess = guess
@@ -330,7 +330,7 @@ class Parameter(Serializable):
                         raise GuessOutOfBounds(self)
                     if guess.imag > limit[1].imag or guess.imag < limit[0].imag:
                         raise GuessOutOfBounds(self)
-            
+                    
             if guess is not None:
                 self.scale_factor = guess
             elif limit is not None:

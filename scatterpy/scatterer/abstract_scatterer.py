@@ -33,11 +33,11 @@ from copy import copy
 import numpy as np
 import yaml
 
-from scatterpy.io import Serializable
+from scatterpy.io import SerializeByConstructor
 from scatterpy.errors import ScattererDefinitionError
 
 
-class Scatterer(Serializable):
+class Scatterer(SerializeByConstructor):
     """
     Base class for scatterers
 

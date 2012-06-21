@@ -35,9 +35,9 @@ import numpy as np
 import copy
 from types import NoneType
 from .utility.helpers import _ensure_pair
-from scatterpy.io import Serializable
+from scatterpy.io import SerializeByConstructor
 
-class Optics(Serializable):
+class Optics(SerializeByConstructor):
     """
     Contains details about the source, detector, and optical train used
     to generate a hologram.

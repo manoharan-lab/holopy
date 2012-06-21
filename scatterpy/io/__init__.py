@@ -22,3 +22,4 @@ IO functionality needed by scatterpy
 """
 from __future__ import division
 from serializable import Serializable
+from serializable import SerializeByConstructor
