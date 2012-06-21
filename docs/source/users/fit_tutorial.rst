@@ -1,5 +1,6 @@
+*****************
 Fitting holograms
-=================
+*****************
 
 The :func:`holopy.analyze.fit.fit_new` fits a model of the object to a given set of data.
 
@@ -32,11 +33,12 @@ The :func:`holopy.analyze.fit.fit_new` fits a model of the object to a given set
 
    The measured hologram to which you are fitting the model
 
-:algorithm (optional):
+:minimizer (optional):
 
-   The fitting algorithm.  This defaults to the supplied nmpfit
-   algorithm, but if you have OpenOpt installed you can use minimizers
-   from that package as well.
+   The Minimizer to use to fit the data.  This defaults to the
+   supplied nmpfit algorithm, but if you have OpenOpt installed you
+   can use minimizers from that package as well.  You also use this to
+   pass in non-default options to the minimizer
 
 Here let's compute a hologram and then fit it.  You can replace the
 calculated hologram with real data, if you like ::
@@ -81,3 +83,15 @@ file.  These files are reasonably human readable and can be loaded
 back as an object with ::
 
   loaded_result = holopy.io.yaml_io.load('result.yaml')
+
+Advanced Options
+================
+
+If you want to give extra information to the minimizer (change
+tolerances or iteration limit, or the like) modify your fit call to
+something like ::
+
+  from holopy.analyze.fit_new import Nmpfit
+  result = fit(model, holo, Nmpfit(ftol = 1e-5, maxiter=2))
+
+   

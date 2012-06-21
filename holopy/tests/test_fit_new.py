@@ -34,7 +34,7 @@ from numpy.testing import assert_equal, assert_approx_equal, assert_raises, dec
 from scatterpy.theory import Mie, Multisphere
 from scatterpy.scatterer import Sphere, SphereCluster
 
-from holopy.analyze.fit_new import (par, Parameter, Model, fit, Minimizer,
+from holopy.analyze.fit_new import (par, Parameter, Model, fit, Nmpfit,
                                     InvalidParameterSpecification, GuessOutOfBounds)
 from scatterpy.tests.common import assert_parameters_allclose, assert_obj_close, assert_allclose
 
@@ -366,17 +366,20 @@ def test_minimizer():
                  Parameter(name='b', guess = -2),
                  Parameter(name='c', guess = 3)]
 
-    minimizer = Minimizer()
+    minimizer = Nmpfit()
 
-    result, converged, minimization_details = minimizer.minimize(parameters,
-                                                                 cost_func)
+    result, minimization_details = minimizer.minimize(parameters, cost_func)
 
     assert_allclose([a, b, c], result)
 
-    assert_equal(converged, True)
-
     with assert_raises(InvalidParameterSpecification):
         minimizer.minimize([Parameter(name = 'a')], cost_func)
+
+    # now test limiting minimizer iterations
+
+    minimizer = Nmpfit(maxiter=1)
+    result, minimization_details = minimizer.minimize(parameters, cost_func)
+    
 
 
 @attr('fast')

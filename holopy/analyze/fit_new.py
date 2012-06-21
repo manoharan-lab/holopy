@@ -28,7 +28,9 @@ try:
     from collections import OrderedDict
 except ImportError:
     from ordereddict import OrderedDict
+
 import inspect
+import warnings
 import time
 
 import numpy as np
@@ -37,24 +39,6 @@ import scatterpy
 from scatterpy.io import SerializeByConstructor
 
 
-def fit(model, data, algorithm='nmpfit'):
-    time_start = time.time()
-
-    minimizer = Minimizer(algorithm)
-    fitted_pars, converged, minimizer_info = minimizer.minimize(model.parameters, model.cost_func(data), model.selection)
-    
-    fitted_scatterer = model.make_scatterer_from_par_values(fitted_pars)
-    fitted_alpha = model.alpha(fitted_pars)
-    theory = model.theory(data.optics, data.shape)
-    fitted_holo = theory.calc_holo(fitted_scatterer, fitted_alpha)
-    
-    chisq = float((((fitted_holo-data))**2).sum() / fitted_holo.size)
-    rsq = float(1 - ((data - fitted_holo)**2).sum()/((data - data.mean())**2).sum())
-
-    time_stop = time.time()
-
-    return FitResult(fitted_scatterer, fitted_alpha, chisq, rsq, converged,
-                     time_stop - time_start, model, minimizer, minimizer_info)
 
 class FitResult(SerializeByConstructor):
     def __init__(self, scatterer, alpha, chisq, rsq, converged, time, model,
@@ -273,39 +257,68 @@ class GuessOutOfBounds(InvalidParameterSpecification):
             return "guess {s.guess} does not match fixed value {s.limit}".format(s=self.par)
         return "guess {s.guess} is not within bounds {s.limit}".format(s=self.par)
     
+class MinimizerConvergenceFailed(Exception):
+    def __init__(self, result, details):
+        self.result = result
+        self.details = details
+        
     
 class Minimizer(SerializeByConstructor):
-    def __init__(self, algorithm='nmpfit'):
-        self.algorithm = algorithm
+    def __init__(self, algorithm='nmpfit', ):
+        raise NotImplementedError()
 
     def minimize(self, parameters, cost_func, selection=None):
-        if self.algorithm == 'nmpfit':
-            from holopy.third_party import nmpfit
-            nmp_pars = []
-            for i, par in enumerate(parameters):
-
-                def resid_wrapper(p, fjac=None):
-                    status = 0                    
-                    return [status, cost_func(p, selection)]
+        raise NotImplementedError()
     
-                d = {'parname': par.name}
-                if par.limit is not None:
-                    d['limited'] = [par.scale(l) is not None for l in par.limit]
-                    d['limits'] = par.scale(np.array(par.limit))
-                else:
-                    d['limited'] = [False, False]    
-                if par.guess is not None:
-                    d['value'] = par.scale(par.guess)
-                else:
-                    raise InvalidParameterSpecification("nmpfit requires an "
-                                                        "initial guess for all "
-                                                        "parameters")
-                nmp_pars.append(d)
-            fitresult = nmpfit.mpfit(resid_wrapper, parinfo=nmp_pars)
-            converged = fitresult.status < 4
-            return fitresult.params, converged, fitresult
     def __repr__(self):
         return "Minimizer(algorithm='{0}')".format(self.algorithm)
+
+class Nmpfit(Minimizer):
+    def __init__(self, quiet = False, ftol = 1e-10, xtol = 1e-10, gtol = 1e-10, damp = 0,
+                 maxiter = 100, err=None):
+        # do the import on demand so the user doesn't need a minimizer present
+        # unless they are using it
+        from holopy.third_party import nmpfit
+        self.ftol = ftol
+        self.xtol = xtol
+        self.gtol = gtol
+        self.damp = 0
+        self.maxiter = 100
+        self.quiet = quiet
+        self.err = None
+
+    def minimize(self, parameters, cost_func, selection = None):
+        from holopy.third_party import nmpfit
+        def resid_wrapper(p, fjac=None):
+            status = 0                    
+            return [status, cost_func(p, selection)]
+        nmp_pars = []
+
+        # marshall the paramters into a dict of the form nmpfit wants
+        for i, par in enumerate(parameters):
+            d = {'parname': par.name}
+            if par.limit is not None:
+                d['limited'] = [par.scale(l) is not None for l in par.limit]
+                d['limits'] = par.scale(np.array(par.limit))
+            else:
+                d['limited'] = [False, False]    
+            if par.guess is not None:
+                d['value'] = par.scale(par.guess)
+            else:
+                raise InvalidParameterSpecification("nmpfit requires an "
+                                                    "initial guess for all "
+                                                    "parameters")
+            nmp_pars.append(d)
+
+        # now fit it
+        fitresult = nmpfit.mpfit(resid_wrapper, parinfo=nmp_pars, ftol = self.ftol,
+                                 xtol = self.xtol, gtol = self.gtol, damp = self.damp,
+                                 maxiter = self.maxiter, quiet = self.quiet)
+        if fitresult.status > 3:
+            raise MinimizerConvergenceFailed(fitresult.params, fitresult)
+
+        return fitresult.params, fitresult
+        
 
 
 class Parameter(SerializeByConstructor):
@@ -451,6 +464,35 @@ class ComplexParameter(Parameter):
         return "{0} + {1}".format(self.real, 1.0j*self.imag)
     
 
+def fit(model, data, minimizer=Nmpfit()):
+    time_start = time.time()
+
+    try:
+        fitted_pars, minimizer_info = minimizer.minimize(model.parameters,
+                                                         model.cost_func(data),
+                                                         model.selection)
+        converged = True
+    except MinimizerConvergenceFailed as cf:
+        warnings.warn("Minimizer Convergence Failed, your results may not be "
+                      "correct")
+        fitted_pars, minimizer_info  = cf.result, cf.details
+        converged = False
+        
+    
+    fitted_scatterer = model.make_scatterer_from_par_values(fitted_pars)
+    fitted_alpha = model.alpha(fitted_pars)
+    theory = model.theory(data.optics, data.shape)
+    fitted_holo = theory.calc_holo(fitted_scatterer, fitted_alpha)
+    
+    chisq = float((((fitted_holo-data))**2).sum() / fitted_holo.size)
+    rsq = float(1 - ((data - fitted_holo)**2).sum()/((data - data.mean())**2).sum())
+
+    time_stop = time.time()
+
+    return FitResult(fitted_scatterer, fitted_alpha, chisq, rsq, converged,
+                     time_stop - time_start, model, minimizer, minimizer_info)
+
+    
 # provide a shortcut name for Parameter since users will have to type it a lot
 par = Parameter
 
