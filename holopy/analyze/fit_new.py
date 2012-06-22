@@ -308,6 +308,7 @@ class Nmpfit(Minimizer):
                 raise InvalidParameterSpecification("nmpfit requires an "
                                                     "initial guess for all "
                                                     "parameters")
+            d.update(par.kwargs)
             nmp_pars.append(d)
 
         # now fit it
@@ -322,11 +323,11 @@ class Nmpfit(Minimizer):
 
 
 class Parameter(SerializeByConstructor):
-    def __init__(self, guess = None, limit = None, name = None, misc = None):
+    def __init__(self, guess = None, limit = None, name = None, **kwargs):
         self.name = name
         self.guess = guess
         self.limit = limit
-        self.misc = misc
+        self.kwargs = kwargs
         
         if self.fixed:
             if guess is not None and guess != limit:
@@ -397,6 +398,16 @@ class Parameter(SerializeByConstructor):
             def imag_or_bust(val):
                 if val is None:
                     return None
+                if isinstance(val, dict):
+                    d = {}
+                    for key in val:
+                        try:
+                            d[key] = val[key].imag
+                        except TypeError:
+                            # probably a string or a bool or something so we
+                            # don't need to take its imaginary part
+                            d[key] = val[key]
+                    return d
                 elif not np.isscalar(val):
                     return [imag_or_bust(v) for v in val]
                 elif np.iscomplex(val):
@@ -409,7 +420,7 @@ class Parameter(SerializeByConstructor):
             return ComplexParameter(self, Parameter(imag_or_bust(other.guess),
                                                     imag_or_bust(other.limit),
                                                     other.name,
-                                                    other.misc))
+                                                    **imag_or_bust(other.kwargs)))
         else:
             return ComplexParameter(self, other.imag)
 
@@ -432,8 +443,16 @@ class Parameter(SerializeByConstructor):
             except TypeError:
                 return x
 
+        kwargs = {}
+        for key in self.kwargs:
+            try:
+                self.kwargs[key] + 2
+                kwargs[key] = self.kwargs[key] * other
+            except TypeError:
+                kwargs[key] = self.kwargs[key]
+            
         return Parameter(mult(self.guess), mult(self.limit), self.name,
-                         self.misc)
+                         **kwargs)
     
     def __rmul__(self, other):
         return self.__mul__(other)
@@ -444,8 +463,9 @@ class Parameter(SerializeByConstructor):
             args.append('guess={0}'.format(self.guess))
         if self.limit is not None:
             args.append('limit={0}'.format(self.limit))
-        if self.misc is not None:
-            args.append('misc={0}'.format(self.misc))
+        if self.kwargs is not None:
+            for key in self.kwargs:
+                args.append('{0}={1}'.format(key, self.kwargs[key]))
         return "Parameter(name={0}, {1})".format(repr(self.name), ', '.join(args))
             
 # user in general will not be creating ComplexParameters, they are created when

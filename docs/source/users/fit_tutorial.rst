@@ -94,4 +94,7 @@ something like ::
   from holopy.analyze.fit_new import Nmpfit
   result = fit(model, holo, Nmpfit(ftol = 1e-5, maxiter=2))
 
-   
+
+If you need to provide information to the minimizer about specific parameters (for example a derivative step to nmp fit) you add them to the par call as keyword args, for example ::
+
+  n = par(1.59, [1, 2], step = 1e-3)
