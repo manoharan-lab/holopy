@@ -166,27 +166,6 @@ class Optics(SerializeByConstructor):
         new.pixel_scale = self.pixel_scale * factor
         return new
     
-    def __repr__(self):
-        def f(x):
-            if x is None or (hasattr(x, 'shape') and  x.shape is ()):
-                return 'None'
-            return list(x)
-        return "{s.__class__.__name__}(wavelen={s.wavelen}, index={s._index}, \
-polarization={polarization}, divergence={s.divergence}, \
-pixel_size={pixel_size}, train={s.train}, mag={s.mag}, \
-pixel_scale={pixel_scale})".format(s=self, polarization=f(self.polarization),
-                                  pixel_size=f(self.pixel_size),
-                                  pixel_scale=f(self.pixel_scale))
-
-        
-        return ("{0}(wavelen={1}, index={2}, ".format(self.__class__.__name__,
-                                                      self._wavelen, self._index)
-                +"polarization={0}, divergence={1}, ".format(repr(self.polarization),
-                                                            self.divergence)
-                +"pixel_size={0}, train={1}, ".format(repr(self.pixel_size),
-                                                      self.train)
-                +"mag={0}, pixel_scale = {1})".format(self.mag, repr(self.pixel_scale)))
-
 class WavelengthNotSpecified(Exception):
     def __init__(self):
         pass

@@ -38,7 +38,14 @@ import re
 import os.path
 import inspect
 import scatterpy.io.serializable
-from holopy.analyze.fit_new import FitResult, Model, Parameter
+from scatterpy.io.serializable import ordered_dump
+from holopy.analyze.fit_new import FitResult, Model, Parameter, Nmpfit
+
+class LoadError(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+    def __str__(self):
+        return msg
 
 def save(outf, obj):
     if isinstance(outf, basestring):
@@ -49,45 +56,6 @@ def load(inf):
     if isinstance(inf, basestring):
         inf = file(inf)
     return yaml.load(inf)
-
-###################################################################
-# Custom Yaml Representers
-###################################################################
-
-# ordered_dump code is heavily inspired by the source of PyYAML's represent_mapping
-def ordered_dump(dumper, tag, data):
-    value = []
-    node = yaml.nodes.MappingNode(tag, value)
-    for key, item in data.iteritems():
-        node_key = dumper.represent_data(key)
-        node_value = dumper.represent_data(item)
-        value.append((node_key, node_value))
-
-    return node
-
-# Represent 1d ndarrays as lists in yaml files because it makes them much
-# prettier
-def ndarray_representer(dumper, data):
-    return dumper.represent_list(data.tolist())
-
-yaml.add_representer(np.ndarray, ndarray_representer)
-
-# represent tuples as lists because yaml doesn't have tuples
-def tuple_representer(dumper, data):
-    return dumper.represent_list(list(data))
-yaml.add_representer(tuple, tuple_representer)
-
-# represent numpy types as things that will print more cleanly
-def complex_representer(dumper, data):
-    return dumper.represent_scalar('!complex', repr(data.tolist()))
-yaml.add_representer(np.complex128, complex_representer)
-def complex_constructor(loader, node):
-    return complex(node.value)
-yaml.add_constructor('!complex', complex_constructor)
-def numpy_float_representer(dumper, data):
-    return dumper.represent_float(float(data))
-yaml.add_representer(np.float64, numpy_float_representer)
-
 
 def model_representer(dumper, data):
     dump_dict = OrderedDict()
@@ -107,44 +75,15 @@ def model_representer(dumper, data):
     return ordered_dump(dumper, '!Model', dump_dict)
 yaml.add_representer(Model, model_representer)
 
-#def model_loader(loader, node):
-#    data = loader.construct_mapping(node)
-#    import ipdb; ipdb.set_trace()
-#    return Model(**data)
-#yaml.add_constructor('!Model', model_loader)
-
-def class_representer(dumper, data):
-    if re.match('scatterpy.theory', data.__module__):
-        return dumper.represent_scalar('!theory', "{0}.{1}".format(data.__module__,
-                                   data.__name__))
+# legacy loader, this is only here because for a while we saved things as
+# !Minimizer {algorithm = nmpfit} and we still want to be able to read those yamls
+def minimizer_constructor(loader, node):
+    data = loader.construct_mapping(node, deep=True)
+    if data['algorithm'] == 'nmpfit':
+        return Nmpfit()
     else:
-        raise NotImplemented
-yaml.add_representer(scatterpy.io.serializable.SerializableMetaclass, class_representer)
-
-def class_loader(loader, node):
-    name = loader.construct_scalar(node)        
-
-    tok = name.split('.')
-
-    mod = __import__(tok[0])
-    for t in tok[1:]:
-        mod = mod.__getattribute__(t)
-
-    return mod
-    
-    # use os.path.splitext in a slightly nonstandard way, here we pick out the
-    # class name seperate from the module name, which happens to be equivalent
-    # to picking out the extension from a filename
-    module, obj = os.path.splitext(name)
-    # os.path.splitext leaves the dot, remove it
-    obj = obj[1:]
-
-    
-    
-    module = __import__(module)
-    return module.__getattribute__(obj)
-yaml.add_constructor(u'!theory', class_loader)
-
+        raise LoadError('Could not load Minimizer with: {0}'.format(data))
+yaml.add_constructor("!Minimizer", minimizer_constructor)
 
 def function_representer(dumper, data):
     code = inspect.getsource(data)

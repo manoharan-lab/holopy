@@ -476,15 +476,6 @@ class FitResult(Serializable):
         if index == 1:
             return self.alpha
         raise KeyError
-    def __repr__(self):
-        try:
-            return "{s.__class__.__name__}(scatterer={s.scatterer}, \
-alpha={s.alpha}, chisq={s.chisq}, rsq={s.rsq}, status={s.status}, \
-time={s.time}, minimizer_info={s.minimizer_info})".format(s=self)
-        except AttributeError:
-            return "{s.__class__.__name__}(scatterer={s.scatterer}, \
-alpha={s.alpha}, chisq={s.chisq}, status={s.status}, \
-time={s.time}, minimizer_info={s.minimizer_info})".format(s=self)
 
 class FitSetup(Serializable):
     """

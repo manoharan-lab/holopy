@@ -63,22 +63,6 @@ class ScatteringTheory(SerializeByConstructor):
         else:
             self.optics = optics
 
-    def __repr__(self):
-        # if not overriden this will return a dump of all the
-        # variables in the class's dict.  This is probably right for
-        # enough subclasses that it is worth implementing.  Any class
-        # where that is not a valid representation should override
-        # this method.
-        def pretty_repr(item):
-            if isinstance(item, np.ndarray) and item.ndim==1:
-                return repr(list(item))
-            else:
-                return repr(item)
-        
-        return "{0}({1})".format(self.__class__.__name__,
-                                 ','.join(["{0}={1}".format(c[0], pretty_repr(c[1])) for c in
-                                           sorted(self.__dict__.iteritems())]))
-
     def calc_field(self, scatterer, selection=None):
         """
         Calculate fields.  Implemented in derived classes only.

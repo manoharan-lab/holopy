@@ -53,13 +53,6 @@ class FitResult(SerializeByConstructor):
         self.minimizer = minimizer
         self.minimization_details = minimization_details
         
-    def __repr__(self):
-        return ("{s.__class__.__name__}(scatterer={s.scatterer}, "
-                "alpha={s.alpha}, chisq={s.chisq}, rsq={s.rsq}, "
-                "converged={s.converged}, time={s.time}, model={s.model}, "
-                "minimizer={s.minimizer}, "
-                "minimization_details={s.minimization_details})".format(s=self))  #pragma: no cover
-
 class Model(SerializeByConstructor):
     """
     Representation of a model to fit to data
@@ -264,15 +257,11 @@ class MinimizerConvergenceFailed(Exception):
         
     
 class Minimizer(SerializeByConstructor):
-    def __init__(self, algorithm='nmpfit', ):
+    def __init__(self, algorithm='nmpfit'):
         raise NotImplementedError()
-
     def minimize(self, parameters, cost_func, selection=None):
         raise NotImplementedError()
     
-    def __repr__(self):
-        return "Minimizer(algorithm='{0}')".format(self.algorithm)
-
 class Nmpfit(Minimizer):
     def __init__(self, quiet = False, ftol = 1e-10, xtol = 1e-10, gtol = 1e-10, damp = 0,
                  maxiter = 100, err=None):
@@ -456,18 +445,7 @@ class Parameter(SerializeByConstructor):
     
     def __rmul__(self, other):
         return self.__mul__(other)
-            
-    def __repr__(self):
-        args = []
-        if self.guess is not None:
-            args.append('guess={0}'.format(self.guess))
-        if self.limit is not None:
-            args.append('limit={0}'.format(self.limit))
-        if self.kwargs is not None:
-            for key in self.kwargs:
-                args.append('{0}={1}'.format(key, self.kwargs[key]))
-        return "Parameter(name={0}, {1})".format(repr(self.name), ', '.join(args))
-            
+                        
 # user in general will not be creating ComplexParameters, they are created when
 # you do something like: par(1.59) + 1e-4j or par(1.59) + par(1e-4j)
 class ComplexParameter(Parameter):

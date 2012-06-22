@@ -31,6 +31,9 @@ except ImportError:
     from ordereddict import OrderedDict
 import inspect
 import yaml
+import re
+import os
+import numpy as np
 
 # ordered_dump code is heavily inspired by the source of PyYAML's represent_mapping
 def ordered_dump(dumper, tag, data):
@@ -61,6 +64,21 @@ class Serializable(yaml.YAMLObject):
         return dumper.represent_yaml_object('!{0}'.format(data.__class__.__name__), data, cls,
                                             flow_style=cls.yaml_flow_style)
     
+    def __repr__(self):
+        dump_dict = OrderedDict()
+
+        for var in inspect.getargspec(self.__init__).args[1:]:
+            if hasattr(self, var) and getattr(self, var) is not None:
+                item = getattr(self, var)
+                if isinstance(item, np.ndarray) and item.ndim == 1:
+                    item = list(item)
+                dump_dict[var] = item
+
+        keywpairs = ["{0}={1}".format(k[0], repr(k[1])) for k in dump_dict.iteritems()]
+        return "{0}({1})".format(self.__class__.__name__, ", ".join(keywpairs))
+
+
+    
 class SerializeByConstructor(Serializable):
     @classmethod
     def to_yaml(cls, dumper, data):
@@ -81,3 +99,49 @@ class SerializeByConstructor(Serializable):
         fields = loader.construct_mapping(node, deep=True)
         return cls(**fields)
         return loader.construct_yaml_object(node, cls)
+
+
+
+###################################################################
+# Custom Yaml Representers
+###################################################################
+
+# Represent 1d ndarrays as lists in yaml files because it makes them much
+# prettier
+def ndarray_representer(dumper, data):
+    return dumper.represent_list(data.tolist())
+yaml.add_representer(np.ndarray, ndarray_representer)
+
+# represent tuples as lists because yaml doesn't have tuples
+def tuple_representer(dumper, data):
+    return dumper.represent_list(list(data))
+yaml.add_representer(tuple, tuple_representer)
+
+# represent numpy types as things that will print more cleanly
+def complex_representer(dumper, data):
+    return dumper.represent_scalar('!complex', repr(data.tolist()))
+yaml.add_representer(np.complex128, complex_representer)
+def complex_constructor(loader, node):
+    return complex(node.value)
+yaml.add_constructor('!complex', complex_constructor)
+def numpy_float_representer(dumper, data):
+    return dumper.represent_float(float(data))
+yaml.add_representer(np.float64, numpy_float_representer)
+
+
+def class_representer(dumper, data):
+    if re.match('scatterpy.theory', data.__module__):
+        return dumper.represent_scalar('!theory', "{0}.{1}".format(data.__module__,
+                                   data.__name__))
+    else:
+        raise NotImplemented
+yaml.add_representer(SerializableMetaclass, class_representer)
+
+def class_loader(loader, node):
+    name = loader.construct_scalar(node)        
+    tok = name.split('.')
+    mod = __import__(tok[0])
+    for t in tok[1:]:
+        mod = mod.__getattribute__(t)
+    return mod
+yaml.add_constructor(u'!theory', class_loader)

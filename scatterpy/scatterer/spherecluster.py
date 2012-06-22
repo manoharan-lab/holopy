@@ -78,11 +78,6 @@ class SphereCluster(Composite):
                     pass
         return overlaps
             
-    def __repr__(self):
-        return "{c}(spheres={spheres})".format(c=self.__class__.__name__,
-                                       spheres=repr(self.scatterers))
-
-
     @property
     def n(self):
         return np.array([s.n for s in self.scatterers])

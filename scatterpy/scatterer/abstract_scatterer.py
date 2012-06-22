@@ -157,17 +157,6 @@ class Scatterer(SerializeByConstructor):
 
         return cls(**built)
 
-    def __repr__(self):
-        pars = []
-        for key, val in  sorted(self.__dict__.iteritems()):
-            if isinstance(val, np.ndarray):
-                pars.append('='.join((key, repr(list(val)))))
-            else:
-                pars.append('='.join((key, repr(val))))
-                
-        return "{0}({1})".format(self.__class__.__name__, ', '.join(pars))
-
-
     def like_me(self, **overrides):
         pars = dict(self.__dict__)
         pars.update(overrides)

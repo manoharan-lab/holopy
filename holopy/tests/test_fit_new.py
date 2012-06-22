@@ -250,13 +250,13 @@ def test_parameter():
 
     # include a fixed complex index
     pj = par(1.59) + 1e-4j
-    assert_equal(repr(pj), 'Parameter(name=None, guess=1.59) + 0.0001j')
+    assert_equal(repr(pj), 'Parameter(guess=1.59) + 0.0001j')
 
 
     # include a fitted complex index with a guess of 1e-4
     pj2 = par(1.59) + par(1e-4j)
-    assert_equal(repr(pj2), ('Parameter(name=None, guess=1.59) + '
-                             'Parameter(name=None, guess=0.0001j)'))
+    assert_equal(repr(pj2), ('Parameter(guess=1.59) + '
+                             'Parameter(guess=0.0001j)'))
 
     pj3 = par(1j, [0j, 1j])
 
