@@ -230,6 +230,14 @@ class Model(SerializeByConstructor):
 
     # TODO: Allow a layer on top of theory to do things like moving sphere
 
+# TODO: Consider moving custom Exceptions into separate module
+
+class ParameterSpecficationError(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+    def __str__(self):
+        return self.msg
+
 class ModelDefinitionError(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -263,8 +271,43 @@ class Minimizer(SerializeByConstructor):
         raise NotImplementedError()
     
 class Nmpfit(Minimizer):
-    def __init__(self, quiet = False, ftol = 1e-10, xtol = 1e-10, gtol = 1e-10, damp = 0,
-                 maxiter = 100, err=None):
+    """
+    Levenberg-Marquardt minimizer, from Numpy/Python translation of Craig 
+    Markwardt's mpfit.pro. 
+
+    Parameters
+    ----------
+    quiet: Boolean
+        If True, suppress output on minimizer convergence.
+    ftol: float
+        Convergence criterion for minimizer: converges if actual and predicted
+        relative reductions in chi squared <= ftol
+    xtol: float
+        Convergence criterion for minimizer: converges if relative error between
+        two Levenberg-Marquardt iterations is <= xtol
+    gtol: float
+        Convergence criterion for minimizer: converges if absolute value of 
+        cosine of angle between vector of cost function evaluated at current 
+        solution for minimized parameters and any column of the Jacobian is 
+        <= gtol
+    damp: float
+        If nonzero, residuals larger than damp will be replaced by tanh. See
+        nmpfit documentation.
+    maxiter: int
+        Maximum number of Levenberg-Marquardt iterations to be performed.
+        
+    Notes
+    -----
+
+    See nmpfit documentation for further details. Not all functionalities of
+    nmpfit are implemented here: in particular, we do not allow analytical
+    derivatives of the residual function, which is impractical and/or 
+    impossible to calculate for holograms. If you want to weight the residuals,
+    you need to supply a custom residual function.
+
+    """
+    def __init__(self, quiet = False, ftol = 1e-10, xtol = 1e-10, gtol = 1e-10,
+                 damp = 0, maxiter = 100):
         # do the import on demand so the user doesn't need a minimizer present
         # unless they are using it
         from holopy.third_party import nmpfit
@@ -274,9 +317,8 @@ class Nmpfit(Minimizer):
         self.damp = 0
         self.maxiter = 100
         self.quiet = quiet
-        self.err = None
 
-    def minimize(self, parameters, cost_func, selection = None):
+    def minimize(self, parameters, cost_func, selection = None, debug = False):
         from holopy.third_party import nmpfit
         def resid_wrapper(p, fjac=None):
             status = 0                    
@@ -297,18 +339,32 @@ class Nmpfit(Minimizer):
                 raise InvalidParameterSpecification("nmpfit requires an "
                                                     "initial guess for all "
                                                     "parameters")
-            d.update(par.kwargs)
+            # Check for other allowed parinfo keys here: see nmpfit docs
+            allowed_keys = ['step', 'mpside', 'mpmaxstep']
+            for key, value in par.kwargs.iteritems():
+                if key in allowed_keys:
+                    if key == 'mpside':
+                        d[key] = value
+                    else:
+                        d[key] = par.scale(value)
+                else:
+                    raise ParameterSpecificationError("Parameter " + par.name +
+                                                      " contains kwargs that" +
+                                                      " are not supported by" +
+                                                      " nmpfit")
             nmp_pars.append(d)
 
         # now fit it
         fitresult = nmpfit.mpfit(resid_wrapper, parinfo=nmp_pars, ftol = self.ftol,
                                  xtol = self.xtol, gtol = self.gtol, damp = self.damp,
                                  maxiter = self.maxiter, quiet = self.quiet)
-        if fitresult.status > 3:
+        if fitresult.status == 5:
             raise MinimizerConvergenceFailed(fitresult.params, fitresult)
-
-        return fitresult.params, fitresult
         
+        if debug == True:
+            return fitresult.params, fitresult, nmp_pars
+        else:
+            return fitresult.params, fitresult
 
 
 class Parameter(SerializeByConstructor):

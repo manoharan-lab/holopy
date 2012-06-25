@@ -28,7 +28,7 @@ import numpy as np
 
 import holopy as hp
 
-from nose.tools import with_setup, nottest
+from nose.tools import with_setup, nottest, set_trace
 from nose.plugins.attrib import attr
 from numpy.testing import assert_equal, assert_approx_equal, assert_raises, dec
 from scatterpy.theory import Mie, Multisphere
@@ -379,8 +379,18 @@ def test_minimizer():
 
     minimizer = Nmpfit(maxiter=1)
     result, minimization_details = minimizer.minimize(parameters, cost_func)
-    
 
+    # now test parinfo argument passing
+    parameters2 = [Parameter(name='a', guess = 5, mpside = 2),
+                   Parameter(name='b', guess = -2, ),
+                   Parameter(name='c', guess = 3, limit = [0., 10.], 
+                             mpmaxstep = 2., step = 0.001)]
+    result2, details2, parinfo = minimizer.minimize(parameters2, cost_func, 
+                                                    debug = True)
+    assert_equal(parinfo[0]['mpside'], 2)
+    assert_equal(parinfo[2]['limits'], np.array([0., 10.])/3.)
+    assert_equal(parinfo[2]['step'], 1e-3/3.)
+    assert_equal(parinfo[2]['limited'], [True, True])
 
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
