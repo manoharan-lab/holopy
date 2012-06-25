@@ -40,7 +40,7 @@ from scatterpy.errors import TheoryNotCompatibleError
 from holopy.optics import (WavelengthNotSpecified, PixelScaleNotSpecified,
                            MediumIndexNotSpecified)
 
-from .common import assert_allclose
+from common import assert_allclose
 
 import os.path
 

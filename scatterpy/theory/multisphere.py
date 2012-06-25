@@ -35,9 +35,9 @@ from scatterpy.errors import UnrealizableScatterer
 
 from scatterpy.scatterer import SphereCluster
 from scatterpy.errors import TheoryNotCompatibleError
-from scatterpy.theory.scatteringtheory import ScatteringTheory, ElectricField
+from scatterpy.theory.scatteringtheory import FortranTheory
 
-class Multisphere(ScatteringTheory):
+class Multisphere(FortranTheory):
     """
     Class that contains methods and parameters for calculating
     scattering using T-matrix superposition method.
@@ -96,10 +96,7 @@ class Multisphere(ScatteringTheory):
                  niter=200, eps=1e-6, meth=1, qeps1=1e-5, 
                  qeps2=1e-8): 
 
-        # call base class constructor
-        ScatteringTheory.__init__(self, imshape=imshape,
-                                  theta=theta, phi=phi,
-                                  optics=optics) 
+
 
         self.niter = niter
         self.eps = eps
@@ -107,6 +104,10 @@ class Multisphere(ScatteringTheory):
         self.qeps1 = qeps1
         self.qeps2 = qeps2
 
+        # call base class constructor
+        super(Multisphere, self).__init__(optics=optics, imshape=imshape,
+                                  theta=theta, phi=phi) 
+        
     def calc_field(self, scatterer, selection=None):
         """
         Calculate fields for single or multiple spheres

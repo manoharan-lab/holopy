@@ -241,7 +241,7 @@ class ScatteringTheory(SerializeByConstructor):
         else:
             points = points.reshape((self.imshape[0]*self.imshape[1], 3))
 
-        return points.T
+        return points
     
         
     def _interpret_fields(self, fields, z, selection = None):
@@ -251,11 +251,22 @@ class ScatteringTheory(SerializeByConstructor):
                 new_fields.append(np.zeros(self.imshape, dtype=field.dtype))
                 new_fields[i][selection] = field
             fields = new_fields
-        else:        
+        else:
+            if hasattr(fields, 'shape') and fields.shape[1] == 3:
+                fields = fields.T
             fields = [f.reshape(self.imshape) for f in fields]
         return ElectricField(*fields, z_ref = z, wavelen = self.optics.med_wavelen)           
         
-        
+
+# Subclass of scattering theory, overrides functions that depend on array
+# ordering and handles the tranposes for sending data to/from fortran
+class FortranTheory(ScatteringTheory):
+    def _list_of_sph_coords(self, center, selection=None):
+        return super(FortranTheory, self)._list_of_sph_coords(center,
+                                                              selection).T
+
+    
+    
 #TODO: Should this be a method of the Electric field class? - tgd 2011-08-15
 def interfere_at_detector(e1, e2):
     """

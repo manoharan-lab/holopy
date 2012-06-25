@@ -238,51 +238,6 @@
         return
         end
 
-! deprecated (but still used in dda for now, that code should move to using calc_scat_field)
-      subroutine paraxholocl(kr, kz, theta, phi, ascatm, polvec, alpha, holo)
-! Subroutine to calculate hologram at a point given coordinates, S2, S1,
-! polarization, and scaling coefficient alpha, using simplified paraxial
-! (no Poynting vector) approach a la Grier.
-! Right now require polarization vector to be real (e.g. linear polarization)
-! Works for a general S matrix.
-        real*8 kr, kz, theta, phi, polvec(2), alpha, holo, einc(2)
-        real*8 signarr(2)
-        complex*16 ascatm(2,2), prefactor, escatsph(2), esrect(3), hcmplx, inc(2)
-!f2py intent(in) kr
-!f2py intent(in) kz 
-!f2py intent(in) phi 
-!f2py intent(in) polvec
-!f2py intent(in) alpha
-!f2py intent(in) ascatm
-!f2py intent(out) holo
-
-! First calculate incident field in spherical coordinates at the detector
-! do not apply phase here
-        call incfield(polvec(1), polvec(2), phi, einc)
-
-! get scattered field in spherical coordinates
-! because of no phase applied to incident field, the prefactor is different
-! than Bohren & Huffman (This caused JF much grief in figuring out).
-        prefactor = (0.0, 1.0) / kr * zexp((0.0, 1.0)*kr)
-        signarr = (/ 1.0, -1.0 /) ! needed since escatperp = -escatphi
-        escatsph = prefactor*matmul(ascatm, einc)*signarr
-
-! convert spherical E field to cartesian
-        call fieldstocart(escatsph, theta, phi, esrect)
-
-! now apply an e-ikz factor at the detector, because it's the CC 
-! of the incident field in Cartesian we need
-        inc = polvec * zexp((0.0, 1.0)*kz)
-
-! fortran dot product complex conjugates the first argument
-        hcmplx = 1. + 2.*alpha*dot_product(inc, esrect(1:2)) + alpha**2 * &
-              dot_product(esrect(1:2), esrect(1:2))
-
-! convert to double precision real
-        holo = real(hcmplx, 8)
-        return
-        end
-
 
       subroutine fieldstocart(asph, theta, phi, acart)
 ! Complex routine to convert scattered fields from scat. plane spherical to cartesian.

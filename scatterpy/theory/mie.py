@@ -33,10 +33,10 @@ from mie_f.multilayer_sphere_lib import scatcoeffs_multi
 
 from scatterpy.errors import TheoryNotCompatibleError, UnrealizableScatterer
 from scatterpy.scatterer import Sphere, CoatedSphere, Composite
-from scatterpy.theory.scatteringtheory import ScatteringTheory, ElectricField
+from scatterpy.theory.scatteringtheory import FortranTheory
 from holopy.utility.helpers import _ensure_array
 
-class Mie(ScatteringTheory):
+class Mie(FortranTheory):
     """
     Class that contains methods and parameters for calculating
     scattering using Mie theory.

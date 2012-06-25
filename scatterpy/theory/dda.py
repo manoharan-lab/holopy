@@ -84,19 +84,6 @@ class DDA(ScatteringTheory):
 
         super(DDA, self).__init__(optics, imshape, theta, phi)
 
-    def _write_adda_angles_file(self, theta, phi, kr, temp_dir):
-        # adda expects degrees, so convert
-        angles = np.vstack((theta, phi)).transpose() * 180/np.pi
-        # Leave filename hardcoded for now since it is the default name for adda
-        outf = file(os.path.join(temp_dir, 'scat_params.dat'), 'w')
-
-        # write the header on the scattering angles file
-        header = ["global_type=pairs", "N={0}".format(len(phi)), "pairs="]
-        outf.write('\n'.join(header)+'\n')
-        # Now write all the angles
-        np.savetxt(outf, angles)
-        outf.close()
-
     def _run_adda(self, scatterer, optics, temp_dir):
         cmd = ['adda']
         cmd.extend(['-scat_matr', 'ampl'])
@@ -192,19 +179,25 @@ class DDA(ScatteringTheory):
         # TODO: figure out how adda is doing recentering and if we need to
         # adjust for that
 
-    def calc_holo(self, scatterer, alpha=1.0):
+    def calc_field(self, scatterer, selection = None):
         time_start = time.time()
         
         temp_dir = tempfile.mkdtemp()
         print(temp_dir)
+
+        calc_points = self._list_of_sph_coords(scatterer.center, selection)
+
+        angles = calc_points[:,1:] * 180/np.pi
+
+        outf = file(os.path.join(temp_dir, 'scat_params.dat'), 'w')
+
+        # write the header on the scattering angles file
+        header = ["global_type=pairs", "N={0}".format(len(angles)), "pairs="]
+        outf.write('\n'.join(header)+'\n')
+        # Now write all the angles
+        np.savetxt(outf, angles)
+        outf.close()      
         
-        grid = self._spherical_grid(*scatterer.center)
-        theta = grid[...,1].ravel()
-        phi = grid[...,2].ravel()
-        kr = grid[...,0].ravel()
-
-        self._write_adda_angles_file(theta, phi, kr, temp_dir)
-
         self._run_adda(scatterer, self.optics, temp_dir)
         
         # Go into the results directory, there should only be one run
@@ -216,18 +209,6 @@ class DDA(ScatteringTheory):
         # columns in result are
         # theta phi s1.r s1.i s2.r s2.i s3.r s3.i s4.r s4.i
         
-        out_theta = adda_result[:,0]
-        out_phi = adda_result[:,1]
-
-        # Sanity check that the output angles are the same as the input ones
-        # need relatively loose tolerances because adda appears to round off the
-        # values we give it.  This may be a problem later, we will have to see
-#        assert_allclose(out_theta, theta, rtol=.1)
-#        assert_allclose(out_phi, phi, rtol=.5)
-        # TODO: kr will not line up perfectly with the angles things were
-        # actually calculated at, need to figure out which sets of coordinates
-        # to use.  
-        
         # Combine the real and imaginary components from the file into complex
         # numbers
         s = adda_result[:,2::2] + 1.0j*adda_result[:,3::2]
@@ -235,20 +216,13 @@ class DDA(ScatteringTheory):
         # Now arrange them into a scattering matrix, see Bohren and Huffman p63
         # eq 3.12
         scat_matr = np.array([[s[:,1], s[:,2]], [s[:,3], s[:,0]]]).transpose()
-        # TODO: check normalization
 
-        
-        #shutil.rmtree(temp_dir)
-        
-        pixels = np.zeros_like(kr)
-        for i in range(len(kr)):
-            pixels[i] = mieangfuncs.paraxholocl(kr[i], scatterer.z *
-                                                self.optics.wavevec,
-                                                theta[i], phi[i], scat_matr[i],
-                                                self.optics.polarization, alpha)
+        fields = np.zeros_like(calc_points, dtype = scat_matr.dtype)
 
-        h = hp.Hologram(pixels.reshape(self.imshape), optics = self.optics)
-        h.calculation_time = time.time() - time_start
+        for i, point in enumerate(calc_points):
+            kr, theta, phi = point
+            escat_sph = mieangfuncs.calc_scat_field(kr, phi, scat_matr[i],
+                                                    self.optics.polarization)
+            fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
 
-        
-        return h
+        return self._interpret_fields(fields, scatterer.z, selection)
