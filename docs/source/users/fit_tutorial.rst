@@ -2,7 +2,7 @@
 Fitting holograms
 *****************
 
-The :func:`holopy.analyze.fit.fit_new` fits a model of the object to a given set of data.
+The :func:`holopy.analyze.fit.fit` fits a model of the object to a given set of data.
 
 :model:
    A description of the scattering system to fit to your hologram.  This consists of
@@ -15,7 +15,7 @@ The :func:`holopy.analyze.fit.fit_new` fits a model of the object to a given set
 	  include rotation angles of a cluster or inter-particle
 	  separations.  For most basic use, you will do this by passing in
 	  a :class:`scatterpy.scatterer.Scatterer` object with
-	  :class:`holopy.analyze.fit_new.Parameter` objects instead of
+	  :class:`holopy.analyze.fit.Parameter` objects instead of
 	  numbers for any values you want to vary in the fit.
 
    :theory:
@@ -44,7 +44,7 @@ Here let's compute a hologram and then fit it.  You can replace the
 calculated hologram with real data, if you like ::
 
    from holopy import Optics
-   from holopy.analyze.fit_new import Model, par, fit
+   from holopy.analyze.fit import Model, par, fit
    from scatterpy.scatterer import Sphere
    from scatterpy.theory import Mie
 
@@ -91,7 +91,7 @@ If you want to give extra information to the minimizer (change
 tolerances or iteration limit, or the like) modify your fit call to
 something like ::
 
-  from holopy.analyze.fit_new import Nmpfit
+  from holopy.analyze.fit import Nmpfit
   result = fit(model, holo, Nmpfit(ftol = 1e-5, maxiter=2))
 
 

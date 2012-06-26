@@ -15,34 +15,29 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
-
-'''
-Test fitting and related infrastructure
-
-.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
-'''
 from __future__ import division
 
+import os
 try:
     from collections import OrderedDict
 except ImportError:
     from ordereddict import OrderedDict
+import tempfile
 
 import numpy as np
+
 import holopy as hp
-import scatterpy
-from numpy.testing import (assert_array_almost_equal, assert_allclose,
-                           assert_approx_equal, dec)
-from nose.tools import with_setup, assert_raises, assert_equal
-import os
+
+from nose.tools import with_setup, nottest, set_trace
 from nose.plugins.attrib import attr
-
+from numpy.testing import assert_equal, assert_approx_equal, assert_raises, dec
+from scatterpy.theory import Mie, Multisphere
 from scatterpy.scatterer import Sphere, SphereCluster
-import scatterpy
-from holopy.analyze.fit import fit
 
-from scatterpy.tests.common import assert_parameters_allclose
+from holopy.analyze.fit import (par, Parameter, Model, fit, Nmpfit,
+                                InvalidParameterSpecification, GuessOutOfBounds)
+from scatterpy.tests.common import assert_parameters_allclose, assert_obj_close, assert_allclose
+
 
 def setup_optics():
     # set up optics class for use in several test functions
@@ -56,15 +51,15 @@ def setup_optics():
     optics = hp.optics.Optics(wavelen=wavelen, index=index,
                               pixel_scale=pixel_scale,
                               polarization=polarization,
-                                  divergence=divergence)
+                              divergence=divergence)
     
 def teardown_optics():
     global optics
     del optics
 
-gold_single = OrderedDict((('center.x', 5.534e-6),
-               ('center.y', 5.792e-6),
-               ('center.z', 1.415e-5),
+gold_single = OrderedDict((('center[0]', 5.534e-6),
+               ('center[1]', 5.792e-6),
+               ('center[2]', 1.415e-5),
                ('n.imag', 1e-4),
                ('n.real', 1.582),
                ('r', 6.484e-7)))
@@ -73,102 +68,116 @@ gold_alpha = .6497
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_fit_mie_single():
+    """
+    Fit Mie theory to a hologram of a single sphere
+    """
     path = os.path.abspath(hp.__file__)
     path = os.path.join(os.path.split(path)[0],'tests', 'exampledata')
     holo = hp.process.normalize(hp.load(os.path.join(path, 'image0001.npy'),
                                         optics=optics))
+
+    parameters = [Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5]),
+                  Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
+                  Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
+                  Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5]),
+                  Parameter(name='n', guess=1.59, limit = [1, 2]),
+                  Parameter(name='alpha', guess=.6, limit = [.1, 1])]
+
     
-    s = Sphere(n=1.59+1e-4j, r=8.5e-7, center = (.567e-5, .576e-5, 15e-6))
-    alpha = .6
-    lb = Sphere(center=[0.0, 0.0, 0.0], n=(1+0.0001j), r=1e-08), .1
-    ub = Sphere(center=[1.0e-05, 1.0e-05, 0.0001], n=(2+0.0001j), r=1e-05), 1.0
+    def make_scatterer(x, y, z, r, n):
+        return Sphere(n=n+1e-4j, r = r, center = (x, y, z))
 
-    fitresult = fit(holo, (s,alpha), scatterpy.theory.Mie, 'nmpfit',
-                    lb, ub)
+    model = Model(parameters, Mie, make_scatterer=make_scatterer)
 
-    assert_approx_equal(fitresult.alpha, gold_alpha, significant=4)
+    result = fit(model, holo)
+
+    assert_parameters_allclose(result.scatterer, gold_single, rtol = 1e-3)
+    assert_approx_equal(result.alpha, gold_alpha, significant=4)
+    assert_equal(model, result.model)
+
     
-    assert_parameters_allclose(fitresult.scatterer, gold_single, rtol = 1e-3)
-
-
-@dec.skipif(True, "OpenOpt fits not reimplemented")
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
-def test_fit_mie_single_ralg():
+def test_fit_mie_par_scatterer():
     path = os.path.abspath(hp.__file__)
     path = os.path.join(os.path.split(path)[0],'tests', 'exampledata')
     holo = hp.process.normalize(hp.load(os.path.join(path, 'image0001.npy'),
                                         optics=optics))
-    
-    s = Sphere(n=1.59+1e-4j, r=8.5e-7, center=(.567e-5, .576e-5, 15e-6))
-    alpha = .6
-    lb = Sphere(center=[0.0, 0.0, 0.0], n=(1+0.0001j), r=1e-08), .1
-    ub = Sphere(center=[1.0e-05, 1.0e-05, 0.0001], n=(2+0.0001j), r=1e-05), 1.0
 
-    fitresult = fit(holo, (s,alpha), scatterpy.theory.Mie, 'ralg', lb, ub,
-    plot=False)
+    
+    s = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
+                         par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
+               r = par(8.5e-7, (1e-8, 1e-5)), n = par(1.59, (1,2))+1e-4j)
 
-    assert_approx_equal(fitresult.alpha, gold_alpha, significant=4)
     
-    assert_parameters_allclose(fitresult.scatterer.parameters, gold_single)
+    model = Model((s, par(.6, [.1,1], 'alpha')), Mie)
+
+    result = fit(model, holo)
+
+    # TODO: make new structure work with complex n
+    gold_single = OrderedDict((('center[0]', 5.534e-6),
+                               ('center[1]', 5.792e-6),
+                               ('center[2]', 1.415e-5),
+                               ('n.imag', 1e-4),
+                               ('n.real', 1.582),
+                               ('r', 6.484e-7))) 
     
+    assert_parameters_allclose(result.scatterer, gold_single, rtol=1e-3)
+    # TODO: see if we can get this back to 3 sig figs correct alpha
+    assert_approx_equal(result.alpha, gold_alpha, significant=3)
+    assert_equal(model, result.model)
+    
+@nottest
 @attr('slow')
 def test_fit_superposition():
+    """
+    Fit Mie superposition to a calculated hologram from two spheres
+    """
     # Make a test hologram
     optics = hp.Optics(wavelen=6.58e-07, index=1.33, polarization=[0.0, 1.0],
                     divergence=0, pixel_size=None, train=None, mag=None,
-                    pixel_scale=[2.302e-07, 2.302e-07])
+                    pixel_scale=[2*2.302e-07, 2*2.302e-07])
 
-    s1 = Sphere(n=1.5891+1e-4j, r = .65e-6, center=(1.56e-05, 1.44e-05, 15e-6))
-    s2 = Sphere(n=1.5891+1e-4j, r = .65e-6, center=(3.42e-05, 3.17e-05, 10e-6))
+    s1 = Sphere(n=1.5891+1e-4j, r = .65e-6, 
+                center=(1.56e-05, 1.44e-05, 15e-6))
+    s2 = Sphere(n=1.5891+1e-4j, r = .65e-6, 
+                center=(3.42e-05, 3.17e-05, 10e-6))
     sc = SphereCluster([s1, s2])
     alpha = .629
     
-    theory = scatterpy.theory.Mie(imshape=200, optics=optics)
+    theory = Mie(optics, 100)
+    holo = theory.calc_holo(sc, alpha)
 
-    holo = hp.process.normalize(theory.calc_holo(sc, alpha))
+    # Now construct the model, and fit
+    parameters = [Parameter(name = 'x0', guess = 1.6e-5, limit = [0, 1e-4]),
+                  Parameter('y0', 1.4e-5, [0, 1e-4]),
+                  Parameter('z0', 15.5e-6, [0, 1e-4]),
+                  Parameter('r0', .65e-6, [0.6e-6, 0.7e-6]),
+                  Parameter('nr', 1.5891, [1, 2]),
+                  Parameter('x1', 3.5e-5, [0, 1e-4]),
+                  Parameter('y1', 3.2e-5, [0, 1e-4]),
+                  Parameter('z1', 10.5e-6, [0, 1e-4]),
+                  Parameter('r1', .65e-6, [0.6e-6, 0.7e-6]),
+                  Parameter('alpha', .63, [.5, 0.8])]
 
-    # Now fit it
-    s1 = Sphere(n=1.5891+1e-4j, r = .65e-6, center=(1.56e-05, 1.44e-05, 15e-6))
-    s2 = Sphere(n=1.5891+1e-4j, r = .65e-6, center=(3.42e-05, 3.17e-05, 10e-6))
-    sc = SphereCluster([s1, s2])
-    alpha = .629
-    
-    lb1 = Sphere(1+1e-4j, 1e-8, 0, 0, 0)
-    ub1 = Sphere(2+1e-4j, 1e-5, 1e-4, 1e-4, 1e-4)
-    lb = SphereCluster([lb1, lb1]), .1
-    ub = SphereCluster([ub1, ub1]), 1
+    def make_scatterer(x0, x1, y0, y1, z0, z1, r0, r1, nr):
+        s = SphereCluster([
+                Sphere(center = (x0, y0, z0), r=r0, n = nr+1e-4j),
+                Sphere(center = (x1, y1, z1), r=r1, n = nr+1e-4j)])
+        return s
 
-    fitresult = fit(holo, (sc, alpha), theory, 'nmpfit', lb, ub)
+    model = Model(parameters, Mie, make_scatterer=make_scatterer)
+    result = fit(model, holo)
 
-    fit_sc = fitresult[0]
-    fit_alpha = fitresult[1]
-    #    fitres_unpacked = np.array([fit_sc.n[0].real, fit_sc.n[0].imag, 
-    #                            fit_sc.r[0], fit_sc.x[0], fit_sc.y[0],
-    #                            fit_sc.z[0], fit_sc.n[1].real, fit_sc.n[1].imag,
-    #                            fit_sc.r[1], fit_sc.x[1], fit_sc.y[1], 
-    #                            fit_sc.z[1], fit_alpha])
-
-
-    assert_parameters_allclose(fit_sc, sc)
-    
-    gold = np.array([1.56e-5, 1.44e-5, 1.5e-5, 1e-4, 1.5891, 6.5e-7, 3.420e-5,
-                     3.170e-5, 1e-5, 1e-4, 1.5891, 6.5e-7])
-    gold_alpha = .629
-
-    assert_approx_equal(fit_alpha, gold_alpha, significant=2)
-    assert_parameters_allclose(fit_sc, gold)
-    
-    #    gold = np.array([1.5891, 1.000, 6.500, 1.560, 1.440, 1.500, 1.5891, 1.000, 6.50,
-    #                 3.420, 3.170, 1.000, 6.29])
-
-    #assert_array_almost_equal(fitres_unpacked * [1, 10**4, 10**7, 10**5, 10**5,
-    #                                       10**5,1,10**4, 10**7, 10**5,10**5,
-    #                                       10**5, 10], gold, decimal=2)
-
+    assert_parameters_allclose(result.scatterer, sc)
+    assert_approx_equal(result.alpha, alpha, significant=4)
+    assert_equal(result.model, model)
 
 @attr('slow')
 def test_fit_multisphere_noisydimer_slow():
+    """
+    Fit multisphere superposition model to noisified dimer hologram
+    """
     optics = hp.Optics(wavelen=658e-9, polarization = [0., 1.0], 
                        divergence = 0., pixel_scale = [0.345e-6, 0.345e-6], 
                        index = 1.334)
@@ -178,218 +187,236 @@ def test_fit_multisphere_noisydimer_slow():
     holo = hp.process.normalize(hp.load(os.path.join(path, 'image0002.npy'),
                                         optics=optics))
     
-    # gold results
-    gold = np.array([1.603, 1.000, 6.857, 1.642, 1.725, 2.058, 1.603, 1.000, 
-                     6.964, 1.758, 1.753, 2.127, 1.000])
-    
+    # Now construct the model, and fit
+    parameters = [Parameter(name = 'x0', guess = 1.64155e-5, 
+                            limit = [0, 1e-4]),
+                  Parameter(1.7247e-5, [0, 1e-4], 'y0'),
+                  Parameter(20.582e-6, [0, 1e-4], 'z0'),
+                  Parameter(.6856e-6, [1e-8, 1e-4], 'r0'),
+                  Parameter(1.6026, [1, 2], 'nr0'),
+                  Parameter(1.758e-5, [0, 1e-4], 'x1'),
+                  Parameter(1.753e-5, [0, 1e-4], 'y1'),
+                  Parameter(21.2698e-6, [1e-8, 1e-4], 'z1'),
+                  Parameter(.695e-6, [1e-8, 1e-4], 'r1'),
+                  Parameter(1.6026, [1, 2], 'nr1'),
+                  Parameter(.99, [.1, 1.0], 'alpha')]
+
+    def make_scatterer(x0, x1, y0, y1, z0, z1, r0, r1, nr0, nr1):
+        s = SphereCluster([
+                Sphere(center = (x0, y0, z0), r=r0, n = nr0+1e-5j),
+                Sphere(center = (x1, y1, z1), r=r1, n = nr1+1e-5j)])
+        return s
+
     # initial guess
-    s1 = Sphere(n=1.6026+1e-5j, r = .6856e-6, center=(1.64155e-05, 1.7247e-05, 20.582e-6))
-    s2 = Sphere(n=1.6026+1e-5j, r = .695e-6, center=(1.758e-05, 1.753e-05, 21.2698e-6))
-    sc = SphereCluster([s1, s2])
-    alpha = 0.99
+    #s1 = Sphere(n=1.6026+1e-5j, r = .6856e-6, 
+    #            center=(1.64155e-05, 1.7247e-05, 20.582e-6)) 
+    #s2 = Sphere(n=1.6026+1e-5j, r = .695e-6, 
+    #            center=(1.758e-05, 1.753e-05, 21.2698e-6)) 
+    #sc = SphereCluster([s1, s2])
+    #alpha = 0.99
 
-    lb1 = Sphere(1+1e-5j, 1e-8, 0, 0, 0)
-    ub1 = Sphere(2+1e-5j, 1e-5, 1e-4, 1e-4, 1e-4)
-    step1 = Sphere(1e-4+1e-4j, 1e-8, 0, 0, 0)
-    lb = SphereCluster([lb1, lb1]), .1
-    ub = SphereCluster([ub1, ub1]), 1    
-    step = SphereCluster([step1, step1]), 0
+    #lb1 = Sphere(1+1e-5j, 1e-8, 0, 0, 0)
+    #ub1 = Sphere(2+1e-5j, 1e-5, 1e-4, 1e-4, 1e-4)
+    #step1 = Sphere(1e-4+1e-4j, 1e-8, 0, 0, 0)
+    #lb = SphereCluster([lb1, lb1]), .1
+    #ub = SphereCluster([ub1, ub1]), 1    
+    #step = SphereCluster([step1, step1]), 0
 
-    fitresult = fit(holo, (sc, alpha), 
-                    scatterpy.theory.Multisphere(imshape = 100, 
-                                                 optics = optics), 'nmpfit', 
-                    lb, ub, step = step)
-
-    fit_sc = fitresult[0]
-    fit_alpha = fitresult[1]
+    model = Model(parameters, Multisphere, make_scatterer=make_scatterer)
+    result = fit(model, holo)
+    print result.scatterer
 
     gold = np.array([1.642e-5, 1.725e-5, 2.058e-5, 1e-5, 1.603, 6.857e-7, 
-                     1.758e-5, 1.753e-5, 2.127e-5, 1e-5, 1.603, 6.964e-7])
+                     1.758e-5, 1.753e-5, 2.127e-5, 1e-5, 1.603,
+                     6.964e-7])
+    gold_alpha = 1.0
 
-    assert_parameters_allclose(fit_sc, gold, rtol=1e-2)
-    # TODO: This test fails, alpha comes back as .9899..., where did the gold
-    # come from?  
-    assert_approx_equal(fit_alpha, 1.0, significant=2)
-
-    #    assert_array_almost_equal(fitres_unpacked * [1971, 10**5, 10**7, 10**5, 10**5,
-    #                                       10**5,1,10**5, 10**7, 10**5,10**5,
-    #                                       10**5, 1], gold, decimal=2)
+    assert_parameters_allclose(result.scatterer, gold, rtol=1e-2)
+    # TODO: This test fails, alpha comes back as .9899..., where did
+    # the gold come from?
+    assert_approx_equal(result.alpha, gold_alpha, significant=2)
 
 
-@attr('slow')
-@attr('glacial')
-def test_six_mie_superposition():
-    '''
-    Right now Mie Superposition is only being tested for 2 simulated particles.
-    Test against real data fitted by calling nmpfit directly.
-    This links to data on the group share.
+@attr('fast')
+def test_parameter():
+    p = Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5])
+    assert_equal(1e-6, p.unscale(p.scale(1e-6)))
 
-    Original data file: /group/manoharan/jerome/jf072511/13/image0095.tif
-    with bg jerome/jf072611/bg_13.npy
+    with assert_raises(GuessOutOfBounds):
+        Parameter(guess=1, limit=(2, 3))
 
-    fnorm should be 6.216.  (Updated: got a better fit w/lower fnorm).
+    with assert_raises(GuessOutOfBounds):
+        Parameter(guess=1, limit=3)
 
-    Very slow -- takes about an hour to run.
-    '''
-    optics = hp.Optics(wavelen = 662.3e-9, polarization = [0., 1.0], 
-                       divergence = 0., pixel_scale = [0.10678e-6, 0.10678e-6],
-                       index = 1.4105)
-    holo = hp.load('/group/manoharan/holopy/test_image_six_droplet.npy', 
-                   optics = optics)
-    gold = np.array([1.526, 1.0, 4.372, 1.3798, 1.5089, 1.3256, 
-                     1.526, 1.0, 4.372, 1.4461, 1.2384, 1.5213,
-                     1.526, 1.0, 4.372, 1.5164, 1.4277, 1.6675,
-                     1.526, 1.0, 4.372, 1.4045, 1.5979, 1.4805,
-                     1.526, 1.0, 4.372, 1.4152, 1.4171, 1.2691,
-                     1.526, 1.0, 4.372, 1.7079, 1.5628, 1.4302, 2.3607])
+    # include a fixed complex index
+    pj = par(1.59) + 1e-4j
+    assert_equal(repr(pj), 'Parameter(guess=1.59) + 0.0001j')
 
-    # set up initial guess
-    s1 = Sphere(n = 1.515+1e-4j, r = 0.472e-6, center = (1.38e-05, 1.51e-05, 
-                                                         1.33e-5))
-    s2 = Sphere(n = 1.515+1e-4j, r = 0.472e-6, center = (1.45e-5, 1.24e-5, 1.52e-5))
-    s3 = Sphere(n = 1.515+1e-4j, r = 0.472e-6, center = (1.52e-5, 1.43e-5, 1.67e-5))
-    s4 = Sphere(n = 1.515+1e-4j, r = 0.472e-6, center = (1.40e-5, 1.60e-5, 1.48e-5))
-    s5 = Sphere(n = 1.515+1e-4j, r = 0.472e-6, center = (1.42e-5, 1.42e-5, 1.27e-5))
-    s6 = Sphere(n = 1.515+1e-4j, r = 0.472e-6, center = (1.71e-5, 1.56e-5, 1.43e-5))
-    sc = SphereCluster([s1, s2, s3, s4, s5, s6])
-    alpha = 0.24
 
-    # bounds and step
-    lb1 = Sphere(1+1e-4j, 1e-8, 0, 0, 0)
-    ub1 = Sphere(2+1e-4j, 1e-5, 1e-4, 1e-4, 1e-4)
-    lb = SphereCluster([lb1, lb1, lb1, lb1, lb1, lb1]), .1
-    ub = SphereCluster([ub1, ub1, ub1, ub1, ub1, ub1]), 1. 
-    step1 = Sphere(1e-4+1e-4j, 1e-7, 0, 0, 0)
-    step = SphereCluster([step1, step1, step1, step1, step1, step1]), 0
+    # include a fitted complex index with a guess of 1e-4
+    pj2 = par(1.59) + par(1e-4j)
+    assert_equal(repr(pj2), ('Parameter(guess=1.59) + '
+                             'Parameter(guess=0.0001j)'))
 
-    tie1 = Sphere(n = 1, r = 2, center = None)
-    tie = SphereCluster([tie1, tie1, tie1, tie1, tie1, tie1]), None
+    pj3 = par(1j, [0j, 1j])
 
-    fitresult = fit(holo, (sc, alpha), scatterpy.theory.Mie, 'nmpfit', 
-                    lb, ub, step = step, tie=tie)       
-    fitres_unpacked = np.concatenate((fitresult[0].parameter_list, 
-                                      np.array([fitresult[1]])))
+    with assert_raises(GuessOutOfBounds):
+        par(1j, [1, 2j])
 
-    assert_array_almost_equal(fitres_unpacked, gold, decimal=2)
+    with assert_raises(GuessOutOfBounds):
+        par(2j, [.5j, 1j])
+
+
+@attr('fast')
+def test_model():
+    parameters = [Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5]),
+                  Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
+                  Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
+                  Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5]),
+                  Parameter(name='alpha', guess=.6, limit = [.1, 1])]
+
+    def make_scatterer(x, y, z, r):
+        return Sphere(n=1.59+1e-4j, r = r, center = (x, y, z))
+
+    model = Model(parameters, Mie, make_scatterer=make_scatterer)
+
+    x, y, z, r = 1, 2, 3, 1
+    s = model.make_scatterer(x, y, z, r)
+
+    assert_parameters_allclose(s, Sphere(center=(x, y, z), n=1.59+1e-4j,
+                                         r=r))
+
+    # check that Model correctly returns None when asked for alpha on a
+    # parameter set that does not contain alpha
+    
+    parameters = [Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5]),
+                  Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
+                  Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
+                  Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5])]
+    model = Model(parameters, Mie, make_scatterer=make_scatterer)
+
+    assert_equal(model.alpha([x, y, z, r]), 1.0)
+
+@attr('fast')
+def test_scatterer_based_model():
+    s = Sphere(center = (par(guess=.567e-5),par(limit=.567e-5), par(15e-6, (1e-5, 2e-5))),
+               r = 8.5e-7, n = par(1.59, (1,2))+1e-4j)
 
     
-'''
-def test_fit_cluster():
-    path = os.path.abspath(hp.__file__)
-    path = string.rstrip(path, chars='__init__.pyc')+'tests/exampledata/'
-    holo = normalize(hp.load(path + image0002))
+    model = Model(s, Mie)
 
-    sc = hp.model.scatterer.Cluster(
-'''
+    assert_obj_close(model.parameters, [Parameter(name='center[0]', guess=5.67e-06),
+                                    Parameter(name='center[2]', guess=1.5e-05,
+                                              limit=(1e-05, 2e-05)),
+                                    Parameter(name='n.real', guess=1.59, limit=(1,
+                                    2))], context = 'model.parameters')
 
-@attr('slow')
-def test_tie():
-    s1 = Sphere(n=1.59, r = .5, center=(10,10,10))
-    s2 = Sphere(n=1.59, r = .5, center=(10,11,11))
-    sc = SphereCluster([s1, s2])
+    s2 = Sphere(center=[Parameter(name='center[0]', guess=5.67e-06), 5.67e-06,
+                        Parameter(name='center[2]', guess=1.5e-05, limit=(1e-05, 2e-05))],
+                n=Parameter(name='n.real', guess=1.59, limit=(1, 2))+1e-4j, r=8.5e-07)
 
-    optics = hp.Optics(wavelen=.66, index=1.33, pixel_scale=.1)
-    theory = scatterpy.theory.Mie(optics)
 
-    holo = theory.calc_holo(sc)
+    assert_obj_close(model.scatterer, s2, context = 'model.scatterer')
 
-    igs1 = Sphere(n=1.59, r = .5, center=(10.1,10,10))
-    igs2 = Sphere(n=1.59, r = .5, center=(10.1,11,11))
-    ig = SphereCluster([igs1, igs2]), 1
+    s3 = Sphere(center = (6e-6, 5.67e-6, 10e-6), n = 1.6+1e-4j, r = 8.5e-7)
 
-    lb1 = Sphere(n=1.59, r = .5, center=(10,10,10))
-    lb2 = Sphere(n=1.59, r = .5, center=(10,11,11))
-    lb = SphereCluster([lb1, lb2]), 1
+    assert_obj_close(model.make_scatterer((6e-6, 10e-6, 1.6)), s3, context = 'make_scatterer()')
     
-    ub1 = Sphere(n=1.59, r = .5, center=(10.5,10,10))
-    ub2 = Sphere(n=1.59, r = .5, center=(10.5,11,11))
-    ub = SphereCluster([ub1, ub2]), 1
+    # model.make_scatterer
 
-    tie1 = Sphere(n=0+0j, r = None, center=[1, None, None])
-    tie = SphereCluster([tie1, tie1]), None
+@with_setup(setup=setup_optics, teardown=teardown_optics)
+@attr('fast')
+def test_cost_func():
     
-    fitresult = fit(holo, ig, theory, 'nmpfit', lb, ub, tie = tie) 
-    #fitresult = fit(holo, ig, theory, 'nmpfit', lb, ub, tie = None)
+    parameters = [Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5]),
+        Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
+        Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
+        Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5]),
+        Parameter(name='alpha', guess=.6, limit = [.1, 1])]
 
-    assert_parameters_allclose(fitresult.scatterer, sc)
+    def make_scatterer(x, y, z, r):
+        return Sphere(n=1.59+1e-4j, r = r, center = (x, y, z))
+
+    model = Model(parameters, Mie, make_scatterer=make_scatterer)
+
+    theory = Mie(optics, 100)
+    holo = theory.calc_holo(Sphere(center = (.567e-5, .576e-5, 15e-6),
+                                   r = 8.5e-7, n = 1.59+1e-4j), .6)
+
+    cost_func = model.cost_func(holo)
+
+    cost = cost_func([p.scale(p.guess) for p in parameters])
+
+    assert_allclose(cost, np.zeros_like(cost), atol=1e-10)
+    
+
+@attr('fast')
+def test_minimizer():
+    x = np.arange(-10, 10, .1)
+    a = 5.3
+    b = -1.8
+    c = 3.4
+    y = a*x**2 + b*x + c
+
+    def cost_func(par_values, selection=None):
+        a, b, c = par_values
+        return a*x**2 + b*x + c - y
+
+    parameters = [Parameter(name='a', guess = 5),
+                 Parameter(name='b', guess = -2),
+                 Parameter(name='c', guess = 3)]
+
+    minimizer = Nmpfit()
+
+    result, minimization_details = minimizer.minimize(parameters, cost_func)
+
+    assert_allclose([a, b, c], result)
+
+    with assert_raises(InvalidParameterSpecification):
+        minimizer.minimize([Parameter(name = 'a')], cost_func)
+
+    # now test limiting minimizer iterations
+
+    minimizer = Nmpfit(maxiter=1)
+    result, minimization_details = minimizer.minimize(parameters, cost_func)
+
+    # now test parinfo argument passing
+    parameters2 = [Parameter(name='a', guess = 5, mpside = 2),
+                   Parameter(name='b', guess = -2, ),
+                   Parameter(name='c', guess = 3, limit = [0., 10.], 
+                             mpmaxstep = 2., step = 0.001)]
+    result2, details2, parinfo = minimizer.minimize(parameters2, cost_func, 
+                                                    debug = True)
+    assert_equal(parinfo[0]['mpside'], 2)
+    assert_equal(parinfo[2]['limits'], np.array([0., 10.])/3.)
+    assert_equal(parinfo[2]['step'], 1e-3/3.)
+    assert_equal(parinfo[2]['limited'], [True, True])
 
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
-def test_ParameterManager():
-    s = Sphere(n=1.59+1e-4j, r=8.5e-7, center = (.567e-5, .576e-5, 15e-6))
-    alpha = .6
-    lb = Sphere(center=[0.0, 0.0, 0.0], n=(1+0.0001j), r=1e-08), .1
-    ub = (Sphere(center=[1e-05, 1e-05, 0.0001], n=(2+0.0001j), r=1e-05), 1.0)
+def test_serialization():
+    par_s = Sphere(center = (par(.567e-5, [0, 1e-5]), par(.576e-6, [0, 1e-5]),
+                                                           par(15e-6, [1e-5,
+                                                                       2e-5])),
+                   r = par(8.5e-7, [1e-8, 1e-5]), n = par(1.59, [1,2]))
 
-    pm = hp.analyze.fit.ParameterManager((s, alpha), lb, ub)
+    alpha = par(.6, [.1, 1], 'alpha')
 
-    params, alpha2 = pm.interpret_minimizer_list(pm.initial_guess)
+    mie = Mie(optics, 100)
 
-    assert alpha == alpha2
+    model = Model((par_s, alpha), Mie)
+
+    holo = mie.calc_holo(model.guess_scatterer, model.guess_alpha)
+
+    result = fit(model, holo)
+
+    temp = tempfile.NamedTemporaryFile()
+    hp.io.save(temp, result)
+
+    temp.flush()
+    temp.seek(0)
     
-    assert_equal(params,{'center[0]': 5.6699999999999999e-06,
-                         'center[1]': 5.7599999999999999e-06,
-                         'center[2]': 1.5e-05,
-                         'n.imag': 0.0001,
-                         'n.real': 1.5900000000000001,
-                         'r': 8.5000000000000001e-07})
+    loaded = hp.io.yaml_io.load(temp)
 
+    assert_obj_close(result, loaded)
 
-@attr('fast')
-def test_parameter_munging():
-    s1 = Sphere(n=1.59+1e-4j, r = .5, center=(10,10,10))
-    s2 = Sphere(n=1.59+0j, r = .5, center=(10,11,11))
-    sc = SphereCluster([s1, s2])
-
-    
-    lb1 = Sphere(n=1+1e-4j, r = .4, center=(10,10,10))
-    lb2 = Sphere(n=1+0j, r = .4, center=(10,11,11))
-    lb = SphereCluster([lb1, lb2]), .1
-    
-    ub1 = Sphere(n=1.59+1e-4j, r = .6, center=(10.5,10,10))
-    ub2 = Sphere(n=1.59+0j, r = .6, center=(10.5,11,11))
-    ub = SphereCluster([ub1, ub2]), 1
-
-    pm = hp.analyze.fit.ParameterManager((sc, .6), lb, ub)
-
-    guess = pm.initial_guess
-
-    pars, alpha = pm.interpret_minimizer_list(guess)
-
-    minimizer_scatterer = SphereCluster.from_parameters(pars)
-    
-    assert_equal(sc.scatterers[0].r, minimizer_scatterer.scatterers[0].r)
-    assert_equal(sc.scatterers[1].r, minimizer_scatterer.scatterers[1].r)
-    assert_equal(sc.scatterers[0].n, minimizer_scatterer.scatterers[0].n)
-    assert_equal(sc.scatterers[1].n, minimizer_scatterer.scatterers[1].n)
-    assert_array_almost_equal(sc.scatterers[0].center, minimizer_scatterer.scatterers[0].center)
-    assert_array_almost_equal(sc.scatterers[1].center, minimizer_scatterer.scatterers[1].center)
-    
-    assert_equal(alpha, .6)
-
-    s1 = Sphere(n=1.5891+1e-4j, r = .65e-6, center=(1.56e-05, 1.44e-05, 15e-6))
-    s2 = Sphere(n=1.5891+1e-4j, r = .65e-6, center=(3.42e-05, 3.17e-05, 10e-6))
-    sc = SphereCluster([s1, s2])
-    alpha = .629
-    
-    lb1 = Sphere(1+1e-4j, 1e-8, (0, 0, 0))
-    ub1 = Sphere(2+1e-4j, 1e-5, (1e-4, 1e-4, 1e-4))
-    lb = SphereCluster([lb1, lb1]), .1
-    ub = SphereCluster([ub1, ub1]), 1
-
-    pm = hp.analyze.fit.ParameterManager((sc, .6), lb, ub)
-
-    guess = pm.initial_guess
-
-    pars, alpha = pm.interpret_minimizer_list(guess)
-
-    minimizer_scatterer = SphereCluster.from_parameters(pars)
-    
-    assert_equal(sc.scatterers[0].r, minimizer_scatterer.scatterers[0].r)
-    assert_equal(sc.scatterers[1].r, minimizer_scatterer.scatterers[1].r)
-    assert_equal(sc.scatterers[0].n, minimizer_scatterer.scatterers[0].n)
-    assert_equal(sc.scatterers[1].n, minimizer_scatterer.scatterers[1].n)
-    assert_array_almost_equal(sc.scatterers[0].center, minimizer_scatterer.scatterers[0].center)
-    assert_array_almost_equal(sc.scatterers[1].center, minimizer_scatterer.scatterers[1].center)
-    
-    assert_equal(alpha, .6)
