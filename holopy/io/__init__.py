@@ -24,7 +24,7 @@ just holograms.
 """
 from __future__ import division
 
-from yaml_io import save, load_yaml
+from yaml_io import save
 from image_io import load, save_image
 import image_io
 import yaml_io

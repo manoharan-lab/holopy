@@ -35,7 +35,6 @@ from scipy.misc.pilutil import fromimage
 from holopy.third_party.tifffile import TIFFfile
 from holopy.hologram import Hologram
 from holopy.utility.errors import NotImplementedError, LoadError, NoFilesFound
-from holopy.io.yaml_io import load_yaml
 
 def load(im, optics=None, bg=None, bg_type='subtract',
         channel=0, time_scale=None): 
@@ -72,7 +71,6 @@ def load(im, optics=None, bg=None, bg_type='subtract',
     
     # Handle the Optics File
     if isinstance(optics, basestring):
-        try:
             # read from a yaml file.  Each line should be one of the
             # parameters of the optics.
             #
@@ -82,9 +80,20 @@ def load(im, optics=None, bg=None, bg_type='subtract',
             # pixel_scale: [3.4e-7, 3.4e-7]
             #
             # would be a minimal file that would work
-            optics = hp.Optics(**load_yaml(optics))
+        try:
+            optics = hp.io.yaml_io.load(optics)
         except LoadError as er:
             print("Could not load optics file: %s" % er.filename)
+        if isinstance(optics, dict):
+            # sometimes yaml will leave floats as strings, which will cause
+            # problems, so fix that here before we make the optics object. 
+            for key, val in optics.iteritems():
+                if isinstance(val, basestring):
+                    try:
+                        optics[key] = float(val)
+                    except ValueError:
+                        pass
+            optics = hp.Optics(**optics)
         if not isinstance(optics, hp.Optics):
             print("Optics not provided, loading hologram without physical reference")
             optics = hp.Optics(wavelen=1, pixel_scale=(1, 1))
