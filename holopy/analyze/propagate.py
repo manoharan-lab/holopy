@@ -207,9 +207,12 @@ def trans_func(shape, optics, d, cfsp=0, squeeze=True,
 
     # for this we need to use the magnitude of d, size of the image
     # should be a positive number
-    max_m = int(np.max(xdim**2*dx**2/np.abs(d)/wavelen/2))+1
-    max_n = int(np.max(ydim**2*dy**2/np.abs(d)/wavelen/2))+1
-
+    try:
+        max_m = int(np.max(xdim**2*dx**2/np.abs(d)/wavelen/2))+1
+        max_n = int(np.max(ydim**2*dy**2/np.abs(d)/wavelen/2))+1
+    except OverflowError:
+        max_m = xdim/2
+        max_n = ydim/2
     
     # make sure that the array is not larger than the hologram if we
     # are using cascaded free space propagation
