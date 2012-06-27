@@ -64,20 +64,6 @@ class Serializable(yaml.YAMLObject):
         return dumper.represent_yaml_object('!{0}'.format(data.__class__.__name__), data, cls,
                                             flow_style=cls.yaml_flow_style)
     
-    def __repr__(self):
-        dump_dict = OrderedDict()
-
-        for var in inspect.getargspec(self.__init__).args[1:]:
-            if hasattr(self, var) and getattr(self, var) is not None:
-                item = getattr(self, var)
-                if isinstance(item, np.ndarray) and item.ndim == 1:
-                    item = list(item)
-                dump_dict[var] = item
-
-        keywpairs = ["{0}={1}".format(k[0], repr(k[1])) for k in dump_dict.iteritems()]
-        return "{0}({1})".format(self.__class__.__name__, ", ".join(keywpairs))
-
-
     
 class SerializeByConstructor(Serializable):
     @classmethod
@@ -99,6 +85,20 @@ class SerializeByConstructor(Serializable):
         fields = loader.construct_mapping(node, deep=True)
         return cls(**fields)
         return loader.construct_yaml_object(node, cls)
+
+    def __repr__(self):
+        dump_dict = OrderedDict()
+
+        for var in inspect.getargspec(self.__init__).args[1:]:
+            if hasattr(self, var) and getattr(self, var) is not None:
+                item = getattr(self, var)
+                if isinstance(item, np.ndarray) and item.ndim == 1:
+                    item = list(item)
+                dump_dict[var] = item
+
+
+        keywpairs = ["{0}={1}".format(k[0], repr(k[1])) for k in dump_dict.iteritems()]
+        return "{0}({1})".format(self.__class__.__name__, ", ".join(keywpairs))
 
 
 
