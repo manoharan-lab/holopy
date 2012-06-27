@@ -38,6 +38,10 @@ import numpy as np
 import scatterpy
 from scatterpy.io import SerializeByConstructor
 
+from holopy.utility.errors import (ParameterSpecficationError,
+                                   ModelDefinitionError,
+                                   InvalidParameterSpecification,
+                                   GuessOutOfBounds, MinimizerConvergenceFailed)
 
 
 class FitResult(SerializeByConstructor):
@@ -229,46 +233,13 @@ class Model(SerializeByConstructor):
     # as close to the minimizer as possible).
 
     # TODO: Allow a layer on top of theory to do things like moving sphere
-
-# TODO: Consider moving custom Exceptions into separate module
-
-class ParameterSpecficationError(Exception):
-    def __init__(self, msg):
-        self.msg = msg
-    def __str__(self):
-        return self.msg
-
-class ModelDefinitionError(Exception):
-    def __init__(self, msg):
-        self.msg = msg
-    def __str__(self):
-        return self.msg
-    
-class InvalidParameterSpecification(Exception):
-    def __init__(self, msg):
-        self.msg = msg
-    def __str__(self):
-        return self.msg
-
-class GuessOutOfBounds(InvalidParameterSpecification):
-    def __init__(self, parameter):
-        self.par = parameter
-    def __str__(self):
-        if self.par.fixed:
-            return "guess {s.guess} does not match fixed value {s.limit}".format(s=self.par)
-        return "guess {s.guess} is not within bounds {s.limit}".format(s=self.par)
-    
-class MinimizerConvergenceFailed(Warning):
-    def __init__(self, result, details):
-        self.result = result
-        self.details = details
         
     
 class Minimizer(SerializeByConstructor):
     def __init__(self, algorithm='nmpfit'):
-        raise NotImplementedError()
+        raise NotImplementedError() # pragma: nocover
     def minimize(self, parameters, cost_func, selection=None):
-        raise NotImplementedError()
+        raise NotImplementedError() # pragma: nocover
     
 class Nmpfit(Minimizer):
     """

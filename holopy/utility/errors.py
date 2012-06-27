@@ -75,3 +75,34 @@ class ParameterDefinitionError(Exception):
         self.message = message
     def __str__(self):
         return "Input error: " + self.message
+
+class ParameterSpecficationError(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+    def __str__(self):
+        return self.msg
+
+class ModelDefinitionError(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+    def __str__(self):
+        return self.msg
+    
+class InvalidParameterSpecification(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+    def __str__(self):
+        return self.msg
+
+class GuessOutOfBounds(InvalidParameterSpecification):
+    def __init__(self, parameter):
+        self.par = parameter
+    def __str__(self):
+        if self.par.fixed:
+            return "guess {s.guess} does not match fixed value {s.limit}".format(s=self.par)
+        return "guess {s.guess} is not within bounds {s.limit}".format(s=self.par)
+    
+class MinimizerConvergenceFailed(Exception):
+    def __init__(self, result, details):
+        self.result = result
+        self.details = details
