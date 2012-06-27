@@ -258,7 +258,7 @@ class GuessOutOfBounds(InvalidParameterSpecification):
             return "guess {s.guess} does not match fixed value {s.limit}".format(s=self.par)
         return "guess {s.guess} is not within bounds {s.limit}".format(s=self.par)
     
-class MinimizerConvergenceFailed(Exception):
+class MinimizerConvergenceFailed(Warning):
     def __init__(self, result, details):
         self.result = result
         self.details = details
@@ -315,7 +315,7 @@ class Nmpfit(Minimizer):
         self.xtol = xtol
         self.gtol = gtol
         self.damp = 0
-        self.maxiter = 100
+        self.maxiter = maxiter
         self.quiet = quiet
 
     def minimize(self, parameters, cost_func, selection = None, debug = False):
