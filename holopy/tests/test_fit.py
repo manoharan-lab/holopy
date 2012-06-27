@@ -382,15 +382,21 @@ def test_minimizer():
 
     # now test parinfo argument passing
     parameters2 = [Parameter(name='a', guess = 5, mpside = 2),
-                   Parameter(name='b', guess = -2, ),
-                   Parameter(name='c', guess = 3, limit = [0., 10.], 
-                             mpmaxstep = 2., step = 0.001)]
+                   Parameter(name='b', guess = -2, limit = [-4, 4.]),
+                   Parameter(name='c', guess = 3, step = 1e-4, mpmaxstep = 2., 
+                             limit = [0., 12.])]
+    minimizer = Nmpfit()
     result2, details2, parinfo = minimizer.minimize(parameters2, cost_func, 
                                                     debug = True)
     assert_equal(parinfo[0]['mpside'], 2)
-    assert_equal(parinfo[2]['limits'], np.array([0., 10.])/3.)
-    assert_equal(parinfo[2]['step'], 1e-3/3.)
+    assert_equal(parinfo[2]['limits'], np.array([0., 12.])/3.)
+    assert_allclose(parinfo[2]['step'], 1e-4/3.)
     assert_equal(parinfo[2]['limited'], [True, True])
+    print parinfo
+    print result2
+    print details2.status, details2.niter
+    assert_allclose([a, b, c], result2)
+    
 
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
