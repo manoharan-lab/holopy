@@ -364,7 +364,13 @@ class Parameter(SerializeByConstructor):
                         raise GuessOutOfBounds(self)
                     
             if guess is not None:
-                self.scale_factor = guess
+                if abs(guess) > 1e-12:
+                    self.scale_factor = abs(guess)
+                else: # values near 0
+                    if limit is not None:
+                        self.scale_factor = (limit[1] - limit[0])/10.
+                    else:
+                        self.scale_factor = 1. # guess if necessary
             elif limit is not None:
                 self.scale_factor = np.sqrt(limit[0]*limit[1])
             else:
