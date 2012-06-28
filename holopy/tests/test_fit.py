@@ -35,7 +35,8 @@ from scatterpy.theory import Mie, Multisphere
 from scatterpy.scatterer import Sphere, SphereCluster
 
 from holopy.analyze.fit import (par, Parameter, Model, fit, Nmpfit,
-                                InvalidParameterSpecification, GuessOutOfBounds)
+                                InvalidParameterSpecification, GuessOutOfBounds,
+                                MinimizerConvergenceFailed)
 from scatterpy.tests.common import assert_parameters_allclose, assert_obj_close, assert_allclose
 
 
@@ -358,27 +359,31 @@ def test_minimizer():
     c = 3.4
     y = a*x**2 + b*x + c
 
+    # This test does NOT handle scaling correctly -- we would need a Model
+    # which knows the parameters to properly handle the scaling/unscaling
     def cost_func(par_values, selection=None):
         a, b, c = par_values
         return a*x**2 + b*x + c - y
 
+    # test basic usage
     parameters = [Parameter(name='a', guess = 5),
                  Parameter(name='b', guess = -2),
                  Parameter(name='c', guess = 3)]
-
     minimizer = Nmpfit()
-
     result, minimization_details = minimizer.minimize(parameters, cost_func)
-
     assert_allclose([a, b, c], result)
 
+    # test inadequate specification
     with assert_raises(InvalidParameterSpecification):
         minimizer.minimize([Parameter(name = 'a')], cost_func)
 
     # now test limiting minimizer iterations
-
     minimizer = Nmpfit(maxiter=1)
-    result, minimization_details = minimizer.minimize(parameters, cost_func)
+    try:
+        result, minimization_details = minimizer.minimize(parameters, cost_func)
+    except MinimizerConvergenceFailed as cf: # the fit shouldn't converge
+        result, minimization_details = cf.result, cf.details
+    assert_equal(minimization_details.niter, 2) # there's always an offset of 1
 
     # now test parinfo argument passing
     parameters2 = [Parameter(name='a', guess = 5, mpside = 2),
@@ -392,9 +397,6 @@ def test_minimizer():
     assert_equal(parinfo[2]['limits'], np.array([0., 12.])/3.)
     assert_allclose(parinfo[2]['step'], 1e-4/3.)
     assert_equal(parinfo[2]['limited'], [True, True])
-    print parinfo
-    print result2
-    print details2.status, details2.niter
     assert_allclose([a, b, c], result2)
     
 

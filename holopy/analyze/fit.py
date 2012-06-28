@@ -233,8 +233,6 @@ class Model(SerializeByConstructor):
     # as close to the minimizer as possible).
 
     # TODO: Allow a layer on top of theory to do things like moving sphere
-
-    
         
     
 class Minimizer(SerializeByConstructor):
@@ -288,7 +286,7 @@ class Nmpfit(Minimizer):
         self.xtol = xtol
         self.gtol = gtol
         self.damp = 0
-        self.maxiter = 100
+        self.maxiter = maxiter
         self.quiet = quiet
 
     def minimize(self, parameters, cost_func, selection = None, debug = False):
