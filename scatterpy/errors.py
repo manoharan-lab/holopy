@@ -67,3 +67,9 @@ class UnrealizableScatterer(Exception):
         return ("Cannot compute scattering with "+ self.theory.__class__.__name__
                 + " scattering theory for a scatterer of type " +
                 self.scatterer.__class__.__name__ + " because: " + self.message)
+
+class InvalidSelection(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+    def __str__(self):
+        return self.msg

@@ -28,6 +28,7 @@ import holopy as hp
 from holopy.hologram import Hologram
 from holopy.utility.helpers import _ensure_pair
 from scatterpy.io import SerializeByConstructor
+from scatterpy.errors import InvalidSelection
 
 class ScatteringTheory(SerializeByConstructor):
     """
@@ -238,6 +239,9 @@ class ScatteringTheory(SerializeByConstructor):
         points = self._spherical_grid(*center)
         if selection is not None:
             points = points[selection]
+            if not selection.any():
+                raise InvalidSelection("No pixels selected, can't compute fields")
+
         else:
             points = points.reshape((self.imshape[0]*self.imshape[1], 3))
 
