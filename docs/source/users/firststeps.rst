@@ -80,8 +80,7 @@ in the optical train:
 
 .. sourcecode:: ipython
 
-    In [3]: holo = holopy.load('image0001.tif', 
-	   			 optics=opts, bg='../bg01.tif')
+    In [3]: holo = holopy.load('image0001.tif', optics=opts, bg='../bg01.tif')
 
 .. note::
 
@@ -97,32 +96,44 @@ in the optical train:
 
 
 Using YAML files
-````````````````
+----------------
 
-You might alternatively store the optical metadata in a
-`YAML <http://www.yaml.org/>`_ file. Information is stored in
-the yaml file as `parameter_name` followed by a colon and
-then the value. Comments in the yaml file may be added following 
-the "#" character. 
+Holopy can save and load all of its objects from `YAML
+<http://www.yaml.org/>`_ files.  These designed to be both human and
+computer readable and provide both our serialization format, and an alternative method for specifying things like optical metadata.
 
-The following text shows what one might want stored in their optics
-yaml file. Such data can then be read into an instance of the
-:class:`holopy.optics.Optics` object.::
+You can save an optics object for future use::
 
+  holopy.save('opts.yaml', opts)
 
-    wavelen: 658e-9                      # Wavelength of light (in vacuum) used in creating holograms
-    polarization: [0., 1.0]
-    divergence: 0
-    pixel_scale: [.1151e-6, .1151e-6]    # Size of camera pixel in the image plane
-    index: 1.33                          # Index of medium
+opts.yaml will look something like this (yours will not contain the explanatory comments, you can add any comments you want by proceedin them with a '#" character)::
 
+  !Optics
+  wavelen: 658e-9                      # Wavelength of light (in vacuum) used in creating holograms
+  polarization: [0., 1.0]
+  divergence: 0
+  pixel_scale: [.1151e-6, .1151e-6]    # Size of camera pixel in the image plane
+  index: 1.33                          # Index of medium
 
-.. sourcecode:: ipython
+You can also write this file by hand.  In either case you can make an :class:`holopy.optics.Optics` object from the file ::
 
-    In [5]: optics = holopy.optics.Optics(**holopy.load_yaml('optics_file.yaml'))
-	
+		 opts = holopy.load('opts.yaml')
 
 :func:`holopy.load()` will also accept the filename of an optics yaml
 file as the argument for the optics parameter and automatically load
-the yaml file.
+the yaml file. ::
 
+  holo = holopy.load('image0001.tif', optics='opts.yaml', bg='../bg01.tif')
+
+.. Note::
+   
+   :class:`holopy.hologram.Hologram`'s are a special case for yaml
+   output because they contain image data.  They can still be saved,
+   but will generate very large files that may not be easily opened in
+   a text editor like other holopy yamls.
+
+   For the curious advanced user, what we actually do is put a yaml
+   header with optics and other information, and then encode the image
+   data as a .npy binary (as from np.save) all in the same file.  This
+   keeps the whole hologram in a single file, but generates a file
+   that is not quite as easy to work with as other yamls.  

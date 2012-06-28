@@ -108,9 +108,14 @@ class Hologram(np.ndarray):
         # this function finishes the construction of our new object
         if obj is None: 
             return
-        self.optics = getattr(obj, 'optics', None)
-        self.time_scale = getattr(obj, 'time_scale', None)
-        self.name = getattr(obj, 'name', None)
+        try:
+            for var in obj.__dict__:
+                setattr(self, var, getattr(obj, var))
+        except AttributeError:
+            # somehow sometimes we get something without a __dict__ just
+            # ignoring it and waiting until we get something with a __dict__
+            # seems to work
+            pass
 
 
     def __array_wrap__(self, out_arr, context=None):

@@ -149,7 +149,7 @@ def load(im, optics=None, bg=None, bg_type='subtract',
     else:
         return holo
 
-def save_image(im, filename=None, phase=False):
+def save_image(im, filename, phase=False):
     """
     Saves an ndarray or hologram as a tiff.
 
@@ -159,7 +159,7 @@ def save_image(im, filename=None, phase=False):
     ----------
     im : ndarray or :class:`holopy.hologram.Hologram`
         image to save. 
-    filename : basestring (optional)
+    filename : basestring 
         filename in which to save image. If im is a hologram the
         function should default to the hologram's name field if no
         filename is specified 
@@ -167,13 +167,6 @@ def save_image(im, filename=None, phase=False):
         if True, save the phase data rather than the magnitude
 
     """
-    if filename is None:
-        filename = im.name
-
-    if filename is None:
-        print("No filename specified, aborting")
-        return
-
     # if we don't have an extension, default to tif
     if os.path.splitext(filename)[1] is '':
         filename += '.tif'

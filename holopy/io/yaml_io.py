@@ -40,22 +40,56 @@ import inspect
 import scatterpy.io.serializable
 from scatterpy.io.serializable import ordered_dump
 from holopy.analyze.fit import FitResult, Model, Parameter, Nmpfit
+from collections import OrderedDict
 
 class LoadError(Exception):
     def __init__(self, msg):
         self.msg = msg
     def __str__(self):
-        return msg
+        return self.msg
+
+def hologram_representer(dumper, data):
+    dump_dict = OrderedDict()
+    for var in inspect.getargspec(data.__new__).args[1:]:
+        if hasattr(data, var) and getattr(data, var) is not None:
+            dump_dict[var] = getattr(data, var)
+    return ordered_dump(dumper, '!Hologram', dump_dict)
+yaml.add_representer(hp.hologram.Hologram, hologram_representer)
 
 def save(outf, obj):
     if isinstance(outf, basestring):
         outf = file(outf, 'w')
+
     yaml.dump(obj, outf)
+    if isinstance(obj, hp.hologram.Hologram):
+        # having yaml save array data works poorly, so instead we will have
+        # numpy do it.  This will mean the file isn't stricktly a valid yaml (or
+        # even a valid text file really), but we can still read it, and with the
+        # right programs (like linux more) you can still see the text yaml
+        # information, and it keeps everything in one file
+        outf.write('image: !NpyBinary\n')
+        np.save(outf, obj)
+            
 
 def load(inf):
     if isinstance(inf, basestring):
         inf = file(inf)
-    return yaml.load(inf)
+
+    line = inf.readline()
+    lines = []
+    if line == '!Hologram\n':
+        while not re.search('!NpyBinary', line):
+            lines.append(line)
+            line = inf.readline()
+        arr = np.load(inf)
+        head = ''.join(lines[1:])
+        kwargs = yaml.load(head)
+        return hp.Hologram(arr, **kwargs)
+
+
+    else:
+        inf.seek(0)
+        return yaml.load(inf)
 
 def model_representer(dumper, data):
     dump_dict = OrderedDict()

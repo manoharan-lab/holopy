@@ -79,10 +79,9 @@ You will most likely want to save the fit result ::
   holopy.save('result.yaml', result)
 
 This saves all of the information about the fit to a yaml text
-file.  These files are reasonably human readable and can be loaded
-back as an object with ::
+file.  These files are reasonably human readable and serve as our archive format for data.  They can be loaded back into python with ::
 
-  loaded_result = holopy.io.yaml_io.load('result.yaml')
+  loaded_result = holopy.load('result.yaml')
 
 Advanced Options
 ================
