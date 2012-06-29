@@ -57,3 +57,18 @@ def test_hologram_io():
                                         optics=o))
     
     assert_write_read(holo)
+
+@attr('fast')
+def test_load_optics():
+    optics_yaml = """wavelen: 785e-9
+polarization: [1.0, 0]
+divergence: 0
+pixel_size: [6.8e-6, 6.8e-6]
+pixel_scale: [3.3e-7, 3.3e-7]"""
+    t = tempfile.TemporaryFile()
+    t.write(optics_yaml)
+    t.seek(0)
+
+    o = hp.Optics(**hp.load(t))
+
+    assert_obj_close(o, hp.Optics(wavelen=7.85e-07, polarization=[1.0, 0.0], divergence=0, pixel_size=[6.8e-06, 6.8e-06], pixel_scale=[3.3e-07, 3.3e-07]))

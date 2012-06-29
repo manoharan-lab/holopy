@@ -89,7 +89,18 @@ def load(inf):
 
     else:
         inf.seek(0)
-        return yaml.load(inf)
+        obj = yaml.load(inf)
+        if isinstance(obj, dict):
+            # sometimes yaml doesn't convert strings to floats properly, so we
+            # have to check for that.  
+            for key in obj:
+                if isinstance(obj[key], basestring):
+                    try:
+                        obj[key] = float(obj[key])
+                    except ValueError:
+                        pass
+                
+        return obj
 
 def model_representer(dumper, data):
     dump_dict = OrderedDict()
