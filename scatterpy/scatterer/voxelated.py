@@ -26,8 +26,9 @@ import tempfile
 import numpy as np
 from scatterpy.scatterer import Scatterer, Sphere
 from holopy.process.math import rotation_matrix
+from scatterpy.scatterer.abstract_scatterer import SingleScatterer
 
-class VoxelatedScatterer(Scatterer):
+class VoxelatedScatterer(SingleScatterer):
     """
     TODO: need a docstring
     """
@@ -122,6 +123,23 @@ class VoxelatedScatterer(Scatterer):
     def z(self):
         return self.center[2]
 
+class ScattererByFunction(SingleScatterer):
+    def __init__(self, test, n, domain, center):
+        self.test = test
+        self.n = n
+        self.domain = domain
+        self.center = center
+
+    def _points(self, spacing):
+        for i, x in enumerate(np.arange(self.domain[0][0], self.domain[0][1], spacing)):
+            for j, y in enumerate(np.arange(self.domain[1][0], self.domain[1][1], spacing)):
+                for k, z in enumerate(np.arange(self.domain[2][0], self.domain[2][1],
+                                   spacing)):
+                    point = np.array((x, y, z))
+                    if self.test(point):
+                        yield i, j, k
+
+
 
 class SphereIntersection(VoxelatedScatterer):
     def __init__(self, s1, s2, optics):
@@ -179,6 +197,8 @@ def setup_grid(dimension, n, optics):
         dimension = np.array([dimension, dimension, dimension])
     else:
         dimension = np.array(dimension)
+
+    n = abs(n)
 
     dpl = 10*(n/optics.index)
     dpl_size = optics.med_wavelen/dpl

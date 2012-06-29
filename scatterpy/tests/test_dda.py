@@ -39,8 +39,9 @@ import scatterpy
 from scatterpy.errors import TheoryNotCompatibleError
 from holopy.optics import (WavelengthNotSpecified, PixelScaleNotSpecified,
                            MediumIndexNotSpecified)
-
+from scatterpy.scatterer.voxelated import ScattererByFunction
 from common import assert_allclose
+import common
 
 import os.path
 
@@ -147,7 +148,27 @@ def test_DDA_voxelated():
 
     assert_allclose(sphere_holo, gen_holo, rtol=1e-3)
 
+@dec.skipif(missing_dependencies(), "a-dda not installed")
+@with_setup(setup=setup_optics, teardown=teardown_optics)
+def test_voxelated_complex():
+    o = hp.Optics(wavelen=.66, index=1.33, pixel_scale=.1)
+    s = scatterpy.scatterer.Sphere(n = 1.2+2j, r = .2, center = (5,5,5))
 
+    def sphere(r):
+        rsq = r**2
+        def test(point):
+            return (point**2).sum() < rsq
+        return test
+
+    sv = ScattererByFunction(sphere(s.r), s.n, [[-s.r, s.r], [-s.r, s.r], [-s.r,
+    s.r]], center = s.center)
+
+    dda = DDA(o, 50)
+    holo_dda = dda.calc_holo(sv)
+    common.verify(holo_dda, 'dda_voxelated_complex', rtol=1e-5)
+
+    
+@attr('medium')
 @dec.skipif(missing_dependencies(), "a-dda not installed")
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_coated():
@@ -173,3 +194,5 @@ def test_Ellipsoid_dda():
     assert_almost_equal(h.max(), 1.3152766077267062)
     assert_almost_equal(h.mean(), 0.99876620628942114)
     assert_almost_equal(h.std(), 0.06453155384119547)
+
+    

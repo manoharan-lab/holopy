@@ -97,6 +97,9 @@ class DDA(ScatteringTheory):
             scat_args = self._adda_coated(scatterer, self.optics, temp_dir)
         elif isinstance(scatterer, scatterpy.scatterer.VoxelatedScatterer):
             scat_args = self._adda_general(scatterer, self.optics, temp_dir)
+        elif isinstance(scatterer,
+            scatterpy.scatterer.voxelated.ScattererByFunction):
+            scat_args = self._adda_function_scatterer(scatterer, self.optics, temp_dir)
         elif isinstance(scatterer, scatterpy.scatterer.Ellipsoid):
             scat_args = self._adda_ellipsoid(scatterer, self.optics, temp_dir)
         elif isinstance(scatterer, scatterpy.scatterer.SphereCluster):
@@ -179,6 +182,29 @@ class DDA(ScatteringTheory):
         # TODO: figure out how adda is doing recentering and if we need to
         # adjust for that
 
+    def _adda_function_scatterer(self, scatterer, optics, temp_dir):
+        outf = tempfile.NamedTemporaryFile(dir = temp_dir, delete=False)
+        for point in scatterer._points(self._spacing(optics, scatterer.n)):
+            outf.write('{0} {1} {2}\n'.format(*point))
+        outf.flush()
+        
+        cmd = []
+        cmd.extend(['-shape', 'read', outf.name])
+        cmd.extend(['-dpl', str(self._dpl(optics, scatterer.n))])
+        cmd.extend(['-m'])
+        cmd.extend([str(scatterer.n.real/optics.index),
+                    str(scatterer.n.imag/optics.index)])
+
+        return cmd
+
+    
+    def _dpl(self, optics, n):
+        return 10*(abs(n)/optics.index)
+    
+    def _spacing(self, optics, n):
+        return optics.med_wavelen / self._dpl(optics, n)
+        
+    
     def calc_field(self, scatterer, selection = None):
         time_start = time.time()
         

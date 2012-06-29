@@ -49,6 +49,8 @@ class LoadError(Exception):
         return self.msg
 
 def hologram_representer(dumper, data):
+    if data.ndim == 0:
+        return dumper.represent_float(data.max())
     dump_dict = OrderedDict()
     for var in inspect.getargspec(data.__new__).args[1:]:
         if hasattr(data, var) and getattr(data, var) is not None:

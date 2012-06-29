@@ -62,7 +62,7 @@ xoptics = holopy.optics.Optics(wavelen=wavelen, index=index,
 optics=yoptics
 
 
-def verify(result, name):
+def verify(result, name, rtol=1e-7):
     scatterpy_location = os.path.split(os.path.abspath(scatterpy.__file__))[0]
     gold_name = os.path.join(scatterpy_location, 'tests', 'gold', 'gold_'+name)
     if os.path.exists(gold_name + '.npy'):
@@ -70,16 +70,17 @@ def verify(result, name):
         arr = gold
         if isinstance(result, ElectricField):
             arr = np.dstack((result.x_comp, result.y_comp, result.z_comp))
-        assert_allclose(arr, gold)
+        assert_allclose(arr, gold, rtol)
 
     gold = yaml.load(file(gold_name+'.yaml'))
 
     for key, val in gold.iteritems():
         if isinstance(result, ElectricField):
             comp, check = key.split('.')
-            assert_almost_equal(getattr(getattr(result, comp), check)(), val)
+            assert_almost_equal(getattr(getattr(result, comp), check)(), val,
+                                decimal=int(-np.log10(rtol)))
         else:
-            assert_almost_equal(getattr(result, key)(), val)
+            assert_almost_equal(getattr(result, key)(), val, decimal=int(-np.log10(rtol)))
     
 
 def make_golds(result, name):
