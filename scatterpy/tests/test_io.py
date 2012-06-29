@@ -26,8 +26,9 @@ import scatterpy
 import holopy as hp
 import tempfile
 from numpy.testing import assert_equal
-from scatterpy.tests.common import assert_allclose
+from scatterpy.tests.common import assert_allclose, assert_obj_close
 from scatterpy.io import Serializable
+from scatterpy.scatterer import Sphere, SphereCluster
 
 def assert_read_matches_write(o):
     tempf = tempfile.TemporaryFile()
@@ -35,7 +36,7 @@ def assert_read_matches_write(o):
     tempf.flush()
     tempf.seek(0)
     loaded = hp.io.yaml_io.load(tempf)
-    assert_obj_equal(o, loaded)
+    assert_obj_close(o, loaded)
 
 def assert_obj_equal(o1, o2):
     if o1 == o2:
@@ -62,3 +63,9 @@ def test_theory_io():
 def test_scatterer_io():
     s = scatterpy.scatterer.Sphere()
     assert_read_matches_write(s)
+
+    s1 = Sphere(1.59, .5, [1, 1, 2])
+    s2 = Sphere(1.59, .5, [1, 3, 2])
+    sc = SphereCluster([s1, s2])
+
+    assert_read_matches_write(sc)

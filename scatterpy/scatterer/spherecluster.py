@@ -49,15 +49,15 @@ class SphereCluster(Composite):
     -----
     '''
 
-    def __init__(self, spheres):
+    def __init__(self, scatterers):
         # make sure all components are spheres
-        for s in spheres:
+        for s in scatterers:
             if not isinstance(s, Sphere):
                 raise ScattererDefinitionError(
                     "SphereCluster expects all component " +
                     "scatterers to be Spheres.\n" + 
                     repr(s) + " is not a Sphere", self)
-        self.scatterers = spheres
+        self.scatterers = scatterers
 
         if self.overlaps:
             warnings.warn(OverlapWarning(self, self.overlaps))

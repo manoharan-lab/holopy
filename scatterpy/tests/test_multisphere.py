@@ -132,7 +132,7 @@ def test_polarization():
 
 @with_setup(setup=setup_model, teardown=teardown_model)
 def test_2_sph():
-    sc = SphereCluster(spheres=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
+    sc = SphereCluster(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07),
                                 Sphere(center=[6e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07)])
@@ -149,7 +149,7 @@ def test_2_sph():
 @attr('fast')
 @with_setup(setup=setup_model, teardown=teardown_model)
 def test_invalid():
-    sc = SphereCluster(spheres=[Sphere(center=[7.1, 7e-6, 10e-6],
+    sc = SphereCluster(scatterers=[Sphere(center=[7.1, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07),
                                 Sphere(center=[6e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07)])
@@ -158,7 +158,7 @@ def test_invalid():
 
     assert_raises(UnrealizableScatterer, theory.calc_holo, sc)
     
-    sc = SphereCluster(spheres=[Sphere(center=[7.1, 7e-6, 10e-6],
+    sc = SphereCluster(scatterers=[Sphere(center=[7.1, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-01),
                                 Sphere(center=[6e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07)])
@@ -178,7 +178,7 @@ def test_overlap():
     # should raise a warning
     with warnings.catch_warnings(True) as w:
         warnings.simplefilter("always")
-        sc = SphereCluster(spheres=[Sphere(center=[3e-6, 3e-6, 10e-6], 
+        sc = SphereCluster(scatterers=[Sphere(center=[3e-6, 3e-6, 10e-6], 
                                            n=1.59, r=.5e-6), 
                                     Sphere(center=[3.4e-6, 3e-6, 10e-6], 
                                            n=1.59, r=.5e-6)])
@@ -192,7 +192,7 @@ def test_overlap():
     # but it should succeed with a small overlap, after raising a warning
     with warnings.catch_warnings(True) as w:
         warnings.simplefilter("always")
-        sc = SphereCluster(spheres=[Sphere(center=[3e-6, 3e-6, 10e-6], 
+        sc = SphereCluster(scatterers=[Sphere(center=[3e-6, 3e-6, 10e-6], 
                                            n=1.59, r=.5e-6), 
                                     Sphere(center=[3.9e-6, 3.e-6, 10e-6], 
                                            n=1.59, r=.5e-6)])
@@ -204,7 +204,7 @@ def test_overlap():
 @attr('fast')
 @with_setup(setup=setup_model, teardown=teardown_model)
 def test_selection():
-    sc = SphereCluster(spheres=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
+    sc = SphereCluster(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07),
                                 Sphere(center=[6e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07)])

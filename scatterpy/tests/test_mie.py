@@ -125,7 +125,7 @@ def test_Mie_multiple():
     s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
     s2 = Sphere(n = 1.59, r = 1e-6, center=[8e-6,5e-6,5e-6])
     s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,10e-6,3e-6])
-    sc = SphereCluster(spheres=[s1, s2, s3])
+    sc = SphereCluster(scatterers=[s1, s2, s3])
     theory = Mie(imshape=128, optics=optics)
 
     fields = theory.calc_field(sc)
@@ -195,7 +195,7 @@ def test_linearity():
     sphere1 = Sphere(n=n, r=r, center = (x, y, z))
     sphere2 = Sphere(n=n, r=r, center = (x2, y2, z2))
 
-    sc = SphereCluster(spheres = [sphere1, sphere2])
+    sc = SphereCluster(scatterers = [sphere1, sphere2])
     model = xmodel
     
     holo_1 = model.calc_holo(sphere1, alpha=scaling_alpha)
@@ -238,7 +238,7 @@ def test_nonlinearity():
     sphere1 = Sphere(n=n, r=r, center = (x, y, z))
     sphere2 = Sphere(n=n, r=r, center = (x2, y2, z2))
 
-    sc = SphereCluster(spheres = [sphere1, sphere2])
+    sc = SphereCluster(scatterers = [sphere1, sphere2])
     model = xmodel
     
     holo_1 = model.calc_holo(sphere1, alpha=scaling_alpha)

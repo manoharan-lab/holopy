@@ -45,7 +45,7 @@ def test_SphereCluster_construction():
     s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
     s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,0,0])
-    sc = SphereCluster(spheres=[s1, s2, s3])
+    sc = SphereCluster(scatterers=[s1, s2, s3])
     print sc.get_component_list()
     print sc
 
@@ -71,7 +71,7 @@ def test_SphereCluster_construction_typechecking():
     s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,0,0])
     cs = CoatedSphere(n=(1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6),
                       center=[-5e-6, 0,0])
-    sc = SphereCluster(spheres=[s1, s2, s3, cs])
+    sc = SphereCluster(scatterers=[s1, s2, s3, cs])
 
 @attr('fast')
 def test_SphereCluster_ovelap_checking():
@@ -85,7 +85,7 @@ def test_SphereCluster_ovelap_checking():
 def test_SphereCluster_parameters():
     s1 = Sphere(n = 1.59, r = 5e-7, center=[1e-6, -1e-6, 10e-6])
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
-    sc = SphereCluster(spheres = [s1, s2])
+    sc = SphereCluster(scatterers = [s1, s2])
 
     assert_equal(sc.parameters, OrderedDict([('0:Sphere.center[0]',
     1e-6), ('0:Sphere.center[1]', -1e-6),
@@ -106,7 +106,7 @@ def test_SphereCluster_parameters():
 def test_SphereCluster_translation():
     s1 = Sphere(n = 1.59, r = 5, center=[1, -1, 10])
     s2 = Sphere(n = 1.59, r = 1, center=[0,0,0])
-    sc = SphereCluster(spheres = [s1, s2])
+    sc = SphereCluster(scatterers = [s1, s2])
 
     sc2 = sc.translate(1, 1, 1)
 
@@ -120,7 +120,7 @@ def test_SphereCluster_translation():
 def test_SphereCluster_rotation():
     s1 = Sphere(n = 1.59, r = 1, center = [1, 0, 0])
     s2 = Sphere(n = 1.59, r = 1, center = [-1, 0, 1])
-    sc = SphereCluster(spheres = [s1, s2])
+    sc = SphereCluster(scatterers = [s1, s2])
 
     sc2 = sc.rotate(np.pi/2, 0, 0)
 
