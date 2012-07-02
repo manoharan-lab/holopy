@@ -127,7 +127,40 @@ def test_fit_mie_par_scatterer():
     # TODO: see if we can get this back to 3 sig figs correct alpha
     assert_approx_equal(result.alpha, gold_alpha, significant=3)
     assert_equal(model, result.model)
+
+@attr('fast')
+@with_setup(setup=setup_optics, teardown=teardown_optics)
+def test_fit_selection():
+    path = os.path.abspath(hp.__file__)
+    path = os.path.join(os.path.split(path)[0],'tests', 'exampledata')
+    holo = hp.process.normalize(hp.load(os.path.join(path, 'image0001.npy'),
+                                        optics=optics))
+
     
+    s = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
+                         par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
+               r = par(8.5e-7, (1e-8, 1e-5)), n = par(1.59, (1,2))+1e-4j)
+
+    
+    model = Model((s, par(.6, [.1,1], 'alpha')), Mie, selection = .1)
+
+    result = fit(model, holo)
+
+    # TODO: make new structure work with complex n
+    gold_single = OrderedDict((('center[0]', 5.534e-6),
+                               ('center[1]', 5.792e-6),
+                               ('center[2]', 1.415e-5),
+                               ('n.imag', 1e-4),
+                               ('n.real', 1.582),
+                               ('r', 6.484e-7))) 
+    
+    assert_parameters_allclose(result.scatterer, gold_single, rtol=1e-2)
+    # TODO: see if we can get this back to 3 sig figs correct alpha
+    assert_approx_equal(result.alpha, gold_alpha, significant=2)
+    assert_equal(model, result.model)
+
+
+
 @nottest
 @attr('slow')
 def test_fit_superposition():
@@ -361,7 +394,7 @@ def test_minimizer():
 
     # This test does NOT handle scaling correctly -- we would need a Model
     # which knows the parameters to properly handle the scaling/unscaling
-    def cost_func(par_values, selection=None):
+    def cost_func(par_values):
         a, b, c = par_values
         return a*x**2 + b*x + c - y
 

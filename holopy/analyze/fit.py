@@ -72,9 +72,9 @@ class Model(SerializeByConstructor):
         The theory that should be used to compute holograms
     make_scatterer: function(par_values) -> :class:`scatterpy.scatterer.AbstractScatterer`
         Function that returns a scatterer given parameters
-    selection : array of integers (optional)
-        An array with 1's in the locations of pixels where you
-        want to calculate the field, defaults to 1 at all pixels
+    selection : float or array of integers (optional)
+        Fraction of pixels to compare, or an array with 1's in the locations of
+        pixels where you want to calculate the field, defaults to 1 at all pixels
 
     Notes
     -----
@@ -88,6 +88,7 @@ class Model(SerializeByConstructor):
 
         self.theory = theory
         self.selection = selection
+        self._selection = None
 
         self.scatterer = None
         self.parameters = []
@@ -215,17 +216,23 @@ class Model(SerializeByConstructor):
         # the default alpha for theories (which is hopefully what they want)
         return 1.0
     
-    def cost_func(self, data, selection = None): 
+    def cost_func(self, data): 
         if not isinstance(self.theory, scatterpy.theory.ScatteringTheory):
             theory = self.theory(data.optics, data.shape)
         else:
             theory = self.theory
+
+        if self.selection is not None and self._selection is None:
+            if not hasattr(self.selection, 'shape'):
+                # if the user specified a float fraction for selection, we need
+                # to instantiate a selection array
+                self._selection = np.random.random(data.shape) > (1.0-self.selection)
             
-        def cost(par_values, selection=None):
+        def cost(par_values):
             calc = theory.calc_holo(
                 self.make_scatterer_from_par_values(par_values),
-                self.alpha(par_values), selection)
-            return self.compare(calc, data, selection)
+                self.alpha(par_values), self._selection)
+            return self.compare(calc, data, self._selection)
         return cost
 
     # TODO: make a user overridable cost function that gets physical
@@ -293,7 +300,7 @@ class Nmpfit(Minimizer):
         from holopy.third_party import nmpfit
         def resid_wrapper(p, fjac=None):
             status = 0                    
-            return [status, cost_func(p, selection)]
+            return [status, cost_func(p)]
         nmp_pars = []
 
         # marshall the paramters into a dict of the form nmpfit wants
