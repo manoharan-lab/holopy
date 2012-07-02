@@ -1,0 +1,83 @@
+* Data
+** Generalize the Hologram to a Data object.  
+A Data object is at it an ndarray of measurements (or simulated measurements) along with metadata.  
+*** array data
+can be 1d (light scattering)
+2d (holograms and other images)
+3d (volumes or timeseries)
+4d (timeseries of volumes)
+*** Metadata 
+must at minimum specify where the measurements were taken (this can by pixel spacings, angles, spatial coordinates, ...).  It also will contain experimental details, including everything that was in our optics.  
+
+Metadata be a composite of an OpticalTrain, a Detector, ...
+
+** One Canonical way of specifying calculations and data
+A Data object also contains all of the information needed to do a forward calculation, and you should be able to do a calculation with loaded data as a template (so for example a fitting model does not need an optics object repeating all of the optical information that is already in the hologram).  
+
+This could be done by specifying and empty data object (either all 0's or more likely one who has an array attribute that is None) as a target, or it could be done by pulling the metadata object out of the data object.  
+
+* Propagation
+** Reconstruction (free space propagation)
+*** Twin image removal
+*** Deconvolution
+** Non free space propagation 
+This can include Tom's DDA propagation through objects for Adjoint fields, but the same interface should be usable for simulating propagation through a sphere at an interface, a microfluidic device. Only real limitation will be the computational cost of doing these propagation.  
+
+* Scatterers
+** Canonical Representation
+We have a small number of canonical representatives of scatterers, and try not to define more if we don't need to.  
+*** Geometrical Primitives
+Position, (orientation, internal parameters)
+*** Collection of Geometrical Primitives
+*** Voxelated space
+** Views
+Alternative ways of parameterizing a Canonical Representation, so a Dimer is a view of a SphereCluster with different parameters.  
+
+A view can be treated by theories as its canonical primitive, it just provides a different way for the user to specify the same information.  
+
+We prefer creating new views instead of primitives.  So three spheres permanently attached should be treated as a view of a SphereCluster with gap distances fixed.  We would only introduce a new primitive if, for example, they had gaps filled in enough we needed to model their scattering differently.  
+
+* Forward Calculations
+** Examples
+*** model.calc_*(scatterer, DataTarget, scaling)
+*** Static Light Scattering 
+mie.calc_intensity(Sphere(n=1.59, r=GaussianDistribution(mean=.5, sigma=.5)), DataTarget, scaling)
+*** Hologram with Beam Tilt
+mie.calc_holo(Sphere(), DataTarget(OpticalTrain(tilt, pol, ...), ...), alpha)
+** Less state for models
+Models objects no longer contain information about detector geometry, you pass it into calc_* instead.  They only contain information about how to do calculations (tolerances, ...).  This means that in most cases you don't need to instantiate them, you can just call a classmethod that uses the default parameters.  
+** Scaling argument for all calc_* functions
+We probably want a scaling argument for all calc_* functions since static light scattering needs a fitable scaling factor that is fairly similar to alpha.  This makes the interface more parallel between the calc's
+
+* Fit
+fit(model, data, minimizer)
+** Model
+Model(scatterer or other parameterization, metadata = None, alpha = None)
+*** Examples
+**** Sphere Hologram with beam tilt
+Model(Sphere(r = par(), ...), OpticalTrain = Optics(tilt = par(), ...), alpha = par)
+**** Static Light Scattering
+Model(Sphere(n = par(), r = GaussianDistribution(mean=par(), sigma= par())
+*** Metadata (formerly optics) may not be needed since it can be acquired form data when the fit is run.  It only needs to be specified if you are fitting to parameters in it.  
+
+** Constraints
+Should they be with the model or fit?  I will write things as if in model here, but the same thing could be sent to fit instead
+Still needs more thought, here are a couple of ideas
+*** By name
+Model(Sphere(...), constraints= "sphere_0_x - sphere_0_y = 5")
+Ugly, needs string parsing
+*** By parameter, Constraint Objects
+s1 = Sphere()
+s2 = Sphere()
+sc = SphereCluster(s1, s2)
+Model(sc, contraints = AdditiveEqualityContraint([s1.r, s2.r], 5)
+Means s1.r + s2.r = 5
+Would end up needing a large set of different objects for all the kinds of constraints you might want
+*** By Parameter, Mixed string
+Model(sc, contraints = Constraint("{0} + {1} = 5", (s1.x, s2.x))
+Still requires string parsing, but doesn't require user to know our parameter naming conventions
+*** By Parameter, Overloading
+Model(sc, constraints = s1.r + s2.r = 5)
+This would be parsed by operator overloading into some composite parameter object which the model/fit would interpret into constraints
+
+The operator overloading here could get pretty hairy.  
