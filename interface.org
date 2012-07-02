@@ -11,6 +11,9 @@ must at minimum specify where the measurements were taken (this can by pixel spa
 
 Metadata be a composite of an OpticalTrain, a Detector, ...
 
+** Users may actually interact with subclasses (ie Hologram or Image)
+This isn't strictly necessary, but there may be a few convenient things we can do by specializing, and handing the user an Image object when we load their image may be friendlier than handing them a Data object.
+
 ** One Canonical way of specifying calculations and data
 A Data object also contains all of the information needed to do a forward calculation, and you should be able to do a calculation with loaded data as a template (so for example a fitting model does not need an optics object repeating all of the optical information that is already in the hologram).  
 

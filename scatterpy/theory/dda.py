@@ -78,7 +78,7 @@ class DDA(ScatteringTheory):
     def __init__(self, optics, imshape=(256,256), theta=None, phi=None):
         # Check that adda is present and able to run
         try:
-            subprocess.check_output(['adda', '-V'])
+            subprocess.check_call(['adda', '-V'])
         except (subprocess.CalledProcessError, OSError):
             raise DependencyMissing('adda')
 
