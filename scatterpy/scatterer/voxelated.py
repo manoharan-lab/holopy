@@ -24,6 +24,8 @@ from __future__ import division
 
 import tempfile
 import numpy as np
+import holopy as hp
+from copy import copy
 from scatterpy.scatterer import Scatterer, Sphere
 from holopy.process.math import rotation_matrix
 from scatterpy.scatterer.abstract_scatterer import SingleScatterer
@@ -129,15 +131,26 @@ class ScattererByFunction(SingleScatterer):
         self.n = n
         self.domain = domain
         self.center = center
+        self._rotation = None
 
     def _points(self, spacing):
+        if self._rotation is not None:
+            rotation_matrix = hp.process.math.rotation_matrix(*self._rotation)
+        else:
+            rotation_matrix = hp.process.math.rotation_matrix(0, 0, 0)
         for i, x in enumerate(np.arange(self.domain[0][0], self.domain[0][1], spacing)):
             for j, y in enumerate(np.arange(self.domain[1][0], self.domain[1][1], spacing)):
                 for k, z in enumerate(np.arange(self.domain[2][0], self.domain[2][1],
                                    spacing)):
-                    point = np.array((x, y, z))
+                    point = np.dot(rotation_matrix, np.array((x, y, z)))
+                    
                     if self.test(point):
                         yield i, j, k
+
+    def rotate(self, alpha, beta, gamma):
+        new = copy(self)
+        new._rotation = (alpha, beta, gamma)
+        return new
 
 
 

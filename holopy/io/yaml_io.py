@@ -40,7 +40,6 @@ import inspect
 import scatterpy.io.serializable
 from scatterpy.io.serializable import ordered_dump
 from holopy.analyze.fit import FitResult, Model, Parameter, Nmpfit
-from collections import OrderedDict
 
 class LoadError(Exception):
     def __init__(self, msg):
