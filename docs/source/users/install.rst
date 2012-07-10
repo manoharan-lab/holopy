@@ -113,6 +113,6 @@ To run these tests navigate to the root of the package and run:
 
 .. sourcecode:: bash
 
-    $ nosetests -a '!slow' scatterpy/tests holopy/tests
+    $ nosetests -a '!slow' 
 
 

@@ -7,3 +7,4 @@ Tutorials
    calc_tutorial
    recon_tutorial
    fit_tutorial
+   series_fit_tutorial

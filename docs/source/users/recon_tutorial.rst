@@ -1,8 +1,10 @@
 .. _recon_tutorial:
 
-*****************
-Reconstruction
-*****************
+**************************
+Propagation/Reconstruction
+**************************
+
+The classical way of working with holograms is to optically reconstruct them by shining light back through them.  This has the mathematical effect of propagating the field stored in the hologram to some different plane.  Holopy generalizes this concept and allows you to numerically propagate any hologram or electric field to another point in space.  
 
 Import the code
 ===============
@@ -10,9 +12,10 @@ Import the code
 To begin, import the :mod:`holopy.analyze.reconstruct` module. ::
 
     import holopy
-    from holopy.analyze.reconstruct import reconstruct
+    from holopy import propagate, show
 
-:func:`holopy.reconstruct` is also provided as an alias to :func:`holopy.analyze.reconstruct.reconstruct` 
+
+:func:`holopy.propagate` is also provided as an alias to :func:`holopy.propagation.propagation`
 
 
 Load a hologram
@@ -40,100 +43,68 @@ like a numpy array.
 
 .. sourcecode:: ipython
 
-    In [4]: rec_xy = reconstruct(holo, 10e-6)
+    In [4]: rec_xy = reconstruct(holo, 10)
 
-    In [5]: pylab.imshow(abs(rec_xy[:,:,0,0] * scipy.conj(rec_xy[:,:,0,0])))
+    In [6]: rec_xy.dtype
+    Out[6]: dtype('complex128')
 
-    In [6]: rec_xy.shape
-    Out[6]: (1024L, 1024L, 1L, 1L)
-
-    In [7]: rec_xy.dtype
-    Out[7]: dtype('complex128')
+    In [7]: rec_vol = reconstruct(holo, np.linspace(5, 15, 10))
 
 
-The reconstructed image is a four dimensional complex array. The
+The reconstructed image is a complex array. The
 dimensions of the imaging plane (x&y) are the first two
-dimensions. The next two are z - the distance normal to the imaging
-plane) and t (time).
+dimensions.  If a range of z distances are specified the array will be 3 dimensional, x, y, z.  If the hologram is a 3d time series, the reconstructed image will be a 3d x, y, t, or 4d x, y, z, t array.
 
-.. note::
-    The reconstructed array is complex. In the code above the
-    intensity of the reconstructed field was displayed. But one could
-    also show the phase or just the imaginary component of the
-    reconstructed field. For example:
-
-    .. sourcecode:: ipython
-
-        In [8]: pylab.imshow(scipy.angle(rec_xy[:,:,0,0]))
-
-        In [9]: pylab.imshow(scipy.imag(rec_xy[:,:,0,0]))
-
-Visualize the reconstruction
+Visualizing Reconstructions
 ============================
 
 Now that you have the reconstruction, you need to view it. A few 
 resources come in handy when visualizing and working with the
 reconstructions.
 
-The functions in `matplotlib <http://matplotlib.sourceforge.net/>`_
-are great for displaying 2D images and making plots. One of those functions,
-``pylab.imshow``, was demontrated above. Other functions exist for creating
-plots, histograms, contour plots and other figures.
+Holopy provides convenience wrappers around display routines from `matplotlib <http://matplotlib.sourceforge.net/>`_ and `MayaVI <http://code.enthought.com/projects/mayavi/>`_ though since our Data is an numpy array, you can use the raw plotting libraries as well.
 
-Also of potential use are the functions within the ``scipy.ndimage`` package.
-This package includes a number of image processing tools such as erosion and
-dilation operations, Gaussian and Fourier filters and extracting statistics
-on images.
+For viewing 2d slices, use hp.show ::
 
-Finally, `MayaVI <http://code.enthought.com/projects/mayavi/>`_ is great
-for working with and visualizing three-dimensional data sets. We suggest
-looking through the documentation there. But below is a preview of how
-one can use MayaVi with our code.
+  holopy.show(rec_vol)
+  holopy.show(rec_vol.angle())
+  holopy.show(rec_vol.imag())
 
-Demo of visualizing reconstructions
------------------------------------
+By default holopy.show shows the magnitude of a complex image.  For volume images, you can step through slices in the z plane by using the left and right arrow keys on your keyboard.
 
-In the following example we use the hologram from 5 micron-scale
-particles displayed below.
+To see three dimensional renderings, use holopy.render ::
 
-.. image:: ../images/image_5Particle_Hologram.jpg
-    :scale: 20%
+  holopy.render(rec_vol, 'contour')
 
-::
+This will show a contour surface plot of the reconstruction, using MayaVI.  
 
-    import holopy
-    from holopy.analyze import reconstruct
-    import scipy
-    import pylab
-    from enthought.mayavi import mlab
-    opts = holopy.optics.Optics(wavelen=658e-9, index=1.414, pixel_scale = \
-                                [0.07e-6, 0.07e-6])
-    my_holo = holopy.io.load('image1180.tif', bg='background.tif', optics=opts)
+Propagating through Non-Homogeneous Media
+=========================================
 
-You can take a look at a portion of the hologram with::
+The propagation discussed above assumes propagation through free space or a homogeneous dielectric medium.  However, holopy can also propagate a field  through an optical elements :: 
 
-    holo_portion = my_holo[333-256:333+256, 415-256:415+256]
-    pylab.imshow(holo_portion)
+  from holopy.propagation import ThinLens
+  rec = progagate(holo, 1e-5, optical_train = ThinLens(f = 1e-2, z =   1e-1)
 
-And that portion can be reconstructed. We reconstruct and view a 2D slice
-10 microns from the hologram plane::
+or an inhomogeneous medium ::
 
-    rec = reconstruct(holo_portion, 10e-6)
-    pylab.imshow(abs(rec[:,:,0,0]*scipy.conj(rec[:,:,0,0])))
+  medium = holopy.load('medium.yaml')
+  rec = propagate(holo, 1e-5, medium = medium)
 
-Now, to reconstruct a volume over a range from 1 to 12 microns in steps of 100nm::
+Holopy defaults to centering the medium or optical elements on the center of the data field (Or should we specify there center relative to the origin of the coordinate system (upper left corner for images)?  I think we will almost always want to center things, so it is better to make it default, there than the slight akwardness if the Data does not have a well defined center - tgd).  You can specify on offset vector if you don't want them centered ::
 
-    rec_volume = reconstruct(holo_portion, scipy.arange(1e-6,12e-6,0.1e-6))
+  ThinLens(f = 1e-2, z = 1e-1, offset = (1e-4, 1e-4))
 
-To display a contour surface of the intensity of the reconstructed volume::
 
-    from enthought.mayavi import modules
-    mlab.contour3d(abs(rec_volume[:,:,:,0]*scipy.conj(rec_volume[:,:,:,0])))
-    engn = mlab.get_engine()
-    engn.add_module(modules.outline.Outline())
-    engn.add_module(modules.axes.Axes())
+Changing Propagation Model
+==========================
 
-And the output would look something like this
+Holopy defaults to a linear model of propagation by convolution with pointspread functions.  If asked to compute propagation through a nonuniform medium it switches to its DDA propagation model.  If you wish to manually control the propagation model you can use ::
 
-.. image:: ../images/ReconVolume_mlab_5Particle_Hologram.png
-    :scale: 60%
+  rec = propagate(holo, 1e-5, propagation = FresnelTransform)
+
+Be aware that not all propagation models can support all kinds of data, media, and optical elements, so you may get an exception if for example you try to use FresnelTransform with nonuniform media.  If you leave the propagation model unspecified holopy will try to find one that will work for your conditions and only fail if it has no valid model.  
+
+
+
+  
