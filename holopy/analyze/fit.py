@@ -115,8 +115,8 @@ class Model(SerializeByConstructor):
                 self.scatterer = scatterer.from_parameters(dict(parameters))
             else:
                 raise ModelDefinitionError(
-                   "A model cannot contain more than one scatterer.  If you want"
-                   "to include multiple scatterers include them in a single"
+                   "A model cannot contain more than one scatterer.  If you want "
+                   "to include multiple scatterers include them in a single "
                    "composite Scatterer")
 
             return [p[1] for p in parameters if isinstance(p[1], Parameter)]
@@ -125,6 +125,11 @@ class Model(SerializeByConstructor):
             for item in parameters:
                 if isinstance(item, scatterpy.scatterer.Scatterer):
                     self.parameters.extend(unpack_scatterer(item))
+                elif isinstance(item, ComplexParameter):
+                    if isinstance(item.real, Parameter) and not item.real.fixed:
+                        self.parameters.append(item.real, item.name + '.real')
+                    if isinstance(item.imag, Parameter) and not item.imag.fixed:
+                        self.parameters.append(item.imag, item.name + '.imag')
                 elif isinstance(item, Parameter):
                     self.parameters.append(item)
                 else:
@@ -299,11 +304,11 @@ class Nmpfit(Minimizer):
     def minimize(self, parameters, cost_func, selection = None, debug = False):
         from holopy.third_party import nmpfit
         def resid_wrapper(p, fjac=None):
-            status = 0                    
+            status = 0            
             return [status, cost_func(p)]
         nmp_pars = []
 
-        # marshall the paramters into a dict of the form nmpfit wants
+        # marshall the parameters into a dict of the form nmpfit wants
         for i, par in enumerate(parameters):
             d = {'parname': par.name}
             if par.limit is not None:
@@ -358,16 +363,9 @@ class Parameter(SerializeByConstructor):
             self.guess = limit
         else:
             if limit is not None:
-                try:
-                    if guess > limit[1] or guess < limit[0]:
-                        raise GuessOutOfBounds(self)
-                except TypeError:
-                    if (guess.real !=0 or limit[1].real != 0 or
-                        limit[0].real != 0):
-                        raise GuessOutOfBounds(self)
-                    if guess.imag > limit[1].imag or guess.imag < limit[0].imag:
-                        raise GuessOutOfBounds(self)
-                    
+                if guess > limit[1] or guess < limit[0]:
+                    raise GuessOutOfBounds(self)
+                                 
             if guess is not None:
                 if abs(guess) > 1e-12:
                     self.scale_factor = abs(guess)
@@ -403,9 +401,8 @@ class Parameter(SerializeByConstructor):
         -------
         scaled: np.array(dtype=float)
         """
-
         return physical / self.scale_factor
-
+     
     def unscale(self, scaled):
         """
         Inverts scale's transformation
@@ -419,42 +416,6 @@ class Parameter(SerializeByConstructor):
         physical: np.array(dtype=float)
         """
         return scaled * self.scale_factor
-
-    def __add__(self, other):
-        # Compose a Parameter and a complex number or complex Parameter into a
-        # ComplexParameter
-        if isinstance(other, Parameter):
-            def imag_or_bust(val):
-                if val is None:
-                    return None
-                if isinstance(val, dict):
-                    d = {}
-                    for key in val:
-                        try:
-                            d[key] = val[key].imag
-                        except TypeError:
-                            # probably a string or a bool or something so we
-                            # don't need to take its imaginary part
-                            d[key] = val[key]
-                    return d
-                elif not np.isscalar(val):
-                    return [imag_or_bust(v) for v in val]
-                elif np.iscomplex(val):
-                    return val.imag
-                else:
-                    raise InvalidParameterSpecification(
-                        "Addition of parameters is only defined for composing "
-                        "complex parameters")
-
-            return ComplexParameter(self, Parameter(imag_or_bust(other.guess),
-                                                    imag_or_bust(other.limit),
-                                                    other.name,
-                                                    **imag_or_bust(other.kwargs)))
-        else:
-            return ComplexParameter(self, other.imag)
-
-    def __radd__(self, other):
-        return self.__add__(self, other)
 
     def __mul__(self, other):
         def mult(x):
@@ -485,18 +446,31 @@ class Parameter(SerializeByConstructor):
     
     def __rmul__(self, other):
         return self.__mul__(other)
-                        
-# user in general will not be creating ComplexParameters, they are created when
-# you do something like: par(1.59) + 1e-4j or par(1.59) + par(1e-4j)
+
+
+# ComplexParameters must be explicitly created. We will disallow sugar like
+# par(1.59) + 1e-4j.
 class ComplexParameter(Parameter):
     def __init__(self, real, imag, name = None):
+        '''
+        real and imag may be scalars or Parameters. If Parameters, they must be
+        pure real.
+        '''
+        if not isinstance(real, Parameter):
+            real = Parameter(real, real)
         self.real = real
-        self.imag = imag                              
+        if not isinstance(imag, Parameter):
+            imag = Parameter(imag, imag)
+        self.imag = imag
         self.name = name
 
     @property
     def guess(self):
-        return self.real.guess + self.imag.guess*1.0j
+        try:
+            return self.real.guess + self.imag.guess*1.0j
+        except AttributeError: # in case self.imag is a scalar
+            #TODO: won't work if self.real is scalar, self.imag is a Parameter
+            return self.real.guess + self.imag * 1.j
 
     def __repr__(self):
         return "{0} + {1}".format(self.real, 1.0j*self.imag)

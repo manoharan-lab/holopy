@@ -90,9 +90,6 @@ class Scatterer(SerializeByConstructor):
             if isinstance(par, (list, tuple, np.ndarray)):
                 subs = (expand('{0}[{1}]'.format(key, p[0]), p[1]) for p in enumerate(par)) 
                 return chain(*subs)
-            if hasattr(par, 'imag') and par.imag != 0:
-                return [('{0}.real'.format(key), par.real),
-                        ('{0}.imag'.format(key), par.imag)]
             else:
                 return [(key, par)]
 
@@ -142,14 +139,11 @@ class Scatterer(SerializeByConstructor):
 
         def build(par):
             if isinstance(par, dict):
-                if sorted(par.keys()) == ['imag', 'real']:
-                    return par['real'] + 1.0j * par['imag']
-                elif reduce(lambda x, i: isinstance(i, int) and x,
-                            par.keys(), True):
-
-                    d = [p[1] for p in sorted(par.iteritems(), key =
-                                                 lambda x: x[0])]
-                    return [build(p) for p in d]
+                reduce(lambda x, i: isinstance(i, int) and x,
+                       par.keys(), True)
+                d = [p[1] for p in sorted(par.iteritems(), key =
+                                          lambda x: x[0])]
+                return [build(p) for p in d]
             return par
             
         for key, val in collected_arrays.iteritems():

@@ -36,7 +36,7 @@ from scatterpy.scatterer import Sphere, SphereCluster
 
 from holopy.analyze.fit import (par, Parameter, Model, fit, Nmpfit,
                                 InvalidParameterSpecification, GuessOutOfBounds,
-                                MinimizerConvergenceFailed)
+                                MinimizerConvergenceFailed, ComplexParameter)
 from scatterpy.tests.common import assert_parameters_allclose, assert_obj_close, assert_allclose
 
 
@@ -108,7 +108,8 @@ def test_fit_mie_par_scatterer():
     
     s = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
                          par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
-               r = par(8.5e-7, (1e-8, 1e-5)), n = par(1.59, (1,2))+1e-4j)
+               r = par(8.5e-7, (1e-8, 1e-5)), 
+               n = ComplexParameter(par(1.59, (1,2)), 1e-4j))
 
     
     model = Model((s, par(.6, [.1,1], 'alpha')), Mie)
@@ -461,3 +462,94 @@ def test_serialization():
 
     assert_obj_close(result, loaded)
 
+
+@attr('fast')
+def test_complex_parameter():
+    # target
+    a = 3.3
+    b = 2.2 + 3.2j
+    c = -1.9j
+    x = np.arange(-5, 5, 0.01)
+    y = a * x + b * x**2 + c * x**3
+
+    # Need to create a minimal Model to unpack complex parameters
+
+    # case 1: vary real parts of a & b only, hold c fixed
+    params = [par(3., [0., 10.], 'a'),
+              ComplexParameter(real = par(2., [0., 10.]), imag = 3.2, 
+                               name = 'b'), 
+              ComplexParameter(real = 0., imag = par(-1.9, -1.9), 
+                               name = 'c')]
+
+    def cost_func1(scaled_params):
+        # proto-model should handle unscaling
+        a_sc, b_real_sc = scaled_params
+        a = a_sc * params[0].scale_factor
+        b = b_real_sc * params[1].real.scale_factor + 1j * params[1].imag.guess
+        c = params[2].imag.limit * 1j
+        return np.abs(y - (a * x + b * x**2 + c * x**3))
+
+    real_params = [par(3., [0., 10.], 'a'),
+                   par(2., [0., 10.], 'b_real')]
+    minimizer = Nmpfit()
+    result, details = minimizer.minimize(real_params, cost_func1)
+
+'''
+    # case 1: vary real parts of a & b only, hold c fixed
+
+    params = [par(3., [0., 10.], 'a'),
+              par(2., [0., 10.], 'b') + 3.2j, 
+              par(-1.9j, -1.9j, 'c')]
+
+    def cost_func1(a, b):
+        a = params[0].unscale(a)
+        # hack should be unnecessary in real make_scatterer
+        # Model should handle this
+        b_real = params[1].real.unscale(b.real)
+        b_imag = params[1].imag.unscale(b.imag)
+        b = b_real + b_imag * 1j
+        
+        value = a * x + b * x**2 + c * x**3
+        return np.abs(y - value)
+
+    minimizer = Nmpfit()
+    result, details = minimizer.minimize(params, cost_func1)
+
+    assert_allclose(result, (a, b.real))
+
+    # case 2: vary a, fix b.real, vary b.imag, vary c
+    params = [par(3.5, [-2., 12.], 'a'),
+              2.2 + par(3.j, [0.j, 10.j], 'b'),
+              par(-2.j, [-10.j, 0j], 'c')]
+
+    def cost_func2(a, b, c):
+        a = params[0].unscale(a)
+        b_real = params[1].real.unscale(b.real)
+        b_imag = params[1].imag.unscale(b.imag)
+        b = b_real + b_imag * 1j
+        c = params[2].imag.unscale(c)
+
+    result, details = minimizer.minimize(params, cost_func2)
+    assert_allclose(result, (a, b.imag, c.imag))
+
+    # case 3: vary everything
+    params = [par(3.5, [-2., 12.], 'a'),
+              par(2., [0., 10.], 'b') + par(3.j, [0.j, 10.j], 'b'),
+              par(-2.j, [-10.j, 0.j], 'c')]
+    
+    result, details = minimizer.minimize(params, cost_func2) # same cost func
+    assert_allclose(result, (a, b.real, b.imag, c.imag))
+
+    # case 4: fix everything
+    params = [par(3.3, 3.3, 'a'),
+              par(2.2, 2.2, 'b') + par(3.2j, 3.2j, 'b'),
+              par(-1.9j, -1.9j, 'c')]
+
+    result, details = minimizer.minimize(params, cost_func2)
+
+    # case 5: incorrect name specification
+    with assert_raises(ParameterSpecificationError):
+        params = [par(3.5, [-2., 12.], 'a'),
+                  par(2., [0., 10.], 'b') + par(3.j, [0.j, 10.j], 'smorrebrod'),
+                  par(-2.j, [-10.j, 0.j], 'c')]
+'''
