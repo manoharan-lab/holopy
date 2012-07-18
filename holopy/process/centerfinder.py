@@ -27,9 +27,9 @@ from __future__ import division
 
 import scipy
 import numpy
-from scipy import arange, around, array, int16, zeros, sqrt, ndimage
+from scipy import arange, around, array, int16, zeros, sqrt, ndimage, transpose
 
-def center_find(image, scale=.5):
+def center_find(image, centers=1, scale=.5):
     """
     Finds the coordinates of the center of a holographic pattern
     The coordinates returned are in pixels (row number, column number).
@@ -43,25 +43,27 @@ def center_find(image, scale=.5):
     Parameters
     ----------
     image : ndarray
-        image to find the center of
+        image to find the center(s) in
+    centers : int
+        number of centers to find
     scale : float (optional)
         gradient magnitude threshold
 
     Returns
     -------
     res : ndarray
-        row and column of center
+        row(s) and column(s) of center(s)
 
     Notes
     -----
     When scale is close to 1, the code will run quickly but may lack
     accuracy. When scale is set to 0, the gradient at all pixels will
-    contribute to finding the center and the code will take a little
+    contribute to finding the centers and the code will take a little
     bit longer. The user should pay attention to how the magnitude of
-    the gradients correlates with finding an accurate center.
+    the gradients correlates with finding accurate centers.
     """
     x_deriv, y_deriv = image_gradient(image)
-    res,acc = hough(x_deriv, y_deriv, scale)
+    res = hough(x_deriv, y_deriv, centers, scale)
     return res
 
 
@@ -89,13 +91,15 @@ def image_gradient(image):
     return gradx, grady
 
 
-def hough(x_deriv, y_deriv, scale=.25):
+def hough(x_deriv, y_deriv, centers=1, scale=.25):
     """
     Following the approach of a Hough transform, finds the pixel which
     the most gradients point towards or away from. Uses only gradients
     with magnitude greater than scale*maximum gradient. Once the pixel
     is found, uses a brightness-weighted average around that pixel to
-    refine the center location to return.
+    refine the center location to return. After the first center is 
+    found, the sourrounding area is blocked out and another brightest
+    pixel is searched for.
 
     Parameters
     ----------
@@ -104,9 +108,10 @@ def hough(x_deriv, y_deriv, scale=.25):
 
     y_deriv : numpy.ndarray
         y-component of image intesity gradient
-    
     scale : float (optional)
         gradient magnitude threshold
+    centers : int
+        number of centers to find
 
     Returns
     -------
@@ -157,14 +162,18 @@ def hough(x_deriv, y_deriv, scale=.25):
             acc_rows = int16(line[rows_to_use])
         accumulator[acc_rows, acc_cols] += 1
 
-    #m is row number, n is column number
-    [m, n]=scipy.unravel_index(accumulator.argmax(), accumulator.shape) 
-    #brightness average around brightest pixel:
-    boxsize = min(10, m, n, dim_x-1-m, dim_y-1-n) #boxsize changes with closeness to image edge
-    small_sq = accumulator[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1] 
-    #the part of the accumulator to average over
-    rowNum, colNum = numpy.mgrid[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1]
-    #row and column of the revised center:
-    weightedRowNum = scipy.average(rowNum,None,small_sq)
-    weightedColNum = scipy.average(colNum,None,small_sq)
-    return array([weightedRowNum, weightedColNum]), accumulator
+    weightedRowNum=zeros(centers)
+    weightedColNum=zeros(centers)
+    for i in arange(0,centers):
+        #m is row number, n is column number
+        [m, n]=scipy.unravel_index(accumulator.argmax(), accumulator.shape) 
+        #brightness average around brightest pixel:
+        boxsize = min(10, m, n, dim_x-1-m, dim_y-1-n) #boxsize changes with closeness to image edge
+        small_sq = accumulator[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1] 
+        #the part of the accumulator to average over
+        rowNum, colNum = numpy.mgrid[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1]
+        #row and column of the revised center:
+        weightedRowNum[i] = scipy.average(rowNum,None,small_sq)
+        weightedColNum[i] = scipy.average(colNum,None,small_sq)
+        accumulator[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1]=accumulator.min()
+    return transpose(array([weightedRowNum, weightedColNum]))
