@@ -64,6 +64,8 @@ def center_find(image, centers=1, scale=.5):
     """
     x_deriv, y_deriv = image_gradient(image)
     res = hough(x_deriv, y_deriv, centers, scale)
+    if centers==1:
+        res=res[0]
     return res
 
 
@@ -161,7 +163,6 @@ def hough(x_deriv, y_deriv, centers=1, scale=.25):
             acc_cols = cols[rows_to_use]
             acc_rows = int16(line[rows_to_use])
         accumulator[acc_rows, acc_cols] += 1
-
     weightedRowNum=zeros(centers)
     weightedColNum=zeros(centers)
     for i in arange(0,centers):
