@@ -102,7 +102,7 @@ def load(inf):
                         pass
                 
         return obj
-
+"""
 def model_representer(dumper, data):
     dump_dict = OrderedDict()
     if data._user_make_scatterer is None:
@@ -120,7 +120,7 @@ def model_representer(dumper, data):
     dump_dict['selection'] = data.selection
     return ordered_dump(dumper, '!Model', dump_dict)
 yaml.add_representer(Model, model_representer)
-
+"""
 # legacy loader, this is only here because for a while we saved things as
 # !Minimizer {algorithm = nmpfit} and we still want to be able to read those yamls
 def minimizer_constructor(loader, node):

@@ -126,12 +126,19 @@ class Optics(SerializeByConstructor):
         """
         return self.wavelen/self.index
 
+    def wavelen_in(self, medium_index):
+        return self.wavelen/medium_index
+    
     @property
     def wavevec(self):
         """
         The wavevector k, 2pi/(wavelength in medium)
         """
         return 2*np.pi/self.med_wavelen
+
+    def wavevec_in(self, medium_index):
+        return 2*np.pi/self.wavelen_in(medium_index)
+    
             
     @property
     def pixel(self):

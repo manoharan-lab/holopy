@@ -38,6 +38,9 @@ import numpy as np
 import scatterpy
 from scatterpy.io import SerializeByConstructor
 
+from holopy.third_party import nmpfit
+
+
 from holopy.utility.errors import (ParameterSpecficationError,
                                    ModelDefinitionError,
                                    InvalidParameterSpecification,
@@ -45,10 +48,10 @@ from holopy.utility.errors import (ParameterSpecficationError,
 
 
 class FitResult(SerializeByConstructor):
-    def __init__(self, scatterer, alpha, chisq, rsq, converged, time, model,
+    def __init__(self, parameters, scatterer, chisq, rsq, converged, time, model,
                  minimizer, minimization_details):
+        self.parameters = parameters
         self.scatterer = scatterer
-        self.alpha = alpha
         self.chisq = chisq
         self.rsq = rsq
         self.converged = converged
@@ -56,7 +59,56 @@ class FitResult(SerializeByConstructor):
         self.model = model
         self.minimizer = minimizer
         self.minimization_details = minimization_details
-        
+
+class Parameterization(SerializeByConstructor):
+    def __init__(self, pars_to_target, parameters):
+        self.parameters = parameters
+        self.pars_to_target = pars_to_target
+    def make_from(self, parameters):
+        if isinstance(parameters, dict):
+            for_target = {}
+            for arg in inspect.getargspec(self.pars_to_target).args:
+                for_target[arg] = parameters[arg] 
+            return self.pars_to_target(**for_target)
+        else:
+            return self.pars_to_target(*parameters)
+
+    @property
+    def guess(self):
+        guess_pars = {}
+        for par in self.parameters:
+            guess_pars[par.name] = par.guess
+        return self.make_from(guess_pars)
+
+    
+class ParameterizedTarget(Parameterization):
+    def __init__(self, target):
+        self.target = target
+
+        # find all the Parameter's in the target
+        parameters = []
+        for name, par in target.parameters.iteritems():
+            def add_par(p, name):
+                p.name = name
+                if not p.fixed:
+                    parameters.append(p)
+            if isinstance(par, ComplexParameter):
+                add_par(par.real, name+'.real')
+                add_par(par.imag, name+'.imag')
+            elif isinstance(par, Parameter):
+                add_par(par, name)
+
+        self.parameters = parameters
+
+    def make_from(self, parameters):
+        target_pars = self.target.parameters
+        for key in parameters:
+            if key in target_pars:
+                target_pars[key] = parameters[key]
+                # if we have pars that the scatterer doesn't want, ignore
+                # them, they should be consumed elsewhere
+        return self.target.from_parameters(target_pars)
+
 class Model(SerializeByConstructor):
     """
     Representation of a model to fit to data
@@ -74,7 +126,7 @@ class Model(SerializeByConstructor):
         Function that returns a scatterer given parameters
     selection : float or array of integers (optional)
         Fraction of pixels to compare, or an array with 1's in the locations of
-        pixels where you want to calculate the field, defaults to 1 at all pixels
+        pixels where you want to calculate the field.  
 
     Notes
     -----
@@ -82,140 +134,47 @@ class Model(SerializeByConstructor):
     make_scatterer function which can turn the parameters into a scatterer
     
     """
-    def __init__(self, parameters, theory, make_scatterer=None, selection=None):
-        self._user_make_scatterer = make_scatterer
-        self.make_scatterer = make_scatterer
+    def __init__(self, scatterer, theory, metadata=None, selection=None,
+                 alpha = None):
+        if not isinstance(scatterer, Parameterization):
+            scatterer = ParameterizedTarget(scatterer)
+        self.scatterer = scatterer
 
         self.theory = theory
+
+        if metadata is not None and not isinstance(metadata, Parameterization):
+            metadata = ParameterizedTarget(metadata)
+        self.metadata = metadata
+
         self.selection = selection
+        if isinstance(alpha, Parameter) and alpha.name is None:
+            alpha.name = 'alpha'
+        self.alpha = alpha
+        
+        self.parameters = []
+        for parameterizition in (self.scatterer, self.metadata):
+            if parameterizition is not None:
+                self.parameters.extend(parameterizition.parameters)
+        if self.alpha is not None:
+            self.parameters.append(self.alpha)
+        
         self._selection = None
 
-        self.scatterer = None
-        self.parameters = []
+    def get_alpha(self, pars):
+        try:
+            return pars['alpha']
+        except (KeyError, TypeError):
+            if self.alpha is None:
+                return 1.0
+            return self.alpha
 
-        def unpack_scatterer(scatterer):
-            parameters = []
-            for name, par in scatterer.parameters.iteritems():
-                def add_par(p, name):
-                    p.name = name
-                    if p.fixed:
-                        parameters.append((name, p.limit))
-                    else:
-                        parameters.append((name, p))
-                if isinstance(par, ComplexParameter):
-                    add_par(par.real, name+'.real')
-                    add_par(par.imag, name+'.imag')
-                elif isinstance(par, Parameter):
-                    add_par(par, name)
-                else:
-                    # probably just a number, (ie fixed), so just return it
-                    parameters.append((name, par))
-
-            if self.scatterer is None:
-                self.scatterer = scatterer.from_parameters(dict(parameters))
-            else:
-                raise ModelDefinitionError(
-                   "A model cannot contain more than one scatterer.  If you want"
-                   "to include multiple scatterers include them in a single"
-                   "composite Scatterer")
-
-            return [p[1] for p in parameters if isinstance(p[1], Parameter)]
-
-        if isinstance(parameters, (list, tuple)):
-            for item in parameters:
-                if isinstance(item, scatterpy.scatterer.Scatterer):
-                    self.parameters.extend(unpack_scatterer(item))
-                elif isinstance(item, Parameter):
-                    self.parameters.append(item)
-                else:
-                    raise ModelDefinitionError(
-                        "{0} is not a valid parameter".format(item))
-        elif isinstance(parameters, scatterpy.scatterer.Scatterer):
-            self.parameters = unpack_scatterer(parameters)
-        elif isinstance(parameters, Parameter):
-            self.parameters = [parameters]
-                
-        if self.scatterer is not None and make_scatterer is None:
-            def make_scatterer(pars):
-                for_scatterer = self.scatterer.parameters
-                par_dict = {}
-                if isinstance(pars, dict):
-                    par_dict = pars
-                else:
-                    for i, p in enumerate(self.parameters):
-                        par_dict[p.name] = pars[i] 
-                for par, val in par_dict.iteritems():
-                    for_scatterer[par] = val
-                try:
-                    del for_scatterer['alpha']
-                except KeyError:
-                    pass
-                return self.scatterer.from_parameters(for_scatterer)
-            
-            self.make_scatterer = make_scatterer
-        elif make_scatterer is not None:
-            self.make_scatterer = make_scatterer
-        else:
-            raise ModelDefinitionError(
-                "You must either give a model a template scatterer in its "
-                "parameters, or provide a custom make_scatterer function.")
-
-        
-    @property
-    def guess_scatterer(self):
-        pars = self.scatterer.parameters
-        for key, val in pars.iteritems():
-            if isinstance(val, Parameter):
-                pars[key] = val.guess
-        return self.scatterer.from_parameters(pars)
-
-        
-    @property
-    def alpha_par(self):
-        for i, par in enumerate(self.parameters):
-            if par.name == 'alpha':
-                return par
-        return None
-            
-        
-    @property
-    def guess_alpha(self):
-        for i, par in enumerate(self.parameters):
-            if par.name == 'alpha':
-                return par.guess
-        return 1.0
-            
-    def make_scatterer_from_par_values(self, par_values):
-        all_pars = {}
-        for i, p in enumerate(self.parameters):
-            all_pars[p.name] = p.unscale(par_values[i])
-        if self._user_make_scatterer is not None:
-            for_scatterer = {}
-            for arg in inspect.getargspec(self.make_scatterer).args:
-                for_scatterer[arg] = all_pars[arg] 
-            # user make_scatterer functions will most likely take traditional
-            # function arguments, so we need reorganize for that
-            return self._user_make_scatterer(**for_scatterer)
-        else:
-            return self.make_scatterer(all_pars)
-        
-    # TODO: add a make_optics function so that you can have parameters
-    # affect optics things (fit to beam divergence, lens abberations, ...)
 
     def compare(self, calc, data, selection = None):
         if selection==None:
             return (data - calc).ravel()
         else:
             return (selection*data - selection*calc).ravel()
-    
-    def alpha(self, par_values):
-        for i, par in enumerate(self.parameters):
-            if par.name == 'alpha':
-                return par.unscale(par_values[i])
-        # if the user does not provide alpha as a parameter, we just use 1.0,
-        # the default alpha for theories (which is hopefully what they want)
-        return 1.0
-    
+
     def cost_func(self, data): 
         if not isinstance(self.theory, scatterpy.theory.ScatteringTheory):
             theory = self.theory(data.optics, data.shape)
@@ -228,10 +187,10 @@ class Model(SerializeByConstructor):
                 # to instantiate a selection array
                 self._selection = np.random.random(data.shape) > (1.0-self.selection)
             
-        def cost(par_values):
-            calc = theory.calc_holo(
-                self.make_scatterer_from_par_values(par_values),
-                self.alpha(par_values), self._selection)
+        def cost(pars):
+            calc = theory.calc_holo(self.scatterer.make_from(pars),
+                                    self.get_alpha(pars),
+                                    self._selection)
             return self.compare(calc, data, self._selection)
         return cost
 
@@ -247,6 +206,16 @@ class Minimizer(SerializeByConstructor):
         raise NotImplementedError() # pragma: nocover
     def minimize(self, parameters, cost_func, selection=None):
         raise NotImplementedError() # pragma: nocover
+
+    # if minimizers do any parameter rescaling, they are responsible for putting
+    # the parameters back before handing them off to the model.  
+    def pars_from_minimizer(self, parameters, values):
+        pars = OrderedDict()
+        for par, value in zip(parameters, values):
+            pars[par.name] = par.unscale(value)
+
+        return pars
+
     
 class Nmpfit(Minimizer):
     """
@@ -286,9 +255,6 @@ class Nmpfit(Minimizer):
     """
     def __init__(self, quiet = False, ftol = 1e-10, xtol = 1e-10, gtol = 1e-10,
                  damp = 0, maxiter = 100):
-        # do the import on demand so the user doesn't need a minimizer present
-        # unless they are using it
-        from holopy.third_party import nmpfit
         self.ftol = ftol
         self.xtol = xtol
         self.gtol = gtol
@@ -296,15 +262,14 @@ class Nmpfit(Minimizer):
         self.maxiter = maxiter
         self.quiet = quiet
 
-    def minimize(self, parameters, cost_func, selection = None, debug = False):
-        from holopy.third_party import nmpfit
+    def minimize(self, parameters, cost_func, debug = False):
         def resid_wrapper(p, fjac=None):
             status = 0                    
-            return [status, cost_func(p)]
+            return [status, cost_func(self.pars_from_minimizer(parameters, p))]
         nmp_pars = []
 
         # marshall the paramters into a dict of the form nmpfit wants
-        for i, par in enumerate(parameters):
+        for par in parameters:
             d = {'parname': par.name}
             if par.limit is not None:
                 d['limited'] = [par.scale(l) is not None for l in par.limit]
@@ -326,7 +291,7 @@ class Nmpfit(Minimizer):
                     else:
                         d[key] = par.scale(value)
                 else:
-                    raise ParameterSpecificationError("Parameter " + par.name +
+                    raise ParameterSpecficationError("Parameter " + par.name +
                                                       " contains kwargs that" +
                                                       " are not supported by" +
                                                       " nmpfit")
@@ -338,11 +303,13 @@ class Nmpfit(Minimizer):
                                  maxiter = self.maxiter, quiet = self.quiet)
         if fitresult.status == 5:
             raise MinimizerConvergenceFailed(fitresult.params, fitresult)
+
+        result_pars = self.pars_from_minimizer(parameters, fitresult.params)
         
         if debug == True:
-            return fitresult.params, fitresult, nmp_pars
+            return result_pars, fitresult, nmp_pars
         else:
-            return fitresult.params, fitresult
+            return result_pars, fitresult
 
 
 class Parameter(SerializeByConstructor):
@@ -515,41 +482,20 @@ def fit(model, data, minimizer=Nmpfit()):
                       "correct")
         fitted_pars, minimizer_info  = cf.result, cf.details
         converged = False
+
+    fitted_scatterer = model.scatterer.make_from(fitted_pars)
         
-    
-    fitted_scatterer = model.make_scatterer_from_par_values(fitted_pars)
-    fitted_alpha = model.alpha(fitted_pars)
     theory = model.theory(data.optics, data.shape)
-    fitted_holo = theory.calc_holo(fitted_scatterer, fitted_alpha)
+    fitted_holo = theory.calc_holo(fitted_scatterer, model.get_alpha(fitted_pars)) 
     
     chisq = float((((fitted_holo-data))**2).sum() / fitted_holo.size)
     rsq = float(1 - ((data - fitted_holo)**2).sum()/((data - data.mean())**2).sum())
 
     time_stop = time.time()
 
-    return FitResult(fitted_scatterer, fitted_alpha, chisq, rsq, converged,
+    return FitResult(fitted_pars, fitted_scatterer, chisq, rsq, converged,
                      time_stop - time_start, model, minimizer, minimizer_info)
 
     
 # provide a shortcut name for Parameter since users will have to type it a lot
 par = Parameter
-
-
-# Archiving:
-# Model (parameters, theory, cost function, 
-
-################################################################
-# Fitseries engine
-
-# default
-# Load, normalize, background
-# fit
-# archive
-
-# provide customization hooks
-# prefit - user supplied
-# fit
-# postfit - user supplied
-# archive
-
-# archive to a unique directory name (probably from time and hostname)

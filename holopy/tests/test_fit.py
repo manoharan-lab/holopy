@@ -36,7 +36,7 @@ from scatterpy.scatterer import Sphere, SphereCluster
 
 from holopy.analyze.fit import (par, Parameter, Model, fit, Nmpfit,
                                 InvalidParameterSpecification, GuessOutOfBounds,
-                                MinimizerConvergenceFailed)
+                                MinimizerConvergenceFailed, Parameterization)
 from scatterpy.tests.common import assert_parameters_allclose, assert_obj_close, assert_allclose
 
 
@@ -81,19 +81,20 @@ def test_fit_mie_single():
                   Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
                   Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
                   Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5]),
-                  Parameter(name='n', guess=1.59, limit = [1, 2]),
-                  Parameter(name='alpha', guess=.6, limit = [.1, 1])]
+                  Parameter(name='n', guess=1.59, limit = [1, 2])]
 
     
     def make_scatterer(x, y, z, r, n):
         return Sphere(n=n+1e-4j, r = r, center = (x, y, z))
 
-    model = Model(parameters, Mie, make_scatterer=make_scatterer)
+    
+    model = Model(Parameterization(make_scatterer, parameters), Mie,
+                  alpha=Parameter(name='alpha', guess=.6, limit = [.1, 1]))
 
     result = fit(model, holo)
 
     assert_parameters_allclose(result.scatterer, gold_single, rtol = 1e-3)
-    assert_approx_equal(result.alpha, gold_alpha, significant=4)
+    assert_approx_equal(model.get_alpha(result.parameters), gold_alpha, significant=4)
     assert_equal(model, result.model)
 
     
@@ -111,7 +112,7 @@ def test_fit_mie_par_scatterer():
                r = par(8.5e-7, (1e-8, 1e-5)), n = par(1.59, (1,2))+1e-4j)
 
     
-    model = Model((s, par(.6, [.1,1], 'alpha')), Mie)
+    model = Model(s, Mie, alpha = par(.6, [.1,1]))
 
     result = fit(model, holo)
 
@@ -125,7 +126,7 @@ def test_fit_mie_par_scatterer():
     
     assert_parameters_allclose(result.scatterer, gold_single, rtol=1e-3)
     # TODO: see if we can get this back to 3 sig figs correct alpha
-    assert_approx_equal(result.alpha, gold_alpha, significant=3)
+    assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=3)
     assert_equal(model, result.model)
 
 @attr('fast')
@@ -142,7 +143,7 @@ def test_fit_selection():
                r = par(8.5e-7, (1e-8, 1e-5)), n = par(1.59, (1,2))+1e-4j)
 
     
-    model = Model((s, par(.6, [.1,1], 'alpha')), Mie, selection = .1)
+    model = Model(s, Mie, selection = .1, alpha =  par(.6, [.1,1], 'alpha'))
 
     result = fit(model, holo)
 
@@ -156,7 +157,7 @@ def test_fit_selection():
     
     assert_parameters_allclose(result.scatterer, gold_single, rtol=1e-2)
     # TODO: see if we can get this back to 3 sig figs correct alpha
-    assert_approx_equal(result.alpha, gold_alpha, significant=2)
+    assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=2)
     assert_equal(model, result.model)
 
 
@@ -191,8 +192,7 @@ def test_fit_superposition():
                   Parameter('x1', 3.5e-5, [0, 1e-4]),
                   Parameter('y1', 3.2e-5, [0, 1e-4]),
                   Parameter('z1', 10.5e-6, [0, 1e-4]),
-                  Parameter('r1', .65e-6, [0.6e-6, 0.7e-6]),
-                  Parameter('alpha', .63, [.5, 0.8])]
+                  Parameter('r1', .65e-6, [0.6e-6, 0.7e-6])]
 
     def make_scatterer(x0, x1, y0, y1, z0, z1, r0, r1, nr):
         s = SphereCluster([
@@ -200,7 +200,8 @@ def test_fit_superposition():
                 Sphere(center = (x1, y1, z1), r=r1, n = nr+1e-4j)])
         return s
 
-    model = Model(parameters, Mie, make_scatterer=make_scatterer)
+    model = Model(parameters, Mie, make_scatterer=make_scatterer, alpha =
+                  Parameter('alpha', .63, [.5, 0.8]))
     result = fit(model, holo)
 
     assert_parameters_allclose(result.scatterer, sc)
@@ -232,8 +233,7 @@ def test_fit_multisphere_noisydimer_slow():
                   Parameter(1.753e-5, [0, 1e-4], 'y1'),
                   Parameter(21.2698e-6, [1e-8, 1e-4], 'z1'),
                   Parameter(.695e-6, [1e-8, 1e-4], 'r1'),
-                  Parameter(1.6026, [1, 2], 'nr1'),
-                  Parameter(.99, [.1, 1.0], 'alpha')]
+                  Parameter(1.6026, [1, 2], 'nr1')]
 
     def make_scatterer(x0, x1, y0, y1, z0, z1, r0, r1, nr0, nr1):
         s = SphereCluster([
@@ -256,7 +256,8 @@ def test_fit_multisphere_noisydimer_slow():
     #ub = SphereCluster([ub1, ub1]), 1    
     #step = SphereCluster([step1, step1]), 0
 
-    model = Model(parameters, Multisphere, make_scatterer=make_scatterer)
+    model = Model(parameters, Multisphere, make_scatterer=make_scatterer, alpha
+    = Parameter(.99, [.1, 1.0], 'alpha'))
     result = fit(model, holo)
     print result.scatterer
 
@@ -306,16 +307,16 @@ def test_model():
     parameters = [Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5]),
                   Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
                   Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
-                  Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5]),
-                  Parameter(name='alpha', guess=.6, limit = [.1, 1])]
+                  Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5])]
 
     def make_scatterer(x, y, z, r):
         return Sphere(n=1.59+1e-4j, r = r, center = (x, y, z))
 
-    model = Model(parameters, Mie, make_scatterer=make_scatterer)
+    param = Parameterization(make_scatterer, parameters)
+    model = Model(param, Mie)
 
     x, y, z, r = 1, 2, 3, 1
-    s = model.make_scatterer(x, y, z, r)
+    s = model.scatterer.make_from((x, y, z, r))
 
     assert_parameters_allclose(s, Sphere(center=(x, y, z), n=1.59+1e-4j,
                                          r=r))
@@ -327,9 +328,9 @@ def test_model():
                   Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
                   Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
                   Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5])]
-    model = Model(parameters, Mie, make_scatterer=make_scatterer)
+    model = Model(param, Mie, alpha = Parameter(name='alpha', guess=.6, limit = [.1, 1]))
 
-    assert_equal(model.alpha([x, y, z, r]), 1.0)
+    assert_equal(model.alpha.guess, .6)
 
 @attr('fast')
 def test_scatterer_based_model():
@@ -345,16 +346,17 @@ def test_scatterer_based_model():
                                     Parameter(name='n.real', guess=1.59, limit=(1,
                                     2))], context = 'model.parameters')
 
-    s2 = Sphere(center=[Parameter(name='center[0]', guess=5.67e-06), 5.67e-06,
+    s2 = Sphere(center=[Parameter(name='center[0]', guess=5.67e-06),
+                        par(limit=5.67e-06, name='center[1]'),
                         Parameter(name='center[2]', guess=1.5e-05, limit=(1e-05, 2e-05))],
                 n=Parameter(name='n.real', guess=1.59, limit=(1, 2))+1e-4j, r=8.5e-07)
 
 
-    assert_obj_close(model.scatterer, s2, context = 'model.scatterer')
+    assert_obj_close(model.scatterer.target, s2, context = 'model.scatterer')
 
     s3 = Sphere(center = (6e-6, 5.67e-6, 10e-6), n = 1.6+1e-4j, r = 8.5e-7)
 
-    assert_obj_close(model.make_scatterer((6e-6, 10e-6, 1.6)), s3, context = 'make_scatterer()')
+#    assert_obj_close(model.make_scatterer((6e-6, 10e-6, 1.6)), s3, context = 'make_scatterer()')
     
     # model.make_scatterer
 
@@ -365,13 +367,13 @@ def test_cost_func():
     parameters = [Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5]),
         Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
         Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
-        Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5]),
-        Parameter(name='alpha', guess=.6, limit = [.1, 1])]
+        Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5])]
 
     def make_scatterer(x, y, z, r):
         return Sphere(n=1.59+1e-4j, r = r, center = (x, y, z))
 
-    model = Model(parameters, Mie, make_scatterer=make_scatterer)
+    param = Parameterization(make_scatterer, parameters)
+    model = Model(param, Mie, alpha = Parameter(name='alpha', guess=.6, limit = [.1, 1]))
 
     theory = Mie(optics, 100)
     holo = theory.calc_holo(Sphere(center = (.567e-5, .576e-5, 15e-6),
@@ -379,7 +381,7 @@ def test_cost_func():
 
     cost_func = model.cost_func(holo)
 
-    cost = cost_func([p.scale(p.guess) for p in parameters])
+    cost = cost_func(parameters)
 
     assert_allclose(cost, np.zeros_like(cost), atol=1e-10)
     
@@ -390,12 +392,15 @@ def test_minimizer():
     a = 5.3
     b = -1.8
     c = 3.4
+    gold_dict = OrderedDict((('a', a), ('b', b), ('c', c)))
     y = a*x**2 + b*x + c
 
     # This test does NOT handle scaling correctly -- we would need a Model
     # which knows the parameters to properly handle the scaling/unscaling
-    def cost_func(par_values):
-        a, b, c = par_values
+    def cost_func(pars):
+        a = pars['a']
+        b = pars['b']
+        c = pars['c']
         return a*x**2 + b*x + c - y
 
     # test basic usage
@@ -404,7 +409,7 @@ def test_minimizer():
                  Parameter(name='c', guess = 3)]
     minimizer = Nmpfit()
     result, minimization_details = minimizer.minimize(parameters, cost_func)
-    assert_allclose([a, b, c], result)
+    assert_obj_close(gold_dict, result)
 
     # test inadequate specification
     with assert_raises(InvalidParameterSpecification):
@@ -430,7 +435,7 @@ def test_minimizer():
     assert_equal(parinfo[2]['limits'], np.array([0., 12.])/3.)
     assert_allclose(parinfo[2]['step'], 1e-4/3.)
     assert_equal(parinfo[2]['limited'], [True, True])
-    assert_allclose([a, b, c], result2)
+    assert_obj_close(gold_dict, result2)
     
 
 @attr('fast')
@@ -445,9 +450,9 @@ def test_serialization():
 
     mie = Mie(optics, 100)
 
-    model = Model((par_s, alpha), Mie)
+    model = Model(par_s, Mie, alpha=alpha)
 
-    holo = mie.calc_holo(model.guess_scatterer, model.guess_alpha)
+    holo = mie.calc_holo(model.scatterer.guess, model.alpha.guess)
 
     result = fit(model, holo)
 

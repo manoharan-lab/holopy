@@ -155,12 +155,15 @@ class Hologram(np.ndarray):
         This algorithm does 2 1-D resamplings.  
         
         """
+        name = None
         if np.isscalar(shape):
             x, y = (shape, shape)
-            name = self.name + 'r({0},{1})'.format(x, y)
+            if self.name is not None:
+                name = self.name + 'r({0},{1})'.format(x, y)
         else:
             x, y = shape
-            name = self.name+'r{0}'.format(x)
+            if self.name is not None:
+                name = self.name+'r{0}'.format(x)
         new_image = scipy.signal.resample(self, x, axis=0, window=window)
         new_image = scipy.signal.resample(new_image, y, axis=1, 
                                           window=window)

@@ -6,6 +6,10 @@ can be 1d (light scattering)
 2d (holograms and other images)
 3d (volumes or timeseries)
 4d (timeseries of volumes)
+
+*** Wavelength data
+We should be able to handle multiple wavelengths for color images or spect
+
 *** Metadata 
 must at minimum specify where the measurements were taken (this can by pixel spacings, angles, spatial coordinates, ...).  It also will contain experimental details, including everything that was in our optics.  
 

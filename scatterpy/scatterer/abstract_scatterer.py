@@ -62,6 +62,11 @@ class Scatterer(SerializeByConstructor):
         raise NotImplementedError() #pragma: no cover
     
 
+    # eliminate parameters and from_parameters?  This is kind of fitting
+    # specific information.  Or should it be in serializable?  In many ways this
+    # is just a slight variation on what we do to put something in yaml format.
+    # It is probably possible to have to_dict, to_string, to_yaml all with
+    # mostly common code
     @property
     def parameters(self):
         """
@@ -90,6 +95,7 @@ class Scatterer(SerializeByConstructor):
             if isinstance(par, (list, tuple, np.ndarray)):
                 subs = (expand('{0}[{1}]'.format(key, p[0]), p[1]) for p in enumerate(par)) 
                 return chain(*subs)
+            # could be eliminated because of ComplexParameter
             if hasattr(par, 'imag') and par.imag != 0:
                 return [('{0}.real'.format(key), par.real),
                         ('{0}.imag'.format(key), par.imag)]
@@ -142,6 +148,7 @@ class Scatterer(SerializeByConstructor):
 
         def build(par):
             if isinstance(par, dict):
+                # could be eliminated because of ComplexParameter
                 if sorted(par.keys()) == ['imag', 'real']:
                     return par['real'] + 1.0j * par['imag']
                 elif reduce(lambda x, i: isinstance(i, int) and x,
