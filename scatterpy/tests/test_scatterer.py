@@ -36,7 +36,7 @@ from scatterpy.scatterer import (Sphere, CoatedSphere, Scatterer, Ellipsoid,
                                  Composite, abstract_scatterer)
 
 from scatterpy.errors import ScattererDefinitionError
-from .common import assert_allclose
+from common import assert_allclose
 
 @attr('fast')
 def test_AbstractScatterer():
@@ -92,8 +92,8 @@ def test_Sphere_construct_array():
 def test_Sphere_parameters():
     s = Sphere(n = 1.59+1e-4j, r = 5e-7, center=(1e-6, -1e-6, 10e-6))
     assert_equal(s.parameters, OrderedDict([('center[0]',
-    9.9999999999999995e-07), ('center[1]', -9.9999999999999995e-07), ('center[2]',
-    1.0000000000000001e-05), ('n.imag', 0.0001), ('n.real', 1.59), ('r',
+    1e-6), ('center[1]', -1e-6), ('center[2]',
+    1e-5), ('n', 1.59+1e-4j), ('r',
     5e-07)]))
 
     sp = Sphere.from_parameters(s.parameters)
@@ -116,8 +116,7 @@ def test_CoatedSphere_parameters():
     cs = CoatedSphere(n = (1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6), center =
                       (1, 2, 3))
     assert_equal(cs.parameters, OrderedDict([('center[0]', 1), ('center[1]', 2),
-    ('center[2]', 3), ('n[0].imag', 0.0001), ('n[0].real', 1.59),
-    ('n[1].imag', 0.0001), ('n[1].real', 1.33), ('r[0]',
+    ('center[2]', 3), ('n[0]', (1.59+0.0001j)), ('n[1]', (1.33+0.0001j)), ('r[0]',
     5e-07), ('r[1]', 1e-6)]))
 
     cp = CoatedSphere.from_parameters(cs.parameters)

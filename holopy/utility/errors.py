@@ -45,56 +45,40 @@ class NoFilesFound(Exception):
                 "with you not following our naming conventions.  Fits expect "
                 "filenames of the form image%%%%.tif".format(self.pattern,
                                                              self.location))
-  
-class OpticsError(Exception):
-    def __init__(self, message = None):
+
+class Error(Exception):
+    def __init__(self, message):
         self.message = message
+    def __str__(self):
+        return self.message
+    
+class OpticsError(Error):
     def __str__(self):
         return "Optics instance not specified! " + self.message
 
-class ImageError(Exception):
-    def __init__(self, message = None):
-        self.message = message
+class ImageError(Error):
     def __str__(self):
         return "Faulty image: " + self.message
 
-class OutOfBounds(Exception):
-    def __init__(self, message = None):
-        self.message = message
+class OutOfBounds(Error):
     def __str__(self):
         return "Image access out of bounds: " + self.message
 
-class ModelInputError(Exception):
-    def __init__(self, message = None):
-        self.message = message
+class ModelInputError(Error):
     def __str__(self):
         return "Input error: " + self.message
 
-class ParameterDefinitionError(Exception):
-    def __init__(self, message = None):
-        self.message = message
+class ParameterDefinitionError(Error):
     def __str__(self):
         return "Input error: " + self.message
 
-class ParameterSpecficationError(Exception):
-    def __init__(self, msg):
-        self.msg = msg
-    def __str__(self):
-        return self.msg
+class ParameterSpecficationError(Error):
+    pass
 
-class ModelDefinitionError(Exception):
-    def __init__(self, msg):
-        self.msg = msg
-    def __str__(self):
-        return self.msg
+class ModelDefinitionError(Error):
+    pass
     
-class InvalidParameterSpecification(Exception):
-    def __init__(self, msg):
-        self.msg = msg
-    def __str__(self):
-        return self.msg
-
-class GuessOutOfBounds(InvalidParameterSpecification):
+class GuessOutOfBoundsError(ParameterSpecficationError):
     def __init__(self, parameter):
         self.par = parameter
     def __str__(self):
@@ -102,7 +86,7 @@ class GuessOutOfBounds(InvalidParameterSpecification):
             return "guess {s.guess} does not match fixed value {s.limit}".format(s=self.par)
         return "guess {s.guess} is not within bounds {s.limit}".format(s=self.par)
     
-class MinimizerConvergenceFailed(Exception):
+class MinimizerConvergenceFailed(Error):
     def __init__(self, result, details):
         self.result = result
         self.details = details

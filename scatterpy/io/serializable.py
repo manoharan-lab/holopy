@@ -64,29 +64,10 @@ class Serializable(yaml.YAMLObject):
         return dumper.represent_yaml_object('!{0}'.format(data.__class__.__name__), data, cls,
                                             flow_style=cls.yaml_flow_style)
     
-    
+# 
 class SerializeByConstructor(Serializable):
-    @classmethod
-    def to_yaml(cls, dumper, data):
-        dump_dict = OrderedDict()
-
-        # just grabbing all of the constructor arguments that have a
-        # corresponding attribute is a correct serialization for many objects.
-        # Ones for which it is not will need to override to_yaml
-        for var in inspect.getargspec(cls.__init__).args[1:]:
-            if hasattr(data, var) and getattr(data, var) is not None:
-                dump_dict[var] = getattr(data, var)
-
-        return ordered_dump(dumper, '!{0}'.format(data.__class__.__name__), dump_dict)
-        return dumper.represent_mapping('!{0}'.format(data.__class__.__name__), dump_dict)
-
-    @classmethod
-    def from_yaml(cls, loader, node):
-        fields = loader.construct_mapping(node, deep=True)
-        return cls(**fields)
-        return loader.construct_yaml_object(node, cls)
-
-    def __repr__(self):
+    @property
+    def _dict(self):
         dump_dict = OrderedDict()
 
         for var in inspect.getargspec(self.__init__).args[1:]:
@@ -96,10 +77,22 @@ class SerializeByConstructor(Serializable):
                     item = list(item)
                 dump_dict[var] = item
 
+        return dump_dict
+    
+    @classmethod
+    def to_yaml(cls, dumper, data):
+        return ordered_dump(dumper, '!{0}'.format(data.__class__.__name__), data._dict)
 
-        keywpairs = ["{0}={1}".format(k[0], repr(k[1])) for k in dump_dict.iteritems()]
+    
+    @classmethod
+    def from_yaml(cls, loader, node):
+        fields = loader.construct_mapping(node, deep=True)
+        return cls(**fields)
+        return loader.construct_yaml_object(node, cls)
+
+    def __repr__(self):
+        keywpairs = ["{0}={1}".format(k[0], repr(k[1])) for k in self._dict.iteritems()]
         return "{0}({1})".format(self.__class__.__name__, ", ".join(keywpairs))
-
 
 
 ###################################################################
@@ -127,6 +120,9 @@ yaml.add_constructor('!complex', complex_constructor)
 def numpy_float_representer(dumper, data):
     return dumper.represent_float(float(data))
 yaml.add_representer(np.float64, numpy_float_representer)
+def numpy_int_representer(dumper, data):
+    return dumper.represent_int(int(data))
+yaml.add_representer(np.int64, numpy_int_representer)
 
 
 def class_representer(dumper, data):

@@ -35,9 +35,10 @@ This will tell holopy that you want to model scattering from a sphere of fixed i
 
 If your model does not fit neatly into a parametrized scatterer like this, Holopy provides a lower level interface ::
 
-  param = Parametrization(parameters = [par(guess = .5, name = 'r'),
-                                        par(guess = 0, name = 'euler_alpha'),
-                                        par(guess = 0, name = 'euler_beta')], make_scatterer)
+  param = Parametrization(make_scatterer,
+                          parameters = [par(guess = .5, name = 'r'),
+                                        par(guess = 0, name = euler_alpha'),
+                                        par(guess = 0, name = 'euler_beta')])
 
 Here make_scatterer needs to be a function that takes keyword arguments of the names of the parameters and returns a scatterer.  
 
@@ -129,6 +130,12 @@ This saves all of the information about the fit to a yaml text
 file.  These files are reasonably human readable and serve as our archive format for data.  They can be loaded back into python with ::
 
   loaded_result = holopy.load('result.yaml')
+
+You can specify a complex index with ::
+
+  Sphere(n = ComplexParameter(real = par(1.58), imag = 1e-4))
+
+This will fit to the real part of index of refraction while holding the imaginary part fixed.  You can fit to it as well by specifying a Parameter instead of a fixed number there.  
 
 Hologram with Beam Tilt
 -----------------------

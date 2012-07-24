@@ -42,9 +42,7 @@ from holopy.third_party import nmpfit
 
 
 from holopy.utility.errors import (ParameterSpecficationError,
-                                   ModelDefinitionError,
-                                   InvalidParameterSpecification,
-                                   GuessOutOfBounds, MinimizerConvergenceFailed)
+                                   GuessOutOfBoundsError, MinimizerConvergenceFailed)
 
 
 class FitResult(SerializeByConstructor):
@@ -65,13 +63,10 @@ class Parameterization(SerializeByConstructor):
         self.parameters = parameters
         self.pars_to_target = pars_to_target
     def make_from(self, parameters):
-        if isinstance(parameters, dict):
-            for_target = {}
-            for arg in inspect.getargspec(self.pars_to_target).args:
-                for_target[arg] = parameters[arg] 
-            return self.pars_to_target(**for_target)
-        else:
-            return self.pars_to_target(*parameters)
+        for_target = {}
+        for arg in inspect.getargspec(self.pars_to_target).args:
+            for_target[arg] = parameters[arg] 
+        return self.pars_to_target(**for_target)
 
     @property
     def guess(self):
@@ -101,12 +96,23 @@ class ParameterizedTarget(Parameterization):
         self.parameters = parameters
 
     def make_from(self, parameters):
-        target_pars = self.target.parameters
-        for key in parameters:
-            if key in target_pars:
-                target_pars[key] = parameters[key]
-                # if we have pars that the scatterer doesn't want, ignore
-                # them, they should be consumed elsewhere
+        target_pars = {}
+        
+        for name, item in self.target.parameters.iteritems():
+            def get_val(par, name):
+                if par.fixed:
+                    return par.limit
+                else:
+                    return parameters[name]
+                
+            if isinstance(item, ComplexParameter):
+                target_pars[name] = (get_val(item.real, name+'.real') + 1.0j *
+                                     get_val(item.imag, name+'.imag'))
+            elif isinstance(item, Parameter):
+                target_pars[name] = get_val(item, name)
+            else:
+                target_pars[name] = item
+
         return self.target.from_parameters(target_pars)
 
 class Model(SerializeByConstructor):
@@ -147,6 +153,8 @@ class Model(SerializeByConstructor):
         self.metadata = metadata
 
         self.selection = selection
+        self._selection = None
+
         if isinstance(alpha, Parameter) and alpha.name is None:
             alpha.name = 'alpha'
         self.alpha = alpha
@@ -158,7 +166,6 @@ class Model(SerializeByConstructor):
         if self.alpha is not None:
             self.parameters.append(self.alpha)
         
-        self._selection = None
 
     def get_alpha(self, pars):
         try:
@@ -167,7 +174,6 @@ class Model(SerializeByConstructor):
             if self.alpha is None:
                 return 1.0
             return self.alpha
-
 
     def compare(self, calc, data, selection = None):
         if selection==None:
@@ -279,7 +285,7 @@ class Nmpfit(Minimizer):
             if par.guess is not None:
                 d['value'] = par.scale(par.guess)
             else:
-                raise InvalidParameterSpecification("nmpfit requires an "
+                raise ParameterSpecficationError("nmpfit requires an "
                                                     "initial guess for all "
                                                     "parameters")
             # Check for other allowed parinfo keys here: see nmpfit docs
@@ -321,20 +327,13 @@ class Parameter(SerializeByConstructor):
         
         if self.fixed:
             if guess is not None and guess != limit:
-                raise GuessOutOfBounds(self)
+                raise GuessOutOfBoundsError(self)
             self.guess = limit
         else:
             if limit is not None:
-                try:
-                    if guess > limit[1] or guess < limit[0]:
-                        raise GuessOutOfBounds(self)
-                except TypeError:
-                    if (guess.real !=0 or limit[1].real != 0 or
-                        limit[0].real != 0):
-                        raise GuessOutOfBounds(self)
-                    if guess.imag > limit[1].imag or guess.imag < limit[0].imag:
-                        raise GuessOutOfBounds(self)
-                    
+                if guess > limit[1] or guess < limit[0]:
+                    raise GuessOutOfBoundsError(self)
+                                 
             if guess is not None:
                 if abs(guess) > 1e-12:
                     self.scale_factor = abs(guess)
@@ -346,7 +345,7 @@ class Parameter(SerializeByConstructor):
             elif limit is not None:
                 self.scale_factor = np.sqrt(limit[0]*limit[1])
             else:
-                raise InvalidParameterSpecification("In order to specify a parameter "
+                raise ParameterSpecficationError("In order to specify a parameter "
                                                     "you must provide at least an "
                                                     "initial guess or limit")
     @property
@@ -370,9 +369,8 @@ class Parameter(SerializeByConstructor):
         -------
         scaled: np.array(dtype=float)
         """
-
         return physical / self.scale_factor
-
+     
     def unscale(self, scaled):
         """
         Inverts scale's transformation
@@ -386,43 +384,7 @@ class Parameter(SerializeByConstructor):
         physical: np.array(dtype=float)
         """
         return scaled * self.scale_factor
-
-    def __add__(self, other):
-        # Compose a Parameter and a complex number or complex Parameter into a
-        # ComplexParameter
-        if isinstance(other, Parameter):
-            def imag_or_bust(val):
-                if val is None:
-                    return None
-                if isinstance(val, dict):
-                    d = {}
-                    for key in val:
-                        try:
-                            d[key] = val[key].imag
-                        except TypeError:
-                            # probably a string or a bool or something so we
-                            # don't need to take its imaginary part
-                            d[key] = val[key]
-                    return d
-                elif not np.isscalar(val):
-                    return [imag_or_bust(v) for v in val]
-                elif np.iscomplex(val):
-                    return val.imag
-                else:
-                    raise InvalidParameterSpecification(
-                        "Addition of parameters is only defined for composing "
-                        "complex parameters")
-
-            return ComplexParameter(self, Parameter(imag_or_bust(other.guess),
-                                                    imag_or_bust(other.limit),
-                                                    other.name,
-                                                    **imag_or_bust(other.kwargs)))
-        else:
-            return ComplexParameter(self, other.imag)
-
-    def __radd__(self, other):
-        return self.__add__(self, other)
-
+"""
     def __mul__(self, other):
         def mult(x):
             # attempt multiplication of each element, if we fail, assume it was
@@ -452,22 +414,31 @@ class Parameter(SerializeByConstructor):
     
     def __rmul__(self, other):
         return self.__mul__(other)
-                        
-# user in general will not be creating ComplexParameters, they are created when
-# you do something like: par(1.59) + 1e-4j or par(1.59) + par(1e-4j)
+"""
+
+# ComplexParameters must be explicitly created. We will disallow sugar like
+# par(1.59) + 1e-4j.
 class ComplexParameter(Parameter):
     def __init__(self, real, imag, name = None):
+        '''
+        real and imag may be scalars or Parameters. If Parameters, they must be
+        pure real.
+        '''
+        if not isinstance(real, Parameter):
+            real = Parameter(real, real)
         self.real = real
-        self.imag = imag                              
+        if not isinstance(imag, Parameter):
+            imag = Parameter(imag, imag)
+        self.imag = imag
         self.name = name
 
     @property
     def guess(self):
-        return self.real.guess + self.imag.guess*1.0j
-
-    def __repr__(self):
-        return "{0} + {1}".format(self.real, 1.0j*self.imag)
-    
+        try:
+            return self.real.guess + self.imag.guess*1.0j
+        except AttributeError: # in case self.imag is a scalar
+            #TODO: won't work if self.real is scalar, self.imag is a Parameter
+            return self.real.guess + self.imag * 1.j
 
 def fit(model, data, minimizer=Nmpfit()):
     time_start = time.time()

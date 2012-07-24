@@ -35,8 +35,10 @@ from scatterpy.theory import Mie, Multisphere
 from scatterpy.scatterer import Sphere, SphereCluster
 
 from holopy.analyze.fit import (par, Parameter, Model, fit, Nmpfit,
-                                InvalidParameterSpecification, GuessOutOfBounds,
-                                MinimizerConvergenceFailed, Parameterization)
+                                ParameterSpecficationError, GuessOutOfBoundsError,
+                                MinimizerConvergenceFailed, Parameterization,
+                                ComplexParameter) 
+
 from scatterpy.tests.common import assert_parameters_allclose, assert_obj_close, assert_allclose
 
 
@@ -66,6 +68,13 @@ gold_single = OrderedDict((('center[0]', 5.534e-6),
                ('r', 6.484e-7)))
 gold_alpha = .6497
 
+
+gold_single = OrderedDict((('center[0]', 5.534e-6),
+                           ('center[1]', 5.792e-6),
+                           ('center[2]', 1.415e-5),
+                           ('n.real', 1.582),
+                           ('r', 6.484e-7),
+                           ('alpha', .6497)))
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_fit_mie_single():
@@ -80,8 +89,8 @@ def test_fit_mie_single():
     parameters = [Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5]),
                   Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
                   Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
-                  Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5]),
-                  Parameter(name='n', guess=1.59, limit = [1, 2])]
+                  Parameter(name='n', guess=1.59, limit = [1, 2]),
+                  Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5])]
 
     
     def make_scatterer(x, y, z, r, n):
@@ -93,8 +102,7 @@ def test_fit_mie_single():
 
     result = fit(model, holo)
 
-    assert_parameters_allclose(result.scatterer, gold_single, rtol = 1e-3)
-    assert_approx_equal(model.get_alpha(result.parameters), gold_alpha, significant=4)
+    assert_parameters_allclose(result.parameters, gold_single, rtol = 1e-3)
     assert_equal(model, result.model)
 
     
@@ -109,7 +117,8 @@ def test_fit_mie_par_scatterer():
     
     s = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
                          par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
-               r = par(8.5e-7, (1e-8, 1e-5)), n = par(1.59, (1,2))+1e-4j)
+               r = par(8.5e-7, (1e-8, 1e-5)), 
+               n = ComplexParameter(par(1.59, (1,2)), 1e-4j))
 
     
     model = Model(s, Mie, alpha = par(.6, [.1,1]))
@@ -120,7 +129,6 @@ def test_fit_mie_par_scatterer():
     gold_single = OrderedDict((('center[0]', 5.534e-6),
                                ('center[1]', 5.792e-6),
                                ('center[2]', 1.415e-5),
-                               ('n.imag', 1e-4),
                                ('n.real', 1.582),
                                ('r', 6.484e-7))) 
     
@@ -140,24 +148,15 @@ def test_fit_selection():
     
     s = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
                          par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
-               r = par(8.5e-7, (1e-8, 1e-5)), n = par(1.59, (1,2))+1e-4j)
+               r = par(8.5e-7, (1e-8, 1e-5)), n = ComplexParameter(par(1.59, (1,2)),1e-4j))
 
     
     model = Model(s, Mie, selection = .1, alpha =  par(.6, [.1,1], 'alpha'))
 
     result = fit(model, holo)
-
-    # TODO: make new structure work with complex n
-    gold_single = OrderedDict((('center[0]', 5.534e-6),
-                               ('center[1]', 5.792e-6),
-                               ('center[2]', 1.415e-5),
-                               ('n.imag', 1e-4),
-                               ('n.real', 1.582),
-                               ('r', 6.484e-7))) 
+ 
     
-    assert_parameters_allclose(result.scatterer, gold_single, rtol=1e-2)
-    # TODO: see if we can get this back to 3 sig figs correct alpha
-    assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=2)
+    assert_parameters_allclose(result.parameters, gold_single, rtol=1e-2)
     assert_equal(model, result.model)
 
 
@@ -277,29 +276,18 @@ def test_parameter():
     p = Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5])
     assert_equal(1e-6, p.unscale(p.scale(1e-6)))
 
-    with assert_raises(GuessOutOfBounds):
+    with assert_raises(GuessOutOfBoundsError):
         Parameter(guess=1, limit=(2, 3))
 
-    with assert_raises(GuessOutOfBounds):
+    with assert_raises(GuessOutOfBoundsError):
         Parameter(guess=1, limit=3)
 
     # include a fixed complex index
-    pj = par(1.59) + 1e-4j
-    assert_equal(repr(pj), 'Parameter(guess=1.59) + 0.0001j')
+    pj = ComplexParameter(par(1.59),  1e-4j)
 
 
     # include a fitted complex index with a guess of 1e-4
-    pj2 = par(1.59) + par(1e-4j)
-    assert_equal(repr(pj2), ('Parameter(guess=1.59) + '
-                             'Parameter(guess=0.0001j)'))
-
-    pj3 = par(1j, [0j, 1j])
-
-    with assert_raises(GuessOutOfBounds):
-        par(1j, [1, 2j])
-
-    with assert_raises(GuessOutOfBounds):
-        par(2j, [.5j, 1j])
+    pj2 = ComplexParameter(par(1.59), par(1e-4j))
 
 
 @attr('fast')
@@ -316,7 +304,8 @@ def test_model():
     model = Model(param, Mie)
 
     x, y, z, r = 1, 2, 3, 1
-    s = model.scatterer.make_from((x, y, z, r))
+    values = {'x': x, 'y': y, 'z': z, 'r': r}
+    s = model.scatterer.make_from(values)
 
     assert_parameters_allclose(s, Sphere(center=(x, y, z), n=1.59+1e-4j,
                                          r=r))
@@ -335,7 +324,7 @@ def test_model():
 @attr('fast')
 def test_scatterer_based_model():
     s = Sphere(center = (par(guess=.567e-5),par(limit=.567e-5), par(15e-6, (1e-5, 2e-5))),
-               r = 8.5e-7, n = par(1.59, (1,2))+1e-4j)
+               r = 8.5e-7, n = ComplexParameter(par(1.59, (1,2)),1e-4j))
 
     
     model = Model(s, Mie)
@@ -349,9 +338,10 @@ def test_scatterer_based_model():
     s2 = Sphere(center=[Parameter(name='center[0]', guess=5.67e-06),
                         par(limit=5.67e-06, name='center[1]'),
                         Parameter(name='center[2]', guess=1.5e-05, limit=(1e-05, 2e-05))],
-                n=Parameter(name='n.real', guess=1.59, limit=(1, 2))+1e-4j, r=8.5e-07)
-
-
+                n=ComplexParameter(Parameter(name='n.real', guess=1.59,
+                                             limit=(1, 2)),1e-4j), r=8.5e-07)
+    s2.n.imag.name='n.imag'
+    
     assert_obj_close(model.scatterer.target, s2, context = 'model.scatterer')
 
     s3 = Sphere(center = (6e-6, 5.67e-6, 10e-6), n = 1.6+1e-4j, r = 8.5e-7)
@@ -365,9 +355,9 @@ def test_scatterer_based_model():
 def test_cost_func():
     
     parameters = [Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5]),
-        Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
-        Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
-        Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5])]
+                  Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
+                  Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
+                  Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5])]
 
     def make_scatterer(x, y, z, r):
         return Sphere(n=1.59+1e-4j, r = r, center = (x, y, z))
@@ -381,7 +371,7 @@ def test_cost_func():
 
     cost_func = model.cost_func(holo)
 
-    cost = cost_func(parameters)
+    cost = cost_func(dict([(p.name, p.guess) for p in model.parameters]))
 
     assert_allclose(cost, np.zeros_like(cost), atol=1e-10)
     
@@ -412,7 +402,7 @@ def test_minimizer():
     assert_obj_close(gold_dict, result)
 
     # test inadequate specification
-    with assert_raises(InvalidParameterSpecification):
+    with assert_raises(ParameterSpecficationError):
         minimizer.minimize([Parameter(name = 'a')], cost_func)
 
     # now test limiting minimizer iterations
@@ -466,3 +456,92 @@ def test_serialization():
 
     assert_obj_close(result, loaded)
 
+
+@attr('fast')
+def test_complex_parameter():
+    # target
+    a = 3.3
+    b = 2.2 + 3.2j
+    c = -1.9j
+    x = np.arange(-5, 5, 0.01)
+    y = a * x + b * x**2 + c * x**3
+
+    # Need to create a minimal Model to unpack complex parameters
+
+    # case 1: vary real parts of a & b only, hold c fixed
+    params = [par(3., [0., 10.], 'a'),
+              ComplexParameter(real = par(2., [0., 10.]), imag = 3.2, 
+                               name = 'b'), 
+              ComplexParameter(real = 0., imag = par(-1.9, -1.9), 
+                               name = 'c')]
+
+    def cost_func1(values):
+        # proto-model should handle unscaling
+        a, b = values.values()
+        c = params[2].imag.limit * 1j
+        return np.abs(y - (a * x + b * x**2 + c * x**3))
+
+    real_params = [par(3., [0., 10.], 'a'),
+                   par(2., [0., 10.], 'b_real')]
+    minimizer = Nmpfit()
+    result, details = minimizer.minimize(real_params, cost_func1)
+
+'''
+    # case 1: vary real parts of a & b only, hold c fixed
+
+    params = [par(3., [0., 10.], 'a'),
+              par(2., [0., 10.], 'b') + 3.2j, 
+              par(-1.9j, -1.9j, 'c')]
+
+    def cost_func1(a, b):
+        a = params[0].unscale(a)
+        # hack should be unnecessary in real make_scatterer
+        # Model should handle this
+        b_real = params[1].real.unscale(b.real)
+        b_imag = params[1].imag.unscale(b.imag)
+        b = b_real + b_imag * 1j
+        
+        value = a * x + b * x**2 + c * x**3
+        return np.abs(y - value)
+
+    minimizer = Nmpfit()
+    result, details = minimizer.minimize(params, cost_func1)
+
+    assert_allclose(result, (a, b.real))
+
+    # case 2: vary a, fix b.real, vary b.imag, vary c
+    params = [par(3.5, [-2., 12.], 'a'),
+              2.2 + par(3.j, [0.j, 10.j], 'b'),
+              par(-2.j, [-10.j, 0j], 'c')]
+
+    def cost_func2(a, b, c):
+        a = params[0].unscale(a)
+        b_real = params[1].real.unscale(b.real)
+        b_imag = params[1].imag.unscale(b.imag)
+        b = b_real + b_imag * 1j
+        c = params[2].imag.unscale(c)
+
+    result, details = minimizer.minimize(params, cost_func2)
+    assert_allclose(result, (a, b.imag, c.imag))
+
+    # case 3: vary everything
+    params = [par(3.5, [-2., 12.], 'a'),
+              par(2., [0., 10.], 'b') + par(3.j, [0.j, 10.j], 'b'),
+              par(-2.j, [-10.j, 0.j], 'c')]
+    
+    result, details = minimizer.minimize(params, cost_func2) # same cost func
+    assert_allclose(result, (a, b.real, b.imag, c.imag))
+
+    # case 4: fix everything
+    params = [par(3.3, 3.3, 'a'),
+              par(2.2, 2.2, 'b') + par(3.2j, 3.2j, 'b'),
+              par(-1.9j, -1.9j, 'c')]
+
+    result, details = minimizer.minimize(params, cost_func2)
+
+    # case 5: incorrect name specification
+    with assert_raises(ParameterSpecificationError):
+        params = [par(3.5, [-2., 12.], 'a'),
+                  par(2., [0., 10.], 'b') + par(3.j, [0.j, 10.j], 'smorrebrod'),
+                  par(-2.j, [-10.j, 0.j], 'c')]
+'''
