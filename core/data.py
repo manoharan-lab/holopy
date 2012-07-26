@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 """
-Routines for manipulating, reconstructing, and fitting holograms
+Routines for manipulating, reconstructing, and fitting data
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
@@ -25,37 +25,54 @@ from __future__ import division
 
 import numpy as np
 import scipy.signal
-from types import NoneType
-from holopy.utility import errors
+import errors
+from .holopy_object import HolopyObject
 
-class Hologram(np.ndarray):
+class DataTarget(HolopyObject):
     """
-    Class to store raw holograms
+    Generic specifier desired data
+
+    Attributes
+    ----------
+    meauserements: np.ndarray, or object
+        Specification of the locations of measurements
+    **kwargs: varies
+        Other metadata
+    """
+    def __init__(self, positions, *args, **kwargs):
+        self._metadata = kwargs
+        for key, item in self._metadata.iteritems():
+            setattr(self, key, item)
+        self.positions = positions
+        self._metadata['positions'] = positions
+
+    @property
+    def _dict(self):
+        return self._metadata
+
+class Grid(HolopyObject):
+    """
+    Rectangular grid of measurements
+    """
+    def __init__(self, shape, spacing):
+        self.shape = shape
+        self.spacing = spacing
+
+class Data(DataTarget, np.ndarray):
+    """
+    Class to store raw data
 
     All preprocessing, fitting, and reconstruction routines operate on
-    Hologram objects.  These objects also contains metadata of the
-    optical train used to create the hologram.
+    Data objects.  These objects also contains metadata of the
+    optical train used to create the data.
 
     Parameters
     ----------
     arr : numpy.ndarray
-        raw data array of hologram.
-    optics : :class:`holopy.optics.Optics` object (optional)
+        raw data array of data.
+    metadata : :class:`holopy.metadata.Metadata` object (optional)
         optical train parameters
-    time_scale : float or list of float (optional)
-        time betwen frames or list of times of each frame
-    from_origin : numpy.ndarray (2) (optional)
-        upper left corner of hologram: (0,0) unless hologram is
-        subimaged from a larger hologram
-
-    Notes
-    -----
-    Hologram class stores the data in the measured hologram or
-    hologram stack as an ndarray
     """
-    # The reason I don't separate the hologram class from a separate
-    # optics class is that the hologram image itself is only
-    # meaningful if we know something about the optics.
 
     # subclassing ndarray is a little unusual.  I'm following the
     # instructions here:
@@ -63,92 +80,72 @@ class Hologram(np.ndarray):
 
     # Normally we'd use an __init__ method, but subclassing ndarray
     # requires a __new__ method and an __array_finalize__ method
-    def __new__(cls, arr, optics = None, time_scale = None, name = None,
-                from_origin = None):
-        if isinstance(arr, np.ndarray):
-            # Input array is an already formed ndarray instance
-            input_array = arr.copy()
-        else:
-            # see what happens.  For now I'm not going to throw an
-            # exception here because it's possible that image has a
-            # type that will be cast to an array by the np.ndarray
-            # constructor
-            input_array = arr.copy()
+    def __new__(cls, arr, *args, **kwargs):
+        return np.array(arr).view(cls)
 
-        # We first cast to be our class type
-        obj = np.asarray(input_array).view(cls)
+    def __init__(self, arr, positions = None, *args, **kwargs):
+        super(Data, self).__init__(positions, *args, **kwargs)
 
-        # add the metadata to the created instance
-        obj.optics = optics
-        obj.time_scale = time_scale
-        obj.name = name
-   
-        # origin from which the image comes; reset if subimaged
-        if from_origin.__class__ is NoneType:
-            obj.from_origin = np.zeros(2, dtype = 'int')
-        else:
-            obj.from_origin = from_origin
-
-        # Finally, we must return the newly created object:
-        return obj
-
-    @property
-    def shape3d(self):
-        """
-        returns shape as a 3 tuple (if the hologram is 2d then the
-        third dimension will be 1
-        """
-        if self.ndim == 2:
-            return self.shape[0], self.shape[1], 1
-        else:
-            return self.shape
+    def __repr__(self):
+        array_repr = repr(self.view(np.ndarray))[6:-1]
+        holopy_obj_repr = super(Data, self).__repr__()
+        tok = holopy_obj_repr.split('(', 1)
+        return "{0}({1}, {2}".format(tok[0], array_repr, tok[1])
 
 
     def __array_finalize__(self, obj):
-        # this function finishes the construction of our new object
-        if obj is None: 
-            return
-        try:
-            for var in obj.__dict__:
-                setattr(self, var, getattr(obj, var))
-        except AttributeError:
-            # somehow sometimes we get something without a __dict__ just
-            # ignoring it and waiting until we get something with a __dict__
-            # seems to work
-            pass
-
+        # this function finishes the construction of our new object by copying
+        # over the metadata
+        for item in getattr(obj, '_metadata', []):
+            setattr(self, item, getattr(obj, item))
 
     def __array_wrap__(self, out_arr, context=None):
         # this function is needed so that if we run another numpy
-        # function on the hologram (for example, numpy.add), the
+        # function on the data (for example, numpy.add), the
         # metadata will be transferred to the new object that is
         # created
         if out_arr.ndim == 0:
             # if the thing we are returning is 0 dimension (a single value) ie
             # from .sum(), we want to return the number, not the number wrapped
-            # in a hologram
+            # in a data
             return out_arr.max()
         
         return np.ndarray.__array_wrap__(self, out_arr, context)
 
+
+class Image(Data):
+    """
+    2D pixel data on a rectangular grid
+    """
+    def __new__(cls, arr, pixel_size=None, optics=None, **kwargs):
+        return super(Image, cls).__new__(cls, arr, **kwargs)
+
+    def __init__(self, arr, pixel_size=None, optics=None, **kwargs):
+        if pixel_size is None and optics is not None:
+            pixel_size = optics.pixel
+        if np.isscalar(pixel_size):
+            pixel_size = np.repeat(pixel_size, self.ndim)
+        super(Image, self).__init__(arr = arr, positions = Grid(self.shape, pixel_size), optics
+                                    = optics, **kwargs)
+
     def resample(self, shape, window=None):
         """
-        Resamples hologram to a given size.
+        Resamples data to a given size.
 
-        Use, for example, to downsample a hologram in a way that
+        Use, for example, to downsample a data in a way that
         avoids aliasing and ringing.
         
         Parameters
         ----------
         shape : int or 2-tuple of ints
-            shape of final resampled hologram
+            shape of final resampled data
         window : string
             type of smoothing window passed to the scipy.signal.resample
             filter.
 
         Returns
         -------
-        new_image : :class:`holopy.hologram.Hologram` object
+        new_image : :class:`holopy.data.Data` object
 
         Notes
         -----
@@ -172,11 +169,21 @@ class Hologram(np.ndarray):
         # downsampled, pixel scale should increase
         factor = np.array(new_image.shape).astype('float')/self.shape
 
-        # return a new hologram, now divorced from its optical train
-        return Hologram(new_image, self.optics.resample(1.0/factor),
+        # return a new data, now divorced from its optical train
+        return Image(new_image, self.metadata.resample(1.0/factor),
                         self.time_scale, name)
 
+class Volume(Data):
+    """
+    3D pixel data on a rectangular grid
+    """
+    pass
 
+class Timeseries(Data):
+    pass
+
+
+    
 def subimage(im, center=None, size=None):
     """
     Pick out a subimage of a given size.
@@ -195,7 +202,7 @@ def subimage(im, center=None, size=None):
 
     Returns
     -------
-    Hologram : :class:`holopy.hologram.Hologram` object
+    Data : :class:`holopy.data.Data` object
 
     Raises
     ------
@@ -253,7 +260,7 @@ def subimage(im, center=None, size=None):
     
     # might go wrong if lx,ly are not divisible by 2, but they
     # probably will be, so I am not worrying about it
-    return Hologram(im[x0:x1, y0:y1, ...], optics=im.optics,
+    return Data(im[x0:x1, y0:y1, ...], metadata=im.metadata,
                     time_scale=im.time_scale, name=n, 
                     from_origin = np.array([x0, y0]))
 

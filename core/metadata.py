@@ -16,15 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 """
-Classes for defining optical train used to produce a hologram.  
-
-In the future this will include routines to automatically calculate
-the magnification.  The information might also be used to calculate
-the spherical aberration.
-
-Currently only handles inline optical trains.  Could probably extend
-to off-axis by making an option to pass a second optical train for the
-reference beam to the Optics class constructor.
+Classes for defining metadata about experimental or calulated data.  
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 
@@ -34,10 +26,10 @@ from __future__ import division
 import numpy as np
 import copy
 from types import NoneType
-from .utility.helpers import _ensure_pair
-from scatterpy.io import SerializeByConstructor
+from .helpers import _ensure_pair
+from holopy_object import HolopyObject
 
-class Optics(SerializeByConstructor):
+class Optics(HolopyObject):
     """
     Contains details about the source, detector, and optical train used
     to generate a hologram.
@@ -73,8 +65,8 @@ class Optics(SerializeByConstructor):
                  divergence=0., pixel_size=None, train=None,
                  mag=None, pixel_scale = None):
         # source parameters
-        self._wavelen = wavelen
-        self._index = index
+        self.wavelen = wavelen
+        self.index = index
         self.polarization = np.array(polarization)
         self.divergence = divergence
 
@@ -98,27 +90,6 @@ class Optics(SerializeByConstructor):
         else:
             self.pixel_scale = _ensure_pair(pixel_scale)
 
-    @property
-    def index(self):
-        if self._index is not None:
-            return self._index
-        else:
-            raise MediumIndexNotSpecified
-    @index.setter
-    def index(self, value):
-        self._index=value
-
-    @property
-    def wavelen(self):
-        if self._wavelen is not None:
-            return self._wavelen
-        else:
-            raise WavelengthNotSpecified
-    @wavelen.setter
-    def wavelen(self, value):
-        self._wavelen=value
-    
-    
     @property
     def med_wavelen(self):
         """
@@ -149,17 +120,6 @@ class Optics(SerializeByConstructor):
             return _ensure_pair(self.pixel_scale)
         except AttributeError:
             raise PixelScaleNotSpecified
-
-    def propagate_ref_wave(self):
-        """
-        Not yet implemented
-
-        Returns
-        -------
-        field : ndarray
-            A plane reference wave propagated through the optics 
-        """
-        pass
 
     def resample(self, factor):
         """

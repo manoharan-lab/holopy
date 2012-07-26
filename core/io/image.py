@@ -26,142 +26,26 @@ from __future__ import division
 
 import numpy as np
 import scipy as sp
-import holopy as hp
 import Image
 import os
-import glob
 import warnings
 from scipy.misc.pilutil import fromimage
-from holopy.third_party.tifffile import TIFFfile
-from holopy.hologram import Hologram
-from holopy.utility.errors import NotImplementedError, LoadError, NoFilesFound
-
-def load(im, optics=None, bg=None, bg_type='subtract',
-        channel=0, time_scale=None): 
-    """
-    Loads image files and metadata to make a Hologram object.
-
-    Parameters
-    ----------
-    im : ndarray, string, or list of strings
-        if ndarray, contains the raw hologram data;
-        if string or list of strings, specifies the filename or
-        list of filenames 
-    optics : :class:`holopy.optics.Optics` object or string (optional)
-        Optical train parameters.  If string, specifies the filename
-        of an optics yaml
-    bg : string (optional)
-        name of background file
-    bg_type : string (optional)
-        set to 'subtract' or 'divide' to specify how background is removed
-    channel : int (optional)
-        number of channel to load for a color image (in general 0=red,
-        1=green, 2=blue) 
-    time_scale : float or list (optional)
-        time between frames or, if list, time at each frame
-
-    Returns
-    -------
-    holo : :class:`holopy.hologram.Hologram` object
-    
-    Notes
-    -----
-    Currently only handles one channel of a color image.
-    """
-    
-    # Handle the Optics File
-    if isinstance(optics, basestring):
-            # read from a yaml file.  Each line should be one of the
-            # parameters of the optics.
-            #
-            # For Example
-            #
-            # wavelen: 785e-9
-            # pixel_scale: [3.4e-7, 3.4e-7]
-            #
-            # would be a minimal file that would work
-        try:
-            optics = hp.io.yaml_io.load(optics)
-        except LoadError as er:
-            print("Could not load optics file: %s" % er.filename)
-        if isinstance(optics, dict):
-            # sometimes yaml will leave floats as strings, which will cause
-            # problems, so fix that here before we make the optics object. 
-            for key, val in optics.iteritems():
-                if isinstance(val, basestring):
-                    try:
-                        optics[key] = float(val)
-                    except ValueError:
-                        pass
-            optics = hp.Optics(**optics)
-        if not isinstance(optics, hp.Optics):
-            print("Optics not provided, loading hologram without physical reference")
-            optics = hp.Optics(wavelen=1, pixel_scale=(1, 1))
-            
-    def _guess_extension(filename):
-        # most images will be tif files, this lets the user not
-        # specify the extension 
-        if os.path.splitext(filename)[1] == '' and os.path.exists(filename+'.tif'):
-            filename = filename+'.tif'
-        return filename
-
-    if isinstance(im, np.ndarray):
-        # we were given loaded data, use it
-        input_array = im
-    else:
-        # load files given
-        filenames = []
-        try:
-            im.__iter__() # I assume im could be a list/array?
-        except AttributeError: # strings don't have __iter__
-            im = [im]
-
-        for f in im: 
-            g = glob.glob(f)
-            if g:
-                filenames.extend(g)
-            elif os.path.exists(f+'.tif'):
-                filenames.append(f+'.tif')
-
-        if len(filenames) < 1:
-            raise NoFilesFound(im, os.getcwd())
-
-        input_array = _read(filenames[0], channel=channel)
-        for f in filenames[1:]:
-            # For a list of files; open them as a 3D array 
-            new_array = (_read(f, channel=channel))
-            # stack along 3rd dimension
-            input_array = np.dstack((input_array, new_array))
-
-    holo = Hologram(input_array, optics=optics,
-                    time_scale=time_scale, name=_make_id(im))
-    
-    if isinstance(bg, basestring):
-        bg = load(_guess_extension(bg), optics, channel=channel)
-
-    if isinstance(bg, np.ndarray):
-        bg = Hologram(bg)
-
-    holo.filenames = filenames
-
-    if isinstance(bg, Hologram):
-        return hp.process.background(holo, bg, bg_type)
-    else:
-        return holo
+from ..third_party.tifffile import TIFFfile
+from ..data import Image
 
 def save_image(im, filename, phase=False):
     """
-    Saves an ndarray or hologram as a tiff.
+    Saves an ndarray or image as a tiff.
 
     If the array is complex, it will save the magnitude by default.
     
     Parameters
     ----------
-    im : ndarray or :class:`holopy.hologram.Hologram`
+    im : ndarray or :class:`holopy.image.Image`
         image to save. 
     filename : basestring 
-        filename in which to save image. If im is a hologram the
-        function should default to the hologram's name field if no
+        filename in which to save image. If im is a image the
+        function should default to the image's name field if no
         filename is specified 
     phase : boolean (optional)
         if True, save the phase data rather than the magnitude
@@ -181,7 +65,7 @@ def save_image(im, filename, phase=False):
 
 def _read(filename, channel=0):
     """
-    Handler for opening various types of hologram image files.
+    Handler for opening various types of image image files.
 
     Parameters
     ----------
@@ -327,7 +211,7 @@ def _read_tiff_12bit(filename, size):
 
 
 def _make_id(name):
-    """ Construct an identifying name for a hologram based on the file
+    """ Construct an identifying name for a image based on the file
     or files it came from 
     """
 

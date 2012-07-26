@@ -23,7 +23,7 @@ Defines Sphere, a scattering primitive
 '''
 
 from .abstract_scatterer import SphericallySymmetricScatterer
-from scatterpy.errors import ScattererDefinitionError
+from ..errors import ScattererDefinitionError
 
 class Sphere(SphericallySymmetricScatterer):
     '''

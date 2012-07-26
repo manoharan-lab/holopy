@@ -33,11 +33,11 @@ from copy import copy
 import numpy as np
 import yaml
 
-from scatterpy.io import SerializeByConstructor
-from scatterpy.errors import ScattererDefinitionError
+from core.holopy_object  import HolopyObject
+from ..errors import ScattererDefinitionError
 
 
-class Scatterer(SerializeByConstructor):
+class Scatterer(HolopyObject):
     """
     Base class for scatterers
 

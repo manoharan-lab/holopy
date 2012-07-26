@@ -1,5 +1,5 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+# W. Perry, Jerome Fung, and Ryan McGorty
 #
 # This file is part of Holopy.
 #
@@ -15,24 +15,16 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
-
 '''
-Modules for defining different types of scatterers, including
-scattering primitives such as Spheres, and more complex objects such
-as Clusters.
+Code to calculate fields, intensity, and holograms from various types
+of scatterers, using various scattering theories.  
 
+.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
+.. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
-.. moduleauthor:: Thomas G. Dimiduk <tdimidusk@physics.harvard.edu>
 '''
 from __future__ import division
-
-from abstract_scatterer import Scatterer
-import abstract_scatterer
-
-from sphere import Sphere
-from coatedsphere import CoatedSphere
-from composite import Composite
-from .spherecluster import SphereCluster
-from voxelated import VoxelatedScatterer
-from ellipsoid import Ellipsoid
-
+#import theory
+import scatterer

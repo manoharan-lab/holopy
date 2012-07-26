@@ -109,7 +109,8 @@ the imaging plane will be 0.1 microns.  This information is specified as a DataT
    .. sourcecode:: python
   
       import holopy
-      target = holopy.DataTarget(points = 256, (wavelen = 658e-9, index = 1.33, pixel_scale=0.1e-6))
+      target = holopy.DataTarget(measurements = Grid(shape = (256, 256), spacing = (1e-7,1e-7)),
+                                 optics = Optics(wavelen = 658e-9, index = 1.33))
 
 This make use of Holopy's default assumption that you are working with a square grid of measurements, see later examples for how to specify other geometries.
 

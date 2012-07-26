@@ -31,15 +31,11 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 import numpy as np
-import holopy as hp
 import yaml
-import os
 import re
-import os.path
 import inspect
-import scatterpy.io.serializable
-from scatterpy.io.serializable import ordered_dump
-from holopy.analyze.fit import FitResult, Model, Parameter, Nmpfit
+from ..holopy_object import ordered_dump, SerializableMetaclass
+from ..data import Image
 
 class LoadError(Exception):
     def __init__(self, msg):
@@ -47,22 +43,12 @@ class LoadError(Exception):
     def __str__(self):
         return self.msg
 
-def hologram_representer(dumper, data):
-    if data.ndim == 0:
-        return dumper.represent_float(data.max())
-    dump_dict = OrderedDict()
-    for var in inspect.getargspec(data.__new__).args[1:]:
-        if hasattr(data, var) and getattr(data, var) is not None:
-            dump_dict[var] = getattr(data, var)
-    return ordered_dump(dumper, '!Hologram', dump_dict)
-yaml.add_representer(hp.hologram.Hologram, hologram_representer)
-
 def save(outf, obj):
     if isinstance(outf, basestring):
         outf = file(outf, 'w')
 
     yaml.dump(obj, outf)
-    if isinstance(obj, hp.hologram.Hologram):
+    if isinstance(obj, Image):
         # having yaml save array data works poorly, so instead we will have
         # numpy do it.  This will mean the file isn't stricktly a valid yaml (or
         # even a valid text file really), but we can still read it, and with the
@@ -85,7 +71,7 @@ def load(inf):
         arr = np.load(inf)
         head = ''.join(lines[1:])
         kwargs = yaml.load(head)
-        return hp.Hologram(arr, **kwargs)
+        return Image(arr, **kwargs)
 
 
     else:
@@ -102,25 +88,68 @@ def load(inf):
                         pass
                 
         return obj
-"""
-def model_representer(dumper, data):
-    dump_dict = OrderedDict()
-    if data._user_make_scatterer is None:
-        if data.alpha_par:
-            dump_dict['parameters'] = [data.scatterer, data.alpha_par]
-        else:
-            dump_dict['parameters'] = data.scatterer
 
-        dump_dict['theory'] = data.theory
+
+###################################################################
+# Custom Yaml Representers
+###################################################################
+
+def image_representer(dumper, data):
+    if data.ndim == 0:
+        return dumper.represent_float(data.max())
+    dump_dict = OrderedDict()
+    for var in inspect.getargspec(data.__new__).args[1:]:
+        if hasattr(data, var) and getattr(data, var) is not None:
+            dump_dict[var] = getattr(data, var)
+    return ordered_dump(dumper, '!Image', dump_dict)
+yaml.add_representer(Image, image_representer)
+
+
+
+# Represent 1d ndarrays as lists in yaml files because it makes them much
+# prettier
+def ndarray_representer(dumper, data):
+    return dumper.represent_list(data.tolist())
+yaml.add_representer(np.ndarray, ndarray_representer)
+
+# represent tuples as lists because yaml doesn't have tuples
+def tuple_representer(dumper, data):
+    return dumper.represent_list(list(data))
+yaml.add_representer(tuple, tuple_representer)
+
+# represent numpy types as things that will print more cleanly
+def complex_representer(dumper, data):
+    return dumper.represent_scalar('!complex', repr(data.tolist()))
+yaml.add_representer(np.complex128, complex_representer)
+def complex_constructor(loader, node):
+    return complex(node.value)
+yaml.add_constructor('!complex', complex_constructor)
+def numpy_float_representer(dumper, data):
+    return dumper.represent_float(float(data))
+yaml.add_representer(np.float64, numpy_float_representer)
+def numpy_int_representer(dumper, data):
+    return dumper.represent_int(int(data))
+yaml.add_representer(np.int64, numpy_int_representer)
+
+
+def class_representer(dumper, data):
+    if re.match('scatterpy.theory', data.__module__):
+        return dumper.represent_scalar('!theory', "{0}.{1}".format(data.__module__,
+                                   data.__name__))
     else:
-        dump_dict['parameters'] = data.parameters
-        dump_dict['theory'] = data.theory
-        dump_dict['make_scatterer'] = data._user_make_scatterer
-        
-    dump_dict['selection'] = data.selection
-    return ordered_dump(dumper, '!Model', dump_dict)
-yaml.add_representer(Model, model_representer)
-"""
+        raise NotImplemented
+yaml.add_representer(SerializableMetaclass, class_representer)
+
+def class_loader(loader, node):
+    name = loader.construct_scalar(node)        
+    tok = name.split('.')
+    mod = __import__(tok[0])
+    for t in tok[1:]:
+        mod = mod.__getattribute__(t)
+    return mod
+yaml.add_constructor(u'!theory', class_loader)
+
+
 # legacy loader, this is only here because for a while we saved things as
 # !Minimizer {algorithm = nmpfit} and we still want to be able to read those yamls
 def minimizer_constructor(loader, node):

@@ -27,7 +27,6 @@ import shutil
 import errno
 from functools import wraps
 import numpy as np
-import holopy.hologram
 
 def _ensure_array(x):
     if np.isscalar(x):
@@ -43,6 +42,7 @@ def _ensure_pair(x):
         return np.array(x)
     except (IndexError, TypeError):
         return np.array([x, x])
+
 
 def _preserve_holo_type(func):
     """
@@ -60,6 +60,7 @@ def _preserve_holo_type(func):
             return ret
     return wrapper
 
+    
 def _mkdir_p(path):
     '''
     Equivalent to mkdir -p at the shell, this function makes a

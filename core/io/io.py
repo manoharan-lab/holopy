@@ -22,12 +22,26 @@ functions.
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.havard.edu>
 """
 import os
-import yaml_io
-import image_io
+import serialize
+import image
 
+from ..data import Image
+from ..metadata import Optics
 
-def load(inf, optics=None, bg=None, bg_type='subtract',
-         channel=0, time_scale=None):
+def load_image(inf, optics = None, pixel_size = None):
+    if isinstance(inf, basestring):
+        inf = image._read(inf)
+    if isinstance(optics, basestring):
+        optics = serialize.load(optics)
+        # We allowed optics yamls to be written without an !Optics tag, so for
+        # that kind of optics file we get back a dict and have to turn it into
+        # an Optics
+        if isinstance(optics, dict):
+            optics = Optics(**optics)
+
+    return Image(inf, optics = optics, pixel_size = pixel_size)
+
+def load(inf, pixel_size = None, optics = None):
     """
     Load data or results
 
@@ -58,19 +72,19 @@ def load(inf, optics=None, bg=None, bg_type='subtract',
     """
 
     try:
-        return yaml_io.load(inf)
+        return serialize.load(inf)
     except:
         pass
 
-    return image_io.load(inf, optics, bg, bg_type, channel, time_scale)
+    return image.load(inf, pixel_size = pixel_size, optics = optics)
 
 def save(outf, obj):
     if isinstance(outf, basestring):
         filename, ext = os.path.splitext(outf)
         if ext in ['.tif', '.TIF', '.tiff', '.TIFF']:
-            image_io.save_image(obj, outf)
+            image.save_image(obj, outf)
             return
-    yaml_io.save(outf, obj)
+    serialize.save(outf, obj)
 
         
         
