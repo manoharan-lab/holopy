@@ -255,7 +255,7 @@ class DDA(ScatteringTheory):
         # eq 3.12
         scat_matr = np.array([[s[:,1], s[:,2]], [s[:,3], s[:,0]]]).transpose()
 
-        fields = np.zeros_like(calc_points, dtype = scat_matr.dtype)
+        fields = np.zeros_like(calc_points)
 
         for i, point in enumerate(calc_points):
             kr, theta, phi = point
