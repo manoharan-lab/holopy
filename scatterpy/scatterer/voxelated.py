@@ -25,7 +25,7 @@ from __future__ import division
 import tempfile
 import numpy as np
 import holopy as hp
-from copy import copy
+from copy import copy, deepcopy
 from scatterpy.scatterer import Scatterer, Sphere
 from holopy.process.math import rotation_matrix
 from scatterpy.scatterer.abstract_scatterer import SingleScatterer
@@ -151,6 +151,29 @@ class ScattererByFunction(SingleScatterer):
         new = copy(self)
         new._rotation = (alpha, beta, gamma)
         return new
+
+class MultidomainScattererByFunction(ScattererByFunction):
+    def __init__(self, tests, ns, domain, center):
+        self.domains = []
+        for test, n in zip(tests, ns):
+            self.domains.append(ScattererByFunction(test, n, domain, center))
+        self.center = center
+
+    def _points(self, spacing):
+        for i, domain in enumerate(self.domains):
+            for point in  domain._points(spacing):
+                # yeild the points from each domain with their domain number added
+                yield point + (i, )
+
+    def rotate(self, alpha, beta, gamma):
+        new = copy(self)
+        for i, domain in enumerate(new.domains):
+            new.domains[i] = domain.rotate(alpha, beta, gamma)
+        return new
+
+    @property
+    def n(self):
+        return max([abs(d.n) for d in self.domains])
 
 
 
