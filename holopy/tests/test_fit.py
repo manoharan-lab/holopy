@@ -548,7 +548,7 @@ def test_complex_parameter():
 
 from scatterpy.tests.test_dda import missing_dependencies
 
-@dec.skip(missing_dependencies(), 'a-dda not installed')
+@dec.skipif(missing_dependencies(), 'a-dda not installed')
 @attr('slow')
 def test_dda_fit():
     from scatterpy.theory import DDA
