@@ -17,15 +17,11 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
 
-import holopy
-import scatterpy
-import os
 import numpy as np
-import yaml
-from scatterpy.theory.scatteringtheory import ElectricField
 
+from numpy.testing import assert_equal
 
-from numpy.testing import assert_almost_equal, assert_equal
+from ...scattering import scatterer
 
 try:
     from numpy.testing import assert_allclose
@@ -39,91 +35,13 @@ Not equal to tolerance rtol={0}, atol={1}
 
  actual: {2}
  desired: {3}""".format(rtol, atol, actual, desired))
-
-        
-
-wavelen = 658e-9
-ypolarization = [0., 1.0] # y-polarized
-xpolarization = [1.0, 0.] # x-polarized
-divergence = 0
-pixel_scale = [.1151e-6, .1151e-6]
-index = 1.33
-
-yoptics = holopy.optics.Optics(wavelen=wavelen, index=index,
-                               pixel_scale=pixel_scale,
-                               polarization=ypolarization,
-                               divergence=divergence)
-    
-xoptics = holopy.optics.Optics(wavelen=wavelen, index=index,
-                               pixel_scale=pixel_scale,
-                               polarization=xpolarization,
-                               divergence=divergence)
-
-optics=yoptics
-
-
-def verify(result, name, rtol=1e-7):
-    scatterpy_location = os.path.split(os.path.abspath(scatterpy.__file__))[0]
-    gold_name = os.path.join(scatterpy_location, 'tests', 'gold', 'gold_'+name)
-    if os.path.exists(gold_name + '.npy'):
-        gold = np.load(gold_name + '.npy')
-        arr = gold
-        if isinstance(result, ElectricField):
-            arr = np.dstack((result.x_comp, result.y_comp, result.z_comp))
-        assert_allclose(arr, gold, rtol)
-
-    gold = yaml.load(file(gold_name+'.yaml'))
-
-    for key, val in gold.iteritems():
-        if isinstance(result, ElectricField):
-            comp, check = key.split('.')
-            assert_almost_equal(getattr(getattr(result, comp), check)(), val,
-                                decimal=int(-np.log10(rtol)))
-        else:
-            assert_almost_equal(getattr(result, key)(), val, decimal=int(-np.log10(rtol)))
-    
-
-def make_golds(result, name):
-    '''
-    Make new golds for a test
-
-    Parameters
-    ----------
-    result: Hologram or ElectricField
-        A result that you want to make the new gold (try to make sure it is
-        correct)
-    name: string
-        The name for the result (this should be something like the test name)
-    '''
-    
-    gold_name = 'gold_'+name
-    if isinstance(result, ElectricField):
-        np.save(gold_name+'.npy', result._array())
-    else:
-        np.save(gold_name+'.npy', result)
-
-    gold_dict = {}
-
-    checks = ['min', 'max', 'mean', 'std']
-
-
-    for check in checks:
-        if isinstance(result, ElectricField):
-            comps = ['x_comp', 'y_comp', 'z_comp']
-            for comp in comps:
-                res = getattr(getattr(result, comp), check)()
-                gold_dict['{0}.{1}'.format(comp, check)] = res
-        else:
-            gold_dict[check] = getattr(result, check)()
-
-    yaml.dump(gold_dict, file(gold_name+'.yaml','w'))
         
 def assert_parameters_allclose(actual, desired, rtol=1e-7, atol = 0):
-    if isinstance(actual, scatterpy.scatterer.Scatterer):
+    if isinstance(actual, scatterer.Scatterer):
         actual = actual.parameters
     if isinstance(actual, dict):
         actual = np.array([p[1] for p in actual.iteritems()])
-    if isinstance(desired, scatterpy.scatterer.Scatterer):
+    if isinstance(desired, scatterer.Scatterer):
         desired = desired.parameters
     if isinstance(desired, dict):
         desired = np.array([p[1] for p in desired.iteritems()])
@@ -137,7 +55,7 @@ def assert_parameters_allclose(actual, desired, rtol=1e-7, atol = 0):
 def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = None):
     if context is None:
         context = 'tested_object'
-    if isinstance(actual, (scatterpy.scatterer.Scatterer, dict)):
+    if isinstance(actual, (scatterer.Scatterer, dict)):
         assert_parameters_allclose(actual, desired, rtol, atol)
     elif isinstance(actual, (list, tuple)):
         assert_equal(len(actual), len(desired))

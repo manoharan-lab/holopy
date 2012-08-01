@@ -26,5 +26,5 @@ of scatterers, using various scattering theories.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 from __future__ import division
-#import theory
+import theory
 import scatterer

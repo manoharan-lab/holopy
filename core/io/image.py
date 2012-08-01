@@ -17,7 +17,7 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 """
 Routines that operate on files, including routines that import various
-image file formats used for holograms. 
+image file formats used for holograms. S
 
 .. moduleauthor:: Jerome Fung <jfung@physics.harvard.edu>
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
@@ -26,7 +26,7 @@ from __future__ import division
 
 import numpy as np
 import scipy as sp
-import Image
+import Image as PILImage
 import os
 import warnings
 from scipy.misc.pilutil import fromimage
@@ -99,7 +99,7 @@ def _read(filename, channel=0):
         arr, might_be_color = _read_tiff(filename)
     else:
         # try PIL
-        im = Image.open(filename)
+        im = PILImage.open(filename)
         arr = fromimage(im).astype('d')
 
     # pick out only one channel of a color image
@@ -157,7 +157,7 @@ def _read_tiff(filename):
         # use PIL to open it 
         # TOFIX: see if tifffile will open 8-bit tiffs from our
         # cameras correctly
-        im = Image.open(filename)
+        im = PILImage.open(filename)
         arr = fromimage(im).astype('d')
     elif depth == 12:
         tif.close()
@@ -191,7 +191,7 @@ def _read_tiff_12bit(filename, size):
     offsetdict = {256:194, 512:234, 1024:378}
 
     if size in offsetdict:
-        im = Image.fromstring("F", (size, size), data[offsetdict[size]:], 
+        im = PILImage.fromstring("F", (size, size), data[offsetdict[size]:], 
                               "bit", 12, 0, 0, 0, 1)
     else:
         offset = 378 # it's got to be smaller for anything < 1024x1024
@@ -199,7 +199,7 @@ def _read_tiff_12bit(filename, size):
 
         while not done:
             try:
-                im = Image.fromstring("F", (size, size), 
+                im = PILImage.fromstring("F", (size, size), 
                                       data[offset:], "bit", 12, 0, 0, 0, 1)
             except ValueError:
                 offset = offset - 1

@@ -27,14 +27,14 @@ scattered field.
 '''
 from __future__ import division
 import numpy as np
-import mie_f.mieangfuncs as mieangfuncs
-import mie_f.miescatlib as miescatlib
-from mie_f.multilayer_sphere_lib import scatcoeffs_multi
+from core.helpers import _ensure_array
+from core.data import VectorData
+from ..errors import TheoryNotCompatibleError, UnrealizableScatterer
+from ..scatterer import Sphere, CoatedSphere, Composite
+from .scatteringtheory import FortranTheory
+from .mie_f import mieangfuncs, miescatlib
+from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
 
-from scatterpy.errors import TheoryNotCompatibleError, UnrealizableScatterer
-from scatterpy.scatterer import Sphere, CoatedSphere, Composite
-from scatterpy.theory.scatteringtheory import FortranTheory
-from holopy.utility.helpers import _ensure_array
 
 class Mie(FortranTheory):
     """
@@ -65,7 +65,7 @@ class Mie(FortranTheory):
     # don't need to define __init__() because we'll use the base class
     # constructor
 
-    def calc_field(self, scatterer, selection=None):
+    def _calc_field(self, scatterer, target, scaling = None, selection=None):
         """
         Calculate fields for single or multiple spheres
 
@@ -86,17 +86,20 @@ class Mie(FortranTheory):
         For multiple particles, this code superposes the fields
         calculated from each particle (using calc_mie_fields()). 
         """
-            
+        
         def sphere_field(s, selection=None):
-            scat_coeffs = self._scat_coeffs(s)
+            scat_coeffs = self._scat_coeffs(s, target.optics)
 
             # mieangfuncs.f90 works with everything dimensionless.
-            fields = mieangfuncs.mie_fields(self._list_of_sph_coords(s.center, selection),
+            # tranpose to get things in fortran format
+            # TODO: move this transposing to a wrapper
+            fields = mieangfuncs.mie_fields(target.positions_kr_theta_phi(origin = s.center).T,
                                             scat_coeffs,
-                                            self.optics.polarization)
-            return self._interpret_fields(fields, s.z, selection)
-
-        
+                                            target.optics.polarization)
+            phase = np.exp(-1j*np.pi*2*s.z / target.optics.med_wavelen)
+            result = target.from_1d(VectorData(np.vstack(fields).T))
+            return result * scaling * phase
+         
         if isinstance(scatterer, (Sphere, CoatedSphere)):
             return sphere_field(scatterer, selection)
         elif isinstance(scatterer, Composite):
@@ -110,7 +113,7 @@ class Mie(FortranTheory):
             return self.superpose(spheres, selection)
         else: raise TheoryNotCompatibleError(self, scatterer)
 
-    def calc_cross_sections(self, scatterer):
+    def _calc_cross_sections(self, scatterer):
         """
         Calculate scattering, absorption, and extinction cross 
         sections, and asymmetry parameter for spherically
@@ -145,9 +148,9 @@ class Mie(FortranTheory):
 
         return np.array([cscat, cabs, cext, asym])
         
-    def _scat_coeffs(self, s):
-        x_arr = self.optics.wavevec * _ensure_array(s.r)
-        m_arr = _ensure_array(s.n) / self.optics.index
+    def _scat_coeffs(self, s, optics):
+        x_arr = optics.wavevec * _ensure_array(s.r)
+        m_arr = _ensure_array(s.n) / optics.index
     
         # Check that the scatterer is in a range we can compute for
         if x_arr.max() > 1e3:

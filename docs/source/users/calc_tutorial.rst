@@ -109,7 +109,7 @@ the imaging plane will be 0.1 microns.  This information is specified as a DataT
    .. sourcecode:: python
   
       import holopy
-      target = holopy.DataTarget(measurements = Grid(shape = (256, 256), spacing = (1e-7,1e-7)),
+      target = holopy.DataTarget(positions = Grid(shape = (256, 256), spacing = (1e-7,1e-7)),
                                  optics = Optics(wavelen = 658e-9, index = 1.33))
 
 This make use of Holopy's default assumption that you are working with a square grid of measurements, see later examples for how to specify other geometries.
@@ -124,10 +124,10 @@ Here we use the single sphere Mie calculations for computing the
 hologram.  We create a :class:`scatterpy.scatterer.sphere.Sphere`
 object to describe the sphere, use the Mie theory to do the calculation.  The arguments to the ``calc_holo`` function are specified in :meth:`holopy.model.mie.calc_holo`.  They include the size of the hologram we want to calculate (in pixels) and the properties and position of the particle ::
 
-    from scatterpy.theory import Mie
-    from scatterpy.scatterer import Sphere
+    from scattering.theory import Mie
+    from scattering.scatterer import Sphere
     sphere = Sphere(center=(12.8e-6, 12.8e-6, 10e-6), n = 1.58, r = 0.5e-6)
-    holo = Mie.calc_holo(sphere, target, alpha = 0.8)
+    holo = Mie.calc_holo(sphere, target, scaling = 0.8)
 	
 .. note::
     All units in the above code sample are in meters. This will work

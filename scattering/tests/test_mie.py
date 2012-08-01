@@ -35,19 +35,18 @@ from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
                            assert_raises)
 from nose.plugins.attrib import attr
 
-from holopy import Optics
-import scatterpy
-from scatterpy.scatterer import (Sphere, SphereCluster, CoatedSphere, Ellipsoid)
-from scatterpy.theory import Mie
+from ..scatterer import Sphere#, SphereCluster, CoatedSphere, Ellipsoid
+from ..theory import Mie
 
-from scatterpy.theory.mie import UnrealizableScatterer
-from scatterpy.errors import TheoryNotCompatibleError
-import common
-from common import assert_allclose
+from ..theory.mie import UnrealizableScatterer
+from ..errors import TheoryNotCompatibleError
+from ...core import ImageTarget
+from .common import xoptics, yoptics, optics, verify
+from ...core.tests.common import assert_allclose
 
 # nose setup/teardown methods
 def setup_model():
-    global xoptics, yoptics, xmodel, ymodel, scaling_alpha, radius, n
+    global xoptics, yoptics, xtarget, ytarget, scaling_alpha, radius, n
     global n_particle_real, n_particle_imag, x, y, z, optics
 
     scaling_alpha = .6
@@ -62,40 +61,14 @@ def setup_model():
     imshape = 128
     
     # set up optics class for use in several test functions
-    xoptics, yoptics = common.xoptics, common.yoptics
-    optics = common.optics
-    xmodel = Mie(imshape = imshape, optics=xoptics)
-    ymodel = Mie(imshape = imshape, optics=yoptics)
+    xtarget = ImageTarget(imshape, optics=xoptics)
+    ytarget = ImageTarget(imshape, optics=yoptics)
 
 def teardown_model():
-    global xoptics, yoptics, xmodel, ymodel, scaling_alpha, radius, n
+    global xoptics, yoptics, xtarget, ytarget, scaling_alpha, radius, n
     global n_particle_real, n_particle_imag, x, y, z, optics
-    del xoptics, yoptics, xmodel, ymodel, scaling_alpha, radius, n
+    del xoptics, yoptics, xtarget, ytarget, scaling_alpha, radius, n
     del n_particle_real, n_particle_imag, x, y, z, optics
-
-
-@attr('fast')
-@with_setup(setup=setup_model, teardown=teardown_model)
-def test_Mie_construction():
-    theory = Mie(optics)
-    assert_equal(theory.imshape, (256,256))
-    theory = Mie(optics, imshape=(100,100))
-    assert_equal(theory.imshape , (100,100))
-
-    # test with single value instead of tuple
-    theory = Mie(optics, imshape=128)
-    assert_equal(theory.imshape , (128,128))
-
-    # construct with optics
-    theory = Mie(imshape=256, optics=optics)
-    assert_equal(theory.optics.index, 1.33)
-
-    # construct with a dict as optics
-    theory = Mie({'wavelen': .66, 'pixel_scale': .1, 'index': 1.33})
-
-    common.assert_obj_close(theory, eval(repr(theory)))
-
-    
 
 
 @attr('fast')
@@ -104,19 +77,19 @@ def test_single_sphere():
     # single sphere hologram (only tests that functions return)
     sphere = Sphere(n=n, r=radius, center=(x, y, z))
 
-    holo = xmodel.calc_holo(sphere, alpha=scaling_alpha)
-    field = xmodel.calc_field(sphere)
+    holo = Mie.calc_holo(sphere, xtarget, scaling=scaling_alpha)
+    field = Mie.calc_field(sphere, xtarget)
 
-    intensity = xmodel.calc_intensity(sphere)
-
-    common.verify(holo, 'single_holo')
-    common.verify(field, 'single_field')
+    intensity = Mie.calc_intensity(sphere, xtarget)
+    
+    verify(holo, 'single_holo')
+    verify(field, 'single_field')
 
     # now test some invalid scatterers and confirm that it rejects calculating
     # for them
 
     # large radius (calculation not attempted because it would take forever
-    assert_raises(UnrealizableScatterer, xmodel.calc_holo, Sphere(r=1))
+    assert_raises(UnrealizableScatterer, Mie.calc_holo, Sphere(r=1), xtarget)
 
 
 @attr('fast')

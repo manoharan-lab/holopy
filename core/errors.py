@@ -90,3 +90,9 @@ class MinimizerConvergenceFailed(Error):
     def __init__(self, result, details):
         self.result = result
         self.details = details
+
+class PixelScaleNotSpecified(Exception):
+    def __init__(self):
+        pass
+    def __str__(self):
+        return ("Pixel scale not specified in Optics instance.")

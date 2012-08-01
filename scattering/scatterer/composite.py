@@ -33,10 +33,9 @@ from copy import copy
 
 import numpy as np
 
-from holopy.process.math import rotate_points
+#from holopy.process.math import rotate_points
 
-import scatterpy
-from scatterpy.scatterer import Scatterer
+from . import Scatterer
 
 class Composite(Scatterer):
     '''

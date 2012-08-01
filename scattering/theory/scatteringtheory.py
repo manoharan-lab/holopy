@@ -24,13 +24,11 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 import numpy as np
-import holopy as hp
-from holopy.hologram import Hologram
-from holopy.utility.helpers import _ensure_pair
-from scatterpy.io import SerializeByConstructor
-from scatterpy.errors import InvalidSelection
+from core.data import Image, VectorData
+from core.holopy_object import HolopyObject
+from ..errors import InvalidSelection
 
-class ScatteringTheory(SerializeByConstructor):
+class ScatteringTheory(HolopyObject):
     """
     Base class for scattering theories
     
@@ -55,16 +53,16 @@ class ScatteringTheory(SerializeByConstructor):
     theta(j))
     """
 
-    def __init__(self, optics, imshape=(256,256), theta=None, phi=None): 
-        self.imshape = _ensure_pair(imshape)
-        self.theta = theta
-        self.phi = phi
-        if isinstance(optics, dict):
-            self.optics = hp.Optics(**optics)
-        else:
-            self.optics = optics
-
-    def calc_field(self, scatterer, selection=None):
+    def __init__(self):
+        # If the user instantiates a theory, they probably want calc_field to
+        # reference their instance, so overwrite the classmethod with one that
+        # does.  
+        def calc_field(self, scatterer, target, scaling = None):
+            return self._calc_field(scatterer, target, scaling = scaling)
+        self.calc_field = calc_field
+        
+    @classmethod
+    def calc_field(cls, scatterer, target, scaling = 1.0):
         """
         Calculate fields.  Implemented in derived classes only.
 
@@ -85,12 +83,102 @@ class ScatteringTheory(SerializeByConstructor):
         ------
         IncompleteTheory : if calc_field is undefined in the derived class 
         """
+        # make a theory with default arguments to do the computation.  
+        theory = cls()
 
-        raise NotImplementedError
+        return theory._calc_field(scatterer, target, scaling = scaling)
+       
+    @classmethod
+    def calc_intensity(cls, scatterer, target, scaling = 1.0): 
+        """
+        Calculate intensity at focal plane (z=0)
 
+        Parameters
+        ----------
+        scatterer : :mod:`scatterpy.scatterer` object
+            scatterer or list of scatterers to compute field for
+        selection : array on integers (optional)
+            a mask with 1's in the locations of pixels where you
+            want to calculate the field, defaults to all pixels
+
+        Returns
+        -------
+        inten : array(imshape, imshape)
+            scattered intensity
+
+        Notes
+        -----
+        Total scattered intensity only takes into account the x- and
+        y-components of the E-field.  The z-component is ignored
+        because the detector's pixels should be sensitive to the z
+        component of the Poynting vector, E x B, and the z component
+        of E x B cannot depend on Ez.
+        """
+        field = cls.calc_field(scatterer, target = target, scaling = scaling)
+        normal = np.array([0, 0, 1])
+        normal = normal.reshape((1, 1, 3))
+        return (abs(field*(1-normal))**2).sum(-1)
+
+
+    @classmethod
+    def calc_holo(cls, scatterer, target, scaling=1.0):
+        """
+        Calculate hologram formed by interference between scattered
+        fields and a reference wave
+        
+        Parameters
+        ----------
+        scatterer : :mod:`scatterpy.scatterer` object
+            scatterer or list of scatterers to compute field for
+        alpha : scaling value for intensity of reference wave
+        selection : array of integers (optional)
+            a mask with 1's in the locations of pixels where you
+            want to calculate the field, defaults to all pixels
+
+        Returns
+        -------
+        holo : :class:`holopy.hologram.Hologram` object
+            Calculated hologram from the given distribution of spheres
+        """
+        scat = cls.calc_field(scatterer, target = target, scaling = scaling)
+
+        # add the z component to polarization
+        p = np.append(target.optics.polarization, 0)
+        # now reshape to have (spatial x, spatial y, components)
+        p = p.reshape((1,1,3))
+
+        ref = VectorData(p)
+
+        return Image(interfere_at_detector(scat, ref),
+                        optics=target.optics)
+
+    @classmethod
+    def calc_cross_sections(cls, scatterer):
+        """
+        Calculate scattering, absorption, and extinction 
+        cross sections, and asymmetry parameter <cos \theta>. 
+        To be implemented by derived classes.
+
+        Parameters
+        ----------
+        scatterer : :mod:`scatterpy.scatterer` object
+            scatterer or list of scatterers to compute for
+
+        Returns
+        -------
+        cross_sections : array (4)
+            Dimensional scattering, absorption, and extinction 
+            cross sections, and <cos \theta>
+        """
+        # make a theory with default arguments to do the computation.  
+        theory = cls()
+        
+        return theory._calc_cross_sections(scatterer)
+
+    
     # TODO: is this function still needed?  The new ElectricField
     # class makes it essentially trivial -tgd 2011-08-12
-    def superpose(self, scatterers, selection=None):
+    def superpose(self, scatterers, target, selection=None):
         """
         Superpose fields from different scatterers, taking into
         account phase differences.
@@ -120,94 +208,13 @@ class ScatteringTheory(SerializeByConstructor):
         the phase angle of the incident field is 0 at z=0
         """
 
-        field = ElectricField(np.zeros(self.imshape), 
-                              np.zeros(self.imshape),
-                              np.zeros(self.imshape), 0, 
-                              self.optics.med_wavelen)
+        field = VectorData.vector_zeros_like(target)
+
         for s in scatterers:
-            field += self.calc_field(s, selection)
+            phase = np.exp(-1.0j * np.pi * 2 * s.z / target.optics.med_wavelen)
+            field += self.calc_field(s, selection) * phase
 
         return field
-        
-    def calc_intensity(self, scatterer, selection=None, 
-                       xfield=None, yfield=None, zfield=None): 
-        """
-        Calculate intensity at focal plane (z=0)
-
-        Parameters
-        ----------
-        scatterer : :mod:`scatterpy.scatterer` object
-            scatterer or list of scatterers to compute field for
-        selection : array on integers (optional)
-            a mask with 1's in the locations of pixels where you
-            want to calculate the field, defaults to all pixels
-        xfield, yfield, zfield : array (optional)
-            Components of scattered field
-
-        Returns
-        -------
-        inten : array(imshape, imshape)
-            scattered intensity
-
-        Notes
-        -----
-        Total scattered intensity only takes into account the x- and
-        y-components of the E-field.  The z-component is ignored
-        because the detector's pixels should be sensitive to the z
-        component of the Poynting vector, E x B, and the z component
-        of E x B cannot depend on Ez.
-
-        You can specify the fields to avoid the cost of calculating
-        them twice during calc_holo()
-        """
-        field = self.calc_field(scatterer, selection)
-        return abs(field.x_comp)**2 + abs(field.y_comp)**2
-
-    def calc_holo(self, scatterer, alpha=1.0, selection=None):
-        """
-        Calculate hologram formed by interference between scattered
-        fields and a reference wave
-        
-        Parameters
-        ----------
-        scatterer : :mod:`scatterpy.scatterer` object
-            scatterer or list of scatterers to compute field for
-        alpha : scaling value for intensity of reference wave
-        selection : array of integers (optional)
-            a mask with 1's in the locations of pixels where you
-            want to calculate the field, defaults to all pixels
-
-        Returns
-        -------
-        holo : :class:`holopy.hologram.Hologram` object
-            Calculated hologram from the given distribution of spheres
-        """
-        scat = self.calc_field(scatterer, selection)
-        ref = ElectricField(self.optics.polarization[0],
-                            self.optics.polarization[1], 0, 0,
-                            self.optics.med_wavelen)
-
-        return Hologram(interfere_at_detector(scat * alpha, ref),
-                        optics=self.optics)
-
-    def calc_cross_sections(self, scatterer):
-        """
-        Calculate scattering, absorption, and extinction 
-        cross sections, and asymmetry parameter <cos \theta>. 
-        To be implemented by derived classes.
-
-        Parameters
-        ----------
-        scatterer : :mod:`scatterpy.scatterer` object
-            scatterer or list of scatterers to compute for
-
-        Returns
-        -------
-        cross_sections : array (4)
-            Dimensional scattering, absorption, and extinction 
-            cross sections, and <cos \theta>
-        """
-        raise NotImplementedError
 
     def _spherical_grid(self, x, y, z):
         """
@@ -272,7 +279,7 @@ class FortranTheory(ScatteringTheory):
     
     
 #TODO: Should this be a method of the Electric field class? - tgd 2011-08-15
-def interfere_at_detector(e1, e2):
+def interfere_at_detector(e1, e2, detector_normal = (0, 0, 1)):
     """
     Compute the intensity as detected by a plane sensor normal to z from the
     interference of e1 and e2
@@ -294,12 +301,13 @@ def interfere_at_detector(e1, e2):
     # but we choose phase angle = 0 at z=0, so phase = 1
     # which gives 2*real(xfield)
 
+    detector_normal = np.array(detector_normal).reshape((1, 1, 3))
 
-    return (abs(e1.x_comp)**2 + abs(e1.y_comp)**2 +
-            abs(e2.x_comp)**2 + abs(e2.y_comp)**2 +
-            2 * np.real(e1.x_comp*e2.x_comp) +
-            2 * np.real(e1.y_comp*e2.y_comp))
+    new = ((abs(e1)**2 + abs(e2)**2 + 2* np.real(e1*e2)) *
+           (1 - detector_normal)).sum(axis=-1)
+    new._update_metadata(e1._metadata)
 
+    return new
     
 class InvalidElectricFieldComputation(Exception):
     def __init__(self, reason):

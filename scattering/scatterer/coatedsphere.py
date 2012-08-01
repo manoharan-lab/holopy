@@ -24,7 +24,7 @@ Defines CoatedSphere, a scattering primitive
 '''
 from __future__ import division
 
-from holopy.utility.helpers import _ensure_array
+from core.helpers import _ensure_array
 from .abstract_scatterer import SphericallySymmetricScatterer
 
 class CoatedSphere(SphericallySymmetricScatterer):

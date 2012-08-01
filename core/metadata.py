@@ -27,7 +27,9 @@ import numpy as np
 import copy
 from types import NoneType
 from .helpers import _ensure_pair
+from .errors import PixelScaleNotSpecified
 from holopy_object import HolopyObject
+
 
 class Optics(HolopyObject):
     """
@@ -145,8 +147,3 @@ class MediumIndexNotSpecified(Exception):
     def __str__(self):
         return ("Medium index not specified in Optics instance.")
 
-class PixelScaleNotSpecified(Exception):
-    def __init__(self):
-        pass
-    def __str__(self):
-        return ("Pixel scale not specified in Optics instance.")
