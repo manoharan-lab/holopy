@@ -117,7 +117,7 @@ class DataTarget(HolopyObject):
                 shape = shape
             return data.reshape(shape)._update_metadata(self._metadata)
         else:
-            new = VectorData.vector_zeros_like(self)
+            new = VectorData.vector_zeros_like(self, dtype = data.dtype)
             new[self.selection] = data
             return new
 
@@ -248,14 +248,15 @@ class VectorData(Data):
     def __init__(self, arr, components = ('x', 'y', 'z'), *args, **kwargs):
         super(VectorData, self).__init__(arr, components = components, *args, **kwargs)
     @classmethod
-    def vector_zeros_like(cls, target, components = ('x', 'y', 'z')):
+    def vector_zeros_like(cls, target, components = ('x', 'y', 'z'), dtype = None):
         if isinstance(target, VectorData):
             return np.zeros_like(target)
         if isinstance(target, Data):
             return cls(np.repeat(np.zeros_like(target)[...,np.newaxis], len(components),
                                  axis=-1), components = components, **target._metadata)
         elif hasattr(target.positions, 'shape'):
-            return cls(np.zeros(target.positions.shape + (len(components),)),
+            return cls(np.zeros(np.append(target.positions.shape,
+                                          len(components)), dtype = dtype),
                        components = components, **target._metadata)
 
 class ImageTarget(DataTarget):
@@ -269,7 +270,7 @@ class ImageTarget(DataTarget):
         if np.isscalar(pixel_size):
             pixel_size = np.repeat(pixel_size, len(shape))
         super(ImageTarget, self).__init__(positions = Grid(shape, pixel_size), optics
-                                    = optics, **kwargs)        
+                                    = optics, **kwargs)
         
 class Image(ImageTarget, Data):
     """

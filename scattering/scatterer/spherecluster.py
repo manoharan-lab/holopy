@@ -26,11 +26,12 @@ Defines SphereCluster, a Composite scatterer consisting of Spheres
 from __future__ import division
 
 import numpy as np
-from sphere import Sphere
-from composite import Composite
-from scatterpy.errors import OverlapWarning, ScattererDefinitionError
-from holopy.process.math import cartesian_distance, rotate_points
 import warnings
+
+from .sphere import Sphere
+from .composite import Composite
+from ..errors import OverlapWarning, ScattererDefinitionError
+from ...core.math import cartesian_distance, rotate_points
 
 # default to always warning the user about overlaps.  This can be overriden by
 # calling this function again with a different action.  

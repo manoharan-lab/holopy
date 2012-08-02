@@ -23,12 +23,10 @@ Misc utility functions to make coding more convenient
 from __future__ import division
 
 import scipy.fftpack as fftpack
-from holopy.utility.helpers import _preserve_holo_type
 from numpy import sin, cos
 import numpy as np
 
 
-@_preserve_holo_type
 def fft(a, overwrite=False, shift=True):
     """
     More convenient Fast Fourier Transform
@@ -69,7 +67,6 @@ def fft(a, overwrite=False, shift=True):
         else:
             return fftpack.fft2(a, axes=[0, 1], overwrite_x=overwrite)
 
-@_preserve_holo_type
 def ifft(a, overwrite=False, shift=True):
     """
     More convenient Inverse Fast Fourier Transform

@@ -638,7 +638,7 @@ import types
 #
 #     **********
 
-from core.holopy_object import Serializable
+from ..core.holopy_object import Serializable
 
 class mpfit(Serializable):
     def __init__(self, fcn, xall=None, functkw={}, parinfo=None,

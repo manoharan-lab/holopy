@@ -33,7 +33,7 @@ from copy import copy
 import numpy as np
 import yaml
 
-from core.holopy_object  import HolopyObject
+from ...core.holopy_object  import HolopyObject
 from ..errors import ScattererDefinitionError
 
 

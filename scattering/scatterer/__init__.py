@@ -26,13 +26,13 @@ as Clusters.
 '''
 from __future__ import division
 
-from abstract_scatterer import Scatterer
+from .abstract_scatterer import Scatterer
 import abstract_scatterer
 
-from sphere import Sphere
-from coatedsphere import CoatedSphere
-from composite import Composite
-#from .spherecluster import SphereCluster
+from .sphere import Sphere
+from .coatedsphere import CoatedSphere
+from .composite import Composite
+from .spherecluster import SphereCluster
 #from voxelated import VoxelatedScatterer
-#from ellipsoid import Ellipsoid
+from .ellipsoid import Ellipsoid
 

@@ -25,8 +25,8 @@ from __future__ import division
 
 import numpy as np
 
-from scatterpy.scatterer.abstract_scatterer import SingleScatterer
-from scatterpy.errors import ScattererDefinitionError
+from .abstract_scatterer import SingleScatterer
+from ..errors import ScattererDefinitionError
 
 def isnumber(x):
     try:

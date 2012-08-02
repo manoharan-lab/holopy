@@ -24,8 +24,8 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 import numpy as np
-from core.data import Image, VectorData
-from core.holopy_object import HolopyObject
+from ...core.data import Image, VectorData
+from ...core.holopy_object import HolopyObject
 from ..errors import InvalidSelection
 
 class ScatteringTheory(HolopyObject):
@@ -54,12 +54,15 @@ class ScatteringTheory(HolopyObject):
     """
 
     def __init__(self):
-        # If the user instantiates a theory, they probably want calc_field to
-        # reference their instance, so overwrite the classmethod with one that
-        # does.  
-        def calc_field(self, scatterer, target, scaling = None):
-            return self._calc_field(scatterer, target, scaling = scaling)
+        # If the user instantiates a theory, we need to replace the classmethods
+        # that instantiate an object with normal methods that reference the
+        # theory object
+        def calc_field(self, scatterer, target, scaling = 1.0):
+            return self._calc_field(scatterer, target) * scaling
         self.calc_field = calc_field
+        def calc_cross_sections(self, scatterer, optics):
+            return self._calc_cross_sections(scatterer, optics)
+        self.calc_cross_sections = calc_cross_sections
         
     @classmethod
     def calc_field(cls, scatterer, target, scaling = 1.0):
@@ -86,7 +89,7 @@ class ScatteringTheory(HolopyObject):
         # make a theory with default arguments to do the computation.  
         theory = cls()
 
-        return theory._calc_field(scatterer, target, scaling = scaling)
+        return theory._calc_field(scatterer, target) * scaling
        
     @classmethod
     def calc_intensity(cls, scatterer, target, scaling = 1.0): 
@@ -142,10 +145,9 @@ class ScatteringTheory(HolopyObject):
         """
         scat = cls.calc_field(scatterer, target = target, scaling = scaling)
 
-        # add the z component to polarization
-        p = np.append(target.optics.polarization, 0)
-        # now reshape to have (spatial x, spatial y, components)
-        p = p.reshape((1,1,3))
+        # add the z component to polarization and adjust the shape so that it is
+        # broadcast correctly
+        p = np.append(target.optics.polarization, 0).reshape(1, 1, 3)
 
         ref = VectorData(p)
 
@@ -153,7 +155,7 @@ class ScatteringTheory(HolopyObject):
                         optics=target.optics)
 
     @classmethod
-    def calc_cross_sections(cls, scatterer):
+    def calc_cross_sections(cls, scatterer, optics):
         """
         Calculate scattering, absorption, and extinction 
         cross sections, and asymmetry parameter <cos \theta>. 
@@ -173,7 +175,7 @@ class ScatteringTheory(HolopyObject):
         # make a theory with default arguments to do the computation.  
         theory = cls()
         
-        return theory._calc_cross_sections(scatterer)
+        return theory._calc_cross_sections(scatterer, optics)
 
     
     # TODO: is this function still needed?  The new ElectricField
