@@ -22,46 +22,13 @@ Test file IO of scatterpy objects
 '''
 from __future__ import division
 
-import scatterpy
-import holopy as hp
-import tempfile
-from numpy.testing import assert_equal
-from scatterpy.tests.common import assert_allclose, assert_obj_close
-from scatterpy.io import Serializable
-from scatterpy.scatterer import Sphere, SphereCluster
+from ..scatterer import Sphere
+from ...core.tests.common import assert_read_matches_write
+from ..scatterer import Sphere, SphereCluster
 
-def assert_read_matches_write(o):
-    tempf = tempfile.TemporaryFile()
-    hp.io.save(tempf, o)
-    tempf.flush()
-    tempf.seek(0)
-    loaded = hp.io.yaml_io.load(tempf)
-    assert_obj_close(o, loaded)
-
-def assert_obj_equal(o1, o2):
-    if o1 == o2:
-        return True
-    d1, d2 = o1.__dict__, o2.__dict__
-    assert_equal(sorted(d1.keys()), sorted(d2.keys()))
-    for key, val in d1.iteritems():
-        if isinstance(val, Serializable):
-            assert_obj_equal(val, d2[key])
-        elif isinstance(val, tuple):
-            for i, v in enumerate(val):
-                assert_obj_equal(v, d2[key][i])
-        else:
-            try:
-                assert_equal(val, d2[key])
-            except ValueError:
-                assert_allclose(val, d2[key])
-            
-def test_theory_io():
-    t = scatterpy.theory.Multisphere(hp.Optics(wavelen=.66, index=1.33,
-                                               pixel_scale=.1))
-    assert_read_matches_write(t)
-
+    
 def test_scatterer_io():
-    s = scatterpy.scatterer.Sphere()
+    s = Sphere()
     assert_read_matches_write(s)
 
     s1 = Sphere(1.59, .5, [1, 1, 2])

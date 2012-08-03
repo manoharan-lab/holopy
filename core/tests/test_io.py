@@ -16,47 +16,27 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 
-import scatterpy
-import holopy as hp
-from scatterpy.tests.common import assert_obj_close
+from .common import assert_obj_close, assert_read_matches_write
+from .. import Optics
+from .. io import load
+from .. process import normalize
 import tempfile
 from nose.plugins.attrib import attr
+from numpy.testing import dec
 import os
 
 
-
-def assert_write_read(o):
-    tf = tempfile.TemporaryFile()
-    hp.save(tf, o)
-    tf.flush()
-    tf.seek(0)
-    assert_obj_close(hp.load(tf), o)
-
-@attr('fast')
-def test_yaml_io():
-    s = scatterpy.scatterer.Sphere(1.59, .5, (1, 3, 4))
-    assert_write_read(s)
-
-    o = hp.Optics(wavelen=.66, index=1.33, pixel_scale=.1)
-    assert_write_read(o)
-    
-    t = scatterpy.theory.Mie(o, 100)
-    assert_write_read(o)
-
-    mod = hp.analyze.fit.Model(s, t)
-
-    assert_write_read(mod)
-
+@dec.knownfailureif(True, "Data yaml IO not implemented")
 @attr('fast')
 def test_hologram_io():
-    o = hp.Optics(wavelen=.66, index=1.33, pixel_scale=.1)
+    o = Optics(wavelen=.66, index=1.33, pixel_scale=.1)
 
-    path = os.path.abspath(hp.__file__)
-    path = os.path.join(os.path.split(path)[0],'tests', 'exampledata')
-    holo = hp.process.normalize(hp.load(os.path.join(path, 'image0001.npy'),
+    path = os.path.abspath(__file__)
+    path = os.path.join(os.path.split(path)[0], 'exampledata')
+    holo = normalize(load(os.path.join(path, 'image0001.npy'),
                                         optics=o))
-    
-    assert_write_read(holo)
+
+    assert_read_matches_write(holo)
 
 @attr('fast')
 def test_load_optics():
@@ -69,6 +49,6 @@ pixel_scale: [3.3e-7, 3.3e-7]"""
     t.write(optics_yaml)
     t.seek(0)
 
-    o = hp.Optics(**hp.load(t))
+    o = Optics(**load(t))
 
-    assert_obj_close(o, hp.Optics(wavelen=7.85e-07, polarization=[1.0, 0.0], divergence=0, pixel_size=[6.8e-06, 6.8e-06], pixel_scale=[3.3e-07, 3.3e-07]))
+    assert_obj_close(o, Optics(wavelen=7.85e-07, polarization=[1.0, 0.0], divergence=0, pixel_size=[6.8e-06, 6.8e-06], pixel_scale=[3.3e-07, 3.3e-07]))

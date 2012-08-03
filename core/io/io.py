@@ -23,15 +23,15 @@ functions.
 """
 import os
 import serialize
-import image
+import image_file_io
 
 from ..data import Image
 from ..metadata import Optics
 
 def load_image(inf, optics = None, pixel_size = None):
-    if isinstance(inf, basestring):
-        inf = image._read(inf)
-    if isinstance(optics, basestring):
+    if isinstance(inf, (basestring, file)):
+        inf = image_file_io._read(inf)
+    if isinstance(optics, (basestring, file)):
         optics = serialize.load(optics)
         # We allowed optics yamls to be written without an !Optics tag, so for
         # that kind of optics file we get back a dict and have to turn it into
@@ -71,18 +71,20 @@ def load(inf, pixel_size = None, optics = None):
 
     """
 
+    # this is probably a bad idea, but just try to read the file as a yaml, if
+    # we fail then maybe it is an image and we try to load it as such.  -tgd 2012-08-03
     try:
         return serialize.load(inf)
     except:
         pass
 
-    return image.load(inf, pixel_size = pixel_size, optics = optics)
+    return load_image(inf, optics = optics, pixel_size = pixel_size)
 
 def save(outf, obj):
     if isinstance(outf, basestring):
         filename, ext = os.path.splitext(outf)
         if ext in ['.tif', '.TIF', '.tiff', '.TIFF']:
-            image.save_image(obj, outf)
+            image_file_io.save_image(obj, outf)
             return
     serialize.save(outf, obj)
 

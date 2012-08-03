@@ -36,6 +36,7 @@ import numpy as np
 #from holopy.process.math import rotate_points
 
 from . import Scatterer
+from ...core.math import rotate_points
 
 class Composite(Scatterer):
     '''
@@ -103,8 +104,14 @@ class Composite(Scatterer):
                 types[n] = scat_type
 
         scatterers = []
+        # pull in the scatterer package, this lets us grab scatterers by class
+        # name
+        # we have to do it here rather than at the top of the file because we
+        # cannot import scatterer until it is done importing, which will not
+        # happen until import of composite finishes.  
+        from .. import scatterer
         for i, scat_type in enumerate(types):
-            scatterers.append(getattr(scatterpy.scatterer,
+            scatterers.append(getattr(scatterer,
                               scat_type).from_parameters(collected[i]))
 
         return cls(scatterers)

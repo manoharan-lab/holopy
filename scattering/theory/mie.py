@@ -86,6 +86,7 @@ class Mie(FortranTheory):
         For multiple particles, this code superposes the fields
         calculated from each particle (using calc_mie_fields()). 
         """
+        self.foo = 'bar'
         if isinstance(scatterer, Composite):
             spheres = scatterer.get_component_list()
             

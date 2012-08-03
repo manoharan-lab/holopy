@@ -28,19 +28,18 @@ ADDA (http://code.google.com/p/a-dda/) to do DDA calculations.
 
 from __future__ import division
 
+import numpy as np
 import subprocess
 import tempfile
-import shutil
 import glob
 import os
 import time
-import numpy as np
-import holopy as hp
-from .scatteringtheory import ScatteringTheory, ElectricField
+from .scatteringtheory import ScatteringTheory
 from .mie_f import mieangfuncs
-from scatterpy.errors import TheoryNotCompatibleError
-import scatterpy
-
+from ..errors import TheoryNotCompatibleError
+from ...core.data import VectorData
+from ..scatterer import (Sphere, CoatedSphere, VoxelatedScatterer,
+                         ScattererByFunction, Ellipsoid, SphereCluster)
 
 class DependencyMissing(Exception):
     def __init__(self, dep):
@@ -75,14 +74,14 @@ class DDA(ScatteringTheory):
     This can in principle handle any scatterer, but in practice it will need
     excessive memory or computation time for particularly large scatterers.  
     """
-    def __init__(self, optics, imshape=(256,256), theta=None, phi=None):
+    def __init__(self):
         # Check that adda is present and able to run
         try:
             subprocess.check_call(['adda', '-V'])
         except (subprocess.CalledProcessError, OSError):
             raise DependencyMissing('adda')
 
-        super(DDA, self).__init__(optics, imshape, theta, phi)
+        super(DDA, self).__init__()
 
     def _run_adda(self, scatterer, optics, temp_dir):
         cmd = ['adda']
@@ -91,19 +90,18 @@ class DDA(ScatteringTheory):
         cmd.extend(['-lambda', str(optics.med_wavelen)])
         cmd.extend(['-save_geom'])
 
-        if isinstance(scatterer, scatterpy.scatterer.Sphere):
-            scat_args =  self._adda_sphere(scatterer, self.optics, temp_dir)
-        elif isinstance(scatterer, scatterpy.scatterer.CoatedSphere):
-            scat_args = self._adda_coated(scatterer, self.optics, temp_dir)
-        elif isinstance(scatterer, scatterpy.scatterer.VoxelatedScatterer):
-            scat_args = self._adda_general(scatterer, self.optics, temp_dir)
-        elif isinstance(scatterer,
-            scatterpy.scatterer.voxelated.ScattererByFunction):
-            scat_args = self._adda_function_scatterer(scatterer, self.optics, temp_dir)
-        elif isinstance(scatterer, scatterpy.scatterer.Ellipsoid):
-            scat_args = self._adda_ellipsoid(scatterer, self.optics, temp_dir)
-        elif isinstance(scatterer, scatterpy.scatterer.SphereCluster):
-            scat_args = self._adda_bisphere(scatterer, self.optics, temp_dir)
+        if isinstance(scatterer, Sphere):
+            scat_args =  self._adda_sphere(scatterer, optics, temp_dir)
+        elif isinstance(scatterer, CoatedSphere):
+            scat_args = self._adda_coated(scatterer, optics, temp_dir)
+        elif isinstance(scatterer, VoxelatedScatterer):
+            scat_args = self._adda_general(scatterer, optics, temp_dir)
+        elif isinstance(scatterer, ScattererByFunction):
+            scat_args = self._adda_function_scatterer(scatterer, optics, temp_dir)
+        elif isinstance(scatterer, Ellipsoid):
+            scat_args = self._adda_ellipsoid(scatterer, optics, temp_dir)
+        elif isinstance(scatterer, SphereCluster):
+            scat_args = self._adda_bisphere(scatterer, optics, temp_dir)
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
@@ -205,13 +203,13 @@ class DDA(ScatteringTheory):
         return optics.med_wavelen / self._dpl(optics, n)
         
     
-    def calc_field(self, scatterer, selection = None):
+    def _calc_field(self, scatterer, target):
         time_start = time.time()
         
         temp_dir = tempfile.mkdtemp()
         print(temp_dir)
 
-        calc_points = self._list_of_sph_coords(scatterer.center, selection)
+        calc_points = target.positions_kr_theta_phi(scatterer.center)
 
         angles = calc_points[:,1:] * 180/np.pi
 
@@ -224,7 +222,7 @@ class DDA(ScatteringTheory):
         np.savetxt(outf, angles)
         outf.close()      
         
-        self._run_adda(scatterer, self.optics, temp_dir)
+        self._run_adda(scatterer, target.optics, temp_dir)
         
         # Go into the results directory, there should only be one run
         result_dir = glob.glob(os.path.join(temp_dir, 'run000*'))[0]
@@ -248,7 +246,11 @@ class DDA(ScatteringTheory):
         for i, point in enumerate(calc_points):
             kr, theta, phi = point
             escat_sph = mieangfuncs.calc_scat_field(kr, phi, scat_matr[i],
-                                                    self.optics.polarization)
+                                                    target.optics.polarization)
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
 
-        return self._interpret_fields(fields, scatterer.z, selection)
+        fields = VectorData(fields)
+        result = target.from_1d(fields)
+        phase = np.exp(-1j*np.pi*2*scatterer.z / target.optics.med_wavelen)
+
+        return result * phase

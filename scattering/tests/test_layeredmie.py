@@ -23,22 +23,12 @@ Test fortran-based multilayered Mie calculations and python interface.
 '''
 from __future__ import division
 
-import sys
-import os
-hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
-sys.path.append(hp_dir)
-from nose.tools import with_setup
-import holopy as hp
-import scatterpy
+from ...core import Optics, ImageTarget
+from .common import verify
+from ..theory import Mie
+from ..scatterer import CoatedSphere
 
 from nose.plugins.attrib import attr
-
-import common
-
-
-from scatterpy.scatterer.coatedsphere import CoatedSphere
-from scatterpy.theory import Mie
-
 
 @attr('medium')
 def test_Shell():
@@ -46,11 +36,11 @@ def test_Shell():
               n=[(1.27121212428+0j), (1.49+0j)], r=[0.960957713253-0.0055,
                                                     0.960957713253]) 
 
-    optics = hp.Optics(wavelen=0.658, index=1.36, polarization=[1.0, 0.0],
+    optics = Optics(wavelen=0.658, index=1.36, polarization=[1.0, 0.0],
               pixel_scale=[0.071333, 0.071333])
     
-    th = Mie(optics, 200)
+    t = ImageTarget(200, optics = optics)
 
-    h = th.calc_holo(s, 0.4826042444701572)
+    h = Mie.calc_holo(s, t, scaling = 0.4826042444701572)
 
-    common.verify(h, 'shell')
+    verify(h, 'shell')

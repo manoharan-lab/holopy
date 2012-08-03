@@ -28,11 +28,7 @@ from __future__ import division
 
 import scipy
 import numpy as np
-from holopy.hologram import Hologram
-from .math import fft, ifft
 from .filter import zero_filter
-from holopy.utility.helpers import _preserve_holo_type
-from holopy.utility.errors import ImageError
 subtract = 0
 divide = 1
 
@@ -80,10 +76,10 @@ def background(holo, bg, kind = divide):
     else:
         name = "%sbgd%s" % (holo.name, bg.name)
         ar = holo / zero_filter(bg)
+    ar.name = name
+        
+    return ar
 
-    return Hologram(ar, holo.optics, holo.time_scale, name=name)
-
-@_preserve_holo_type
 def detrend(image):
     '''
     Remove linear trends from an image.

@@ -27,9 +27,8 @@ from __future__ import division
       
 import scipy
 import numpy as np
-from .math import fft, ifft
-from holopy.utility.helpers import _preserve_holo_type
-from holopy.utility.errors import ImageError
+from ..math import fft, ifft
+from ..errors import ImageError
 
 def _mask(im_size, mask_rad):
     '''
@@ -53,7 +52,6 @@ def _mask(im_size, mask_rad):
     rad = grid[0]**2 + grid[1]**2
     return rad < mask_rad**2
 
-@_preserve_holo_type
 def pillbox(image, rad, optics = None):
     '''
     Do a convolution-based low pass filter with a circular mask
@@ -74,7 +72,6 @@ def pillbox(image, rad, optics = None):
     image_fft = fft(image) * filter_mask
     return ifft(image_fft).real
 
-@_preserve_holo_type
 def zero_filter(image):
     '''
     Search for and interpolate pixels equal to 0.
@@ -121,7 +118,6 @@ def zero_filter(image):
 # This function taken from http://www.scipy.org/Cookbook/SignalSmooth
 # TODO convert to using scipy.ndimage.fourier.fourier_gaussian()
 # instead.  
-@_preserve_holo_type
 def lowpass(im, n, ny=None) :
     """ blurs the image by convolving with a gaussian kernel of typical
         size n. The optional keyword argument ny allows for a different

@@ -25,8 +25,6 @@ from __future__ import division
 import sys
 import os
 import numpy as np
-hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
-sys.path.append(hp_dir)
 
 import warnings
 from nose.tools import assert_raises, with_setup
@@ -35,16 +33,12 @@ from numpy.testing import (assert_equal, assert_array_almost_equal,
 
 from nose.plugins.attrib import attr
 
-import holopy
-
-from scatterpy.theory import Multisphere
-from scatterpy.theory.multisphere import TMatrixFieldNaN, MultisphereExpansionNaN
-from scatterpy.scatterer import Sphere, SphereCluster
-from scatterpy.errors import UnrealizableScatterer, TheoryNotCompatibleError
-import scatterpy
-import common
-from common import assert_allclose
-
+from ...core import Optics, ImageTarget
+from ..theory import Multisphere
+from ..theory.multisphere import MultisphereExpansionNaN
+from ..scatterer import Sphere, SphereCluster, CoatedSphere
+from ..errors import UnrealizableScatterer, TheoryNotCompatibleError
+from .common import assert_allclose, verify
 
 def setup_model():
     global xoptics, yoptics, scaling_alpha, radius, n_particle_imag
@@ -58,15 +52,15 @@ def setup_model():
     pixel_scale = [.1151e-6, .1151e-6]
     index = 1.33
 
-    yoptics = holopy.optics.Optics(wavelen=wavelen, index=index,
-                                   pixel_scale=pixel_scale,
-                                   polarization=ypolarization,
-                                   divergence=divergence)
+    yoptics = Optics(wavelen=wavelen, index=index,
+                     pixel_scale=pixel_scale,
+                     polarization=ypolarization,
+                     divergence=divergence)
 
-    xoptics = holopy.optics.Optics(wavelen=wavelen, index=index,
-                                   pixel_scale=pixel_scale,
-                                   polarization=xpolarization,
-                                   divergence=divergence)
+    xoptics = Optics(wavelen=wavelen, index=index,
+                     pixel_scale=pixel_scale,
+                     polarization=xpolarization,
+                     divergence=divergence)
 
     scaling_alpha = .6
     radius = .85e-6
@@ -77,6 +71,7 @@ def setup_model():
     z = 15e-6
 
     imshape = 128
+    
 
 def teardown_model():
     global xoptics, yoptics, scaling_alpha, radius, n_particle_imag
@@ -90,11 +85,8 @@ def teardown_model():
 def test_construction():
     # test constructor to make sure it works properly and calls base
     # class constructor properly
-    theory = Multisphere(imshape=128, optics=xoptics, niter=100, eps=1e-6,
-                         meth=0, qeps1=1e-5, qeps2=1e-8)
+    theory = Multisphere(niter=100, eps=1e-6, meth=0, qeps1=1e-5, qeps2=1e-8)
 
-    assert_equal(theory.imshape, (128,128))
-    assert_equal(theory.optics.wavelen, wavelen)
     assert_equal(theory.niter, 100)
     assert_equal(theory.eps, 1e-6)
     assert_equal(theory.meth, 0)
@@ -110,11 +102,11 @@ def test_polarization():
     sphere = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius, 
                     center =(x, y, z))
     sc = SphereCluster([sphere])
-    xmodel = Multisphere(imshape = imshape, optics=xoptics)
-    ymodel = Multisphere(imshape = imshape, optics=yoptics)
+    xtarget = ImageTarget(shape = imshape, optics=xoptics)
+    ytarget = ImageTarget(shape = imshape, optics=yoptics)
 
-    xholo = xmodel.calc_holo(sc, alpha=scaling_alpha)
-    yholo = ymodel.calc_holo(sc, alpha=scaling_alpha)
+    xholo = Multisphere.calc_holo(sc, xtarget, scaling=scaling_alpha)
+    yholo = Multisphere.calc_holo(sc, ytarget, scaling=scaling_alpha)
 
     # the two arrays should not be equal
     try:
@@ -138,9 +130,9 @@ def test_2_sph():
                                        n=1.5811+1e-4j, r=5e-07)])
 
 
-    theory = Multisphere(xoptics, imshape)
+    target = ImageTarget(imshape, optics = xoptics)
 
-    holo = theory.calc_holo(sc, .6)
+    holo = Multisphere.calc_holo(sc, target, scaling=.6)
 
     assert_almost_equal(holo.max(), 1.4140292298443309)
     assert_almost_equal(holo.mean(), 0.9955420925817654)
@@ -154,24 +146,24 @@ def test_invalid():
                                 Sphere(center=[6e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07)])
 
-    theory = Multisphere(xoptics, imshape)
+    target = ImageTarget(imshape, optics = xoptics)
 
-    assert_raises(UnrealizableScatterer, theory.calc_holo, sc)
+    assert_raises(UnrealizableScatterer, Multisphere.calc_holo, sc, target)
     
     sc = SphereCluster(scatterers=[Sphere(center=[7.1, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-01),
                                 Sphere(center=[6e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07)])
     
-    assert_raises(UnrealizableScatterer, theory.calc_holo, sc)
+    assert_raises(UnrealizableScatterer, Multisphere.calc_holo, sc, target)
 
     sc.scatterers[0].r = -1
 
-    assert_raises(UnrealizableScatterer, theory.calc_holo, sc)
+    assert_raises(UnrealizableScatterer, Multisphere.calc_holo, sc, target)
 
-    cs = scatterpy.scatterer.CoatedSphere()
+    cs = CoatedSphere()
 
-    assert_raises(TheoryNotCompatibleError, theory.calc_holo, cs)
+    assert_raises(TheoryNotCompatibleError, Multisphere.calc_holo, cs, target)
 
 @with_setup(setup=setup_model, teardown=teardown_model)
 def test_overlap():
@@ -184,10 +176,10 @@ def test_overlap():
                                            n=1.59, r=.5e-6)])
         assert len(w) > 0
 
-    theory = Multisphere(xoptics, imshape)
+    target = ImageTarget(imshape, optics = xoptics)
 
     # should fail to converge
-    assert_raises(MultisphereExpansionNaN, theory.calc_holo, sc)
+    assert_raises(MultisphereExpansionNaN, Multisphere.calc_holo, sc, target)
 
     # but it should succeed with a small overlap, after raising a warning
     with warnings.catch_warnings(True) as w:
@@ -197,9 +189,9 @@ def test_overlap():
                                     Sphere(center=[3.9e-6, 3.e-6, 10e-6], 
                                            n=1.59, r=.5e-6)])
         assert len(w) > 0
-    holo = theory.calc_holo(sc)
+    holo = Multisphere.calc_holo(sc, target)
 
-    common.verify(holo, '2_sphere_allow_overlap')
+    verify(holo, '2_sphere_allow_overlap')
 
 @attr('fast')
 @with_setup(setup=setup_model, teardown=teardown_model)
@@ -208,13 +200,11 @@ def test_selection():
                                        n=1.5811+1e-4j, r=5e-07),
                                 Sphere(center=[6e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07)])
-    theory = Multisphere(xoptics, imshape)
+    target = ImageTarget(imshape, optics = xoptics)
+    subset_target = ImageTarget(imshape, optics = xoptics, use_random_fraction=.1)
+    
+    holo = Multisphere.calc_holo(sc, target, scaling=scaling_alpha)
 
+    subset_holo = Multisphere.calc_holo(sc, subset_target, scaling=scaling_alpha)
 
-    holo = theory.calc_holo(sc, alpha=scaling_alpha)
-
-    selection = np.random.random((holo.shape)) > .9
-
-    subset_holo = theory.calc_holo(sc, alpha=scaling_alpha, selection=selection)
-
-    assert_allclose(subset_holo[selection], holo[selection])
+    assert_allclose(subset_holo[subset_target.selection], holo[subset_target.selection])

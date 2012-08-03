@@ -18,7 +18,8 @@
 from __future__ import division
 
 import numpy as np
-
+import tempfile
+from ..io import load, save
 from numpy.testing import assert_equal
 
 from ...scattering import scatterer
@@ -35,7 +36,15 @@ Not equal to tolerance rtol={0}, atol={1}
 
  actual: {2}
  desired: {3}""".format(rtol, atol, actual, desired))
-        
+
+def assert_read_matches_write(o):
+    tempf = tempfile.TemporaryFile()
+    save(tempf, o)
+    tempf.flush()
+    tempf.seek(0)
+    loaded = load(tempf)
+    assert_obj_close(o, loaded)
+    
 def assert_parameters_allclose(actual, desired, rtol=1e-7, atol = 0):
     if isinstance(actual, scatterer.Scatterer):
         actual = actual.parameters

@@ -28,14 +28,12 @@ dependence of spherical Hankel functions for the scattered field.
 from __future__ import division
 
 import numpy as np
-import mie_f.mieangfuncs as mieangfuncs
-import mie_f.scsmfo_min as scsmfo_min
-
-from scatterpy.errors import UnrealizableScatterer
-
-from scatterpy.scatterer import SphereCluster
-from scatterpy.errors import TheoryNotCompatibleError
-from scatterpy.theory.scatteringtheory import FortranTheory
+from .mie_f import mieangfuncs
+from .mie_f import scsmfo_min 
+from ...core.data import VectorData
+from ..scatterer import SphereCluster
+from ..errors import TheoryNotCompatibleError, UnrealizableScatterer
+from .scatteringtheory import FortranTheory
 
 class Multisphere(FortranTheory):
     """
@@ -92,12 +90,7 @@ class Multisphere(FortranTheory):
 
     """
 
-    def __init__(self, optics, imshape=(256, 256), theta=None, phi=None,
-                 niter=200, eps=1e-6, meth=1, qeps1=1e-5, 
-                 qeps2=1e-8): 
-
-
-
+    def __init__(self, niter=200, eps=1e-6, meth=1, qeps1=1e-5, qeps2=1e-8): 
         self.niter = niter
         self.eps = eps
         self.meth = meth
@@ -105,10 +98,9 @@ class Multisphere(FortranTheory):
         self.qeps2 = qeps2
 
         # call base class constructor
-        super(Multisphere, self).__init__(optics=optics, imshape=imshape,
-                                  theta=theta, phi=phi) 
+        super(Multisphere, self).__init__() 
         
-    def calc_field(self, scatterer, selection=None):
+    def _calc_field(self, scatterer, target):
         """
         Calculate fields for single or multiple spheres
 
@@ -133,15 +125,15 @@ class Multisphere(FortranTheory):
         # check that the parameters are in a range where the multisphere
         # expansion will work
         for s in scatterer.scatterers:
-            if s.r * self.optics.wavevec > 1e3:
+            if s.r * target.optics.wavevec > 1e3:
                 raise UnrealizableScatterer(self, s, "radius too large, field "+
                                             "calculation would take forever")
 
         # switch to centroid weighted coordinate system tmatrix code expects
         # and nondimensionalize
-        centers = (scatterer.centers - scatterer.centers.mean(0)) * self.optics.wavevec
+        centers = (scatterer.centers - scatterer.centers.mean(0)) * target.optics.wavevec
 
-        m = scatterer.n / self.optics.index
+        m = scatterer.n / target.optics.index
 
         if (centers > 1e4).any():
             raise UnrealizableScatterer(self, scatterer, "Particle separation "
@@ -163,7 +155,7 @@ class Multisphere(FortranTheory):
                                                       -1.0 * centers[:,2], 
                                                       m.real, m.imag,
                                                       scatterer.r * 
-                                                      self.optics.wavevec,
+                                                      target.optics.wavevec,
                                                       self.niter, self.eps, 
                                                       self.qeps1,
                                                       self.qeps2, self.meth, 
@@ -184,19 +176,22 @@ class Multisphere(FortranTheory):
         if np.isnan(amn).any():
             raise MultisphereExpansionNaN()
 
-        fields = mieangfuncs.tmatrix_fields(self._list_of_sph_coords(
-                scatterer.centers.mean(0), selection), amn, lmax, 0,
-                                            self.optics.polarization) 
+        fields = mieangfuncs.tmatrix_fields(target.positions_kr_theta_phi(
+                origin = scatterer.centers.mean(0)).T, amn, lmax, 0,
+                                            target.optics.polarization) 
 
         
         if np.isnan(fields[0][0]):
-            raise TMatrixFieldNaN(self, scatterer, '')
+            raise MultisphereFieldNaN(self, scatterer, '')
 
-        return self._interpret_fields(fields, scatterer.z.mean(), selection)
+        phase = np.exp(-1j*np.pi*2*scatterer.z.mean() / target.optics.med_wavelen)
+        result = target.from_1d(VectorData(np.vstack(fields).T))
 
-class TMatrixFieldNaN(UnrealizableScatterer):
+        return result * phase
+
+class MultisphereFieldNaN(UnrealizableScatterer):
     def __str__(self):
-        return "T-matrix field is NaN, this probably represents a failure of \
+        return "Fields computed with Multisphere are NaN, this probably represents a failure of \
 the code to converge, check your scatterer."
 
 

@@ -198,7 +198,7 @@ class Data(DataTarget, np.ndarray):
     def __new__(cls, arr, *args, **kwargs):
         # things like numpy.std give us 0d arrays, the user probably expects
         # python scalars, so return one instead.  
-        if arr.ndim == 0:
+        if hasattr(arr, 'ndim') and arr.ndim == 0:
             # arr.max pulls out the singular value of the 0d array
             return arr.max()
         return np.array(arr).view(cls)
@@ -280,7 +280,8 @@ class Image(ImageTarget, Data):
         return super(Image, cls).__new__(cls, arr = arr, **kwargs)
 
     def __init__(self, arr, pixel_size=None, optics=None, **kwargs):
-        if pixel_size is None and hasattr(arr.positions, 'spacing'):
+        if (pixel_size is None and hasattr(arr, 'positions') and
+            hasattr(arr.positions, 'spacing')):
             pixel_size = arr.positions.spacing
         super(Image, self).__init__(arr = arr, shape = arr.shape, pixel_size =
                                     pixel_size, optics = optics, **kwargs)

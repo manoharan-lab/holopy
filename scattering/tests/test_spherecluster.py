@@ -32,9 +32,9 @@ from nose.tools import raises, assert_raises
 from numpy.testing import assert_equal, assert_almost_equal
 from nose.plugins.attrib import attr
 
-from scatterpy.scatterer import Sphere, CoatedSphere
-from scatterpy.scatterer import SphereCluster
-from scatterpy.errors import ScattererDefinitionError, OverlapWarning
+from ..scatterer import Sphere, CoatedSphere
+from ..scatterer import SphereCluster
+from ..errors import ScattererDefinitionError, OverlapWarning
 
 import warnings
 

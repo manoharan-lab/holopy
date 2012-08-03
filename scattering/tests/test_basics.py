@@ -17,7 +17,7 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 import numpy as np
 from numpy.testing import assert_allclose
-from core import Optics, DataTarget, Grid
+from ...core import Optics, DataTarget, Grid
 from ..scatterer import Sphere
 from ..theory import Mie
 from ...core.tests.common import assert_obj_close
