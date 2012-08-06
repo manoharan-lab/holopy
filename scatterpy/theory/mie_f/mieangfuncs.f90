@@ -239,6 +239,60 @@
         end
 
 
+      subroutine asm_mie_far(nstop, asbs, theta, asm_out)
+        ! Calculate amplitude scattering matrix for a spherically
+        ! symmetric scatterer, from scattering coefficients calculated
+        ! from the Mie solution or its extension to layered spheres,
+        ! in the far field limit.
+        !
+        ! Inputs:
+        ! =======
+        ! nstop (int):
+        !     Maximum order of vector spherical harmonic expansion
+        ! asbs (complex, (2, nstop)
+        !     Scattering coefficients
+        ! theta (real)
+        !     Spherical coordinate theta (radians).
+        !     In the Mie solution the amplitude scattering matrix is 
+        !     independent of phi.
+        !
+        ! Outputs:
+        ! ========
+        ! asm_out (complex, (2,2))
+        !     Amplitude scattering matrix in standard (Bohren & Huffman) form
+        implicit none
+        integer, intent(in) :: nstop
+        real (kind = 8), intent(in) :: theta
+        complex (kind = 8), dimension(2, nstop), intent(in) :: asbs
+        complex (kind = 8), dimension(2, 2), intent(out) :: asm_out
+        complex (kind = 8), dimension(4) :: asm
+        integer :: n
+        real (kind = 8) :: prefactor
+        real (kind = 8), dimension(nstop) :: pi_n, tau_n
+
+        ! initialize 
+        asm = (/0., 0., 0., 0. /)
+
+        ! compute angular special functions 
+        call pisandtaus(nstop, theta, pi_n, tau_n)
+
+        ! main loop
+        do n = 1, nstop, 1
+           prefactor = (2.*n + 1.) / (n * (n + 1.))
+           asm(1) = asm(1) + prefactor * ( &
+                asbs(1,n) * pi_n(n) + asbs(2,n) * tau_n(n))
+           asm(2) = asm(2) + prefactor * ( &
+                asbs(1,n) * tau_n(n) + asbs(2,n) * pi_n(n))   
+        end do
+        
+        ! reshape into 2 x 2 form. Only diagonal elts are nonzero.
+        asm_out = reshape(cshift(asm, shift = 1), (/ 2, 2 /), &
+             order = (/ 2, 1 /))
+
+        return
+        end
+
+
       subroutine fieldstocart(asph, theta, phi, acart)
 ! Complex routine to convert scattered fields from scat. plane spherical to cartesian.
 ! asph(1) is theta component, asph(2) is phi component
