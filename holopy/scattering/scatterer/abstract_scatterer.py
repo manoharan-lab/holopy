@@ -164,7 +164,7 @@ class Scatterer(HolopyObject):
 
 class SingleScatterer(Scatterer):
     def __init__(self, center = None):
-        if np.isscalar(center) or len(center) != 3:
+        if center is not None and (np.isscalar(center) or len(center) != 3):
             raise ScattererDefinitionError("center specified as {0}, center "
                 "should be specified as (x, y, z)".format(center), self)
         self.center = center

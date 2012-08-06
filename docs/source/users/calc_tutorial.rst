@@ -183,13 +183,28 @@ list of indexes and radii corresponding to the layers ::
 Advanced Calculations
 =====================
 
+Farfield Scattering Matricies
+-----------------------------
+
+If you only want farfield scattering matricies, you don't need to give
+holopy nearly as much information ::
+
+  from holopy.core import DataTarget, Angles, Optics
+  from holopy.scattering.scatterer import Sphere
+  from holopy.scattering.theory import Mie
+  target = DataTarget(positions = Angles(theta = np.linspace(0, np.pi)),
+                      optics = Optics(wavelen=.66, index = 1.33))
+  sphere = Sphere(r = .5, n = 1.59)
+
+  matr = Mie.calc_scat_matr(sphere, target)
+
 Static Light Scattering
 -----------------------
 
 In a static light scattering measurement you record scattered intensity at a number of angles, holopy can simulate such a measurement as ::
 
   from holopy.data import DataTarget, SpecifiedAngles
-  target = DataTarget(SpecifiedAngles(linspace(-90, 90, 30), wavelen = 659e-9, index = 1.33)
+  target = DataTarget(SpecifiedAngles(linspace(-90, 90, 30), optics = Optics(wavelen = 659e-9, index = 1.33))
   s = Sphere(center=None, n = 1.58, r = .5e-6)
   scat = Mie.calc_intensity(s, target)
 

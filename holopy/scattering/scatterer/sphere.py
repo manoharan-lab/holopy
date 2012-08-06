@@ -41,7 +41,7 @@ class Sphere(SphericallySymmetricScatterer):
 
     '''
 
-    def __init__(self, n = 1.59, r = 0.5e-6, center = (0, 0, 0)):
+    def __init__(self, n = 1.59, r = 0.5e-6, center = None):
         self.n = n
         self.r = r
         super(Sphere, self).__init__(center)

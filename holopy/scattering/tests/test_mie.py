@@ -40,7 +40,7 @@ from ..theory import Mie
 
 from ..theory.mie import UnrealizableScatterer
 from ..errors import TheoryNotCompatibleError
-from ...core import ImageTarget
+from ...core import ImageTarget, Optics, Angles, DataTarget
 from .common import xoptics, yoptics, optics, verify
 from ...core.tests.common import assert_allclose
 
@@ -262,7 +262,15 @@ def test_radiometric():
     for key, val in gold.iteritems():
         assert_almost_equal(gold[key], val, decimal = 5)
 
+@attr('fast')
+@with_setup(setup = setup_model, teardown = teardown_model)
+def test_farfield():
+    target = DataTarget(positions = Angles(np.linspace(0, np.pi/2)), optics =
+                                           Optics(wavelen=.66, index = 1.33))
+    sphere = Sphere(r = .5, n = 1.59)
 
+    matr = Mie.calc_scat_matrix(sphere, target)
 
-
+    
+    
 

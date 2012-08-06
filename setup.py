@@ -40,20 +40,17 @@ import numpy as np
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     config = Configuration('',parent_package,top_path)
-    config.add_subpackage('holopy')
-    config.add_subpackage('holopy.analyze')
-    config.add_subpackage('holopy.io')
-    config.add_subpackage('scatterpy')
-    config.add_subpackage('scatterpy.theory')
-    config.add_subpackage('scatterpy.theory.mie_f')
-    config.add_subpackage('scatterpy.scatterer')
-    config.add_subpackage('holopy.process')
-    config.add_subpackage('holopy.utility')
-    config.add_subpackage('holopy.tests')
-    config.add_subpackage('holopy.third_party')
-    config.add_scripts('./holopy/bin/fit')
+    config.add_subpackage('core')
+    config.add_subpackage('core.process')
+    config.add_subpackage('core.io')
+    config.add_subpackage('core.third_party')
+    config.add_subpackage('core.tests')
+    config.add_subpackage('scattering')
+    config.add_subpackage('scattering.theory')
+    config.add_subpackage('scattering.theory.mie_f')
+    config.add_subpackage('scattering.scatterer')
+    config.add_subpackage('scattering.tests')
     config.add_data_files(['.',['AUTHORS']])
-    config.add_data_dir('./holopy/tests')
     
     config.get_version()
     return config
@@ -73,5 +70,5 @@ if __name__ == "__main__":
           description='Holography in Python',
           author='Manoharan Lab, Harvard University',
           author_email='vnm@seas.harvard.edu',
-          url='http://manoharan.seas.harvard.edu/',
-          package=['holopy', 'holopy.io'])
+          url='http://manoharan.seas.harvard.edu/holopy',
+          package=['holopy'])

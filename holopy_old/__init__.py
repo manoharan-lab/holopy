@@ -15,35 +15,33 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
-
-'''
-Defines CoatedSphere, a scattering primitive
+"""
+A python package containing routines to load, reconstruct, fit, and
+analyze digital holograms  
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-'''
+"""
 from __future__ import division
 
-from ...core.helpers import _ensure_array
-from .abstract_scatterer import SphericallySymmetricScatterer
+import process
+import analyze
+import io
 
-class CoatedSphere(SphericallySymmetricScatterer):
-    '''
-    Sphere with concentric layers of different index.  
-    
-    A CoatedSphere can contain any number of layers
-    
-    Attributes
-    ----------
-    n : array(complex)
-        Indices of refraction of each layer, starting from the core
-    r : array(float)
-        Outer radius of the each layer, starting from the core
-    center : 3-tuple, list or numpy array (optional)
-        specifies coordinates of center of sphere
 
-    '''
-    def __init__(self, n = 1.59, r = 0.5e-6, center = (0.0, 0.0, 0.0)):
-        self.n = _ensure_array(n)
-        self.r = _ensure_array(r)
-        super(CoatedSphere, self).__init__(center)
+# import some names into the top level namespace so we can use,
+# e.g. holopy.Hologram or holopy.load
+from .hologram import Hologram, subimage
+from .optics import Optics
+from .analyze.reconstruct import reconstruct
+from .analyze.fit import fit
+from .vis import show
+from io.io import save, load
+
+__version__ = 'unknown'
+try:
+    from _version import __version__
+except ImportError:
+    # version doesn't exist, or got deleted in bzr
+    pass
+

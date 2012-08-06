@@ -177,6 +177,12 @@ class ScatteringTheory(HolopyObject):
         
         return theory._calc_cross_sections(scatterer, optics)
 
+    @classmethod
+    def calc_scat_matrix(cls, scatterer, target):
+        theory = cls()
+
+        return theory._calc_scat_matrix(scatterer, target)
+
     
     # TODO: is this function still needed?  The new ElectricField
     # class makes it essentially trivial -tgd 2011-08-12

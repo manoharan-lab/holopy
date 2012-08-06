@@ -40,7 +40,7 @@ class DataTarget(HolopyObject):
     **kwargs: varies
         Other metadata
     """
-    def __init__(self, positions = None, optics = None, use_random_fraction = None, *args, **kwargs):
+    def __init__(self, positions = None, optics = None, use_random_fraction = None, **kwargs):
         self._metadata = kwargs
         self._update_metadata({'positions': positions, 'optics': optics,
                                'use_random_fraction': use_random_fraction})
@@ -102,6 +102,12 @@ class DataTarget(HolopyObject):
         pos = self.positions_r_theta_phi(origin)
         pos[:,0] *= self.optics.wavevec
         return pos
+
+    def positions_theta(self):
+        if isinstance(self.positions, Angles):
+            return self.positions.theta
+        else:
+            raise UnspecifiedPosition()
         
     def from_1d(self, data):
         if self.selection is None:
@@ -137,42 +143,12 @@ class Grid(HolopyObject):
         else:
             self.selection = None
             
-    def spherical(self, origin):
-        """
-        Return my positions as spherical coordinates relative to origin
-        
-        Parameters
-        ----------
-        origin : real
-            origin of the spherical cooridate system to return
-
-        Returns
-        -------
-        theta, phi: 1-D array
-            Angles
-        r : 2-D array
-            Distances
-        """
-        x, y, z = origin
-        px, py = self.spacing
-        xdim, ydim = self.shape
-        xg, yg = np.ogrid[0:xdim, 0:ydim]
-        x = xg*px - x
-        y = yg*py - y
-        r = np.sqrt(x**2 + y**2 + z**2)
-        theta = np.arctan2(np.sqrt(x**2 + y**2), z)
-        phi = np.arctan2(y, x)
-        # get phi between 0 and 2pi
-        phi = phi + 2*np.pi * (phi < 0)
-        points = np.dstack((r*self.optics.wavevec, theta, phi))
-        if self.selection is not None:
-            points = points[self.selection]
-            if not self.selection.any():
-                raise errors.InvalidSelection("No pixels selected, can't compute fields")
-            else:
-                points = points.reshape((self.imshape[0]*self.imshape[1], 3))
-        return points
-
+class Angles(HolopyObject):
+    def __init__(self, theta = None, phi = None, units = 'radians'):
+        self.theta = theta
+        self.phi = phi
+        self.units = units
+   
 class Data(DataTarget, np.ndarray):
     """
     Class to store raw data
@@ -195,7 +171,7 @@ class Data(DataTarget, np.ndarray):
 
     # Normally we'd use an __init__ method, but subclassing ndarray
     # requires a __new__ method and an __array_finalize__ method
-    def __new__(cls, arr, *args, **kwargs):
+    def __new__(cls, arr, **kwargs):
         # things like numpy.std give us 0d arrays, the user probably expects
         # python scalars, so return one instead.  
         if hasattr(arr, 'ndim') and arr.ndim == 0:

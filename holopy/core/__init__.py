@@ -15,6 +15,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
-from data import Data, Image, DataTarget, ImageTarget, Grid
+from data import Data, Image, DataTarget, ImageTarget, Grid, Angles
 from metadata import Optics
 from io import load, load_image

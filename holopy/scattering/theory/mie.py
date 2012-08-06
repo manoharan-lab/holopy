@@ -65,6 +65,19 @@ class Mie(FortranTheory):
     # don't need to define __init__() because we'll use the base class
     # constructor
 
+    def _calc_scat_matrix(self, scatterer, target):
+        if isinstance(scatterer, (Sphere, CoatedSphere)):
+            scat_coeffs = self._scat_coeffs(scatterer, target.optics)
+
+            if scatterer.center is None:
+                scat_matrs = [mieangfuncs.asm_mie_far(scat_coeffs, theta) for
+                              theta in target.positions_theta()]
+                return np.array(scat_matrs)
+            else:
+                raise TheoryNotCompatibleError(self, scatterer)
+        else:
+            raise TheoryNotCompatibleError(self, scatterer)
+
     def _calc_field(self, scatterer, target):
         """
         Calculate fields for single or multiple spheres
@@ -96,7 +109,7 @@ class Mie(FortranTheory):
             return field
         elif isinstance(scatterer, (Sphere, CoatedSphere)):
             scat_coeffs = self._scat_coeffs(scatterer, target.optics)
-
+            
             # mieangfuncs.f90 works with everything dimensionless.
             # tranpose to get things in fortran format
             # TODO: move this transposing to a wrapper
@@ -109,20 +122,6 @@ class Mie(FortranTheory):
         else:
             raise TheoryNotCompatibleError(self, scatterer)
          
-
-        if isinstance(scatterer, (Sphere, CoatedSphere)):
-            return sphere_field(scatterer, selection)
-        elif isinstance(scatterer, Composite):
-            spheres = scatterer.get_component_list()
-            # compatibility check: verify that the cluster only contains
-            # spheres 
-            for s in spheres:
-                if not isinstance(s, (Sphere, CoatedSphere)):
-                    raise TheoryNotCompatibleError(self, s)
-            # if it passes, superpose the fields
-            return self.superpose(spheres, selection)
-        else: raise TheoryNotCompatibleError(self, scatterer)
-
     def _calc_cross_sections(self, scatterer, optics):
         """
         Calculate scattering, absorption, and extinction cross 
