@@ -26,3 +26,14 @@ scatterpy/tests/gold/gold_mie_multiple_fields.npy
 scatterpy/tests/gold/gold_mie_multiple_holo.npy
 scatterpy/tests/gold/gold_smear.npy
 scatterpy/tests/gold/gold_2_sphere_allow_overlap.npy
+scattering/.noseids
+scattering/tests/gold/gold_2_sphere_allow_overlap.npy
+scattering/tests/gold/gold_dda_voxelated_complex.npy
+scattering/tests/gold/gold_mie_multiple_fields.npy
+scattering/tests/gold/gold_mie_multiple_holo.npy
+scattering/tests/gold/gold_shell.npy
+scattering/tests/gold/gold_single_field.npy
+scattering/tests/gold/gold_single_holo.npy
+scattering/tests/gold/gold_smear.npy
+scattering/tests/gold/gold_two_spheres_samez_holo.npy
+scattering/tests/gold/gold_two_spheres_samez_intensity.npy
