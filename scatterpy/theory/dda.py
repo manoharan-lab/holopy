@@ -187,7 +187,7 @@ class DDA(ScatteringTheory):
         if isinstance(scatterer, MultidomainScattererByFunction):
             outf.write("Nmat={0}\n".format(len(scatterer.domains)))
             for point in scatterer._points(self._spacing(optics, scatterer.n)):
-                outf.write('{0} {1} {2} {3}\n'.format(point[0], point[1],
+                outf.write('{0} {1} {2} {3}'.format(point[0], point[1],
                                                     point[2], point[3]+1))
         else:
             for point in scatterer._points(self._spacing(optics, scatterer.n)):
@@ -255,7 +255,7 @@ class DDA(ScatteringTheory):
         # eq 3.12
         scat_matr = np.array([[s[:,1], s[:,2]], [s[:,3], s[:,0]]]).transpose()
 
-        fields = np.zeros_like(calc_points)
+        fields = np.zeros_like(calc_points, dtype = scat_matr.dtype)
 
         for i, point in enumerate(calc_points):
             kr, theta, phi = point
