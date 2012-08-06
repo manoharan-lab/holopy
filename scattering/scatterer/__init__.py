@@ -33,6 +33,7 @@ from .sphere import Sphere
 from .coatedsphere import CoatedSphere
 from .composite import Composite
 from .spherecluster import SphereCluster
-from voxelated import VoxelatedScatterer, ScattererByFunction
+from voxelated import (VoxelatedScatterer, ScattererByFunction,
+                       MultidomainScattererByFunction)
 from .ellipsoid import Ellipsoid
 

@@ -39,7 +39,8 @@ from .mie_f import mieangfuncs
 from ..errors import TheoryNotCompatibleError
 from ...core.data import VectorData
 from ..scatterer import (Sphere, CoatedSphere, VoxelatedScatterer,
-                         ScattererByFunction, Ellipsoid, SphereCluster)
+                         ScattererByFunction, MultidomainScattererByFunction,
+                         Ellipsoid, SphereCluster)
 
 class DependencyMissing(Exception):
     def __init__(self, dep):
@@ -182,16 +183,29 @@ class DDA(ScatteringTheory):
 
     def _adda_function_scatterer(self, scatterer, optics, temp_dir):
         outf = tempfile.NamedTemporaryFile(dir = temp_dir, delete=False)
-        for point in scatterer._points(self._spacing(optics, scatterer.n)):
-            outf.write('{0} {1} {2}\n'.format(*point))
+        if isinstance(scatterer, MultidomainScattererByFunction):
+            outf.write("Nmat={0}\n".format(len(scatterer.domains)))
+            for point in scatterer._points(self._spacing(optics, scatterer.n)):
+                outf.write('{0} {1} {2} {3}'.format(point[0], point[1],
+                                                    point[2], point[3]+1))
+        else:
+            for point in scatterer._points(self._spacing(optics, scatterer.n)):
+                outf.write('{0} {1} {2}\n'.format(*point))
         outf.flush()
         
         cmd = []
         cmd.extend(['-shape', 'read', outf.name])
         cmd.extend(['-dpl', str(self._dpl(optics, scatterer.n))])
         cmd.extend(['-m'])
-        cmd.extend([str(scatterer.n.real/optics.index),
-                    str(scatterer.n.imag/optics.index)])
+        def add_ns(domain):
+            cmd.extend([str(domain.n.real/optics.index),
+                    str(domain.n.imag/optics.index)])
+        if isinstance(scatterer, MultidomainScattererByFunction):
+            for domain in scatterer.domains:
+                add_ns(domain)
+        else:
+            add_ns(scatterer)
+
 
         return cmd
 
@@ -207,7 +221,6 @@ class DDA(ScatteringTheory):
         time_start = time.time()
         
         temp_dir = tempfile.mkdtemp()
-        print(temp_dir)
 
         calc_points = target.positions_kr_theta_phi(scatterer.center)
 

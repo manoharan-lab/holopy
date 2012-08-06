@@ -545,3 +545,40 @@ def test_complex_parameter():
                   par(2., [0., 10.], 'b') + par(3.j, [0.j, 10.j], 'smorrebrod'),
                   par(-2.j, [-10.j, 0.j], 'c')]
 '''
+
+from scatterpy.tests.test_dda import missing_dependencies
+
+@dec.skipif(missing_dependencies(), 'a-dda not installed')
+@attr('slow')
+def test_dda_fit():
+    from scatterpy.theory import DDA
+    s = Sphere(n = 1.59, r = .2, center = (5, 5, 5))
+    o = hp.Optics(wavelen = .66, index=1.33, pixel_scale=.1)
+
+    mie = Mie(o, 100)
+
+    h = mie.calc_holo(s)
+
+
+    def in_sphere(r):
+        def test(point):
+            point = np.array(point)
+            return (point**2).sum() < r**2
+        return test
+
+
+    def make_scatterer(r, x, y, z):
+        return ScattererByFunction(in_sphere(r), s.n, [[-.3, .3],[-.3,.3],[-.3,.3]], (x, y, z))
+
+
+    parameters = [par(.18, [.1, .3], name='r', step=.1), par(5, [4, 6], 'x'),
+                  par(5, [4,6], 'y'), par(5.2, [4, 6], 'z')]
+
+    p = Parameterization(make_scatterer, parameters)
+
+    model = Model(p, DDA)
+
+    res = fit(model, h)
+
+    assert_equal(res.parameters, OrderedDict([('r', 0.2003609439787491), ('x', 5.0128083665603995), ('y', 5.0125252883133617), ('z', 4.9775097284878775)]))
+
