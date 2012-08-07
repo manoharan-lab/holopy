@@ -78,7 +78,6 @@ def test_DDA_sphere():
     assert_allclose(mie_holo, dda_holo, rtol=.0015)
 
 @dec.skipif(missing_dependencies(), "a-dda not installed")
-@dec.skipif(True, "broken by refactor")
 @attr('slow')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_voxelated():
@@ -121,7 +120,7 @@ def test_DDA_voxelated():
     
     s = VoxelatedScatterer(sphere, center, dpl)
 
-    gen_holo = dda.calc_holo(s)
+    gen_holo = dda.calc_holo(s, target)
 
     assert_allclose(sphere_holo, gen_holo, rtol=1e-3)
 

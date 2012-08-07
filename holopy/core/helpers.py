@@ -27,6 +27,9 @@ import shutil
 import errno
 from functools import wraps
 import numpy as np
+import inspect
+import types
+from decorator import decorator
 
 def _ensure_array(x):
     if np.isscalar(x):
@@ -88,3 +91,56 @@ def _copy_file(source, dest):
         return shutil.copy2(source, dest)
     except shutil.Error:
         pass
+
+###############################################################################
+# The code below allows a new pattern of classmethods which bind to created
+# objects of the class or to a default instance.  
+###############################################################################
+# So if you have a class like this
+#class Foo(object):
+#    def __init__(name = 'joe'):
+#        name = name
+#        finish_binding(self)
+#    @classmethod
+#    @binding
+#    def bar(self):
+#        return self.name
+#
+# it will behave as
+# >>> Foo.bar()
+# joe
+# Foo('bob').bar()
+# bob
+# The bar method will be given an default instance of the class if called as a
+# classmethod, or will behave as a normal instance method if called on an
+# instance
+###############################################################################
+    
+def finish_binding(obj):
+    """
+    binds classmethods decorated with the binding decorator to obj
+
+    This is intended for to be called within __init__ and will replace any
+    @classmethod methods that are also decorated with @binding with instance methods
+    """
+    # use inspect to find all of the methods of the supplied class that have a
+    # _bindme attribute (which was put there by the @binding decorator)
+    fs = inspect.getmembers(obj, lambda x: inspect.ismethod(x) and
+                            hasattr(x,'_bindme'))
+
+    # overwrite the classmethod with an instance method referencing obj for each
+    # method that wants bound
+    for name, f in fs:
+        setattr(obj, name, types.MethodType(f.undecorated, obj))
+
+def binding(f, *args, **kw):
+    r = decorator(_binding, f)
+    r._bindme = True
+    return r
+
+        
+def _binding(f, *args, **kw):
+    if isinstance(args[0], type):
+        args = (args[0](),)+args[1:]
+    return f(*args, **kw)   
+

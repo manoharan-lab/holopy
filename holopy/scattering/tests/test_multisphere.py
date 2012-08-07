@@ -35,7 +35,7 @@ from nose.plugins.attrib import attr
 
 from ...core import Optics, ImageTarget
 from ..theory import Multisphere
-from ..theory.multisphere import MultisphereExpansionNaN
+from ..theory.multisphere import MultisphereExpansionNaN, ConvergenceFailureMultisphere
 from ..scatterer import Sphere, SphereCluster, CoatedSphere
 from ..errors import UnrealizableScatterer, TheoryNotCompatibleError
 from .common import assert_allclose, verify
@@ -208,3 +208,16 @@ def test_selection():
     subset_holo = Multisphere.calc_holo(sc, subset_target, scaling=scaling_alpha)
 
     assert_allclose(subset_holo[subset_target.selection], holo[subset_target.selection])
+
+@attr('fast')
+@with_setup(setup=setup_model, teardown=teardown_model)
+def test_niter():
+    sc = SphereCluster(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
+                                          n=1.5811+1e-4j, r=5e-07),
+                                   Sphere(center=[6e-6, 7e-6, 10e-6],
+                                          n=1.5811+1e-4j, r=5e-07)])
+    target = ImageTarget(imshape, optics = xoptics)
+    multi = Multisphere(niter = 2)
+
+    assert_raises(ConvergenceFailureMultisphere, multi.calc_holo, sc, target)
+

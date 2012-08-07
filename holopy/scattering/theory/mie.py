@@ -99,15 +99,7 @@ class Mie(FortranTheory):
         For multiple particles, this code superposes the fields
         calculated from each particle (using calc_mie_fields()). 
         """
-        self.foo = 'bar'
-        if isinstance(scatterer, Composite):
-            spheres = scatterer.get_component_list()
-            
-            field = self._calc_field(spheres[0], target)
-            for sphere in spheres[1:]:
-                field += self._calc_field(sphere, target)
-            return field
-        elif isinstance(scatterer, (Sphere, CoatedSphere)):
+        if isinstance(scatterer, (Sphere, CoatedSphere)):
             scat_coeffs = self._scat_coeffs(scatterer, target.optics)
             
             # mieangfuncs.f90 works with everything dimensionless.
@@ -119,6 +111,13 @@ class Mie(FortranTheory):
             phase = np.exp(-1j*np.pi*2*scatterer.z / target.optics.med_wavelen)
             result = target.from_1d(VectorData(np.vstack(fields).T))
             return result * phase
+        elif isinstance(scatterer, Composite):
+            spheres = scatterer.get_component_list()
+            
+            field = self._calc_field(spheres[0], target)
+            for sphere in spheres[1:]:
+                field += self._calc_field(sphere, target)
+            return field
         else:
             raise TheoryNotCompatibleError(self, scatterer)
          
