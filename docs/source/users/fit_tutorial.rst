@@ -1,113 +1,65 @@
-**********************
-Fitting Models to Data
-**********************
+*****************
+Fitting holograms
+*****************
 
-The most powerful use of holopy is to analyze data by fitting a model to it.  Given a correct model this can give high precision measurements of physical quantities from holographic or other data.
+The :func:`holopy.analyze.fit.fit` fits a model of the object to a given set of data.
 
-A fit needs:
+:model:
+   A description of the scattering system to fit to your hologram.  This consists of
 
-1) A model of the scattering system
-   
-2) The data the fit is trying to match
-   
-3) (Optional) a fitting algorithm (holopy defaults to using the supplied nmpfit)
+   :parameters:
 
-The simplest fit will look like ::
+	  The set of parameters the fitter should vary to attempt to match
+	  the hologram.  These are typically things like coordinates of
+	  spheres, radii, and indices of refraction. They might also
+	  include rotation angles of a cluster or inter-particle
+	  separations.  For most basic use, you will do this by passing in
+	  a :class:`scatterpy.scatterer.Scatterer` object with
+	  :class:`holopy.analyze.fit.Parameter` objects instead of
+	  numbers for any values you want to vary in the fit.
 
-  result = fit(model, data)
+   :theory:
 
-Scattering Model: :class:`scatterpy.fitting.model.Model`
-========================================================
+	   The scattering theory to be used to compute holograms for
+	   comparison with the data
+	   
+   :scatterer generator (optional):
 
-Model is a set of variable parameters a scattering theory for computing simulated scattering data, and any ancillary information needed for this calculation.  ::
+	   A function that takes as its arguments the parameters and
+	   returns a scatterer which the theory can use to compute a
+	   hologram.  
 
-  model = Model(scatterer_parametrization, theory)
+:data:
 
-scatterer_parametrization
--------------------------
+   The measured hologram to which you are fitting the model
 
-There are two ways to specify a scatterer_parametrization.  The standard method is to provide a :class:`holopy.scattering.scatterer` object telling which values to fix and which to vary. ::
+:minimizer (optional):
 
-  param_scat = Sphere(n = 1.59, r = par(guess = .5, limit = [.3, .8]),
-                      center = (par(10), par(10), par(10))
-
-This will tell holopy that you want to model scattering from a sphere of fixed index n = 1.59, and vary the sphere's radius and position to attempt to match a hologram.  Initial guesses are provided for the radius and three center coordinates, and the radius is constrained to lie between .3 and .8.  The three radii are allowed to vary without limit.
-
-If your model does not fit neatly into a parametrized scatterer like this, Holopy provides a lower level interface ::
-
-  param = Parametrization(make_scatterer,
-                          parameters = [par(guess = .5, name = 'r'),
-                                        par(guess = 0, name = euler_alpha'),
-                                        par(guess = 0, name = 'euler_beta')])
-
-Here make_scatterer needs to be a function that takes keyword arguments of the names of the parameters and returns a scatterer.  
-
-theory
-------
-
-The theory in a model is one of the calc_* functions provided by scattering theories, for example Mie.calc_holo.
-
-Technically, you can use any function here as long as it takes a scatterer and a DataTarget (and optionally additional keyword arguments) as arguments and returns a Data object.
-
-Other information
------------------
-
-If you want to provide a scaling alpha, that can be done as a keyword argument to the model ::
-  
-  model = Model(param_scat, Mie.calc_holo, alpha = par(.6, [0, 1]))
-
-If you want to fit to information normally provided in the Data Metadata, you can provide a parametrized Metadata object, any parameters specified here will override those specified in the data ::
-
-  model = Model(param_scat, mie.calc_holo, metadata = Metadata(divergence = par(0, [0, 1])))
-
-Data
-====
-
-Any Data object with a full set of metadata.  Between the model and the provided Data, you must specify or parametrize all of the values needed to perform a scattering calculation.
-
-Minimizer
-=========
-
-If you do not provide a minimizer, fits will default to using the supplied Nmpfit minimizer ::
-
-  fit(model, data, minimizer = Nmpfit())
-
-You can choose another minimizer or provide non-default options to a minimizer by passing a minimizer object to fit, for example ::
-
-  fit(model, data, minimizer = Nmpfit(ftol=1e-5, xtol = 1e-5, gtol=1e-5, niter=2))
-
-To tell nmpfit to use looser tolerances and a small iteration limit (to get a fast result to check things out), or ::
-
-  fit(model, data, minimizer = Ralg())
-
-To use OpenOpt's ralg minimizer instead of nmpfit.  (This will fail unless you have nmpfit installed and configured so that Holopy can find it).  
-
-If you need to provide information to the minimizer about specific parameters (for example a derivative step to nmp fit) you add them to the par call as keyword args, for example ::
-
-  Sphere(n = par(1.59, [1, 2], step = 1e-3), ...)
-
-Examples
-========
-
-Sphere
-------
+   The Minimizer to use to fit the data.  This defaults to the
+   supplied nmpfit algorithm, but if you have OpenOpt installed you
+   can use minimizers from that package as well.  You also use this to
+   pass in non-default options to the minimizer
 
 Here let's compute a hologram and then fit it.  You can replace the
 calculated hologram with real data, if you like ::
 
-   from holopy import Metadata, DataTarget
-   from holopy.fititng import Model, par, fit
-   from holopy.scattering.scatterer import Sphere
-   from holopy.scattering.theory import Mie
+   from holopy import Optics
+   from holopy.analyze.fit import Model, par, fit
+   from scatterpy.scatterer import Sphere
+   from scatterpy.theory import Mie
 
-   target = holopy.DataTarget(points = 100, (wavelen = 658, index = 1.33, pixel_scale=0.1))
+   optics = Optics(wavelen = .658, index = 1.33, pixel_scale=0.1)
+   mie = Mie(optics, 100)
    s = Sphere(center = (10.2, 9.8, 10.3), r = .5, n = 1.58)
-   holo = mie.calc_holo(s, target)
+   holo = mie.calc_holo(s, 1.0)
 
    par_s = Sphere(center = (par(guess = 10, limit = [5,15]), par(10, [5, 15]), par(10, [5, 15])),
                   r = .5, n = 1.58)
+   
 
-   model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1]))
+   alpha = par(.6, [.1, 1], 'alpha')
+	   
+   model = Model((par_s, alpha), Mie)
    result = fit(model, holo)
 
 Here we specify the three spatial coordinates as parameters, and fix
@@ -135,7 +87,7 @@ You can specify a complex index with ::
 
   Sphere(n = ComplexParameter(real = par(1.58), imag = 1e-4))
 
-This will fit to the real part of index of refraction while holding the imaginary part fixed.  You can fit to it as well by specifying a Parameter instead of a fixed number there.  
+This will fit to the real part of index of refraction while holding the imaginary part fixed.  You can fit to it as well by specifying a Parameter instead of a fixed number there.
 
 Tying Parameters
 ----------------
@@ -150,35 +102,19 @@ This may be done by defining a Parameter and using it in multiple places ::
   sc = SphereCluster([Sphere(n = n_real, r = par(0.5e-6), 
                              center = array([10., 10., 20.]) * 1e-6),
                       Sphere(n = n_real, r = par(0.5e-6),
-                             center = array([9., 11., 21.] * 1e-6))])
+                             center = array([9., 11., 21.]
+  
+Advanced Options
+================
 
-Hologram with Beam Tilt
------------------------
+If you want to give extra information to the minimizer (change
+tolerances or iteration limit, or the like) modify your fit call to
+something like ::
 
-Here we override some of the parameters specified in the Data (or in fact you can leave them as none when specifying Metadata for this data) ::
+  from holopy.analyze.fit import Nmpfit
+  result = fit(model, holo, Nmpfit(ftol = 1e-5, maxiter=2))
 
-  model = Model(Sphere(...), metadata = Metadata(
-    ilum_vector = UnitVector(beta = par(0), gamma = par(0))))
 
-Fitting this model will vary the beam tilt
+If you need to provide information to the minimizer about specific parameters (for example a derivative step to nmp fit) you add them to the par call as keyword args, for example ::
 
-Static Light Scattering
------------------------
-
-Assuming you have recorded some static light scattering data in a file sls_data.txt and the metadata in sls_meta.yaml ::
-
-  data = hp.load('sls_data.txt', 'sls_meta.yaml')
-
-  model = Model(Sphere(n = par(1.58, [1, 2]), r = par(.5)), Mie.calc_intensity, scaling = par(1))
-
-  result = fit(model, data)
-
-Alternative Scatterer Parameterizations
----------------------------------------
-
-Holopy also provides some additional views of scatterers that may be convenient for fitting.  For example ::
-
-  from holopy.fitting.views import Dimer
-  s = Dimer([Sphere(n, r), Sphere(n, r)], gap, beta, gamma, center)
-
-This contains the same number of parameters as a 2 sphere SphereCluster and fully specifies a SphereCluster, but provides a different set of knobs for the fitter to adjust.  
+  n = par(1.59, [1, 2], step = 1e-3)

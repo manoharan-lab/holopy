@@ -1,6 +1,33 @@
 Fundamentals
 ============
 
+Concepts
+----------
+
+We call a :dfn:`hologram` the digital image you record with a
+holographic optical train.  Sometimes when people say "hologram" they
+are actually referring to the 3D image you get when you shine light
+through a holographic film, like the ones you see in museums or on
+your credit card.  We use the term :dfn:`reconstruction` for the 3D
+image produced by shining light through a hologram.
+
+Coordinate system
+------------------
+
+The coordinate system we use in Holopy places the origin, (0,0), at
+the top left corner as shown below. The x-axis runs vertically down, 
+the y-axis runs horizontally to the right, and the z-axis points out
+of the screen, toward you.
+
+In sample space, we choose the z axis so that distances to objects from the camera/focal plane are positive (have positive z coordinates).  The price we pay for this choice is that the propagation direction of the illumination light is then negative.  
+
+.. image:: ../images/HolopyCoordinateSystem.png
+    :scale: 40 %
+    :alt: Coordinate system used in holopy.
+
+
+	
+
 Units
 -----
 
@@ -10,112 +37,56 @@ meters, microns.  So if you specify the wavelength of your red imaging
 laser as 658 then all other units (*x*, *y*, *z* position coordinates,
 particle radii, etc.)  must also be specified in nanometers.
 
-Data
-----
-
-Holopy is at its core a tool for working with optical data, either measurements from some experiment, or simulations of such data.   Holopy has an idea of a Data object which is an array of measurements at points along with metadata about how to interpret those values.
-
-:Measurement Locations:
-   
-   All Data objects must know where in space their measurements were
-   taken.  This can be specified by pixel spacing for a rectangular
-   detector, angles to farfield detectors, or in general a list of
-   coordinates for each measurement location.
-
-:Optical Setup:
-   
-   Wavelength, polarization, divergence, ... of illumination light,
-   index of refraction the medium the system is in, any lenses or
-   other optical elements present in the beam path.
-
-:Other Experimental Conditions:
-
-   Holopy can associate arbitrary Metadata with data to describe any
-   relevant conditions of how the data was obtained or processing that
-   has been done on the data.  
-
-Data can be:
-
-:1 dimensional:
-   static light scattering measurements
-:2 dimensional:
-   Images, or timeseries of 1d data sets
-:3 dimensional:
-   volume data (stacks), or timeseries of images
-:4 dimensional:
-   timeseries of volume data
-
-Holopy will probably work to some degree with higher dimensional data (because the underlying numpy arrays we use are n-dimensional), but many of its functions expect data in one of these forms.  
-
-Coordinate system
------------------
-
-For Image data (data points arrayed in a grid in a single plane), Holopy defaults to placing the origin, (0,0), at the top left corner as shown below. The x-axis runs vertically down, the y-axis runs horizontally to the right, and the z-axis points out of the screen, toward you.  This corresponds to the way that images are treated by most computer software.  
-
-.. image:: ../images/HolopyCoordinateSystem.png
-    :scale: 30 %
-    :alt: Coordinate system used in holopy.
-
-In sample space, we choose the z axis so that distances to objects from the camera/focal plane are positive (have positive z coordinates).  The price we pay for this choice is that the propagation direction of the illumination light is then negative.  
-
-More complex detector geometries will define their own origin, or ask you to define one.  
-	
-
-
-
 
 Overview
 --------
 
-Holopy is divided into a number of packages that each serve specific purposes
+Holopy can be used to analyze holograms or calculate them.
+Calculating holograms is straightforward: you tell Holopy where your
+scatterers are and give it some optical data, and it calculates a
+hologram.
 
-Core
-^^^^
+If you're using Holopy to analyze holograms, you're probably starting
+with a digital image (in any of many image formats).  To analyze it,
+you will also need to have some information about the optical train
+used to produce it.  
 
-holopy.core defines Data and Metadata objects and contains the basic infrastructure for loading and saving data and results.  It also contains basic image processing routines for cleaning up your data.  Most of these are simply higher level wrappers around scipy routines.  holopy.core can be used independently of the rest of holopy.  
+There are two workflows for analysis:
 
-Holopy Core the beginning and end of your workflow:
+Reconstruction
+^^^^^^^^^^^^^^
 
-  1) raw image (or other data) file(s) + metadata -> :class:`holopy.core.data.Data` object
-  2) Raw :class:`holopy.core.data.Data` object + processing -> processed :class:`holopy.core.data.Data` object
-  3) Computed or Processed Result -> Archival yaml text or text/binary result
+   1) Load raw image files, import metadata (optics) -> :class:`holopy.hologram.Hologram` object
+   2) Clean up and process hologram -> processed :class:`holopy.hologram.Hologram` object
+   3) Reconstruct -> :class:`holopy.analyze.reconstruct.Reconstruction`
+   4) Post-process -> :class:`holopy.analyze.reconstruct.Reconstruction`
+   5) Visualize or save
 
-Scattering
-^^^^^^^^^^
-Used to compute simulated scattering from defined scatterers.
-The scattering package provides objects and methods to define scatterer geometry, and theories to compute scattering from specified geometry.  Scattering depends holopy.core (and certain scattering theories may depend on external scattering codes).  
+"Process" means any image processing operations, such as to clean up
+the background or cut out a region of interest.
 
-Holopy Scattering is generally used for:
+Routines for step 1 are in the :mod:`holopy.io` module, for steps 2
+and 4 in the :mod:`holopy.process` module, and for step 3 in the
+:mod:`holopy.analyze.reconstruct` modules.
 
-  1) Describe geometry as :mod:`holopy.scattering.scatterer` object
-  2) Define the result you want as a :mod:`holopy.core.data.DataTarget` object
-  3) Calculate scattering quantities with an :mod:`holopy.scattering.theory` appropriate for your object -> :class:`holopy.core.data.Data` object
-
-Propagation
+Calculation
 ^^^^^^^^^^^
 
-Compute light propagation from a known set of points, possibly through media or optical elements.  Depends on core (and on scattering if propagating through with nonuniform media).  
-
-Propagation is used primarily for one operation:
-
-  1) Hologram or Electric field -> Hologram or Electric field at another position
-
+   1) Describe geometry as :mod:`scatterpy.scatterer` object
+   2) Choose a :mod:`scatterpy.theory` object appropriate to the scatterer
+   3) calculate a hologram of the scatterer with the theory -> `holopy.hologram.Hologram` object
+	 
 Fitting
 ^^^^^^^
 
-Fitting is used to determine what Scatterer best creates some observed data.  Fitting depends on Core and Scattering.
+   1) Load raw image files, import metadata (optics) -> :class:`holopy.hologram.Hologram` object
+   2) Clean up and process hologram -> processed :class:`holopy.hologram.Hologram` object
+   3) Generate initial guess
+   4) Fit -> List of parameter values (index of refraction, radius, position, ...)
+   5) Visualize or save
 
-Fitting is used for:
-
-  1) Define Scattering Model -> :class:`holopy.fitting.model.Model` object
-  2) Fit model to data -> :class:`holopy.fitting.fit.FitResult` object
-
-Visualization
-^^^^^^^^^^^^^
-
-The visualization module is used to, surprise, visualize your data.  If the appropriate display libraries are present, it can show images or slices of your data and 3d renderings of volume data or scatterers.  
-
-  1) Data or Scatterer object -> plot or rendering
-
+Routines for step 1 are in the :mod:`holopy.io` module, for step 2 in
+the :mod:`holopy.process` module, and for steps 3 and 4 in the
+:mod:`holopy.analyze.fit` module.
 
 We'll go over these steps in the next section and the tutorials.
