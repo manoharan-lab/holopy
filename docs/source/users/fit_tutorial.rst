@@ -137,6 +137,21 @@ You can specify a complex index with ::
 
 This will fit to the real part of index of refraction while holding the imaginary part fixed.  You can fit to it as well by specifying a Parameter instead of a fixed number there.  
 
+Tying Parameters
+----------------
+You may desire to fit holograms with *tied parameters*, in which several 
+physical quantities that could be varied independently are constrained to have
+the same (but non-constant) value. A common example involves fitting a model
+to a multi-particle hologram in which all of the particles are constrained to
+have the same refractive index, but the index is determined by the fitter.
+This may be done by defining a Parameter and using it in multiple places ::
+  
+  n_real = par(1.59)
+  sc = SphereCluster([Sphere(n = n_real, r = par(0.5e-6), 
+                             center = array([10., 10., 20.]) * 1e-6),
+                      Sphere(n = n_real, r = par(0.5e-6),
+                             center = array([9., 11., 21.] * 1e-6))])
+
 Hologram with Beam Tilt
 -----------------------
 
@@ -166,4 +181,4 @@ Holopy also provides some additional views of scatterers that may be convenient 
   from holopy.fitting.views import Dimer
   s = Dimer([Sphere(n, r), Sphere(n, r)], gap, beta, gamma, center)
 
-This contains the same number of paramters as a 2 sphere SphereCluster and fully specifies a SphereCluster, but provides a different set of knobs for the fitter to adjust.  
+This contains the same number of parameters as a 2 sphere SphereCluster and fully specifies a SphereCluster, but provides a different set of knobs for the fitter to adjust.  
