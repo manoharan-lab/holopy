@@ -17,10 +17,10 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
 import numpy as np
-from holopy.process import math
+from .. import math
 from nose.plugins.attrib import attr
 
-from scatterpy.tests.common import assert_allclose
+from .common import assert_allclose
 
 import scipy.fftpack
 

@@ -15,33 +15,16 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
-"""
-A python package containing routines to load, reconstruct, fit, and
-analyze digital holograms  
 
-.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
-.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-"""
-from __future__ import division
+import numpy as np
+from numpy.testing import assert_equal
+from nose.plugins.attrib import attr
 
-import process
-import analyze
-import io
+from ..helpers import _ensure_array
 
 
-# import some names into the top level namespace so we can use,
-# e.g. holopy.Hologram or holopy.load
-from .hologram import Hologram, subimage
-from .optics import Optics
-from .analyze.reconstruct import reconstruct
-from .analyze.fit import fit
-from .vis import show
-from io.io import save, load
-
-__version__ = 'unknown'
-try:
-    from _version import __version__
-except ImportError:
-    # version doesn't exist, or got deleted in bzr
-    pass
-
+@attr('fast')
+def test_ensure_array():
+    assert_equal(_ensure_array(1.0), np.array([1.0]))
+    assert_equal(_ensure_array([1.0]), np.array([1.0]))
+    assert_equal(_ensure_array(np.array([1.0])), np.array([1.0]))
