@@ -35,7 +35,8 @@ import yaml
 import re
 import inspect
 from ..holopy_object import ordered_dump, SerializableMetaclass
-from ..data import Image
+from ..data import Image, Data
+from .. import data
 
 class LoadError(Exception):
     def __init__(self, msg):
@@ -48,13 +49,13 @@ def save(outf, obj):
         outf = file(outf, 'w')
 
     yaml.dump(obj, outf)
-    if isinstance(obj, Image):
-        # having yaml save array data works poorly, so instead we will have
-        # numpy do it.  This will mean the file isn't stricktly a valid yaml (or
-        # even a valid text file really), but we can still read it, and with the
-        # right programs (like linux more) you can still see the text yaml
-        # information, and it keeps everything in one file
-        outf.write('image: !NpyBinary\n')
+    if isinstance(obj, Data):
+        # yaml saves of large arrays are very slow, so we have numpy save the data
+        # parts of data objects.  This will mean the file isn't stricktly
+        # a valid yaml (or even a valid text file really), but we can still read
+        # it, and with the right programs (like linux more) you can still see
+        # the text yaml information, and it keeps everything in one file
+        outf.write('array: !NpyBinary\n')
         np.save(outf, obj)
             
 
@@ -63,15 +64,18 @@ def load(inf):
         inf = file(inf)
 
     line = inf.readline()
+    cls = line.strip('{} !\n')
     lines = []
-    if line == '!Hologram\n':
+    if hasattr(data, cls) and issubclass(getattr(data, cls), Data):
         while not re.search('!NpyBinary', line):
             lines.append(line)
             line = inf.readline()
         arr = np.load(inf)
         head = ''.join(lines[1:])
         kwargs = yaml.load(head)
-        return Image(arr, **kwargs)
+        if kwargs is None:
+            kwargs = {}
+        return getattr(data, cls)(arr, **kwargs)
 
 
     else:
@@ -94,18 +98,6 @@ def load(inf):
 # Custom Yaml Representers
 ###################################################################
 
-def image_representer(dumper, data):
-    if data.ndim == 0:
-        return dumper.represent_float(data.max())
-    dump_dict = OrderedDict()
-    for var in inspect.getargspec(data.__new__).args[1:]:
-        if hasattr(data, var) and getattr(data, var) is not None:
-            dump_dict[var] = getattr(data, var)
-    return ordered_dump(dumper, '!Image', dump_dict)
-yaml.add_representer(Image, image_representer)
-
-
-
 # Represent 1d ndarrays as lists in yaml files because it makes them much
 # prettier
 def ndarray_representer(dumper, data):
@@ -124,17 +116,18 @@ yaml.add_representer(np.complex128, complex_representer)
 def complex_constructor(loader, node):
     return complex(node.value)
 yaml.add_constructor('!complex', complex_constructor)
+
 def numpy_float_representer(dumper, data):
     return dumper.represent_float(float(data))
 yaml.add_representer(np.float64, numpy_float_representer)
+
 def numpy_int_representer(dumper, data):
     return dumper.represent_int(int(data))
 yaml.add_representer(np.int64, numpy_int_representer)
 
-
 def class_representer(dumper, data):
     if re.match('scatterpy.theory', data.__module__):
-        return dumper.represent_scalar('!theory', "{0}.{1}".format(data.__module__,
+        return dumper.represent_scalar('!class', "{0}.{1}".format(data.__module__,
                                    data.__name__))
     else:
         raise NotImplemented

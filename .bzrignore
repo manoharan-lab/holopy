@@ -26,3 +26,4 @@ holopy/scattering/tests/gold/gold_single_holo.npy
 holopy/scattering/tests/gold/gold_smear.npy
 holopy/scattering/tests/gold/gold_two_spheres_samez_holo.npy
 holopy/scattering/tests/gold/gold_two_spheres_samez_intensity.npy
+holopy/scattering/.noseids

@@ -235,6 +235,8 @@ class VectorData(Data):
                                           len(components)), dtype = dtype),
                        components = components, **target._metadata)
 
+        
+
 class ImageTarget(DataTarget):
     def __init__(self, shape, pixel_size=None, optics=None, **kwargs):
         shape = _ensure_pair(shape)
@@ -247,6 +249,15 @@ class ImageTarget(DataTarget):
             pixel_size = np.repeat(pixel_size, len(shape))
         super(ImageTarget, self).__init__(positions = Grid(shape, pixel_size), optics
                                     = optics, **kwargs)
+
+    @property    
+    def _dict(self):
+        d = super(ImageTarget, self)._dict
+        g = d['positions']
+        del d['positions']
+        d['shape'] = g.shape
+        d['pixel_size'] = g.spacing
+        return d
         
 class Image(ImageTarget, Data):
     """
@@ -261,6 +272,15 @@ class Image(ImageTarget, Data):
             pixel_size = arr.positions.spacing
         super(Image, self).__init__(arr = arr, shape = arr.shape, pixel_size =
                                     pixel_size, optics = optics, **kwargs)
+
+    @property
+    def _dict(self):
+        d = super(Image, self)._dict
+        # remove the shape from the ImageTarget _dict because Image gets shape
+        # directly from the supplied arr
+        del d['shape']
+        return d
+
 
     def resample(self, shape, window=None):
         """

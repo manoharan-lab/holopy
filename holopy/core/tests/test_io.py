@@ -17,16 +17,14 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 
 from .common import assert_obj_close, assert_read_matches_write
-from .. import Optics
-from .. io import load
+from .. import Optics, Data, load
 from .. process import normalize
 import tempfile
 from nose.plugins.attrib import attr
-from numpy.testing import dec
 import os
+import numpy as np
 
 
-@dec.knownfailureif(True, "Data yaml IO not implemented")
 @attr('fast')
 def test_hologram_io():
     o = Optics(wavelen=.66, index=1.33, pixel_scale=.1)
@@ -52,3 +50,7 @@ pixel_scale: [3.3e-7, 3.3e-7]"""
     o = Optics(**load(t))
 
     assert_obj_close(o, Optics(wavelen=7.85e-07, polarization=[1.0, 0.0], divergence=0, pixel_size=[6.8e-06, 6.8e-06], pixel_scale=[3.3e-07, 3.3e-07]))
+
+def test_data_io():
+    d = Data(np.random.random((10, 10)))
+    assert_read_matches_write(d)

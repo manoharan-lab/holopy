@@ -78,7 +78,7 @@ def test_DDA_sphere():
     assert_allclose(mie_holo, dda_holo, rtol=.0015)
 
 @dec.skipif(missing_dependencies(), "a-dda not installed")
-@attr('slow')
+@attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_voxelated():
     # test that DDA voxelated gets the same results as DDA sphere as a basic
@@ -124,6 +124,7 @@ def test_DDA_voxelated():
 
     assert_allclose(sphere_holo, gen_holo, rtol=1e-3)
 
+@attr('fast')
 @dec.skipif(missing_dependencies(), "a-dda not installed")
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_voxelated_complex():
