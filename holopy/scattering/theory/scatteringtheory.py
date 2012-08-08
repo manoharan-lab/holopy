@@ -21,12 +21,13 @@ calc_intensity and calc_holo, based on subclass's calc_field
 
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
+.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
 import numpy as np
 from ...core.data import Image, VectorData
 from ...core.holopy_object import HolopyObject
-from ...core.helpers import binding, finish_binding
+from ..binding_method import binding, finish_binding
 
 class ScatteringTheory(HolopyObject):
     """

@@ -31,8 +31,26 @@ We also make use of a modified version of the Python version of mpfit_, original
 .. _mpfit: http://www.physics.wisc.edu/~craigm/idl/fitting.html
 .. _stsci_python: http://www.stsci.edu/resources/software_hardware/pyraf/stsci_python
 
-Finally, we thank A. Ross Barnett for permitting us to use his routine SBESJY.FOR_, which computes spherical Bessel functions.
+We thank A. Ross Barnett for permitting us to use his routine SBESJY.FOR_, which computes spherical Bessel functions.
 
 .. _SBESJY.FOR: http://www.fresco.org.uk/programs/barnett/index.htm
 
+
+We include a copy Michele Simionato's decorator.py_ (v 3.3.3) which simplifies writing correct function decorators.  If you have that module installed it will be used preferentially.
+
+docorator.py is Copyright (c) 2005-2012, Michele Simionato
+All rights reserved.
+
+.. _decorator.py: http://pypi.python.org/pypi/decorator/3.3.3
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   Redistributions of source code must retain the above copyright 
+   notice, this list of conditions and the following disclaimer.
+   Redistributions in bytecode form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in
+   the documentation and/or other materials provided with the
+   distribution. 
 
