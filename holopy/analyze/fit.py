@@ -60,12 +60,41 @@ class FitResult(SerializeByConstructor):
 
 class Parameterization(SerializeByConstructor):
     def __init__(self, pars_to_target, parameters):
-        self.parameters = parameters
+        self.parameters = []
+        self._fixed_params = {}
+        for par in parameters:
+            def add_par(p, name = None):
+                if name != None:
+                    p.name = name
+                if not p.fixed:
+                    self.parameters.append(p)
+                else:
+                    self._fixed_params[p.name] = p.guess
+
+            if isinstance(par, ComplexParameter):
+                add_par(par.real, par.name+'.real')
+                add_par(par.imag, par.name+'.imag')
+            elif isinstance(par, Parameter):
+                add_par(par)
         self.pars_to_target = pars_to_target
+
     def make_from(self, parameters):
+        # parameters is an ordered dictionary
         for_target = {}
         for arg in inspect.getargspec(self.pars_to_target).args:
-            for_target[arg] = parameters[arg] 
+            if (arg + '.real') in parameters and (arg + '.imag') in parameters:
+                for_target[arg] = (parameters[arg + '.real'] + 1.j *
+                                   parameters[arg + '.imag'])
+            elif (arg + '.real') in self._fixed_params and \
+                    (arg + '.imag') in parameters:
+                for_target[arg] = (self._fixed_params[arg + '.real'] + 1.j * 
+                                   parameters[arg + '.imag'])
+            elif (arg + '.real') in parameters and (arg + '.imag') in \
+                    self._fixed_params:
+                for_target[arg] = (parameters[arg + '.real'] + 1.j * 
+                                   self._fixed_params[arg + '.imag'])
+            else:
+                for_target[arg] = parameters[arg] 
         return self.pars_to_target(**for_target)
 
     @property
@@ -445,8 +474,7 @@ def fit(model, data, minimizer=Nmpfit()):
 
     try:
         fitted_pars, minimizer_info = minimizer.minimize(model.parameters,
-                                                         model.cost_func(data),
-                                                         model.selection)
+                                                         model.cost_func(data))
         converged = True
     except MinimizerConvergenceFailed as cf:
         warnings.warn("Minimizer Convergence Failed, your results may not be "
