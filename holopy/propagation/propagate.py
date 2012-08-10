@@ -25,16 +25,15 @@ Code to propagate objects/waves using scattering models.
 from __future__ import division
 
 import numpy as np
-import scipy as sp
-from holopy.process.math import fft, ifft
-from holopy.hologram import Hologram
-from holopy.utility.helpers import _ensure_pair
+from ..core.math import fft, ifft
+from ..core.helpers import _ensure_pair, _ensure_array
+from ..core import Data, Volume, Image, Grid, UnevenGrid
 
 # May eventually want to have this function take a propagation model
 # so that we can do things other than convolution
 
-def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
-              gradient_filter=False, project_along_z=False):
+def propagate(data, d, ft=None, fourier_filter=None, gradient_filter=False,
+              project_along_z=False):
     """
     Propagates a hologram a distance d along the optical axis.
 
@@ -51,7 +50,7 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
 
     Parameters
     ----------
-    holo : :class:`holopy.hologram.Hologram`
+    data : :class:`holopy.hologram.Hologram`
        Hologram to propagate
     d : float
        Distance to propagate, in meters
@@ -74,7 +73,7 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
 
     Returns
     -------
-    holo(d) : :class:`holopy.hologram.Hologram`
+    data(d) : :class:`holopy.hologram.Hologram`
        The hologram progagated to a distance d from its current location.  
         
     Notes
@@ -85,9 +84,9 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
     machinery. 
     """
     
-    m, n = holo.shape[:2]
+    m, n = data.shape[:2]
             
-    G = trans_func([m, n], holo.optics, d, squeeze=False,
+    G = trans_func([m, n], data.optics, d, squeeze=False,
                    gradient_filter=gradient_filter,
                    zprojection=project_along_z)
     
@@ -95,7 +94,7 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
     # on which it is applied
     mm, nn = [dim/2 for dim in G.shape[:2]]
     if ft is None:
-        ft = fft(holo)
+        ft = fft(data)
     else:
         # make a local copy so that we don't modify the ft we are passed
         ft = ft.copy()
@@ -103,23 +102,26 @@ def propagate(holo, d, ft=None, fourier_filter=None, squeeze=True,
     if fourier_filter is not None:
         ft *= fourier_filter
 
-    if ft.ndim is 2:
-        ft = ft.reshape(ft.shape[0], ft.shape[1], 1)
     ft = np.repeat(ft[:, :, np.newaxis,...], G.shape[2], axis=2)
-    ft[(m/2-mm):(m/2+mm),(n/2-nn):(n/2+nn),...] *= G[:(mm*2),:(nn*2), :, np.newaxis]
-    # Transfer function may not cover the whole image, any values
-    # outside it need to be set to zero to make the reconstruction
-    # correct
-    ft[0:n/2-nn,...] = 0
-    ft[n/2+nn:n,...] = 0
-    ft[:,0:m/2-mm,...] = 0
-    ft[:,m/2+mm:m,...] = 0
 
+    ft = apply_trans_func(ft, G)
     
-    if squeeze:
-        return np.squeeze(ifft(ft, overwrite=True))
-    else:
-        return ifft(ft, overwrite=True)
+    arr = np.squeeze(ifft(ft, overwrite=True))
+
+    if arr.ndim == 2:
+        return Image(arr, data.positions.spacing, optics = data.optics)
+    elif arr.ndim == 3:
+        # check if supplied distances are in a regular grid
+        dd = np.diff(d)
+        if np.allclose(dd[0], dd):
+            positions = Grid(spacing = np.append(data.positions.spacing, dd[0]),
+                             shape = arr.shape)
+        else:
+            positions = UnevenGrid(spacing = (data.positions.spacing[0],
+                                    data.positions.spacing[1], d),
+                                   shape = arr.shape)
+        return Volume(arr, positions = positions)
+    
 
 def apply_trans_func(ft, G):
     mm, nn = [dim/2 for dim in G.shape[:2]]

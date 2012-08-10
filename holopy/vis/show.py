@@ -24,9 +24,9 @@ sensible way.
 """
 from __future__ import division
 
-import holopy as hp
 import numpy as np
-import scatterpy
+from ..scattering.scatterer import SphereCluster
+from ..core import Image
 
 class VisualizationNotImplemented(Exception):
     def __init__(self, o):
@@ -51,15 +51,14 @@ def show(o,color=(0,0,1)):
     to import all of mayavi just to load holopy)
     """
     
-    if isinstance(o, scatterpy.scatterer.SphereCluster):
+    if isinstance(o, SphereCluster):
         import vis3d
         vis3d.show_sphere_cluster(o,color)
         return
     
     elif isinstance(o, (list, tuple)):
         o = np.dstack(o)
-    if isinstance(o, (hp.Hologram, hp.analyze.reconstruct.Reconstruction,
-                        np.ndarray)):
+    if isinstance(o, (Image, np.ndarray)):
         import vis2d
         vis2d.show(o)
     else:

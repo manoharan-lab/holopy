@@ -22,15 +22,13 @@ The tests here test basic reconstruction capability
 '''
 from __future__ import division
 
-import sys
 import os
 import string
-hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
-sys.path.append(hp_dir)
 import numpy as np
 import scipy
-import holopy
-import nose
+from ...core import load
+from ...core.tests.common import get_example_data
+from ..propagate import propagate
 from numpy.testing import assert_array_equal
 from nose.plugins.attrib import attr
 
@@ -38,42 +36,27 @@ from nose.plugins.attrib import attr
 class TestRecon:
     @attr('fast')
     def test_reconNear(self):
-        path = os.path.abspath(holopy.__file__)
-        path = string.rstrip(path, chars='__init__.pyc')+'tests/exampledata/'
-        image_path = path + 'image0003.npy'
-        gold_path = path + 'recon_4.npy'
-        gold = np.load(gold_path)
-        opts = path + 'optical_train3.yaml'
-        im = holopy.load(image_path,optics=opts)
-        rec_im = holopy.reconstruct(im, 4e-6)
-        rec_im = abs(rec_im[:,:,0,0] * scipy.conj(rec_im[:,:,0,0]))
+        im = get_example_data('image0003.npy', 'optical_train3.yaml')
+        gold = get_example_data('recon_4.npy', 'optical_train3.yaml')
+        rec_im = propagate(im, 4e-6)
+        rec_im = abs(rec_im * scipy.conj(rec_im))
         rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
         assert_array_equal(rec_im.astype('uint8'),gold)
 
     @attr('fast')
     def test_reconMiddle(self):
-        path = os.path.abspath(holopy.__file__)
-        path = string.rstrip(path, chars='__init__.pyc')+'tests/exampledata/'
-        image_path = path + 'image0003.npy'
-        gold_path = path + 'recon_7.npy'
-        gold = np.load(gold_path)
-        opts = path + 'optical_train3.yaml'
-        im = holopy.load(image_path,optics=opts)
-        rec_im = holopy.reconstruct(im, 7e-6)
-        rec_im = abs(rec_im[:,:,0,0] * scipy.conj(rec_im[:,:,0,0]))
+        gold = get_example_data('recon_7.npy', 'optical_train3.yaml')
+        im = get_example_data('image0003.npy', 'optical_train3.yaml')
+        rec_im = propagate(im, 7e-6)
+        rec_im = abs(rec_im * scipy.conj(rec_im))
         rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
         assert_array_equal(rec_im.astype('uint8'),gold)
     
     @attr('fast')
     def test_reconFar(self):
-        path = os.path.abspath(holopy.__file__)
-        path = string.rstrip(path, chars='__init__.pyc')+'tests/exampledata/'
-        image_path = path + 'image0003.npy'
-        gold_path = path + 'recon_10.npy'
-        gold = np.load(gold_path)
-        opts = path + 'optical_train3.yaml'
-        im = holopy.load(image_path,optics=opts)
-        rec_im = holopy.reconstruct(im, 10e-6)
-        rec_im = abs(rec_im[:,:,0,0] * scipy.conj(rec_im[:,:,0,0]))
+        gold = get_example_data('recon_10.npy', 'optical_train3.yaml')
+        im = get_example_data('image0003.npy', 'optical_train3.yaml')
+        rec_im = propagate(im, 10e-6)
+        rec_im = abs(rec_im * scipy.conj(rec_im))
         rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
         assert_array_equal(rec_im.astype('uint8'),gold)

@@ -24,10 +24,9 @@ New custom display functions for holograms and reconstructions.
 from __future__ import division
 
 import numpy as np
-import holopy as hp
-from scatterpy.theory import Multisphere
+from ..scattering.theory import Multisphere
+from ..propagation import propagate
 import pylab
-from holopy.utility.helpers import _ensure_pair
 
 class plotter:
     def __init__(self, im, i=0, j=0, optics=None):
@@ -163,11 +162,11 @@ def infocuscheck(hologram, scatterer, offset = 0):
     """
     distance = scatterer.centers[:,2].mean()+offset
     #reconstruct the hologram
-    r = hp.reconstruct(hologram,distance)
+    r = propagate(hologram,distance)
     #reconstruct the scatterer
     theory = Multisphere(hologram.optics,[256,256])
     tmat = theory.calc_holo(scatterer)
-    r2 = hp.reconstruct(tmat,distance)
+    r2 = propagate(tmat,distance)
     #show the holograms and reconstructions  
     pylab.figure()
     scalemin = min(abs(r[:,:,0,0]).min(), abs(r2[:,:,0,0]).min())

@@ -19,6 +19,7 @@ from __future__ import division
 
 import numpy as np
 import tempfile
+import os
 from ..io import load, save
 from numpy.testing import assert_equal
 
@@ -37,6 +38,14 @@ Not equal to tolerance rtol={0}, atol={1}
  actual: {2}
  desired: {3}""".format(rtol, atol, actual, desired))
 
+def get_example_data_path(name):
+    path = os.path.abspath(__file__)
+    path = os.path.join(os.path.split(path)[0], 'exampledata')
+    return os.path.join(path, name)
+
+def get_example_data(name, optics_name):
+    return load(get_example_data_path(name), optics = get_example_data_path(optics_name))
+        
 def assert_read_matches_write(o):
     tempf = tempfile.TemporaryFile()
     save(tempf, o)

@@ -16,7 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 
-from .common import assert_obj_close, assert_read_matches_write
+from .common import (assert_obj_close, assert_read_matches_write,
+                     get_example_data_path)
 from .. import Optics, Data, load
 from .. process import normalize
 import tempfile
@@ -29,9 +30,7 @@ import numpy as np
 def test_hologram_io():
     o = Optics(wavelen=.66, index=1.33, pixel_scale=.1)
 
-    path = os.path.abspath(__file__)
-    path = os.path.join(os.path.split(path)[0], 'exampledata')
-    holo = normalize(load(os.path.join(path, 'image0001.npy'),
+    holo = normalize(load(get_example_data_path('image0001.npy'),
                                         optics=o))
 
     assert_read_matches_write(holo)

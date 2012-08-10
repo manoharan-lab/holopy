@@ -15,7 +15,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
-from data import (Data, Image, DataTarget, ImageTarget, Grid, Angles, Volume,
-                  UnevenGrid) 
-from metadata import Optics
-from io import load, load_image, save
+"""
+Propagation of light (electric fields) or holograms
+
+.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
+.. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
+.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
+"""
+from __future__ import division
+
+from propagate import propagate, trans_func

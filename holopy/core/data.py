@@ -142,6 +142,9 @@ class Grid(HolopyObject):
             self.selection = np.random.random(self.shape) > (1.0-self.selection)
         else:
             self.selection = None
+
+class UnevenGrid(Grid):
+    pass
             
 class Angles(HolopyObject):
     def __init__(self, theta = None, phi = None, units = 'radians'):
