@@ -1,0 +1,120 @@
+# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
+# Jerome Fung, and Ryan McGorty
+#
+# This file is part of Holopy.
+#
+# Holopy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Holopy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
+"""
+Classes for describing free parameters in fitting models
+
+.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jfung@physics.harvard.edu>
+"""
+
+import numpy as np
+from ..core.holopy_object import HolopyObject
+from .errors import GuessOutOfBoundsError, ParameterSpecificationError
+
+class Parameter(HolopyObject):
+    def __init__(self, guess = None, limit = None, name = None, **kwargs):
+        self.name = name
+        self.guess = guess
+        self.limit = limit
+        self.kwargs = kwargs
+        
+        if self.fixed:
+            if guess is not None and guess != limit:
+                raise GuessOutOfBoundsError(self)
+            self.guess = limit
+        else:
+            if limit is not None:
+                if guess > limit[1] or guess < limit[0]:
+                    raise GuessOutOfBoundsError(self)
+                                 
+            if guess is not None:
+                if abs(guess) > 1e-12:
+                    self.scale_factor = abs(guess)
+                else: # values near 0
+                    if limit is not None:
+                        self.scale_factor = (limit[1] - limit[0])/10.
+                    else:
+                        self.scale_factor = 1. # guess if necessary
+            elif limit is not None:
+                self.scale_factor = np.sqrt(limit[0]*limit[1])
+            else:
+                raise ParameterSpecificationError("In order to specify a parameter "
+                                                    "you must provide at least an "
+                                                    "initial guess or limit")
+    @property
+    def fixed(self):
+        if self.limit is not None:
+            try:
+                self.limit[1]
+            except TypeError:
+                return True
+        return False
+        
+    def scale(self, physical):
+        """
+        Scales parameters to approximately unity
+
+        Parameters
+        ----------
+        physical: np.array(dtype=float)
+
+        Returns
+        -------
+        scaled: np.array(dtype=float)
+        """
+        return physical / self.scale_factor
+     
+    def unscale(self, scaled):
+        """
+        Inverts scale's transformation
+
+        Parameters
+        ----------
+        scaled: np.array(dtype=float)
+
+        Returns
+        -------
+        physical: np.array(dtype=float)
+        """
+        return scaled * self.scale_factor
+
+class ComplexParameter(Parameter):
+    def __init__(self, real, imag, name = None):
+        '''
+        real and imag may be scalars or Parameters. If Parameters, they must be
+        pure real.
+        '''
+        if not isinstance(real, Parameter):
+            real = Parameter(real, real)
+        self.real = real
+        if not isinstance(imag, Parameter):
+            imag = Parameter(imag, imag)
+        self.imag = imag
+        self.name = name
+
+    @property
+    def guess(self):
+        try:
+            return self.real.guess + self.imag.guess*1.0j
+        except AttributeError: # in case self.imag is a scalar
+            #TODO: won't work if self.real is scalar, self.imag is a Parameter
+            return self.real.guess + self.imag * 1.j
+
+    
+# provide a shortcut name for Parameter since users will have to type it a lot
+par = Parameter

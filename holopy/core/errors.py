@@ -22,35 +22,24 @@ Error classes used in holopy
 """
 from __future__ import division
 
-class NotImplementedError(Exception):
-    def __init__(self, message):
-        self.message = message
-    def __str__(self):
-        return "Capability not implemented: " + self.message
 
-class LoadError(Exception):
-    def __init__(self, filename, message):
-        self.message = message
-        self.filename = filename
-    def __str__(self):
-        return "Error loading file " + self.filename + ": " + self.message
-    
-
-class NoFilesFound(Exception):
-    def __init__(self, pattern, location):
-        self.pattern = pattern
-        self.location = location
-    def __str__(self):
-        return ("No files matching {0} found in {1}.  This could be an error "
-                "with you not following our naming conventions.  Fits expect "
-                "filenames of the form image%%%%.tif".format(self.pattern,
-                                                             self.location))
 
 class Error(Exception):
     def __init__(self, message):
         self.message = message
     def __str__(self):
         return self.message
+
+class LoadError(Error):
+    def __init__(self, filename, message):
+        self.filename = filename
+        super(LoadError, self).__init__(message)
+    def __str__(self):
+        return "Error loading file " + self.filename + ": " + self.message
+
+class NotImplementedError(Error):
+    def __str__(self):
+        return "Capability not implemented: " + self.message
     
 class OpticsError(Error):
     def __str__(self):
@@ -60,36 +49,6 @@ class ImageError(Error):
     def __str__(self):
         return "Faulty image: " + self.message
 
-class OutOfBounds(Error):
-    def __str__(self):
-        return "Image access out of bounds: " + self.message
-
-class ModelInputError(Error):
-    def __str__(self):
-        return "Input error: " + self.message
-
-class ParameterDefinitionError(Error):
-    def __str__(self):
-        return "Input error: " + self.message
-
-class ParameterSpecficationError(Error):
-    pass
-
-class ModelDefinitionError(Error):
-    pass
-    
-class GuessOutOfBoundsError(ParameterSpecficationError):
-    def __init__(self, parameter):
-        self.par = parameter
-    def __str__(self):
-        if self.par.fixed:
-            return "guess {s.guess} does not match fixed value {s.limit}".format(s=self.par)
-        return "guess {s.guess} is not within bounds {s.limit}".format(s=self.par)
-    
-class MinimizerConvergenceFailed(Error):
-    def __init__(self, result, details):
-        self.result = result
-        self.details = details
 
 class PixelScaleNotSpecified(Exception):
     def __init__(self):

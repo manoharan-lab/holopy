@@ -26,6 +26,8 @@ from __future__ import division
 import warnings
 import exceptions
 
+from ..core.errors import Error
+
 class InvalidScatterer(Exception):
     pass
 
@@ -38,19 +40,20 @@ class OverlapWarning(exceptions.UserWarning):
                                                               self.overlaps)
 warnings.simplefilter('always', OverlapWarning)
 
-class ScattererDefinitionError(Exception):
+class ScattererDefinitionError(Error):
     def __init__(self, message, scatterer):
-        self.message = message
         self.scatterer = scatterer
+        super(ScattererDefinitionError, self).__init__(message)
     def __str__(self):
         return ("Error defining scatterer object of type " + 
                 self.scatterer.__class__.__name__ +
                 ".\n" + self.message)
 
-class TheoryNotCompatibleError(Exception):
+class TheoryNotCompatibleError(Error):
     def __init__(self, theory, scatterer):
         self.theory = theory
         self.scatterer = scatterer
+        super(TheoryNotCompatibleError, self).__init__(None)
     def __str__(self):
         return ("The implementation of the " +
                 self.theory.__class__.__name__ + 
@@ -58,18 +61,18 @@ class TheoryNotCompatibleError(Exception):
                 "scatterers of type " + 
                 self.scatterer.__class__.__name__)
 
-class UnrealizableScatterer(Exception):
+class UnrealizableScatterer(Error):
     def __init__(self, theory, scatterer, message):
         self.theory = theory
         self.scatterer = scatterer
-        self.message = message
+        super(UnrealizableScatterer, self).__init__(message)
     def __str__(self):
         return ("Cannot compute scattering with "+ self.theory.__class__.__name__
                 + " scattering theory for a scatterer of type " +
                 self.scatterer.__class__.__name__ + " because: " + self.message)
 
-class InvalidSelection(Exception):
-    def __init__(self, msg):
-        self.msg = msg
-    def __str__(self):
-        return self.msg
+class InvalidSelection(Error):
+    pass
+
+class ModelInputError(Error):
+    pass

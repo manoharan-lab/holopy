@@ -15,7 +15,7 @@ sphere," Applied Optics 42, 1710-1720, (1993).
 
 import numpy as np
 import miescatlib
-from ....core.errors import ModelInputError
+from ...errors import ModelInputError
 
 from numpy import exp, sin, cos, real, imag
 

@@ -54,6 +54,7 @@ class DataTarget(HolopyObject):
         for key, item in self._metadata.iteritems():
             setattr(self, key, item)
         return self
+
         
 
     @property
@@ -90,7 +91,7 @@ class DataTarget(HolopyObject):
         # get phi between 0 and 2pi
         phi = phi + 2*np.pi * (phi < 0)
         points = np.dstack((r, theta, phi))
-        if self.selection is not None:
+        if hasattr(self, 'selection') and self.selection is not None:
             points = points[self.selection]
             if not self.selection.any():
                 raise errors.InvalidSelection("No pixels selected, can't compute fields")
@@ -110,7 +111,7 @@ class DataTarget(HolopyObject):
             raise UnspecifiedPosition()
         
     def from_1d(self, data):
-        if self.selection is None:
+        if (not hasattr(self, 'selection')) or self.selection is None:
             # If the data is VectorData and the target is not, we need to adjust
             # the shape
             if hasattr(self, 'shape'):
@@ -246,7 +247,7 @@ class ImageTarget(DataTarget):
         if pixel_size is None:
             try:
                 pixel_size = optics.pixel
-            except errors.PixelScaleNotSpecified:
+            except (errors.PixelScaleNotSpecified, AttributeError):
                 pass
         if np.isscalar(pixel_size):
             pixel_size = np.repeat(pixel_size, len(shape))
