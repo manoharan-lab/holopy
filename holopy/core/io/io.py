@@ -29,8 +29,7 @@ from ..data import Image
 from ..metadata import Optics
 
 def load_image(inf, optics = None, pixel_size = None):
-    if isinstance(inf, (basestring, file)):
-        inf = image_file_io._read(inf)
+    arr = image_file_io._read(inf)
     if isinstance(optics, (basestring, file)):
         optics = serialize.load(optics)
         # We allowed optics yamls to be written without an !Optics tag, so for
@@ -39,7 +38,7 @@ def load_image(inf, optics = None, pixel_size = None):
         if isinstance(optics, dict):
             optics = Optics(**optics)
 
-    return Image(inf, optics = optics, pixel_size = pixel_size)
+    return Image(arr, optics = optics, pixel_size = pixel_size)
 
 def load(inf, pixel_size = None, optics = None):
     """

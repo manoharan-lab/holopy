@@ -49,8 +49,7 @@ class DependencyMissing(SkipTest, Exception):
     def __init__(self, dep):
         self.dep = dep
     def __str__(self):
-        return "External Dependency: " + self.dep + " could not be found.  Is \
-it installed and configured properly?"
+        return "External Dependency: " + self.dep + " could not be found, terminating."
 
 class DDA(ScatteringTheory):
     """

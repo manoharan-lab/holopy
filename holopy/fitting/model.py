@@ -130,7 +130,7 @@ class Model(HolopyObject):
     theory: :function:`scattering.theory.ScatteringTheory.calc_*`
         The scattering calc function that should be used to compute results for
         comparison with the data
-    metadata: :class:`core.data.DataTarget`
+    target_overlay: :class:`core.data.DataTarget`
         A DataTarget object with overrides for and of the metadata of the data
         you fit to.  Do not bother to provide entries for shape, position, and
         things that are provided in the data, use this for replacing wavelen with a
@@ -139,25 +139,27 @@ class Model(HolopyObject):
         Extra scaling parameter, hopefully this will be removed by improvements
         in our theory soon.  
     """
-    def __init__(self, scatterer, theory, metadata=None, alpha = None):
+    def __init__(self, scatterer, theory, target_overlay=None, alpha = None):
         if not isinstance(scatterer, Parametrization):
             scatterer = ParameterizedObject(scatterer)
         self.scatterer = scatterer
 
         self.theory = theory
 
-        if (metadata is not None) and (not isinstance(metadata, Parametrization)):
-            metadata = ParameterizedObject(metadata)
-        self.metadata = metadata
+        # TODO: make target_overlay a Parametrization so that you can fit to
+        # things in the target metadata
+        self.target_overlay = target_overlay
 
         if isinstance(alpha, Parameter) and alpha.name is None:
             alpha.name = 'alpha'
         self.alpha = alpha
-        
-        self.parameters = []
-        for parameterizition in (self.scatterer, self.metadata):
-            if parameterizition is not None:
-                self.parameters.extend(parameterizition.parameters)
+
+        # TODO: put this code back once target_overlay is a Paramtrization
+#        self.parameters = []
+#        for parameterizition in (self.scatterer, self.target_overlay):
+#            if parameterizition is not None:
+#                self.parameters.extend(parameterizition.parameters)
+        self.parameters = self.scatterer.parameters
         if self.alpha is not None:
             self.parameters.append(self.alpha)
         
@@ -175,8 +177,8 @@ class Model(HolopyObject):
 
     def get_target(self, data):
         target = copy(data)
-        if self.metadata is not None:
-            target._update_metadata(self.metadata._metadata)
+        if self.target_overlay is not None:
+            target.set_metadata(**self.target_overlay._metadata)
         return target
 
     def cost_func(self, data):

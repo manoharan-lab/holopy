@@ -20,7 +20,9 @@ from __future__ import division
 import numpy as np
 import tempfile
 import os
+import types
 from numpy.testing import assert_equal
+from ..holopy_object import OrderedDict
 
 from ..io import load, save
 from ..metadata import Optics
@@ -56,17 +58,19 @@ def assert_read_matches_write(o):
     tempf.seek(0)
     loaded = load(tempf)
     assert_obj_close(o, loaded)
-    
+
+# TODO: rewrite this.  I don't think this the right way to do things anymore, we
+# should be comparing _dict entries
 def assert_parameters_allclose(actual, desired, rtol=1e-7, atol = 0):
     if isinstance(actual, scatterer.Scatterer):
         actual = actual.parameters
-    if isinstance(actual, dict):
+    if isinstance(actual, OrderedDict):
         actual = np.array([p[1] for p in actual.iteritems()])
     if isinstance(desired, scatterer.Scatterer):
         desired = desired.parameters
-    if isinstance(desired, dict):
+    if isinstance(desired, OrderedDict):
         desired = np.array([p[1] for p in desired.iteritems()])
-    if actual.dtype == 'object':
+    if getattr(actual, 'dtype', None) == 'object' or getattr(desired, 'dtype', None) == 'object':
         # regular allclose will probably fail on objects, so if the scatterer
         # contains objects (like say paramters), compare them with our assert_obj_close
         assert_obj_close(actual, desired)
@@ -76,13 +80,22 @@ def assert_parameters_allclose(actual, desired, rtol=1e-7, atol = 0):
 def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = None):
     if context is None:
         context = 'tested_object'
-    if isinstance(actual, (scatterer.Scatterer, dict)):
-        assert_parameters_allclose(actual, desired, rtol, atol)
+    elif hasattr(actual, '_dict'):
+        assert_obj_close(actual._dict, desired._dict)
     elif isinstance(actual, (list, tuple)):
         assert_equal(len(actual), len(desired))
         for i, item in enumerate(actual):
             assert_obj_close(actual[i], desired[i], context =
                              '{0}[{1}]'.format(context, i))
+    elif isinstance(actual, types.MethodType):
+        assert_equal(actual.im_func.func_name, desired.im_func.func_name)
+        act_obj = actual.im_self
+        des_obj = desired.im_self
+        if act_obj is None and des_obj is not None:
+            act_obj = actual.im_class()
+        if act_obj is not None and des_obj is None:
+            des_obj = desired.im_class()
+        assert_obj_close(act_obj, des_obj)
     elif hasattr(actual, '__dict__'):
         for key, val in actual.__dict__.iteritems():
             assert_obj_close(getattr(actual, key), getattr(desired, key), rtol,

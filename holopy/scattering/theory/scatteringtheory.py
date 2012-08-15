@@ -239,7 +239,7 @@ def interfere_at_detector(e1, e2, detector_normal = (0, 0, 1)):
 
     new = ((abs(e1)**2 + abs(e2)**2 + 2* np.real(e1*e2)) *
            (1 - detector_normal)).sum(axis=-1)
-    new._update_metadata(e1._metadata)
+    new.set_metadata(**e1._metadata)
 
     return new
     

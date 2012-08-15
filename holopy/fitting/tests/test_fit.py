@@ -125,7 +125,7 @@ def test_fit_mie_par_scatterer():
 
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
-def test_fit_selection():
+def test_fit_random_subset():
     holo = normalize(get_example_data('image0001.npy', optics=optics))
 
     
@@ -134,12 +134,13 @@ def test_fit_selection():
                r = par(8.5e-7, (1e-8, 1e-5)), n = ComplexParameter(par(1.59, (1,2)),1e-4j))
 
     
-    model = Model(s, Mie.calc_holo, metadata=DataTarget(use_random_fraction = .1), alpha = par(.6, [.1,1]))
+    model = Model(s, Mie.calc_holo, target_overlay=DataTarget(use_random_fraction = .1), alpha = par(.6, [.1,1]))
 
     result = fit(model, holo)
  
-    
-    assert_parameters_allclose(result.parameters, gold_single, rtol=1e-2)
+    # we have to use a relatively loose tolerance here because the random
+    # selection occasionally causes the fit to be a bit worse
+    assert_parameters_allclose(result.parameters, gold_single, rtol=1.5e-2)
     assert_equal(model, result.model)
 
 
@@ -330,7 +331,6 @@ def test_serialization():
 
     temp.flush()
     temp.seek(0)
-    
     loaded = load(temp)
 
     assert_obj_close(result, loaded)

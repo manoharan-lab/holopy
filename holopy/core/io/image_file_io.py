@@ -88,6 +88,7 @@ def _read(filename, channel=0):
     # check file extension
     extension = os.path.splitext(filename)[1]
 
+
     might_be_color = True
     
     if extension in ['.npy', '.npz']:

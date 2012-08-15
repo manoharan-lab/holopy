@@ -34,8 +34,9 @@ import numpy as np
 import yaml
 import re
 import inspect
-from ..holopy_object import ordered_dump, SerializableMetaclass
-from ..data import Image, Data
+import types
+from ..holopy_object import SerializableMetaclass
+from ..data import Data
 from .. import data
 
 class LoadError(Exception):
@@ -126,11 +127,8 @@ def numpy_int_representer(dumper, data):
 yaml.add_representer(np.int64, numpy_int_representer)
 
 def class_representer(dumper, data):
-    if re.match('scatterpy.theory', data.__module__):
-        return dumper.represent_scalar('!class', "{0}.{1}".format(data.__module__,
-                                   data.__name__))
-    else:
-        raise NotImplemented
+    return dumper.represent_scalar('!class', "{0}.{1}".format(data.__module__,
+                                                              data.__name__))
 yaml.add_representer(SerializableMetaclass, class_representer)
 
 def class_loader(loader, node):
@@ -142,6 +140,26 @@ def class_loader(loader, node):
     return mod
 yaml.add_constructor(u'!theory', class_loader)
 
+def OrderedDict_representer(dumper, data):
+    return dumper.represent_dict(data)
+yaml.add_representer(OrderedDict, OrderedDict_representer)
+
+def instancemethod_representer(dumper, data):
+    func = data.im_func.func_name
+    obj = data.im_self
+    if isinstance(obj, SerializableMetaclass):
+        obj = obj()
+    return dumper.represent_scalar('!method', "{0} of {1}".format(func, yaml.dump(obj)))
+yaml.add_representer(types.MethodType, instancemethod_representer)
+
+def instancemethod_constructor(loader, node):
+    name = loader.construct_scalar(node)
+    tok = name.split('of')
+    method = tok[0].strip()
+    obj = 'dummy: '+ tok[1] 
+    obj = yaml.load(obj)['dummy']
+    return getattr(obj, method)
+yaml.add_constructor('!method', instancemethod_constructor)
 
 # legacy loader, this is only here because for a while we saved things as
 # !Minimizer {algorithm = nmpfit} and we still want to be able to read those yamls

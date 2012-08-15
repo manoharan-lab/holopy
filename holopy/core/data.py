@@ -40,21 +40,36 @@ class DataTarget(HolopyObject):
     **kwargs: varies
         Other metadata
     """
-    def __init__(self, positions = None, optics = None, use_random_fraction = None, **kwargs):
-        self._metadata = kwargs
-        self._update_metadata({'positions': positions, 'optics': optics,
-                               'use_random_fraction': use_random_fraction})
-        if use_random_fraction is not None:
-            self.selection = np.random.random(self.positions.shape) > (1.0-use_random_fraction)
-        else:
-            self.selection = None
+    def __init__(self, positions = None, optics = None, use_random_fraction =
+                 None, **kwargs):
+        self.set_metadata(positions = positions, optics =  optics,
+                          use_random_fraction = use_random_fraction, **kwargs)
 
-    def _update_metadata(self, newmeta):
-        self._metadata.update(newmeta)
+    @property
+    def selection(self):
+        # we only generate a random selection once
+        if not hasattr(self, '_selection'):
+            if self.use_random_fraction is not None:
+                self._selection = (np.random.random((self.positions.shape)) >
+                                   1.0-self.use_random_fraction)
+            else:
+                self._selection = None
+
+        # if it already exists, we just return the cached _selection
+        return self._selection
+
+
+    def _update_metadata(self):
         for key, item in self._metadata.iteritems():
-            setattr(self, key, item)
-        return self
+            if item is not None:
+                setattr(self, key, item)
 
+    def set_metadata(self, **kwargs):
+        if not hasattr(self, '_metadata'):
+            self._metadata = {}
+        self._metadata.update(kwargs)
+        self._update_metadata()
+        return self
         
 
     @property
@@ -122,7 +137,7 @@ class DataTarget(HolopyObject):
                 shape = np.append(shape, len(data.components))
             else:
                 shape = shape
-            return data.reshape(shape)._update_metadata(self._metadata)
+            return data.reshape(shape).set_metadata(**self._metadata)
         else:
             new = VectorData.vector_zeros_like(self, dtype = data.dtype)
             new[self.selection] = data
@@ -175,15 +190,15 @@ class Data(DataTarget, np.ndarray):
 
     # Normally we'd use an __init__ method, but subclassing ndarray
     # requires a __new__ method and an __array_finalize__ method
-    def __new__(cls, arr, **kwargs):
+    def __new__(cls, arr, dtype = None, **kwargs):
         # things like numpy.std give us 0d arrays, the user probably expects
         # python scalars, so return one instead.  
         if hasattr(arr, 'ndim') and arr.ndim == 0:
             # arr.max pulls out the singular value of the 0d array
             return arr.max()
-        return np.array(arr).view(cls)
+        return np.asarray(arr, dtype = dtype).view(cls)
 
-    def __init__(self, arr, positions = None, *args, **kwargs):
+    def __init__(self, arr, positions = None, dtype = None, *args, **kwargs):
         super(Data, self).__init__(positions, *args, **kwargs)
 
     def __repr__(self):
@@ -197,9 +212,7 @@ class Data(DataTarget, np.ndarray):
         # this function finishes the construction of our new object by copying
         # over the metadata
         if hasattr(obj, '_metadata'):
-            self._metadata = obj._metadata
-        for item in getattr(obj, '_metadata', []):
-            setattr(self, item, getattr(obj, item))
+            self.set_metadata(**obj._metadata)
 
     def __array_wrap__(self, out_arr, context=None):
         # this function is needed so that if we run another numpy
@@ -230,10 +243,11 @@ class VectorData(Data):
     @classmethod
     def vector_zeros_like(cls, target, components = ('x', 'y', 'z'), dtype = None):
         if isinstance(target, VectorData):
-            return np.zeros_like(target)
+            return np.zeros_like(target, dtype = dtype)
         if isinstance(target, Data):
             return cls(np.repeat(np.zeros_like(target)[...,np.newaxis], len(components),
-                                 axis=-1), components = components, **target._metadata)
+                                 axis=-1), components = components,
+                       dtype = dtype, **target._metadata)
         elif hasattr(target.positions, 'shape'):
             return cls(np.zeros(np.append(target.positions.shape,
                                           len(components)), dtype = dtype),
@@ -284,7 +298,6 @@ class Image(ImageTarget, Data):
         # directly from the supplied arr
         del d['shape']
         return d
-
 
     def resample(self, shape, window=None):
         """
