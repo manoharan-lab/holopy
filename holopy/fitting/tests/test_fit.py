@@ -28,21 +28,18 @@ import numpy as np
 
 from nose.tools import with_setup, nottest
 from nose.plugins.attrib import attr
-from numpy.testing import assert_equal, assert_approx_equal, assert_raises, dec
-from ...scattering.scatterer import Sphere, SphereCluster
-from ...scattering.theory import Mie, Multisphere
-from ...core import ImageTarget, Optics
-from ..parameter import Parameter, ComplexParameter, par
-from ..model import Parametrization, Model
-from ..errors import GuessOutOfBoundsError
+from numpy.testing import assert_equal, assert_approx_equal, assert_raises, dec, assert_allclose
+from ...scattering.scatterer import Sphere, SphereCluster, ScattererByFunction
+from ...scattering.theory import Mie, Multisphere, DDA
+from ...core import Optics, ImageTarget, load, save, DataTarget
+from ...core.process import normalize
+from .. import fit, Parameter, ComplexParameter, par, Parametrization, Model
+from ..minimizer import Nmpfit
+from ..errors import ParameterSpecificationError, MinimizerConvergenceFailed
 
 
-from holopy.analyze.fit import (par, Parameter, Model, fit, Nmpfit,
-                                ParameterSpecficationError, GuessOutOfBoundsError,
-                                MinimizerConvergenceFailed, Parameterization,
-                                ComplexParameter) 
-
-from ...core.tests.common import assert_obj_close
+from ...scattering.tests.test_dda import dda_external_not_available
+from ...core.tests.common import assert_obj_close, get_example_data, assert_parameters_allclose
 
 
 def setup_optics():
@@ -65,8 +62,7 @@ def teardown_optics():
 
 gold_single = OrderedDict((('center[0]', 5.534e-6),
                ('center[1]', 5.792e-6),
-               ('center[2]', 1.415e-5),
-               ('n.imag', 1e-4),
+               ('center[2]', 1.415e-5),               ('n.imag', 1e-4),
                ('n.real', 1.582),
                ('r', 6.484e-7)))
 gold_alpha = .6497
@@ -81,13 +77,7 @@ gold_single = OrderedDict((('center[0]', 5.534e-6),
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_fit_mie_single():
-    """
-    Fit Mie theory to a hologram of a single sphere
-    """
-    path = os.path.abspath(hp.__file__)
-    path = os.path.join(os.path.split(path)[0],'tests', 'exampledata')
-    holo = hp.process.normalize(hp.load(os.path.join(path, 'image0001.npy'),
-                                        optics=optics))
+    holo = normalize(get_example_data('image0001.npy', optics))
 
     parameters = [Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5]),
                   Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
@@ -100,7 +90,7 @@ def test_fit_mie_single():
         return Sphere(n=n+1e-4j, r = r, center = (x, y, z))
 
     
-    model = Model(Parameterization(make_scatterer, parameters), Mie,
+    model = Model(Parametrization(make_scatterer, parameters), Mie.calc_holo,
                   alpha=Parameter(name='alpha', guess=.6, limit = [.1, 1]))
 
     result = fit(model, holo)
@@ -112,19 +102,15 @@ def test_fit_mie_single():
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_fit_mie_par_scatterer():
-    path = os.path.abspath(hp.__file__)
-    path = os.path.join(os.path.split(path)[0],'tests', 'exampledata')
-    holo = hp.process.normalize(hp.load(os.path.join(path, 'image0001.npy'),
-                                        optics=optics))
+    holo = normalize(get_example_data('image0001.npy', optics))
 
-    
     s = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
                          par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
                r = par(8.5e-7, (1e-8, 1e-5)), 
                n = ComplexParameter(par(1.59, (1,2)), 1e-4j))
 
     
-    model = Model(s, Mie, alpha = par(.6, [.1,1]))
+    model = Model(s, Mie.calc_holo, alpha = par(.6, [.1,1]))
 
     result = fit(model, holo)
 
@@ -143,10 +129,7 @@ def test_fit_mie_par_scatterer():
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_fit_selection():
-    path = os.path.abspath(hp.__file__)
-    path = os.path.join(os.path.split(path)[0],'tests', 'exampledata')
-    holo = hp.process.normalize(hp.load(os.path.join(path, 'image0001.npy'),
-                                        optics=optics))
+    holo = normalize(get_example_data('image0001.npy', optics=optics))
 
     
     s = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
@@ -154,7 +137,7 @@ def test_fit_selection():
                r = par(8.5e-7, (1e-8, 1e-5)), n = ComplexParameter(par(1.59, (1,2)),1e-4j))
 
     
-    model = Model(s, Mie, selection = .1, alpha =  par(.6, [.1,1], 'alpha'))
+    model = Model(s, Mie.calc_holo, metadata=DataTarget(use_random_fraction = .1), alpha = par(.6, [.1,1]))
 
     result = fit(model, holo)
  
@@ -301,7 +284,7 @@ def test_minimizer():
     assert_obj_close(gold_dict, result)
 
     # test inadequate specification
-    with assert_raises(ParameterSpecficationError):
+    with assert_raises(ParameterSpecificationError):
         minimizer.minimize([Parameter(name = 'a')], cost_func)
 
     # now test limiting minimizer iterations
@@ -337,38 +320,34 @@ def test_serialization():
 
     alpha = par(.6, [.1, 1], 'alpha')
 
-    mie = Mie(optics, 100)
+    target = ImageTarget(shape = 100, optics = optics) 
 
-    model = Model(par_s, Mie, alpha=alpha)
+    model = Model(par_s, Mie.calc_holo, alpha=alpha)
 
-    holo = mie.calc_holo(model.scatterer.guess, model.alpha.guess)
+    holo = Mie.calc_holo(model.scatterer.guess, target, model.alpha.guess)
 
     result = fit(model, holo)
 
     temp = tempfile.NamedTemporaryFile()
-    hp.io.save(temp, result)
+    save(temp, result)
 
     temp.flush()
     temp.seek(0)
     
-    loaded = hp.io.yaml_io.load(temp)
+    loaded = load(temp)
 
     assert_obj_close(result, loaded)
 
 
-
-from scatterpy.tests.test_dda import missing_dependencies
-
-@dec.skipif(missing_dependencies(), 'a-dda not installed')
+@dec.skipif(dda_external_not_available(), 'a-dda not installed')
 @attr('slow')
 def test_dda_fit():
-    from scatterpy.theory import DDA
     s = Sphere(n = 1.59, r = .2, center = (5, 5, 5))
-    o = hp.Optics(wavelen = .66, index=1.33, pixel_scale=.1)
+    o = Optics(wavelen = .66, index=1.33, pixel_scale=.1)
 
-    mie = Mie(o, 100)
+    target = ImageTarget(optics = o, shape = 100)
 
-    h = mie.calc_holo(s)
+    h = Mie.calc_holo(s, target)
 
 
     def in_sphere(r):
@@ -385,11 +364,13 @@ def test_dda_fit():
     parameters = [par(.18, [.1, .3], name='r', step=.1), par(5, [4, 6], 'x'),
                   par(5, [4,6], 'y'), par(5.2, [4, 6], 'z')]
 
-    p = Parameterization(make_scatterer, parameters)
+    p = Parametrization(make_scatterer, parameters)
 
-    model = Model(p, DDA)
+    model = Model(p, DDA.calc_holo)
 
     res = fit(model, h)
 
-    assert_equal(res.parameters, OrderedDict([('r', 0.2003609439787491), ('x', 5.0128083665603995), ('y', 5.0125252883133617), ('z', 4.9775097284878775)]))
+    assert_parameters_allclose(res.parameters, OrderedDict([('r',
+    0.2003609439787491), ('x', 5.0128083665603995), ('y', 5.0125252883133617),
+    ('z', 4.9775097284878775)]), rtol=1e-3)
 

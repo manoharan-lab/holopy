@@ -78,7 +78,7 @@ class Parametrization(HolopyObject):
         return self.make_from(guess_pars)
 
 
-class ParameterizedTarget(Parametrization):
+class ParameterizedObject(Parametrization):
     def __init__(self, target):
         self.target = target
 
@@ -141,13 +141,13 @@ class Model(HolopyObject):
     """
     def __init__(self, scatterer, theory, metadata=None, alpha = None):
         if not isinstance(scatterer, Parametrization):
-            scatterer = ParameterizedTarget(scatterer)
+            scatterer = ParameterizedObject(scatterer)
         self.scatterer = scatterer
 
         self.theory = theory
 
         if (metadata is not None) and (not isinstance(metadata, Parametrization)):
-            metadata = ParameterizedTarget(metadata)
+            metadata = ParameterizedObject(metadata)
         self.metadata = metadata
 
         if isinstance(alpha, Parameter) and alpha.name is None:
@@ -173,10 +173,14 @@ class Model(HolopyObject):
     def compare(self, calc, data, selection = None):
         return (data - calc).ravel()
 
-    def cost_func(self, data):
+    def get_target(self, data):
         target = copy(data)
         if self.metadata is not None:
             target._update_metadata(self.metadata._metadata)
+        return target
+
+    def cost_func(self, data):
+        target = self.get_target(data)
         def cost(pars):
             calc = self.theory(self.scatterer.make_from(pars), target, scaling =
                           self.get_alpha(pars))

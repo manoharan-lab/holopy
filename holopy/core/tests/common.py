@@ -20,9 +20,10 @@ from __future__ import division
 import numpy as np
 import tempfile
 import os
-from ..io import load, save
 from numpy.testing import assert_equal
 
+from ..io import load, save
+from ..metadata import Optics
 from ...scattering import scatterer
 
 try:
@@ -43,8 +44,10 @@ def get_example_data_path(name):
     path = os.path.join(os.path.split(path)[0], 'exampledata')
     return os.path.join(path, name)
 
-def get_example_data(name, optics_name):
-    return load(get_example_data_path(name), optics = get_example_data_path(optics_name))
+def get_example_data(name, optics):
+    if not isinstance(optics, Optics):
+        optics = get_example_data_path(optics)
+    return load(get_example_data_path(name), optics = optics)
         
 def assert_read_matches_write(o):
     tempf = tempfile.TemporaryFile()

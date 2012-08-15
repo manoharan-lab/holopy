@@ -21,17 +21,13 @@ Test fitting a hologram using nmpfit without any wrapping
 from __future__ import division
 
 import numpy as np
-import os
-import string
-import pylab
 
-import holopy
-#from scatterpy.theory import mie_fortran as mie
-from scatterpy.theory import mie
-from scatterpy.theory import Mie
-from scatterpy.scatterer import Sphere, SphereCluster
-from holopy.third_party import nmpfit
-from holopy.process import normalize
+from ...scattering.theory import Mie
+from ...scattering.scatterer import Sphere
+from ..third_party import nmpfit
+from ...core import Optics
+from ...core.process import normalize
+from ...core.tests.common import assert_parameters_allclose, get_example_data
 
 # these are the exact values; should correspond to fit results
 # in order: real index, imag index, radius , x, y, z, alpha, fnorm, fit status
@@ -48,7 +44,7 @@ divergence = 0
 pixel_scale = [.1151e-6, .1151e-6]
 index = 1.33
 
-optics = holopy.optics.Optics(wavelen=wavelen, index=index,
+optics = Optics(wavelen=wavelen, index=index,
                               pixel_scale=pixel_scale,
                               polarization=polarization,
                               divergence=divergence)
@@ -105,40 +101,19 @@ parinfo = [{'parname':'n_particle_real',
            'limits': [0.0, 1.0],
            'value': scaling_alpha}] 
 
-path = os.path.abspath(holopy.__file__)
-path = string.rstrip(path, chars='__init__.pyc')+'tests/exampledata/'
+holo = normalize(get_example_data('image0001.npy', optics))
 
-# load the target file
-# be sure to normalize, or fit will fail
-holo = normalize(holopy.load(path + 'image0001.npy'))
-
-# or uncomment to fit a calculated hologram (residual should be zero
-# if fit succeeds)
-#holo = mie.forward_holo(100, optics, gold_single[0], gold_single[1],
-#                        gold_single[2], gold_single[3],
-#                        gold_single[4], gold_single[5], gold_single[6])
-
-theory = Mie(imshape = holo.shape, optics=optics)
 
 # define the residual function
 def residfunct(p, fjac = None):
     # nmpfit calls residfunct w/fjac as a kwarg, we ignore
 
-    # uncomment for old interface to mie calculation
-    #calculated = mie.forward_holo(holo.shape[0], optics, p[0],
-    #                              n_particle_imag, p[1], p[2], p[3],
-    #                              p[4], p[5])
-
-    # below uses new class-based interface to mie calculation
     sphere = Sphere(n=p[0]+n_particle_imag*1j, r=p[1], center = p[2:5])
-    calculated = theory.calc_holo(sphere, alpha=p[5])
+    calculated = Mie.calc_holo(sphere, holo, scaling=p[5])
 
     status = 0
     derivates = holo - calculated
 
-    # print sum of squares and param values for debugging
-    print "sum of squares: ", np.dot(derivates.ravel(), derivates.ravel())
-    print "params: ", p
     return([status, derivates.ravel()])
 
 def test_nmpfit():
@@ -146,8 +121,5 @@ def test_nmpfit():
                              xtol = xtol, gtol = gtol, damp = damp,
                              maxiter = maxiter, quiet = quiet)
 
-    print "Fit finished with status ", fitresult.status
-    print "Difference from expected values: ", \
-        fitresult.params - gold_single[np.array([0,2,3,4,5,6])] 
-
-
+    assert_parameters_allclose(fitresult.params,
+                               gold_single[np.array([0,2,3,4,5,6])], rtol=1e-3)

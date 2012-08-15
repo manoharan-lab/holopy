@@ -30,7 +30,7 @@ import time
 
 from ..core.holopy_object import HolopyObject
 from .errors import MinimizerConvergenceFailed
-from .minimize import Minimizer, Nmpfit
+from .minimizer import Minimizer, Nmpfit
 
 class FitResult(HolopyObject):
     def __init__(self, parameters, scatterer, chisq, rsq, converged, time, model,
@@ -68,8 +68,8 @@ def fit(model, data, minimizer=Nmpfit):
 
     # compute goodness of fit parameters
     fitted_scatterer = model.scatterer.make_from(fitted_pars)
-    theory = model.theory(data.optics, data.shape)
-    fitted_holo = theory.calc_holo(fitted_scatterer, model.get_alpha(fitted_pars)) 
+    fitted_holo = model.theory(fitted_scatterer, model.get_target(data),
+                               scaling = model.get_alpha(fitted_pars)) 
     chisq = float((((fitted_holo-data))**2).sum() / fitted_holo.size)
     rsq = float(1 - ((data - fitted_holo)**2).sum()/((data - data.mean())**2).sum())
 

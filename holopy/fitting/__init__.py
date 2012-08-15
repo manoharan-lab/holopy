@@ -15,3 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
+
+from fit import fit
+from model import Model, Parametrization
+from parameter import Parameter, par, ComplexParameter
