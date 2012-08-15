@@ -81,6 +81,7 @@ class Parameterization(SerializeByConstructor):
     def make_from(self, parameters):
         # parameters is an ordered dictionary
         for_target = {}
+
         for arg in inspect.getargspec(self.pars_to_target).args:
             if (arg + '.real') in parameters and (arg + '.imag') in parameters:
                 for_target[arg] = (parameters[arg + '.real'] + 1.j *
@@ -336,10 +337,11 @@ class Nmpfit(Minimizer):
         fitresult = nmpfit.mpfit(resid_wrapper, parinfo=nmp_pars, ftol = self.ftol,
                                  xtol = self.xtol, gtol = self.gtol, damp = self.damp,
                                  maxiter = self.maxiter, quiet = self.quiet)
-        if fitresult.status == 5:
-            raise MinimizerConvergenceFailed(fitresult.params, fitresult)
 
         result_pars = self.pars_from_minimizer(parameters, fitresult.params)
+
+        if fitresult.status == 5:
+            raise MinimizerConvergenceFailed(result_pars, fitresult)
         
         if debug == True:
             return result_pars, fitresult, nmp_pars
