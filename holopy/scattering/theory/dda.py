@@ -34,6 +34,9 @@ import tempfile
 import glob
 import os
 import time
+
+from nose.plugins.skip import SkipTest
+
 from .scatteringtheory import ScatteringTheory
 from .mie_f import mieangfuncs
 from ..errors import TheoryNotCompatibleError
@@ -42,7 +45,7 @@ from ..scatterer import (Sphere, CoatedSphere, VoxelatedScatterer,
                          ScattererByFunction, MultidomainScattererByFunction,
                          Ellipsoid, SphereCluster)
 
-class DependencyMissing(Exception):
+class DependencyMissing(SkipTest, Exception):
     def __init__(self, dep):
         self.dep = dep
     def __str__(self):

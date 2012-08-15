@@ -28,7 +28,7 @@ import numpy as np
 
 from nose.tools import with_setup, nottest
 from nose.plugins.attrib import attr
-from numpy.testing import assert_equal, assert_approx_equal, assert_raises, dec, assert_allclose
+from numpy.testing import assert_equal, assert_approx_equal, assert_raises, assert_allclose
 from ...scattering.scatterer import Sphere, SphereCluster, ScattererByFunction
 from ...scattering.theory import Mie, Multisphere, DDA
 from ...core import Optics, ImageTarget, load, save, DataTarget
@@ -36,9 +36,6 @@ from ...core.process import normalize
 from .. import fit, Parameter, ComplexParameter, par, Parametrization, Model
 from ..minimizer import Nmpfit
 from ..errors import ParameterSpecificationError, MinimizerConvergenceFailed
-
-
-from ...scattering.tests.test_dda import dda_external_not_available
 from ...core.tests.common import assert_obj_close, get_example_data, assert_parameters_allclose
 
 
@@ -339,7 +336,6 @@ def test_serialization():
     assert_obj_close(result, loaded)
 
 
-@dec.skipif(dda_external_not_available(), 'a-dda not installed')
 @attr('slow')
 def test_dda_fit():
     s = Sphere(n = 1.59, r = .2, center = (5, 5, 5))

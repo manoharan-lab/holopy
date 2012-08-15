@@ -24,7 +24,7 @@ from __future__ import division
 
 
 from nose.tools import assert_raises
-from numpy.testing import assert_almost_equal, dec
+from numpy.testing import assert_almost_equal
 import numpy as np
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
@@ -32,20 +32,11 @@ from nose.plugins.attrib import attr
 from ..scatterer import Sphere, Ellipsoid, CoatedSphere
 from ...core import ImageTarget, Optics
 from ..theory import Mie, DDA
-from ..theory.dda import DependencyMissing
 from ..scatterer.voxelated import ScattererByFunction, VoxelatedScatterer
 from .common import assert_allclose, verify
 
 
 import os.path
-
-def dda_external_not_available():
-    try:
-        DDA()
-    except DependencyMissing:
-        return True
-    return False
-    
 
 # nose setup/teardown methods
 def setup_optics():
@@ -67,7 +58,6 @@ def teardown_optics():
     global optics, target
     del optics, target
 
-@dec.skipif(dda_external_not_available(), "a-dda not installed")
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_sphere():
@@ -77,7 +67,6 @@ def test_DDA_sphere():
     dda_holo = DDA.calc_holo(sc, target)
     assert_allclose(mie_holo, dda_holo, rtol=.0015)
 
-@dec.skipif(dda_external_not_available(), "a-dda not installed")
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_voxelated():
@@ -125,7 +114,6 @@ def test_DDA_voxelated():
     assert_allclose(sphere_holo, gen_holo, rtol=1e-3)
 
 @attr('fast')
-@dec.skipif(dda_external_not_available(), "a-dda not installed")
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_voxelated_complex():
     o = Optics(wavelen=.66, index=1.33, pixel_scale=.1)
@@ -147,7 +135,6 @@ def test_voxelated_complex():
 
     
 @attr('medium')
-@dec.skipif(dda_external_not_available(), "a-dda not installed")
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_coated():
     cs = CoatedSphere(
@@ -159,7 +146,6 @@ def test_DDA_coated():
 
     assert_allclose(lmie_holo, dda_holo, rtol = 5e-5)
 
-@dec.skipif(dda_external_not_available(), "a-dda not installed")
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_Ellipsoid_dda():
     e = Ellipsoid(1.5, r = (.5, .1, .1), center = (1, -1, 10))
