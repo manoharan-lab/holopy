@@ -15,27 +15,6 @@ core Package
     :members:
     :show-inheritance:
 	   
-:mod:`errors` Module
---------------------
-
-.. automodule:: holopy.core.errors
-    :members:
-    :show-inheritance:
-
-:mod:`helpers` Module
----------------------
-
-.. automodule:: holopy.core.helpers
-    :members:
-    :show-inheritance:
-
-:mod:`holopy_object` Module
----------------------------
-
-.. automodule:: holopy.core.holopy_object
-    :members:
-    :show-inheritance:
-
 :mod:`math` Module
 ------------------
 
@@ -43,13 +22,17 @@ core Package
     :members:
     :show-inheritance:
 
+:mod:`io` Package
+-----------------
 
-Subpackages
------------
+.. autofunction:: holopy.core.io.io.load
+				  
+.. autofunction:: holopy.core.io.io.save   
+
+:mod:`process` Package
+----------------------
 
 .. toctree::
-
-    holopy.core.io
     holopy.core.process
 
 

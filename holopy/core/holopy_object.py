@@ -16,7 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 """
-Metaclass to provide default saving to yaml files for scatterpy and holopy objects
+Root class for all of holopy.  This class provides serialization to and from
+yaml text file for all holopy objects.  
 
 yaml files are structured text files designed to be easy for humans to
 read and write but also easy for computers to read.  Holopy uses them

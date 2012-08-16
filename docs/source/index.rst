@@ -46,7 +46,7 @@ Contents:
 
    credits
    users/index
-   reference/modules
+   reference/holopy
 
 
 Indices and tables

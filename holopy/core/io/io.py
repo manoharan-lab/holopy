@@ -46,7 +46,7 @@ def load(inf, pixel_size = None, optics = None):
 
     Parameters
     ----------
-    inf: singe or list of basestring or files
+    inf : singe or list of basestring or files
         File to load.  If the file is a yaml file, all other arguments are
         ignored.  If inf is a list of image files or filenames they are all
         loaded as a a timeseries hologram
@@ -65,8 +65,7 @@ def load(inf, pixel_size = None, optics = None):
 
     Returns
     -------
-    obj: The object loaded, :class:`holopy.hologram.Hologram`, or as loaded from
-        yaml
+    obj : The object loaded, :class:`holopy.core.data.Image`, or as loaded from yaml
 
     """
 
@@ -80,6 +79,27 @@ def load(inf, pixel_size = None, optics = None):
     return load_image(inf, optics = optics, pixel_size = pixel_size)
 
 def save(outf, obj):
+    """
+    Save a holopy object
+
+    Will save objects as yaml text containing all information about the object
+    unless outf is a filename with an image extension, in which case it will
+    save an image, truncating metadata.
+
+    Parameters
+    ----------
+    outf : basestring or file
+        Location to save the object
+    obj : :class:`holopy.core.holopy_object.HolopyObject`
+        The object to save
+
+    Notes
+    -----
+    Data objects are actually saved as an invalid yaml file consisting of a yaml
+    header and numpy .npy binary data.  This is done because yaml's saving of
+    binary data is very slow for large Data.  Holopy can read these 'yaml'
+    files, but any other yaml implementation will get confused.  
+    """
     if isinstance(outf, basestring):
         filename, ext = os.path.splitext(outf)
         if ext in ['.tif', '.TIF', '.tiff', '.TIFF']:
