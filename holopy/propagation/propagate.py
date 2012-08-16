@@ -32,8 +32,7 @@ from ..core import Data, Volume, Image, Grid, UnevenGrid
 # May eventually want to have this function take a propagation model
 # so that we can do things other than convolution
 
-def propagate(data, d, ft=None, fourier_filter=None, gradient_filter=False,
-              project_along_z=False):
+def propagate(data, d, gradient_filter=False):
     """
     Propagates a hologram a distance d along the optical axis.
 
@@ -54,22 +53,10 @@ def propagate(data, d, ft=None, fourier_filter=None, gradient_filter=False,
        Hologram to propagate
     d : float
        Distance to propagate, in meters
-    ft : ndarray<complex> (optional)
-       Fourier transform of image to propagate, if given, ft will be used
-       instead of holo
-    fourier_filter : ndarray<complex> (optional)
-       Fourier filter to apply to reconstructed data
-    squeeze : Boolean (optional)
-       If True, remove size 1 dimensions (so if a single z is provided
-       return holo will be a 2d array
     gradient_filter : float
        For each distance, compute a second propagation a distance
        gradient_filter away and subtract.  This enhances contrast of
        rapidly varying features 
-    project_along_z : Boolean (optional)
-       Set to True to reconstruct a projection of z-slices, d should be an
-       array of distances, return will be a sum of reconstructions at those
-       distances 
 
     Returns
     -------
@@ -84,23 +71,11 @@ def propagate(data, d, ft=None, fourier_filter=None, gradient_filter=False,
     machinery. 
     """
     
-    m, n = data.shape[:2]
-            
-    G = trans_func([m, n], data.optics, d, squeeze=False,
-                   gradient_filter=gradient_filter,
-                   zprojection=project_along_z)
+    G = trans_func(data.shape[:2], data.positions.spacing,
+                   data.optics.med_wavelen, d, squeeze=False,
+                   gradient_filter=gradient_filter)
     
-    # Half dimensions of the psf, they will be used to define the area
-    # on which it is applied
-    mm, nn = [dim/2 for dim in G.shape[:2]]
-    if ft is None:
-        ft = fft(data)
-    else:
-        # make a local copy so that we don't modify the ft we are passed
-        ft = ft.copy()
-
-    if fourier_filter is not None:
-        ft *= fourier_filter
+    ft = fft(data)
 
     ft = np.repeat(ft[:, :, np.newaxis,...], G.shape[2], axis=2)
 
@@ -140,8 +115,8 @@ def apply_trans_func(ft, G):
     return ft
 
 
-def trans_func(shape, optics, d, cfsp=0, squeeze=True,
-               gradient_filter=0, zprojection=False):
+def trans_func(shape, spacing, wavelen, d, cfsp=0, squeeze=True,
+               gradient_filter=0):
     """
     Calculates the optical transfer function to use in reconstruction
 
@@ -154,8 +129,10 @@ def trans_func(shape, optics, d, cfsp=0, squeeze=True,
     ----------
     shape : (int, int)
        maximum dimensions of the transfer function
-    optics : :class:`holopy.optics.Optics`
-       Optics object with pixel and wavelength information
+    spacing : (float, float)
+       the spacing between point is the grid to calculate
+    wavelen : float
+       the wavelength in the medium you are propagating through
     d : float or list of floats
        reconstruction distance.  If list or array, this function will
        return an array of transfer functions, one for each distance 
@@ -169,9 +146,6 @@ def trans_func(shape, optics, d, cfsp=0, squeeze=True,
     gradient_filter : float (optional)
        Subtract a second transfer function a distance gradient_filter
        from each z 
-    zprojection : Boolean (optional)
-       Set to True to return a sum of the transfer functions at
-       distances z, used to calculate a projected hologram 
 
     Returns
     -------
@@ -189,8 +163,7 @@ def trans_func(shape, optics, d, cfsp=0, squeeze=True,
     """
     d = np.array([d])
 
-    dx, dy = optics.pixel
-    wavelen = optics.med_wavelen
+    dx, dy = spacing
     xdim, ydim = _ensure_pair(shape)
 
     d = d.reshape([1, 1, d.size])
@@ -245,10 +218,6 @@ def trans_func(shape, optics, d, cfsp=0, squeeze=True,
 
     if cfsp > 0:
         g = g**cfsp
-
-    if zprojection and len(g.shape)>2:
-        g = g.sum(axis=-1)
-        g = g[..., np.newaxis]
 
     if squeeze:
         return np.squeeze(g)
