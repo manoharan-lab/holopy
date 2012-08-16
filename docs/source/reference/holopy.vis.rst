@@ -15,17 +15,3 @@ vis Package
     :members:
     :show-inheritance:
 
-:mod:`vis2d` Module
--------------------
-
-.. automodule:: holopy.vis.vis2d
-    :members:
-    :show-inheritance:
-
-:mod:`vis3d` Module
--------------------
-
-.. automodule:: holopy.vis.vis3d
-    :members:
-    :show-inheritance:
-

@@ -49,10 +49,11 @@ def propagate(data, d, gradient_filter=False):
 
     Parameters
     ----------
-    data : :class:`holopy.hologram.Hologram`
+    data : :class:`holopy.core.data.Image`
        Hologram to propagate
-    d : float
-       Distance to propagate, in meters
+    d : float or list of floats
+       Distance to propagate, in meters.  A list tells to propagate to several
+       distances and return the volume
     gradient_filter : float
        For each distance, compute a second propagation a distance
        gradient_filter away and subtract.  This enhances contrast of
@@ -60,7 +61,7 @@ def propagate(data, d, gradient_filter=False):
 
     Returns
     -------
-    data(d) : :class:`holopy.hologram.Hologram`
+    data : :class:`holopy.core.data.Image` or :class:`holopy.core.data.Volume`
        The hologram progagated to a distance d from its current location.  
         
     Notes

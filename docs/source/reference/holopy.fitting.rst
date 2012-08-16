@@ -8,24 +8,12 @@ fitting Package
     :members:
     :show-inheritance:
 
-:mod:`errors` Module
---------------------
-
-.. automodule:: holopy.fitting.errors
-    :members:
-    :show-inheritance:
-
-:mod:`fit` Module
------------------
-
-.. automodule:: holopy.fitting.fit
-    :members:
-    :show-inheritance:
-
-:mod:`minimizer` Module
+.. autofunction:: holopy.fitting.fit.fit
+	   
+:mod:`parameter` Module
 -----------------------
 
-.. automodule:: holopy.fitting.minimizer
+.. automodule:: holopy.fitting.parameter
     :members:
     :show-inheritance:
 
@@ -35,12 +23,13 @@ fitting Package
 .. automodule:: holopy.fitting.model
     :members:
     :show-inheritance:
-
-:mod:`parameter` Module
+	   
+:mod:`minimizer` Module
 -----------------------
 
-.. automodule:: holopy.fitting.parameter
+.. automodule:: holopy.fitting.minimizer
     :members:
     :show-inheritance:
+
 
 

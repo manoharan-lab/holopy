@@ -48,6 +48,24 @@ class FitResult(HolopyObject):
 
 
 def fit(model, data, minimizer=Nmpfit):
+    """
+    fit a model to some data
+
+    Parameters
+    ----------
+    model : :class:`holopy.fitting.model.Model` object
+        A model describing the scattering system which leads to your data and
+        the parameters to vary to fit it to the data
+    data : :class:`holopy.core.data.Data` object
+        The data o fit
+    minimizer : (optional) :class:`holopy.fitting.minimizer.Minimizer`
+        The minimizer to use to do the fit
+
+    Returns
+    -------
+    result : :class:`FitResult`
+        an object containing the best fit paramters and information about the fit
+    """
     time_start = time.time()
 
     if issubclass(minimizer, Minimizer):

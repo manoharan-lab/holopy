@@ -4,7 +4,12 @@
 Propagation/Reconstruction
 **************************
 
-The classical way of working with holograms is to optically reconstruct them by shining light back through them.  This has the mathematical effect of propagating the field stored in the hologram to some different plane.  Holopy generalizes this concept and allows you to numerically propagate any hologram or electric field to another point in space.  
+The classical way of working with holograms is to optically
+reconstruct them by shining light back through them.  This has the
+mathematical effect of propagating the field stored in the hologram to
+some different plane.  Holopy generalizes this concept and allows you
+to numerically propagate any hologram or electric field to another
+point in space.
 
 Import the code
 ===============
@@ -15,45 +20,41 @@ To begin, import the :mod:`holopy.analyze.reconstruct` module. ::
     from holopy import propagate, show
 
 
-:func:`holopy.propagate` is also provided as an alias to :func:`holopy.propagation.propagation`
+:func:`holopy.propagate` is provided as an alias to :func:`holopy.propagation.propagation`
 
 
 Load a hologram
 ==================
 
-The first thing to do is to create a :class:`holopy.hologram.Hologram`
+The first thing to do is to create a :class:`holopy.core.data.Image`
 object which will store the image data of the hologram as well as
-metadata about the optics used in creating the hologram.  See
-:ref:`loading` and :ref:`metadata`.  Usually you will specify the
-imaging laser wavelength, the medium refractive index, and the pixel
-size of the camera as the metadata.
+metadata about the optics used in creating the hologram, imaging laser
+wavelength, the medium refractive index, and the pixel size of the
+camera.  See :ref:`loading` and :ref:`metadata`.
 
 
 Reconstruct the hologram
 ========================
 To reconstruct an x-y slice you must pass (at least) the hologram and the
 z-distance of the reconstructed image to the function
-:func:`holopy.analyze.reconstruct.reconstruct`
+:func:`holopy.propagation.propagate.propagate`
 
 In the following bit of code, an image 10 microns from the focal plane
-is reconstructed. The reconstruct function returns a
-:class:`holopy.analyze.reconstruct.Reconstruction` instance. Like with
-the :class:`holopy.hologram.Hologram` instance, this can be treated
-like a numpy array.
+is reconstructed. 
 
 .. sourcecode:: ipython
 
-    In [4]: rec_xy = reconstruct(holo, 10)
+    In [4]: rec_xy = propagate(holo, 10)
 
     In [6]: rec_xy.dtype
     Out[6]: dtype('complex128')
 
-    In [7]: rec_vol = reconstruct(holo, np.linspace(5, 15, 10))
+    In [7]: rec_vol = propagate(holo, np.linspace(5, 15, 10))
 
 
-The reconstructed image is a complex array. The
-dimensions of the imaging plane (x&y) are the first two
-dimensions.  If a range of z distances are specified the array will be 3 dimensional, x, y, z.  If the hologram is a 3d time series, the reconstructed image will be a 3d x, y, t, or 4d x, y, z, t array.
+The reconstructed image is a complex array. The dimensions of the
+imaging plane (x&y) are the first two dimensions.  If a range of z
+distances are specified the array will be 3 dimensional, x, y, z.  
 
 Visualizing Reconstructions
 ============================

@@ -24,14 +24,23 @@ Classes for defining models of scattering for fitting
 from __future__ import division
 
 import inspect
-import numpy as np
 from copy import copy
 
 from ..core.holopy_object import HolopyObject
-from ..scattering.theory.scatteringtheory import ScatteringTheory
 from .parameter import Parameter, ComplexParameter
 
 class Parametrization(HolopyObject):
+    """
+    Description of free parameters and how to make a scatterer from them
+
+    Parameters
+    ----------
+    make_scatterer : function
+        A function which should take the Parametrization parameters by name as
+        keyword arguments and return a scatterer
+    parameters : list
+        The list of parameters for this Parametrization
+    """
     def __init__(self, make_scatterer, parameters):
         self.parameters = []
         self._fixed_params = {}
@@ -127,15 +136,15 @@ class Model(HolopyObject):
     ----------
     parameters: :class:`Paramatrization`
         The parameters which can be varied in this model.  
-    theory: :function:`scattering.theory.ScatteringTheory.calc_*`
+    theory : :function:`scattering.theory.ScatteringTheory.calc_*`
         The scattering calc function that should be used to compute results for
         comparison with the data
-    target_overlay: :class:`core.data.DataTarget`
+    target_overlay : :class:`core.data.DataTarget`
         A DataTarget object with overrides for and of the metadata of the data
         you fit to.  Do not bother to provide entries for shape, position, and
         things that are provided in the data, use this for replacing wavelen with a
         par, or adding a use_random_fraction entry.
-    alpa: float or Parameter
+    alpha : float or Parameter
         Extra scaling parameter, hopefully this will be removed by improvements
         in our theory soon.  
     """

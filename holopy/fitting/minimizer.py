@@ -37,8 +37,9 @@ from .third_party import nmpfit
 
     
 class Minimizer(HolopyObject):
-    def __init__(self, algorithm='nmpfit'):
-        raise NotImplementedError() # pragma: nocover
+    """
+    Defines interface that minimizer adapters should support
+    """
     def minimize(self, parameters, cost_func, selection=None):
         raise NotImplementedError() # pragma: nocover
 

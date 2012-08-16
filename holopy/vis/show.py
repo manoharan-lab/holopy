@@ -42,13 +42,13 @@ def show(o,color=(0,0,1)):
 
     Parameters
     ----------
-    o: :class:`scatterpy.scatterer.Scatterer`, :class:`holopy.hologram.Hologram`, or :class:`holopy.analyze.reconstruct.Reconstruction`
+    o : :class:`holopy.core.data.Image`, :class:`holopy.core.data.Volume` or :class:`holopy.scattering.scatterer.spherecluster.SphereCluster`
        Object to visualize
 
     Notes
     -----
     Loads plotting library the first time it is required (so that we don't have
-    to import all of mayavi just to load holopy)
+    to import all of matplotlib or mayavi just to load holopy)
     """
     
     if isinstance(o, SphereCluster):

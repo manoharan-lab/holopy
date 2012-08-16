@@ -27,6 +27,25 @@ from ..core.holopy_object import HolopyObject
 from .errors import GuessOutOfBoundsError, ParameterSpecificationError
 
 class Parameter(HolopyObject):
+    """
+    Describe a free parameter in a fitting model
+
+    Parameters
+    ----------
+    guess : (optional) float
+        Your inital guess for this parameter
+    limit : (optional) float or (float, float)
+        Describe how the minimizer should allow a parameter to vary.  A single
+        value here fixes the parameter to that value, a pair limits the
+        parameter to  vary between (min, max)
+    name : (optional) string
+        A short descriptive name of the parameter.  Do not provide this if using
+        the parameter in a :class:`ParameterizedScatterer`, it will assign a
+        name based on the Parameter's position within the scatterer
+    **kwargs : varies
+        Additional information made available to the minimizer.  This can be
+        used for things like step sizes.  
+    """
     def __init__(self, guess = None, limit = None, name = None, **kwargs):
         self.name = name
         self.guess = guess
@@ -94,6 +113,24 @@ class Parameter(HolopyObject):
         return scaled * self.scale_factor
 
 class ComplexParameter(Parameter):
+    """
+    A complex free parameter
+
+    ComplexParameters have a real and imaginary part which can (potentially)
+    vary seperately.
+
+    Parameters
+    ----------
+    real, imag : float or :class:`Parameter`
+        The real and imaginary parts of this parameter.  Assign floats to fix
+        that portion or parameters to allow it to vary.  The parameters must be
+        pure real.  You should omit name's for the parameters, Complexparameter
+        will name them
+    name : string
+        Short descriptive name of the ComplexParameter.  Do not provide this if
+        using a ParameterizedScatterer, a name will be assigned based its
+        position within the scatterer. 
+    """
     def __init__(self, real, imag, name = None):
         '''
         real and imag may be scalars or Parameters. If Parameters, they must be

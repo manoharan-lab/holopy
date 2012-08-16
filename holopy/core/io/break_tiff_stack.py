@@ -24,7 +24,7 @@ Jerome Fung <fung@physics.harvard.edu>
 from __future__ import division
 
 import numpy as np
-from holopy.third_party.tifffile import TIFFfile
+from ..third_party.tifffile import TIFFfile
 
 def extract_frame(fname, num):
     tif = TIFFfile(fname)
