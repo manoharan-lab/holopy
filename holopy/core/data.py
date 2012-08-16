@@ -30,17 +30,57 @@ import errors
 from .holopy_object import HolopyObject
 from .helpers import _ensure_pair
 
+class PositionSpecification(HolopyObject):
+    """
+    Abstract base class for representations of positions.  You should use its
+    subclasses
+    """
+    pass
+        
+class Grid(PositionSpecification):
+    """
+    Rectangular grid of measurements
+    """
+    def __init__(self, shape, spacing, random_subset = None):
+        self.shape = shape
+        if np.isscalar(spacing):
+            spacing = np.repeat(spacing, len(shape))
+        self.spacing = spacing
+        self.random_subset = random_subset
+        if random_subset is not None:
+            self.selection = np.random.random(self.shape) > (1.0-self.selection)
+        else:
+            self.selection = None
+
+class UnevenGrid(Grid):
+    pass
+            
+class Angles(PositionSpecification):
+    def __init__(self, theta = None, phi = None, units = 'radians'):
+        self.theta = theta
+        self.phi = phi
+        self.units = units
+
 class DataTarget(HolopyObject):
     """
-    Specification of what data should look like.  DataTarget objects are
-    lightweigt because they do not include actual data, but they contain
-    everything else Data would.  
+    Specification of what data should look like.
+
+    A DataTarget should specify the positions where data would be measured and
+    any other metadata that would be associated with the data.  Data target
+    objects are used to specify the output format of various calculation
+    functions and to provide needed metadata for the calculation.  
 
     Attributes
     ----------
-    positions: :class:`holopy.core.data.PositionSpecification`
+    positions : :class:`PositionSpecification` object
         Specification of the locations of measurements
-    **kwargs: varies
+    optics : :class:`metadata.Optics` object
+        Information about the optical train associated with this data target
+    use_random_fraction: float
+        Use only a random fraction of the pixels specified by this DataTarget
+        when doing calculations.  This can give a good representation of the
+        whole field with much lower computation times
+    **kwargs : varies
         Other metadata
     """
     def __init__(self, positions = None, optics = None, use_random_fraction =
@@ -93,7 +133,7 @@ class DataTarget(HolopyObject):
 
         Returns
         -------
-        theta, phi: 1-D array
+        theta, phi : 1-D array
             Angles
         r : 2-D array
             Distances
@@ -147,36 +187,6 @@ class DataTarget(HolopyObject):
             new[self.selection] = data
             return new
 
-class PositionSpecification(HolopyObject):
-    """
-    Abstract base class for representations of positions.  You should use its
-    subclasses
-    """
-    pass
-        
-class Grid(PositionSpecification):
-    """
-    Rectangular grid of measurements
-    """
-    def __init__(self, shape, spacing, random_subset = None):
-        self.shape = shape
-        if np.isscalar(spacing):
-            spacing = np.repeat(spacing, len(shape))
-        self.spacing = spacing
-        self.random_subset = random_subset
-        if random_subset is not None:
-            self.selection = np.random.random(self.shape) > (1.0-self.selection)
-        else:
-            self.selection = None
-
-class UnevenGrid(Grid):
-    pass
-            
-class Angles(PositionSpecification):
-    def __init__(self, theta = None, phi = None, units = 'radians'):
-        self.theta = theta
-        self.phi = phi
-        self.units = units
    
 class Data(DataTarget, np.ndarray):
     """
@@ -191,7 +201,7 @@ class Data(DataTarget, np.ndarray):
     You will often work with a subclass of data describing the specific data
     format you are using.  
 
-    Parameters
+    Attributes
     ----------
     arr : numpy.ndarray
         raw data array of data.
@@ -199,7 +209,7 @@ class Data(DataTarget, np.ndarray):
         Specification of where each data point in arr was taken
     dtype : numpy dtype (optional)
         Desired dtype of the Data, this overrides the dtype of arr 
-    kwargs : varies
+    **kwargs : varies
         Other metadata to store with the Data
     """
 

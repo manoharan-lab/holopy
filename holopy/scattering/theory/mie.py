@@ -38,28 +38,18 @@ from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
 
 class Mie(FortranTheory):
     """
-    Class that contains methods and parameters for calculating
-    scattering using Mie theory.
+    Compute scattering using the Lorenz-Mie solution.
 
-    Attributes
-    ----------
-    imshape : float or tuple (optional)
-        Size of grid to calculate scattered fields or
-        intensities. This is the shape of the image that calc_field or
-        calc_intensity will return
-    phi : array 
-        Specifies azimuthal scattering angles to calculate (incident
-        direction is z)
-    theta : array 
-        Specifies polar scattering angles to calculate
-    optics : :class:`holopy.optics.Optics` object
-        specifies optical train
-
-    Notes
-    -----
-    If phi and theta are both 1-D vectors, the calc functions
-    should return an array where result(i,j) = result(phi(i),
-    theta(j))
+    This theory calculates exact scattering for single spheres and approximate
+    results for groups of spheres.  It does not account for multiple scattering,
+    hence the approximation in the case of multiple spheres.  Neglecting
+    multiple scattering is a good approximation if the particles are
+    sufficiently seperated.
+    
+    This model can also calculate the exact scattered field from a 
+    spherically symmetric particle with an arbitrary number of layers
+    with differing refractive indices, using Yang's recursive
+    algorithm ([Yang2003]_).
     """
 
     # don't need to define __init__() because we'll use the base class

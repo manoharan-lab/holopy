@@ -31,13 +31,18 @@ from ..binding_method import binding, finish_binding
 
 class ScatteringTheory(HolopyObject):
     """
-    Base class for scattering theories
+    Defines common interface for all scattering theories.  
     
     Notes
     -----
     A subclasses that do the work of computing scattering should do it by
     implementing a _calc_field(self, scatterer, target) function that returns a
-    VectorData electric field.  
+    VectorData electric field.
+
+    ScatteringTheory uses pseudo classmethods which when called on a
+    ScatteringTheory class are in fact called on a default instantiation
+    (no parameters given to the constructor).  If you manually instantiate a
+    ScatteringTheory Object then it's calc_* methods refer to itself.  
     """
 
     def __init__(self):
@@ -163,7 +168,7 @@ class ScatteringTheory(HolopyObject):
         -------
         cross_sections : array (4)
             Dimensional scattering, absorption, and extinction 
-            cross sections, and <cos \theta>
+            cross sections, and <cos theta>
 
         Notes
         -----

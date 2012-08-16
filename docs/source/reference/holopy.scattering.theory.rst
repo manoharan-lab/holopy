@@ -8,18 +8,15 @@ theory Package
     :members:
     :show-inheritance:
 
-:mod:`dda` Module
------------------
-
-.. automodule:: holopy.scattering.theory.dda
-    :members:
-    :show-inheritance:
-
+.. autoclass:: holopy.scattering.theory.scatteringtheory.ScatteringTheory
+			   :members:
+	
 :mod:`mie` Module
 -----------------
 
 .. automodule:: holopy.scattering.theory.mie
     :members:
+	:inherited-members:
     :show-inheritance:
 
 :mod:`multisphere` Module
@@ -27,19 +24,13 @@ theory Package
 
 .. automodule:: holopy.scattering.theory.multisphere
     :members:
+	:inherited-members:
     :show-inheritance:
 
-:mod:`scatteringtheory` Module
-------------------------------
+:mod:`dda` Module
+-----------------
 
-.. automodule:: holopy.scattering.theory.scatteringtheory
+.. automodule:: holopy.scattering.theory.dda
     :members:
+	:inherited-members:
     :show-inheritance:
-
-Subpackages
------------
-
-.. toctree::
-
-    holopy.scattering.theory.mie_f
-

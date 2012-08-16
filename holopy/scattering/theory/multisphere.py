@@ -37,9 +37,12 @@ from .scatteringtheory import FortranTheory
 
 class Multisphere(FortranTheory):
     """
-    Class that contains methods and parameters for calculating
-    scattering using T-matrix superposition method.
-
+    Calculate the scattered field of a collection of spheres through a
+    numerical method that accounts for multiple scattering and near-field
+    effects (see [Fung2011]_, [Mackowski1996]_).  This approach is much more
+    accurate than Mie superposition, but it is also more computationally
+    intensive.  The Multisphere code can handle any number of spheres.
+    
     Attributes
     ----------
     imshape : float or tuple (optional)

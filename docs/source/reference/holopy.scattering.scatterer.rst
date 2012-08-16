@@ -1,20 +1,18 @@
 scatterer Package
 =================
 
-:mod:`scatterer` Package
-------------------------
-
 .. automodule:: holopy.scattering.scatterer
     :members:
     :show-inheritance:
+	   
+:mod:`sphere` Module
+--------------------
 
-:mod:`abstract_scatterer` Module
---------------------------------
-
-.. automodule:: holopy.scattering.scatterer.abstract_scatterer
+.. automodule:: holopy.scattering.scatterer.sphere
     :members:
     :show-inheritance:
 
+	   
 :mod:`coatedsphere` Module
 --------------------------
 
@@ -22,12 +20,6 @@ scatterer Package
     :members:
     :show-inheritance:
 
-:mod:`composite` Module
------------------------
-
-.. automodule:: holopy.scattering.scatterer.composite
-    :members:
-    :show-inheritance:
 
 :mod:`ellipsoid` Module
 -----------------------
@@ -36,12 +28,6 @@ scatterer Package
     :members:
     :show-inheritance:
 
-:mod:`sphere` Module
---------------------
-
-.. automodule:: holopy.scattering.scatterer.sphere
-    :members:
-    :show-inheritance:
 
 :mod:`spherecluster` Module
 ---------------------------

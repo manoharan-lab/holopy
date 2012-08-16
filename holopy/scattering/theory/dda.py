@@ -53,8 +53,15 @@ class DependencyMissing(SkipTest, Exception):
 
 class DDA(ScatteringTheory):
     """
-    Scattering theory class that calculates holograms using the Discrete Dipole
-    Approximation (DDA).  Can in principle handle any scatterer
+    Computes scattering using the the Discrete Dipole Approximation (DDA).
+
+    It can (in principle) calculate scattering from any arbitrary scatterer.
+    The DDA uses a numerical method that represents arbitrary scatterers as an array
+    of point dipoles and then self-consistently solves Maxwell's equations
+    to determine the scattered field. In practice, this model can be 
+    extremely computationally intensive, particularly if the size of the 
+    scatterer is larger than the wavelength of light.  This model requires an
+    external scattering code: `a-dda <http://code.google.com/p/a-dda/>`_
 
     Attributes
     ----------

@@ -16,9 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 '''
-Scattering theories for calculating field and intensity patterns from
-a collection of scatterers.  The fields can also be used to calculate
-holograms. 
+Theories to compute scattering from objects.
+
+All theories have a common interface defined by
+:class:`holopy.scattering.theory.scatteringtheory.ScatteringTheory`.  
+
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>

@@ -63,16 +63,16 @@ Data as it is loaded
 
    In [1]: import holopy
 
-   In [2]: optics = holopy.metadata.Optics(wavelen=658e-9, index=1.33, pixel_scale=[0.1e-6,0.1e-6])
+   In [2]: optics = holopy.metadata.Optics(wavelen=658e-9, index=1.33)
 
-   In [3]: holo = holopy.load_image('image0001.tif', optics = optics)
+   In [3]: holo = holopy.load_image('image0001.tif', pixel_spacing = .1e-6,  optics = optics)
 
-In the first line above we create an instance of the Metadata
-containing the imaging laser wavelength, the medium refractive index,
-and the pixel size of the camera in the imaging plane.  You can
-specify more metadata, but this is all we need for now.  The second
-line loads the image data, associates the metadata with it and returns
-the Data.
+In the first line above we create an instance of the Optics metadata
+containing the imaging laser wavelength and the medium refractive
+index.  You can specify more metadata, but this is all we need for
+now.  The second line loads the image data, tells it the pixel size of
+the camera in the imaging plane for the image and that it was taken
+with the previously defined optics.
 
 .. note::
 
