@@ -33,30 +33,29 @@ from numpy.testing import assert_array_equal
 from nose.plugins.attrib import attr
 
 
-class TestRecon:
-    @attr('fast')
-    def test_reconNear(self):
-        im = get_example_data('image0003.npy', 'optical_train3.yaml')
-        gold = get_example_data('recon_4.npy', 'optical_train3.yaml')
-        rec_im = propagate(im, 4e-6)
-        rec_im = abs(rec_im * scipy.conj(rec_im))
-        rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
-        assert_array_equal(rec_im.astype('uint8'),gold)
+@attr('fast')
+def test_reconNear():
+    im = get_example_data('image0003.npy', 'optical_train3.yaml')
+    gold = get_example_data('recon_4.npy', 'optical_train3.yaml')
+    rec_im = propagate(im, 4e-6)
+    rec_im = abs(rec_im * scipy.conj(rec_im))
+    rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
+    assert_array_equal(rec_im.astype('uint8'),gold)
 
-    @attr('fast')
-    def test_reconMiddle(self):
-        gold = get_example_data('recon_7.npy', 'optical_train3.yaml')
-        im = get_example_data('image0003.npy', 'optical_train3.yaml')
-        rec_im = propagate(im, 7e-6)
-        rec_im = abs(rec_im * scipy.conj(rec_im))
-        rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
-        assert_array_equal(rec_im.astype('uint8'),gold)
+@attr('fast')
+def test_reconMiddle():
+    gold = get_example_data('recon_7.npy', 'optical_train3.yaml')
+    im = get_example_data('image0003.npy', 'optical_train3.yaml')
+    rec_im = propagate(im, 7e-6)
+    rec_im = abs(rec_im * scipy.conj(rec_im))
+    rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
+    assert_array_equal(rec_im.astype('uint8'),gold)
     
-    @attr('fast')
-    def test_reconFar(self):
-        gold = get_example_data('recon_10.npy', 'optical_train3.yaml')
-        im = get_example_data('image0003.npy', 'optical_train3.yaml')
-        rec_im = propagate(im, 10e-6)
-        rec_im = abs(rec_im * scipy.conj(rec_im))
-        rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
-        assert_array_equal(rec_im.astype('uint8'),gold)
+@attr('fast')
+def test_reconFar():
+    gold = get_example_data('recon_10.npy', 'optical_train3.yaml')
+    im = get_example_data('image0003.npy', 'optical_train3.yaml')
+    rec_im = propagate(im, 10e-6)
+    rec_im = abs(rec_im * scipy.conj(rec_im))
+    rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
+    assert_array_equal(rec_im.astype('uint8'),gold)

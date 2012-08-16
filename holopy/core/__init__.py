@@ -15,7 +15,17 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
+"""
+Core data manipulation for holopy.  It covers loading and saving data and
+results and basic image processing and math.  Holopy.core is usable on its own
+as a data manipulation library.  
+
+.. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
+.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
+"""
+
 from data import (Data, Image, DataTarget, ImageTarget, Grid, Angles, Volume,
                   UnevenGrid) 
 from metadata import Optics
 from io import load, load_image, save
+

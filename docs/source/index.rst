@@ -3,22 +3,24 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Holography in Python
-==================================
+Holography and Light Scattering in Python
+=========================================
 
 :Release: |version|
 :Date: |today|
 
-The :mod:`holopy` package contains routines for loading digital
-holograms, processing them, and extracting useful data.  It allows you
-to reconstruct a 3D volume from a hologram -- the digital equivalent
-of shining light through a holographic film -- or fit holograms to
-scattering models, allowing you to obtain precise information about
-the positions and optical properties of the objects used to make the
-hologram.  In both cases, the idea is that a single 2D holographic
-image of a sample encodes information about its 3D structure.  Holopy
-helps you retrieve that information.  It can also be used in reverse,
-to calculate holograms given a 3D structure.
+The :mod:`holopy` provides tools for working with digital holograms
+and light scattering.  It provides a user friendly package to a lot of
+optical physics and a number of tools for working with experimental
+data.  It allows you to reconstruct a 3D volume from a hologram (the
+digital equivalent of shining light through a holographic film),
+compute light scattering or holograms of objects, or construct models
+of light scattering in your data and fit them to obtain precise
+information about the positions and optical properties of the objects
+used to make the hologram.  A single 2D holographic image of a sample
+encodes information about its 3D structure.  Holopy helps you retrieve
+that information.
+
 
 The following features work and are well-tested:
 
@@ -44,14 +46,13 @@ Contents:
 
    credits
    users/index
-..   reference
+   reference/modules
 
-..
-  Indices and tables
-  ==================
 
-  * :ref:`genindex`
-  * :ref:`modindex`
-  * :ref:`search`
+Indices and tables
+==================
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
 
 

@@ -16,7 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 """
-Routines for manipulating, reconstructing, and fitting data
+Smart Data objects that know where the data was recorded and other metadata you
+need to work with the data.  
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
@@ -31,11 +32,13 @@ from .helpers import _ensure_pair
 
 class DataTarget(HolopyObject):
     """
-    Generic specifier desired data
+    Specification of what data should look like.  DataTarget objects are
+    lightweigt because they do not include actual data, but they contain
+    everything else Data would.  
 
     Attributes
     ----------
-    meauserements: np.ndarray, or object
+    positions: :class:`holopy.core.data.PositionSpecification`
         Specification of the locations of measurements
     **kwargs: varies
         Other metadata
@@ -80,11 +83,12 @@ class DataTarget(HolopyObject):
 
     def positions_r_theta_phi(self, origin):
         """
-        Return my positions as spherical coordinates relative to origin
+        Returns a list of positions of each data point, in spherical coordinates
+        relative to origin.  
         
         Parameters
         ----------
-        origin : real
+        origin : (real, real, real)
             origin of the spherical cooridate system to return
 
         Returns
@@ -143,8 +147,14 @@ class DataTarget(HolopyObject):
             new[self.selection] = data
             return new
 
+class PositionSpecification(HolopyObject):
+    """
+    Abstract base class for representations of positions.  You should use its
+    subclasses
+    """
+    pass
         
-class Grid(HolopyObject):
+class Grid(PositionSpecification):
     """
     Rectangular grid of measurements
     """
@@ -162,7 +172,7 @@ class Grid(HolopyObject):
 class UnevenGrid(Grid):
     pass
             
-class Angles(HolopyObject):
+class Angles(PositionSpecification):
     def __init__(self, theta = None, phi = None, units = 'radians'):
         self.theta = theta
         self.phi = phi
@@ -170,18 +180,27 @@ class Angles(HolopyObject):
    
 class Data(DataTarget, np.ndarray):
     """
-    Class to store raw data
+    Generic Data object.  Data can store data in any array structure.  A Data
+    object should contain all of the necessary information about how the data
+    was taken to work with it.  This includes at a minimum the cooridates of
+    where each data point was taken and usually includes other information like
+    wavelength, exposure time, or medium index.  
 
-    All preprocessing, fitting, and reconstruction routines operate on
-    Data objects.  These objects also contains metadata of the
-    optical train used to create the data.
+    All holopy routines operate on Data objects.  
+
+    You will often work with a subclass of data describing the specific data
+    format you are using.  
 
     Parameters
     ----------
     arr : numpy.ndarray
         raw data array of data.
-    metadata : :class:`holopy.metadata.Metadata` object (optional)
-        optical train parameters
+    positions : :class:`PositionSpecification` object
+        Specification of where each data point in arr was taken
+    dtype : numpy dtype (optional)
+        Desired dtype of the Data, this overrides the dtype of arr 
+    kwargs : varies
+        Other metadata to store with the Data
     """
 
     # subclassing ndarray is a little unusual.  I'm following the
@@ -238,6 +257,16 @@ class Data(DataTarget, np.ndarray):
 
 
 class VectorData(Data):
+    """
+    Data with vector components (usually x, y, z) like electric fields.
+
+    Attributes
+    ----------
+    arr: np.ndarray
+        raw array data
+    components: list of strings
+        names of each component
+    """
     def __init__(self, arr, components = ('x', 'y', 'z'), *args, **kwargs):
         super(VectorData, self).__init__(arr, components = components, *args, **kwargs)
     @classmethod

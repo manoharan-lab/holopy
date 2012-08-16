@@ -13,20 +13,23 @@ particle radii, etc.)  must also be specified in nanometers.
 Data
 ----
 
-Holopy is at its core a tool for working with optical data, either measurements from some experiment, or simulations of such data.   Holopy has an idea of a Data object which is an array of measurements at points along with metadata about how to interpret those values.
+Holopy is at its core a tool for working with optical data, either measurements from some experiment, or simulations of such data.  Holopy works with all such data as :class:`holopy.core.data.Data` objects which is are array of point measurements along with metadata about how to interpret those values.  Metadata might be:
 
 :Measurement Locations:
    
    All Data objects must know where in space their measurements were
-   taken.  This can be specified by pixel spacing for a rectangular
-   detector, angles to farfield detectors, or in general a list of
-   coordinates for each measurement location.
+   taken.  This is specified as a
+   :class:`holopy.core.data.PositionSpecification` object which can be
+   by pixel spacing for a rectangular detector, angles to farfield
+   detectors, or in general a list of coordinates for each measurement
+   location.
 
 :Optical Setup:
    
-   Wavelength, polarization, divergence, ... of illumination light,
-   index of refraction the medium the system is in, any lenses or
-   other optical elements present in the beam path.
+   :class:`holopy.core.metadata.Optics` object containing wavelength,
+   polarization, divergence, ... of illumination light, index of
+   refraction the medium the system is in, any lenses or other optical
+   elements present in the beam path.
 
 :Other Experimental Conditions:
 
@@ -39,9 +42,9 @@ Data can be:
 :1 dimensional:
    static light scattering measurements
 :2 dimensional:
-   Images, or timeseries of 1d data sets
+   :class:`holopy.core.data.Image`, or timeseries of 1d data sets
 :3 dimensional:
-   volume data (stacks), or timeseries of images
+   :class:`holopy.core.data.Volume` data (stacks), or timeseries of images
 :4 dimensional:
    timeseries of volume data
 
