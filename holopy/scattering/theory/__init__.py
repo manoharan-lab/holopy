@@ -30,7 +30,16 @@ All theories have a common interface defined by
 '''
 from __future__ import division
 
-from mie import Mie
-from dda import DDA
-from multisphere import Multisphere
-#from scatteringtheory import ScatteringTheory
+try:
+    from mie import Mie
+    from multisphere import Multisphere
+    from dda import DDA
+except ImportError:
+    import warnings
+    warnings.warn("""
+Could not import scattering.  You will not be able to do scattering
+calculations, but the rest of holopy sould remain usable.
+
+This is probably due to your not having properly compiled versions holopy's
+fortran bits.  """)
+
