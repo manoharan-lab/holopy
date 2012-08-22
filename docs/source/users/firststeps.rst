@@ -100,8 +100,10 @@ You can save an optics object for future use::
 
 optics.yaml will look something like this (yours will not contain the
 explanatory comments, you can add any comments you want by proceedin
-them with a '#" character)::
+them with a '#" character)
 
+.. sourcecode:: yaml
+  
   !Optics
   wavelen: 658e-9                      # Wavelength of light (in vacuum) used in creating holograms
   polarization: [0., 1.0]
