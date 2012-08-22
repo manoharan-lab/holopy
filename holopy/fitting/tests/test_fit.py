@@ -140,7 +140,7 @@ def test_fit_random_subset():
  
     # we have to use a relatively loose tolerance here because the random
     # selection occasionally causes the fit to be a bit worse
-    assert_parameters_allclose(result.parameters, gold_single, rtol=1.5e-2)
+    assert_parameters_allclose(result.parameters, gold_single, rtol=1.6e-2)
     assert_equal(model, result.model)
 
 

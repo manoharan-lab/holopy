@@ -147,3 +147,34 @@ class MediumIndexNotSpecified(Exception):
     def __str__(self):
         return ("Medium index not specified in Optics instance.")
 
+class PositionSpecification(HolopyObject):
+    """
+    Abstract base class for representations of positions.  You should use its
+    subclasses
+    """
+    pass
+        
+class Grid(PositionSpecification):
+    """
+    Rectangular grid of measurements
+    """
+    def __init__(self, shape, spacing, random_subset = None):
+        self.shape = shape
+        if np.isscalar(spacing):
+            spacing = np.repeat(spacing, len(shape))
+        self.spacing = spacing
+        self.random_subset = random_subset
+        if random_subset is not None:
+            self.selection = np.random.random(self.shape) > (1.0-self.selection)
+        else:
+            self.selection = None
+
+class UnevenGrid(Grid):
+    pass
+            
+class Angles(PositionSpecification):
+    def __init__(self, theta = None, phi = None, units = 'radians'):
+        self.theta = theta
+        self.phi = phi
+        self.units = units
+

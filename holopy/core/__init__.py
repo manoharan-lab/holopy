@@ -24,8 +24,7 @@ as a data manipulation library.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 """
 
-from data import (Data, Image, DataTarget, ImageTarget, Grid, Angles, Volume,
-                  UnevenGrid) 
-from metadata import Optics
+from data import Data, Image, DataTarget, ImageTarget, Volume
+from metadata import Optics, Grid, Angles, UnevenGrid
 from io import load, load_image, save
 

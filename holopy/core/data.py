@@ -24,42 +24,14 @@ need to work with the data.
 """
 from __future__ import division
 
+import warnings
+import copy
 import numpy as np
 import scipy.signal
 import errors
 from .holopy_object import HolopyObject
 from .helpers import _ensure_pair
-
-class PositionSpecification(HolopyObject):
-    """
-    Abstract base class for representations of positions.  You should use its
-    subclasses
-    """
-    pass
-        
-class Grid(PositionSpecification):
-    """
-    Rectangular grid of measurements
-    """
-    def __init__(self, shape, spacing, random_subset = None):
-        self.shape = shape
-        if np.isscalar(spacing):
-            spacing = np.repeat(spacing, len(shape))
-        self.spacing = spacing
-        self.random_subset = random_subset
-        if random_subset is not None:
-            self.selection = np.random.random(self.shape) > (1.0-self.selection)
-        else:
-            self.selection = None
-
-class UnevenGrid(Grid):
-    pass
-            
-class Angles(PositionSpecification):
-    def __init__(self, theta = None, phi = None, units = 'radians'):
-        self.theta = theta
-        self.phi = phi
-        self.units = units
+from .metadata import Grid, Angles
 
 class DataTarget(HolopyObject):
     """
@@ -299,8 +271,13 @@ class ImageTarget(DataTarget):
         shape = _ensure_pair(shape)
         if pixel_size is None:
             try:
-                pixel_size = optics.pixel
-            except (errors.PixelScaleNotSpecified, AttributeError):
+                pixel_size = optics.pixel_scale
+                warnings.warn("Specifying pixel_scale in optics is depricated, "
+                              "use Image pixel_size or similar instead")
+                optics = copy.copy(optics)
+                if hasattr(optics, 'pixel_scale'):
+                    del optics.pixel_scale
+            except (AttributeError):
                 pass
         if np.isscalar(pixel_size):
             pixel_size = np.repeat(pixel_size, len(shape))
