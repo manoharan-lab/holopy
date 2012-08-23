@@ -18,7 +18,8 @@
 from __future__ import division
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
-from ..data import DataTarget, Grid, VectorData
+from ..data import DataTarget, Grid, VectorData, Image
+from .common import assert_obj_close
 
 
 def test_VectorData():
@@ -49,3 +50,16 @@ def test_from1d():
     
     vf = target.from_1d(data)
     assert_equal(vf, assembled)
+
+def test_Image():
+    i = Image(np.arange(16).reshape((4,4)), pixel_size = 1)
+    assert_equal(i.positions.spacing, 1)
+    assert_equal(i.positions.shape, [4, 4])
+
+def test_resample():
+    i = Image(np.arange(16).reshape((4,4)), pixel_size = 1)
+    assert_obj_close(i.resample((2, 2)), Image([[  5.,   6.],
+                                                [  9.,  10.]],
+                                               pixel_size=np.array([ 0.5,  0.5]))) 
+
+    assert_obj_close(i, Image(np.arange(16).reshape((4,4)), pixel_size = 1))

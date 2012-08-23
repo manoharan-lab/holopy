@@ -84,6 +84,9 @@ class HolopyObject(Serializable):
         keywpairs = ["{0}={1}".format(k[0], repr(k[1])) for k in self._dict.iteritems()]
         return "{0}({1})".format(self.__class__.__name__, ", ".join(keywpairs))
 
+    def __str__(self):
+        return self.__repr__()
+
 
 # ordered_dump code is heavily inspired by the source of PyYAML's represent_mapping
 def ordered_dump(dumper, tag, data):

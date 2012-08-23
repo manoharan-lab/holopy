@@ -30,8 +30,8 @@ import numpy as np
 import scipy.signal
 import errors
 from .holopy_object import HolopyObject
-from .helpers import _ensure_pair
 from .metadata import Grid, Angles
+from .helpers import _ensure_pair, _ensure_array
 
 class DataTarget(HolopyObject):
     """
@@ -56,9 +56,9 @@ class DataTarget(HolopyObject):
         Other metadata
     """
     def __init__(self, positions = None, optics = None, use_random_fraction =
-                 None, **kwargs):
+                 None):
         self.set_metadata(positions = positions, optics =  optics,
-                          use_random_fraction = use_random_fraction, **kwargs)
+                          use_random_fraction = use_random_fraction)
 
     @property
     def selection(self):
@@ -159,6 +159,8 @@ class DataTarget(HolopyObject):
             new[self.selection] = data
             return new
 
+
+
    
 class Data(DataTarget, np.ndarray):
     """
@@ -200,7 +202,7 @@ class Data(DataTarget, np.ndarray):
         return np.asarray(arr, dtype = dtype).view(cls)
 
     def __init__(self, arr, positions = None, dtype = None, *args, **kwargs):
-        super(Data, self).__init__(positions, *args, **kwargs)
+        super(Data, self).__init__(positions = positions, *args, **kwargs)
 
     def __repr__(self):
         array_repr = repr(self.view(np.ndarray))[6:-1]
@@ -237,87 +239,9 @@ class Data(DataTarget, np.ndarray):
         else:
             return result
 
-
-class VectorData(Data):
-    """
-    Data with vector components (usually x, y, z) like electric fields.
-
-    Attributes
-    ----------
-    arr: np.ndarray
-        raw array data
-    components: list of strings
-        names of each component
-    """
-    def __init__(self, arr, components = ('x', 'y', 'z'), *args, **kwargs):
-        super(VectorData, self).__init__(arr, components = components, *args, **kwargs)
-    @classmethod
-    def vector_zeros_like(cls, target, components = ('x', 'y', 'z'), dtype = None):
-        if isinstance(target, VectorData):
-            return np.zeros_like(target, dtype = dtype)
-        if isinstance(target, Data):
-            return cls(np.repeat(np.zeros_like(target)[...,np.newaxis], len(components),
-                                 axis=-1), components = components,
-                       dtype = dtype, **target._metadata)
-        elif hasattr(target.positions, 'shape'):
-            return cls(np.zeros(np.append(target.positions.shape,
-                                          len(components)), dtype = dtype),
-                       components = components, **target._metadata)
-
-        
-
-class ImageTarget(DataTarget):
-    def __init__(self, shape, pixel_size=None, optics=None, **kwargs):
-        shape = _ensure_pair(shape)
-        if pixel_size is None:
-            try:
-                pixel_size = optics.pixel_scale
-                warnings.warn("Specifying pixel_scale in optics is depricated, "
-                              "use Image pixel_size or similar instead")
-                optics = copy.copy(optics)
-                if hasattr(optics, 'pixel_scale'):
-                    del optics.pixel_scale
-            except (AttributeError):
-                pass
-        if np.isscalar(pixel_size):
-            pixel_size = np.repeat(pixel_size, len(shape))
-        super(ImageTarget, self).__init__(positions = Grid(shape, pixel_size), optics
-                                    = optics, **kwargs)
-
-    @property    
-    def _dict(self):
-        d = super(ImageTarget, self)._dict
-        g = d['positions']
-        del d['positions']
-        d['shape'] = g.shape
-        d['pixel_size'] = g.spacing
-        return d
-        
-class Image(ImageTarget, Data):
-    """
-    2D pixel data on a rectangular grid
-    """
-    def __new__(cls, arr, pixel_size=None, optics=None, **kwargs):
-        return super(Image, cls).__new__(cls, arr = arr, **kwargs)
-
-    def __init__(self, arr, pixel_size=None, optics=None, **kwargs):
-        if (pixel_size is None and hasattr(arr, 'positions') and
-            hasattr(arr.positions, 'spacing')):
-            pixel_size = arr.positions.spacing
-        super(Image, self).__init__(arr = arr, shape = arr.shape, pixel_size =
-                                    pixel_size, optics = optics, **kwargs)
-
-    @property
-    def _dict(self):
-        d = super(Image, self)._dict
-        # remove the shape from the ImageTarget _dict because Image gets shape
-        # directly from the supplied arr
-        del d['shape']
-        return d
-
     def resample(self, shape, window=None):
         """
-        Resamples data to a given size.
+        Resamples data to a given shape.
 
         Use, for example, to downsample a data in a way that
         avoids aliasing and ringing.
@@ -339,28 +263,126 @@ class Image(ImageTarget, Data):
         This algorithm does 2 1-D resamplings.  
         
         """
-        name = None
-        if np.isscalar(shape):
-            x, y = (shape, shape)
-            if self.name is not None:
-                name = self.name + 'r({0},{1})'.format(x, y)
-        else:
-            x, y = shape
-            if self.name is not None:
-                name = self.name+'r{0}'.format(x)
-        new_image = scipy.signal.resample(self, x, axis=0, window=window)
-        new_image = scipy.signal.resample(new_image, y, axis=1, 
-                                          window=window)
+        if (not hasattr(self, 'positions')) or (not isinstance(self.positions,
+                                                               Grid)):
+            raise NotImplemented()
+            
+        shape = _ensure_array(shape)
+        new = self
+        factors = {}
+        for i, s in enumerate(shape):
+            if s != self.shape[i]:
+                factors[i] = 1.0 * s / self.shape[i]
+                new = scipy.signal.resample(new, s, axis=i, window=window)
 
-        # Change the pixel calibration appropriately.  If image is
-        # downsampled, pixel scale should increase
-        factor = np.array(new_image.shape).astype('float')/self.shape
+        new = self.__class__(new, **self._dict)
+        new.set_metadata(positions = new.positions.resample_by_factors(factors))
+        return new
 
-        # return a new data, now divorced from its optical train
-        return Image(new_image, self.metadata.resample(1.0/factor),
-                        self.time_scale, name)
 
-class Volume(Data):
+class VectorData(Data):
+    """
+    Data with vector components (usually x, y, z) like electric fields.
+
+    Attributes
+    ----------
+    arr: np.ndarray
+        raw array data
+    components: list of strings
+        names of each component
+    """
+    def __init__(self, arr, components = ('x', 'y', 'z'), *args, **kwargs):
+        super(VectorData, self).__init__(arr, *args, **kwargs)
+        self.set_metadata(components = components)
+    @classmethod
+    def vector_zeros_like(cls, target, components = ('x', 'y', 'z'), dtype = None):
+        if isinstance(target, VectorData):
+            return np.zeros_like(target, dtype = dtype)
+        if isinstance(target, Data):
+            return cls(np.repeat(np.zeros_like(target)[...,np.newaxis], len(components),
+                                 axis=-1), components = components,
+                       dtype = dtype, **target._metadata)
+        elif hasattr(target.positions, 'shape'):
+            return cls(np.zeros(np.append(target.positions.shape,
+                                          len(components)), dtype = dtype),
+                       components = components, **target._metadata)
+
+        
+
+class ImageTarget(DataTarget):
+    def __init__(self, shape, pixel_size=None, optics=None, **kwargs):
+        shape = _ensure_pair(shape)
+        kwargs = copy.copy(kwargs)
+        if pixel_size is None:
+            if 'positions' in kwargs:
+                pixel_size = kwargs['positions']
+                del kwargs['positions']
+            elif hasattr(optics, 'pixel_scale'):
+                pixel_size = optics.pixel_scale
+                warnings.warn("Specifying pixel_scale in optics is depricated, "
+                              "use Image pixel_size or similar instead")
+                optics = copy.copy(optics)
+                del optics.pixel_scale
+
+        if np.isscalar(pixel_size):
+            pixel_size = np.repeat(pixel_size, len(shape))
+        super(ImageTarget, self).__init__(positions = Grid(shape, pixel_size), optics
+                                          = optics, **kwargs)
+
+    @property    
+    def _dict(self):
+        d = super(ImageTarget, self)._dict
+        g = d['positions']
+        del d['positions']
+        d['shape'] = g.shape
+        d['pixel_size'] = g.spacing
+        return d
+        
+class Image(ImageTarget, Data):
+    """
+    2D pixel data on a rectangular grid
+    """
+    def __new__(cls, arr, pixel_size=None, optics=None, **kwargs):
+        return super(Image, cls).__new__(cls, arr = arr, **kwargs)
+
+    def __init__(self, arr, pixel_size=None, optics=None, **kwargs):
+        if 'shape' in kwargs:
+            # might get a shape specifier when pulling attributes from a target,
+            # ignore it because getting the shape from arr is more reliable
+            del kwargs['shape']
+        arr = _ensure_array(arr)
+        if (pixel_size is None and hasattr(arr, 'positions') and
+            hasattr(arr.positions, 'spacing')):
+            pixel_size = arr.positions.spacing
+        super(Image, self).__init__(arr = arr, shape = arr.shape, pixel_size =
+                                    pixel_size, optics = optics, **kwargs)
+
+
+
+    @property
+    def _dict(self):
+        d = super(Image, self)._dict
+        # remove the shape from the ImageTarget _dict because Image gets shape
+        # directly from the supplied arr
+        del d['shape']
+        return d
+
+    @classmethod
+    def from_target(cls, arr, target):
+        metadata = copy.copy(target._metadata)
+        if 'shape' in metadata:
+            del metadata['shape']
+        if 'positions' in metadata and metadata['positions'] is not None:
+            metadata['pixel_size'] = metadata['positions'].spacing
+            del metadata['positions']
+        return cls(arr, **metadata)
+        
+
+    
+class VolumeTarget(DataTarget):
+    pass
+
+class Volume(VolumeTarget, Data):
     """
     3D pixel data on a rectangular grid
     """

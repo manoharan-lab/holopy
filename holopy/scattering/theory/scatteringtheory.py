@@ -144,12 +144,9 @@ class ScatteringTheory(HolopyObject):
 
         # add the z component to polarization and adjust the shape so that it is
         # broadcast correctly
-        p = np.append(target.optics.polarization, 0).reshape(1, 1, 3)
+        ref = VectorData(np.append(target.optics.polarization, 0).reshape(1, 1, 3))
 
-        ref = VectorData(p)
-
-        return Image(interfere_at_detector(scat, ref),
-                        optics=target.optics)
+        return Image.from_target(interfere_at_detector(scat, ref), target)
 
     @classmethod
     @binding

@@ -25,9 +25,7 @@ from __future__ import division
 
 import numpy as np
 import copy
-from types import NoneType
 from .helpers import _ensure_pair
-from .errors import PixelScaleNotSpecified
 from holopy_object import HolopyObject
 
 
@@ -112,17 +110,6 @@ class Optics(HolopyObject):
     def wavevec_in(self, medium_index):
         return 2*np.pi/self.wavelen_in(medium_index)
     
-            
-    @property
-    def pixel(self):
-        try:
-            if self.pixel_scale.__class__ == NoneType or \
-                    _ensure_pair(self.pixel_scale)[1].__class__ == NoneType:
-                raise PixelScaleNotSpecified
-            return _ensure_pair(self.pixel_scale)
-        except AttributeError:
-            raise PixelScaleNotSpecified
-
     def resample(self, factor):
         """
         Update an optics instance for a resampling.  This has the effect of
@@ -163,11 +150,18 @@ class Grid(PositionSpecification):
         if np.isscalar(spacing):
             spacing = np.repeat(spacing, len(shape))
         self.spacing = spacing
+        
         self.random_subset = random_subset
         if random_subset is not None:
             self.selection = np.random.random(self.shape) > (1.0-self.selection)
         else:
             self.selection = None
+
+    def resample_by_factors(self, factors):
+        new = copy.copy(self)
+        new.spacing = new.spacing.astype('float')
+        new.spacing[factors.keys()] *= factors.values()
+        return new
 
 class UnevenGrid(Grid):
     pass
@@ -178,3 +172,4 @@ class Angles(PositionSpecification):
         self.phi = phi
         self.units = units
 
+        
