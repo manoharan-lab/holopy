@@ -24,4 +24,4 @@ Propagation of light (electric fields) or holograms
 """
 from __future__ import division
 
-from propagate import propagate, trans_func
+from convolution_propagation import propagate

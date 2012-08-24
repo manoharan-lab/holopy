@@ -27,12 +27,12 @@ from __future__ import division
 import numpy as np
 from ..core.math import fft, ifft
 from ..core.helpers import _ensure_pair, _ensure_array
-from ..core import Data, Volume, Image, Grid, UnevenGrid
+from ..core import Data, Volume, Image, Grid, UnevenGrid, VolumeTarget
 
 # May eventually want to have this function take a propagation model
 # so that we can do things other than convolution
 
-def propagate(data, d, gradient_filter=False):
+def propagate(data, target, gradient_filter=False):
     """
     Propagates a hologram a distance d along the optical axis.
 
@@ -51,7 +51,7 @@ def propagate(data, d, gradient_filter=False):
     ----------
     data : :class:`holopy.core.data.Image`
        Hologram to propagate
-    d : float or list of floats
+    target : float, list of floats, or `holopy.core.data.VolumeTarget`
        Distance to propagate, in meters.  A list tells to propagate to several
        distances and return the volume
     gradient_filter : float
@@ -71,6 +71,31 @@ def propagate(data, d, gradient_filter=False):
     hologram without invoking the rest of the reconstruction
     machinery. 
     """
+
+    if isinstance(target, VolumeTarget):
+        # get the right z slices in the volume
+        d = np.arange(target.positions.shape[2]) * target.positions.spacing[2]
+        d = d + target.origin[2]
+        vol = propagate(data, d, gradient_filter)
+
+
+        if data.center is None:
+            data_center = data.positions.extent/2
+        else:
+            data_center = data.center
+
+        offset = target.center[:2] - data_center
+
+        x0, y0 = offset[:2]
+        x1, y1 = np.array((x0, y0)) + (target.positions.extent[:2] / data.positions.spacing[:2])
+        vol = vol[x0:x1, y0:y1 :]
+        vol = vol.resample(target.positions.shape)
+        vol.set_metadata(**target._metadata)
+        return vol
+
+    # target is just a list of distances, so we can compute convolution
+    # propagation to those distances
+    d = target
     
     G = trans_func(data.shape[:2], data.positions.spacing,
                    data.optics.med_wavelen, d, squeeze=False,
@@ -85,7 +110,7 @@ def propagate(data, d, gradient_filter=False):
     arr = np.squeeze(ifft(ft, overwrite=True))
 
     if arr.ndim == 2:
-        return Image(arr, data.positions.spacing, optics = data.optics)
+        res = Image(arr, data.positions.spacing, optics = data.optics)
     elif arr.ndim == 3:
         # check if supplied distances are in a regular grid
         dd = np.diff(d)
@@ -96,8 +121,9 @@ def propagate(data, d, gradient_filter=False):
             positions = UnevenGrid(spacing = (data.positions.spacing[0],
                                     data.positions.spacing[1], d),
                                    shape = arr.shape)
-        return Volume(arr, positions = positions)
-    
+        res =  Volume(arr, positions = positions)
+    res.set_metadata(**data._metadata)
+    return res
 
 def apply_trans_func(ft, G):
     mm, nn = [dim/2 for dim in G.shape[:2]]

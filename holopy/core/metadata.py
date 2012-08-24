@@ -163,6 +163,11 @@ class Grid(PositionSpecification):
         new.spacing[factors.keys()] *= factors.values()
         return new
 
+    @property
+    def extent(self):
+        return self.shape * self.spacing
+
+    
 class UnevenGrid(Grid):
     pass
             

@@ -194,11 +194,11 @@ class DDA(ScatteringTheory):
         outf = tempfile.NamedTemporaryFile(dir = temp_dir, delete=False)
         if isinstance(scatterer, MultidomainScattererByFunction):
             outf.write("Nmat={0}\n".format(len(scatterer.domains)))
-            for point in scatterer._points(self._spacing(optics, scatterer.n)):
+            for point in scatterer._points(self.required_spacing(optics, scatterer.n)):
                 outf.write('{0} {1} {2} {3}'.format(point[0], point[1],
                                                     point[2], point[3]+1))
         else:
-            for point in scatterer._points(self._spacing(optics, scatterer.n)):
+            for point in scatterer._points(self.required_spacing(optics, scatterer.n)):
                 outf.write('{0} {1} {2}\n'.format(*point))
         outf.flush()
         
@@ -218,12 +218,13 @@ class DDA(ScatteringTheory):
 
         return cmd
 
-    
-    def _dpl(self, optics, n):
+    @classmethod
+    def _dpl(cls, optics, n):
         return 10*(abs(n)/optics.index)
-    
-    def _spacing(self, optics, n):
-        return optics.med_wavelen / self._dpl(optics, n)
+
+    @classmethod
+    def required_spacing(cls, optics, n):
+        return optics.med_wavelen / cls._dpl(optics, n)
         
     
     def _calc_field(self, scatterer, target):

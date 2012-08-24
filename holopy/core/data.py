@@ -55,9 +55,10 @@ class DataTarget(HolopyObject):
     **kwargs : varies
         Other metadata
     """
-    def __init__(self, positions = None, optics = None, use_random_fraction =
-                 None):
+    def __init__(self, positions = None, optics = None, center = None,
+                 use_random_fraction = None):
         self.set_metadata(positions = positions, optics =  optics,
+                          center = center,
                           use_random_fraction = use_random_fraction)
 
     @property
@@ -76,8 +77,7 @@ class DataTarget(HolopyObject):
 
     def _update_metadata(self):
         for key, item in self._metadata.iteritems():
-            if item is not None:
-                setattr(self, key, item)
+            setattr(self, key, item)
 
     def set_metadata(self, **kwargs):
         if not hasattr(self, '_metadata'):
@@ -248,7 +248,7 @@ class Data(DataTarget, np.ndarray):
         
         Parameters
         ----------
-        shape : int or 2-tuple of ints
+        shape : int or array_like of ints
             shape of final resampled data
         window : string
             type of smoothing window passed to the scipy.signal.resample
@@ -268,11 +268,12 @@ class Data(DataTarget, np.ndarray):
             raise NotImplemented()
             
         shape = _ensure_array(shape)
+        print shape, self.shape
         new = self
         factors = {}
         for i, s in enumerate(shape):
             if s != self.shape[i]:
-                factors[i] = 1.0 * s / self.shape[i]
+                factors[i] = 1.0 * self.shape[i] / s
                 new = scipy.signal.resample(new, s, axis=i, window=window)
 
         new = self.__class__(new, **self._dict)
@@ -308,8 +309,14 @@ class VectorData(Data):
                        components = components, **target._metadata)
 
         
+class GriddedTarget(DataTarget):
+    @property
+    def origin(self):
+        return self.center - self.positions.extent / 2
 
-class ImageTarget(DataTarget):
+
+        
+class ImageTarget(GriddedTarget):
     def __init__(self, shape, pixel_size=None, optics=None, **kwargs):
         shape = _ensure_pair(shape)
         kwargs = copy.copy(kwargs)
@@ -337,7 +344,8 @@ class ImageTarget(DataTarget):
         d['shape'] = g.shape
         d['pixel_size'] = g.spacing
         return d
-        
+
+    
 class Image(ImageTarget, Data):
     """
     2D pixel data on a rectangular grid
@@ -379,7 +387,7 @@ class Image(ImageTarget, Data):
         
 
     
-class VolumeTarget(DataTarget):
+class VolumeTarget(GriddedTarget):
     pass
 
 class Volume(VolumeTarget, Data):

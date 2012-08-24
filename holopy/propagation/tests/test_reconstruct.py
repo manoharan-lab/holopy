@@ -22,11 +22,8 @@ The tests here test basic reconstruction capability
 '''
 from __future__ import division
 
-import os
-import string
 import numpy as np
 import scipy
-from ...core import load
 from ...core.tests.common import get_example_data
 from ..propagate import propagate
 from numpy.testing import assert_array_equal
