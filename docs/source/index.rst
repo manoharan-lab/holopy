@@ -10,7 +10,7 @@ Holography and Light Scattering in Python
 :Date: |today|
 
 The :mod:`holopy` provides tools for working with digital holograms
-and light scattering.  It provides a user friendly package to a lot of
+and light scattering data.  It provides user friendly access to a lot of
 optical physics and a number of tools for working with experimental
 data.  It allows you to reconstruct a 3D volume from a hologram (the
 digital equivalent of shining light through a holographic film),
