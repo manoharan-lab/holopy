@@ -79,10 +79,19 @@ class DataTarget(HolopyObject):
         for key, item in self._metadata.iteritems():
             setattr(self, key, item)
 
-    def set_metadata(self, **kwargs):
+    def set_metadata(self, no_set_none = True, **kwargs):
         if not hasattr(self, '_metadata'):
             self._metadata = {}
-        self._metadata.update(kwargs)
+        if no_set_none:
+            for key, val in kwargs.iteritems():
+                if val is None:
+                    if key not in self._metadata:
+                        self._metadata[key] = None
+                else:
+                    self._metadata[key] = val
+        else:
+            self._metadata.update(kwargs)
+
         self._update_metadata()
         return self
         
