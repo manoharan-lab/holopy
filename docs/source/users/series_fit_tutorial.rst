@@ -59,7 +59,7 @@ Each frame fitted actually uses the Model from the previous fitresult.
 This allows you to modify the initial guesses for the next frame, but
 you can also swap out any arbitrary peices about the model if desired
 (switch from Mie to Multisphere theory, change the number of particles
-in a SphereCluster, or anything else).  Just remember, with great
+in a Spheres object, or anything else).  Just remember, with great
 power comes great responsibility.
    
 If postfit raises a :class:`holopy.fitting.series.RejectFit` or

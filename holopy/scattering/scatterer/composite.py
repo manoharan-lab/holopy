@@ -17,8 +17,8 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-Defines Composite, a scatterer that consists of other scatterers,
-including scattering primitives (e.g. Sphere) or other Composite
+Defines Scatterers, a scatterer that consists of other scatterers,
+including scattering primitives (e.g. Sphere) or other Scatterers
 scatterers (e.g. two trimers).
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
@@ -38,11 +38,11 @@ import numpy as np
 from . import Scatterer
 from ...core.math import rotate_points
 
-class Composite(Scatterer):
+class Scatterers(Scatterer):
     '''
     Contains optical and geometrical properties of a a composite
-    scatterer.  A Composite can consist of multiple scattering
-    primitives (e.g. Sphere) or other Composite scatterers. 
+    scatterer.  A Scatterers can consist of multiple scattering
+    primitives (e.g. Sphere) or other Scatterers scatterers. 
 
     Attributes
     ----------

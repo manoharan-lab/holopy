@@ -43,7 +43,7 @@ from ..errors import TheoryNotCompatibleError
 from ...core.data import VectorData
 from ..scatterer import (Sphere, CoatedSphere, VoxelatedScatterer,
                          ScattererByFunction, MultidomainScattererByFunction,
-                         Ellipsoid, SphereCluster)
+                         Ellipsoid, Spheres)
 
 class DependencyMissing(SkipTest, Exception):
     def __init__(self, dep):
@@ -110,7 +110,7 @@ class DDA(ScatteringTheory):
             scat_args = self._adda_function_scatterer(scatterer, optics, temp_dir)
         elif isinstance(scatterer, Ellipsoid):
             scat_args = self._adda_ellipsoid(scatterer, optics, temp_dir)
-        elif isinstance(scatterer, SphereCluster):
+        elif isinstance(scatterer, Spheres):
             scat_args = self._adda_bisphere(scatterer, optics, temp_dir)
         else:
             raise TheoryNotCompatibleError(self, scatterer)

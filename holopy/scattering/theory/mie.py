@@ -30,7 +30,7 @@ import numpy as np
 from ...core.helpers import _ensure_array
 from ...core.data import VectorData
 from ..errors import TheoryNotCompatibleError, UnrealizableScatterer
-from ..scatterer import Sphere, CoatedSphere, Composite
+from ..scatterer import Sphere, CoatedSphere, Scatterers
 from .scatteringtheory import FortranTheory
 from .mie_f import mieangfuncs, miescatlib
 from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
@@ -101,7 +101,7 @@ class Mie(FortranTheory):
             phase = np.exp(-1j*np.pi*2*scatterer.z / target.optics.med_wavelen)
             result = target.from_1d(VectorData(np.vstack(fields).T))
             return result * phase
-        elif isinstance(scatterer, Composite):
+        elif isinstance(scatterer, Scatterers):
             spheres = scatterer.get_component_list()
             
             field = self._calc_field(spheres[0], target)
@@ -130,7 +130,7 @@ class Mie(FortranTheory):
             Dimensional scattering, absorption, and extinction 
             cross sections, and <cos \theta> 
         """
-        if isinstance(scatterer, Composite):
+        if isinstance(scatterer, Scatterers):
             raise UnrealizableScatterer(self, scatterer, 
                                         "Use Multisphere to calculate " + 
                                         "radiometric quantities")

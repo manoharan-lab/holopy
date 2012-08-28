@@ -26,7 +26,7 @@ from __future__ import division
 import numpy as np
 from numpy import sqrt
 import holopy as hp
-from scatterpy.scatterer import Sphere, SphereCluster
+from scatterpy.scatterer import Sphere, Spheres
 from matplotlib import pyplot
 
 #calculate the distances between each sphere in a cluster and each
@@ -122,7 +122,7 @@ def make_tricluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
         1/sqrt(3)*(radius+gap/2.0),-2/sqrt(3)*(radius+gap/2.0)])+xcom
     ys = np.array([-radius-gap/2.0,radius+gap/2.0,0])+ycom
     zs = np.array(np.zeros(3))+zcom
-    triangle = SphereCluster([
+    triangle = Spheres([
         Sphere(n=index, r = radius, center = (xs[0], ys[0], zs[0])),
         Sphere(n=index, r = radius, center = (xs[1], ys[1], zs[1])),
         Sphere(n=index, r = radius, center = (xs[2], ys[2], zs[2]))])
@@ -154,7 +154,7 @@ def make_sqcluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
     xs = np.array([-radius-gap/2.0,-radius-gap/2.0,radius+gap/2.0,radius+gap/2.])+xcom
     ys = np.array([-radius-gap/2.0, radius+gap/2.0,-radius-gap/2.0,radius+gap/2.0])+ycom
     zs = np.array([0,0,0,0])+zcom
-    square = SphereCluster([
+    square = Spheres([
         Sphere(n=index, r = radius, center = (xs[0], ys[0], zs[0])),
         Sphere(n=index, r = radius, center = (xs[1], ys[1], zs[1])),
         Sphere(n=index, r = radius, center = (xs[2], ys[2], zs[2])),
@@ -190,7 +190,7 @@ def make_tetracluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
     zs = np.array([-(1/4.0)*sqrt(2/3.0)*(2*radius+gap),
         -(1/4.0)*sqrt(2/3.0)*(2*radius+gap),-(1/4.0)*sqrt(2/3.0)*(2*radius+gap),
         (3/4.0)*sqrt(2/3.0)*(2*radius+gap)])+zcom
-    tetra = SphereCluster([
+    tetra = Spheres([
         Sphere(n=index, r = radius, center = (xs[0], ys[0], zs[0])),
         Sphere(n=index, r = radius, center = (xs[1], ys[1], zs[1])),
         Sphere(n=index, r = radius, center = (xs[2], ys[2], zs[2])),
@@ -223,7 +223,7 @@ def make_tribipyrcluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
     xs = [1/sqrt(3)*(radius+gap/2.0),1/sqrt(3)*(radius+gap/2.0),-2/sqrt(3)*(radius+gap/2.0),0,0]
     ys = [-radius-gap/2.0,radius+gap/2.0,0,0,0]
     zs = [0,0,0,sqrt(2/3.0)*(2*radius+gap),-sqrt(2/3.0)*(2*radius+gap)]
-    triangularbipyramid = SphereCluster([
+    triangularbipyramid = Spheres([
         Sphere(n=index, r = radius, center = (xs[0], ys[0], zs[0])),
         Sphere(n=index, r = radius, center = (xs[1], ys[1], zs[1])),
         Sphere(n=index, r = radius, center = (xs[2], ys[2], zs[2])),
@@ -257,7 +257,7 @@ def make_octacluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
     xs = np.array([-radius-gap/2.0,-radius-gap/2.0,radius+gap/2.0,radius+gap/2.0,0,0])+xcom
     ys = np.array([-radius-gap/2.0, radius+gap/2.0,-radius-gap/2.0,radius+gap/2.0,0,0])+ycom
     zs = np.array([0,0,0,0,1/sqrt(2)*(2*radius+gap),-1/sqrt(2)*(2*radius+gap)])+zcom
-    octahedron = SphereCluster([
+    octahedron = Spheres([
         Sphere(n=index, r = radius, center = (xs[0], ys[0], zs[0])),
         Sphere(n=index, r = radius, center = (xs[1], ys[1], zs[1])),
         Sphere(n=index, r = radius, center = (xs[2], ys[2], zs[2])),
@@ -295,7 +295,7 @@ def make_cubecluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
             -radius-gap/2.0, radius+gap/2.0,-radius-gap/2.0,radius+gap/2.0])+ycom
     zs = np.array([-radius-gap/2.0,-radius-gap/2.0,-radius-gap/2.0,-radius-gap/2.0,
             radius+gap/2.0,radius+gap/2.0,radius+gap/2.0,radius+gap/2.0])+zcom
-    cube = SphereCluster([
+    cube = Spheres([
         Sphere(n=index, r = radius, center = (xs[0], ys[0], zs[0])),
         Sphere(n=index, r = radius, center = (xs[1], ys[1], zs[1])),
         Sphere(n=index, r = radius, center = (xs[2], ys[2], zs[2])),
@@ -343,7 +343,7 @@ def make_polytetracluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
         -1/(sqrt(2))*(radius+gap/2.0),1/(sqrt(2))*(radius+gap/2.0),
         -1/(sqrt(2))*(radius+gap/2.0),-5/3.0/sqrt(2)*(radius+gap/2.0),
         -5/3.0/sqrt(2)*(radius+gap/2.0)])+zcom
-    polytetra = SphereCluster([
+    polytetra = Spheres([
         Sphere(n=index, r = radius, center = (xs[0], ys[0], zs[0])),
         Sphere(n=index, r = radius, center = (xs[1], ys[1], zs[1])),
         Sphere(n=index, r = radius, center = (xs[2], ys[2], zs[2])),

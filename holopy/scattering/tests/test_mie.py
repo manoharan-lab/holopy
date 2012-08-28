@@ -35,7 +35,7 @@ from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
                            assert_raises)
 from nose.plugins.attrib import attr
 
-from ..scatterer import Sphere, SphereCluster, CoatedSphere, Ellipsoid
+from ..scatterer import Sphere, Spheres, CoatedSphere, Ellipsoid
 from ..theory import Mie
 
 from ..theory.mie import UnrealizableScatterer
@@ -98,7 +98,7 @@ def test_Mie_multiple():
     s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
     s2 = Sphere(n = 1.59, r = 1e-6, center=[8e-6,5e-6,5e-6])
     s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,10e-6,3e-6])
-    sc = SphereCluster(scatterers=[s1, s2, s3])
+    sc = Spheres(scatterers=[s1, s2, s3])
 
     target = ImageTarget(128, optics = optics)
     fields = Mie.calc_field(sc, target)
@@ -168,7 +168,7 @@ def test_linearity():
     sphere1 = Sphere(n=n, r=r, center = (x, y, z))
     sphere2 = Sphere(n=n, r=r, center = (x2, y2, z2))
 
-    sc = SphereCluster(scatterers = [sphere1, sphere2])
+    sc = Spheres(scatterers = [sphere1, sphere2])
     
     holo_1 = Mie.calc_holo(sphere1, xtarget, scaling=scaling_alpha)
     holo_2 = Mie.calc_holo(sphere2, xtarget, scaling=scaling_alpha)
@@ -210,7 +210,7 @@ def test_nonlinearity():
     sphere1 = Sphere(n=n, r=r, center = (x, y, z))
     sphere2 = Sphere(n=n, r=r, center = (x2, y2, z2))
 
-    sc = SphereCluster(scatterers = [sphere1, sphere2])
+    sc = Spheres(scatterers = [sphere1, sphere2])
     
     holo_1 = Mie.calc_holo(sphere1, xtarget, scaling=scaling_alpha)
     holo_2 = Mie.calc_holo(sphere2, xtarget, scaling=scaling_alpha)

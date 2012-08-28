@@ -33,7 +33,7 @@ from numpy.testing import assert_equal
 from nose.plugins.attrib import attr
 
 from ..scatterer import (Sphere, CoatedSphere, Scatterer, Ellipsoid,
-                         Composite, abstract_scatterer)
+                         Scatterers, abstract_scatterer)
 
 from ..errors import ScattererDefinitionError
 from .common import assert_allclose
@@ -128,28 +128,28 @@ def test_CoatedSphere_parameters():
 @attr('fast')
 def test_Composite_construction():
     # empty composite
-    comp_empty = Composite()
+    comp_empty = Scatterers()
     print comp_empty.get_component_list()
     
     # composite of multiple spheres
     s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
     s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,0,0])
-    comp_spheres = Composite(scatterers=[s1, s2, s3])
+    comp_spheres = Scatterers(scatterers=[s1, s2, s3])
 
     # heterogeneous composite
     cs = CoatedSphere(n=(1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6),
                       center=[-5e-6, 0,0])
-    comp = Composite(scatterers=[s1, s2, s3, cs])
+    comp = Scatterers(scatterers=[s1, s2, s3, cs])
 
     # multi-level composite (contains another composite)
     s4 = Sphere(center=[0, 5e-6, 0])
     comp_spheres.add(s4)
-    comp2 = Composite(scatterers=[comp_spheres, comp])
+    comp2 = Scatterers(scatterers=[comp_spheres, comp])
     print comp2.get_component_list()
 
     # even more levels
-    comp3 = Composite(scatterers=[comp2, cs])
+    comp3 = Scatterers(scatterers=[comp2, cs])
     print comp3
 
 @attr('fast')

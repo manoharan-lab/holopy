@@ -36,7 +36,7 @@ from nose.plugins.attrib import attr
 from ...core import Optics, ImageTarget
 from ..theory import Multisphere
 from ..theory.multisphere import MultisphereExpansionNaN, ConvergenceFailureMultisphere
-from ..scatterer import Sphere, SphereCluster, CoatedSphere
+from ..scatterer import Sphere, Spheres, CoatedSphere
 from ..errors import UnrealizableScatterer, TheoryNotCompatibleError
 from .common import assert_allclose, verify
 
@@ -101,7 +101,7 @@ def test_polarization():
 
     sphere = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius, 
                     center =(x, y, z))
-    sc = SphereCluster([sphere])
+    sc = Spheres([sphere])
     xtarget = ImageTarget(shape = imshape, optics=xoptics)
     ytarget = ImageTarget(shape = imshape, optics=yoptics)
 
@@ -124,7 +124,7 @@ def test_polarization():
 
 @with_setup(setup=setup_model, teardown=teardown_model)
 def test_2_sph():
-    sc = SphereCluster(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
+    sc = Spheres(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07),
                                 Sphere(center=[6e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07)])
@@ -141,7 +141,7 @@ def test_2_sph():
 @attr('fast')
 @with_setup(setup=setup_model, teardown=teardown_model)
 def test_invalid():
-    sc = SphereCluster(scatterers=[Sphere(center=[7.1, 7e-6, 10e-6],
+    sc = Spheres(scatterers=[Sphere(center=[7.1, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07),
                                 Sphere(center=[6e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07)])
@@ -150,7 +150,7 @@ def test_invalid():
 
     assert_raises(UnrealizableScatterer, Multisphere.calc_holo, sc, target)
     
-    sc = SphereCluster(scatterers=[Sphere(center=[7.1, 7e-6, 10e-6],
+    sc = Spheres(scatterers=[Sphere(center=[7.1, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-01),
                                 Sphere(center=[6e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07)])
@@ -170,7 +170,7 @@ def test_overlap():
     # should raise a warning
     with warnings.catch_warnings(True) as w:
         warnings.simplefilter("always")
-        sc = SphereCluster(scatterers=[Sphere(center=[3e-6, 3e-6, 10e-6], 
+        sc = Spheres(scatterers=[Sphere(center=[3e-6, 3e-6, 10e-6], 
                                            n=1.59, r=.5e-6), 
                                     Sphere(center=[3.4e-6, 3e-6, 10e-6], 
                                            n=1.59, r=.5e-6)])
@@ -184,7 +184,7 @@ def test_overlap():
     # but it should succeed with a small overlap, after raising a warning
     with warnings.catch_warnings(True) as w:
         warnings.simplefilter("always")
-        sc = SphereCluster(scatterers=[Sphere(center=[3e-6, 3e-6, 10e-6], 
+        sc = Spheres(scatterers=[Sphere(center=[3e-6, 3e-6, 10e-6], 
                                            n=1.59, r=.5e-6), 
                                     Sphere(center=[3.9e-6, 3.e-6, 10e-6], 
                                            n=1.59, r=.5e-6)])
@@ -196,7 +196,7 @@ def test_overlap():
 @attr('fast')
 @with_setup(setup=setup_model, teardown=teardown_model)
 def test_selection():
-    sc = SphereCluster(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
+    sc = Spheres(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07),
                                 Sphere(center=[6e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07)])
@@ -212,7 +212,7 @@ def test_selection():
 @attr('fast')
 @with_setup(setup=setup_model, teardown=teardown_model)
 def test_niter():
-    sc = SphereCluster(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
+    sc = Spheres(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
                                           n=1.5811+1e-4j, r=5e-07),
                                    Sphere(center=[6e-6, 7e-6, 10e-6],
                                           n=1.5811+1e-4j, r=5e-07)])

@@ -17,7 +17,7 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-Defines SphereCluster, a Composite scatterer consisting of Spheres
+Defines Spheres, a Scatterers scatterer consisting of Spheres
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
@@ -29,7 +29,7 @@ import numpy as np
 import warnings
 
 from .sphere import Sphere
-from .composite import Composite
+from .composite import Scatterers
 from ..errors import OverlapWarning, ScattererDefinitionError
 from ...core.math import cartesian_distance, rotate_points
 
@@ -37,7 +37,7 @@ from ...core.math import cartesian_distance, rotate_points
 # calling this function again with a different action.  
 warnings.simplefilter('always', OverlapWarning)
 
-class SphereCluster(Composite):
+class Spheres(Scatterers):
     '''
     Contains optical and geometrical properties of a cluster of spheres. 
 
@@ -55,7 +55,7 @@ class SphereCluster(Composite):
         for s in scatterers:
             if not isinstance(s, Sphere):
                 raise ScattererDefinitionError(
-                    "SphereCluster expects all component " +
+                    "Spheres expects all component " +
                     "scatterers to be Spheres.\n" + 
                     repr(s) + " is not a Sphere", self)
         self.scatterers = scatterers
@@ -111,15 +111,15 @@ class SphereCluster(Composite):
 # TODO: Move this code out of scatterer? It sort of has more to do with how
 # clusters move than pure geometry
 
-# (VNM) as a way of generating a new SphereCluster, rotate is fine.  But
+# (VNM) as a way of generating a new Spheres, rotate is fine.  But
 # it should become a method (and override Scatterer.rotate()) rather
-# than a function.  I would propose moving this to Composite, where it
+# than a function.  I would propose moving this to Scatterers, where it
 # can be made more general and inheritable.
     
 def rotate(cluster, theta, phi, psi):
     com = cluster.centers.mean(0)
         
-    return SphereCluster([Sphere(n=s.n, r=s.r, center =
+    return Spheres([Sphere(n=s.n, r=s.r, center =
                                  com+rotate_points(s.center-com, theta,
                                                    phi, psi)) for s in
                           cluster.scatterers])

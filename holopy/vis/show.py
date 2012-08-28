@@ -25,7 +25,7 @@ sensible way.
 from __future__ import division
 
 import numpy as np
-from ..scattering.scatterer import SphereCluster
+from ..scattering.scatterer import Spheres
 from ..core import Image
 
 class VisualizationNotImplemented(Exception):
@@ -51,7 +51,7 @@ def show(o,color=(0,0,1)):
     to import all of matplotlib or mayavi just to load holopy)
     """
     
-    if isinstance(o, SphereCluster):
+    if isinstance(o, Spheres):
         import vis3d
         vis3d.show_sphere_cluster(o,color)
         return

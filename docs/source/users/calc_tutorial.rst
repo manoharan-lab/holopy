@@ -92,10 +92,10 @@ Cluster of Spheres
 Calculating a hologram from a cluster of spheres is done in a very
 similar manner ::
 
-    from holopy.scattering.scatterer import SphereCluster
+    from holopy.scattering.scatterer import Spheres
     s1 = Sphere(center=(5, 5, 5), n = 1.59, r = 0.5)
     s2 = Sphere(center=(4, 4, 5), n = 1.59, r = 0.5)
-    cluster = SphereCluster([s1, s2])
+    cluster = Spheres([s1, s2])
     holo = Mie.calc_holo(cluster, target)
 
 This will do the calculation with superposition of Mie solutions, if
@@ -107,7 +107,7 @@ you would instead use ::
 
 Adding more spheres to the cluster is as simple as defining more
 sphere objects and passing a longer list of spheres to the
-:class:`holopy.scattering.scatterer.SphereCluster` constructor.
+:class:`holopy.scattering.scatterer.Spheres` constructor.
 
 Coated Spheres
 --------------
@@ -187,7 +187,7 @@ Some theories like :class:`holopy.scattering.theory.multisphere.Multisphere` hav
   from holopy.scattering.theory import Multisphere
   s1 = Sphere(center=(5, 5, 5), n = 1.59, r = 0.5)
   s2 = Sphere(center=(4, 4, 5), n = 1.59, r = 0.5)
-  cluster = SphereCluster([s1, s2])
+  cluster = Spheres([s1, s2])
   target = ImageTarget(shape = 100, pixel_size = .1, optics = Optics(wavelen = .660, index = 1.33))
   multi = Multisphere(niter = 100)
   holo = multi.calc_holo(cluster, target)

@@ -29,7 +29,7 @@ import numpy as np
 from nose.tools import with_setup, nottest
 from nose.plugins.attrib import attr
 from numpy.testing import assert_equal, assert_approx_equal, assert_raises, assert_allclose
-from ...scattering.scatterer import Sphere, SphereCluster, ScattererByFunction
+from ...scattering.scatterer import Sphere, Spheres, ScattererByFunction
 from ...scattering.theory import Mie, Multisphere, DDA
 from ...core import Optics, ImageTarget, load, save, DataTarget
 from ...core.process import normalize
@@ -160,7 +160,7 @@ def test_fit_superposition():
                 center=(1.56e-05, 1.44e-05, 15e-6))
     s2 = Sphere(n=1.5891+1e-4j, r = .65e-6, 
                 center=(3.42e-05, 3.17e-05, 10e-6))
-    sc = SphereCluster([s1, s2])
+    sc = Spheres([s1, s2])
     alpha = .629
     
     theory = Mie(optics, 100)
@@ -178,7 +178,7 @@ def test_fit_superposition():
                   Parameter('r1', .65e-6, [0.6e-6, 0.7e-6])]
 
     def make_scatterer(x0, x1, y0, y1, z0, z1, r0, r1, nr):
-        s = SphereCluster([
+        s = Spheres([
                 Sphere(center = (x0, y0, z0), r=r0, n = nr+1e-4j),
                 Sphere(center = (x1, y1, z1), r=r1, n = nr+1e-4j)])
         return s
@@ -219,7 +219,7 @@ def test_fit_multisphere_noisydimer_slow():
                   Parameter(1.6026, [1, 2], 'nr1')]
 
     def make_scatterer(x0, x1, y0, y1, z0, z1, r0, r1, nr0, nr1):
-        s = SphereCluster([
+        s = Spheres([
                 Sphere(center = (x0, y0, z0), r=r0, n = nr0+1e-5j),
                 Sphere(center = (x1, y1, z1), r=r1, n = nr1+1e-5j)])
         return s
@@ -229,15 +229,15 @@ def test_fit_multisphere_noisydimer_slow():
     #            center=(1.64155e-05, 1.7247e-05, 20.582e-6)) 
     #s2 = Sphere(n=1.6026+1e-5j, r = .695e-6, 
     #            center=(1.758e-05, 1.753e-05, 21.2698e-6)) 
-    #sc = SphereCluster([s1, s2])
+    #sc = Spheres([s1, s2])
     #alpha = 0.99
 
     #lb1 = Sphere(1+1e-5j, 1e-8, 0, 0, 0)
     #ub1 = Sphere(2+1e-5j, 1e-5, 1e-4, 1e-4, 1e-4)
     #step1 = Sphere(1e-4+1e-4j, 1e-8, 0, 0, 0)
-    #lb = SphereCluster([lb1, lb1]), .1
-    #ub = SphereCluster([ub1, ub1]), 1    
-    #step = SphereCluster([step1, step1]), 0
+    #lb = Spheres([lb1, lb1]), .1
+    #ub = Spheres([ub1, ub1]), 1    
+    #step = Spheres([step1, step1]), 0
 
     model = Model(parameters, Multisphere, make_scatterer=make_scatterer, alpha
     = Parameter(.99, [.1, 1.0], 'alpha'))

@@ -24,7 +24,7 @@ from __future__ import division
 
 from ..scatterer import Sphere
 from ...core.tests.common import assert_read_matches_write
-from ..scatterer import Sphere, SphereCluster
+from ..scatterer import Sphere, Spheres
 
     
 def test_scatterer_io():
@@ -33,6 +33,6 @@ def test_scatterer_io():
 
     s1 = Sphere(1.59, .5, [1, 1, 2])
     s2 = Sphere(1.59, .5, [1, 3, 2])
-    sc = SphereCluster([s1, s2])
+    sc = Spheres([s1, s2])
 
     assert_read_matches_write(sc)

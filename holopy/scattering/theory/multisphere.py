@@ -31,7 +31,7 @@ import numpy as np
 from .mie_f import mieangfuncs
 from .mie_f import scsmfo_min 
 from ...core.data import VectorData
-from ..scatterer import SphereCluster
+from ..scatterer import Spheres
 from ..errors import TheoryNotCompatibleError, UnrealizableScatterer
 from .scatteringtheory import FortranTheory
 
@@ -122,7 +122,7 @@ class Multisphere(FortranTheory):
 
         """
         
-        if not isinstance(scatterer, SphereCluster):
+        if not isinstance(scatterer, Spheres):
             raise TheoryNotCompatibleError(self, scatterer)
 
         # check that the parameters are in a range where the multisphere
