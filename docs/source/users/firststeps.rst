@@ -61,9 +61,9 @@ Data as it is loaded
 
 .. sourcecode:: ipython
 
-   optics = holopy.core.metadata.Optics(wavelen=658e-9, index=1.33)
+   optics = holopy.core.metadata.Optics(wavelen=.660, index=1.33)
 
-   holo = holopy.load('image0001.tif', pixel_size = .1e-6,  optics = optics)
+   holo = holopy.load('image0001.tif', pixel_size = .1,  optics = optics)
 
 .. note::
 
@@ -74,7 +74,7 @@ Data as it is loaded
     .. sourcecode:: ipython
 
         optics.med_wavelen
-        4.947368421052631e-07
+        0.49624060150375937
 
 In the first line of code above we create an instance of the Optics metadata class
 containing the imaging laser wavelength and the medium refractive
@@ -103,21 +103,21 @@ them with a '#" character)
 .. sourcecode:: yaml
   
   !Optics
-  wavelen: 6.58e-07                    # Wavelength of light (in vacuum) used in creating holograms
-  index: 1.33                          # Index of medium
+  wavelen: 0.660    # Wavelength of light (in vacuum) used in creating holograms
+  index: 1.33       # Index of medium
   polarization: [1.0, 0.0]
   divergence: 0.0
 
 You can also write this file by hand.  In either case you can make an :class:`holopy.optics.Optics` object from the file ::
 
          meta = holopy.load('optics.yaml')
-         holo = holopy.load('image0001.tif', pixel_size = .1e-6,  optics = meta)
+         holo = holopy.load('image0001.tif', pixel_size = .1,  optics = meta)
 
 :func:`holopy.load()` will also accept the filename of an metadata yaml
 file as the argument for the optics parameter and automatically load
 the yaml file. ::
 
-  holo = holopy.load('image0001.tif', pixel_size = .1e-6, optics='optics.yaml')
+  holo = holopy.load('image0001.tif', pixel_size = .1, optics='optics.yaml')
 
 .. Note::
    

@@ -4,6 +4,8 @@
 Scattering Calculations.
 ************************
 
+TODO: add an intro to scattering calculations here
+
 In rough pseudo code, computing a hologram looks like this  ::
   holo = Theory.calc_holo(scatterer, target)
 
@@ -25,31 +27,33 @@ To actually compute scattering, you need to do three things:
 Define a Scatterer
 ==================
 
-Scatterer objects are used to describe the geometry of objects that
-scatter light.  They contain information about the position, size, and
+Scatterer objects are used to describe the geometry and optical properties of objects that
+scatter light.  They contain information about the position, size, shape, and
 index of refraction of the scatterers.  You define a scatterer like
-this ::
+this: ::
 
   from holopy.scattering.scatterer import Sphere
-  sphere = Sphere(n = 1.59, r = .5, center = (5, 5, 5))
+  sphere = Sphere(n = 1.59+.0001j, r = .5, center = (5, 5, 5))
+
+TODO: explain why you need to include a complex index.
 
 This scatterer is one we commonly use in our lab, a 1 micron
-polystyrene sphere.  Its index of refraction is 1.59, and here we have
-placed it 5 microns away from our camera.
+polystyrene sphere.  Its index of refraction is 1.59 with a very small complex part, and here we have
+placed it 5 microns away from our imaging plane.
 
 You can describe other objects or collections of objects with other
-scatterers in :mod:`holopy.scattering.scatterer`, go on take a look,
+scatterers in :mod:`holopy.scattering.scatterer`. Go on take a look,
 we will still be here when you get back.
 
 Desired data
 ============
 
-Holopy needs to know where in space you want to compute scattered quantities.  This is done be specifying a DataTarget object ::
+Holopy needs to know where in space you want to compute scattered quantities.  This is done by specifying a DataTarget object ::
   
   from holopy.core import ImageTarget, Optics
-  target = ImageTarget(shape = 100, spacing = .1, optics = Optics(wavelen = .66, index = 1.33))
+  target = ImageTarget(shape = 100, pixel_size = .1, optics = Optics(wavelen = .660, index = 1.33))
 
-Here we have chosen to use an :class:`holopy.core.data.ImageTarget` object because we want a square hologram like we would record on a camera.  If you want to calculate some other kind of data, you would use a raw :class:`holopy.core.data.DataTarget` object or a different subclass.  
+Here we have chosen to use a :class:`holopy.core.data.ImageTarget` object because we want a square hologram like we would record on a camera.  If you want to calculate some other kind of data, you would use a raw :class:`holopy.core.data.DataTarget` object or a different subclass.  
 
 This :class:`ImageTarget` is just like a normal :class:`holopy.core.data.Data` object in that it specifies coordinates of a measurement and any other relevant experimental conditions.  The distinction between a DataTarget and Data is that DataTarget's do not contain all of the data values, only where they would be measured.  The astute reader will notice that a Data object is a valid DataTarget, you can provide a Data object anywhere a DataTarget is needed, essentially telling holopy "calculate something like this Data."
 
@@ -65,15 +69,15 @@ Lets focus on the simplest of them, the :class:`holopy.scattering.theory.mie.Mie
   from holopy.scattering.theory import Mie
   holo = Mie.calc_holo(sphere, target)
 
-Similar functions exist to calculate all kinds of interesting scattered quantities and they are called the same way (except for calc_cross_sections which only needs an Optics object not a full fledged target.  
+Similar functions exist to calculate all kinds of interesting scattered quantities and they are called the same way (except for calc_cross_sections which needs an Optics object in place of a full fledged target).  
 
 .. note::
    All units in the above code sample are in microns. You are free to work in any self consistent set of units, for example you could work in pixels by doing: ::
 	
      sphere = Sphere(center = (50, 50, 50), n = 1.59, r = 5)
-	 target = ImageTarget(spacing = 1, shape = 100, optics = Optics(wavelen = 6.6, index=1.33))
+     target = ImageTarget(pixel_size = 1, shape = 100, optics = Optics(wavelen = 6.58, index=1.33))
 
-   In a similar vein you could work in meters, inches, furlongs, or cubits. 
+   In a similar vein you could work in meters, inches, furlongs, smoots, or cubits. 
 	 
 Examples
 ========
@@ -110,7 +114,7 @@ Coated Spheres
 
 Coated (or layered) spheres can use the same Mie theory as normal
 spheres. Coated spheres differ from normal spheres only in taking a
-list of indexes and radii corresponding to the layers ::
+list of indexes and radii corresponding to the layers. The indices are given in order starting from the core. ::
 
     from holopy.scattering.scatterer import CoatedSphere
     cs = CoatedSphere(center=(5, 5, 5), n = (1.59, 1.42), r = (0.3, 0.6))
@@ -130,11 +134,15 @@ In a static light scattering measurement you record scattered intensity at a num
   from holopy.core import DataTarget, Angles, Optics
   from holopy.scattering.scatterer import Sphere
   from holopy.scattering.theory import Mie
-  target = DataTarget(positions = Angles(theta = np.linspace(0, np.pi)),
-                      optics = Optics(wavelen=.66, index = 1.33))
+  target = DataTarget(positions = Angles(theta = np.linspace(0, np.pi, 100)),
+                      optics = Optics(wavelen=.660, index = 1.33))
   sphere = Sphere(r = .5, n = 1.59)
 
-  matr = Mie.calc_scat_matr(sphere, target)
+  matr = Mie.calc_scat_matrix(sphere, target)
+  
+  figure()
+  semilogy(np.linspace(0, np.pi, 100), abs(matr[:,0,0])**2)
+  semilogy(np.linspace(0, np.pi, 100), abs(matr[:,1,1])**2)
   
 If you ommit the center specification on a scatterer, holopy will assume you want farfield values.  
 
@@ -144,7 +152,7 @@ Hologram With Beam Tilt or Nonstandard Polarization
 
 Tilted incident illumination can be specified in the Optics metadata ::
   
-   optics = Optics(wavelen= .66, index=1.33, illum_vector = (0, .2, 1), pol = [.3, .4])
+   optics = Optics(wavelen= .66, index=1.33, illum_vector = (0, .2, 1), polarization = [.3, .4])
 
 The default illum_vector is (0, 0, 1) indicating light incident along the z axis (propagating in the -z direction).  Polarization and illumination vectors are automatically normalized, so provide them however is convenient.
 
@@ -177,5 +185,9 @@ Non Default Theory Parameters
 Some theories like :class:`holopy.scattering.theory.multisphere.Multisphere` have some adjustable parameters.  In general our defaults will work fine, but you can adjust them if you want.  You do this by instantiating the theory and calling calc functions on that specific object.  ::
 
   from holopy.scattering.theory import Multisphere
+  s1 = Sphere(center=(5, 5, 5), n = 1.59, r = 0.5)
+  s2 = Sphere(center=(4, 4, 5), n = 1.59, r = 0.5)
+  cluster = SphereCluster([s1, s2])
+  target = ImageTarget(shape = 100, pixel_size = .1, optics = Optics(wavelen = .660, index = 1.33))
   multi = Multisphere(niter = 100)
-  holo = multi.calc_holo(....)
+  holo = multi.calc_holo(cluster, target)

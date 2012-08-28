@@ -14,7 +14,7 @@ point in space.
 Import the code
 ===============
 
-To begin, import the :mod:`holopy.analyze.reconstruct` module. ::
+To begin, import: ::
 
     import holopy
     from holopy import propagate, show
@@ -44,12 +44,12 @@ is reconstructed.
 
 .. sourcecode:: ipython
 
-    In [4]: rec_xy = propagate(holo, 10)
+    rec_xy = propagate(holo, 10)
 
-    In [6]: rec_xy.dtype
-    Out[6]: dtype('complex128')
+    rec_xy.dtype
+    dtype('complex128')
 
-    In [7]: rec_vol = propagate(holo, np.linspace(5, 15, 10))
+    rec_vol = propagate(holo, np.linspace(5, 15, 10))
 
 
 The reconstructed image is a complex array. The dimensions of the
@@ -73,6 +73,8 @@ For viewing 2d slices, use hp.show ::
 
 By default holopy.show shows the magnitude of a complex image.  For volume images, you can step through slices in the z plane by using the left and right arrow keys on your keyboard.
 
+
+[Render not yet implemented]
 To see three dimensional renderings, use holopy.render ::
 
   holopy.render(rec_vol, 'contour')
@@ -81,6 +83,8 @@ This will show a contour surface plot of the reconstruction, using MayaVI.
 
 Propagating through Non-Homogeneous Media
 =========================================
+
+[Not yet implemented]
 
 The propagation discussed above assumes propagation through free space or a homogeneous dielectric medium.  However, holopy can also propagate a field  through an optical elements :: 
 
