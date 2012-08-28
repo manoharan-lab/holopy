@@ -115,14 +115,15 @@ def propagate(data, target, gradient_filter=False):
         # check if supplied distances are in a regular grid
         dd = np.diff(d)
         if np.allclose(dd[0], dd):
+            # shape of none will have the shape inferred from arr
             positions = Grid(spacing = np.append(data.positions.spacing, dd[0]),
-                             shape = arr.shape)
+                             shape = None)
         else:
             positions = UnevenGrid(spacing = (data.positions.spacing[0],
-                                    data.positions.spacing[1], d),
-                                   shape = arr.shape)
+                                              data.positions.spacing[1], d),
+                                   shape = None)
         res =  Volume(arr, positions = positions)
-    res.set_metadata(**data._metadata)
+    res.set_metadata(overwrite = False, **data._metadata)
     return res
 
 def apply_trans_func(ft, G):

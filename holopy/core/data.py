@@ -79,10 +79,14 @@ class DataTarget(HolopyObject):
         for key, item in self._metadata.iteritems():
             setattr(self, key, item)
 
-    def set_metadata(self, no_set_none = True, **kwargs):
+    def set_metadata(self, overwrite = True, overwrite_with_none = False, **kwargs):
         if not hasattr(self, '_metadata'):
             self._metadata = {}
-        if no_set_none:
+        if not overwrite:
+            for key, val in kwargs.iteritems():
+                if key not in self._metadata:
+                    self._metadata[key] = val
+        elif not overwrite_with_none:
             for key, val in kwargs.iteritems():
                 if val is None:
                     if key not in self._metadata:
@@ -212,7 +216,13 @@ class Data(DataTarget, np.ndarray):
 
     def __init__(self, arr, positions = None, dtype = None, *args, **kwargs):
         super(Data, self).__init__(positions = positions, *args, **kwargs)
+        if hasattr(self.positions, 'shape'):
+            # if positions is a Grid it should always have the same shape as
+            # us.
+            # TODO: refactor things so that this is necessarily true
+            self.positions.shape = self.shape
 
+        
     def __repr__(self):
         array_repr = repr(self.view(np.ndarray))[6:-1]
         holopy_obj_repr = super(Data, self).__repr__()

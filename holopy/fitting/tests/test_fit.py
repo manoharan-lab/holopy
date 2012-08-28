@@ -279,7 +279,7 @@ def test_minimizer():
                  Parameter(name='c', guess = 3)]
     minimizer = Nmpfit()
     result, minimization_details = minimizer.minimize(parameters, cost_func)
-    assert_obj_close(gold_dict, result)
+    assert_obj_close(gold_dict, result, context = 'basic_minimized_parameters')
 
     # test inadequate specification
     with assert_raises(ParameterSpecificationError):
@@ -305,7 +305,7 @@ def test_minimizer():
     assert_equal(parinfo[2]['limits'], np.array([0., 12.])/3.)
     assert_allclose(parinfo[2]['step'], 1e-4/3.)
     assert_equal(parinfo[2]['limited'], [True, True])
-    assert_obj_close(gold_dict, result2)
+    assert_obj_close(gold_dict, result2, context = 'minimized_parameters_with_parinfo')
     
 
 @attr('fast')
@@ -333,7 +333,7 @@ def test_serialization():
     temp.seek(0)
     loaded = load(temp)
 
-    assert_obj_close(result, loaded)
+    assert_obj_close(result, loaded, context = 'serialized_result')
 
 
 @attr('slow')

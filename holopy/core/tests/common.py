@@ -76,35 +76,47 @@ def assert_parameters_allclose(actual, desired, rtol=1e-7, atol = 0):
         assert_obj_close(actual, desired)
     else:
         assert_allclose(actual, desired, rtol=rtol, atol = atol)
+            
+        
+def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_object'):
+    if isinstance(actual, np.ndarray) or isinstance(desired, np.ndarray):
+        assert_allclose(actual, desired, rtol = rtol, atol = atol, err_msg=context)
 
-def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = None):
-    if context is None:
-        context = 'tested_object'
-    elif hasattr(actual, '_dict'):
-        assert_obj_close(actual._dict, desired._dict)
+    if isinstance(actual, dict) and isinstance(desired, dict):
+        for key, val in actual.iteritems():
+            assert_obj_close(actual[key], desired[key], context =
+                             '{0}[{1}]'.format(context, key))
+    elif hasattr(actual, '_dict') and hasattr(desired, '_dict'):
+        assert_obj_close(actual._dict, desired._dict, rtol=rtol, atol=atol,
+                         context = "{0}._dict".format(context))
     elif isinstance(actual, (list, tuple)):
-        assert_equal(len(actual), len(desired))
+        assert_equal(len(actual), len(desired), err_msg=context)
         for i, item in enumerate(actual):
             assert_obj_close(actual[i], desired[i], context =
                              '{0}[{1}]'.format(context, i))
     elif isinstance(actual, types.MethodType):
-        assert_equal(actual.im_func.func_name, desired.im_func.func_name)
+        assert_equal(actual.im_func.func_name, desired.im_func.func_name,
+                     err_msg=context)
+
+        # We want to treat Mie.calc_holo and Mie().calc_holo as equal, this code
+        # here instantiates a class if possible so these match
         act_obj = actual.im_self
+        try:
+            act_obj = act_obj()
+        except TypeError:
+            pass
         des_obj = desired.im_self
-        if act_obj is None and des_obj is not None:
-            act_obj = actual.im_class()
-        if act_obj is not None and des_obj is None:
-            des_obj = desired.im_class()
-        assert_obj_close(act_obj, des_obj)
+        try:
+            des_obj = des_obj()
+        except TypeError:
+            pass
+
+        # now actually compare things 
+        assert_obj_close(act_obj, des_obj, rtol=rtol, atol=atol,
+                         context = context)
     elif hasattr(actual, '__dict__'):
         for key, val in actual.__dict__.iteritems():
-            assert_obj_close(getattr(actual, key), getattr(desired, key), rtol,
+            assert_obj_close(getattr(actual, key), getattr(desired, key), rtol, atol,
                              context = context+'.'+key)
-    elif actual is not None and not np.isscalar(actual):
-        for i, item in enumerate(actual):
-            assert_obj_close(actual[i], desired[i], rtol, atol, context)
     else:
-        try:
-            assert_equal(actual, desired)
-        except AssertionError as e:
-            raise AssertionError("\nIn {0}{1}".format(context, str(e)))
+        assert_equal(actual, desired, err_msg=context)

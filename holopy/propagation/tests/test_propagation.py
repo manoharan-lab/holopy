@@ -28,12 +28,13 @@ class test_propagation():
     def __init__(self):
         self.optics = Optics(.66, 1.33)
         im_target = ImageTarget(pixel_size = .1, shape = 100, optics = self.optics)
-        sphere = Sphere(n = 1.59, center = (5, 5, 5))
+        sphere = Sphere(n = 1.59, r = .5, center = (5, 5, 5))
         self.holo = Mie.calc_holo(sphere, im_target)
 
+    # gold for this is just a snapshot on 2012-08-27 (v249), it could be wrong.  -tgd
     def test_propagate_volume(self):
-        vol_target = VolumeTarget(positions = Grid(shape = (50, 50, 50),
-                                                   spacing = .75),
+        vol_target = VolumeTarget(positions = Grid(shape = (50, 50, 20),
+                                                   spacing = .25),
                                   optics = self.optics, center = (5, 5, 5))
         
         vol = propagate(self.holo, target = vol_target)
@@ -45,9 +46,9 @@ class test_propagation():
         vol = VolumeTarget(positions = Grid(
                 shape = np.append(self.holo.shape, len(d)),
                 spacing = np.append(self.holo.positions.spacing, 1)),
-                           center = (5, 5, 7))
+                           center = (5, 5, 7.5))
         
 
         r1 = propagate(self.holo, d)
         r2 = propagate(self.holo, vol)
-        assert_obj_close(r1, r2)
+        assert_obj_close(r1, r2, context = 'propagated_volume')
