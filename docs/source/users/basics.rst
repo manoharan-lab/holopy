@@ -6,46 +6,47 @@ Units
 
 Holopy does **not** enforce any particular set of units. As long as
 you are consistent, you can use any set of units, for example pixels,
-meters, microns.  So if you specify the wavelength of your red imaging
+meters, or microns.  So if you specify the wavelength of your red imaging
 laser as 658 then all other units (*x*, *y*, *z* position coordinates,
 particle radii, etc.)  must also be specified in nanometers.
 
 Data
 ----
 
-Holopy is at its core a tool for working with optical data, either measurements from some experiment, or simulations of such data.  Holopy works with all such data as :class:`holopy.core.data.Data` objects which is are array of point measurements along with metadata about how to interpret those values.  Metadata might be:
+Holopy is at its core a tool for working with optical data, either measurements from some experiment or simulations of such data.  Holopy works with all such data as :class:`holopy.core.data.Data` objects which are arrays of point measurements along with metadata about how to interpret those values.  Metadata might be:
 
 :Measurement Locations:
    
    All Data objects must know where in space their measurements were
    taken.  This is specified as a
-   :class:`holopy.core.data.PositionSpecification` object which can be
+   :class:`holopy.core.metadata.PositionSpecification` object which can be
    by pixel spacing for a rectangular detector, angles to farfield
    detectors, or in general a list of coordinates for each measurement
    location.
 
 :Optical Setup:
    
-   :class:`holopy.core.metadata.Optics` object containing wavelength,
+   Details about the optical system and optical path are specified 
+   as a :class:`holopy.core.metadata.Optics` object containing wavelength,
    polarization, divergence, ... of illumination light, index of
-   refraction the medium the system is in, any lenses or other optical
+   refraction of the medium the scatterers are in, and any lenses or other optical
    elements present in the beam path.
 
 :Other Experimental Conditions:
 
-   Holopy can associate arbitrary Metadata with data to describe any
+   Holopy can associate arbitrary metadata with data to describe any
    relevant conditions of how the data was obtained or processing that
    has been done on the data.  
 
 Data can be:
 
-:1 dimensional:
+:1-dimensional:
    static light scattering measurements
-:2 dimensional:
+:2-dimensional:
    :class:`holopy.core.data.Image`, or timeseries of 1d data sets
-:3 dimensional:
-   :class:`holopy.core.data.Volume` data (stacks), or timeseries of images
-:4 dimensional:
+:3-dimensional:
+   :class:`holopy.core.data.Volume` data (stacks) or timeseries of images
+:4-dimensional:
    timeseries of volume data
 
 Holopy will probably work to some degree with higher dimensional data (because the underlying numpy arrays we use are n-dimensional), but many of its functions expect data in one of these forms.  
@@ -77,7 +78,7 @@ Core
 
 holopy.core defines Data and Metadata objects and contains the basic infrastructure for loading and saving data and results.  It also contains basic image processing routines for cleaning up your data.  Most of these are simply higher level wrappers around scipy routines.  holopy.core can be used independently of the rest of holopy.  
 
-Holopy Core the beginning and end of your workflow:
+Holopy Core is used at the beginning and end of your workflow:
 
   1) raw image (or other data) file(s) + metadata -> :class:`holopy.core.data.Data` object
   2) Raw :class:`holopy.core.data.Data` object + processing -> processed :class:`holopy.core.data.Data` object
@@ -86,9 +87,9 @@ Holopy Core the beginning and end of your workflow:
 Scattering
 ^^^^^^^^^^
 Used to compute simulated scattering from defined scatterers.
-The scattering package provides objects and methods to define scatterer geometry, and theories to compute scattering from specified geometry.  Scattering depends holopy.core (and certain scattering theories may depend on external scattering codes).  
+The scattering package provides objects and methods to define scatterer geometries, and theories to compute scattering from specified geometries.  Scattering depends on holopy.core (and certain scattering theories may depend on external scattering codes).  
 
-Holopy Scattering is generally used for:
+Holopy Scattering is generally used to:
 
   1) Describe geometry as :mod:`holopy.scattering.scatterer` object
   2) Define the result you want as a :mod:`holopy.core.data.DataTarget` object
@@ -97,7 +98,7 @@ Holopy Scattering is generally used for:
 Propagation
 ^^^^^^^^^^^
 
-Compute light propagation from a known set of points, possibly through media or optical elements.  Depends on core (and on scattering if propagating through with nonuniform media).  
+Compute light propagation from one known set of points to another set of points, possibly through media or optical elements.  Depends on core (and on scattering if propagating through with nonuniform media).  
 
 Propagation is used primarily for one operation:
 
@@ -108,7 +109,7 @@ Fitting
 
 Fitting is used to determine what Scatterer best creates some observed data.  Fitting depends on Core and Scattering.
 
-Fitting is used for:
+Fitting is used to:
 
   1) Define Scattering Model -> :class:`holopy.fitting.model.Model` object
   2) Fit model to data -> :class:`holopy.fitting.fit.FitResult` object
