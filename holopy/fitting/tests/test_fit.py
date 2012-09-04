@@ -257,58 +257,6 @@ def test_fit_multisphere_noisydimer_slow():
 
 
 @attr('fast')
-def test_minimizer():
-    x = np.arange(-10, 10, .1)
-    a = 5.3
-    b = -1.8
-    c = 3.4
-    gold_dict = OrderedDict((('a', a), ('b', b), ('c', c)))
-    y = a*x**2 + b*x + c
-
-    # This test does NOT handle scaling correctly -- we would need a Model
-    # which knows the parameters to properly handle the scaling/unscaling
-    def cost_func(pars):
-        a = pars['a']
-        b = pars['b']
-        c = pars['c']
-        return a*x**2 + b*x + c - y
-
-    # test basic usage
-    parameters = [Parameter(name='a', guess = 5),
-                 Parameter(name='b', guess = -2),
-                 Parameter(name='c', guess = 3)]
-    minimizer = Nmpfit()
-    result, minimization_details = minimizer.minimize(parameters, cost_func)
-    assert_obj_close(gold_dict, result, context = 'basic_minimized_parameters')
-
-    # test inadequate specification
-    with assert_raises(ParameterSpecificationError):
-        minimizer.minimize([Parameter(name = 'a')], cost_func)
-
-    # now test limiting minimizer iterations
-    minimizer = Nmpfit(maxiter=1)
-    try:
-        result, minimization_details = minimizer.minimize(parameters, cost_func)
-    except MinimizerConvergenceFailed as cf: # the fit shouldn't converge
-        result, minimization_details = cf.result, cf.details
-    assert_equal(minimization_details.niter, 2) # there's always an offset of 1
-
-    # now test parinfo argument passing
-    parameters2 = [Parameter(name='a', guess = 5, mpside = 2),
-                   Parameter(name='b', guess = -2, limit = [-4, 4.]),
-                   Parameter(name='c', guess = 3, step = 1e-4, mpmaxstep = 2., 
-                             limit = [0., 12.])]
-    minimizer = Nmpfit()
-    result2, details2, parinfo = minimizer.minimize(parameters2, cost_func, 
-                                                    debug = True)
-    assert_equal(parinfo[0]['mpside'], 2)
-    assert_equal(parinfo[2]['limits'], np.array([0., 12.])/3.)
-    assert_allclose(parinfo[2]['step'], 1e-4/3.)
-    assert_equal(parinfo[2]['limited'], [True, True])
-    assert_obj_close(gold_dict, result2, context = 'minimized_parameters_with_parinfo')
-    
-
-@attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_serialization():
     par_s = Sphere(center = (par(.567e-5, [0, 1e-5]), par(.576e-6, [0, 1e-5]),

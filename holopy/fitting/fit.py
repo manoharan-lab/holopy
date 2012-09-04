@@ -29,7 +29,7 @@ import warnings
 import time
 
 from ..core.holopy_object import HolopyObject
-from .errors import MinimizerConvergenceFailed
+from .errors import MinimizerConvergenceFailed, InvalidMinimizer
 from .minimizer import Minimizer, Nmpfit
 
 class FitResult(HolopyObject):
@@ -68,8 +68,12 @@ def fit(model, data, minimizer=Nmpfit):
     """
     time_start = time.time()
 
-    if issubclass(minimizer, Minimizer):
-        minimizer = minimizer()
+    if not isinstance(minimizer, Minimizer):
+        if issubclass(minimizer, Minimizer):
+            minimizer = minimizer()
+        else:
+            raise InvalidMinimizer("Object supplied as a minimizer could not be"
+                                   "interpreted as a minimizer")
     
     try:
         fitted_pars, minimizer_info = minimizer.minimize(model.parameters,

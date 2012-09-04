@@ -44,3 +44,6 @@ class MinimizerConvergenceFailed(Error):
     def __init__(self, result, details):
         self.result = result
         self.details = details
+
+class InvalidMinimizer:
+    pass
