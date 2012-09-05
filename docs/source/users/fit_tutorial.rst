@@ -70,11 +70,11 @@ defining a Parameter and using it in multiple places ::
   
   n_real = par(1.59)
   sc = Spheres([Sphere(n = n_real, r = par(0.5e-6), 
-                             center = array([10., 10., 20.]) * 1e-6),
+                             center = array([10., 10., 20.])),
                       Sphere(n = n_real, r = par(0.5e-6),
-                             center = array([9., 11., 21.]
+                             center = array([9., 11., 21.]))])
 
-theory
+Theory
 ------
 
 The theory in a model is one of the calc_* functions provided by
@@ -110,23 +110,20 @@ Minimizer
 =========
 
 If you do not provide a minimizer, fits will default to using the
-supplied Nmpfit minimizer ::
+supplied Nmpfit minimizer which can be called explicitly as follows::
 
   fit(model, data, minimizer = Nmpfit())
 
 You can choose another minimizer or provide non-default options to a
-minimizer by passing a minimizer object to fit, for example ::
+minimizer by passing a minimizer object to fit(), for example (To tell nmpfit to use looser tolerances and a small iteration limit
+(to get a fast result to check things out).)::
 
   fit(model, data, minimizer = Nmpfit(ftol=1e-5, xtol = 1e-5, gtol=1e-5, niter=2))
 
-To tell nmpfit to use looser tolerances and a small iteration limit
-(to get a fast result to check things out), or ::
+or to use OpenOpt's ralg minimizer instead of nmpfit  (This will fail unless you have OpenOpt installed and configured so that Holopy can
+find it.)::
 
   fit(model, data, minimizer = Ralg())
-
-To use OpenOpt's ralg minimizer instead of nmpfit.  (This will fail
-unless you have OpenOpt installed and configured so that Holopy can
-find it).
 
 If you need to provide information to the minimizer about specific
 parameters (for example a derivative step to nmp fit) you add them to
@@ -140,18 +137,18 @@ Examples
 Sphere
 ------
 
-Here let's compute a hologram and then fit it.  You can replace the
-calculated hologram with real data, if you like ::
+Let's compute a hologram with known parameters and then fit it to make sure we retrieve the right parameters.  Instead, you can replace the
+calculated hologram (holo) with real data, if you like. TODO: result is not very accurate... why? ::
 
-
-   from holopy import Metadata, ImageTarget
+   import holopy
+   from holopy.core import ImageTarget, Optics
    from holopy.fitting import Model, par, fit
    from holopy.scattering.scatterer import Sphere
    from holopy.scattering.theory import Mie
 
-   target = ImageTarget(shape = 100, spacing = .1, optics = Optics(wavelen = 658, index = 1.33))
+   target = ImageTarget(shape = 100, pixel_size = .1, optics = Optics(wavelen = .660, index = 1.33))
    s = Sphere(center = (10.2, 9.8, 10.3), r = .5, n = 1.58)
-   holo = mie.calc_holo(s, target)
+   holo = Mie.calc_holo(s, target)
 
    par_s = Sphere(center = (par(guess = 10, limit = [5,15]), par(10, [5, 15]), par(10, [5, 15])),
                   r = .5, n = 1.58)
@@ -185,6 +182,38 @@ You can specify a complex index with ::
   Sphere(n = ComplexParameter(real = par(1.58), imag = 1e-4))
 
 This will fit to the real part of index of refraction while holding the imaginary part fixed.  You can fit to it as well by specifying a Parameter instead of a fixed number there.  
+
+Spheres
+------
+
+In this example, we fit for the parameters of two spheres ::
+
+    import holopy
+    from holopy.scattering.scatterer import Sphere
+    from holopy.scattering.scatterer import Spheres
+    from holopy.scattering.theory import Mie
+    from holopy.core import ImageTarget, Optics
+    from holopy.fitting import Model, par, fit
+    from holopy.fitting.minimizer import Nmpfit
+
+    #calculate a hologram with known particle positions to do a fit against
+    target = ImageTarget(shape = 256, pixel_size = .1, 
+        optics = Optics(wavelen = .660, index = 1.33))
+
+    s1 = Sphere(center=(15, 15, 20), n = 1.59, r = 0.5)
+    s2 = Sphere(center=(14, 14, 20), n = 1.59, r = 0.5)
+    cluster = Spheres([s1, s2])
+    holo = Mie.calc_holo(cluster, target)
+
+    #now do the fit
+    guess1 = Sphere(center = (par(guess = 15.5, limit = [5,25]), 
+        par(14.5, [5, 25]), par(22, [5, 25])), r = .5, n = 1.59)
+    guess2 = Sphere(center = (par(guess = 14.5, limit = [5,25]), 
+        par(13.5, [5, 25]), par(22, [5, 25])), r = .5, n = 1.59)
+    par_s = Spheres([guess1,guess2])
+
+    model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1]))
+    result = fit(model, holo)
 
 Hologram with Beam Tilt
 -----------------------
