@@ -318,3 +318,16 @@ def test_dda_fit():
     0.2003609439787491), ('x', 5.0128083665603995), ('y', 5.0125252883133617),
     ('z', 4.9775097284878775)]), rtol=1e-3)
 
+
+def test_integer_correctness():
+    # we keep having bugs where the fitter doesn't 
+    target = ImageTarget(shape = 100, pixel_size = .1, optics = Optics(wavelen = .660, index = 1.33))
+    s = Sphere(center = (10.2, 9.8, 10.3), r = .5, n = 1.58)
+    holo = Mie.calc_holo(s, target)
+
+    par_s = Sphere(center = (par(guess = 10, limit = [5,15]), par(10, [5, 15]), par(10, [5, 15])),
+                   r = .5, n = 1.58)
+
+    model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1]))
+    result = fit(model, holo)
+    assert_allclose(result.scatterer.center, [10.2, 9.8, 10.3])
