@@ -213,7 +213,7 @@ class Model(HolopyObject):
 #            if parameterizition is not None:
 #                self.parameters.extend(parameterizition.parameters)
         self.parameters = self.scatterer.parameters
-        if self.alpha is not None:
+        if isinstance(self.alpha, Parameter):
             self.parameters.append(self.alpha)
         
 
