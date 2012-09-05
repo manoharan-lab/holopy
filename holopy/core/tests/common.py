@@ -119,4 +119,8 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
             assert_obj_close(getattr(actual, key), getattr(desired, key), rtol, atol,
                              context = context+'.'+key)
     else:
-        assert_equal(actual, desired, err_msg=context)
+        try:
+            assert_allclose(actual, desired, rtol=rtol, atol=atol,
+                            err_msg=context)
+        except (TypeError, NotImplementedError):
+            assert_equal(actual, desired, err_msg=context)

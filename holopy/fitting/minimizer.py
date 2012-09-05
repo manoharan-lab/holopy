@@ -102,9 +102,9 @@ class Nmpfit(Minimizer):
         def resid_wrapper(p, fjac=None):
             status = 0                    
             return [status, cost_func(self.pars_from_minimizer(parameters, p))]
-        nmp_pars = []
 
         # marshall the paramters into a dict of the form nmpfit wants
+        nmp_pars = []
         for par in parameters:
             d = {'parname': par.name}
             if par.limit is not None:

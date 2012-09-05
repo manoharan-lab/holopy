@@ -25,6 +25,7 @@ from __future__ import division
 
 import inspect
 from copy import copy
+from os.path import commonprefix
 
 from ..core.holopy_object import HolopyObject
 from .parameter import Parameter, ComplexParameter
@@ -86,18 +87,44 @@ class Parametrization(HolopyObject):
             guess_pars[par.name] = par.guess
         return self.make_from(guess_pars)
 
-
+def tied_name(name1, name2):
+    common_suffix = commonprefix([name1[::-1], name2[::-1]])[::-1]
+    return common_suffix.strip(':_')
+    
 class ParameterizedObject(Parametrization):
     def __init__(self, target):
         self.target = target
 
         # find all the Parameter's in the target
         parameters = []
+        ties = {}
         for name, par in target.parameters.iteritems():
             def add_par(p, name):
-                p.name = name
-                if not p.fixed:
-                    parameters.append(p)
+                if p in parameters:
+                    # if the parameter is already in the parameters list, it
+                    # means the parameter is tied
+                    
+                    # we will rename the parameter so that when it is printed it
+                    # better reflects how it is used
+                    new_name = tied_name(p.name, name)
+
+                    if p.name in ties:
+                        # if there is already an existing tie group we need to
+                        # do a few things to get the name right
+                        group = ties[p.name]
+                        if p.name != new_name:
+                            del ties[p.name]
+                    else:
+                        group = [p.name]
+
+                    group.append(name)
+                    ties[new_name] = group
+                    p.name = new_name
+                    
+                else:
+                    p.name = name
+                    if not p.fixed:
+                        parameters.append(p)
             if isinstance(par, ComplexParameter):
                 add_par(par.real, name+'.real')
                 add_par(par.imag, name+'.imag')
@@ -105,24 +132,41 @@ class ParameterizedObject(Parametrization):
                 add_par(par, name)
 
         self.parameters = parameters
+        self.ties = ties
 
     def make_from(self, parameters):
         target_pars = {}
+
         
-        for name, item in self.target.parameters.iteritems():
+        for name, par in self.target.parameters.iteritems():
+            # if this par is in a tie group, we need to work with its tie group
+            # name since that will be what is in parameters
+            for groupname, group in self.ties.iteritems():
+                if name in group:
+                    name = groupname
+                    
             def get_val(par, name):
                 if par.fixed:
                     return par.limit
                 else:
                     return parameters[name]
-                
-            if isinstance(item, ComplexParameter):
-                target_pars[name] = (get_val(item.real, name+'.real') + 1.0j *
-                                     get_val(item.imag, name+'.imag'))
-            elif isinstance(item, Parameter):
-                target_pars[name] = get_val(item, name)
+
+            if isinstance(par, ComplexParameter):
+                par_val = (get_val(par.real, name+'.real') + 1.0j *
+                                     get_val(par.imag, name+'.imag'))
+            elif isinstance(par, Parameter):
+                par_val = get_val(par, name)
             else:
-                target_pars[name] = item
+                par_val = par
+
+            
+            if name in self.ties:
+                for tied_name in self.ties[name]:
+                    target_pars[tied_name] = par_val
+            else:
+                target_pars[name] = par_val
+                
+                
 
         return self.target.from_parameters(target_pars)
 
