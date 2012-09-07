@@ -18,11 +18,10 @@
 
 from .common import (assert_obj_close, assert_read_matches_write,
                      get_example_data_path)
-from .. import Optics, Data, load
+from .. import Optics, Marray, load
 from .. process import normalize
 import tempfile
 from nose.plugins.attrib import attr
-import os
 import numpy as np
 
 
@@ -51,5 +50,5 @@ pixel_scale: [3.3e-7, 3.3e-7]"""
     assert_obj_close(o, Optics(wavelen=7.85e-07, polarization=[1.0, 0.0], divergence=0, pixel_size=[6.8e-06, 6.8e-06], pixel_scale=[3.3e-07, 3.3e-07]))
 
 def test_data_io():
-    d = Data(np.random.random((10, 10)))
+    d = Marray(np.random.random((10, 10)))
     assert_read_matches_write(d)

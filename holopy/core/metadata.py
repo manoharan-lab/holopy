@@ -145,17 +145,9 @@ class Grid(PositionSpecification):
     """
     Rectangular grid of measurements
     """
-    def __init__(self, shape, spacing, random_subset = None):
-        self.shape = shape
-        if np.isscalar(spacing):
-            spacing = np.repeat(spacing, len(shape))
+    def __init__(self, spacing):
         self.spacing = spacing
         
-        self.random_subset = random_subset
-        if random_subset is not None:
-            self.selection = np.random.random(self.shape) > (1.0-self.selection)
-        else:
-            self.selection = None
 
     def resample_by_factors(self, factors):
         new = copy.copy(self)
@@ -163,6 +155,7 @@ class Grid(PositionSpecification):
         new.spacing[factors.keys()] *= factors.values()
         return new
 
+    # TODO: this can't be done here now because grid no longer has a shape
     @property
     def extent(self):
         return self.shape * self.spacing

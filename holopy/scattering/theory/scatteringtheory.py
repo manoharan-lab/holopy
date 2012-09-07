@@ -25,7 +25,7 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 import numpy as np
-from ...core.data import Image, VectorData
+from ...core.marray import Image, VectorImage
 from ...core.holopy_object import HolopyObject
 from ..binding_method import binding, finish_binding
 
@@ -144,7 +144,7 @@ class ScatteringTheory(HolopyObject):
 
         # add the z component to polarization and adjust the shape so that it is
         # broadcast correctly
-        ref = VectorData(np.append(target.optics.polarization, 0).reshape(1, 1, 3))
+        ref = VectorImage(np.append(target.optics.polarization, 0).reshape(1, 1, 3))
 
         return Image.from_target(interfere_at_detector(scat, ref), target)
 
@@ -241,7 +241,6 @@ def interfere_at_detector(e1, e2, detector_normal = (0, 0, 1)):
 
     new = ((abs(e1)**2 + abs(e2)**2 + 2* np.real(e1*e2)) *
            (1 - detector_normal)).sum(axis=-1)
-    new.set_metadata(**e1._metadata)
 
     return new
     

@@ -27,7 +27,7 @@ from __future__ import division
 import numpy as np
 from ..core.math import fft, ifft
 from ..core.helpers import _ensure_pair, _ensure_array
-from ..core import Data, Volume, Image, Grid, UnevenGrid, VolumeTarget
+from ..core import Volume, Image, Grid, UnevenGrid, VolumeSchema
 
 # May eventually want to have this function take a propagation model
 # so that we can do things other than convolution
@@ -72,7 +72,7 @@ def propagate(data, target, gradient_filter=False):
     machinery. 
     """
 
-    if isinstance(target, VolumeTarget):
+    if isinstance(target, VolumeSchema):
         # get the right z slices in the volume
         d = np.arange(target.positions.shape[2]) * target.positions.spacing[2]
         d = d + target.origin[2]

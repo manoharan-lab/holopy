@@ -28,7 +28,7 @@ scattered field.
 from __future__ import division
 import numpy as np
 from ...core.helpers import _ensure_array
-from ...core.data import VectorData
+from ...core.marray import VectorImageSchema
 from ..errors import TheoryNotCompatibleError, UnrealizableScatterer
 from ..scatterer import Sphere, CoatedSphere, Scatterers
 from .scatteringtheory import FortranTheory
@@ -99,7 +99,8 @@ class Mie(FortranTheory):
                     origin = scatterer.center).T, scat_coeffs,
                     target.optics.polarization)
             phase = np.exp(-1j*np.pi*2*scatterer.z / target.optics.med_wavelen)
-            result = target.from_1d(VectorData(np.vstack(fields).T))
+            schema = VectorImageSchema.from_ImageSchema(target)
+            result = schema.interpret_1d(np.vstack(fields).T)
             return result * phase
         elif isinstance(scatterer, Scatterers):
             spheres = scatterer.get_component_list()

@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 import numpy as np
-from numpy.testing import assert_allclose
-from ...core import Optics, DataTarget, Grid
+from numpy.testing import assert_allclose, assert_equal
+from ...core import Optics, ImageSchema, Grid
 from ..scatterer import Sphere
 from ..theory import Mie
 from ...core.tests.common import assert_obj_close
@@ -26,7 +26,7 @@ from ...core.tests.common import assert_obj_close
 
 def test_positions_kr_theta_phi():
     o = Optics(wavelen=.66, index=1.33)
-    t = DataTarget(Grid((2,2), .1), o)
+    t = ImageSchema(shape = (2,2), spacing = .1, optics = o)
     pos = t.positions_kr_theta_phi((0,0,1))
     assert_allclose(pos, np.array([[ 12.66157039,   0.        ,   0.        ],
        [ 12.72472076,   0.09966865,   1.57079633],
@@ -36,8 +36,10 @@ def test_positions_kr_theta_phi():
 def test_calc_field():
     o = Optics(wavelen=.66, index=1.33)
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
-    t = DataTarget(Grid((2,2), .1), o)
+    t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
     f = Mie.calc_field(s, t)
+    assert_equal(t.optics, f.optics)
+    assert_equal(t.spacing, f.spacing)
     assert_allclose(f, np.array([[[ -3.95866810e-01 +2.47924378e+00j,
                                      0.00000000e+00 +0.00000000e+00j,
                                      0.00000000e+00 -0.00000000e+00j],
@@ -55,7 +57,7 @@ def test_calc_field():
 def test_calc_holo():
     o = Optics(wavelen=.66, index=1.33)
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
-    t = DataTarget(Grid((2,2), .1), o)
+    t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
     h = Mie.calc_holo(s, t)
     assert_obj_close(h.positions, t.positions)
     assert_allclose(h, np.array([[ 6.51162661,  5.67743548],
@@ -64,7 +66,7 @@ def test_calc_holo():
 def test_calc_intensity():
     o = Optics(wavelen=.66, index=1.33)
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
-    t = DataTarget(Grid((2,2), .1), o)
+    t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
     i = Mie.calc_intensity(s, t)
     assert_allclose(i, np.array([[ 6.30336023,  5.65995739],
                                  [ 5.61505927,  5.04233591]]))
