@@ -50,7 +50,7 @@ class PseudoMarray(HolopyObject):
         # we only generate a random selection once
         if not hasattr(self, '_selection'):
             if self.use_random_fraction is not None:
-                self._selection = (np.random.random((self.positions.shape)) >
+                self._selection = (np.random.random((self.shape)) >
                                    1.0-self.use_random_fraction)
             else:
                 self._selection = None
@@ -138,7 +138,7 @@ class Marray(PseudoMarray, np.ndarray):
     # we have to implement our own std because the numpy one stubbornly returns
     # 0d Data objects which we don't want
     def std(self, axis=None, dtype=None, out=None, ddof=0):
-        result = super(Data, self).std(axis=None, dtype=None, out=None, ddof=0)
+        result = super(Marray, self).std(axis=None, dtype=None, out=None, ddof=0)
         if result.ndim == 0:
             return result.max()
         else:
@@ -181,8 +181,10 @@ class GenericSchema(PseudoMarray):
         Other metadata
     """
 
-    def __init__(self, shape, positions = None, optics = None, origin = None,
+    def __init__(self, shape = None, positions = None, optics = None, origin = None,
                  use_random_fraction = None, **kwargs):
+        if shape is None:
+            shape = positions.shape
         self.shape = shape
         call_super_init(GenericSchema, self, 'shape')
     
@@ -309,8 +311,10 @@ class PseudoImage(PseudoRegularGrid):
 
     
 class ImageSchema(GenericSchema, PseudoImage):
-    
-    pass
+    def __init__(self, shape, spacing = None, optics = None, origin = None,
+                 use_random_fraction = None, **kwargs):
+        shape = _ensure_pair(shape)
+        call_super_init(ImageSchema, self)
 
 class Image(RegularGrid, PseudoImage):
     pass
@@ -323,6 +327,22 @@ class PseudoVectorImage(PseudoImage):
                  origin = None, use_random_fraction = None, **kwargs):
         self.components = components
         call_super_init(PseudoVectorImage, self, 'components')
+
+    @property
+    def selection(self):
+        # we only generate a random selection once
+        if not hasattr(self, '_selection'):
+            if self.use_random_fraction is not None:
+                # cut the last dimension because we don't want to apply
+                # selection to the individual vector componets
+                self._selection = (np.random.random((self.shape[:-1])) >
+                                   1.0-self.use_random_fraction)
+            else:
+                self._selection = None
+
+        # if it already exists, we just return the cached _selection
+        return self._selection
+
 
 class VectorImage(RegularGrid, PseudoVectorImage):
     pass
@@ -340,9 +360,15 @@ class VectorImageSchema(GenericSchema, PseudoVectorImage):
             shape = image_schema.shape
         else:
             shape = np.append(image_schema.shape, len(components))
-        return cls(components = components, shape = shape,
+        new =  cls(components = components, shape = shape,
                    spacing = image_schema.positions.spacing, 
-                   **dict_without(image_schema._dict, ['shape', 'positions']))
+                   **dict_without(image_schema._dict, ['shape', 'positions',
+                                                       'spacing']))
+        # we want to use the same random selection as the schema we come from did
+        if hasattr(image_schema, '_selection'):
+            new._selection = image_schema._selection
+
+        return new
 
     def interpret_1d(self, arr):
         if self.selection is None:

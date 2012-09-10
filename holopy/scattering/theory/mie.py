@@ -28,7 +28,6 @@ scattered field.
 from __future__ import division
 import numpy as np
 from ...core.helpers import _ensure_array
-from ...core.marray import VectorImageSchema
 from ..errors import TheoryNotCompatibleError, UnrealizableScatterer
 from ..scatterer import Sphere, CoatedSphere, Scatterers
 from .scatteringtheory import FortranTheory
@@ -55,20 +54,20 @@ class Mie(FortranTheory):
     # don't need to define __init__() because we'll use the base class
     # constructor
 
-    def _calc_scat_matrix(self, scatterer, target):
+    def _calc_scat_matrix(self, scatterer, schema):
         if isinstance(scatterer, (Sphere, CoatedSphere)):
-            scat_coeffs = self._scat_coeffs(scatterer, target.optics)
+            scat_coeffs = self._scat_coeffs(scatterer, schema.optics)
 
             if scatterer.center is None:
                 scat_matrs = [mieangfuncs.asm_mie_far(scat_coeffs, theta) for
-                              theta in target.positions_theta()]
+                              theta in schema.positions_theta()]
                 return np.array(scat_matrs)
             else:
                 raise TheoryNotCompatibleError(self, scatterer)
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
-    def _calc_field(self, scatterer, target):
+    def _calc_field(self, scatterer, schema):
         """
         Calculate fields for single or multiple spheres
 
@@ -90,24 +89,22 @@ class Mie(FortranTheory):
         calculated from each particle (using calc_mie_fields()). 
         """
         if isinstance(scatterer, (Sphere, CoatedSphere)):
-            scat_coeffs = self._scat_coeffs(scatterer, target.optics)
+            scat_coeffs = self._scat_coeffs(scatterer, schema.optics)
             
             # mieangfuncs.f90 works with everything dimensionless.
             # tranpose to get things in fortran format
             # TODO: move this transposing to a wrapper
-            fields = mieangfuncs.mie_fields(target.positions_kr_theta_phi(
+            fields = mieangfuncs.mie_fields(schema.positions_kr_theta_phi(
                     origin = scatterer.center).T, scat_coeffs,
-                    target.optics.polarization)
-            phase = np.exp(-1j*np.pi*2*scatterer.z / target.optics.med_wavelen)
-            schema = VectorImageSchema.from_ImageSchema(target)
-            result = schema.interpret_1d(np.vstack(fields).T)
-            return result * phase
+                    schema.optics.polarization)
+
+            return self._finalize_fields(scatterer.z, fields, schema)
         elif isinstance(scatterer, Scatterers):
             spheres = scatterer.get_component_list()
             
-            field = self._calc_field(spheres[0], target)
+            field = self._calc_field(spheres[0], schema)
             for sphere in spheres[1:]:
-                field += self._calc_field(sphere, target)
+                field += self._calc_field(sphere, schema)
             return field
         else:
             raise TheoryNotCompatibleError(self, scatterer)

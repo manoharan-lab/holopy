@@ -22,10 +22,7 @@ Test fortran-based Mie calculations and python interface.
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
-import sys
 import os
-hp_dir = (os.path.split(sys.path[0])[0]).rsplit(os.sep, 1)[0]
-sys.path.append(hp_dir)
 from nose.tools import with_setup, assert_raises
 import yaml
 
@@ -35,18 +32,18 @@ from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
                            assert_raises)
 from nose.plugins.attrib import attr
 
-from ..scatterer import Sphere, Spheres, CoatedSphere, Ellipsoid
+from ..scatterer import Sphere, Spheres, Ellipsoid
 from ..theory import Mie
 
 from ..theory.mie import UnrealizableScatterer
 from ..errors import TheoryNotCompatibleError
-from ...core import ImageTarget, Optics, Angles, DataTarget
+from ...core import ImageSchema, Optics, Angles, GenericSchema
 from .common import xoptics, yoptics, optics, verify
 from ...core.tests.common import assert_allclose
 
 # nose setup/teardown methods
 def setup_model():
-    global xtarget, ytarget, scaling_alpha, radius, n
+    global xschema, yschema, scaling_alpha, radius, n
     global n_particle_real, n_particle_imag, x, y, z
 
     scaling_alpha = .6
@@ -61,13 +58,13 @@ def setup_model():
     imshape = 128
     
     # set up optics class for use in several test functions
-    xtarget = ImageTarget(imshape, optics=xoptics)
-    ytarget = ImageTarget(imshape, optics=yoptics)
+    xschema = ImageSchema(imshape, optics=xoptics)
+    yschema = ImageSchema(imshape, optics=yoptics)
 
 def teardown_model():
-    global xtarget, ytarget, scaling_alpha, radius, n
+    global xschema, yschema, scaling_alpha, radius, n
     global n_particle_real, n_particle_imag, x, y, z
-    del xtarget, ytarget, scaling_alpha, radius, n
+    del xschema, yschema, scaling_alpha, radius, n
     del n_particle_real, n_particle_imag, x, y, z
 
 
@@ -77,10 +74,10 @@ def test_single_sphere():
     # single sphere hologram (only tests that functions return)
     sphere = Sphere(n=n, r=radius, center=(x, y, z))
 
-    holo = Mie.calc_holo(sphere, xtarget, scaling=scaling_alpha)
-    field = Mie.calc_field(sphere, xtarget)
+    holo = Mie.calc_holo(sphere, xschema, scaling=scaling_alpha)
+    field = Mie.calc_field(sphere, xschema)
 
-    intensity = Mie.calc_intensity(sphere, xtarget)
+    intensity = Mie.calc_intensity(sphere, xschema)
     
     verify(holo, 'single_holo')
     verify(field, 'single_field')
@@ -89,7 +86,7 @@ def test_single_sphere():
     # for them
 
     # large radius (calculation not attempted because it would take forever
-    assert_raises(UnrealizableScatterer, Mie.calc_holo, Sphere(r=1), xtarget)
+    assert_raises(UnrealizableScatterer, Mie.calc_holo, Sphere(r=1), xschema)
 
 
 @attr('fast')
@@ -100,32 +97,32 @@ def test_Mie_multiple():
     s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,10e-6,3e-6])
     sc = Spheres(scatterers=[s1, s2, s3])
 
-    target = ImageTarget(128, optics = optics)
-    fields = Mie.calc_field(sc, target)
+    schema = ImageSchema(128, optics = optics)
+    fields = Mie.calc_field(sc, schema)
 
     verify(fields, 'mie_multiple_fields')
-    Mie.calc_intensity(sc, target)
+    Mie.calc_intensity(sc, schema)
 
-    holo = Mie.calc_holo(sc, target)
+    holo = Mie.calc_holo(sc, schema)
     verify(holo, 'mie_multiple_holo')
 
     # should throw exception when fed a ellipsoid
     el = Ellipsoid(n = 1.59, r = (1e-6, 2e-6, 3e-6), center=[8e-6,5e-6,5e-6])
     with assert_raises(TheoryNotCompatibleError) as cm:
-        Mie.calc_field(el, target)
+        Mie.calc_field(el, schema)
     assert_equal(str(cm.exception), "The implementation of the Mie scattering "
                  "theory doesn't know how to handle scatterers of type "
                  "Ellipsoid")
     
-    assert_raises(TheoryNotCompatibleError, Mie.calc_field, el, target)
+    assert_raises(TheoryNotCompatibleError, Mie.calc_field, el, schema)
     assert_raises(TheoryNotCompatibleError, Mie.calc_intensity,
-                  el, target)
-    assert_raises(TheoryNotCompatibleError, Mie.calc_holo, el, target)
+                  el, schema)
+    assert_raises(TheoryNotCompatibleError, Mie.calc_holo, el, schema)
     # and when the list of scatterers includes a coated sphere
     sc.add(el)
-    assert_raises(TheoryNotCompatibleError, Mie.calc_field, sc, target)
-    assert_raises(TheoryNotCompatibleError, Mie.calc_intensity, sc, target)
-    assert_raises(TheoryNotCompatibleError, Mie.calc_holo, sc, target)
+    assert_raises(TheoryNotCompatibleError, Mie.calc_field, sc, schema)
+    assert_raises(TheoryNotCompatibleError, Mie.calc_intensity, sc, schema)
+    assert_raises(TheoryNotCompatibleError, Mie.calc_holo, sc, schema)
     
 @attr('fast')
 @with_setup(setup=setup_model, teardown=teardown_model)
@@ -134,8 +131,8 @@ def test_mie_polarization():
     # not the same, nor too different from one another.
     sphere = Sphere(n=n, r=radius, center=(x, y, z))
 
-    xholo = Mie.calc_holo(sphere, xtarget, scaling=scaling_alpha)
-    yholo = Mie.calc_holo(sphere, ytarget, scaling=scaling_alpha)
+    xholo = Mie.calc_holo(sphere, xschema, scaling=scaling_alpha)
+    yholo = Mie.calc_holo(sphere, yschema, scaling=scaling_alpha)
 
     # the two arrays should not be equal
     try:
@@ -170,9 +167,9 @@ def test_linearity():
 
     sc = Spheres(scatterers = [sphere1, sphere2])
     
-    holo_1 = Mie.calc_holo(sphere1, xtarget, scaling=scaling_alpha)
-    holo_2 = Mie.calc_holo(sphere2, xtarget, scaling=scaling_alpha)
-    holo_super = Mie.calc_holo(sc, xtarget, scaling=scaling_alpha)
+    holo_1 = Mie.calc_holo(sphere1, xschema, scaling=scaling_alpha)
+    holo_2 = Mie.calc_holo(sphere2, xschema, scaling=scaling_alpha)
+    holo_super = Mie.calc_holo(sc, xschema, scaling=scaling_alpha)
 
     # make sure we're not just looking at uniform arrays (could
     # happen if the size is set too small)
@@ -212,9 +209,9 @@ def test_nonlinearity():
 
     sc = Spheres(scatterers = [sphere1, sphere2])
     
-    holo_1 = Mie.calc_holo(sphere1, xtarget, scaling=scaling_alpha)
-    holo_2 = Mie.calc_holo(sphere2, xtarget, scaling=scaling_alpha)
-    holo_super = Mie.calc_holo(sc, xtarget, scaling=scaling_alpha)
+    holo_1 = Mie.calc_holo(sphere1, xschema, scaling=scaling_alpha)
+    holo_2 = Mie.calc_holo(sphere2, xschema, scaling=scaling_alpha)
+    holo_super = Mie.calc_holo(sc, xschema, scaling=scaling_alpha)
 
     # test nonlinearity by subtracting off individual holograms
     try:
@@ -232,14 +229,14 @@ def test_nonlinearity():
 @with_setup(setup=setup_model, teardown=teardown_model)
 def test_selection():
     sphere = Sphere(n=n, r=radius, center=(x, y, z))
-    holo = Mie.calc_holo(sphere, xtarget, scaling=scaling_alpha)
+    holo = Mie.calc_holo(sphere, xschema, scaling=scaling_alpha)
 
     
-    subset_target = ImageTarget(xtarget.positions.shape, optics = xoptics, use_random_fraction = .1)
+    subset_schema = ImageSchema(xschema.shape, optics = xoptics, use_random_fraction = .1)
     
-    subset_holo = Mie.calc_holo(sphere, subset_target, scaling=scaling_alpha)
+    subset_holo = Mie.calc_holo(sphere, subset_schema, scaling=scaling_alpha)
 
-    assert_allclose(subset_holo[subset_target.selection], holo[subset_target.selection])
+    assert_allclose(subset_holo[subset_schema.selection], holo[subset_schema.selection])
 
 @attr('fast')
 @with_setup(setup = setup_model, teardown = teardown_model)
@@ -265,11 +262,11 @@ def test_radiometric():
 @attr('fast')
 @with_setup(setup = setup_model, teardown = teardown_model)
 def test_farfield():
-    target = DataTarget(positions = Angles(np.linspace(0, np.pi/2)), optics =
+    schema = GenericSchema(positions = Angles(np.linspace(0, np.pi/2)), optics =
                                            Optics(wavelen=.66, index = 1.33))
     sphere = Sphere(r = .5, n = 1.59)
 
-    matr = Mie.calc_scat_matrix(sphere, target)
+    matr = Mie.calc_scat_matrix(sphere, schema)
 
     
     

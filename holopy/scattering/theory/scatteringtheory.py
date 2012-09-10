@@ -25,7 +25,7 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 import numpy as np
-from ...core.marray import Image, VectorImage
+from ...core.marray import Image, VectorImage, VectorImageSchema
 from ...core.holopy_object import HolopyObject
 from ..binding_method import binding, finish_binding
 
@@ -146,7 +146,7 @@ class ScatteringTheory(HolopyObject):
         # broadcast correctly
         ref = VectorImage(np.append(target.optics.polarization, 0).reshape(1, 1, 3))
 
-        return Image.from_target(interfere_at_detector(scat, ref), target)
+        return interfere_at_detector(scat, ref)
 
     @classmethod
     @binding
@@ -203,7 +203,14 @@ class ScatteringTheory(HolopyObject):
         """
 
         return cls_self._calc_scat_matrix(scatterer, target)
-        
+
+    def _finalize_fields(self, z, fields, schema):
+        # expects fields as an Nx3 ndarray
+        phase = np.exp(-1j*np.pi*2*z / schema.optics.med_wavelen)
+        schema = VectorImageSchema.from_ImageSchema(schema)
+        result = schema.interpret_1d(fields)
+        return result * phase
+
 
 # Subclass of scattering theory, overrides functions that depend on array
 # ordering and handles the tranposes for sending data to/from fortran
@@ -211,6 +218,10 @@ class FortranTheory(ScatteringTheory):
     def _list_of_sph_coords(self, center, selection=None):
         return super(FortranTheory, self)._list_of_sph_coords(center,
                                                               selection).T
+    def _finalize_fields(self, z, fields, schema):
+        return super(FortranTheory, self)._finalize_fields(
+            z, np.vstack(fields).T, schema) 
+        
 
     
     
@@ -239,9 +250,10 @@ def interfere_at_detector(e1, e2, detector_normal = (0, 0, 1)):
 
     detector_normal = np.array(detector_normal).reshape((1, 1, 3))
 
-    new = ((abs(e1)**2 + abs(e2)**2 + 2* np.real(e1*e2)) *
-           (1 - detector_normal)).sum(axis=-1)
+    new = Image(((abs(e1)**2 + abs(e2)**2 + 2* np.real(e1*e2)) *
+           (1 - detector_normal)).sum(axis=-1), **e1._dict)
 
+    
     return new
     
 class InvalidElectricFieldComputation(Exception):

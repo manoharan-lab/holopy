@@ -40,7 +40,6 @@ from nose.plugins.skip import SkipTest
 from .scatteringtheory import ScatteringTheory
 from .mie_f import mieangfuncs
 from ..errors import TheoryNotCompatibleError
-from ...core.data import VectorData
 from ..scatterer import (Sphere, CoatedSphere, VoxelatedScatterer,
                          ScattererByFunction, MultidomainScattererByFunction,
                          Ellipsoid, Spheres)
@@ -227,12 +226,12 @@ class DDA(ScatteringTheory):
         return optics.med_wavelen / cls._dpl(optics, n)
         
     
-    def _calc_field(self, scatterer, target):
+    def _calc_field(self, scatterer, schema):
         time_start = time.time()
         
         temp_dir = tempfile.mkdtemp()
 
-        calc_points = target.positions_kr_theta_phi(scatterer.center)
+        calc_points = schema.positions_kr_theta_phi(scatterer.center)
 
         angles = calc_points[:,1:] * 180/np.pi
 
@@ -245,7 +244,7 @@ class DDA(ScatteringTheory):
         np.savetxt(outf, angles)
         outf.close()      
         
-        self._run_adda(scatterer, target.optics, temp_dir)
+        self._run_adda(scatterer, schema.optics, temp_dir)
         
         # Go into the results directory, there should only be one run
         result_dir = glob.glob(os.path.join(temp_dir, 'run000*'))[0]
@@ -269,11 +268,7 @@ class DDA(ScatteringTheory):
         for i, point in enumerate(calc_points):
             kr, theta, phi = point
             escat_sph = mieangfuncs.calc_scat_field(kr, phi, scat_matr[i],
-                                                    target.optics.polarization)
+                                                    schema.optics.polarization)
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
 
-        fields = VectorData(fields)
-        result = target.from_1d(fields)
-        phase = np.exp(-1j*np.pi*2*scatterer.z / target.optics.med_wavelen)
-
-        return result * phase
+        return self._finalize_fields(scatterer.z, fields, schema)

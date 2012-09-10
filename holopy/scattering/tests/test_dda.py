@@ -30,7 +30,7 @@ from nose.tools import with_setup
 from nose.plugins.attrib import attr
 
 from ..scatterer import Sphere, Ellipsoid, CoatedSphere
-from ...core import ImageTarget, Optics
+from ...core import ImageSchema, Optics
 from ..theory import Mie, DDA
 from ..scatterer.voxelated import ScattererByFunction, VoxelatedScatterer
 from .common import assert_allclose, verify
@@ -41,7 +41,7 @@ import os.path
 # nose setup/teardown methods
 def setup_optics():
     # set up optics class for use in several test functions
-    global optics, target
+    global optics, schema
     wavelen = 658e-3
     polarization = [0., 1.0]
     divergence = 0
@@ -52,19 +52,19 @@ def setup_optics():
                     pixel_scale=pixel_scale,
                     polarization=polarization,
                     divergence=divergence)
-    target = ImageTarget(128, optics = optics)
+    schema = ImageSchema(128, optics = optics)
     
 def teardown_optics():
-    global optics, target
-    del optics, target
+    global optics, schema
+    del optics, schema
 
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_sphere():
     sc = Sphere(n=1.59, r=3e-1, center=(1, -1, 30))
 
-    mie_holo = Mie.calc_holo(sc, target)
-    dda_holo = DDA.calc_holo(sc, target)
+    mie_holo = Mie.calc_holo(sc, schema)
+    dda_holo = DDA.calc_holo(sc, schema)
     assert_allclose(mie_holo, dda_holo, rtol=.0015)
 
 @attr('medium')
@@ -81,7 +81,7 @@ def test_DDA_voxelated():
     
     sc = Sphere(n=n, r=r, center = center)
 
-    sphere_holo = dda.calc_holo(sc, target)
+    sphere_holo = dda.calc_holo(sc, schema)
 
     geom = np.loadtxt(os.path.join(dda._last_result_dir, 'sphere.geom'),
                       skiprows=3)
@@ -109,7 +109,7 @@ def test_DDA_voxelated():
     
     s = VoxelatedScatterer(sphere, center, dpl)
 
-    gen_holo = dda.calc_holo(s, target)
+    gen_holo = dda.calc_holo(s, schema)
 
     assert_allclose(sphere_holo, gen_holo, rtol=1e-3)
 
@@ -128,9 +128,9 @@ def test_voxelated_complex():
     sv = ScattererByFunction(sphere(s.r), s.n, [[-s.r, s.r], [-s.r, s.r], [-s.r,
     s.r]], center = s.center)
 
-    target = ImageTarget(50, optics = o)
+    schema = ImageSchema(50, optics = o)
 
-    holo_dda = DDA.calc_holo(sv, target)
+    holo_dda = DDA.calc_holo(sv, schema)
     verify(holo_dda, 'dda_voxelated_complex', rtol=1e-5)
 
     
@@ -141,16 +141,16 @@ def test_DDA_coated():
         center=[7.141442573813124, 7.160766866147957, 11.095409800342143],
         n=[(1.27121212428+0j), (1.49+0j)], r=[.1-0.0055, 0.1])
 
-    lmie_holo = Mie.calc_holo(cs, target)
-    dda_holo = DDA.calc_holo(cs, target)
+    lmie_holo = Mie.calc_holo(cs, schema)
+    dda_holo = DDA.calc_holo(cs, schema)
 
     assert_allclose(lmie_holo, dda_holo, rtol = 5e-5)
 
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_Ellipsoid_dda():
     e = Ellipsoid(1.5, r = (.5, .1, .1), center = (1, -1, 10))
-    target = ImageTarget(100, optics = Optics(wavelen=.66, pixel_scale=.1, index=1.33))
-    h = DDA.calc_holo(e, target)
+    schema = ImageSchema(100, optics = Optics(wavelen=.66, pixel_scale=.1, index=1.33))
+    h = DDA.calc_holo(e, schema)
 
     assert_almost_equal(h.max(), 1.3152766077267062)
     assert_almost_equal(h.mean(), 0.99876620628942114)

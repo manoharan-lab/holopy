@@ -23,7 +23,7 @@ Test fortran-based multilayered Mie calculations and python interface.
 '''
 from __future__ import division
 
-from ...core import Optics, ImageTarget
+from ...core import Optics, ImageSchema
 from .common import verify
 from ..theory import Mie
 from ..scatterer import CoatedSphere
@@ -39,7 +39,7 @@ def test_Shell():
     optics = Optics(wavelen=0.658, index=1.36, polarization=[1.0, 0.0],
               pixel_scale=[0.071333, 0.071333])
     
-    t = ImageTarget(200, optics = optics)
+    t = ImageSchema(200, optics = optics)
 
     h = Mie.calc_holo(s, t, scaling = 0.4826042444701572)
 

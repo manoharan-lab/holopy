@@ -169,5 +169,8 @@ class Angles(PositionSpecification):
         self.theta = theta
         self.phi = phi
         self.units = units
+        self.shape = theta.shape
+        if self.phi is not None:
+            assert self.phi.shape == self.shape
 
-        
+    

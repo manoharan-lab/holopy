@@ -33,7 +33,7 @@ from numpy.testing import (assert_equal, assert_array_almost_equal,
 
 from nose.plugins.attrib import attr
 
-from ...core import Optics, ImageTarget
+from ...core import Optics, ImageSchema
 from ..theory import Multisphere
 from ..theory.multisphere import MultisphereExpansionNaN, ConvergenceFailureMultisphere
 from ..scatterer import Sphere, Spheres, CoatedSphere
@@ -102,11 +102,11 @@ def test_polarization():
     sphere = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius, 
                     center =(x, y, z))
     sc = Spheres([sphere])
-    xtarget = ImageTarget(shape = imshape, optics=xoptics)
-    ytarget = ImageTarget(shape = imshape, optics=yoptics)
+    xschema = ImageSchema(shape = imshape, optics=xoptics)
+    yschema = ImageSchema(shape = imshape, optics=yoptics)
 
-    xholo = Multisphere.calc_holo(sc, xtarget, scaling=scaling_alpha)
-    yholo = Multisphere.calc_holo(sc, ytarget, scaling=scaling_alpha)
+    xholo = Multisphere.calc_holo(sc, xschema, scaling=scaling_alpha)
+    yholo = Multisphere.calc_holo(sc, yschema, scaling=scaling_alpha)
 
     # the two arrays should not be equal
     try:
@@ -130,9 +130,9 @@ def test_2_sph():
                                        n=1.5811+1e-4j, r=5e-07)])
 
 
-    target = ImageTarget(imshape, optics = xoptics)
+    schema = ImageSchema(imshape, optics = xoptics)
 
-    holo = Multisphere.calc_holo(sc, target, scaling=.6)
+    holo = Multisphere.calc_holo(sc, schema, scaling=.6)
 
     assert_almost_equal(holo.max(), 1.4140292298443309)
     assert_almost_equal(holo.mean(), 0.9955420925817654)
@@ -146,24 +146,24 @@ def test_invalid():
                                 Sphere(center=[6e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07)])
 
-    target = ImageTarget(imshape, optics = xoptics)
+    schema = ImageSchema(imshape, optics = xoptics)
 
-    assert_raises(UnrealizableScatterer, Multisphere.calc_holo, sc, target)
+    assert_raises(UnrealizableScatterer, Multisphere.calc_holo, sc, schema)
     
     sc = Spheres(scatterers=[Sphere(center=[7.1, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-01),
                                 Sphere(center=[6e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07)])
     
-    assert_raises(UnrealizableScatterer, Multisphere.calc_holo, sc, target)
+    assert_raises(UnrealizableScatterer, Multisphere.calc_holo, sc, schema)
 
     sc.scatterers[0].r = -1
 
-    assert_raises(UnrealizableScatterer, Multisphere.calc_holo, sc, target)
+    assert_raises(UnrealizableScatterer, Multisphere.calc_holo, sc, schema)
 
     cs = CoatedSphere()
 
-    assert_raises(TheoryNotCompatibleError, Multisphere.calc_holo, cs, target)
+    assert_raises(TheoryNotCompatibleError, Multisphere.calc_holo, cs, schema)
 
 @with_setup(setup=setup_model, teardown=teardown_model)
 def test_overlap():
@@ -176,10 +176,10 @@ def test_overlap():
                                            n=1.59, r=.5e-6)])
         assert len(w) > 0
 
-    target = ImageTarget(imshape, optics = xoptics)
+    schema = ImageSchema(imshape, optics = xoptics)
 
     # should fail to converge
-    assert_raises(MultisphereExpansionNaN, Multisphere.calc_holo, sc, target)
+    assert_raises(MultisphereExpansionNaN, Multisphere.calc_holo, sc, schema)
 
     # but it should succeed with a small overlap, after raising a warning
     with warnings.catch_warnings(True) as w:
@@ -189,7 +189,7 @@ def test_overlap():
                                     Sphere(center=[3.9e-6, 3.e-6, 10e-6], 
                                            n=1.59, r=.5e-6)])
         assert len(w) > 0
-    holo = Multisphere.calc_holo(sc, target)
+    holo = Multisphere.calc_holo(sc, schema)
 
     verify(holo, '2_sphere_allow_overlap')
 
@@ -200,14 +200,14 @@ def test_selection():
                                        n=1.5811+1e-4j, r=5e-07),
                                 Sphere(center=[6e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07)])
-    target = ImageTarget(imshape, optics = xoptics)
-    subset_target = ImageTarget(imshape, optics = xoptics, use_random_fraction=.1)
+    schema = ImageSchema(imshape, optics = xoptics)
+    subset_schema = ImageSchema(imshape, optics = xoptics, use_random_fraction=.1)
     
-    holo = Multisphere.calc_holo(sc, target, scaling=scaling_alpha)
+    holo = Multisphere.calc_holo(sc, schema, scaling=scaling_alpha)
 
-    subset_holo = Multisphere.calc_holo(sc, subset_target, scaling=scaling_alpha)
+    subset_holo = Multisphere.calc_holo(sc, subset_schema, scaling=scaling_alpha)
 
-    assert_allclose(subset_holo[subset_target.selection], holo[subset_target.selection])
+    assert_allclose(subset_holo[subset_schema.selection], holo[subset_schema.selection])
 
 @attr('fast')
 @with_setup(setup=setup_model, teardown=teardown_model)
@@ -216,8 +216,8 @@ def test_niter():
                                           n=1.5811+1e-4j, r=5e-07),
                                    Sphere(center=[6e-6, 7e-6, 10e-6],
                                           n=1.5811+1e-4j, r=5e-07)])
-    target = ImageTarget(imshape, optics = xoptics)
+    schema = ImageSchema(imshape, optics = xoptics)
     multi = Multisphere(niter = 2)
 
-    assert_raises(ConvergenceFailureMultisphere, multi.calc_holo, sc, target)
+    assert_raises(ConvergenceFailureMultisphere, multi.calc_holo, sc, schema)
 
