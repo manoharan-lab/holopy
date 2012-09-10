@@ -31,7 +31,7 @@ import os
 import warnings
 from scipy.misc.pilutil import fromimage
 from ..third_party.tifffile import TIFFfile
-from ..data import Image
+from ..marray import Image
 
 def save_image(im, filename, phase=False):
     """
@@ -85,23 +85,23 @@ def _read(filename, channel=0):
     LoadError
         if there is a problem loading a file
     """
-    # check file extension
-    extension = os.path.splitext(filename)[1]
 
+
+    # The most reliable way to determine what type of image file we are working
+    # with is to just try opening it with various loaders.  Extensions could be
+    # missing or wrong, but, ie, if np.load succeeds, it was a np file
+    try:
+        return np.load(filename)
+    except IOError:
+        pass
 
     might_be_color = True
-    
-    if extension in ['.npy', '.npz']:
-        # numpy format
-        return np.load(filename)
-    elif extension in ['.tif', '.TIF', '.tiff', '.TIFF']:
-        # check for nonstandard TIFF file (e.g. 12-bit, which PIL
-        # can't open)  
+    try:
         arr, might_be_color = _read_tiff(filename)
-    else:
-        # try PIL
+    except (ValueError, TypeError):
         im = PILImage.open(filename)
         arr = fromimage(im).astype('d')
+        
 
     # pick out only one channel of a color image
     if len(arr.shape) > 2 and might_be_color:

@@ -94,7 +94,8 @@ def call_super_init(cls, self, consumed = [], **kwargs):
     # should not be passed up the chain
     del call_args['self']
     call_args = dict_without(call_args, consumed)
-    # now add any new args to the call dict
+    # now add any new args to the call dict.  We add explicitly specified args
+    # last so they will overwrite other specifications as desired.  
     call_args.update(kwargs)
     
     # and finally call the superclass's __init__
@@ -144,8 +145,12 @@ class Marray(PseudoMarray, np.ndarray):
             return result
 
     @classmethod
-    def zeros_like(cls, marray, dtype = None):
-        return cls(np.zeros_like(marray, dtype = dtype), **marray._dict) 
+    def zeros_like(cls, obj, dtype = None):
+        if isinstance(obj, np.ndarray):
+            return cls(np.zeros_like(obj, dtype = dtype), **obj._dict)
+        else:
+            return cls(np.zeros(obj.shape, dtype=dtype),
+                       **dict_without(obj._dict, 'shape'))
 
 
 class GenericSchema(PseudoMarray):
@@ -183,7 +188,7 @@ class GenericSchema(PseudoMarray):
     
 
 class PseudoRegularGrid(PseudoMarray):
-    def __init__(self, spacing, optics = None, origin = None,
+    def __init__(self, spacing = None, optics = None, origin = None,
                  use_random_fraction = None, **kwargs):
         
         if np.isscalar(spacing):
@@ -194,6 +199,11 @@ class PseudoRegularGrid(PseudoMarray):
     @property
     def spacing(self):
         return self.positions.spacing
+
+class RegularGrid(Marray, PseudoRegularGrid):
+    def __init__(self, arr, spacing = None, optics = None, origin = None,
+                 use_random_fraction = None, dtype = None, **kwargs):
+        call_super_init(RegularGrid, self)
 
     def resample(self, shape, window=None):
         """
@@ -227,7 +237,7 @@ class PseudoRegularGrid(PseudoMarray):
                 factors[i] = 1.0 * self.shape[i] / s
                 new = scipy.signal.resample(new, s, axis=i, window=window)
 
-        new = self.__class__(new, **self._dict)
+                new = self.__class__(new, **self._dict)
         new.positions = new.positions.resample_by_factors(factors)
         return new
 
@@ -302,7 +312,7 @@ class ImageSchema(GenericSchema, PseudoImage):
     
     pass
 
-class Image(Marray, PseudoImage):
+class Image(RegularGrid, PseudoImage):
     pass
 
 class PseudoVolume(PseudoRegularGrid):
@@ -314,7 +324,7 @@ class PseudoVectorImage(PseudoImage):
         self.components = components
         call_super_init(PseudoVectorImage, self, 'components')
 
-class VectorImage(Marray, PseudoVectorImage):
+class VectorImage(RegularGrid, PseudoVectorImage):
     pass
         
 
@@ -346,7 +356,7 @@ class VectorImageSchema(GenericSchema, PseudoVectorImage):
 class VolumeSchema(GenericSchema, PseudoVolume):
     pass
 
-class Volume(Marray, PseudoVolume):
+class Volume(RegularGrid, PseudoVolume):
     pass
     
 

@@ -25,7 +25,7 @@ import os
 import serialize
 import image_file_io
 
-from ..data import Image
+from ..marray import Image
 from ..metadata import Optics
 
 def load_image(inf, optics = None, pixel_size = None):
@@ -38,7 +38,7 @@ def load_image(inf, optics = None, pixel_size = None):
         if isinstance(optics, dict):
             optics = Optics(**optics)
 
-    return Image(arr, optics = optics, pixel_size = pixel_size)
+    return Image(arr, optics = optics, spacing = pixel_size)
 
 def load(inf, pixel_size = None, optics = None):
     """
@@ -70,10 +70,11 @@ def load(inf, pixel_size = None, optics = None):
     """
 
     # this is probably a bad idea, but just try to read the file as a yaml, if
-    # we fail then maybe it is an image and we try to load it as such.  -tgd 2012-08-03
+    # we fail then maybe it is an image and we try to load it as such.  -tgd
+    # 2012-08-03
     try:
         return serialize.load(inf)
-    except:
+    except serialize.ReaderError:
         pass
 
     return load_image(inf, optics = optics, pixel_size = pixel_size)

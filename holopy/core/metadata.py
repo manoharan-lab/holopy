@@ -25,7 +25,7 @@ from __future__ import division
 
 import numpy as np
 import copy
-from .helpers import _ensure_pair
+from .helpers import _ensure_pair, _ensure_array
 from holopy_object import HolopyObject
 
 
@@ -151,7 +151,7 @@ class Grid(PositionSpecification):
 
     def resample_by_factors(self, factors):
         new = copy.copy(self)
-        new.spacing = new.spacing.astype('float')
+        new.spacing = _ensure_array(new.spacing).astype('float')
         new.spacing[factors.keys()] *= factors.values()
         return new
 

@@ -18,17 +18,17 @@
 from __future__ import division
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
-from ..marray import ImageSchema, Grid, VectorImage, Image
+from ..marray import ImageSchema, Grid, VectorImage, VectorImageSchema, Image
 from .common import assert_obj_close
 
 
 def test_VectorData():
-    target = ImageSchema(shape = (100,100), spacing = .1)
-
-    vd = VectorData.vector_zeros_like(target)
+    schema = ImageSchema(shape = (100,100), spacing = .1)
+    vs = VectorImageSchema.from_ImageSchema(schema)
+    vd = VectorImage.zeros_like(vs)
     assert_equal(vd.shape, (100,100,3))
 
-    vd2 = VectorData(np.zeros((10, 10, 3)))
+    vd2 = VectorImage(np.zeros((10, 10, 3)))
     assert_equal(vd2.components, ('x', 'y', 'z'))
 
 
@@ -41,14 +41,14 @@ def test_positions_in_spherical():
        [ 1.73205081,  0.95531662,  0.78539816]]))
 
 def test_from1d():
-    target = ImageSchema(shape = (2,2), spacing = 1)
-    data = VectorData([[1, 0, 0],
+    schema = ImageSchema(shape = (2,2), spacing = 1)
+    data = VectorImage([[1, 0, 0],
                        [0, 1, 2],
                        [1, 2, 3],
                        [5, 8, 9]])
-    assembled = VectorData([[[1, 0, 0], [0, 1, 2]], [[1, 2, 3], [5, 8, 9]]])
+    assembled = VectorImage([[[1, 0, 0], [0, 1, 2]], [[1, 2, 3], [5, 8, 9]]])
     
-    vf = target.from_1d(data)
+    vf = VectorImageSchema.from_ImageSchema(schema).interpret_1d(data)
     assert_equal(vf, assembled)
 
 def test_Image():
@@ -59,7 +59,8 @@ def test_Image():
 def test_resample():
     i = Image(np.arange(16).reshape((4,4)), spacing = 1)
     assert_obj_close(i.resample((2, 2)),
-                     Image([[  5.,   6.], [  9.,  10.]],
-                           pixel_size=np.array([ 2, 2])), context = 'image') 
+                     Image([[  5,   6], [  9,  10]],
+                           spacing=np.array([ 2, 2])), context = 'image') 
 
-    assert_obj_close(i, Image(np.arange(16).reshape((4,4)), pixel_size = 1), context='image')
+    assert_obj_close(i, Image(np.arange(16).reshape((4,4)),
+                              spacing = 1), context='image') 

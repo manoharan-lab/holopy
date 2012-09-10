@@ -52,7 +52,7 @@ def get_example_data(name, optics):
     return load(get_example_data_path(name), optics = optics)
         
 def assert_read_matches_write(o):
-    tempf = tempfile.TemporaryFile()
+    tempf = tempfile.NamedTemporaryFile()
     save(tempf, o)
     tempf.flush()
     tempf.seek(0)

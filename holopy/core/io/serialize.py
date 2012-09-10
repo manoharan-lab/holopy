@@ -32,12 +32,13 @@ except ImportError:
     from ordereddict import OrderedDict
 import numpy as np
 import yaml
+from yaml.reader import ReaderError
 import re
 import inspect
 import types
 from ..holopy_object import SerializableMetaclass
-from ..data import Data
-from .. import data
+from ..marray import Marray
+from  .. import marray
 
 class LoadError(Exception):
     def __init__(self, msg):
@@ -50,7 +51,7 @@ def save(outf, obj):
         outf = file(outf, 'w')
 
     yaml.dump(obj, outf)
-    if isinstance(obj, Data):
+    if isinstance(obj, Marray):
         # yaml saves of large arrays are very slow, so we have numpy save the data
         # parts of data objects.  This will mean the file isn't stricktly
         # a valid yaml (or even a valid text file really), but we can still read
@@ -67,7 +68,7 @@ def load(inf):
     line = inf.readline()
     cls = line.strip('{} !\n')
     lines = []
-    if hasattr(data, cls) and issubclass(getattr(data, cls), Data):
+    if hasattr(marray, cls) and issubclass(getattr(marray, cls), Marray):
         while not re.search('!NpyBinary', line):
             lines.append(line)
             line = inf.readline()
@@ -76,7 +77,7 @@ def load(inf):
         kwargs = yaml.load(head)
         if kwargs is None:
             kwargs = {}
-        return getattr(data, cls)(arr, **kwargs)
+        return getattr(marray, cls)(arr, **kwargs)
 
 
     else:
@@ -125,6 +126,15 @@ yaml.add_representer(np.float64, numpy_float_representer)
 def numpy_int_representer(dumper, data):
     return dumper.represent_int(int(data))
 yaml.add_representer(np.int64, numpy_int_representer)
+
+def numpy_dtype_representer(dumper, data):
+    return dumper.represent_scalar('!dtype', data.name)
+yaml.add_representer(np.dtype, numpy_dtype_representer)
+
+def numpy_dtype_loader(loader, node):
+    name = loader.construct_scalar(node)
+    return np.dtype(name)
+yaml.add_constructor('!dtype', numpy_dtype_loader)
 
 def class_representer(dumper, data):
     return dumper.represent_scalar('!class', "{0}.{1}".format(data.__module__,
