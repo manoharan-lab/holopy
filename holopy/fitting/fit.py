@@ -33,6 +33,31 @@ from .errors import MinimizerConvergenceFailed, InvalidMinimizer
 from .minimizer import Minimizer, Nmpfit
 
 class FitResult(HolopyObject):
+    """
+    The results of a fit.
+
+    You should not make objects of this class directly, they will be given to
+    you by :func:`fit`
+
+    Parameters
+    ----------
+    parameters : array(float)
+        The fitted values for each parameter
+    scatterer : :mod:`.scatterer`
+        The best fit scatterer
+    chisq : float
+        The :math:`\chi^2` goodness of fit
+    rsq : float
+        The :math:`R^2` goodness of fit
+    converged : bool
+        Did the minimizer converge
+    time : float
+        Time in seconds the fit took
+    minimizer : :class:`.Minimizer`
+        Them minimizer used in the fit
+    minimization_details : object
+        Additional information returned by the minimizer about the minimization
+    """
     def __init__(self, parameters, scatterer, chisq, rsq, converged, time, model,
                  minimizer, minimization_details):
         self.parameters = parameters
@@ -53,12 +78,12 @@ def fit(model, data, minimizer=Nmpfit):
 
     Parameters
     ----------
-    model : :class:`holopy.fitting.model.Model` object
+    model : :class:`~holopy.fitting.model.Model` object
         A model describing the scattering system which leads to your data and
         the parameters to vary to fit it to the data
-    data : :class:`holopy.core.marray.Marray` object
+    data : :class:`~holopy.core.marray.Marray` object
         The data to fit
-    minimizer : (optional) :class:`holopy.fitting.minimizer.Minimizer`
+    minimizer : (optional) :class:`~holopy.fitting.minimizer.Minimizer`
         The minimizer to use to do the fit
 
     Returns

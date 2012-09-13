@@ -92,13 +92,24 @@ def tied_name(name1, name2):
     return common_suffix.strip(':_')
     
 class ParameterizedObject(Parametrization):
-    def __init__(self, schema):
-        self.schema = schema
+    """
+    Specify parameters for a fit by including them in an object
 
-        # find all the Parameter's in the schema
+    Parameters are named automatically from their position in the object
+    
+    Parameters
+    ----------
+    obj : :mod:`.scatterer`
+        Object containing parameters specifying any values vary in the fit.  It
+        can also include numbers for any fixed values
+    """
+    def __init__(self, obj):
+        self.obj = obj
+
+        # find all the Parameter's in the obj
         parameters = []
         ties = {}
-        for name, par in schema.parameters.iteritems():
+        for name, par in obj.parameters.iteritems():
             def add_par(p, name):
                 if p in parameters:
                     # if the parameter is already in the parameters list, it
@@ -135,10 +146,10 @@ class ParameterizedObject(Parametrization):
         self.ties = ties
 
     def make_from(self, parameters):
-        schema_pars = {}
+        obj_pars = {}
 
         
-        for name, par in self.schema.parameters.iteritems():
+        for name, par in self.obj.parameters.iteritems():
             # if this par is in a tie group, we need to work with its tie group
             # name since that will be what is in parameters
             for groupname, group in self.ties.iteritems():
@@ -162,13 +173,13 @@ class ParameterizedObject(Parametrization):
             
             if name in self.ties:
                 for tied_name in self.ties[name]:
-                    schema_pars[tied_name] = par_val
+                    obj_pars[tied_name] = par_val
             else:
-                schema_pars[name] = par_val
+                obj_pars[name] = par_val
                 
                 
 
-        return self.schema.from_parameters(schema_pars)
+        return self.obj.from_parameters(obj_pars)
 
 
 
@@ -178,12 +189,12 @@ class Model(HolopyObject):
 
     Parameters
     ----------
-    parameters: :class:`Paramatrization`
+    parameters: :class:`.Paramatrization`
         The parameters which can be varied in this model.  
-    theory : :function:`scattering.theory.ScatteringTheory.calc_*`
+    theory : :func:`scattering.theory.ScatteringTheory.calc_*`
         The scattering calc function that should be used to compute results for
         comparison with the data
-    schema_overlay : :class:`core.marray.Schema`
+    schema_overlay : :class:`~core.marray.Schema`
         A Schema object with overrides for and of the metadata of the data
         you fit to.  Do not bother to provide entries for shape, position, and
         things that are provided in the data, use this for replacing wavelen with a

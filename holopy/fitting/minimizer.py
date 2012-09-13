@@ -38,9 +38,20 @@ from .third_party import nmpfit
     
 class Minimizer(HolopyObject):
     """
-    Defines interface that minimizer adapters should support
+    Common interface to all minimizers holopy supports
     """
-    def minimize(self, parameters, cost_func, selection=None):
+    def minimize(self, parameters, cost_func):
+        """
+        Find the best solution to an optimization problem
+
+        Parameters
+        ----------
+        parameters : list of :class:`.Parameter` objects
+            Parameters to vary in the model
+        cost_func : function
+            A function taking parameters as arguments that returns the residual
+            for the minimization problem
+        """
         raise NotImplementedError() # pragma: nocover
 
     # if minimizers do any parameter rescaling, they are responsible for putting
@@ -148,3 +159,4 @@ class Nmpfit(Minimizer):
         else:
             return result_pars, fitresult
 
+    minimize.__doc__ = Minimizer.minimize.__doc__

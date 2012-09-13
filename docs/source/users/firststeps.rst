@@ -5,7 +5,9 @@ Initially you'll probably find it helpful to work from a python shell
 such as ipython.
 
 
-Holopy can work with many types of data, but we use it most for working with digital holographic images, so we will start with an example of such.  
+Holopy can work with many types of data, but we use it most for
+working with digital holographic images, so we will start with an
+example of such.
 
 .. _loading:
 
@@ -17,25 +19,31 @@ Let's say you have a digital hologram stored in the file
 including TIFF files, numpy data format files, and any image format
 that can be handled by the Python Imaging Library.  But it's always
 good to load your images in Holopy and view them to see if they are
-imported correctly.  You can do this as follows
+imported correctly.  You can do this as follows ::
 
-.. sourcecode:: ipython
+   import holopy ash hp
 
-   import holopy
+   holo = hp.load('image0001.tif')
 
-   holo = holopy.load('image0001.tif')
-
-The function :func:`holopy.load` (which is an alias to
-:func:`holopy.io.load` returns an two dimensional Data array.  You can view it:
+We use an alias import for holopy so that you can refer to it as hp
+because you will be typing it a lot.  ``import holopy`` also works,
+but then you need to type out holopy instead of just hp. The function
+:func:`hp.load <holopy.core.io.io.load>` returns an :class:`.Image`, a
+2D array of the pixel values.  You can view it:
 
 .. sourcecode:: ipython
 
    holopy.show(holo)
 
-You can do math or image processing operations on ``holo`` just like
-you would for a normal `numpy <http://numpy.scipy.org/>`_ array.  For
-example (note you need to ``import scipy.ndimage`` and ``import scipy`` for these to work)::
+.. note ::
+   
+  You can do math or image processing operations on ``holo`` just like
+  you would for a normal `numpy
+  <http://docs.scipy.org/doc/numpy/reference/arrays.html>`_ array.  For
+  example::
 
+    import scipy.ndimage
+    import scipy.fftpack
     filtered_image = scipy.ndimage.uniform_filter(holo, [10,10])
     ffted_image = scipy.fftpack.fft2(holo)
 
@@ -51,30 +59,17 @@ recorded. This additional information is referred to as
 :dfn:`metadata`, and you should provide such metadata whenever you want
 to do real calculations on your data.
 
-In Holopy this metadata is stored in a number of Metadata objects
-which should be associated with data objects.  The most common
-metadata is optical information, described by the
-:class:`holopy.core.metadata.Optics` class.  If your data is a
-standard image, optical information may be the only type of metadata you need.  Because of the
-prime importance of metadata, hp.load supports associating it with
-Data as it is loaded
+All of the objects Holopy uses for storing data also support the
+addition of such metadata.  The most common metadata is pixel size and
+optical information, described by an :class:`.Optics` object.  Because
+of the prime importance of metadata, :func:`hp.load
+<holopy.core.io.io.load>` supports associating it with data as it is
+loaded ::
 
-.. sourcecode:: ipython
-
-   optics = holopy.core.metadata.Optics(wavelen=.660, index=1.33)
+   optics = holopy.core.Optics(wavelen=.660, index=1.33)
 
    holo = holopy.load('image0001.tif', pixel_size = .1,  optics = optics)
 
-.. note::
-
-    The wavelength specified in the Optics object is the wavelength in
-    vacuum. Holopy uses the given wavelength and medium refractive index
-    to calculate the wavelength in the medium. The wavelength in the medium is available as:
-
-    .. sourcecode:: ipython
-
-        optics.med_wavelen
-        0.49624060150375937
 
 In the first line of code above we create an instance of the Optics metadata class
 containing the imaging laser wavelength and the medium refractive
@@ -82,6 +77,16 @@ index.  You can specify more metadata, but this is all we need for
 now.  The second line loads the image data, tells it the pixel size of
 the camera in the imaging plane for the image and that it was taken
 with the previously defined optics object.
+
+.. note::
+
+    The wavelength specified in the Optics object is the wavelength in
+    vacuum. Holopy uses the given wavelength and medium refractive
+    index to calculate the wavelength in the medium. The wavelength in
+    the medium is available as::
+
+        optics.med_wavelen
+        0.49624060150375937
 
 
 Using YAML files
@@ -108,14 +113,15 @@ them with a '#" character)
   polarization: [1.0, 0.0]
   divergence: 0.0
 
-You can also write this file by hand.  In either case you can make an :class:`holopy.optics.Optics` object from the file ::
+You can also write this file by hand.  In either case you can make an
+:class:`.Optics` object from the file ::
 
-         meta = holopy.load('optics.yaml')
-         holo = holopy.load('image0001.tif', pixel_size = .1,  optics = meta)
+         optics = holopy.load('optics.yaml')
+         holo = holopy.load('image0001.tif', pixel_size = .1,  optics = optics)
 
-:func:`holopy.load()` will also accept the filename of an metadata yaml
-file as the argument for the optics parameter and automatically load
-the yaml file. ::
+:func:`hp.load <holopy.core.io.io.load>` will also accept the filename
+of an metadata yaml file as the argument for the optics parameter and
+automatically load the yaml file. ::
 
   holo = holopy.load('image0001.tif', pixel_size = .1, optics='optics.yaml')
 

@@ -1,14 +1,13 @@
 fitting Package
 ===============
 
-:mod:`fitting` Package
+:mod:`fit` Module
 ----------------------
 
-.. automodule:: holopy.fitting
+.. automodule:: holopy.fitting.fit
     :members:
     :show-inheritance:
 
-.. autofunction:: holopy.fitting.fit.fit
 	   
 :mod:`parameter` Module
 -----------------------

@@ -41,7 +41,7 @@ class Parameter(HolopyObject):
         parameter to  vary between (min, max)
     name : (optional) string
         A short descriptive name of the parameter.  Do not provide this if using
-        the parameter in a :class:`ParameterizedScatterer`, it will assign a
+        the parameter in a :class:`.ParameterizedScatterer`, it will assign a
         name based on the Parameter's position within the scatterer
     **kwargs : varies
         Additional information made available to the minimizer.  This can be

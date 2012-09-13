@@ -23,7 +23,7 @@ to interpret those values.  Metadata might be:
    
    All Marray objects must know where in space their measurements were
    taken.  This is specified as a
-   :class:`holopy.core.metadata.PositionSpecification` object which can be
+   :class:`~holopy.core.metadata.PositionSpecification` object which can be
    by pixel spacing for a rectangular detector, angles to farfield
    detectors, or in general a list of coordinates for each measurement
    location.
@@ -31,7 +31,7 @@ to interpret those values.  Metadata might be:
 :Optical Setup:
    
    Details about the optical system and optical path are specified 
-   as a :class:`holopy.core.metadata.Optics` object containing wavelength,
+   as a :class:`.metadata.Optics` object containing wavelength,
    polarization, divergence, ... of illumination light, index of
    refraction of the medium the scatterers are in, and any lenses or other optical
    elements present in the beam path.
@@ -47,9 +47,9 @@ Data can be:
 :1-dimensional:
    static light scattering measurements
 :2-dimensional:
-   :class:`holopy.core.marray.Image`, or timeseries of 1d data sets
+   :class:`~holopy.core.marray.Image`, or timeseries of 1d data sets
 :3-dimensional:
-   :class:`holopy.core.marray.Volume` data (stacks) or timeseries of images
+   :class:`~holopy.core.marray.Volume` data (stacks) or timeseries of images
 :4-dimensional:
    timeseries of volume data
 
@@ -101,8 +101,8 @@ rest of holopy.
 
 Holopy Core is used at the beginning and end of your workflow:
 
-  1) raw image (or other data) file(s) + metadata -> :class:`holopy.core.marray.Marray` object
-  2) Raw :class:`holopy.core.marray.Marray` object + processing -> processed :class:`holopy.core.marray.Marray` object
+  1) raw image (or other data) file(s) + metadata -> :class:`~holopy.core.marray.Marray` object
+  2) Raw :class:`~holopy.core.marray.Marray` object + processing -> processed :class:`~holopy.core.marray.Marray` object
   3) Computed or Processed Result -> Archival yaml text or text/binary result
 
 Scattering
@@ -116,9 +116,9 @@ theories may depend on external scattering codes).
 
 Holopy Scattering is generally used to:
 
-  1) Describe geometry as :mod:`holopy.scattering.scatterer` object
-  2) Define the result you want as a :mod:`holopy.core.marray.Schema` object
-  3) Calculate scattering quantities with an :mod:`holopy.scattering.theory` appropriate for your object -> :class:`holopy.core.marray.Marray` object
+  1) Describe geometry as :mod:`~holopy.scattering.scatterer` object
+  2) Define the result you want as a :mod:`~holopy.core.marray.Schema` object
+  3) Calculate scattering quantities with an :mod:`~holopy.scattering.theory` appropriate for your :mod:`~holopy.scattering.scatterer` -> :class:`~holopy.core.marray.Marray` object
 
 Propagation
 ^^^^^^^^^^^
@@ -129,7 +129,7 @@ core (and on scattering if propagating through with nonuniform media).
 
 Propagation is used primarily for one operation:
 
-  1) Image or VectorImage (Electric field) -> Image or VectorImage at another position
+  1) :class:`.Image` or :class:`.VectorImage` (Electric field) -> :class:`.Image` or :class:`.VectorImage` at another position
 
 Fitting
 ^^^^^^^
@@ -139,8 +139,8 @@ data.  Fitting depends on Core and Scattering.
 
 Fitting is used to:
 
-  1) Define Scattering Model -> :class:`holopy.fitting.model.Model` object
-  2) Fit model to data -> :class:`holopy.fitting.fit.FitResult` object
+  1) Define Scattering Model -> :class:`~holopy.fitting.model.Model` object
+  2) Fit model to data -> :class:`.FitResult` object
 
 Visualization
 ^^^^^^^^^^^^^

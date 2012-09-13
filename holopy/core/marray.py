@@ -172,8 +172,17 @@ def _describe_init_signature(cls):
     cls.__doc__ = cls.__doc__.format(attrs = attr_sig)
     return cls
     
-           
+
+@_describe_init_signature
 class Marray(PseudoMarray, np.ndarray):
+    """
+    Generic Array with metadata
+
+    You usually should use a more appropriate subclass, raw Marrays are somewhat
+    cumbersome to use.
+
+    {attrs}
+    """
     def __new__(cls, arr, positions = None, optics = None, origin = None,
                 use_random_fraction = None, dtype = None, **kwargs):
         # things like numpy.std give us 0d arrays, the user probably expects

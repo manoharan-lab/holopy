@@ -17,16 +17,13 @@ Import the code
 To begin, import: ::
 
     import holopy
-    from holopy import propagate, show
-
-
-:func:`holopy.propagate` is provided as an alias to :func:`holopy.propagation.propagation`
+    from holopy import propagate, show, load
 
 
 Load a hologram
-==================
+===============
 
-The first thing to do is to create a :class:`holopy.core.data.Image`
+The first thing to do is to create a :class:`.Image`
 object which will store the image data of the hologram as well as
 metadata about the optics used in creating the hologram, imaging laser
 wavelength, the medium refractive index, and the pixel size of the
@@ -37,19 +34,17 @@ Reconstruct the hologram
 ========================
 To reconstruct an x-y slice you must pass (at least) the hologram and the
 z-distance of the reconstructed image to the function
-:func:`holopy.propagation.propagate.propagate`
+:func:`.propagate`
 
 In the following bit of code, an image 10 microns from the focal plane
-is reconstructed. 
+is reconstructed. ::
 
-.. sourcecode:: ipython
+  rec_xy = propagate(holo, 10)
 
-    rec_xy = propagate(holo, 10)
+  rec_xy.dtype
+  dtype('complex128')
 
-    rec_xy.dtype
-    dtype('complex128')
-
-    rec_vol = propagate(holo, np.linspace(5, 15, 10))
+  rec_vol = propagate(holo, np.linspace(5, 15, 10))
 
 
 The reconstructed image is a complex array. The dimensions of the
@@ -57,34 +52,47 @@ imaging plane (x&y) are the first two dimensions.  If a range of z
 distances are specified the array will be 3 dimensional, x, y, z.  
 
 Visualizing Reconstructions
-============================
+===========================
 
 Now that you have the reconstruction, you need to view it. A few 
 resources come in handy when visualizing and working with the
 reconstructions.
 
-Holopy provides convenience wrappers around display routines from `matplotlib <http://matplotlib.sourceforge.net/>`_ and `MayaVI <http://code.enthought.com/projects/mayavi/>`_ though since our Data is an numpy array, you can use the raw plotting libraries as well.
+Holopy provides convenience wrappers around display routines from
+`matplotlib <http://matplotlib.sourceforge.net/>`_ and `MayaVI
+<http://code.enthought.com/projects/mayavi/>`_ though since our Data
+is an numpy array, you can use the raw plotting libraries as well.
 
-For viewing 2d slices, use hp.show ::
+For viewing 2d slices, use :func:`hp.show <holopy.vis.show>`::
 
-  holopy.show(rec_vol)
-  holopy.show(rec_vol.angle())
-  holopy.show(rec_vol.imag())
+  hp.show(rec_vol)
+  hp.show(rec_vol.angle())
+  hp.show(rec_vol.imag())
 
-By default holopy.show shows the magnitude of a complex image.  For volume images, you can step through slices in the z plane by using the left and right arrow keys on your keyboard.
+By default hp.show shows the magnitude of a complex image.  For
+volume images, you can step through slices in the z plane by using the
+left and right arrow keys on your keyboard.
 
 
-[Render not yet implemented]
 To see three dimensional renderings, use holopy.render ::
 
   holopy.render(rec_vol, 'contour')
+  
+This will show a contour surface plot of the reconstruction, using
+MayaVI.
 
-This will show a contour surface plot of the reconstruction, using MayaVI.  
+.. note::
 
+   Surface rendering of reconstructions is not implemented yet
+
+   
 Propagating through Non-Homogeneous Media
 =========================================
 
-[Not yet implemented]
+.. note::
+
+  This is a feature preview, Holopy does not yet support propagating
+  through nonuniform media.  
 
 The propagation discussed above assumes propagation through free space or a homogeneous dielectric medium.  However, holopy can also propagate a field  through an optical elements :: 
 
@@ -103,6 +111,11 @@ Holopy defaults to centering the medium or optical elements on the center of the
 
 Changing Propagation Model
 ==========================
+
+.. note::
+
+   This is a feature preview.  Holopy currently supports propagating
+   only by convolution.  
 
 Holopy defaults to a linear model of propagation by convolution with pointspread functions.  If asked to compute propagation through a nonuniform medium it switches to its DDA propagation model.  If you wish to manually control the propagation model you can use ::
 
