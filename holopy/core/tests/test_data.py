@@ -22,7 +22,7 @@ from ..marray import ImageSchema, Grid, VectorImage, VectorImageSchema, Image
 from .common import assert_obj_close
 
 
-def test_VectorData():
+def test_VectorImage():
     schema = ImageSchema(shape = (100,100), spacing = .1)
     vs = VectorImageSchema.from_ImageSchema(schema)
     vd = VectorImage.zeros_like(vs)
@@ -33,8 +33,8 @@ def test_VectorData():
 
 
 def test_positions_in_spherical():
-    target = ImageSchema(shape = (2,2), spacing = 1)
-    spherical = target.positions_r_theta_phi((0,0,1))
+    schema = ImageSchema(shape = (2,2), spacing = 1)
+    spherical = schema.positions_r_theta_phi((0,0,1))
     assert_allclose(spherical, np.array([[ 1.        ,  0.        ,  0.        ],
        [ 1.41421356,  0.78539816,  1.57079633],
        [ 1.41421356,  0.78539816,  0.        ],
@@ -42,13 +42,13 @@ def test_positions_in_spherical():
 
 def test_from1d():
     schema = ImageSchema(shape = (2,2), spacing = 1)
-    data = VectorImage([[1, 0, 0],
+    im = VectorImage([[1, 0, 0],
                        [0, 1, 2],
                        [1, 2, 3],
                        [5, 8, 9]])
     assembled = VectorImage([[[1, 0, 0], [0, 1, 2]], [[1, 2, 3], [5, 8, 9]]])
     
-    vf = VectorImageSchema.from_ImageSchema(schema).interpret_1d(data)
+    vf = VectorImageSchema.from_ImageSchema(schema).interpret_1d(im)
     assert_equal(vf, assembled)
 
 def test_Image():

@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 """
-Classes for defining metadata about experimental or calulated data.  
+Classes for defining metadata about experimental or calulated results.  
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 
@@ -154,11 +154,6 @@ class Grid(PositionSpecification):
         new.spacing = _ensure_array(new.spacing).astype('float')
         new.spacing[factors.keys()] *= factors.values()
         return new
-
-    # TODO: this can't be done here now because grid no longer has a shape
-    @property
-    def extent(self):
-        return self.shape * self.spacing
 
     
 class UnevenGrid(Grid):

@@ -1,10 +1,10 @@
 core Package
 ============
 
-:mod:`data` Module
+:mod:`marray` Module
 ------------------
 
-.. automodule:: holopy.core.data
+.. automodule:: holopy.core.marray
     :members:
     :show-inheritance:
 

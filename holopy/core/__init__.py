@@ -24,7 +24,8 @@ as a data manipulation library.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 """
 
-from marray import Marray, Image, GenericSchema, ImageSchema, Volume, VolumeSchema
+from marray import (Marray, Image, Schema, ImageSchema, Volume,
+                    VolumeSchema, VectorImage, VectorImageSchema)
 from metadata import Optics, Grid, Angles, UnevenGrid
 from io import load, load_image, save
 

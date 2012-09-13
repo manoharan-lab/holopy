@@ -42,7 +42,7 @@ def show(o,color=(0,0,1)):
 
     Parameters
     ----------
-    o : :class:`holopy.core.data.Image`, :class:`holopy.core.data.Volume` or :class:`holopy.scattering.scatterer.spherecluster.SphereCluster`
+    o : :class:`holopy.core.marray.Image`, :class:`holopy.core.marray.Volume` or :class:`holopy.scattering.scatterer.spherecluster.SphereCluster`
        Object to visualize
 
     Notes

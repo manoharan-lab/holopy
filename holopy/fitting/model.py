@@ -63,22 +63,22 @@ class Parametrization(HolopyObject):
 
     def make_from(self, parameters):
         # parameters is an ordered dictionary
-        for_target = {}
+        for_schema = {}
         for arg in inspect.getargspec(self.make_scatterer).args:
             if (arg + '.real') in parameters and (arg + '.imag') in parameters:
-                for_target[arg] = (parameters[arg + '.real'] + 1.j *
+                for_schema[arg] = (parameters[arg + '.real'] + 1.j *
                                    parameters[arg + '.imag'])
             elif (arg + '.real') in self._fixed_params and \
                     (arg + '.imag') in parameters:
-                for_target[arg] = (self._fixed_params[arg + '.real'] + 1.j * 
+                for_schema[arg] = (self._fixed_params[arg + '.real'] + 1.j * 
                                    parameters[arg + '.imag'])
             elif (arg + '.real') in parameters and (arg + '.imag') in \
                     self._fixed_params:
-                for_target[arg] = (parameters[arg + '.real'] + 1.j * 
+                for_schema[arg] = (parameters[arg + '.real'] + 1.j * 
                                    self._fixed_params[arg + '.imag'])
             else:
-                for_target[arg] = parameters[arg] 
-        return self.make_scatterer(**for_target)
+                for_schema[arg] = parameters[arg] 
+        return self.make_scatterer(**for_schema)
 
     @property
     def guess(self):
@@ -92,13 +92,13 @@ def tied_name(name1, name2):
     return common_suffix.strip(':_')
     
 class ParameterizedObject(Parametrization):
-    def __init__(self, target):
-        self.target = target
+    def __init__(self, schema):
+        self.schema = schema
 
-        # find all the Parameter's in the target
+        # find all the Parameter's in the schema
         parameters = []
         ties = {}
-        for name, par in target.parameters.iteritems():
+        for name, par in schema.parameters.iteritems():
             def add_par(p, name):
                 if p in parameters:
                     # if the parameter is already in the parameters list, it
@@ -135,10 +135,10 @@ class ParameterizedObject(Parametrization):
         self.ties = ties
 
     def make_from(self, parameters):
-        target_pars = {}
+        schema_pars = {}
 
         
-        for name, par in self.target.parameters.iteritems():
+        for name, par in self.schema.parameters.iteritems():
             # if this par is in a tie group, we need to work with its tie group
             # name since that will be what is in parameters
             for groupname, group in self.ties.iteritems():
@@ -162,13 +162,13 @@ class ParameterizedObject(Parametrization):
             
             if name in self.ties:
                 for tied_name in self.ties[name]:
-                    target_pars[tied_name] = par_val
+                    schema_pars[tied_name] = par_val
             else:
-                target_pars[name] = par_val
+                schema_pars[name] = par_val
                 
                 
 
-        return self.target.from_parameters(target_pars)
+        return self.schema.from_parameters(schema_pars)
 
 
 
@@ -183,8 +183,8 @@ class Model(HolopyObject):
     theory : :function:`scattering.theory.ScatteringTheory.calc_*`
         The scattering calc function that should be used to compute results for
         comparison with the data
-    target_overlay : :class:`core.data.DataTarget`
-        A DataTarget object with overrides for and of the metadata of the data
+    schema_overlay : :class:`core.marray.Schema`
+        A Schema object with overrides for and of the metadata of the data
         you fit to.  Do not bother to provide entries for shape, position, and
         things that are provided in the data, use this for replacing wavelen with a
         par, or adding a use_random_fraction entry.
@@ -192,24 +192,24 @@ class Model(HolopyObject):
         Extra scaling parameter, hopefully this will be removed by improvements
         in our theory soon.  
     """
-    def __init__(self, scatterer, theory, target_overlay=None, alpha = None):
+    def __init__(self, scatterer, theory, schema_overlay=None, alpha = None):
         if not isinstance(scatterer, Parametrization):
             scatterer = ParameterizedObject(scatterer)
         self.scatterer = scatterer
 
         self.theory = theory
 
-        # TODO: make target_overlay a Parametrization so that you can fit to
-        # things in the target metadata
-        self.target_overlay = target_overlay
+        # TODO: make schema_overlay a Parametrization so that you can fit to
+        # things in the schema metadata
+        self.schema_overlay = schema_overlay
 
         if isinstance(alpha, Parameter) and alpha.name is None:
             alpha.name = 'alpha'
         self.alpha = alpha
 
-        # TODO: put this code back once target_overlay is a Paramtrization
+        # TODO: put this code back once schema_overlay is a Paramtrization
 #        self.parameters = []
-#        for parameterizition in (self.scatterer, self.target_overlay):
+#        for parameterizition in (self.scatterer, self.schema_overlay):
 #            if parameterizition is not None:
 #                self.parameters.extend(parameterizition.parameters)
         self.parameters = self.scatterer.parameters
@@ -228,16 +228,18 @@ class Model(HolopyObject):
     def compare(self, calc, data, selection = None):
         return (data - calc).ravel()
 
-    def get_target(self, data):
-        target = copy(data)
-        if self.target_overlay is not None:
-            target.set_metadata(**self.target_overlay._metadata)
-        return target
+    def get_schema(self, data):
+        schema = copy(data)
+        if self.schema_overlay is not None:
+            for key, val in self.schema_overlay._dict.iteritems():
+                if val is not None:
+                    setattr(schema, key, val)
+        return schema
 
     def cost_func(self, data):
-        target = self.get_target(data)
+        schema = self.get_schema(data)
         def cost(pars):
-            calc = self.theory(self.scatterer.make_from(pars), target, scaling =
+            calc = self.theory(self.scatterer.make_from(pars), schema, scaling =
                           self.get_alpha(pars))
             return self.compare(calc, data)
         return cost

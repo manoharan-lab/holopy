@@ -31,7 +31,7 @@ from nose.plugins.attrib import attr
 from numpy.testing import assert_equal, assert_approx_equal, assert_raises, assert_allclose
 from ...scattering.scatterer import Sphere, Spheres, ScattererByFunction
 from ...scattering.theory import Mie, Multisphere, DDA
-from ...core import Optics, ImageTarget, load, save, DataTarget
+from ...core import Optics, ImageSchema, load, save
 from ...core.process import normalize
 from .. import fit, Parameter, ComplexParameter, par, Parametrization, Model
 from ..minimizer import Nmpfit
@@ -134,13 +134,13 @@ def test_fit_random_subset():
                r = par(8.5e-7, (1e-8, 1e-5)), n = ComplexParameter(par(1.59, (1,2)),1e-4j))
 
     
-    model = Model(s, Mie.calc_holo, target_overlay=DataTarget(use_random_fraction = .1), alpha = par(.6, [.1,1]))
+    model = Model(s, Mie.calc_holo, schema_overlay=ImageSchema(use_random_fraction = .1), alpha = par(.6, [.1,1]))
 
     result = fit(model, holo)
  
     # we have to use a relatively loose tolerance here because the random
     # selection occasionally causes the fit to be a bit worse
-    assert_parameters_allclose(result.parameters, gold_single, rtol=1.6e-2)
+    assert_parameters_allclose(result.parameters, gold_single, rtol=2e-2)
     assert_equal(model, result.model)
 
 
@@ -153,7 +153,7 @@ def test_fit_superposition():
     """
     # Make a test hologram
     optics = hp.Optics(wavelen=6.58e-07, index=1.33, polarization=[0.0, 1.0],
-                    divergence=0, pixel_size=None, train=None, mag=None,
+                    divergence=0, spacing=None, train=None, mag=None,
                     pixel_scale=[2*2.302e-07, 2*2.302e-07])
 
     s1 = Sphere(n=1.5891+1e-4j, r = .65e-6, 
@@ -200,10 +200,7 @@ def test_fit_multisphere_noisydimer_slow():
                        divergence = 0., pixel_scale = [0.345e-6, 0.345e-6], 
                        index = 1.334)
 
-    path = os.path.abspath(hp.__file__)
-    path = os.path.join(os.path.split(path)[0],'tests', 'exampledata')
-    holo = hp.process.normalize(hp.load(os.path.join(path, 'image0002.npy'),
-                                        optics=optics))
+    holo = normalize(get_example_data('image0002.npy', optics=optics))
     
     # Now construct the model, and fit
     parameters = [Parameter(name = 'x0', guess = 1.64155e-5, 
@@ -266,11 +263,11 @@ def test_serialization():
 
     alpha = par(.6, [.1, 1], 'alpha')
 
-    target = ImageTarget(shape = 100, optics = optics) 
+    schema = ImageSchema(shape = 100, optics = optics) 
 
     model = Model(par_s, Mie.calc_holo, alpha=alpha)
 
-    holo = Mie.calc_holo(model.scatterer.guess, target, model.alpha.guess)
+    holo = Mie.calc_holo(model.scatterer.guess, schema, model.alpha.guess)
 
     result = fit(model, holo)
 
@@ -289,9 +286,9 @@ def test_dda_fit():
     s = Sphere(n = 1.59, r = .2, center = (5, 5, 5))
     o = Optics(wavelen = .66, index=1.33, pixel_scale=.1)
 
-    target = ImageTarget(optics = o, shape = 100)
+    schema = ImageSchema(optics = o, shape = 100)
 
-    h = Mie.calc_holo(s, target)
+    h = Mie.calc_holo(s, schema)
 
 
     def in_sphere(r):
@@ -321,9 +318,9 @@ def test_dda_fit():
 
 def test_integer_correctness():
     # we keep having bugs where the fitter doesn't 
-    target = ImageTarget(shape = 100, pixel_size = .1, optics = Optics(wavelen = .660, index = 1.33))
+    schema = ImageSchema(shape = 100, spacing = .1, optics = Optics(wavelen = .660, index = 1.33))
     s = Sphere(center = (10.2, 9.8, 10.3), r = .5, n = 1.58)
-    holo = Mie.calc_holo(s, target)
+    holo = Mie.calc_holo(s, schema)
 
     par_s = Sphere(center = (par(guess = 10, limit = [5,15]), par(10, [5, 15]), par(10, [5, 15])),
                    r = .5, n = 1.58)

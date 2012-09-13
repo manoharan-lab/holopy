@@ -45,5 +45,5 @@ class MinimizerConvergenceFailed(Error):
         self.result = result
         self.details = details
 
-class InvalidMinimizer:
+class InvalidMinimizer(Error):
     pass

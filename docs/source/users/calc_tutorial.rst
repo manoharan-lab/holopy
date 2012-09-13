@@ -7,7 +7,7 @@ Scattering Calculations.
 TODO: add an intro to scattering calculations here
 
 In rough pseudo code, computing a hologram looks like this  ::
-  holo = Theory.calc_holo(scatterer, target)
+  holo = Theory.calc_holo(scatterer, schema)
 
 You can compute other scattering quantities by calling appropriate
 calc functions (see
@@ -17,7 +17,7 @@ To actually compute scattering, you need to do three things:
 
 1. Define a scatterer using a :mod:`holopy.scattering.scatterer` object
 
-2. Specify the output Data format using a :mod:`holopy.core.data.DataTarget` object
+2. Specify the output Data format using a :mod:`holopy.core.data.Schema` object
 
 3. Use a calc function from a :mod:`holopy.scattering.theory` object
    to compute scattered quantities
@@ -48,7 +48,7 @@ we will still be here when you get back.
 Desired data
 ============
 
-Holopy needs to know where in space you want to compute scattered quantities.  This is done by specifying a DataTarget object ::
+Holopy needs to know where in space you want to compute scattered quantities.  This is done by specifying a Schema object ::
   
   from holopy.core import ImageTarget, Optics
   target = ImageTarget(shape = 100, pixel_size = .1, optics = Optics(wavelen = .660, index = 1.33))

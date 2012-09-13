@@ -56,8 +56,8 @@ def fit(model, data, minimizer=Nmpfit):
     model : :class:`holopy.fitting.model.Model` object
         A model describing the scattering system which leads to your data and
         the parameters to vary to fit it to the data
-    data : :class:`holopy.core.data.Data` object
-        The data o fit
+    data : :class:`holopy.core.marray.Marray` object
+        The data to fit
     minimizer : (optional) :class:`holopy.fitting.minimizer.Minimizer`
         The minimizer to use to do the fit
 
@@ -90,7 +90,7 @@ def fit(model, data, minimizer=Nmpfit):
 
     # compute goodness of fit parameters
     fitted_scatterer = model.scatterer.make_from(fitted_pars)
-    fitted_holo = model.theory(fitted_scatterer, model.get_target(data),
+    fitted_holo = model.theory(fitted_scatterer, model.get_schema(data),
                                scaling = model.get_alpha(fitted_pars)) 
     chisq = float((((fitted_holo-data))**2).sum() / fitted_holo.size)
     rsq = float(1 - ((data - fitted_holo)**2).sum()/((data - data.mean())**2).sum())

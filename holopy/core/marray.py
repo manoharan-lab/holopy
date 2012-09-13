@@ -18,7 +18,7 @@
 """
 Storing measurements and calculated data.  This is done through
 Arrays with metadata (Marray and subclases).  It also includes Schema which
-specify how data should be computed in an analogous interface to how Marrays are
+specify how results should be computed in an analogous interface to how Marrays are
 specified.  
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
@@ -35,6 +35,7 @@ from .holopy_object import HolopyObject
 from .metadata import Grid, Angles
 from .helpers import _ensure_pair, _ensure_array
 import inspect
+
 
 # Ancestor for all array like storage objects for data/calculations.  
 class PseudoMarray(HolopyObject):
@@ -124,26 +125,37 @@ class Marray(PseudoMarray, np.ndarray):
 
     def __array_wrap__(self, out_arr, context=None):
         # this function is needed so that if we run another numpy
-        # function on the data (for example, numpy.add), the
+        # function on the Marray (for example, numpy.add), the
         # metadata will be transferred to the new object that is
         # created
         if out_arr.ndim == 0:
             # if the thing we are returning is 0 dimension (a single value) ie
             # from .sum(), we want to return the number, not the number wrapped
-            # in a data
+            # in a Marray
             return out_arr.max()
         
         return np.ndarray.__array_wrap__(self, out_arr, context)
 
+    def __repr__(self):
+        keywpairs = ["{0}={1}".format(k[0], repr(k[1])) for k in
+                     self._dict.iteritems()]
+        # we want te print numpy's repr
+        arr = np.ndarray.__repr__(self)
+        # but take out the class name since we are including it ourself
+        arr = 'array(' + arr.split('(', 1)[1]
+        return "{0}(arr={1}, \n{2})".format(self.__class__.__name__, arr,
+                                          ", ".join(keywpairs))
+
+
     # we have to implement our own std because the numpy one stubbornly returns
-    # 0d Data objects which we don't want
+    # 0d Marray objects which we don't want
     def std(self, axis=None, dtype=None, out=None, ddof=0):
         result = super(Marray, self).std(axis=None, dtype=None, out=None, ddof=0)
         if result.ndim == 0:
             return result.max()
         else:
             return result
-
+        
     @classmethod
     def zeros_like(cls, obj, dtype = None):
         if isinstance(obj, np.ndarray):
@@ -153,28 +165,28 @@ class Marray(PseudoMarray, np.ndarray):
                        **dict_without(obj._dict, 'shape'))
 
 
-class GenericSchema(PseudoMarray):
+class Schema(PseudoMarray):
     """
-    Specification of what data should look like.
+    Specification of what a result should look like.
 
     A Schema should specify the positions where data would be measured and
-    any other metadata that would be associated with the data.  Data target
+    any other metadata that would be associated with the data.  Schema
     objects are used to specify the output format of various calculation
     functions and to provide needed metadata for the calculation.  
 
     Attributes
     ----------
     shape : tuple(int)
-        shape of the data object.  Should be a tuple of 1 or more integers for
+        shape of the Marray object.  Should be a tuple of 1 or more integers for
         the shape along each axis.  
     positions : :class:`PositionSpecification` object
         Specification of the locations of measurements
     optics : :class:`metadata.Optics` object
-        Information about the optical train associated with this data target
+        Information about the optical train associated with this schema
     origin : (float, float, float)
         Offset for the origin of the space represented by this Schema.  
     use_random_fraction: float
-        Use only a random fraction of the pixels specified by this DataTarget
+        Use only a random fraction of the pixels specified by this Schema
         when doing calculations.  This can give a good representation of the
         whole field with much lower computation times
     **kwargs : varies
@@ -183,10 +195,10 @@ class GenericSchema(PseudoMarray):
 
     def __init__(self, shape = None, positions = None, optics = None, origin = None,
                  use_random_fraction = None, **kwargs):
-        if shape is None:
+        if shape is None and hasattr(positions, 'shape'):
             shape = positions.shape
         self.shape = shape
-        call_super_init(GenericSchema, self, 'shape')
+        call_super_init(Schema, self, 'shape')
     
 
 class PseudoRegularGrid(PseudoMarray):
@@ -202,6 +214,10 @@ class PseudoRegularGrid(PseudoMarray):
     def spacing(self):
         return self.positions.spacing
 
+    @property
+    def extent(self):
+        return self.shape * self.spacing
+
 class RegularGrid(Marray, PseudoRegularGrid):
     def __init__(self, arr, spacing = None, optics = None, origin = None,
                  use_random_fraction = None, dtype = None, **kwargs):
@@ -209,22 +225,22 @@ class RegularGrid(Marray, PseudoRegularGrid):
 
     def resample(self, shape, window=None):
         """
-        Resamples data to a given shape.
+        Resamples Marray to a given shape.
 
-        Use, for example, to downsample a data in a way that
+        Use, for example, to downsample a Marray in a way that
         avoids aliasing and ringing.
         
         Parameters
         ----------
         shape : int or array_like of ints
-            shape of final resampled data
+            shape of final resampled results
         window : string
             type of smoothing window passed to the scipy.signal.resample
             filter.
 
         Returns
         -------
-        new_image : :class:`holopy.data.Data` object
+        new_image : :class:`holopy.marray.Marray` object
 
         Notes
         -----
@@ -310,10 +326,11 @@ class PseudoImage(PseudoRegularGrid):
         return pos
 
     
-class ImageSchema(GenericSchema, PseudoImage):
-    def __init__(self, shape, spacing = None, optics = None, origin = None,
+class ImageSchema(Schema, PseudoImage):
+    def __init__(self, shape = None, spacing = None, optics = None, origin = None,
                  use_random_fraction = None, **kwargs):
-        shape = _ensure_pair(shape)
+        if shape is not None:
+            shape = _ensure_pair(shape)
         call_super_init(ImageSchema, self)
 
 class Image(RegularGrid, PseudoImage):
@@ -348,7 +365,7 @@ class VectorImage(RegularGrid, PseudoVectorImage):
     pass
         
 
-class VectorImageSchema(GenericSchema, PseudoVectorImage):
+class VectorImageSchema(Schema, PseudoVectorImage):
     def __init__(self, shape, spacing, components = ('x', 'y', 'z'), optics = None,
                  origin = None, use_random_fraction = None, **kwargs):
         self.components = components
@@ -363,7 +380,7 @@ class VectorImageSchema(GenericSchema, PseudoVectorImage):
         new =  cls(components = components, shape = shape,
                    spacing = image_schema.positions.spacing, 
                    **dict_without(image_schema._dict, ['shape', 'positions',
-                                                       'spacing']))
+                                                       'spacing', 'dtype']))
         # we want to use the same random selection as the schema we come from did
         if hasattr(image_schema, '_selection'):
             new._selection = image_schema._selection
@@ -379,7 +396,7 @@ class VectorImageSchema(GenericSchema, PseudoVectorImage):
             return new
         
 
-class VolumeSchema(GenericSchema, PseudoVolume):
+class VolumeSchema(Schema, PseudoVolume):
     pass
 
 class Volume(RegularGrid, PseudoVolume):

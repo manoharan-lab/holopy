@@ -25,9 +25,10 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 import numpy as np
-from ...core.marray import Image, VectorImage, VectorImageSchema
+from ...core.marray import Image, VectorImage, VectorImageSchema, dict_without
 from ...core.holopy_object import HolopyObject
 from ..binding_method import binding, finish_binding
+
 
 class ScatteringTheory(HolopyObject):
     """
@@ -36,8 +37,8 @@ class ScatteringTheory(HolopyObject):
     Notes
     -----
     A subclasses that do the work of computing scattering should do it by
-    implementing a _calc_field(self, scatterer, target) function that returns a
-    VectorData electric field.
+    implementing a _calc_field(self, scatterer, schema) function that returns a
+    VectorImage electric field.
 
     ScatteringTheory uses pseudo classmethods which when called on a
     ScatteringTheory class are in fact called on a default instantiation
@@ -53,7 +54,7 @@ class ScatteringTheory(HolopyObject):
         
     @classmethod
     @binding
-    def calc_field(cls_self, scatterer, target, scaling = 1.0):
+    def calc_field(cls_self, scatterer, schema, scaling = 1.0):
         """
         Calculate fields.  Implemented in derived classes only.
 
@@ -64,7 +65,7 @@ class ScatteringTheory(HolopyObject):
 
         Returns
         -------
-        e_field : :mod:`holopy.core.VectorData`
+        e_field : :mod:`holopy.core.marray.VectorImage`
             scattered electric field
 
 
@@ -76,11 +77,11 @@ class ScatteringTheory(HolopyObject):
         instantiate a theory object if it has adjustable parameters and you want
         to use non-default values.  
         """
-        return cls_self._calc_field(scatterer, target) * scaling
+        return cls_self._calc_field(scatterer, schema) * scaling
        
     @classmethod
     @binding
-    def calc_intensity(cls_self, scatterer, target, scaling = 1.0): 
+    def calc_intensity(cls_self, scatterer, schema, scaling = 1.0): 
         """
         Calculate intensity at focal plane (z=0)
 
@@ -91,7 +92,7 @@ class ScatteringTheory(HolopyObject):
 
         Returns
         -------
-        inten : Data
+        inten : :mod:`holopy.core.marray.Image`
             scattered intensity
 
         Notes
@@ -108,7 +109,7 @@ class ScatteringTheory(HolopyObject):
         component of the Poynting vector, E x B, and the z component
         of E x B cannot depend on Ez.
         """
-        field = cls_self.calc_field(scatterer, target = target, scaling = scaling)
+        field = cls_self.calc_field(scatterer, schema = schema, scaling = scaling)
         normal = np.array([0, 0, 1])
         normal = normal.reshape((1, 1, 3))
         return (abs(field*(1-normal))**2).sum(-1)
@@ -116,7 +117,7 @@ class ScatteringTheory(HolopyObject):
 
     @classmethod
     @binding
-    def calc_holo(cls_self, scatterer, target, scaling=1.0):
+    def calc_holo(cls_self, scatterer, schema, scaling=1.0):
         """
         Calculate hologram formed by interference between scattered
         fields and a reference wave
@@ -140,11 +141,11 @@ class ScatteringTheory(HolopyObject):
         instantiate a theory object if it has adjustable parameters and you want
         to use non-default values.
         """
-        scat = cls_self.calc_field(scatterer, target = target, scaling = scaling)
+        scat = cls_self.calc_field(scatterer, schema = schema, scaling = scaling)
 
         # add the z component to polarization and adjust the shape so that it is
         # broadcast correctly
-        ref = VectorImage(np.append(target.optics.polarization, 0).reshape(1, 1, 3))
+        ref = VectorImage(np.append(schema.optics.polarization, 0).reshape(1, 1, 3))
 
         return interfere_at_detector(scat, ref)
 
@@ -179,7 +180,7 @@ class ScatteringTheory(HolopyObject):
 
     @classmethod
     @binding
-    def calc_scat_matrix(cls_self, scatterer, target):
+    def calc_scat_matrix(cls_self, scatterer, schema):
         """
         Compute scattering matricies for scatterer
 
@@ -190,7 +191,7 @@ class ScatteringTheory(HolopyObject):
 
         Returns
         -------
-        scat_matr : :mod:`holopy.core.Data`
+        scat_matr : :mod:`holopy.core.marray.Marray`
             Scattering matricies at specified positions
 
         Notes
@@ -202,7 +203,7 @@ class ScatteringTheory(HolopyObject):
         to use non-default values.  
         """
 
-        return cls_self._calc_scat_matrix(scatterer, target)
+        return cls_self._calc_scat_matrix(scatterer, schema)
 
     def _finalize_fields(self, z, fields, schema):
         # expects fields as an Nx3 ndarray
@@ -251,7 +252,7 @@ def interfere_at_detector(e1, e2, detector_normal = (0, 0, 1)):
     detector_normal = np.array(detector_normal).reshape((1, 1, 3))
 
     new = Image(((abs(e1)**2 + abs(e2)**2 + 2* np.real(e1*e2)) *
-           (1 - detector_normal)).sum(axis=-1), **e1._dict)
+           (1 - detector_normal)).sum(axis=-1), **dict_without(e1._dict, 'dtype'))
 
     
     return new

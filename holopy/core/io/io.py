@@ -65,7 +65,7 @@ def load(inf, pixel_size = None, optics = None):
 
     Returns
     -------
-    obj : The object loaded, :class:`holopy.core.data.Image`, or as loaded from yaml
+    obj : The object loaded, :class:`holopy.core.marray.Image`, or as loaded from yaml
 
     """
 
@@ -96,7 +96,7 @@ def save(outf, obj):
 
     Notes
     -----
-    Data objects are actually saved as an invalid yaml file consisting of a yaml
+    Marray objects are actually saved as an invalid yaml file consisting of a yaml
     header and numpy .npy binary data.  This is done because yaml's saving of
     binary data is very slow for large Data.  Holopy can read these 'yaml'
     files, but any other yaml implementation will get confused.  

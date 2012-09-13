@@ -52,8 +52,8 @@ def save(outf, obj):
 
     yaml.dump(obj, outf)
     if isinstance(obj, Marray):
-        # yaml saves of large arrays are very slow, so we have numpy save the data
-        # parts of data objects.  This will mean the file isn't stricktly
+        # yaml saves of large arrays are very slow, so we have numpy save the array
+        # parts of Marray objects.  This will mean the file isn't stricktly
         # a valid yaml (or even a valid text file really), but we can still read
         # it, and with the right programs (like linux more) you can still see
         # the text yaml information, and it keeps everything in one file

@@ -18,7 +18,7 @@
 from __future__ import division
 
 import numpy as np
-from ...core import ImageTarget, VolumeTarget, Optics, Grid
+from ...core import ImageSchema, VolumeSchema, Optics, Grid
 from ...scattering.theory import Mie
 from ...scattering.scatterer import Sphere
 from .. import propagate
@@ -27,27 +27,26 @@ from ...core.tests.common import assert_obj_close
 class test_propagation():
     def __init__(self):
         self.optics = Optics(.66, 1.33)
-        im_target = ImageTarget(pixel_size = .1, shape = 100, optics = self.optics)
+        im_schema = ImageSchema(spacing = .1, shape = 100, optics = self.optics)
         sphere = Sphere(n = 1.59, r = .5, center = (5, 5, 5))
-        self.holo = Mie.calc_holo(sphere, im_target)
+        self.holo = Mie.calc_holo(sphere, im_schema)
 
     # gold for this is just a snapshot on 2012-08-27 (v249), it could be wrong.  -tgd
     def test_propagate_volume(self):
-        vol_target = VolumeTarget(positions = Grid(shape = (50, 50, 20),
-                                                   spacing = .25),
-                                  optics = self.optics, center = (5, 5, 5))
+        vol_schema = VolumeSchema(shape = (50, 50, 20), spacing = .25,
+                                  optics = self.optics)
+        vol_schema.origin = (5, 5, 5) - vol_schema.extent / 2
+                                  
         
-        vol = propagate(self.holo, target = vol_target)
+        vol = propagate(self.holo, schema = vol_schema)
                     
     
         
-    def test_d_vs_target(self):
+    def test_d_vs_schema(self):
         d = np.arange(5, 10, 1)
-        vol = VolumeTarget(positions = Grid(
-                shape = np.append(self.holo.shape, len(d)),
-                spacing = np.append(self.holo.positions.spacing, 1)),
-                           center = (5, 5, 7.5))
-        
+        vol = VolumeSchema(shape = np.append(self.holo.shape, len(d)),
+                spacing = np.append(self.holo.positions.spacing, 1))
+        vol.origin = (5, 5, 7.5) - vol.extent /2 
 
         r1 = propagate(self.holo, d)
         r2 = propagate(self.holo, vol)

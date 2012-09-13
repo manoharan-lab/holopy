@@ -49,6 +49,6 @@ pixel_scale: [3.3e-7, 3.3e-7]"""
 
     assert_obj_close(o, Optics(wavelen=7.85e-07, polarization=[1.0, 0.0], divergence=0, pixel_size=[6.8e-06, 6.8e-06], pixel_scale=[3.3e-07, 3.3e-07]))
 
-def test_data_io():
+def test_marray_io():
     d = Marray(np.random.random((10, 10)))
     assert_read_matches_write(d)

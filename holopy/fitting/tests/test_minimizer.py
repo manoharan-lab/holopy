@@ -15,14 +15,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
+from __future__ import division
 
-import holopy
-from holopy.scattering.scatterer import Sphere
-from holopy.scattering.scatterer import Spheres
-from holopy.scattering.theory import Mie
-from holopy.core import ImageTarget, Optics
-from holopy.fitting import Model, par, fit
-from holopy.fitting.minimizer import Nmpfit
 import warnings
 
 import numpy as np
@@ -31,17 +25,14 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
-from nose.tools import with_setup, nottest
-from nose.plugins.attrib import attr
-from numpy.testing import assert_equal, assert_approx_equal, assert_raises, assert_allclose
-from ...scattering.scatterer import Sphere, Spheres, ScattererByFunction
-from ...scattering.theory import Mie, Multisphere, DDA
-from ...core import Optics, ImageTarget, load, save, DataTarget
-from ...core.process import normalize
-from .. import fit, Parameter, ComplexParameter, par, Parametrization, Model
+from numpy.testing import assert_equal, assert_raises, assert_allclose
+from ...scattering.scatterer import Sphere, Spheres
+from ...scattering.theory import Mie
+from ...core import Optics, ImageSchema
+from .. import fit, Parameter, par, Model
 from ..minimizer import Nmpfit
 from ..errors import ParameterSpecificationError, MinimizerConvergenceFailed
-from ...core.tests.common import assert_obj_close, get_example_data, assert_parameters_allclose
+from ...core.tests.common import assert_obj_close
 
 def test_minimizer():
     x = np.arange(-10, 10, .1)
@@ -97,12 +88,12 @@ def test_minimizer():
 
 def test_iter_limit():
     #calculate a hologram with known particle positions to do a fit against
-    target = ImageTarget(shape = 256, pixel_size = .1, optics = Optics(wavelen = .660, index = 1.33))
+    schema = ImageSchema(shape = 256, spacing = .1, optics = Optics(wavelen = .660, index = 1.33))
 
     s1 = Sphere(center=(15, 15, 20), n = 1.59, r = 0.5)
     s2 = Sphere(center=(14, 14, 20), n = 1.59, r = 0.5)
     cluster = Spheres([s1, s2])
-    holo = Mie.calc_holo(cluster, target)
+    holo = Mie.calc_holo(cluster, schema)
     from holopy.fitting.minimizer import Nmpfit
     
     #trying to do a fast fit:
@@ -115,7 +106,7 @@ def test_iter_limit():
     with warnings.catch_warnings(record=True) as w:
         # Cause all warnings to always be triggered.
         warnings.simplefilter("always")
-        result4 = fit(model, holo, minimizer = Nmpfit(maxiter=2))
+        result = fit(model, holo, minimizer = Nmpfit(maxiter=2))
 
         assert len(w) == 1
         assert issubclass(w[-1].category, UserWarning)
