@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 """
-Storing measurements and calculated data.  This is done through
+Storing measurements and calculated results.  This is done through
 Arrays with metadata (Marray and subclases).  It also includes Schema which
 specify how results should be computed in an analogous interface to how Marrays are
 specified.  
@@ -79,7 +79,6 @@ def dict_without(d, items):
             pass
     return d
 
-
 def call_super_init(cls, self, consumed = [], **kwargs):
     # this function uses a little inspect magic to call the superclass's __init__
     # the arguments to the current __init__ modulo the arguments consumed or
@@ -101,7 +100,79 @@ def call_super_init(cls, self, consumed = [], **kwargs):
     
     # and finally call the superclass's __init__
     super(cls, self).__init__(**call_args)
-        
+
+def _describe_init_signature(cls):
+    """
+    Decorator to facilitate documentation of Marray subclasses.
+
+    This decorator documents the attributes of a class's constructor using a
+    common set of decriptions for arguments.  {attrs} in the class's docstring
+    will be replaced with a numpy docstring formatted decription of the
+    arguments the class's __init__ takes.
+    """
+    
+    # setup a dictionary of all the keyword attrs marray classes use
+    # If you use this method with a new subclass that takes a new argument, you
+    # will need to add it here.  
+    attrs = {}
+    attrs = {'shape' : """
+    shape : tuple(int)
+        shape of the Marray object.  Should be a tuple of 1 or more integers for
+        the shape along each axis.  """,
+             'arr' : """
+    arr : array
+        raw array data/calculations (without metadata)""",
+             'positions' : """
+    positions : :class:`PositionSpecification` object
+        Specification of the locations of measurements""",
+             'spacing' : """
+    spacing : array(dtype=float)
+        spacing between values along each axis in the {name}""",
+             'optics' : """
+    optics : :class:`metadata.Optics` object
+        Information about the optical train associated with this schema""",
+             'origin' : """
+    origin : (float, float, float)
+        Offset for the origin of the space represented by this Schema.  """,
+             'use_random_fraction' : """
+    use_random_fraction : float
+        Use only a random fraction of the pixels specified by this Schema
+        when doing calculations.  This can give a good representation of the
+        whole field with much lower computation times.""",
+             'components' : """
+    components : list(string) default 'x', 'y', 'x'
+        Names of the vector components for this {name}""",
+             'dtype' : """
+    dtype : data-type, optional
+        The desired data-type for the array.  If not given, then
+        the type will be determined as the minimum type required
+        to hold the objects in the sequence.  This argument can only
+        be used to 'upcast' the array.  For downcasting, use the
+        .astype(t) method.""",
+             'kwargs' : """
+    **kwargs : varies
+        Other metadata"""}
+
+    for key, val in attrs.iteritems():
+        if val[0] == '\n':
+            val = val[1:]
+        # This lets us referr to the class's name as {name} in the attribute
+        # documentation snippits above
+        attrs[key] = val.format(name = cls.__name__)
+
+    argspec = inspect.getargspec(cls.__init__)
+    # leave off self (the first argument)
+    args = argspec.args[1:]
+    if argspec.keywords is not None:
+        args.append(argspec.keywords)
+
+    attr_sig = """Attributes
+    ----------
+    {0}""".format('\n'.join([attrs[arg] for arg in args]))
+    cls.__doc__ = cls.__doc__.format(attrs = attr_sig)
+    return cls
+    
+           
 class Marray(PseudoMarray, np.ndarray):
     def __new__(cls, arr, positions = None, optics = None, origin = None,
                 use_random_fraction = None, dtype = None, **kwargs):
@@ -164,7 +235,7 @@ class Marray(PseudoMarray, np.ndarray):
             return cls(np.zeros(obj.shape, dtype=dtype),
                        **dict_without(obj._dict, 'shape'))
 
-
+@_describe_init_signature
 class Schema(PseudoMarray):
     """
     Specification of what a result should look like.
@@ -174,23 +245,7 @@ class Schema(PseudoMarray):
     objects are used to specify the output format of various calculation
     functions and to provide needed metadata for the calculation.  
 
-    Attributes
-    ----------
-    shape : tuple(int)
-        shape of the Marray object.  Should be a tuple of 1 or more integers for
-        the shape along each axis.  
-    positions : :class:`PositionSpecification` object
-        Specification of the locations of measurements
-    optics : :class:`metadata.Optics` object
-        Information about the optical train associated with this schema
-    origin : (float, float, float)
-        Offset for the origin of the space represented by this Schema.  
-    use_random_fraction: float
-        Use only a random fraction of the pixels specified by this Schema
-        when doing calculations.  This can give a good representation of the
-        whole field with much lower computation times
-    **kwargs : varies
-        Other metadata
+    {attrs}
     """
 
     def __init__(self, shape = None, positions = None, optics = None, origin = None,
@@ -261,7 +316,6 @@ class RegularGrid(Marray, PseudoRegularGrid):
 
 
 
-        
 class PseudoImage(PseudoRegularGrid):
     def __init__(self, spacing = None, optics = None, origin = None,
                  use_random_fraction = None, **kwargs):
@@ -325,15 +379,29 @@ class PseudoImage(PseudoRegularGrid):
         pos[:,0] *= self.optics.wavevec
         return pos
 
-    
+@_describe_init_signature
 class ImageSchema(Schema, PseudoImage):
+    """
+    Description of a desired Image.
+
+    An ImageSchema contains all of the information needed to calculate an Image
+    
+    {attrs}
+    """
     def __init__(self, shape = None, spacing = None, optics = None, origin = None,
                  use_random_fraction = None, **kwargs):
         if shape is not None:
             shape = _ensure_pair(shape)
         call_super_init(ImageSchema, self)
 
+@_describe_init_signature
 class Image(RegularGrid, PseudoImage):
+    """
+    2D rectangular grid of measurements or calculations.  
+    
+    {attrs}
+    """
+
     pass
 
 class PseudoVolume(PseudoRegularGrid):
@@ -361,7 +429,13 @@ class PseudoVectorImage(PseudoImage):
         return self._selection
 
 
+@_describe_init_signature
 class VectorImage(RegularGrid, PseudoVectorImage):
+    """
+    2D rectangular grid of vector values
+
+    {attrs}
+    """
     pass
         
 
@@ -394,12 +468,27 @@ class VectorImageSchema(Schema, PseudoVectorImage):
             new = VectorImage.zeros_like(self, dtype = arr.dtype)
             new[self.selection] = arr
             return new
-        
 
+        
+@_describe_init_signature
 class VolumeSchema(Schema, PseudoVolume):
+    """
+    Description of a desired Volume.
+
+    An VolumeSchema contains all of the information needed to calculate an Volume
+    
+    {attrs}
+    """
     pass
 
+
+@_describe_init_signature
 class Volume(RegularGrid, PseudoVolume):
+    """
+    3D rectangular grid of measurements or calculations.  
+    
+    {attrs}
+    """
     pass
     
 

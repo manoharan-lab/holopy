@@ -214,7 +214,7 @@ class ScatteringTheory(HolopyObject):
 
 
 # Subclass of scattering theory, overrides functions that depend on array
-# ordering and handles the tranposes for sending data to/from fortran
+# ordering and handles the tranposes for sending values to/from fortran
 class FortranTheory(ScatteringTheory):
     def _list_of_sph_coords(self, center, selection=None):
         return super(FortranTheory, self)._list_of_sph_coords(center,

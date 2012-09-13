@@ -2,7 +2,7 @@ core Package
 ============
 
 :mod:`marray` Module
-------------------
+--------------------
 
 .. automodule:: holopy.core.marray
     :members:
@@ -26,8 +26,10 @@ core Package
 -----------------
 
 .. autofunction:: holopy.core.io.io.load
+	:noindex:
 				  
 .. autofunction:: holopy.core.io.io.save   
+	:noindex:
 
 :mod:`process` Package
 ----------------------

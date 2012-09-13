@@ -1,12 +1,8 @@
 propagation Package
 ===================
 
-:mod:`propagate` Module
------------------------
+:mod:`convolution_propagation` Module
+-------------------------------------
 
-.. automodule:: holopy.propagation.propagate
-    :members: propagate, impulse_response, trans_func
-    :show-inheritance:
-
-
+.. autofunction:: holopy.propagation.convolution_propagation.propagate
 

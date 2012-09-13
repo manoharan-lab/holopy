@@ -32,7 +32,7 @@ def fft(a, overwrite=False, shift=True):
     More convenient Fast Fourier Transform
     
     An easier to use fft function, it will pick the correct fft to do
-    based on the shape of the data, and do the fftshift for you.  This
+    based on the shape of the Marray, and do the fftshift for you.  This
     is indendended for working with images, and thus for dimensions
     greater than 2 does slicewise transforms of each "image" in a
     multidimensional stack 
@@ -42,10 +42,10 @@ def fft(a, overwrite=False, shift=True):
     a : ndarray
        The array to transform
     overwrite : bool
-       Allow this function to overwrite the data you pass in.  This
+       Allow this function to overwrite the Marry you pass in.  This
        may improve performance slightly.  Default is not to overwrite
     shift : bool
-       Whether to preform an fftshift on the data to give low
+       Whether to preform an fftshift on the Marry to give low
        frequences near the center as you probably expect.  Default is
        to do the fftshift. 
 
@@ -72,7 +72,7 @@ def ifft(a, overwrite=False, shift=True):
     More convenient Inverse Fast Fourier Transform
     
     An easier to use ifft function, it will pick the correct ifft to
-    do based on the shape of the data, and do the fftshift for you.
+    do based on the shape of the Marry, and do the fftshift for you.
     This is indendended for working with images, and thus for
     dimensions greater than 2 does slicewise transforms of each
     "image" in a multidimensional stack
@@ -82,10 +82,10 @@ def ifft(a, overwrite=False, shift=True):
     a : ndarray
        The array to transform
     overwrite : bool
-       Allow this function to overwrite the data you pass in.  This
+       Allow this function to overwrite the Marry you pass in.  This
        may improve performance slightly.  Default is not to overwrite 
     shift : bool
-       Whether to preform an fftshift on the data to give low
+       Whether to preform an fftshift on the Marry to give low
        frequences near the center as you probably expect.  Default is to
        do the fftshift. 
 

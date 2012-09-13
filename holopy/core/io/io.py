@@ -97,8 +97,8 @@ def save(outf, obj):
     Notes
     -----
     Marray objects are actually saved as an invalid yaml file consisting of a yaml
-    header and numpy .npy binary data.  This is done because yaml's saving of
-    binary data is very slow for large Data.  Holopy can read these 'yaml'
+    header and a numpy .npy binary array.  This is done because yaml's saving of
+    binary array is very slow for large arrays.  Holopy can read these 'yaml'
     files, but any other yaml implementation will get confused.  
     """
     if isinstance(outf, basestring):

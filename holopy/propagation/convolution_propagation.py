@@ -52,7 +52,7 @@ def propagate(data, schema, gradient_filter=False):
     ----------
     data : :class:`holopy.core.marray.Image`
        Hologram to propagate
-    schema : float, list of floats, or `holopy.core.data.VolumeSchema`
+    schema : float, list of floats, or :class:`holopy.core.marray.VolumeSchema`
        Distance to propagate, in meters.  A list tells to propagate to several
        distances and return the volume
     gradient_filter : float
@@ -62,20 +62,14 @@ def propagate(data, schema, gradient_filter=False):
 
     Returns
     -------
-    data : :class:`holopy.core.data.Image` or :class:`holopy.core.data.Volume`
+    data : :class:`holopy.core.marray.Image` or :class:`holopy.core.marray.Volume`
        The hologram progagated to a distance d from its current location.  
         
-    Notes
-    -----
-    propagate is used primarily to support reconstructions, but is
-    separated out because occasionally you want to propagate a
-    hologram without invoking the rest of the reconstruction
-    machinery. 
     """
 
     if isinstance(schema, VolumeSchema):
         # get the right z slices in the volume
-        d = np.arange(schema.shape[2]) * schema.positions.spacing[2]
+        d = np.arange(schema.shape[2]) * schema.spacing[2]
         d = d + schema.origin[2]
         vol = propagate(data, d, gradient_filter)
 
