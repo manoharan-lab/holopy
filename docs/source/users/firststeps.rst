@@ -21,7 +21,7 @@ that can be handled by the Python Imaging Library.  But it's always
 good to load your images in Holopy and view them to see if they are
 imported correctly.  You can do this as follows ::
 
-   import holopy ash hp
+   import holopy as hp
 
    holo = hp.load('image0001.tif')
 
@@ -29,12 +29,25 @@ We use an alias import for holopy so that you can refer to it as hp
 because you will be typing it a lot.  ``import holopy`` also works,
 but then you need to type out holopy instead of just hp. The function
 :func:`hp.load <holopy.core.io.io.load>` returns an :class:`.Image`, a
-2D array of the pixel values.  You can view it:
-
-.. sourcecode:: ipython
+2D array of the pixel values.  You can view it::
 
    holopy.show(holo)
 
+Subtracting a background image can frequently make your hologram look
+much nicer.  If you can, take another image with the same optical setup
+as the ``image0001.tif`` but without the object of interest in it.
+Here we pretend you have called that image ``bg.tif`` but you can name
+it whatever you want.  Then you can do::
+
+  bg = hp.load('bg.tif')
+  holo = holo - bg
+
+I usually overwrite the original image with the background subtracted
+image as illustrated above, but you can also give it a different name
+to keep the raw image around.  Going forward we will just describe
+loading holograms, but you should feel free to background subtract
+them if you have backgrounds.  
+   
 .. note ::
    
   You can do math or image processing operations on ``holo`` just like
@@ -66,9 +79,9 @@ of the prime importance of metadata, :func:`hp.load
 <holopy.core.io.io.load>` supports associating it with data as it is
 loaded ::
 
-   optics = holopy.core.Optics(wavelen=.660, index=1.33)
+   optics = hp.core.Optics(wavelen=.660, index=1.33)
 
-   holo = holopy.load('image0001.tif', pixel_size = .1,  optics = optics)
+   holo = hp.load('image0001.tif', pixel_size = .1,  optics = optics)
 
 
 In the first line of code above we create an instance of the Optics metadata class
@@ -77,6 +90,12 @@ index.  You can specify more metadata, but this is all we need for
 now.  The second line loads the image data, tells it the pixel size of
 the camera in the imaging plane for the image and that it was taken
 with the previously defined optics object.
+
+If you want to background subtract the image, you can use::
+
+  holo = hp.load('image0001.tif', pixel_size = .1,  optics = optics) - hp.load('bg.tif')
+
+
 
 .. note::
 

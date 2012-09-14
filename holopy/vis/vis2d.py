@@ -24,7 +24,6 @@ New custom display functions for holograms and reconstructions.
 from __future__ import division
 
 import numpy as np
-from ..scattering.theory import Multisphere
 from ..propagation import propagate
 import pylab
 
@@ -111,7 +110,7 @@ class plotter:
 
         self.ax.set_title(titlestring)
         
-def show(im, i=0, t=0, phase = False):
+def show2d(im, i=0, t=0, phase = False):
     """
     Display a hologram or reconstruction
 

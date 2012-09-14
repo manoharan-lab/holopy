@@ -60,6 +60,6 @@ def show(o,color=(0,0,1)):
         o = np.dstack(o)
     if isinstance(o, (Image, np.ndarray)):
         import vis2d
-        vis2d.show(o)
+        vis2d.show2d(o)
     else:
         raise VisualizationNotImplemented(o)
