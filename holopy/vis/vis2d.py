@@ -67,20 +67,26 @@ class plotter:
     def click(self, event):
         if event.ydata is not None and event.xdata is not None:
             coord = np.array((event.ydata, event.xdata))
+            origin = np.zeros(3)
+            if self.im.origin is not None:
+                origin = self.im.origin
+            coord = tuple(coord.round().astype('int'))
 
-            pixel = None
-            if hasattr(self.im, 'optics'):
-                pixel =  self.optics.pixel
-            if pixel == None and hasattr(self.im, 'holo'):
-                pixel = self.im.holo.optics.pixel
-
-            distance = None
-            if hasattr(self.im, 'distances'):
-                distance = self.im.distances[self.i]
-
-            print('{0}, {1}'.format(tuple(coord.round().astype('int')),
-                                    tuple(np.append(coord * pixel, distance))))
-
+            if self.im.ndim == 3:
+                if getattr(self.im, 'spacing', None) is not None:
+                    z =  self.im.spacing[2] * self.i + origin[2]
+                    
+                    print('{0}, {1}'.format(tuple(np.append(coord, self.i)),
+                                            tuple(np.append(coord * self.im.spacing[:2] + origin[:2], z))))
+                else:
+                    print(coord)
+            else:
+                if getattr(self.im, 'spacing', None) is not None:
+                    spacing = self.im.spacing[:2]
+                    print('{0}, {1}'.format(coord, tuple(coord * spacing +
+                                            origin[:2])))
+                else:
+                    print(coord)
 
     def __call__(self, event):
         if len(self.im.shape) > 2:

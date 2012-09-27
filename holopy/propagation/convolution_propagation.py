@@ -103,18 +103,24 @@ def propagate(data, schema, gradient_filter=False):
     
     arr = np.squeeze(ifft(ft, overwrite=True))
 
+    origin = np.zeros(3)
+    if data.origin is not None:
+        origin = data.origin
+    origin[2] += _ensure_array(d)[0]
+
     if arr.ndim == 2:
-        res =  Image(arr,  **dict_without(data._dict, 'dtype'))
+        res =  Image(arr,  origin = origin,
+                     **dict_without(data._dict, ['dtype', 'origin']))
     elif arr.ndim == 3:
         # check if supplied distances are in a regular grid
         dd = np.diff(d)
         if np.allclose(dd[0], dd):
             # shape of none will have the shape inferred from arr
             spacing = np.append(data.spacing, dd[0])
-            res = Volume(arr, spacing = spacing,
+            res = Volume(arr, spacing = spacing, origin = origin,
                          **dict_without(data._dict, ['spacing', 'dtype']))
         else:
-            res = Marray(arr, positions=positions,
+            res = Marray(arr, positions=positions, origin = origin,
                          **dict_without(data._dict, ['spacing', 'position', 'dtype']))
     return res
 
