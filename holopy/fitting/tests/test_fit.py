@@ -17,7 +17,6 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
 
-import os
 try:
     from collections import OrderedDict
 except ImportError:
@@ -28,14 +27,14 @@ import numpy as np
 
 from nose.tools import with_setup, nottest
 from nose.plugins.attrib import attr
-from numpy.testing import assert_equal, assert_approx_equal, assert_raises, assert_allclose
+from numpy.testing import assert_equal, assert_approx_equal, assert_allclose
 from ...scattering.scatterer import Sphere, Spheres, ScattererByFunction
 from ...scattering.theory import Mie, Multisphere, DDA
 from ...core import Optics, ImageSchema, load, save
 from ...core.process import normalize
 from .. import fit, Parameter, ComplexParameter, par, Parametrization, Model
 from ..minimizer import Nmpfit
-from ..errors import ParameterSpecificationError, MinimizerConvergenceFailed
+from ..errors import MinimizerConvergenceFailed
 from ...core.tests.common import assert_obj_close, get_example_data, assert_parameters_allclose
 
 

@@ -15,24 +15,33 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
-"""
-Holographic imaging and light scattering.  Work with experimental data, compute
-holograms or light scattering of objects, and fit modeled scattering to measured
-data.
+from __future__ import division
 
-.. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
-.. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
-.. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
-.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
-"""
+from nose.tools import assert_raises, assert_equal
+
+from ..parameter import Parameter, par
+from ..errors import GuessOutOfBoundsError
+from ...core.tests.common import assert_obj_close
 
 
-import core
-from .core import load, save
-import scattering
-import fitting
-from propagation import propagate
-from vis import show
+def test_parameter():
+    # basic parameter
+    p1 = Parameter(guess = 5, limit = [4, 6])
+    # now make a par using shorthands
+    p2 = par(5, [4,6])
+    # they should be the same
+    assert_obj_close(p1, p2)
 
-from _version import __version__
+    p3 = par(limit = 7)
+
+    assert_equal(p3.guess, 7)
+
+    assert_raises(GuessOutOfBoundsError, par, 7, [4, 6])
+                  
+    assert_raises(GuessOutOfBoundsError, par, 6, 7)
+
+    p4 = par(0, [-1, 1])
+    assert_equal(p4.scale_factor, 0.2)
+
+    p5 = par(limit = [1, 4])
+    assert_equal(p5.scale_factor, 2.0)

@@ -58,7 +58,7 @@ class Parameter(HolopyObject):
                 raise GuessOutOfBoundsError(self)
             self.guess = limit
         else:
-            if limit is not None:
+            if limit is not None and guess is not None:
                 if guess > limit[1] or guess < limit[0]:
                     raise GuessOutOfBoundsError(self)
                                  
@@ -71,6 +71,9 @@ class Parameter(HolopyObject):
                     else:
                         self.scale_factor = 1. # guess if necessary
             elif limit is not None:
+                # TODO: bug, this will fail for negative limits, but that is
+                # sufficently uncommon that I am not going to worry about it for
+                # now.  
                 self.scale_factor = np.sqrt(limit[0]*limit[1])
             else:
                 raise ParameterSpecificationError("In order to specify a parameter "

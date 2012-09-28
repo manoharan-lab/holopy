@@ -29,7 +29,7 @@ analysis procedures.
 try:
     from collections import OrderedDict
 except ImportError:
-    from ordereddict import OrderedDict
+    from ordereddict import OrderedDict #pragma: no cover
 import inspect
 import numpy as np
 import yaml
@@ -78,7 +78,6 @@ class HolopyObject(Serializable):
     def from_yaml(cls, loader, node):
         fields = loader.construct_mapping(node, deep=True)
         return cls(**fields)
-        return loader.construct_yaml_object(node, cls)
 
     def __repr__(self):
         keywpairs = ["{0}={1}".format(k[0], repr(k[1])) for k in self._dict.iteritems()]

@@ -81,7 +81,7 @@ class Optics(HolopyObject):
         if pixel_scale is None:
             if train is not None:
                 # calculate from optical train
-                pass # TODO: code here
+                pass # TODO: code here #pragma: no cover
             elif mag is not None:
                 # calculate from specified magnification
                 self.pixel_scale = self.pixel_size/mag
