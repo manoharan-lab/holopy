@@ -27,6 +27,14 @@ from __future__ import division
 import numpy as np
 from ..scattering.scatterer import Spheres
 from ..core import Image
+try:
+    from .vis2d import show2d
+except ImportError:
+    pass
+try:
+    from .vis3d import show_sphere_cluster
+except ImportError:
+    pass
 
 class VisualizationNotImplemented(Exception):
     def __init__(self, o):
@@ -50,16 +58,12 @@ def show(o,color=(0,0,1)):
     Loads plotting library the first time it is required (so that we don't have
     to import all of matplotlib or mayavi just to load holopy)
     """
+    if isinstance(o, (list, tuple)):
+        o = np.dstack(o)
     
     if isinstance(o, Spheres):
-        import vis3d
-        vis3d.show_sphere_cluster(o,color)
-        return
-    
-    elif isinstance(o, (list, tuple)):
-        o = np.dstack(o)
-    if isinstance(o, (Image, np.ndarray)):
-        import vis2d
-        vis2d.show2d(o)
+        show_sphere_cluster(o,color)
+    elif isinstance(o, (Image, np.ndarray)):
+        show2d(o)
     else:
         raise VisualizationNotImplemented(o)
