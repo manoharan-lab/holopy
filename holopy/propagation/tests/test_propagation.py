@@ -22,7 +22,7 @@ from ...core import ImageSchema, VolumeSchema, Optics, Grid
 from ...scattering.theory import Mie
 from ...scattering.scatterer import Sphere
 from .. import propagate
-from ...core.tests.common import assert_obj_close
+from ...core.tests.common import assert_obj_close, verify
 
 class test_propagation():
     def __init__(self):
@@ -31,22 +31,20 @@ class test_propagation():
         sphere = Sphere(n = 1.59, r = .5, center = (5, 5, 5))
         self.holo = Mie.calc_holo(sphere, im_schema)
 
-    # gold for this is just a snapshot on 2012-08-27 (v249), it could be wrong.  -tgd
     def test_propagate_volume(self):
-        vol_schema = VolumeSchema(shape = (50, 50, 20), spacing = .25,
+        vol_schema = VolumeSchema(shape = (40, 40, 25), spacing = .2,
                                   optics = self.optics)
-        vol_schema.origin = (5, 5, 5) - vol_schema.extent / 2
-                                  
+        vol_schema.center = (5, 5, 7.5)
         
-        vol = propagate(self.holo, schema = vol_schema)
-                    
+        vol = propagate(self.holo, vol_schema)
+        verify(vol, 'propagate_into_volume')
     
         
     def test_d_vs_schema(self):
         d = np.arange(5, 10, 1)
         vol = VolumeSchema(shape = np.append(self.holo.shape, len(d)),
                 spacing = np.append(self.holo.positions.spacing, 1))
-        vol.origin = (5, 5, 7.5) - vol.extent /2 
+        vol.center = (5, 5, 7.5) 
 
         r1 = propagate(self.holo, d)
         r2 = propagate(self.holo, vol)

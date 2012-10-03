@@ -287,7 +287,15 @@ class PseudoRegularGrid(PseudoMarray):
 
     @property
     def extent(self):
-        return self.shape * self.spacing
+        return np.array(self.shape)  * self.spacing
+
+    @property
+    def center(self):
+        return self.origin + self.extent/2
+
+    @center.setter
+    def center(self, value):
+        self.origin = value - self.extent/2
 
 class RegularGrid(Marray, PseudoRegularGrid):
     def __init__(self, arr, spacing = None, optics = None, origin = None,

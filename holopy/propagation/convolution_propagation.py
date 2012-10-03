@@ -33,7 +33,7 @@ from holopy.core.marray import dict_without
 # May eventually want to have this function take a propagation model
 # so that we can do things other than convolution
 
-def propagate(data, schema, gradient_filter=False):
+def propagate(data, d, gradient_filter=False):
     """
     Propagates a hologram a distance d along the optical axis.
 
@@ -52,9 +52,9 @@ def propagate(data, schema, gradient_filter=False):
     ----------
     data : :class:`holopy.core.marray.Image`
        Hologram to propagate
-    schema : float, list of floats, or :class:`holopy.core.marray.VolumeSchema`
-       Distance to propagate, in meters.  A list tells to propagate to several
-       distances and return the volume
+    d : float, list of floats, or :class:`holopy.core.marray.VolumeSchema`
+       Distance to propagate, in meters, or desired schema.  A list tells to
+       propagate to several distances and return the volume
     gradient_filter : float
        For each distance, compute a second propagation a distance
        gradient_filter away and subtract.  This enhances contrast of
@@ -67,7 +67,8 @@ def propagate(data, schema, gradient_filter=False):
         
     """
 
-    if isinstance(schema, VolumeSchema):
+    if isinstance(d, VolumeSchema):
+        schema = d
         # get the right z slices in the volume
         d = np.arange(schema.shape[2]) * schema.spacing[2]
         d = d + schema.origin[2]
@@ -79,17 +80,13 @@ def propagate(data, schema, gradient_filter=False):
         else:
             data_origin = data.origin
 
-        offset = schema.origin - data_origin
+        offset = (schema.origin - data_origin) 
 
-        x0, y0 = offset[:2]
-        x1, y1 = np.array((x0, y0)) + (schema.extent[:2] / data.spacing[:2])
+        x0, y0 = offset[:2] / data.spacing
+        x1, y1 = (offset[:2] + schema.extent[:2]) / data.spacing[:2]
         vol = vol[x0:x1, y0:y1 :]
         vol = vol.resample(schema.shape)
         return vol
-
-    # schema is just a list of distances, so we can compute convolution
-    # propagation to those distances
-    d = schema
     
     G = trans_func(data.shape[:2], data.positions.spacing,
                    data.optics.med_wavelen, d, squeeze=False,

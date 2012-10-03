@@ -1,0 +1,4 @@
+This directory is used for storing full object test gold copies.  The yaml files in this directory should not be checked into bazaar because they contain large binary blobs.
+
+The unit tests will use these gold copies if they exist, if not, it will just test mean, max, std type data in the parent directory.
+
