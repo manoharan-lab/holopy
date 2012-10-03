@@ -226,6 +226,13 @@ class Marray(PseudoMarray, np.ndarray):
         return "{0}(arr={1}, \n{2})".format(self.__class__.__name__, arr,
                                           ", ".join(keywpairs))
 
+    @property
+    def _dict(self):
+        # I believe in all cases where we use Marray._dict we don't actually
+        # want the dtype, it is always safer to infer it from the underlying
+        # ndarray.   dtype is only provided as a constructor argument in case we
+        # want to override the default selection.  
+        return dict_without(super(Marray, self)._dict, 'dtype')
 
     # we have to implement our own std because the numpy one stubbornly returns
     # 0d Marray objects which we don't want

@@ -21,7 +21,9 @@ import numpy as np
 import tempfile
 import os
 import types
-from numpy.testing import assert_equal
+import inspect
+import yaml
+from numpy.testing import assert_equal, assert_almost_equal
 from ..holopy_object import OrderedDict
 
 from ..io import load, save
@@ -124,3 +126,58 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
                             err_msg=context)
         except (TypeError, NotImplementedError):
             assert_equal(actual, desired, err_msg=context)
+
+def verify(result, name, rtol=1e-7):
+    location = os.path.split(os.path.abspath(__file__))[0]
+    # This gets the filename for the context verify was called from.  It feels
+    # really hacky, but it should get the job done.  
+    filename = inspect.currentframe().f_back.f_code.co_filename
+    location =  os.path.split(filename)[0]
+    gold_dir = os.path.join(location, 'gold')
+    gold_name = os.path.join(location, 'gold', 'gold_'+name)
+    gold_yaml = yaml.load(file(gold_name+'.yaml'))
+
+    full = os.path.join(gold_dir, 'full_data', 'gold_full_{0}.yaml'.format(name))
+    if os.path.exists(full):
+        assert_obj_close(result, load(full), rtol)
+
+
+    if isinstance(result, dict):
+        assert_obj_close(result, gold_yaml, rtol)
+    else:
+        for key, val in gold_yaml.iteritems():
+            assert_almost_equal(getattr(result, key)(), val, decimal=int(-np.log10(rtol)))
+
+# TODO: update me
+def make_golds(result, name):
+    '''
+    Make new golds for a test
+
+    Parameters
+    ----------
+    result: Marray
+        A result that you want to make the new gold (try to make sure it is
+        correct)
+    name: string
+        The name for the result (this should be something like the test name)
+    '''
+    
+    gold_name = 'gold_'+name
+
+    full = 'gold_full_{0}.yaml'.format(name)
+    save(full, result)
+    
+    gold_dict = {}
+
+    checks = ['min', 'max', 'mean', 'std']
+
+    for check in checks:
+        gold_dict[check] = getattr(result, check)()
+
+    simple_checks = 'gold_{0}.yaml'.format(name)
+    save(simple_checks, gold_dict)
+
+    print('move {0} to the gold/ directory, and {1} to the gold/full_data/ '
+          'directory to regold your local test.  You should also see about '
+          'getting the full data somewhere useful for fetching by '
+          'others'.format(simple_checks, gold_name))

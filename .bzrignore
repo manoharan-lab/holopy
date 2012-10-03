@@ -16,14 +16,5 @@ Makefile
 .spyderproject
 commit.txt
 .out
-holopy/scattering/tests/gold/gold_2_sphere_allow_overlap.npy
-holopy/scattering/tests/gold/gold_dda_voxelated_complex.npy
-holopy/scattering/tests/gold/gold_mie_multiple_fields.npy
-holopy/scattering/tests/gold/gold_mie_multiple_holo.npy
-holopy/scattering/tests/gold/gold_shell.npy
-holopy/scattering/tests/gold/gold_single_field.npy
-holopy/scattering/tests/gold/gold_single_holo.npy
-holopy/scattering/tests/gold/gold_smear.npy
-holopy/scattering/tests/gold/gold_two_spheres_samez_holo.npy
-holopy/scattering/tests/gold/gold_two_spheres_samez_intensity.npy
 holopy/scattering/.noseids
+holopy/scattering/tests/gold/full_data/*.yaml

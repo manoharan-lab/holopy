@@ -19,13 +19,10 @@ from __future__ import division
 
 import os
 import numpy as np
-import yaml
-
-from numpy.testing import assert_almost_equal
 
 from ...core import Optics
 
-from ...core.tests.common import assert_allclose, assert_obj_close
+from ...core.tests.common import assert_allclose, assert_obj_close, verify
 
 wavelen = 658e-9
 ypolarization = [0., 1.0] # y-polarized
@@ -47,61 +44,3 @@ xoptics = Optics(wavelen=wavelen, index=index,
 optics=yoptics
 
 
-def verify(result, name, rtol=1e-7):
-    location = os.path.split(os.path.abspath(__file__))[0]
-    gold_name = os.path.join(location, 'gold', 'gold_'+name)
-    gold_yaml = yaml.load(file(gold_name+'.yaml'))
-    if isinstance(result, dict):
-        assert_obj_close(result, gold_yaml, rtol)
-        return
-    if os.path.exists(gold_name + '.npy'):
-        gold = np.load(gold_name + '.npy')
-        arr = gold
-        assert_allclose(arr, gold, rtol)
-
-
-    for key, val in gold_yaml.iteritems():
-        lookup = {'x_comp': 0, 'y_comp': 1, 'z_comp': 2}
-        if hasattr(result, 'components'):
-            comp, check = key.split('.')
-            assert_almost_equal(getattr(result[...,lookup[comp]], check)(), val,
-                                decimal=int(-np.log10(rtol)),
-                                err_msg = "for {0} {1}".format(name, key))
-        else:
-            assert_almost_equal(getattr(result, key)(), val, decimal=int(-np.log10(rtol)))
-
-# TODO: update me
-def make_golds(result, name):
-    '''
-    Make new golds for a test
-
-    Parameters
-    ----------
-    result: Hologram or ElectricField
-        A result that you want to make the new gold (try to make sure it is
-        correct)
-    name: string
-        The name for the result (this should be something like the test name)
-    '''
-    
-    gold_name = 'gold_'+name
-    if isinstance(result, ElectricField):
-        np.save(gold_name+'.npy', result._array())
-    else:
-        np.save(gold_name+'.npy', result)
-
-    gold_dict = {}
-
-    checks = ['min', 'max', 'mean', 'std']
-
-
-    for check in checks:
-        if isinstance(result, ElectricField):
-            comps = ['x_comp', 'y_comp', 'z_comp']
-            for comp in comps:
-                res = getattr(getattr(result, comp), check)()
-                gold_dict['{0}.{1}'.format(comp, check)] = res
-        else:
-            gold_dict[check] = getattr(result, check)()
-
-    yaml.dump(gold_dict, file(gold_name+'.yaml','w'))
