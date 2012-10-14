@@ -327,3 +327,8 @@ def test_integer_correctness():
     model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1]))
     result = fit(model, holo)
     assert_allclose(result.scatterer.center, [10.2, 9.8, 10.3])
+
+def test_model_guess():
+    ps = Sphere(n=par(1.59, [1.5,1.7]), r = .5, center=(5,5,5))
+    m = Model(ps, Mie)
+    assert_obj_close(m.scatterer.guess, Sphere(n=1.59, r=0.5, center=[5, 5, 5]))

@@ -145,6 +145,15 @@ class ParameterizedObject(Parametrization):
         self.parameters = parameters
         self.ties = ties
 
+    @property
+    def guess(self):
+        pars = self.obj.parameters
+        for key in pars.keys():
+            if hasattr(pars[key], 'guess'):
+                pars[key] = pars[key].guess
+        return self.make_from(pars)
+        
+
     def make_from(self, parameters):
         obj_pars = {}
 
