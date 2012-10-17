@@ -272,3 +272,50 @@ class DDA(ScatteringTheory):
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
 
         return self._finalize_fields(scatterer.z, fields, schema)
+
+    def calc_field_volume(self, volume, incident):
+        """
+        Compute the Electric field in a volume
+
+        Parameters
+        ----------
+        volume : :class:`.VolumeScatterer`
+            The volume to propagate light into
+        incident : :class:`.VectorField`
+            The incident electric field
+
+        Returns
+        -------
+        field : :class:`.VectorField`
+            The electric field at every point in the volume 
+        
+        """
+        assert volume.shape == incident.shape
+        assert volume.spacing == incident.spacing
+
+        indicies = np.array(sorted(set(volume)))
+        # use the lowest index as the "medium"
+        medium = indicies[0]
+        # normalize with respect to the medium
+        indicies /= medium
+        # make sure the medium index is different from unity so a-dda will place
+        # dipoles so we can get a field value 
+        indicies[0] += 1e-4
+
+        index_lookup = dict(enumerate(indicies))
+        
+        outf = tempfile.NamedTemporaryFile(dir = temp_dir, delete=False)
+        outf.write("Nmat={0}\n".format(len(indicies)))
+        for i in range(volume.shape[0]):
+            for j in range(volume.shape[1]):
+                for k in range(volume.shape[2]):
+                    outf.write('{0} {1} {2} {3}\n'.format(
+                        i, j, k, index_lookup[volume[i, j, k]])
+
+        cmd = []
+        cmd.extend(['-shape', 'read', outf.name])
+        cmd.extend(['-dpl', str(self._dpl(optics, scatterer.n))])
+        cmd.extend(['-m', str()])
+        cmd.extend(['-store_ind_field'])
+
+

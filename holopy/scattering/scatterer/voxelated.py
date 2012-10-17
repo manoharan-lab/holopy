@@ -20,6 +20,7 @@ Generalized scatterers, represented by discretizing space into voxels.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 """
+# TODO: rename this file?  Voxelated scatterer may not be the right name.  
 from __future__ import division
 
 import tempfile
@@ -28,7 +29,14 @@ from copy import copy
 from . import Sphere
 from ...core.math import rotation_matrix
 from .abstract_scatterer import SingleScatterer
+from ...core.marray import Volume, call_super_init
 
+class VolumeScatterer(Volume):
+    def __init__(self, indicies, spacing, origin):
+        call_super_init(VolumeScatterer, self, arr = indicies, consumed =
+                        'indicies')
+
+# TODO: obsolete, get rid of this once volume scatterer is up to stuff
 class VoxelatedScatterer(SingleScatterer):
     """
     TODO: need a docstring
