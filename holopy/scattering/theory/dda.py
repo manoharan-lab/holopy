@@ -310,7 +310,7 @@ class DDA(ScatteringTheory):
             for j in range(volume.shape[1]):
                 for k in range(volume.shape[2]):
                     outf.write('{0} {1} {2} {3}\n'.format(
-                        i, j, k, index_lookup[volume[i, j, k]])
+                        i, j, k, index_lookup[volume[i, j, k]]))
 
         cmd = []
         cmd.extend(['-shape', 'read', outf.name])
