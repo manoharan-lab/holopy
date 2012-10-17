@@ -51,7 +51,7 @@ import types
 try:
     from decorator import decorator
 except ImportError:
-    from .third_party.decorator import decorator
+    from .third_party.decorator import decorator # pragma: no cover
     
 
 def finish_binding(obj):

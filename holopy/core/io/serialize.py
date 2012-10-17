@@ -148,7 +148,7 @@ def class_loader(loader, node):
     for t in tok[1:]:
         mod = mod.__getattribute__(t)
     return mod
-yaml.add_constructor(u'!theory', class_loader)
+yaml.add_constructor(u'!class', class_loader)
 
 def OrderedDict_representer(dumper, data):
     return dumper.represent_dict(data)
@@ -159,7 +159,15 @@ def instancemethod_representer(dumper, data):
     obj = data.im_self
     if isinstance(obj, SerializableMetaclass):
         obj = obj()
-    return dumper.represent_scalar('!method', "{0} of {1}".format(func, yaml.dump(obj)))
+    rep = yaml.dump(obj)
+    # if the obj has arguments, we need to switch it to flow style so that it is
+    # emitted properly
+    tok = rep.split('\n')
+    # TODO: this is a hack to get this working, I think it may cause bugs in
+    # some corner cases
+    if len(tok) > 2:
+        rep = '{0} {{{1}}}'.format(tok[0], ', '.join(tok[1:]))
+    return dumper.represent_scalar('!method', "{0} of {1}".format(func, rep))
 yaml.add_representer(types.MethodType, instancemethod_representer)
 
 def instancemethod_constructor(loader, node):
