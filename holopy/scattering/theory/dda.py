@@ -24,7 +24,7 @@ ADDA (http://code.google.com/p/a-dda/) to do DDA calculations.
 
 #TODO: Adda currently fails if you call it with things specified in meters
 #(values are too small), so we should probably nondimensionalize before talking
-#to adda.  
+#to adda.
 
 from __future__ import division
 
@@ -57,8 +57,8 @@ class DDA(ScatteringTheory):
     It can (in principle) calculate scattering from any arbitrary scatterer.
     The DDA uses a numerical method that represents arbitrary scatterers as an array
     of point dipoles and then self-consistently solves Maxwell's equations
-    to determine the scattered field. In practice, this model can be 
-    extremely computationally intensive, particularly if the size of the 
+    to determine the scattered field. In practice, this model can be
+    extremely computationally intensive, particularly if the size of the
     scatterer is larger than the wavelength of light.  This model requires an
     external scattering code: `a-dda <http://code.google.com/p/a-dda/>`_
 
@@ -68,20 +68,20 @@ class DDA(ScatteringTheory):
         Size of grid to calculate scattered fields or
         intensities. This is the shape of the image that calc_field or
         calc_intensity will return
-    phi : array 
+    phi : array
         Specifies azimuthal scattering angles to calculate (incident
         direction is z)
-    theta : array 
+    theta : array
         Specifies polar scattering angles to calculate
     optics : :class:`holopy.optics.Optics` object
-        specifies optical train    
+        specifies optical train
 
     Notes
     -----
     Does not handle near fields.  This introduces ~5% error at 10 microns.
-    
+
     This can in principle handle any scatterer, but in practice it will need
-    excessive memory or computation time for particularly large scatterers.  
+    excessive memory or computation time for particularly large scatterers.
     """
     def __init__(self):
         # Check that adda is present and able to run
@@ -117,7 +117,7 @@ class DDA(ScatteringTheory):
         cmd.extend(scat_args)
 
         subprocess.check_call(cmd, cwd=temp_dir)
-        
+
     def _adda_sphere(self, scatterer, optics, temp_dir):
         cmd = []
         cmd.extend(['-eq_rad', str(scatterer.r)])
@@ -139,14 +139,14 @@ class DDA(ScatteringTheory):
     def _adda_bisphere(self, scatterer, optics, temp_dir):
         # A-DDA bisphere only takes a pair of identical spheres.  We could handle
         # more complicated things by voxelating ourselves, but they are better
-        # than us at voxelating, so lets use their restrictions for now.  
+        # than us at voxelating, so lets use their restrictions for now.
         if (len(scatterer.r) != 2 or scatterer.r[0] != scatterer.r[1] or
             scatterer.n[0] != scatterer.n[1]):
             raise UnrealizableScatterer(self, scatterer, 'adda bisphere only '
                                         'works for 2 identical spheres')
 
         sep = hp.process.math.cartesian_distance(*scatterer.centers)
-        
+
         cmd = []
         #        cmd.extend(['-size',
         #        str(scatterer.r[0]/self.optics.med_wavelen)])
@@ -156,21 +156,21 @@ class DDA(ScatteringTheory):
                     str(scatterer.n[0].imag/optics.index)])
 
         return cmd
-        
-    
+
+
     def _adda_coated(self, scatterer, optics, temp_dir):
         cmd = []
         cmd.extend(['-eq_rad', str(scatterer.r[1])])
         cmd.extend(['-shape', 'coated', str(scatterer.r[0]/scatterer.r[1])])
         # A-DDA thinks of it as a sphere with an inclusion, so their first index
-        # (the sphere) is our second, the outer layer.  
+        # (the sphere) is our second, the outer layer.
         cmd.extend(['-m', str(scatterer.n[1].real/optics.index),
                     str(scatterer.n[1].imag/optics.index),
                     str(scatterer.n[0].real/optics.index),
                     str(scatterer.n[0].imag/optics.index)])
 
         return cmd
-        
+
     def _adda_general(self, scatterer, optics, temp_dir):
         ms = []
         for n in scatterer.n:
@@ -200,7 +200,7 @@ class DDA(ScatteringTheory):
             for point in scatterer._points(self.required_spacing(optics, scatterer.n)):
                 outf.write('{0} {1} {2}\n'.format(*point))
         outf.flush()
-        
+
         cmd = []
         cmd.extend(['-shape', 'read', outf.name])
         cmd.extend(['-dpl', str(self._dpl(optics, scatterer.n))])
@@ -224,11 +224,11 @@ class DDA(ScatteringTheory):
     @classmethod
     def required_spacing(cls, optics, n):
         return optics.med_wavelen / cls._dpl(optics, n)
-        
-    
+
+
     def _calc_field(self, scatterer, schema):
         time_start = time.time()
-        
+
         temp_dir = tempfile.mkdtemp()
 
         calc_points = schema.positions_kr_theta_phi(scatterer.center)
@@ -242,10 +242,10 @@ class DDA(ScatteringTheory):
         outf.write('\n'.join(header)+'\n')
         # Now write all the angles
         np.savetxt(outf, angles)
-        outf.close()      
-        
+        outf.close()
+
         self._run_adda(scatterer, schema.optics, temp_dir)
-        
+
         # Go into the results directory, there should only be one run
         result_dir = glob.glob(os.path.join(temp_dir, 'run000*'))[0]
         self._last_result_dir = result_dir
@@ -254,7 +254,7 @@ class DDA(ScatteringTheory):
                                  skiprows=1)
         # columns in result are
         # theta phi s1.r s1.i s2.r s2.i s3.r s3.i s4.r s4.i
-        
+
         # Combine the real and imaginary components from the file into complex
         # numbers
         s = adda_result[:,2::2] + 1.0j*adda_result[:,3::2]
@@ -287,8 +287,8 @@ class DDA(ScatteringTheory):
         Returns
         -------
         field : :class:`.VectorField`
-            The electric field at every point in the volume 
-        
+            The electric field at every point in the volume
+
         """
         assert volume.shape == incident.shape
         assert volume.spacing == incident.spacing
@@ -299,11 +299,11 @@ class DDA(ScatteringTheory):
         # normalize with respect to the medium
         indicies /= medium
         # make sure the medium index is different from unity so a-dda will place
-        # dipoles so we can get a field value 
+        # dipoles so we can get a field value
         indicies[0] += 1e-4
 
         index_lookup = dict(enumerate(indicies))
-        
+
         outf = tempfile.NamedTemporaryFile(dir = temp_dir, delete=False)
         outf.write("Nmat={0}\n".format(len(indicies)))
         for i in range(volume.shape[0]):
@@ -317,5 +317,3 @@ class DDA(ScatteringTheory):
         cmd.extend(['-dpl', str(self._dpl(optics, scatterer.n))])
         cmd.extend(['-m', str()])
         cmd.extend(['-store_ind_field'])
-
-

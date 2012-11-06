@@ -17,7 +17,7 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 """
 Root class for all of holopy.  This class provides serialization to and from
-yaml text file for all holopy objects.  
+yaml text file for all holopy objects.
 
 yaml files are structured text files designed to be easy for humans to
 read and write but also easy for computers to read.  Holopy uses them
@@ -26,10 +26,7 @@ analysis procedures.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 """
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict #pragma: no cover
+from helpers import OrderedDict
 import inspect
 import numpy as np
 import yaml
@@ -39,7 +36,7 @@ class SerializableMetaclass(yaml.YAMLObjectMetaclass):
     def __init__(cls, name, bases, kwds):
         super(SerializableMetaclass, cls).__init__(name, bases, kwds)
         # Replace the normal yaml constructor with one that uses the class name
-        # as the yaml tag.  
+        # as the yaml tag.
         cls.yaml_loader.add_constructor('!{0}'.format(cls.__name__), cls.from_yaml)
         cls.yaml_dumper.add_representer(cls, cls.to_yaml)
 
@@ -49,7 +46,7 @@ class Serializable(yaml.YAMLObject):
     Base class for any object that wants a nice clean yaml output
     """
     __metaclass__ = SerializableMetaclass
-    
+
     @classmethod
     def to_yaml(cls, dumper, data):
         return dumper.represent_yaml_object('!{0}'.format(data.__class__.__name__), data, cls,
@@ -68,12 +65,12 @@ class HolopyObject(Serializable):
                 dump_dict[var] = item
 
         return dump_dict
-    
+
     @classmethod
     def to_yaml(cls, dumper, data):
         return ordered_dump(dumper, '!{0}'.format(data.__class__.__name__), data._dict)
 
-    
+
     @classmethod
     def from_yaml(cls, loader, node):
         fields = loader.construct_mapping(node, deep=True)

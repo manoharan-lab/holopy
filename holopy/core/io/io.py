@@ -23,22 +23,11 @@ functions.
 """
 import os
 import serialize
-import image_file_io
+from .image_file_io import load_image, save_image
 
 from ..marray import Image
 from ..metadata import Optics
 
-def load_image(inf, optics = None, pixel_size = None):
-    arr = image_file_io._read(inf)
-    if isinstance(optics, (basestring, file)):
-        optics = serialize.load(optics)
-        # We allowed optics yamls to be written without an !Optics tag, so for
-        # that kind of optics file we get back a dict and have to turn it into
-        # an Optics
-        if isinstance(optics, dict):
-            optics = Optics(**optics)
-
-    return Image(arr, optics = optics, spacing = pixel_size)
 
 def load(inf, pixel_size = None, optics = None):
     """
@@ -59,7 +48,7 @@ def load(inf, pixel_size = None, optics = None):
         set to 'subtract' or 'divide' to specify how background is removed
     channel : int (optional)
         number of channel to load for a color image (in general 0=red,
-        1=green, 2=blue) 
+        1=green, 2=blue)
     time_scale : float or list (optional)
         time between frames or, if list, time at each frame
 
@@ -77,7 +66,16 @@ def load(inf, pixel_size = None, optics = None):
     except serialize.ReaderError:
         pass
 
-    return load_image(inf, optics = optics, pixel_size = pixel_size)
+    arr = load_image(inf)
+    if isinstance(optics, (basestring, file)):
+        optics = serialize.load(optics)
+        # In the past We allowed optics yamls to be written without an !Optics
+        # tag, so for that backwards compatability, we attempt to turn an
+        # anonymous dict into an Optics
+        if isinstance(optics, dict):
+            optics = Optics(**optics)
+
+    return Image(arr, optics = optics, spacing = pixel_size)
 
 def save(outf, obj):
     """
@@ -96,18 +94,14 @@ def save(outf, obj):
 
     Notes
     -----
-    Marray objects are actually saved as an invalid yaml file consisting of a yaml
+    Marray objects are actually saved as an custom yaml file consisting of a yaml
     header and a numpy .npy binary array.  This is done because yaml's saving of
     binary array is very slow for large arrays.  Holopy can read these 'yaml'
-    files, but any other yaml implementation will get confused.  
+    files, but any other yaml implementation will get confused.
     """
     if isinstance(outf, basestring):
         filename, ext = os.path.splitext(outf)
         if ext in ['.tif', '.TIF', '.tiff', '.TIFF']:
-            image_file_io.save_image(obj, outf)
+            save_image(outf, obj)
             return
     serialize.save(outf, obj)
-
-        
-        
-

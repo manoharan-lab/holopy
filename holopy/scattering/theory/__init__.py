@@ -19,7 +19,7 @@
 Theories to compute scattering from objects.
 
 All theories have a common interface defined by
-:class:`holopy.scattering.theory.scatteringtheory.ScatteringTheory`.  
+:class:`holopy.scattering.theory.scatteringtheory.ScatteringTheory`.
 
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
@@ -33,7 +33,6 @@ from __future__ import division
 try:
     from mie import Mie
     from multisphere import Multisphere
-    from dda import DDA
 except ImportError:
     import warnings
     warnings.warn("""
@@ -43,3 +42,7 @@ calculations, but the rest of holopy sould remain usable.
 This is probably due to your not having properly compiled versions holopy's
 fortran bits.  """)
 
+try:
+    from dda import DDA
+except ImportError:
+    pass

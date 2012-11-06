@@ -22,15 +22,12 @@ Test construction and manipulation of Scatterer objects.
 '''
 from __future__ import division
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict 
-
 import numpy as np
 from nose.tools import raises, assert_raises
 from numpy.testing import assert_equal
 from nose.plugins.attrib import attr
+
+from ...core.helpers import OrderedDict
 
 from ..scatterer import (Sphere, CoatedSphere, Scatterer, Ellipsoid,
                          Scatterers, abstract_scatterer)
@@ -41,7 +38,7 @@ from .common import assert_allclose
 @attr('fast')
 def test_AbstractScatterer():
     assert_raises(NotImplementedError, Scatterer)
-    
+
 
 @attr('fast')
 def test_Sphere_construction():
@@ -60,7 +57,7 @@ def test_Ellipsoid():
     assert_equal(s.r, (1, 2, 3))
     assert_equal(s.center, (3, 2, 1))
     assert_equal(str(s)[0:9], 'Ellipsoid')
-    
+
 @attr('fast')
 def test_Sphere_construct_list():
     # specify center as list
@@ -100,7 +97,7 @@ def test_Sphere_parameters():
     assert_equal(s.r, sp.r)
     assert_equal(s.n, sp.n)
     assert_equal(s.center, sp.center)
-    
+
 @attr('fast')
 def test_CoatedSphere_construction():
     cs = CoatedSphere(n=(1.59, 1.59), r=(5e-7, 1e-6), center=(1e-6, -1e-6, 10e-6))
@@ -109,7 +106,7 @@ def test_CoatedSphere_construction():
     cs = CoatedSphere(n = (1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6))
     center = np.array([1e-6, -1e-6, 10e-6])
     cs = CoatedSphere(n = (1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6),
-                      center = center) 
+                      center = center)
     cs = CoatedSphere()
 
 def test_CoatedSphere_parameters():
@@ -124,13 +121,13 @@ def test_CoatedSphere_parameters():
     assert_equal(cs.r, cp.r)
     assert_equal(cs.n, cp.n)
     assert_equal(cs.center, cp.center)
-    
+
 @attr('fast')
 def test_Composite_construction():
     # empty composite
     comp_empty = Scatterers()
     print comp_empty.get_component_list()
-    
+
     # composite of multiple spheres
     s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
@@ -169,5 +166,3 @@ def test_translate():
     assert_equal(s.r, s2.r)
     assert_equal(s.n, s2.n)
     assert_allclose(s2.center, (1, 1, 1))
-    
-    

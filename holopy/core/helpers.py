@@ -25,8 +25,12 @@ from __future__ import division
 import os
 import shutil
 import errno
-from functools import wraps
 import numpy as np
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict #pragma: no cover
 
 def _ensure_array(x):
     if np.isscalar(x):
@@ -44,23 +48,6 @@ def _ensure_pair(x):
         return np.array([x, x])
 
 
-def _preserve_holo_type(func):
-    """
-    Wraps a function that takes an array as its first argument, this
-    will make sure if it gets a hologram, it returns a hologram
-    """
-    @wraps(func)
-    def wrapper(*args, **kw):
-        ret = func(*args, **kw)
-        if (isinstance(args[0], holopy.hologram.Hologram) and 
-            not isinstance(ret, holopy.hologram.Hologram)):
-            return holopy.hologram.Hologram(ret, args[0].optics, 
-                                            name=args[0].name)
-        else:
-            return ret
-    return wrapper
-
-    
 def _mkdir_p(path):
     '''
     Equivalent to mkdir -p at the shell, this function makes a
@@ -72,7 +59,7 @@ def _mkdir_p(path):
     '''
     try:
         os.makedirs(path)
-    except OSError as exc: 
+    except OSError as exc:
         if exc.errno == errno.EEXIST:
             pass
         else: raise
@@ -88,4 +75,3 @@ def _copy_file(source, dest):
         return shutil.copy2(source, dest)
     except shutil.Error:
         pass
-

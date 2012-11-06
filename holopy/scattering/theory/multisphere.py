@@ -29,46 +29,45 @@ from __future__ import division
 
 import numpy as np
 from .mie_f import mieangfuncs
-from .mie_f import scsmfo_min 
+from .mie_f import scsmfo_min
 from ..scatterer import Spheres
 from ..errors import TheoryNotCompatibleError, UnrealizableScatterer
 from .scatteringtheory import FortranTheory
 
 class Multisphere(FortranTheory):
-    """
-    Calculate the scattered field of a collection of spheres through a
+    """Calculate the scattered field of a collection of spheres through a
     numerical method that accounts for multiple scattering and near-field
     effects (see [Fung2011]_, [Mackowski1996]_).  This approach is much more
     accurate than Mie superposition, but it is also more computationally
     intensive.  The Multisphere code can handle any number of spheres.
-    
+
     Attributes
     ----------
     imshape : float or tuple (optional)
         Size of grid to calculate scattered fields or
         intensities. This is the shape of the image that calc_field or
         calc_intensity will return
-    phi : array 
+    phi : array
         Specifies azimuthal scattering angles to calculate (incident
         direction is z)
-    theta : array 
+    theta : array
         Specifies polar scattering angles to calculate
     optics : :class:`holopy.optics.Optics` object
         specifies optical train
     niter : integer (optional)
         maximum number of iterations to use in solving the interaction
-        equations 
+        equations
     meth : integer (optional)
         method to use to solve interaction equations.  Set to 0 for
         biconjugate gradient; 1 for order-of-scattering
     eps : float (optional)
         relative error tolerance in solution for interaction equations
-    qeps1 : float (optional) 
+    qeps1 : float (optional)
         error tolerance used to determine at what order the
         single-sphere spherical harmonic expansion should be truncated
-    qeps2 : float (optional) 
+    qeps2 : float (optional)
         error tolerance used to determine at what order the cluster
-        spherical harmonic expansion should be truncated 
+        spherical harmonic expansion should be truncated
 
     Notes
     -----
@@ -78,21 +77,25 @@ class Multisphere(FortranTheory):
     for dense arrays of identical spheres.  Order-of-scattering may
     converge better for non-identical spheres.
 
+    Multisphere does not check for overlaps becaue overlapping spheres can be
+    useful for getting fits to converge.  The results to be sensible for small
+    overlaps even though mathemtically speaking they are not xstrictly valid.
+
     References
     ----------
     .. [1] Daniel W. Mackowski, SCSMFO.FOR: Calculation of the Scattering
        Properties for a Cluster of Spheres,
-       ftp://ftp.eng.auburn.edu/pub/dmckwski/scatcodes/scsmfo.ps 
+       ftp://ftp.eng.auburn.edu/pub/dmckwski/scatcodes/scsmfo.ps
 
     .. [2] D.W. Mackowski, M.I. Mishchenko, A multiple sphere T-matrix
        Fortran code for use on parallel computer clusters, Journal of
        Quantitative Spectroscopy and Radiative Transfer, In Press,
        Corrected Proof, Available online 11 March 2011, ISSN 0022-4073,
-       DOI: 10.1016/j.jqsrt.2011.02.019. 
+       DOI: 10.1016/j.jqsrt.2011.02.019.
 
     """
 
-    def __init__(self, niter=200, eps=1e-6, meth=1, qeps1=1e-5, qeps2=1e-8): 
+    def __init__(self, niter=200, eps=1e-6, meth=1, qeps1=1e-5, qeps2=1e-8):
         self.niter = niter
         self.eps = eps
         self.meth = meth
@@ -100,8 +103,8 @@ class Multisphere(FortranTheory):
         self.qeps2 = qeps2
 
         # call base class constructor
-        super(Multisphere, self).__init__() 
-        
+        super(Multisphere, self).__init__()
+
     def _calc_field(self, scatterer, schema):
         """
         Calculate fields for single or multiple spheres
@@ -113,14 +116,14 @@ class Multisphere(FortranTheory):
         selection : array of integers (optional)
             a mask with 1's in the locations of pixels where you
             want to calculate the field, defaults to all pixels
-            
+
         Returns
         -------
         xfield, yfield, zfield : complex arrays with shape `imshape`
             x, y, z components of scattered fields
 
         """
-        
+
         if not isinstance(scatterer, Spheres):
             raise TheoryNotCompatibleError(self, scatterer)
 
@@ -140,28 +143,16 @@ class Multisphere(FortranTheory):
         if (centers > 1e4).any():
             raise UnrealizableScatterer(self, scatterer, "Particle separation "
                                         "too large, calculation would take forever")
-        
-        
-        _, lmax, amn0, converged = scsmfo_min.amncalc(1, centers[:,0], 
-                                                      centers[:,1],
-                                                      # The fortran code uses 
-                                                      # oppositely
-                                                      # directed z axis 
-                                                      # (they have laser
-                                                      # propagation as positive,
-                                                      # we have it
-                                                      # negative), so we 
-                                                      # multiply the z
-                                                      # coordinate by -1 to 
-                                                      # correct for that.  
-                                                      -1.0 * centers[:,2], 
-                                                      m.real, m.imag,
-                                                      scatterer.r * 
-                                                      schema.optics.wavevec,
-                                                      self.niter, self.eps, 
-                                                      self.qeps1,
-                                                      self.qeps2, self.meth, 
-                                                      (0,0))
+
+
+        _, lmax, amn0, converged = scsmfo_min.amncalc(
+            1, centers[:,0],  centers[:,1],
+            # The fortran code uses oppositely directed z axis (they have laser
+            # propagation as positive, we have it negative), so we multiply the
+            # z coordinate by -1 to correct for that.
+            -1.0 * centers[:,2],  m.real, m.imag,
+            scatterer.r * schema.optics.wavevec, self.niter, self.eps,
+            self.qeps1, self.qeps2,  self.meth, (0,0))
 
         # converged == 1 if the SCSMFO iterative solver converged
         # f2py converts F77 LOGICAL to int
@@ -171,18 +162,17 @@ class Multisphere(FortranTheory):
         # chop off unused parts of amn0, the fortran code currently has a hard
         # coded number of parameters so it will return too many coefficients.
         # We truncate here to reduce the length of stuff we have to compute with
-        # later.  
+        # later.
         limit = lmax**2 + 2*lmax
         amn = amn0[:, 0:limit, :]
 
         if np.isnan(amn).any():
             raise MultisphereExpansionNaN()
 
-        fields = mieangfuncs.tmatrix_fields(schema.positions_kr_theta_phi(
-                origin = scatterer.centers.mean(0)).T, amn, lmax, 0,
-                                            schema.optics.polarization) 
+        positions = schema.positions_kr_theta_phi(origin = scatterer.centers.mean(0)).T
 
-        
+        fields = mieangfuncs.tmatrix_fields(positions, amn, lmax, 0, schema.optics.polarization)
+
         if np.isnan(fields[0][0]):
             raise MultisphereFieldNaN(self, scatterer, '')
 

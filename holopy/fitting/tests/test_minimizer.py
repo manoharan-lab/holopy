@@ -20,15 +20,12 @@ from __future__ import division
 import warnings
 
 import numpy as np
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
 
 from numpy.testing import assert_equal, assert_raises, assert_allclose
 from ...scattering.scatterer import Sphere, Spheres
 from ...scattering.theory import Mie
 from ...core import Optics, ImageSchema
+from ...core.helpers import OrderedDict
 from .. import fit, Parameter, par, Model
 from ..minimizer import Nmpfit
 from ..errors import ParameterSpecificationError, MinimizerConvergenceFailed
@@ -73,17 +70,17 @@ def test_minimizer():
     # now test parinfo argument passing
     parameters2 = [Parameter(name='a', guess = 5, mpside = 2),
                    Parameter(name='b', guess = -2, limit = [-4, 4.]),
-                   Parameter(name='c', guess = 3, step = 1e-4, mpmaxstep = 2., 
+                   Parameter(name='c', guess = 3, step = 1e-4, mpmaxstep = 2.,
                              limit = [0., 12.])]
     minimizer = Nmpfit()
-    result2, details2, parinfo = minimizer.minimize(parameters2, cost_func, 
+    result2, details2, parinfo = minimizer.minimize(parameters2, cost_func,
                                                     debug = True)
     assert_equal(parinfo[0]['mpside'], 2)
     assert_equal(parinfo[2]['limits'], np.array([0., 12.])/3.)
     assert_allclose(parinfo[2]['step'], 1e-4/3.)
     assert_equal(parinfo[2]['limited'], [True, True])
     assert_obj_close(gold_dict, result2, context = 'minimized_parameters_with_parinfo')
-    
+
 
 
 def test_iter_limit():
@@ -95,7 +92,7 @@ def test_iter_limit():
     cluster = Spheres([s1, s2])
     holo = Mie.calc_holo(cluster, schema)
     from holopy.fitting.minimizer import Nmpfit
-    
+
     #trying to do a fast fit:
     guess1 = Sphere(center = (par(guess = 15, limit = [5,25]), par(15, [5, 25]), par(20, [5, 25])), r = (par(guess = .45, limit=[.4,.6])), n = 1.59)
     guess2 = Sphere(center = (par(guess = 14, limit = [5,25]), par(14, [5, 25]), par(20, [5, 25])), r = (par(guess = .45, limit=[.4,.6])), n = 1.59)

@@ -22,16 +22,12 @@ Test construction and manipulation of Scatterer objects.
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
-
 import numpy as np
 from nose.tools import raises, assert_raises
 from numpy.testing import assert_equal, assert_almost_equal
 from nose.plugins.attrib import attr
 
+from ...core.helpers import OrderedDict
 from ..scatterer import Sphere, CoatedSphere
 from ..scatterer import Spheres
 from ..errors import ScattererDefinitionError, OverlapWarning
@@ -40,7 +36,7 @@ import warnings
 
 @attr('fast')
 def test_Spheres_construction():
-    
+
     # cluster of multiple spheres
     s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
@@ -64,7 +60,7 @@ def test_Spheres_construction():
 @attr('fast')
 @raises(ScattererDefinitionError)
 def test_Spheres_construction_typechecking():
-    # heterogeneous composite should raise exception, since a    
+    # heterogeneous composite should raise exception, since a
     # sphere cluster must contain only Spheres
     s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
@@ -91,7 +87,7 @@ def test_Spheres_parameters():
     1e-6), ('0:Sphere.center[1]', -1e-6),
     ('0:Sphere.center[2]', 1.0e-05), ('0:Sphere.n', 1.59),  ('0:Sphere.r',
     5e-07), ('1:Sphere.center[0]', 0), ('1:Sphere.center[1]', 0),
-    ('1:Sphere.center[2]', 0), ('1:Sphere.n', 1.59), ('1:Sphere.r', 1e-06)])) 
+    ('1:Sphere.center[2]', 0), ('1:Sphere.n', 1.59), ('1:Sphere.r', 1e-06)]))
 
     sc2 = Spheres.from_parameters(sc.parameters)
 
@@ -101,8 +97,8 @@ def test_Spheres_parameters():
     assert_equal(sc.scatterers[1].n, sc2.scatterers[1].n)
     assert_equal(sc.scatterers[0].center, sc2.scatterers[0].center)
     assert_equal(sc.scatterers[1].center, sc2.scatterers[1].center)
-    
-    
+
+
 def test_Spheres_translation():
     s1 = Sphere(n = 1.59, r = 5, center=[1, -1, 10])
     s2 = Sphere(n = 1.59, r = 1, center=[0,0,0])
@@ -130,5 +126,3 @@ def test_Spheres_rotation():
     assert_equal(sc.scatterers[1].n, sc2.scatterers[1].n)
     assert_almost_equal([0, -1, 0], sc2.scatterers[0].center)
     assert_almost_equal([0, 1, 1], sc2.scatterers[1].center)
-    
-

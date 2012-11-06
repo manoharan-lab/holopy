@@ -23,10 +23,9 @@ The abstract base class for all scattering objects
 '''
 from __future__ import division
 from collections import defaultdict
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
+
+from ...core.helpers import OrderedDict
+
 from itertools import chain
 from copy import copy
 
@@ -60,7 +59,7 @@ class Scatterer(HolopyObject):
             A copy of this scatterer translated to a new location
         """
         raise NotImplementedError() #pragma: no cover
-    
+
 
     # eliminate parameters and from_parameters?  This is kind of fitting
     # specific information.  Or should it be in serializable?  In many ways this
@@ -93,14 +92,14 @@ class Scatterer(HolopyObject):
 
         def expand(key, par):
             if isinstance(par, (list, tuple, np.ndarray)):
-                subs = (expand('{0}[{1}]'.format(key, p[0]), p[1]) for p in enumerate(par)) 
+                subs = (expand('{0}[{1}]'.format(key, p[0]), p[1]) for p in enumerate(par))
                 return chain(*subs)
             else:
                 return [(key, par)]
 
         return OrderedDict(sorted(chain(*[expand(*p) for p in
-                                          self.__dict__.iteritems()]))) 
-    
+                                          self.__dict__.iteritems()])))
+
 
     @classmethod
     def from_parameters(cls, parameters):
@@ -150,7 +149,7 @@ class Scatterer(HolopyObject):
                                           lambda x: x[0])]
                 return [build(p) for p in d]
             return par
-            
+
         for key, val in collected_arrays.iteritems():
             built[key] = build(val)
 
@@ -194,12 +193,12 @@ class SingleScatterer(Scatterer):
         return self.center[1]
     @property
     def z(self):
-        return self.center[2]        
+        return self.center[2]
 
 class SphericallySymmetricScatterer(SingleScatterer):
     def rotate(self, alpha, beta, gamma):
         return copy(self)
-    
+
 
     # Legacy, Deprecated.  Kept around in case anyone has files saved with
     # xyzTriples, this should read thim into the new format, though I haven't

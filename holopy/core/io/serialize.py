@@ -26,16 +26,14 @@ analysis procedures.
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 """
 from __future__ import division
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
 import numpy as np
 import yaml
 from yaml.reader import ReaderError
 import re
 import inspect
 import types
+
+from ..helpers import OrderedDict
 from ..holopy_object import SerializableMetaclass
 from ..marray import Marray
 from  .. import marray
@@ -59,7 +57,7 @@ def save(outf, obj):
         # the text yaml information, and it keeps everything in one file
         outf.write('array: !NpyBinary\n')
         np.save(outf, obj)
-            
+
 
 def load(inf):
     if isinstance(inf, basestring):
@@ -85,14 +83,14 @@ def load(inf):
         obj = yaml.load(inf)
         if isinstance(obj, dict):
             # sometimes yaml doesn't convert strings to floats properly, so we
-            # have to check for that.  
+            # have to check for that.
             for key in obj:
                 if isinstance(obj[key], basestring):
                     try:
                         obj[key] = float(obj[key])
                     except ValueError:
                         pass
-                
+
         return obj
 
 
@@ -142,7 +140,7 @@ def class_representer(dumper, data):
 yaml.add_representer(SerializableMetaclass, class_representer)
 
 def class_loader(loader, node):
-    name = loader.construct_scalar(node)        
+    name = loader.construct_scalar(node)
     tok = name.split('.')
     mod = __import__(tok[0])
     for t in tok[1:]:
@@ -174,7 +172,7 @@ def instancemethod_constructor(loader, node):
     name = loader.construct_scalar(node)
     tok = name.split('of')
     method = tok[0].strip()
-    obj = 'dummy: '+ tok[1] 
+    obj = 'dummy: '+ tok[1]
     obj = yaml.load(obj)['dummy']
     return getattr(obj, method)
 yaml.add_constructor('!method', instancemethod_constructor)
@@ -199,15 +197,13 @@ def function_representer(dumper, data):
 # to access the type of a fuction (function does not work)
 yaml.add_representer(function_representer.__class__, function_representer)
 
-# for now punt if we attempt to read in functions. 
+# for now punt if we attempt to read in functions.
 # make_scatterer in model is allowed to be any function, so we may encounter
 # them.  This constructor allows the read to succeed, but the function will be
-# absent.  
+# absent.
 # It is possible to read in functions from the file, but it is more than a
 # little subtle and kind of dangrous, so I want to think more about it before
 # doing it - tgd 2012-06-4
 def function_constructor(loader, node):
     return None
 yaml.add_constructor('!function', function_constructor)
-
-

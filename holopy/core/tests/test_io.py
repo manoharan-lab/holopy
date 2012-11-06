@@ -18,11 +18,14 @@
 
 from .common import (assert_obj_close, assert_read_matches_write,
                      get_example_data_path)
-from .. import Optics, Marray, load
+from .. import Optics, Marray, load, save
 from .. process import normalize
 import tempfile
+import os
+import shutil
 from nose.plugins.attrib import attr
 import numpy as np
+from ..io import save_image
 
 
 @attr('fast')
@@ -52,3 +55,22 @@ pixel_scale: [3.3e-7, 3.3e-7]"""
 def test_marray_io():
     d = Marray(np.random.random((10, 10)))
     assert_read_matches_write(d)
+
+def test_tif_io():
+    holo = load(get_example_data_path('image0001.npy'))
+    t = tempfile.mkdtemp()
+
+    filename = os.path.join(t, 'image0001.tif')
+    save(filename, holo)
+    l = load(filename)
+    assert_obj_close(l, holo)
+
+    # check that it defaults to saving as tif
+    filename = os.path.join(t, 'image0002')
+    save_image(filename, holo)
+    l = load(filename+'.tif')
+    assert_obj_close(l, holo)
+
+
+
+    shutil.rmtree(t)

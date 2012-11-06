@@ -17,10 +17,6 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
 import tempfile
 
 import numpy as np
@@ -32,6 +28,7 @@ from ...scattering.scatterer import Sphere, Spheres, ScattererByFunction
 from ...scattering.theory import Mie, Multisphere, DDA
 from ...core import Optics, ImageSchema, load, save
 from ...core.process import normalize
+from ...core.helpers import OrderedDict
 from .. import fit, Parameter, ComplexParameter, par, Parametrization, Model
 from ..minimizer import Nmpfit
 from ..errors import MinimizerConvergenceFailed
@@ -46,12 +43,12 @@ def setup_optics():
     divergence = 0
     pixel_scale = [.1151e-6, .1151e-6]
     index = 1.33
-    
+
     optics = Optics(wavelen=wavelen, index=index,
                               pixel_scale=pixel_scale,
                               polarization=polarization,
                               divergence=divergence)
-    
+
 def teardown_optics():
     global optics
     del optics
@@ -81,11 +78,11 @@ def test_fit_mie_single():
                   Parameter(name='n', guess=1.59, limit = [1, 2]),
                   Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5])]
 
-    
+
     def make_scatterer(x, y, z, r, n):
         return Sphere(n=n+1e-4j, r = r, center = (x, y, z))
 
-    
+
     model = Model(Parametrization(make_scatterer, parameters), Mie.calc_holo,
                   alpha=Parameter(name='alpha', guess=.6, limit = [.1, 1]))
 
@@ -94,7 +91,7 @@ def test_fit_mie_single():
     assert_parameters_allclose(result.parameters, gold_single, rtol = 1e-3)
     assert_equal(model, result.model)
 
-    
+
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_fit_mie_par_scatterer():
@@ -102,10 +99,10 @@ def test_fit_mie_par_scatterer():
 
     s = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
                          par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
-               r = par(8.5e-7, (1e-8, 1e-5)), 
+               r = par(8.5e-7, (1e-8, 1e-5)),
                n = ComplexParameter(par(1.59, (1,2)), 1e-4j))
 
-    
+
     model = Model(s, Mie.calc_holo, alpha = par(.6, [.1,1]))
 
     result = fit(model, holo)
@@ -115,8 +112,8 @@ def test_fit_mie_par_scatterer():
                                ('center[1]', 5.792e-6),
                                ('center[2]', 1.415e-5),
                                ('n.real', 1.582),
-                               ('r', 6.484e-7))) 
-    
+                               ('r', 6.484e-7)))
+
     assert_parameters_allclose(result.scatterer, gold_single, rtol=1e-3)
     # TODO: see if we can get this back to 3 sig figs correct alpha
     assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=3)
@@ -127,16 +124,16 @@ def test_fit_mie_par_scatterer():
 def test_fit_random_subset():
     holo = normalize(get_example_data('image0001.npy', optics=optics))
 
-    
+
     s = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
                          par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
                r = par(8.5e-7, (1e-8, 1e-5)), n = ComplexParameter(par(1.59, (1,2)),1e-4j))
 
-    
+
     model = Model(s, Mie.calc_holo, schema_overlay=ImageSchema(use_random_fraction = .1), alpha = par(.6, [.1,1]))
 
     result = fit(model, holo)
- 
+
     # we have to use a relatively loose tolerance here because the random
     # selection occasionally causes the fit to be a bit worse
     assert_parameters_allclose(result.parameters, gold_single, rtol=2e-2)
@@ -155,13 +152,13 @@ def test_fit_superposition():
                     divergence=0, spacing=None, train=None, mag=None,
                     pixel_scale=[2*2.302e-07, 2*2.302e-07])
 
-    s1 = Sphere(n=1.5891+1e-4j, r = .65e-6, 
+    s1 = Sphere(n=1.5891+1e-4j, r = .65e-6,
                 center=(1.56e-05, 1.44e-05, 15e-6))
-    s2 = Sphere(n=1.5891+1e-4j, r = .65e-6, 
+    s2 = Sphere(n=1.5891+1e-4j, r = .65e-6,
                 center=(3.42e-05, 3.17e-05, 10e-6))
     sc = Spheres([s1, s2])
     alpha = .629
-    
+
     theory = Mie(optics, 100)
     holo = theory.calc_holo(sc, alpha)
 
@@ -195,14 +192,14 @@ def test_fit_multisphere_noisydimer_slow():
     """
     Fit multisphere superposition model to noisified dimer hologram
     """
-    optics = hp.Optics(wavelen=658e-9, polarization = [0., 1.0], 
-                       divergence = 0., pixel_scale = [0.345e-6, 0.345e-6], 
+    optics = hp.Optics(wavelen=658e-9, polarization = [0., 1.0],
+                       divergence = 0., pixel_scale = [0.345e-6, 0.345e-6],
                        index = 1.334)
 
     holo = normalize(get_example_data('image0002.npy', optics=optics))
-    
+
     # Now construct the model, and fit
-    parameters = [Parameter(name = 'x0', guess = 1.64155e-5, 
+    parameters = [Parameter(name = 'x0', guess = 1.64155e-5,
                             limit = [0, 1e-4]),
                   Parameter(1.7247e-5, [0, 1e-4], 'y0'),
                   Parameter(20.582e-6, [0, 1e-4], 'z0'),
@@ -221,10 +218,10 @@ def test_fit_multisphere_noisydimer_slow():
         return s
 
     # initial guess
-    #s1 = Sphere(n=1.6026+1e-5j, r = .6856e-6, 
-    #            center=(1.64155e-05, 1.7247e-05, 20.582e-6)) 
-    #s2 = Sphere(n=1.6026+1e-5j, r = .695e-6, 
-    #            center=(1.758e-05, 1.753e-05, 21.2698e-6)) 
+    #s1 = Sphere(n=1.6026+1e-5j, r = .6856e-6,
+    #            center=(1.64155e-05, 1.7247e-05, 20.582e-6))
+    #s2 = Sphere(n=1.6026+1e-5j, r = .695e-6,
+    #            center=(1.758e-05, 1.753e-05, 21.2698e-6))
     #sc = Spheres([s1, s2])
     #alpha = 0.99
 
@@ -232,7 +229,7 @@ def test_fit_multisphere_noisydimer_slow():
     #ub1 = Sphere(2+1e-5j, 1e-5, 1e-4, 1e-4, 1e-4)
     #step1 = Sphere(1e-4+1e-4j, 1e-8, 0, 0, 0)
     #lb = Spheres([lb1, lb1]), .1
-    #ub = Spheres([ub1, ub1]), 1    
+    #ub = Spheres([ub1, ub1]), 1
     #step = Spheres([step1, step1]), 0
 
     model = Model(parameters, Multisphere, make_scatterer=make_scatterer, alpha
@@ -240,7 +237,7 @@ def test_fit_multisphere_noisydimer_slow():
     result = fit(model, holo)
     print result.scatterer
 
-    gold = np.array([1.642e-5, 1.725e-5, 2.058e-5, 1e-5, 1.603, 6.857e-7, 
+    gold = np.array([1.642e-5, 1.725e-5, 2.058e-5, 1e-5, 1.603, 6.857e-7,
                      1.758e-5, 1.753e-5, 2.127e-5, 1e-5, 1.603,
                      6.964e-7])
     gold_alpha = 1.0
@@ -262,7 +259,7 @@ def test_serialization():
 
     alpha = par(.6, [.1, 1], 'alpha')
 
-    schema = ImageSchema(shape = 100, optics = optics) 
+    schema = ImageSchema(shape = 100, optics = optics)
 
     model = Model(par_s, Mie.calc_holo, alpha=alpha)
 
@@ -316,7 +313,7 @@ def test_dda_fit():
 
 
 def test_integer_correctness():
-    # we keep having bugs where the fitter doesn't 
+    # we keep having bugs where the fitter doesn't
     schema = ImageSchema(shape = 100, spacing = .1, optics = Optics(wavelen = .660, index = 1.33))
     s = Sphere(center = (10.2, 9.8, 10.3), r = .5, n = 1.58)
     holo = Mie.calc_holo(s, schema)

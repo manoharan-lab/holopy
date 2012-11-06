@@ -24,18 +24,13 @@ of third party minimizers.
 
 from __future__ import division
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
-
-
 import numpy as np
 from ..core.holopy_object import HolopyObject
+from ..core.helpers import OrderedDict
 from .errors import ParameterSpecificationError, MinimizerConvergenceFailed
 from .third_party import nmpfit
 
-    
+
 class Minimizer(HolopyObject):
     """
     Common interface to all minimizers holopy supports
@@ -55,7 +50,7 @@ class Minimizer(HolopyObject):
         raise NotImplementedError() # pragma: nocover
 
     # if minimizers do any parameter rescaling, they are responsible for putting
-    # the parameters back before handing them off to the model.  
+    # the parameters back before handing them off to the model.
     def pars_from_minimizer(self, parameters, values):
         pars = OrderedDict()
         for par, value in zip(parameters, values):
@@ -63,11 +58,11 @@ class Minimizer(HolopyObject):
 
         return pars
 
-    
+
 class Nmpfit(Minimizer):
     """
-    Levenberg-Marquardt minimizer, from Numpy/Python translation of Craig 
-    Markwardt's mpfit.pro. 
+    Levenberg-Marquardt minimizer, from Numpy/Python translation of Craig
+    Markwardt's mpfit.pro.
 
     Parameters
     ----------
@@ -80,22 +75,22 @@ class Nmpfit(Minimizer):
         Convergence criterion for minimizer: converges if relative error between
         two Levenberg-Marquardt iterations is <= xtol
     gtol: float
-        Convergence criterion for minimizer: converges if absolute value of 
-        cosine of angle between vector of cost function evaluated at current 
-        solution for minimized parameters and any column of the Jacobian is 
+        Convergence criterion for minimizer: converges if absolute value of
+        cosine of angle between vector of cost function evaluated at current
+        solution for minimized parameters and any column of the Jacobian is
         <= gtol
     damp: float
         If nonzero, residuals larger than damp will be replaced by tanh. See
         nmpfit documentation.
     maxiter: int
         Maximum number of Levenberg-Marquardt iterations to be performed.
-        
+
     Notes
     -----
 
     See nmpfit documentation for further details. Not all functionalities of
     nmpfit are implemented here: in particular, we do not allow analytical
-    derivatives of the residual function, which is impractical and/or 
+    derivatives of the residual function, which is impractical and/or
     impossible to calculate for holograms. If you want to weight the residuals,
     you need to supply a custom residual function.
 
@@ -111,7 +106,7 @@ class Nmpfit(Minimizer):
 
     def minimize(self, parameters, cost_func, debug = False):
         def resid_wrapper(p, fjac=None):
-            status = 0                    
+            status = 0
             return [status, cost_func(self.pars_from_minimizer(parameters, p))]
 
         # marshall the paramters into a dict of the form nmpfit wants
@@ -122,7 +117,7 @@ class Nmpfit(Minimizer):
                 d['limited'] = [par.scale(l) is not None for l in par.limit]
                 d['limits'] = par.scale(np.array(par.limit))
             else:
-                d['limited'] = [False, False]    
+                d['limited'] = [False, False]
             if par.guess is not None:
                 d['value'] = par.scale(par.guess)
             else:
@@ -153,7 +148,7 @@ class Nmpfit(Minimizer):
 
         if fitresult.status == 5:
             raise MinimizerConvergenceFailed(result_pars, fitresult)
-        
+
         if debug == True:
             return result_pars, fitresult, nmp_pars
         else:

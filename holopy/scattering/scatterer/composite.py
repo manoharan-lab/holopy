@@ -25,10 +25,8 @@ scatterers (e.g. two trimers).
 '''
 from __future__ import division
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
+from ...core.helpers import OrderedDict
+
 from copy import copy
 
 import numpy as np
@@ -42,11 +40,11 @@ class Scatterers(Scatterer):
     '''
     Contains optical and geometrical properties of a a composite
     scatterer.  A Scatterers can consist of multiple scattering
-    primitives (e.g. Sphere) or other Scatterers scatterers. 
+    primitives (e.g. Sphere) or other Scatterers scatterers.
 
     Attributes
     ----------
-    scatterers: list 
+    scatterers: list
        List of scatterers that make up this object
 
     Notes
@@ -64,7 +62,7 @@ class Scatterers(Scatterer):
     def __init__(self, scatterers=None):
         if scatterers is None:
             self.scatterers = []
-        else: 
+        else:
             self.scatterers = scatterers
 
     def add(self, scatterer):
@@ -108,27 +106,27 @@ class Scatterers(Scatterer):
         # name
         # we have to do it here rather than at the top of the file because we
         # cannot import scatterer until it is done importing, which will not
-        # happen until import of composite finishes.  
+        # happen until import of composite finishes.
         from .. import scatterer
         for i, scat_type in enumerate(types):
             scatterers.append(getattr(scatterer,
                               scat_type).from_parameters(collected[i]))
 
         return cls(scatterers)
-    
+
     def _prettystr(self, level, indent="  "):
         '''
         Generate pretty string representation of object by recursion.
         Used by __str__.
         '''
-        out = level*indent + self.__class__.__name__ + '\n'     
+        out = level*indent + self.__class__.__name__ + '\n'
         for s in self.scatterers:
             if isinstance(s, self.__class__):
                 out = out + s._prettystr(level+1)
             else:
                 out = out + (level+1)*indent + s.__str__() + '\n'
         return out
-        
+
     def __str__(self):
         '''
         Pretty print the nested tree of scatterers
@@ -145,7 +143,7 @@ class Scatterers(Scatterer):
     def rotate(self, alpha, beta, gamma):
         centers = np.array([s.center for s in self.scatterers])
         com = centers.mean(0)
-        
+
         new_centers = com + rotate_points(centers - com, alpha, beta, gamma)
 
         scatterers = []
