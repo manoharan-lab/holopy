@@ -83,17 +83,21 @@ class DDA(ScatteringTheory):
     This can in principle handle any scatterer, but in practice it will need
     excessive memory or computation time for particularly large scatterers.
     """
-    def __init__(self):
+    def __init__(self, n_cpu = 1):
         # Check that adda is present and able to run
         try:
             subprocess.check_call(['adda', '-V'])
         except (subprocess.CalledProcessError, OSError):
             raise DependencyMissing('adda')
 
+        self.n_cpu = n_cpu
         super(DDA, self).__init__()
 
     def _run_adda(self, scatterer, optics, temp_dir):
-        cmd = ['adda']
+        if self.n_cpu == 1:
+            cmd = ['adda']
+        if self.n_cpu > 1:
+            cmd = ['mpiexec', '-n', str(self.n_cpu), 'adda_mpi']
         cmd.extend(['-scat_matr', 'ampl'])
         cmd.extend(['-store_scat_grid'])
         cmd.extend(['-lambda', str(optics.med_wavelen)])

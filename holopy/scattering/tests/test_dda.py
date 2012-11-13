@@ -47,13 +47,13 @@ def setup_optics():
     divergence = 0
     pixel_scale = [.1151, .1151]
     index = 1.33
-    
+
     optics = Optics(wavelen=wavelen, index=index,
                     pixel_scale=pixel_scale,
                     polarization=polarization,
                     divergence=divergence)
     schema = ImageSchema(128, optics = optics)
-    
+
 def teardown_optics():
     global optics, schema
     del optics, schema
@@ -67,6 +67,16 @@ def test_DDA_sphere():
     dda_holo = DDA.calc_holo(sc, schema)
     assert_allclose(mie_holo, dda_holo, rtol=.0015)
 
+@with_setup(setup=setup_optics, teardown=teardown_optics)
+def test_dda_2_cpu():
+    sc = Sphere(n=1.59, r=3e-1, center=(1, -1, 30))
+
+    mie_holo = Mie.calc_holo(sc, schema)
+    dda_n2 = DDA(n_cpu=2)
+    dda_holo = dda_n2.calc_holo(sc, schema)
+
+    # TODO: figure out how to actually test that it runs on multiple cpus
+
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_voxelated():
@@ -78,7 +88,7 @@ def test_DDA_voxelated():
     r = .3
 
     dda = DDA()
-    
+
     sc = Sphere(n=n, r=r, center = center)
 
     sphere_holo = dda.calc_holo(sc, schema)
@@ -92,7 +102,7 @@ def test_DDA_voxelated():
     # fail)
     # FAIL HINT: grid size hardcoded, check that it is what dda sphere outputs
     dpl_dia = 16
-    
+
     sphere = np.zeros((dpl_dia,dpl_dia,dpl_dia))
 
     for point in geom:
@@ -100,13 +110,13 @@ def test_DDA_voxelated():
         sphere[x, y, z] = 1
 
     sphere = sphere.astype('float') * n
-    
+
     dpl = 13.2569
 
     # this would nominally be the correct way to determine dpl, but because of
-    #volume correction within adda, this is not as accurate (only 
+    #volume correction within adda, this is not as accurate (only
     #dpl = dpl_dia * optics.med_wavelen / (r*2)
-    
+
     s = VoxelatedScatterer(sphere, center, dpl)
 
     gen_holo = dda.calc_holo(s, schema)
@@ -133,7 +143,7 @@ def test_voxelated_complex():
     holo_dda = DDA.calc_holo(sv, schema)
     verify(holo_dda, 'dda_voxelated_complex', rtol=1e-5)
 
-    
+
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_coated():
@@ -155,5 +165,3 @@ def test_Ellipsoid_dda():
     assert_almost_equal(h.max(), 1.3152766077267062)
     assert_almost_equal(h.mean(), 0.99876620628942114)
     assert_almost_equal(h.std(), 0.06453155384119547)
-
-    
