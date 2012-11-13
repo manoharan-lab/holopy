@@ -24,8 +24,10 @@ import tempfile
 import os
 import shutil
 from nose.plugins.attrib import attr
+from numpy.testing import assert_raises
 import numpy as np
-from ..io import save_image
+from ..errors import LoadError
+from ..io import save_image, load_image
 
 
 @attr('fast')
@@ -71,6 +73,17 @@ def test_tif_io():
     l = load(filename+'.tif')
     assert_obj_close(l, holo)
 
-
-
     shutil.rmtree(t)
+
+def test_non_tiff():
+    # test loading a few other image formats.  We have some in the docs
+    # director, so just use them
+    import holopy
+    root = os.path.split(os.path.split(holopy.__file__)[0])[0]
+    doc_images = os.path.join(root, 'docs', 'source', 'images')
+
+    load(os.path.join(doc_images, 'image_5Particle_Hologram.jpg'))
+    load(os.path.join(doc_images, 'ReconVolume_mlab_5Particle_Hologram.png'))
+
+    assert_raises(LoadError, load_image, os.path.join(doc_images,
+                                                      'image_5Particle_Hologram.jpg'), 4)

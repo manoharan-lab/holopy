@@ -31,6 +31,7 @@ import os
 import warnings
 from scipy.misc.pilutil import fromimage
 from ..third_party.tifffile import TIFFfile
+from ..errors import LoadError
 
 def save_image(filename, im):
     """
@@ -97,7 +98,7 @@ def load_image(filename, channel=0):
     if len(arr.shape) > 2 and might_be_color:
         if channel >= arr.shape[2]:
             raise LoadError(filename,
-                            "The image doesn't have a channel number " + channel)
+                "The image doesn't have a channel number {0}".format(channel))
         else:
             arr = arr[:, :, channel]
     elif channel > 0:
