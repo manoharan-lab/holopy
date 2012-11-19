@@ -48,11 +48,11 @@ def get_example_data_path(name):
     path = os.path.join(os.path.split(path)[0], 'exampledata')
     return os.path.join(path, name)
 
-def get_example_data(name, optics):
-    if not isinstance(optics, Optics):
+def get_example_data(name, optics=None):
+    if optics is not None and not isinstance(optics, Optics):
         optics = get_example_data_path(optics)
     return load(get_example_data_path(name), optics = optics)
-        
+
 def assert_read_matches_write(o):
     tempf = tempfile.NamedTemporaryFile()
     save(tempf, o)
@@ -78,8 +78,8 @@ def assert_parameters_allclose(actual, desired, rtol=1e-7, atol = 0):
         assert_obj_close(actual, desired)
     else:
         assert_allclose(actual, desired, rtol=rtol, atol = atol)
-            
-        
+
+
 def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_object'):
     if isinstance(actual, np.ndarray) or isinstance(desired, np.ndarray):
         assert_allclose(actual, desired, rtol = rtol, atol = atol, err_msg=context)
@@ -113,7 +113,7 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
         except TypeError:
             pass
 
-        # now actually compare things 
+        # now actually compare things
         assert_obj_close(act_obj, des_obj, rtol=rtol, atol=atol,
                          context = context)
     elif hasattr(actual, '__dict__'):
@@ -130,7 +130,7 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
 def verify(result, name, rtol=1e-7):
     location = os.path.split(os.path.abspath(__file__))[0]
     # This gets the filename for the context verify was called from.  It feels
-    # really hacky, but it should get the job done.  
+    # really hacky, but it should get the job done.
     filename = inspect.currentframe().f_back.f_code.co_filename
     location =  os.path.split(filename)[0]
     gold_dir = os.path.join(location, 'gold')
@@ -161,12 +161,12 @@ def make_golds(result, name):
     name: string
         The name for the result (this should be something like the test name)
     '''
-    
+
     gold_name = 'gold_'+name
 
     full = 'gold_full_{0}.yaml'.format(name)
     save(full, result)
-    
+
     gold_dict = {}
 
     checks = ['min', 'max', 'mean', 'std']

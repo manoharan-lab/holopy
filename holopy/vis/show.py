@@ -18,7 +18,7 @@
 
 """
 A general show method that can display most holopy and scatterpy objects in a
-sensible way.  
+sensible way.
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
@@ -27,14 +27,8 @@ from __future__ import division
 import numpy as np
 from ..scattering.scatterer import Spheres
 from ..core import Image
-try:
-    from .vis2d import show2d
-except ImportError:
-    pass
-try:
-    from .vis3d import show_sphere_cluster
-except ImportError:
-    pass
+from .vis2d import show2d
+from .vis3d import show_sphere_cluster
 
 class VisualizationNotImplemented(Exception):
     def __init__(self, o):
@@ -42,7 +36,7 @@ class VisualizationNotImplemented(Exception):
     def __str__(self):
         return "Visualization of object of type: {0} not implemented".format(
             self.o.__class__.__name__)
-    
+
 
 def show(o,color=(0,0,1)):
     """
@@ -60,7 +54,7 @@ def show(o,color=(0,0,1)):
     """
     if isinstance(o, (list, tuple)):
         o = np.dstack(o)
-    
+
     if isinstance(o, Spheres):
         show_sphere_cluster(o,color)
     elif isinstance(o, (Image, np.ndarray)):

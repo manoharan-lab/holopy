@@ -24,11 +24,14 @@ New custom display functions for holograms and reconstructions.
 from __future__ import division
 
 import numpy as np
-from ..propagation import propagate
-import pylab
 
 class plotter:
     def __init__(self, im, i=0, j=0, optics=None):
+        # Delay the pylab import until we actually use it to avoid a hard
+        # dependency on matplotlib, and to avoid paying the cost of importing it
+        # for non interactive code
+        import pylab
+
         self.im = im
         self.optics = optics
         self.i = i
@@ -53,8 +56,6 @@ class plotter:
             im = self.im[...,self.i,self.j]
         self._title()
 
-#        pylab.show()
-
         import sys; sys.stdout.flush()
         if self.plot is not None:
             self.plot.set_array(im)
@@ -75,7 +76,7 @@ class plotter:
             if self.im.ndim == 3:
                 if getattr(self.im, 'spacing', None) is not None:
                     z =  self.im.spacing[2] * self.i + origin[2]
-                    
+
                     print('{0}, {1}'.format(tuple(np.append(coord, self.i)),
                                             tuple(np.append(coord * self.im.spacing[:2] + origin[:2], z))))
                 else:
@@ -115,7 +116,7 @@ class plotter:
             titlestring += "image {0}".format(self.i)
 
         self.ax.set_title(titlestring)
-        
+
 def show2d(im, i=0, t=0, phase = False):
     """
     Display a hologram or reconstruction
@@ -133,9 +134,8 @@ def show2d(im, i=0, t=0, phase = False):
     t : int
        slice along t to show for reconstructions.  Ignored for holograms (or any
        less than 4d array)
-       
-    """
 
+    """
     if hasattr(im, 'optics'):
         optics = im.optics
     else:
@@ -145,10 +145,11 @@ def show2d(im, i=0, t=0, phase = False):
             im = np.angle(im)
         else:
             im = np.abs(im)
-    
+
     plotter(im, i, t, optics)
 
 
+# TODO: broken by refactors, see if we still want this, fix if we do
 def infocuscheck(hologram, scatterer, offset = 0):
     """
     Display a raw hologram, a calculated hologram, and reconstructions
@@ -163,8 +164,13 @@ def infocuscheck(hologram, scatterer, offset = 0):
     offset : float
        Offset from reconstructing at the z-distance given by the
        mean z-distance of the scatterer.
-       
+
     """
+    # Delay the pylab import until we actually use it to avoid a hard
+    # dependency on matplotlib, and to avoid paying the cost of importing it
+    # for non interactive code
+    import pylab
+
     distance = scatterer.centers[:,2].mean()+offset
     #reconstruct the hologram
     r = propagate(hologram,distance)
@@ -172,7 +178,7 @@ def infocuscheck(hologram, scatterer, offset = 0):
     theory = Multisphere(hologram.optics,[256,256])
     tmat = theory.calc_holo(scatterer)
     r2 = propagate(tmat,distance)
-    #show the holograms and reconstructions  
+    #show the holograms and reconstructions
     pylab.figure()
     scalemin = min(abs(r[:,:,0,0]).min(), abs(r2[:,:,0,0]).min())
     scalemax = max(abs(r[:,:,0,0]).max(), abs(r2[:,:,0,0]).max())
@@ -191,8 +197,14 @@ def infocuscheck(hologram, scatterer, offset = 0):
     pylab.title(str(distance))
     pylab.show()
 
+# TODO: broken by refactors, see if we still want this, fix if we do
 # was in scattering.geometry
 def viewcluster(cluster):
+    # Delay the pylab import until we actually use it to avoid a hard
+    # dependency on matplotlib, and to avoid paying the cost of importing it
+    # for non interactive code
+    from matplotlib import pyplot
+
     #this is not elegant, but lets you look at the cluster from three angles
     #to check if it is the cluster you wanted
     #warning: the particles are not shown to scale!!!!!! (markersize is in points)
@@ -220,4 +232,3 @@ def viewcluster(cluster):
     pyplot.ylim(min(pyplot.xlim()[0],pyplot.ylim()[0]),max(pyplot.xlim()[1],pyplot.ylim()[1]))
     pyplot.xlim(-dist.max(),dist.max())
     pyplot.ylim(-dist.max(),dist.max())
-
