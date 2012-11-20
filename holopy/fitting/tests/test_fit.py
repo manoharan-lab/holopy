@@ -148,7 +148,7 @@ def test_fit_superposition():
     Fit Mie superposition to a calculated hologram from two spheres
     """
     # Make a test hologram
-    optics = hp.Optics(wavelen=6.58e-07, index=1.33, polarization=[0.0, 1.0],
+    optics = Optics(wavelen=6.58e-07, index=1.33, polarization=[0.0, 1.0],
                     divergence=0, spacing=None, train=None, mag=None,
                     pixel_scale=[2*2.302e-07, 2*2.302e-07])
 
