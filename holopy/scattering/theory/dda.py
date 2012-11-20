@@ -198,7 +198,7 @@ class DDA(ScatteringTheory):
         if isinstance(scatterer, MultidomainScattererByFunction):
             outf.write("Nmat={0}\n".format(len(scatterer.domains)))
             for point in scatterer._points(self.required_spacing(optics, scatterer.n)):
-                outf.write('{0} {1} {2} {3}'.format(point[0], point[1],
+                outf.write('{0} {1} {2} {3}\n'.format(point[0], point[1],
                                                     point[2], point[3]+1))
         else:
             for point in scatterer._points(self.required_spacing(optics, scatterer.n)):
