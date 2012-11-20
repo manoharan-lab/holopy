@@ -52,7 +52,7 @@ def show_sphere_cluster(s,color):
             resolution=32, color=color)
         mlab.view(-90,0,s.z[:].mean())
 
-def volume_contour(d, voxel):
+def volume_contour(d):
     # Mayavi moved namespaces in the upgrade to 2.4. This try block will
     # allow using either the new or old namespace.
     try:
@@ -61,5 +61,5 @@ def volume_contour(d, voxel):
         from enthought.mayavi import mlab
 
     vol = mlab.pipeline.scalar_field(d)
-    vol.spacing = voxel
+    vol.spacing = d.spacing
     contours = mlab.pipeline.contour_surface(vol)
