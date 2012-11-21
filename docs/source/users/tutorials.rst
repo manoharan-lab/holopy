@@ -8,3 +8,4 @@ Tutorials
    recon_tutorial
    fit_tutorial
    series_fit_tutorial
+   ddaintro
