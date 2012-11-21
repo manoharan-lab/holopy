@@ -206,9 +206,10 @@ class SphereTest:
             return False
 
 def test_janus():
-    x = HemisphericalShellTest(np.array([0,0,0]), np.array([1,0,0]), .050, .051)
-    schema = ImageSchema(20, .1, Optics(.66, 1.33))
-    y = SphereTest(np.array([0,0,0]), .05)
-    s = MultidomainScattererByFunction([x.isPtIn, y.isPtIn], [1.5+0j, 1.4+0j],[[-.25,.25],[-.25,.25],[-.25,.25]], (5,5,5))
+    x = HemisphericalShellTest(np.array([0,0,0]), np.array([1,0,0]), .5, .51)
+    schema = ImageSchema(60, .1, Optics(.66, 1.33))
+    y = SphereTest(np.array([0,0,0]), .5)
+    s = MultidomainScattererByFunction([x.isPtIn, y.isPtIn], [2.0+0j, 1.34+0j],[[-.51,.51],[-.51,.51],[-.51,.51]], (5,5,5))
 
     holo = DDA.calc_holo(s, schema)
+    verify(holo, 'janus_dda')

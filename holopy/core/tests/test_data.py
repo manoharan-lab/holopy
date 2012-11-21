@@ -17,8 +17,9 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose
-from ..marray import ImageSchema, Grid, VectorGrid, VectorGridSchema, Image, zeros_like
+from numpy.testing import assert_equal, assert_allclose, assert_raises
+from ..marray import (ImageSchema, VectorGrid, VectorGridSchema, Image,
+                      zeros_like, subimage)
 from .common import assert_obj_close
 
 
@@ -64,3 +65,9 @@ def test_resample():
 
     assert_obj_close(i, Image(np.arange(16).reshape((4,4)),
                               spacing = 1), context='image')
+def test_subimage():
+    i = np.zeros((10,10))
+    s = subimage(i, (5,5), 2)
+    assert s.shape == (2,2)
+
+    assert_raises(IndexError, subimage, i, (2,2), 10)

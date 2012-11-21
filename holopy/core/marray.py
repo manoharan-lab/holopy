@@ -473,6 +473,7 @@ class VectorGridSchema(Schema, PseudoVectorGrid):
                  origin = None, use_random_fraction = None,
                  components = ('x', 'y', 'z'), **kwargs):
         call_super_init(VectorGridSchema, self)
+
     @classmethod
     def from_schema(cls, schema, components = ('x', 'y', 'z')):
         if isinstance(schema, PseudoVectorGrid):
@@ -511,3 +512,36 @@ class VolumeSchema(Schema, PseudoVolume):
     {attrs}
     """
     _corresponding_marray = Volume
+
+
+def subimage(arr, center, shape):
+    """
+    Pick out a region of an image or other array
+
+    Parameters
+    ----------
+    arr : numpy.ndarray
+        The array to subimage
+    center : tuple of ints
+        The desired center of the region, should have the same number of
+        elements as the arr has dimensions
+    shape : int or tuple of ints
+        Desired shape of the region.  If a single int is given the region will
+        be that dimension in along every axis.  Shape should be even
+
+    Returns
+    -------
+    sub : numpy.ndarray
+        Subset of shape shape centered at center
+    """
+    assert len(center) == arr.ndim
+    if np.isscalar(shape):
+        shape = np.repeat(shape, arr.ndim)
+    assert len(shape) == arr.ndim
+
+    extent = [slice(c-s/2, c+s/2) for c, s in zip(center, shape)]
+    for i, axis in enumerate(extent):
+        if axis.start < 0 or axis.stop > arr.shape[i]:
+            raise IndexError
+
+    return arr[[slice(c-s/2, c+s/2) for c, s in zip(center, shape)]]
