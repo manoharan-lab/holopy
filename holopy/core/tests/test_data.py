@@ -17,8 +17,8 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose
-from ..marray import ImageSchema, Grid, VectorImage, VectorImageSchema, Image
+from numpy.testing import assert_equal, assert_allclose, assert_raises
+from ..marray import ImageSchema, VectorImage, VectorImageSchema, Image, subimage
 from .common import assert_obj_close
 
 
@@ -47,7 +47,7 @@ def test_from1d():
                        [1, 2, 3],
                        [5, 8, 9]])
     assembled = VectorImage([[[1, 0, 0], [0, 1, 2]], [[1, 2, 3], [5, 8, 9]]])
-    
+
     vf = VectorImageSchema.from_ImageSchema(schema).interpret_1d(im)
     assert_equal(vf, assembled)
 
@@ -60,7 +60,14 @@ def test_resample():
     i = Image(np.arange(16).reshape((4,4)), spacing = 1)
     assert_obj_close(i.resample((2, 2)),
                      Image([[  5,   6], [  9,  10]],
-                           spacing=np.array([ 2, 2])), context = 'image') 
+                           spacing=np.array([ 2, 2])), context = 'image')
 
     assert_obj_close(i, Image(np.arange(16).reshape((4,4)),
-                              spacing = 1), context='image') 
+                              spacing = 1), context='image')
+
+def test_subimage():
+    i = np.zeros((10,10))
+    s = subimage(i, (5,5), 2)
+    assert s.shape == (2,2)
+
+    assert_raises(IndexError, subimage, i, (2,2), 10)

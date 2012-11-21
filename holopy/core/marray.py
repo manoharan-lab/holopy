@@ -19,7 +19,7 @@
 Storing measurements and calculated results.  This is done through
 Arrays with metadata (Marray and subclases).  It also includes Schema which
 specify how results should be computed in an analogous interface to how Marrays are
-specified.  
+specified.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
@@ -37,7 +37,7 @@ from .helpers import _ensure_pair, _ensure_array
 import inspect
 
 
-# Ancestor for all array like storage objects for data/calculations.  
+# Ancestor for all array like storage objects for data/calculations.
 class PseudoMarray(HolopyObject):
     def __init__(self, positions = None, optics = None, origin = None,
                  use_random_fraction = None):
@@ -67,7 +67,7 @@ class PseudoMarray(HolopyObject):
             raise UnspecifiedPosition()
 
     # TODO: need equivalents for set_metadata or to rewrite other code so it
-    # doesn't need it.  
+    # doesn't need it.
 
 
 def dict_without(d, items):
@@ -83,7 +83,7 @@ def call_super_init(cls, self, consumed = [], **kwargs):
     # this function uses a little inspect magic to call the superclass's __init__
     # the arguments to the current __init__ modulo the arguments consumed or
     # added in the current __init__
-    
+
     # get the arguments passed to the function that called this function
     call = inspect.getargvalues(inspect.currentframe().f_back)
     call_args = dict([(arg, call.locals[arg]) for arg in call.args])
@@ -95,9 +95,9 @@ def call_super_init(cls, self, consumed = [], **kwargs):
     del call_args['self']
     call_args = dict_without(call_args, consumed)
     # now add any new args to the call dict.  We add explicitly specified args
-    # last so they will overwrite other specifications as desired.  
+    # last so they will overwrite other specifications as desired.
     call_args.update(kwargs)
-    
+
     # and finally call the superclass's __init__
     super(cls, self).__init__(**call_args)
 
@@ -110,10 +110,10 @@ def _describe_init_signature(cls):
     will be replaced with a numpy docstring formatted decription of the
     arguments the class's __init__ takes.
     """
-    
+
     # setup a dictionary of all the keyword attrs marray classes use
     # If you use this method with a new subclass that takes a new argument, you
-    # will need to add it here.  
+    # will need to add it here.
     attrs = {}
     attrs = {'shape' : """
     shape : tuple(int)
@@ -171,7 +171,7 @@ def _describe_init_signature(cls):
     {0}""".format('\n'.join([attrs[arg] for arg in args]))
     cls.__doc__ = cls.__doc__.format(attrs = attr_sig)
     return cls
-    
+
 
 @_describe_init_signature
 class Marray(PseudoMarray, np.ndarray):
@@ -186,12 +186,12 @@ class Marray(PseudoMarray, np.ndarray):
     def __new__(cls, arr, positions = None, optics = None, origin = None,
                 use_random_fraction = None, dtype = None, **kwargs):
         # things like numpy.std give us 0d arrays, the user probably expects
-        # python scalars, so return one instead.  
+        # python scalars, so return one instead.
         if hasattr(arr, 'ndim') and arr.ndim == 0:
             # arr.max pulls out the singular value of the 0d array
             return arr.max()
         return np.asarray(arr, dtype = dtype).view(cls)
-    
+
     def __init__(self, arr, positions = None, optics = None, origin = None,
                  use_random_fraction = None, dtype = None, **kwargs):
         call_super_init(Marray, self, ['arr', 'dtype'])
@@ -201,7 +201,7 @@ class Marray(PseudoMarray, np.ndarray):
         # over the metadata
         for key, item in getattr(obj, '__dict__', {}).iteritems():
             setattr(self, key, item)
-        
+
 
     def __array_wrap__(self, out_arr, context=None):
         # this function is needed so that if we run another numpy
@@ -213,7 +213,7 @@ class Marray(PseudoMarray, np.ndarray):
             # from .sum(), we want to return the number, not the number wrapped
             # in a Marray
             return out_arr.max()
-        
+
         return np.ndarray.__array_wrap__(self, out_arr, context)
 
     def __repr__(self):
@@ -231,7 +231,7 @@ class Marray(PseudoMarray, np.ndarray):
         # I believe in all cases where we use Marray._dict we don't actually
         # want the dtype, it is always safer to infer it from the underlying
         # ndarray.   dtype is only provided as a constructor argument in case we
-        # want to override the default selection.  
+        # want to override the default selection.
         return dict_without(super(Marray, self)._dict, 'dtype')
 
     # we have to implement our own std because the numpy one stubbornly returns
@@ -242,7 +242,7 @@ class Marray(PseudoMarray, np.ndarray):
             return result.max()
         else:
             return result
-        
+
     @classmethod
     def zeros_like(cls, obj, dtype = None):
         if isinstance(obj, np.ndarray):
@@ -259,7 +259,7 @@ class Schema(PseudoMarray):
     A Schema should specify the positions where data would be measured and
     any other metadata that would be associated with the data.  Schema
     objects are used to specify the output format of various calculation
-    functions and to provide needed metadata for the calculation.  
+    functions and to provide needed metadata for the calculation.
 
     {attrs}
     """
@@ -270,12 +270,12 @@ class Schema(PseudoMarray):
             shape = positions.shape
         self.shape = shape
         call_super_init(Schema, self, 'shape')
-    
+
 
 class PseudoRegularGrid(PseudoMarray):
     def __init__(self, spacing = None, optics = None, origin = None,
                  use_random_fraction = None, **kwargs):
-        
+
         if np.isscalar(spacing):
             spacing = np.repeat(spacing, len(self.shape))
         call_super_init(PseudoRegularGrid, self, consumed = 'spacing',
@@ -308,7 +308,7 @@ class RegularGrid(Marray, PseudoRegularGrid):
 
         Use, for example, to downsample a Marray in a way that
         avoids aliasing and ringing.
-        
+
         Parameters
         ----------
         shape : int or array_like of ints
@@ -323,8 +323,8 @@ class RegularGrid(Marray, PseudoRegularGrid):
 
         Notes
         -----
-        This algorithm does 2 1-D resamplings.  
-        
+        This algorithm does 2 1-D resamplings.
+
         """
         shape = _ensure_array(shape)
         new = self
@@ -345,7 +345,7 @@ class PseudoImage(PseudoRegularGrid):
                  use_random_fraction = None, **kwargs):
         # legacy code.  We have allowed specifying spacing in the optics, I am
         # trying to depricate that now, but this will keep it working as people
-        # expect.  
+        # expect.
         if spacing is None:
             if (hasattr(optics, 'pixel_scale') and
                 optics.pixel_scale is not None):
@@ -358,14 +358,14 @@ class PseudoImage(PseudoRegularGrid):
         call_super_init(PseudoImage, self)
 
     # subclasses must provide a self.shape
-                
+
     # these functions can be generalized for other kinds of marrays (I think),
     # look into changing the algorithms so we can push this up the inheritance tree
     def positions_r_theta_phi(self, origin):
         """
         Returns a list of positions of each data point, in spherical coordinates
-        relative to origin.  
-        
+        relative to origin.
+
         Parameters
         ----------
         origin : (real, real, real)
@@ -409,7 +409,7 @@ class ImageSchema(Schema, PseudoImage):
     Description of a desired Image.
 
     An ImageSchema contains all of the information needed to calculate an Image
-    
+
     {attrs}
     """
     def __init__(self, shape = None, spacing = None, optics = None, origin = None,
@@ -421,8 +421,8 @@ class ImageSchema(Schema, PseudoImage):
 @_describe_init_signature
 class Image(RegularGrid, PseudoImage):
     """
-    2D rectangular grid of measurements or calculations.  
-    
+    2D rectangular grid of measurements or calculations.
+
     {attrs}
     """
 
@@ -461,7 +461,7 @@ class VectorImage(RegularGrid, PseudoVectorImage):
     {attrs}
     """
     pass
-        
+
 
 class VectorImageSchema(Schema, PseudoVectorImage):
     def __init__(self, shape, spacing, components = ('x', 'y', 'z'), optics = None,
@@ -476,7 +476,7 @@ class VectorImageSchema(Schema, PseudoVectorImage):
         else:
             shape = np.append(image_schema.shape, len(components))
         new =  cls(components = components, shape = shape,
-                   spacing = image_schema.positions.spacing, 
+                   spacing = image_schema.positions.spacing,
                    **dict_without(image_schema._dict, ['shape', 'positions',
                                                        'spacing', 'dtype']))
         # we want to use the same random selection as the schema we come from did
@@ -493,14 +493,14 @@ class VectorImageSchema(Schema, PseudoVectorImage):
             new[self.selection] = arr
             return new
 
-        
+
 @_describe_init_signature
 class VolumeSchema(Schema, PseudoVolume):
     """
     Description of a desired Volume.
 
     An VolumeSchema contains all of the information needed to calculate an Volume
-    
+
     {attrs}
     """
     pass
@@ -509,10 +509,41 @@ class VolumeSchema(Schema, PseudoVolume):
 @_describe_init_signature
 class Volume(RegularGrid, PseudoVolume):
     """
-    3D rectangular grid of measurements or calculations.  
-    
+    3D rectangular grid of measurements or calculations.
+
     {attrs}
     """
     pass
-    
 
+
+def subimage(arr, center, shape):
+    """
+    Pick out a region of an image or other array
+
+    Parameters
+    ----------
+    arr : numpy.ndarray
+        The array to subimage
+    center : tuple of ints
+        The desired center of the region, should have the same number of
+        elements as the arr has dimensions
+    shape : int or tuple of ints
+        Desired shape of the region.  If a single int is given the region will
+        be that dimension in along every axis.  Shape should be even
+
+    Returns
+    -------
+    sub : numpy.ndarray
+        Subset of shape shape centered at center
+    """
+    assert len(center) == arr.ndim
+    if np.isscalar(shape):
+        shape = np.repeat(shape, arr.ndim)
+    assert len(shape) == arr.ndim
+
+    extent = [slice(c-s/2, c+s/2) for c, s in zip(center, shape)]
+    for i, axis in enumerate(extent):
+        if axis.start < 0 or axis.stop > arr.shape[i]:
+            raise IndexError
+
+    return arr[[slice(c-s/2, c+s/2) for c, s in zip(center, shape)]]
