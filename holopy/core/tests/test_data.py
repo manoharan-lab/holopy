@@ -18,17 +18,17 @@
 from __future__ import division
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
-from ..marray import ImageSchema, Grid, VectorImage, VectorImageSchema, Image
+from ..marray import ImageSchema, Grid, VectorGrid, VectorGridSchema, Image, zeros_like
 from .common import assert_obj_close
 
 
-def test_VectorImage():
+def test_VectorGrid():
     schema = ImageSchema(shape = (100,100), spacing = .1)
-    vs = VectorImageSchema.from_ImageSchema(schema)
-    vd = VectorImage.zeros_like(vs)
+    vs = VectorGridSchema.from_schema(schema)
+    vd = zeros_like(vs)
     assert_equal(vd.shape, (100,100,3))
 
-    vd2 = VectorImage(np.zeros((10, 10, 3)))
+    vd2 = VectorGrid(np.zeros((10, 10, 3)))
     assert_equal(vd2.components, ('x', 'y', 'z'))
 
 
@@ -42,13 +42,13 @@ def test_positions_in_spherical():
 
 def test_from1d():
     schema = ImageSchema(shape = (2,2), spacing = 1)
-    im = VectorImage([[1, 0, 0],
+    im = VectorGrid([[1, 0, 0],
                        [0, 1, 2],
                        [1, 2, 3],
                        [5, 8, 9]])
-    assembled = VectorImage([[[1, 0, 0], [0, 1, 2]], [[1, 2, 3], [5, 8, 9]]])
-    
-    vf = VectorImageSchema.from_ImageSchema(schema).interpret_1d(im)
+    assembled = VectorGrid([[[1, 0, 0], [0, 1, 2]], [[1, 2, 3], [5, 8, 9]]])
+
+    vf = VectorGridSchema.from_schema(schema).interpret_1d(im)
     assert_equal(vf, assembled)
 
 def test_Image():
@@ -60,7 +60,7 @@ def test_resample():
     i = Image(np.arange(16).reshape((4,4)), spacing = 1)
     assert_obj_close(i.resample((2, 2)),
                      Image([[  5,   6], [  9,  10]],
-                           spacing=np.array([ 2, 2])), context = 'image') 
+                           spacing=np.array([ 2, 2])), context = 'image')
 
     assert_obj_close(i, Image(np.arange(16).reshape((4,4)),
-                              spacing = 1), context='image') 
+                              spacing = 1), context='image')

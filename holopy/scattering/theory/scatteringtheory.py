@@ -25,25 +25,25 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 import numpy as np
-from ...core.marray import Image, VectorImage, VectorImageSchema, dict_without
+from ...core.marray import Image, VectorGrid, VectorGridSchema, dict_without
 from ...core.holopy_object import HolopyObject
 from ..binding_method import binding, finish_binding
 
 
 class ScatteringTheory(HolopyObject):
     """
-    Defines common interface for all scattering theories.  
-    
+    Defines common interface for all scattering theories.
+
     Notes
     -----
     A subclasses that do the work of computing scattering should do it by
     implementing a _calc_field(self, scatterer, schema) function that returns a
-    VectorImage electric field.
+    VectorGrid electric field.
 
     ScatteringTheory uses pseudo classmethods which when called on a
     ScatteringTheory class are in fact called on a default instantiation
     (no parameters given to the constructor).  If you manually instantiate a
-    ScatteringTheory Object then it's calc_* methods refer to itself.  
+    ScatteringTheory Object then it's calc_* methods refer to itself.
     """
 
     def __init__(self):
@@ -51,7 +51,7 @@ class ScatteringTheory(HolopyObject):
         # that instantiate an object with normal methods that reference the
         # theory object
         finish_binding(self)
-        
+
     @classmethod
     @binding
     def calc_field(cls_self, scatterer, schema, scaling = 1.0):
@@ -65,7 +65,7 @@ class ScatteringTheory(HolopyObject):
 
         Returns
         -------
-        e_field : :mod:`holopy.core.marray.VectorImage`
+        e_field : :mod:`holopy.core.marray.VectorGrid`
             scattered electric field
 
 
@@ -75,13 +75,13 @@ class ScatteringTheory(HolopyObject):
         object.  If called on a theory class, they use a default theory object
         which is correct for the vast majority of situations.  You only need to
         instantiate a theory object if it has adjustable parameters and you want
-        to use non-default values.  
+        to use non-default values.
         """
         return cls_self._calc_field(scatterer, schema) * scaling
-       
+
     @classmethod
     @binding
-    def calc_intensity(cls_self, scatterer, schema, scaling = 1.0): 
+    def calc_intensity(cls_self, scatterer, schema, scaling = 1.0):
         """
         Calculate intensity at focal plane (z=0)
 
@@ -121,7 +121,7 @@ class ScatteringTheory(HolopyObject):
         """
         Calculate hologram formed by interference between scattered
         fields and a reference wave
-        
+
         Parameters
         ----------
         scatterer : :mod:`holopy.scattering.scatterer` object
@@ -145,7 +145,7 @@ class ScatteringTheory(HolopyObject):
 
         # add the z component to polarization and adjust the shape so that it is
         # broadcast correctly
-        ref = VectorImage(np.append(schema.optics.polarization, 0).reshape(1, 1, 3))
+        ref = VectorGrid(np.append(schema.optics.polarization, 0).reshape(1, 1, 3))
 
         return interfere_at_detector(scat, ref)
 
@@ -153,8 +153,8 @@ class ScatteringTheory(HolopyObject):
     @binding
     def calc_cross_sections(cls_self, scatterer, optics):
         """
-        Calculate scattering, absorption, and extinction 
-        cross sections, and asymmetry parameter <cos \theta>. 
+        Calculate scattering, absorption, and extinction
+        cross sections, and asymmetry parameter <cos \theta>.
         To be implemented by derived classes.
 
         Parameters
@@ -165,7 +165,7 @@ class ScatteringTheory(HolopyObject):
         Returns
         -------
         cross_sections : array (4)
-            Dimensional scattering, absorption, and extinction 
+            Dimensional scattering, absorption, and extinction
             cross sections, and <cos theta>
 
         Notes
@@ -200,7 +200,7 @@ class ScatteringTheory(HolopyObject):
         object.  If called on a theory class, they use a default theory object
         which is correct for the vast majority of situations.  You only need to
         instantiate a theory object if it has adjustable parameters and you want
-        to use non-default values.  
+        to use non-default values.
         """
 
         return cls_self._calc_scat_matrix(scatterer, schema)
@@ -208,7 +208,7 @@ class ScatteringTheory(HolopyObject):
     def _finalize_fields(self, z, fields, schema):
         # expects fields as an Nx3 ndarray
         phase = np.exp(-1j*np.pi*2*z / schema.optics.med_wavelen)
-        schema = VectorImageSchema.from_ImageSchema(schema)
+        schema = VectorGridSchema.from_schema(schema)
         result = schema.interpret_1d(fields)
         return result * phase
 
@@ -221,11 +221,11 @@ class FortranTheory(ScatteringTheory):
                                                               selection).T
     def _finalize_fields(self, z, fields, schema):
         return super(FortranTheory, self)._finalize_fields(
-            z, np.vstack(fields).T, schema) 
-        
+            z, np.vstack(fields).T, schema)
 
-    
-    
+
+
+
 #TODO: Should this be a method of the Electric field class? - tgd 2011-08-15
 def interfere_at_detector(e1, e2, detector_normal = (0, 0, 1)):
     """
@@ -245,7 +245,7 @@ def interfere_at_detector(e1, e2, detector_normal = (0, 0, 1)):
     # assumptions could be relaxed by adding more parameters if necessary
 
     # normally we would have
-    # interference = conj(xfield)*phase + conj(phase)*xfield, 
+    # interference = conj(xfield)*phase + conj(phase)*xfield,
     # but we choose phase angle = 0 at z=0, so phase = 1
     # which gives 2*real(xfield)
 
@@ -254,12 +254,11 @@ def interfere_at_detector(e1, e2, detector_normal = (0, 0, 1)):
     new = Image(((abs(e1)**2 + abs(e2)**2 + 2* np.real(e1*e2)) *
            (1 - detector_normal)).sum(axis=-1), **dict_without(e1._dict, 'dtype'))
 
-    
+
     return new
-    
+
 class InvalidElectricFieldComputation(Exception):
     def __init__(self, reason):
         self.reason = reason
     def __str__(self):
         return "Invalid Electric Computation: " + self.reason
-    

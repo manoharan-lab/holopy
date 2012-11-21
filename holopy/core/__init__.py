@@ -18,15 +18,14 @@
 """
 Core data manipulation for holopy.  It covers loading and saving data and
 results and basic image processing and math.  Holopy.core is usable on its own
-as a data manipulation library.  
+as a data manipulation library.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 """
 
 from marray import (Marray, Image, Schema, ImageSchema, Volume,
-                    VolumeSchema, VectorImage, VectorImageSchema)
+                    VolumeSchema, VectorGrid, VectorGridSchema)
 from metadata import Optics, Grid, Angles, UnevenGrid
 from io import load, load_image, save
 import process
-
