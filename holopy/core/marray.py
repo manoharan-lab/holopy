@@ -44,6 +44,23 @@ def zeros_like(obj, dtype = None):
         return obj._corresponding_marray(np.zeros(obj.shape, dtype=dtype),
                    **dict_without(obj._dict, 'shape'))
 
+def arr_like(arr, template):
+    """
+    Make a new Marray with metadata like an old one
+
+    Parameters
+    ----------
+    arr : numpy.ndarray
+        Array data to add metadata to
+    template : :class:`.Marray`
+        Marray to copy metadata from
+
+    Returns
+    res : :class:`.Marray`
+        Marray like template containing data from arr
+    """
+    return template.__class__(arr, **template._dict)
+
 # Ancestor for all array like storage objects for data/calculations.
 class PseudoMarray(HolopyObject):
     def __init__(self, positions = None, optics = None, origin = None,
@@ -253,7 +270,6 @@ class Marray(PseudoMarray, np.ndarray):
             return result.max()
         else:
             return result
-
 
 
 @_describe_init_signature

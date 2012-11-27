@@ -24,7 +24,7 @@ from __future__ import division
 
 import numpy as np
 import scipy
-from ...core.tests.common import get_example_data
+from ...core.tests.common import get_example_data, assert_obj_close
 from .. import propagate
 from numpy.testing import assert_array_equal
 from nose.plugins.attrib import attr
@@ -38,6 +38,8 @@ def test_reconNear():
     rec_im = abs(rec_im * scipy.conj(rec_im))
     rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
     assert_array_equal(rec_im.astype('uint8'),gold)
+    assert_obj_close(rec_im.optics, gold.optics)
+    assert_array_equal(rec_im.spacing, gold.spacing)
 
 @attr('fast')
 def test_reconMiddle():
@@ -47,7 +49,7 @@ def test_reconMiddle():
     rec_im = abs(rec_im * scipy.conj(rec_im))
     rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
     assert_array_equal(rec_im.astype('uint8'),gold)
-    
+
 @attr('fast')
 def test_reconFar():
     gold = get_example_data('recon_10.npy', 'optical_train3.yaml')

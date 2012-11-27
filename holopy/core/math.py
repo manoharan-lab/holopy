@@ -25,17 +25,18 @@ from __future__ import division
 import scipy.fftpack as fftpack
 from numpy import sin, cos
 import numpy as np
+from .marray import arr_like, Marray
 
 
 def fft(a, overwrite=False, shift=True):
     """
     More convenient Fast Fourier Transform
-    
+
     An easier to use fft function, it will pick the correct fft to do
     based on the shape of the Marray, and do the fftshift for you.  This
     is indendended for working with images, and thus for dimensions
     greater than 2 does slicewise transforms of each "image" in a
-    multidimensional stack 
+    multidimensional stack
 
     Parameters
     ----------
@@ -47,7 +48,7 @@ def fft(a, overwrite=False, shift=True):
     shift : bool
        Whether to preform an fftshift on the Marry to give low
        frequences near the center as you probably expect.  Default is
-       to do the fftshift. 
+       to do the fftshift.
 
     Returns
     -------
@@ -56,21 +57,25 @@ def fft(a, overwrite=False, shift=True):
     """
     if a.ndim is 1:
         if shift:
-            return fftpack.fftshift(fftpack.fft(a, overwrite_x=overwrite))
+            res = fftpack.fftshift(fftpack.fft(a, overwrite_x=overwrite))
         else:
-            return fftpack.fft(a, overwrite_x=overwrite)
+            res = fftpack.fft(a, overwrite_x=overwrite)
     else:
         if shift:
-            return fftpack.fftshift(fftpack.fft2(a, axes=[0, 1],
+            res = fftpack.fftshift(fftpack.fft2(a, axes=[0, 1],
                                                  overwrite_x=overwrite),
                                     axes=[0,1])
         else:
-            return fftpack.fft2(a, axes=[0, 1], overwrite_x=overwrite)
+            res = fftpack.fft2(a, axes=[0, 1], overwrite_x=overwrite)
+    if isinstance(a, Marray):
+        res = arr_like(res, a)
+    return res
+
 
 def ifft(a, overwrite=False, shift=True):
     """
     More convenient Inverse Fast Fourier Transform
-    
+
     An easier to use ifft function, it will pick the correct ifft to
     do based on the shape of the Marry, and do the fftshift for you.
     This is indendended for working with images, and thus for
@@ -83,11 +88,11 @@ def ifft(a, overwrite=False, shift=True):
        The array to transform
     overwrite : bool
        Allow this function to overwrite the Marry you pass in.  This
-       may improve performance slightly.  Default is not to overwrite 
+       may improve performance slightly.  Default is not to overwrite
     shift : bool
        Whether to preform an fftshift on the Marry to give low
        frequences near the center as you probably expect.  Default is to
-       do the fftshift. 
+       do the fftshift.
 
     Returns
     -------
@@ -96,15 +101,18 @@ def ifft(a, overwrite=False, shift=True):
     """
     if a.ndim is 1:
         if shift:
-            return fftpack.ifft(fftpack.fftshift(a, overwrite_x=overwrite))
+            res = fftpack.ifft(fftpack.fftshift(a, overwrite_x=overwrite))
         else:
-            return fftpack.ifft(a, overwrite_x=overwrite)
+            res = fftpack.ifft(a, overwrite_x=overwrite)
     else:
         if shift:
-            return fftpack.ifft2(fftpack.fftshift(a, axes=[0,1]), axes=[0, 1],
+            res = fftpack.ifft2(fftpack.fftshift(a, axes=[0,1]), axes=[0, 1],
                                  overwrite_x=overwrite)
         else:
-            return fftpack.ifft2(a, overwrite_x=overwrite)
+            res = fftpack.ifft2(a, overwrite_x=overwrite)
+    if isinstance(a, Marray):
+        res = arr_like(res, a)
+    return res
 
 def rotate_points(points, theta, phi, psi):
     points = np.array(points)
@@ -112,32 +120,32 @@ def rotate_points(points, theta, phi, psi):
     if points.ndim == 1:
         return np.dot(rot, points)
     return np.array([np.dot(rot, c) for c in points])
-        
+
 def rotation_matrix(alpha, beta, gamma, radians = True):
     """
     Return a 3d rotation matrix
 
     Parameters
     ----------
-    alpha, beta, gamma: float 
+    alpha, beta, gamma: float
         Euler rotation angles in z, y, z convention
     radians: boolean
         Default True; treats input angles in radians
-     
+
     Returns
     -------
     rot: array(3,3)
         Rotation matrix, to rotate a vector x, use np.dot(x, rot)
-        
+
     Notes
     -----
     The Euler angles rotate a vector (in the active picture) by alpha
     counterclockwise about the fixed lab z axis, beta counterclockwise about
-    the lab y axis, and by gamma about the lab z axis.  Counterclockwise is 
+    the lab y axis, and by gamma about the lab z axis.  Counterclockwise is
     defined as viewed from the origin, looking in the positive direction
     along an axis.  This is for compatability with the passive picture adopted
     by SCSMFO.
-        
+
     """
     if not radians:
         alpha *= np.pi/180.
@@ -158,4 +166,3 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
 # TODO: make this handle 2d
 def cartesian_distance(p1, p2):
     return np.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2+(p1[2]-p2[2])**2)
-
