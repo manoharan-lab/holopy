@@ -26,6 +26,7 @@ calc_intensity and calc_holo, based on subclass's calc_field
 
 import numpy as np
 from ...core.marray import Image, VectorGrid, VectorGridSchema, dict_without
+from ...core import Optics
 from ...core.holopy_object import HolopyObject
 from ..binding_method import binding, finish_binding
 
@@ -60,12 +61,12 @@ class ScatteringTheory(HolopyObject):
 
         Parameters
         ----------
-        scatterer : :mod:`holopy.scattering.scatterer` object
+        scatterer : :mod:`.scatterer` object
             (possibly composite) scatterer for which to compute scattering
 
         Returns
         -------
-        e_field : :mod:`holopy.core.marray.VectorGrid`
+        e_field : :mod:`.VectorGrid`
             scattered electric field
 
 
@@ -87,12 +88,12 @@ class ScatteringTheory(HolopyObject):
 
         Parameters
         ----------
-        scatterer : :mod:`holopy.scattering.scatterer` object
+        scatterer : :mod:`.scatterer` object
             (possibly composite) scatterer for which to compute scattering
 
         Returns
         -------
-        inten : :mod:`holopy.core.marray.Image`
+        inten : :mod:`.Image`
             scattered intensity
 
         Notes
@@ -124,13 +125,13 @@ class ScatteringTheory(HolopyObject):
 
         Parameters
         ----------
-        scatterer : :mod:`holopy.scattering.scatterer` object
+        scatterer : :mod:`.scatterer` object
             (possibly composite) scatterer for which to compute scattering
         alpha : scaling value for intensity of reference wave
 
         Returns
         -------
-        holo : :class:`holopy.hologram.Hologram` object
+        holo : :class:`.Image` object
             Calculated hologram from the given distribution of spheres
 
         Notes
@@ -142,12 +143,7 @@ class ScatteringTheory(HolopyObject):
         to use non-default values.
         """
         scat = cls_self.calc_field(scatterer, schema = schema, scaling = scaling)
-
-        # add the z component to polarization and adjust the shape so that it is
-        # broadcast correctly
-        ref = VectorGrid(np.append(schema.optics.polarization, 0).reshape(1, 1, 3))
-
-        return interfere_at_detector(scat, ref)
+        return scattered_field_to_hologram(scat, schema.optics)
 
     @classmethod
     @binding
@@ -159,7 +155,7 @@ class ScatteringTheory(HolopyObject):
 
         Parameters
         ----------
-        scatterer : :mod:`holopy.scattering.scatterer` object
+        scatterer : :mod:`.scatterer` object
             (possibly composite) scatterer for which to compute scattering
 
         Returns
@@ -191,7 +187,7 @@ class ScatteringTheory(HolopyObject):
 
         Returns
         -------
-        scat_matr : :mod:`holopy.core.marray.Marray`
+        scat_matr : :mod:`.Marray`
             Scattering matricies at specified positions
 
         Notes
@@ -223,39 +219,33 @@ class FortranTheory(ScatteringTheory):
         return super(FortranTheory, self)._finalize_fields(
             z, np.vstack(fields).T, schema)
 
-
-
-
-#TODO: Should this be a method of the Electric field class? - tgd 2011-08-15
-def interfere_at_detector(e1, e2, detector_normal = (0, 0, 1)):
+# this is pulled out separate from the calc_holo method because occasionally you
+# want to turn prepared  e_fields into holograms directly
+def scattered_field_to_hologram(scat, ref, detector_normal = (0, 0, 1)):
     """
-    Compute the intensity as detected by a plane sensor normal to z from the
-    interference of e1 and e2
+    Calculate a hologram from an E-field
 
     Parameters
     ----------
-    e1, e2: :class:`scatterpy.theory.scatteringtheory.ElectricField`
-        The two electric fields to superimpose
-
-    Returns
-    i: :class:`numpy.ndarray`
-        2d array of detected intensity
+    scat : :class:`.VectorGrid`
+        The scattered (object) field
+    ref : :class:`.VectorGrid` or :class:`.Optics`
+        The reference field, it can also be inferred from polarization of an
+        Optics object
+    dectector_normal : (float, float, float)
+        Vector normal to the detector the hologram should be measured at
+        (defaults to z hat, a detector in the x, y plane)
     """
-    # This function assumes the detector is normal to z and planar, these
-    # assumptions could be relaxed by adding more parameters if necessary
-
-    # normally we would have
-    # interference = conj(xfield)*phase + conj(phase)*xfield,
-    # but we choose phase angle = 0 at z=0, so phase = 1
-    # which gives 2*real(xfield)
-
+    if isinstance(ref, Optics):
+        # add the z component to polarization and adjust the shape so that it is
+        # broadcast correctly
+        ref = VectorGrid(np.append(ref.polarization, 0).reshape(1, 1, 3))
     detector_normal = np.array(detector_normal).reshape((1, 1, 3))
 
-    new = Image(((abs(e1)**2 + abs(e2)**2 + 2* np.real(e1*e2)) *
-           (1 - detector_normal)).sum(axis=-1), **dict_without(e1._dict, 'dtype'))
+    return Image(((abs(scat)**2 + abs(ref)**2 + 2* np.real(scat*ref)) *
+                  (1 - detector_normal)).sum(axis=-1),
+                 **dict_without(scat._dict, 'dtype'))
 
-
-    return new
 
 class InvalidElectricFieldComputation(Exception):
     def __init__(self, reason):
