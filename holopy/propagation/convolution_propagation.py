@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 """
-Code to propagate objects/waves using scattering models.  
+Code to propagate objects/waves using scattering models.
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
@@ -28,6 +28,7 @@ import numpy as np
 from ..core.math import fft, ifft
 from ..core.helpers import _ensure_pair, _ensure_array
 from ..core import Volume, Image, Grid, UnevenGrid, VolumeSchema, Marray
+from ..core.marray import VectorGrid
 from holopy.core.marray import dict_without
 
 # May eventually want to have this function take a propagation model
@@ -50,21 +51,21 @@ def propagate(data, d, gradient_filter=False):
 
     Parameters
     ----------
-    data : :class:`holopy.core.marray.Image`
+    data : :class:`.Image` or :class:`.VectorGrid`
        Hologram to propagate
-    d : float, list of floats, or :class:`holopy.core.marray.VolumeSchema`
+    d : float, list of floats, or :class:`.VolumeSchema`
        Distance to propagate, in meters, or desired schema.  A list tells to
        propagate to several distances and return the volume
     gradient_filter : float
        For each distance, compute a second propagation a distance
        gradient_filter away and subtract.  This enhances contrast of
-       rapidly varying features 
+       rapidly varying features
 
     Returns
     -------
-    data : :class:`holopy.core.marray.Image` or :class:`holopy.core.marray.Volume`
-       The hologram progagated to a distance d from its current location.  
-        
+    data : :class:`.Image` or :class:`.Volume`
+       The hologram progagated to a distance d from its current location.
+
     """
 
     if isinstance(d, VolumeSchema):
@@ -80,53 +81,55 @@ def propagate(data, d, gradient_filter=False):
         else:
             data_origin = data.origin
 
-        offset = (schema.origin - data_origin) 
+        offset = (schema.origin - np.array(data_origin))
 
         x0, y0 = offset[:2] / data.spacing
         x1, y1 = (offset[:2] + schema.extent[:2]) / data.spacing[:2]
         vol = vol[x0:x1, y0:y1 :]
         vol = vol.resample(schema.shape)
         return vol
-    
+
     G = trans_func(data.shape[:2], data.positions.spacing,
                    data.optics.med_wavelen, d, squeeze=False,
                    gradient_filter=gradient_filter)
-    
+
     ft = fft(data)
 
     ft = np.repeat(ft[:, :, np.newaxis,...], G.shape[2], axis=2)
 
     ft = apply_trans_func(ft, G)
-    
-    arr = np.squeeze(ifft(ft, overwrite=True))
+
+    res = np.squeeze(ifft(ft, overwrite=True))
 
     origin = np.zeros(3)
     if data.origin is not None:
         origin = data.origin
     origin[2] += _ensure_array(d)[0]
 
-    if arr.ndim == 2:
-        res =  Image(arr,  origin = origin,
-                     **dict_without(data._dict, ['dtype', 'origin']))
-    elif arr.ndim == 3:
+    if not np.isscalar(d) and not isinstance(data, VectorGrid):
         # check if supplied distances are in a regular grid
         dd = np.diff(d)
         if np.allclose(dd[0], dd):
             # shape of none will have the shape inferred from arr
             spacing = np.append(data.spacing, dd[0])
-            res = Volume(arr, spacing = spacing, origin = origin,
+            res = Volume(res, spacing = spacing, origin = origin,
                          **dict_without(data._dict, ['spacing', 'dtype']))
         else:
-            res = Marray(arr, positions=positions, origin = origin,
+            res = Marray(res, positions=positions, origin = origin,
                          **dict_without(data._dict, ['spacing', 'position', 'dtype']))
+
     return res
 
 def apply_trans_func(ft, G):
     mm, nn = [dim/2 for dim in G.shape[:2]]
     m, n = ft.shape[:2]
-    
+
+    if ft.ndim == 4:
+        # vector field input, so we need to add a dimension to G so it
+        # broadcasts correctly
+        G = G[...,np.newaxis]
     ft[(m/2-mm):(m/2+mm),(n/2-nn):(n/2+nn)] *= G[:(mm*2),:(nn*2)]
-    
+
     # Transfer function may not cover the whole image, any values
     # outside it need to be set to zero to make the reconstruction
     # correct
@@ -158,17 +161,17 @@ def trans_func(shape, spacing, wavelen, d, cfsp=0, squeeze=True,
        the wavelength in the medium you are propagating through
     d : float or list of floats
        reconstruction distance.  If list or array, this function will
-       return an array of transfer functions, one for each distance 
+       return an array of transfer functions, one for each distance
     cfsp : integer (optional)
        cascaded free-space propagation factor.  If this is an integer
        > 0, the transfer function G will be calculated at d/csf and
        the value returned will be G**csf.
     squeeze : Bool (optional)
        Remove length 1 dimensions (so that if only one distance is
-       specified trans_func will be a 2d array) 
+       specified trans_func will be a 2d array)
     gradient_filter : float (optional)
        Subtract a second transfer function a distance gradient_filter
-       from each z 
+       from each z
 
     Returns
     -------
@@ -182,7 +185,7 @@ def trans_func(shape, spacing, wavelen, d, cfsp=0, squeeze=True,
        2005), equation 3.79 (page 116)
 
     .. [2] Kreis, Optical Engineering 41(8):1829, section 5
-    
+
     """
     d = np.array([d])
 
@@ -190,7 +193,7 @@ def trans_func(shape, spacing, wavelen, d, cfsp=0, squeeze=True,
     xdim, ydim = _ensure_pair(shape)
 
     d = d.reshape([1, 1, d.size])
-    
+
     if(cfsp > 0):
         cfsp = int(abs(cfsp)) # should be nonnegative integer
         d = d/cfsp
@@ -211,19 +214,18 @@ def trans_func(shape, spacing, wavelen, d, cfsp=0, squeeze=True,
     except OverflowError:
         max_m = xdim/2
         max_n = ydim/2
-    
+
     # make sure that the array is not larger than the hologram if we
     # are using cascaded free space propagation
     max_m = min(xdim, max_m*2)/2
     max_n = min(ydim, max_n*2)/2
-   
+
     m, n = np.ogrid[-max_m:max_m,-max_n:max_n]
-    
-    
+
     root = 1.+0j-(wavelen*n/(xdim*dx))**2 - (wavelen*m/(ydim*dy))**2
 
     root *= (root >= 0)
-    
+
     # add the z axis to this array so it broadcasts correctly
     root = root[..., np.newaxis]
 
@@ -266,7 +268,7 @@ def impulse_response(shape, optics, d):
     -------
     trans_func : np.ndarray
        The calculated transfer function.  This will be at most as large as
-       shape, but may be smaller if the frequencies outside that are zero  
+       shape, but may be smaller if the frequencies outside that are zero
 
     References
     ----------
@@ -285,14 +287,14 @@ def impulse_response(shape, optics, d):
     d = d.reshape([1, 1, d.size])
 
     # TODO BUG: this will fail for odd hologram shapes (but I am not worrying
-    # about this because in practice we never use them - tgd 2011-11-21) 
+    # about this because in practice we never use them - tgd 2011-11-21)
     max_m = xdim/2
     max_n = ydim/2
 
     m, n = np.ogrid[-max_m:max_m,-max_n:max_n]
     m = m.reshape([m.shape[0], 1, 1])
     n = n.reshape([1, n.shape[1], 1])
-    
+
     root = np.sqrt(d**2 + (m*dx)**2 + (n*dy)**2)
 
     return 1.0j/wavelen * np.exp(-1.0j*optics.wavevec*root)/root

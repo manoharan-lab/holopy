@@ -18,8 +18,9 @@
 from __future__ import division
 
 import numpy as np
-from ...core import ImageSchema, VolumeSchema, Optics, Grid
+from ...core import ImageSchema, VolumeSchema, Optics
 from ...scattering.theory import Mie
+from ...scattering.theory.scatteringtheory import scattered_field_to_hologram
 from ...scattering.scatterer import Sphere
 from .. import propagate
 from ...core.tests.common import assert_obj_close, verify
@@ -27,25 +28,31 @@ from ...core.tests.common import assert_obj_close, verify
 class test_propagation():
     def __init__(self):
         self.optics = Optics(.66, 1.33)
-        im_schema = ImageSchema(spacing = .1, shape = 100, optics = self.optics)
-        sphere = Sphere(n = 1.59, r = .5, center = (5, 5, 5))
-        self.holo = Mie.calc_holo(sphere, im_schema)
+        self.im_schema = ImageSchema(spacing = .1, shape = 100,
+                                     optics = self.optics)
+        self.sphere = Sphere(n = 1.59, r = .5, center = (5, 5, 5))
+        self.holo = Mie.calc_holo(self.sphere, self.im_schema)
 
     def test_propagate_volume(self):
         vol_schema = VolumeSchema(shape = (40, 40, 25), spacing = .2,
                                   optics = self.optics)
         vol_schema.center = (5, 5, 7.5)
-        
+
         vol = propagate(self.holo, vol_schema)
         verify(vol, 'propagate_into_volume')
-    
-        
+
+
     def test_d_vs_schema(self):
         d = np.arange(5, 10, 1)
         vol = VolumeSchema(shape = np.append(self.holo.shape, len(d)),
                 spacing = np.append(self.holo.positions.spacing, 1))
-        vol.center = (5, 5, 7.5) 
+        vol.center = (5, 5, 7.5)
 
         r1 = propagate(self.holo, d)
         r2 = propagate(self.holo, vol)
         assert_obj_close(r1, r2, context = 'propagated_volume')
+
+    def test_propagate_e_field(self):
+        e = Mie.calc_field(self.sphere, self.im_schema)
+        prop_e = propagate(e, 10)
+        verify(prop_e, 'propagate_e_field')
