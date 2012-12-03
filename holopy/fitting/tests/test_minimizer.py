@@ -85,7 +85,7 @@ def test_minimizer():
 
 def test_iter_limit():
     #calculate a hologram with known particle positions to do a fit against
-    schema = ImageSchema(shape = 256, spacing = .1, optics = Optics(wavelen = .660, index = 1.33))
+    schema = ImageSchema(shape = 100, spacing = .1, optics = Optics(wavelen = .660, index = 1.33))
 
     s1 = Sphere(center=(15, 15, 20), n = 1.59, r = 0.5)
     s2 = Sphere(center=(14, 14, 20), n = 1.59, r = 0.5)
