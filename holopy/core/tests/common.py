@@ -48,10 +48,8 @@ def get_example_data_path(name):
     path = os.path.join(os.path.split(path)[0], 'exampledata')
     return os.path.join(path, name)
 
-def get_example_data(name, optics=None):
-    if optics is not None and not isinstance(optics, Optics):
-        optics = get_example_data_path(optics)
-    return load(get_example_data_path(name), optics = optics)
+def get_example_data(name):
+    return load(get_example_data_path(name))
 
 def assert_read_matches_write(o):
     tempf = tempfile.NamedTemporaryFile()

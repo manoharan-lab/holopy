@@ -32,19 +32,19 @@ from nose.plugins.attrib import attr
 
 @attr('fast')
 def test_reconNear():
-    im = get_example_data('image0003.npy', 'optical_train3.yaml')
-    gold = get_example_data('recon_4.npy', 'optical_train3.yaml')
+    im = get_example_data('image0003.yaml')
+    gold = get_example_data('recon_4.npy')
     rec_im = propagate(im, 4e-6)
     rec_im = abs(rec_im * scipy.conj(rec_im))
     rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
     assert_array_equal(rec_im.astype('uint8'),gold)
-    assert_obj_close(rec_im.optics, gold.optics)
-    assert_array_equal(rec_im.spacing, gold.spacing)
+    assert_obj_close(rec_im.optics, im.optics)
+    assert_array_equal(rec_im.spacing, im.spacing)
 
 @attr('fast')
 def test_reconMiddle():
-    gold = get_example_data('recon_7.npy', 'optical_train3.yaml')
-    im = get_example_data('image0003.npy', 'optical_train3.yaml')
+    gold = get_example_data('recon_7.npy')
+    im = get_example_data('image0003.yaml',)
     rec_im = propagate(im, 7e-6)
     rec_im = abs(rec_im * scipy.conj(rec_im))
     rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
@@ -52,8 +52,8 @@ def test_reconMiddle():
 
 @attr('fast')
 def test_reconFar():
-    gold = get_example_data('recon_10.npy', 'optical_train3.yaml')
-    im = get_example_data('image0003.npy', 'optical_train3.yaml')
+    gold = get_example_data('recon_10.npy')
+    im = get_example_data('image0003.yaml')
     rec_im = propagate(im, 10e-6)
     rec_im = abs(rec_im * scipy.conj(rec_im))
     rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)

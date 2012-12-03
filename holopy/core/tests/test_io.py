@@ -17,7 +17,7 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 
 from .common import (assert_obj_close, assert_read_matches_write,
-                     get_example_data_path)
+                     get_example_data)
 from .. import Optics, Marray, load, save
 from .. process import normalize
 import tempfile
@@ -32,10 +32,7 @@ from ..io import save_image, load_image
 
 @attr('fast')
 def test_hologram_io():
-    o = Optics(wavelen=.66, index=1.33, pixel_scale=.1)
-
-    holo = normalize(load(get_example_data_path('image0001.npy'),
-                                        optics=o))
+    holo = normalize(get_example_data('image0001.yaml'))
 
     assert_read_matches_write(holo)
 
@@ -59,7 +56,7 @@ def test_marray_io():
     assert_read_matches_write(d)
 
 def test_tif_io():
-    holo = load(get_example_data_path('image0001.npy'))
+    holo = get_example_data('image0001.yaml')
     t = tempfile.mkdtemp()
 
     filename = os.path.join(t, 'image0001.tif')

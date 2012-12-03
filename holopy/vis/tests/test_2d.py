@@ -9,6 +9,6 @@ except ImportError:
     raise SkipTest()
 
 def test_show():
-    d = get_example_data('image0001.npy')
+    d = get_example_data('image0001.yaml')
     hp.show(d)
     plt.savefig(tempfile.TemporaryFile(suffix='.pdf'))

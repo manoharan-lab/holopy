@@ -32,22 +32,7 @@ from ...core.tests.common import assert_parameters_allclose, get_example_data
 # these are the exact values; should correspond to fit results
 # in order: real index, imag index, radius , x, y, z, alpha, fnorm, fit status
 gold_single = np.array([1.5768, 0.0001, 6.62e-7, 5.54e-6, 5.79e-6,
-                        14.2e-6, 0.6398, 7.119, 2]) 
-
-# Particle parameters for input file
-medium_index = 1.33
-
-# define optical train
-wavelen = 658e-9
-polarization = [0., 1.0]
-divergence = 0
-pixel_scale = [.1151e-6, .1151e-6]
-index = 1.33
-
-optics = Optics(wavelen=wavelen, index=index,
-                              pixel_scale=pixel_scale,
-                              polarization=polarization,
-                              divergence=divergence)
+                        14.2e-6, 0.6398, 7.119, 2])
 
 # initial guess
 scaling_alpha = .6
@@ -99,9 +84,9 @@ parinfo = [{'parname':'n_particle_real',
           {'parname': 'scaling_alpha',
            'limited': [True, True],
            'limits': [0.0, 1.0],
-           'value': scaling_alpha}] 
+           'value': scaling_alpha}]
 
-holo = normalize(get_example_data('image0001.npy', optics))
+holo = normalize(get_example_data('image0001.yaml'))
 
 
 # define the residual function

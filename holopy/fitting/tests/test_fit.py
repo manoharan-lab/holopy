@@ -30,28 +30,7 @@ from ...core import Optics, ImageSchema, load, save
 from ...core.process import normalize
 from ...core.helpers import OrderedDict
 from .. import fit, Parameter, ComplexParameter, par, Parametrization, Model
-from ..minimizer import Nmpfit
-from ..errors import MinimizerConvergenceFailed
 from ...core.tests.common import assert_obj_close, get_example_data, assert_parameters_allclose
-
-
-def setup_optics():
-    # set up optics class for use in several test functions
-    global optics
-    wavelen = 658e-9
-    polarization = [0., 1.0]
-    divergence = 0
-    pixel_scale = [.1151e-6, .1151e-6]
-    index = 1.33
-
-    optics = Optics(wavelen=wavelen, index=index,
-                              pixel_scale=pixel_scale,
-                              polarization=polarization,
-                              divergence=divergence)
-
-def teardown_optics():
-    global optics
-    del optics
 
 gold_single = OrderedDict((('center[0]', 5.534e-6),
                ('center[1]', 5.792e-6),
@@ -68,9 +47,8 @@ gold_single = OrderedDict((('center[0]', 5.534e-6),
                            ('r', 6.484e-7),
                            ('alpha', .6497)))
 @attr('medium')
-@with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_fit_mie_single():
-    holo = normalize(get_example_data('image0001.npy', optics))
+    holo = normalize(get_example_data('image0001.yaml'))
 
     parameters = [Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5]),
                   Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
@@ -93,9 +71,8 @@ def test_fit_mie_single():
 
 
 @attr('medium')
-@with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_fit_mie_par_scatterer():
-    holo = normalize(get_example_data('image0001.npy', optics))
+    holo = normalize(get_example_data('image0001.yaml'))
 
     s = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
                          par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
@@ -120,9 +97,8 @@ def test_fit_mie_par_scatterer():
     assert_equal(model, result.model)
 
 @attr('fast')
-@with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_fit_random_subset():
-    holo = normalize(get_example_data('image0001.npy', optics=optics))
+    holo = normalize(get_example_data('image0001.yaml'))
 
 
     s = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
@@ -196,7 +172,7 @@ def test_fit_multisphere_noisydimer_slow():
                        divergence = 0., pixel_scale = [0.345e-6, 0.345e-6],
                        index = 1.334)
 
-    holo = normalize(get_example_data('image0002.npy', optics=optics))
+    holo = normalize(get_example_data('image0002.yaml'))
 
     # Now construct the model, and fit
     parameters = [Parameter(name = 'x0', guess = 1.64155e-5,
@@ -250,7 +226,6 @@ def test_fit_multisphere_noisydimer_slow():
 
 
 @attr('fast')
-@with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_serialization():
     par_s = Sphere(center = (par(.567e-5, [0, 1e-5]), par(.576e-6, [0, 1e-5]),
                                                            par(15e-6, [1e-5,
@@ -259,7 +234,7 @@ def test_serialization():
 
     alpha = par(.6, [.1, 1], 'alpha')
 
-    schema = ImageSchema(shape = 100, optics = optics)
+    schema = ImageSchema(shape = 100, spacing = .1151e-6, optics = Optics(.66e-6, 1.33))
 
     model = Model(par_s, Mie.calc_holo, alpha=alpha)
 
