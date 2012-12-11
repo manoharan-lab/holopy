@@ -35,4 +35,5 @@ import fitting
 from propagation import propagate
 from vis import show
 
-from _version import __version__
+__version__ = '1.9.292'
+__version_info__ = tuple([ int(num) for num in __version__.split('.')])
