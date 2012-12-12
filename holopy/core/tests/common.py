@@ -30,6 +30,11 @@ from ..io import load, save
 from ..metadata import Optics
 from ...scattering import scatterer
 
+# tests should fail if they give warnings
+import warnings
+warnings.simplefilter("error")
+
+
 try:
     from numpy.testing import assert_allclose
 except ImportError:

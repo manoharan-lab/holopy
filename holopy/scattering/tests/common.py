@@ -17,10 +17,9 @@
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
 
-import os
-import numpy as np
-
 from ...core import Optics
+from ...core import ImageSchema
+from ...scattering.scatterer import Sphere
 
 from ...core.tests.common import assert_allclose, assert_obj_close, verify
 
@@ -30,17 +29,30 @@ xpolarization = [1.0, 0.] # x-polarized
 divergence = 0
 pixel_scale = [.1151e-6, .1151e-6]
 index = 1.33
+imshape = 128
 
 yoptics = Optics(wavelen=wavelen, index=index,
-                 pixel_scale=pixel_scale,
                  polarization=ypolarization,
                  divergence=divergence)
-    
+
 xoptics = Optics(wavelen=wavelen, index=index,
-                 pixel_scale=pixel_scale,
                  polarization=xpolarization,
                  divergence=divergence)
 
+xschema = ImageSchema(shape = 128, spacing = pixel_scale, optics = xoptics)
+yschema = ImageSchema(shape = 128, spacing = pixel_scale, optics = yoptics)
+
 optics=yoptics
+schema=yschema
 
+scaling_alpha = .6
+radius = .85e-6
+n_particle_real = 1.59
+n_particle_imag = 1e-4
+n = n_particle_real + n_particle_imag * 1.0j
+x = .576e-05
+y = .576e-05
+z = 15e-6
 
+sphere = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius,
+                    center =(x, y, z))

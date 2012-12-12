@@ -29,7 +29,7 @@ import numpy as np
 
 try:
     from collections import OrderedDict
-except ImportError:
+except ImportError: #pragma: no cover
     from ordereddict import OrderedDict #pragma: no cover
 
 def _ensure_array(x):
@@ -46,32 +46,3 @@ def _ensure_pair(x):
         return np.array(x)
     except (IndexError, TypeError):
         return np.array([x, x])
-
-
-def _mkdir_p(path):
-    '''
-    Equivalent to mkdir -p at the shell, this function makes a
-    directory and its parents as needed, silently doing nothing if it
-    exists.
-
-    Mainly a convenience function for including in scripts that crunch
-    through a lot of files.
-    '''
-    try:
-        os.makedirs(path)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST:
-            pass
-        else: raise
-
-def _copy_file(source, dest):
-    '''
-    Copies a file from source to dest.  Does nothing if source == dest
-
-    Mainly a convenience function for including in scripts that crunch
-    through a lot of files.
-    '''
-    try:
-        return shutil.copy2(source, dest)
-    except shutil.Error:
-        pass

@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
 '''
-Test fortran-based multilayered Mie calculations and python interface.  
+Test fortran-based multilayered Mie calculations and python interface.
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
@@ -34,12 +34,11 @@ from nose.plugins.attrib import attr
 def test_Shell():
     s = CoatedSphere(center=[7.141442573813124, 7.160766866147957, 11.095409800342143],
               n=[(1.27121212428+0j), (1.49+0j)], r=[0.960957713253-0.0055,
-                                                    0.960957713253]) 
+                                                    0.960957713253])
 
-    optics = Optics(wavelen=0.658, index=1.36, polarization=[1.0, 0.0],
-              pixel_scale=[0.071333, 0.071333])
-    
-    t = ImageSchema(200, optics = optics)
+    optics = Optics(wavelen=0.658, index=1.36, polarization=[1.0, 0.0])
+
+    t = ImageSchema(200, .071333, optics = optics)
 
     h = Mie.calc_holo(s, t, scaling = 0.4826042444701572)
 

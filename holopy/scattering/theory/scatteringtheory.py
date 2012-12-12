@@ -244,7 +244,7 @@ def scattered_field_to_hologram(scat, ref, detector_normal = (0, 0, 1)):
 
     return Image(((abs(scat)**2 + abs(ref)**2 + 2* np.real(scat*ref)) *
                   (1 - detector_normal)).sum(axis=-1),
-                 **dict_without(scat._dict, 'dtype'))
+                 **dict_without(scat._dict, ['dtype', 'components']))
 
 
 class InvalidElectricFieldComputation(Exception):

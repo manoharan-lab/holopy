@@ -49,10 +49,9 @@ def setup_optics():
     index = 1.33
 
     optics = Optics(wavelen=wavelen, index=index,
-                    pixel_scale=pixel_scale,
                     polarization=polarization,
                     divergence=divergence)
-    schema = ImageSchema(128, optics = optics)
+    schema = ImageSchema(128, spacing = pixel_scale, optics = optics)
 
 def teardown_optics():
     global optics, schema
@@ -77,6 +76,12 @@ def test_dda_2_cpu():
 
     # TODO: figure out how to actually test that it runs on multiple cpus
 
+def in_sphere(r):
+    rsq = r**2
+    def test(point):
+        return (point**2).sum() < rsq
+    return test
+
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_voxelated():
@@ -93,40 +98,17 @@ def test_DDA_voxelated():
 
     sphere_holo = dda.calc_holo(sc, schema)
 
-    geom = np.loadtxt(os.path.join(dda._last_result_dir, 'sphere.geom'),
-                      skiprows=3)
-
-    # hardcode size for now.  This is available in the log of the adda output,
-    # so we could get it with a parser, but this works for now, not that it
-    # could change if we change the size of the scatterer (and thus lead to a
-    # fail)
-    # FAIL HINT: grid size hardcoded, check that it is what dda sphere outputs
-    dpl_dia = 16
-
-    sphere = np.zeros((dpl_dia,dpl_dia,dpl_dia))
-
-    for point in geom:
-        x, y, z = point
-        sphere[x, y, z] = 1
-
-    sphere = sphere.astype('float') * n
-
-    dpl = 13.2569
-
-    # this would nominally be the correct way to determine dpl, but because of
-    #volume correction within adda, this is not as accurate (only
-    #dpl = dpl_dia * optics.med_wavelen / (r*2)
-
-    s = VoxelatedScatterer(sphere, center, dpl)
+    s = ScattererByFunction(in_sphere(r), n, [[-r, r], [-r, r], [-r, r]],
+                            center)
 
     gen_holo = dda.calc_holo(s, schema)
 
-    assert_allclose(sphere_holo, gen_holo, rtol=1e-3)
+    assert_allclose(sphere_holo, gen_holo, rtol=2e-3)
 
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_voxelated_complex():
-    o = Optics(wavelen=.66, index=1.33, pixel_scale=.1)
+    o = Optics(wavelen=.66, index=1.33)
     s = Sphere(n = 1.2+2j, r = .2, center = (5,5,5))
 
     def sphere(r):
@@ -138,7 +120,7 @@ def test_voxelated_complex():
     sv = ScattererByFunction(sphere(s.r), s.n, [[-s.r, s.r], [-s.r, s.r], [-s.r,
     s.r]], center = s.center)
 
-    schema = ImageSchema(50, optics = o)
+    schema = ImageSchema(50, .1, optics = o)
 
     holo_dda = DDA.calc_holo(sv, schema)
     verify(holo_dda, 'dda_voxelated_complex', rtol=1e-5)
@@ -159,7 +141,7 @@ def test_DDA_coated():
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_Ellipsoid_dda():
     e = Ellipsoid(1.5, r = (.5, .1, .1), center = (1, -1, 10))
-    schema = ImageSchema(100, optics = Optics(wavelen=.66, pixel_scale=.1, index=1.33))
+    schema = ImageSchema(100, .1, optics = Optics(wavelen=.66, index=1.33))
     h = DDA.calc_holo(e, schema)
 
     assert_almost_equal(h.max(), 1.3152766077267062)
