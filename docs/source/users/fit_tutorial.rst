@@ -162,12 +162,12 @@ Let's compute a hologram with known parameters and then fit it to make sure we r
 calculated hologram (holo) with real data, if you like. TODO: result is not very accurate... why? ::
 
    import holopy
-   from holopy.core import ImageTarget, Optics
+   from holopy.core import ImageSchema, Optics
    from holopy.fitting import Model, par, fit
    from holopy.scattering.scatterer import Sphere
    from holopy.scattering.theory import Mie
 
-   target = ImageTarget(shape = 100, pixel_size = .1, optics = Optics(wavelen = .660, index = 1.33))
+   target = ImageSchema(shape = 100, spacing = .1, optics = Optics(wavelen = .660, index = 1.33))
    s = Sphere(center = (10.2, 9.8, 10.3), r = .5, n = 1.58)
    holo = Mie.calc_holo(s, target)
 
@@ -219,12 +219,12 @@ In this example, we fit for the parameters of two spheres ::
     from holopy.scattering.scatterer import Sphere
     from holopy.scattering.scatterer import Spheres
     from holopy.scattering.theory import Mie
-    from holopy.core import ImageTarget, Optics
+    from holopy.core import ImageSchema, Optics
     from holopy.fitting import Model, par, fit
     from holopy.fitting.minimizer import Nmpfit
 
     #calculate a hologram with known particle positions to do a fit against
-    target = ImageTarget(shape = 256, pixel_size = .1, 
+    target = ImageSchema(shape = 256, spacing = .1, 
         optics = Optics(wavelen = .660, index = 1.33))
 
     s1 = Sphere(center=(15, 15, 20), n = 1.59, r = 0.5)
