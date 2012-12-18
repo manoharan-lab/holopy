@@ -19,7 +19,7 @@ from __future__ import division
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_raises
 from ..marray import (ImageSchema, VectorGrid, VectorGridSchema, Image,
-                      zeros_like, subimage)
+                      zeros_like, subimage, resize, Volume)
 from .common import assert_obj_close
 
 
@@ -36,7 +36,7 @@ def test_VectorGrid():
 def test_positions_in_spherical():
     schema = ImageSchema(shape = (2,2), spacing = 1)
     spherical = schema.positions_r_theta_phi((0,0,1))
-    assert_allclose(spherical, np.array([[ 1.        ,  0.        ,  0.        ],
+    assert_allclose(spherical, np.array([[ 1. , 0. , 0.],
        [ 1.41421356,  0.78539816,  1.57079633],
        [ 1.41421356,  0.78539816,  0.        ],
        [ 1.73205081,  0.95531662,  0.78539816]]))
@@ -71,3 +71,18 @@ def test_subimage():
     assert s.shape == (2,2)
 
     assert_raises(IndexError, subimage, i, (2,2), 10)
+
+def test_resize():
+    i = Image(np.zeros((100, 100)), .1)
+    r = resize(i, (5, 5), (8, 8))
+    assert_equal(r.center, (5, 5, 0))
+    assert_equal(r.extent, (8, 8))
+
+    v = Volume(np.zeros((10, 10, 10)), .1)
+    r = resize(v, extent =  (.8, .8, .8))
+    assert_equal(r.center, (.5, .5, .5))
+    assert_equal(r.extent, (.8, .8, .8))
+
+    r = resize(v, spacing = (.2, .2, .2))
+    assert_equal(r.spacing, (.2, .2, .2))
+    assert_equal(r.shape, (5, 5, 5))

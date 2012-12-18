@@ -27,7 +27,6 @@ from numpy.testing import assert_equal, assert_almost_equal
 from ..holopy_object import OrderedDict
 
 from ..io import load, save
-from ..metadata import Optics
 from ...scattering import scatterer
 
 # tests should fail if they give warnings
@@ -64,8 +63,7 @@ def assert_read_matches_write(o):
     loaded = load(tempf)
     assert_obj_close(o, loaded)
 
-# TODO: rewrite this.  I don't think this the right way to do things anymore, we
-# should be comparing _dict entries
+# TODO: Kill this function, assert_obj_close should replace it
 def assert_parameters_allclose(actual, desired, rtol=1e-7, atol = 0):
     if isinstance(actual, scatterer.Scatterer):
         actual = actual.parameters
@@ -84,8 +82,14 @@ def assert_parameters_allclose(actual, desired, rtol=1e-7, atol = 0):
 
 
 def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_object'):
-    if isinstance(actual, np.ndarray) or isinstance(desired, np.ndarray):
+    # we go ahead and try to compare anything using numpy's assert allclose, if
+    # it fails it probably gives more useful error messages than later options,
+    # and catching NotImplementedError and TypeError should cause this to
+    # silently fall through for other types
+    try:
         assert_allclose(actual, desired, rtol = rtol, atol = atol, err_msg=context)
+    except (NotImplementedError, TypeError):
+        pass
 
     if isinstance(actual, dict) and isinstance(desired, dict):
         for key, val in actual.iteritems():

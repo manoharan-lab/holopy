@@ -27,7 +27,7 @@ from ...scattering.scatterer import Sphere
 from ..third_party import nmpfit
 from ...core import Optics
 from ...core.process import normalize
-from ...core.tests.common import assert_parameters_allclose, get_example_data
+from ...core.tests.common import get_example_data, assert_obj_close
 
 # these are the exact values; should correspond to fit results
 # in order: real index, imag index, radius , x, y, z, alpha, fnorm, fit status
@@ -106,5 +106,5 @@ def test_nmpfit():
                              xtol = xtol, gtol = gtol, damp = damp,
                              maxiter = maxiter, quiet = quiet)
 
-    assert_parameters_allclose(fitresult.params,
+    assert_obj_close(fitresult.params,
                                gold_single[np.array([0,2,3,4,5,6])], rtol=1e-3)

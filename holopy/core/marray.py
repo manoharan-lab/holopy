@@ -63,7 +63,7 @@ def arr_like(arr, template):
 
 # Ancestor for all array like storage objects for data/calculations.
 class PseudoMarray(HolopyObject):
-    def __init__(self, positions = None, optics = None, origin = None,
+    def __init__(self, positions = None, optics = None, origin = np.zeros(3),
                  use_random_fraction = None, **kwargs):
         self.positions = positions
         self.optics = optics
@@ -211,7 +211,7 @@ class Marray(PseudoMarray, np.ndarray):
 
     {attrs}
     """
-    def __new__(cls, arr, positions = None, optics = None, origin = None,
+    def __new__(cls, arr, positions = None, optics = None, origin = np.zeros(3),
                 use_random_fraction = None, dtype = None, **kwargs):
         # things like numpy.std give us 0d arrays, the user probably expects
         # python scalars, so return one instead.
@@ -220,7 +220,7 @@ class Marray(PseudoMarray, np.ndarray):
             return arr.max()
         return np.asarray(arr, dtype = dtype).view(cls)
 
-    def __init__(self, arr, positions = None, optics = None, origin = None,
+    def __init__(self, arr, positions = None, optics = None, origin = np.zeros(3),
                  use_random_fraction = None, dtype = None, **kwargs):
         call_super_init(Marray, self, ['arr', 'dtype'])
 
@@ -286,7 +286,7 @@ class Schema(PseudoMarray):
     """
     _corresponding_marray = Marray
     def __init__(self, shape = None, positions = None, optics = None,
-                 origin = None, use_random_fraction = None, **kwargs):
+                 origin = np.zeros(3), use_random_fraction = None, **kwargs):
         if shape is None and hasattr(positions, 'shape'):
             shape = positions.shape
         self.shape = shape
@@ -294,7 +294,7 @@ class Schema(PseudoMarray):
 
 
 class PseudoRegularGrid(PseudoMarray):
-    def __init__(self, spacing = None, optics = None, origin = None,
+    def __init__(self, spacing = None, optics = None, origin = np.zeros(3),
                  use_random_fraction = None, **kwargs):
 
         if np.isscalar(spacing):
@@ -320,7 +320,7 @@ class PseudoRegularGrid(PseudoMarray):
 
 class PseudoVectorGrid(PseudoRegularGrid):
     def __init__(self, spacing, components = ('x', 'y', 'z'), optics = None,
-                 origin = None, use_random_fraction = None, **kwargs):
+                 origin = np.zeros(3), use_random_fraction = None, **kwargs):
         self.components = components
         call_super_init(PseudoVectorGrid, self, 'components')
 
@@ -339,7 +339,7 @@ class PseudoVectorGrid(PseudoRegularGrid):
 
 
 class RegularGrid(Marray, PseudoRegularGrid):
-    def __init__(self, arr, spacing = None, optics = None, origin = None,
+    def __init__(self, arr, spacing = None, optics = None, origin = np.zeros(3),
                  use_random_fraction = None, dtype = None, **kwargs):
         call_super_init(RegularGrid, self)
 
@@ -376,12 +376,12 @@ class RegularGrid(Marray, PseudoRegularGrid):
                 new = scipy.signal.resample(new, s, axis=i, window=window)
 
                 new = self.__class__(new, **self._dict)
-        new.positions = new.positions.resample_by_factors(factors)
+        new.positions = self.positions.resample_by_factors(factors)
         return new
 
 
 class PseudoImage(PseudoRegularGrid):
-    def __init__(self, spacing = None, optics = None, origin = None,
+    def __init__(self, spacing = None, optics = None, origin = np.zeros(3),
                  use_random_fraction = None, **kwargs):
         # legacy code.  We have allowed specifying spacing in the optics, I am
         # trying to depricate that now, but this will keep it working as people
@@ -443,6 +443,16 @@ class PseudoImage(PseudoRegularGrid):
         pos[:,0] *= self.optics.wavevec
         return pos
 
+    @property
+    def center(self):
+        return self.origin + np.append(self.extent/2, 0)
+
+    @center.setter
+    def center(self, value):
+        if len(value) == 2:
+            value = np.append(value, 0)
+        self.origin = value - np.append(self.extent/2, 0)
+
 
 @_describe_init_signature
 class Image(RegularGrid, PseudoImage):
@@ -465,7 +475,7 @@ class ImageSchema(Schema, PseudoImage):
     """
     _corresponding_marray = Image
     def __init__(self, shape = None, spacing = None, optics = None,
-                 origin = None, use_random_fraction = None, **kwargs):
+                 origin = np.zeros(3), use_random_fraction = None, **kwargs):
         if shape is not None:
             shape = _ensure_pair(shape)
         call_super_init(ImageSchema, self)
@@ -476,7 +486,7 @@ class PseudoVolume(PseudoRegularGrid):
 
 
 class VectorGrid(RegularGrid, PseudoVectorGrid):
-    def __init__(self, arr, spacing = None, optics = None, origin = None,
+    def __init__(self, arr, spacing = None, optics = None, origin = np.zeros(3),
                  use_random_fraction = None, dtype = None,
                  components = ('x', 'y', 'z'), **kwargs):
         call_super_init(VectorGrid, self)
@@ -486,7 +496,7 @@ class VectorGrid(RegularGrid, PseudoVectorGrid):
 class VectorGridSchema(Schema, PseudoVectorGrid):
     _corresponding_marray = VectorGrid
     def __init__(self, shape = None, spacing = None, optics = None,
-                 origin = None, use_random_fraction = None,
+                 origin = np.zeros(3), use_random_fraction = None,
                  components = ('x', 'y', 'z'), **kwargs):
         call_super_init(VectorGridSchema, self)
 
@@ -528,6 +538,9 @@ class VolumeSchema(Schema, PseudoVolume):
     {attrs}
     """
     _corresponding_marray = Volume
+    def __init__(self, shape = None, spacing = None, optics = None,
+                 origin = np.zeros(3), use_random_fraction = None, **kwargs):
+        call_super_init(VolumeSchema, self)
 
 
 def subimage(arr, center, shape):
@@ -556,8 +569,56 @@ def subimage(arr, center, shape):
     assert len(shape) == arr.ndim
 
     extent = [slice(c-s/2, c+s/2) for c, s in zip(center, shape)]
+    # TODO: BUG: get coordinate offset correct (reset origin)
+    return _checked_cut(arr, extent)
+
+def resize(arr, center = None, extent = None, spacing = None):
+    """
+    Resize and resample an marray
+
+    Parameters
+    ----------
+    arr : :class:`.Marray`
+        Marray to resize
+    center : array(float) optional
+        Desired center of the new marray. Default is the old center
+    extent : array(float) optional
+        Desired extent of the new marray. Default is the old extent
+    spacing : array(float) optional
+        Desired spacing of the new marray. Default is the old spacing
+
+    Returns
+    -------
+    arr : :class:`.Marray`
+        Desired cut of arr. Will be a view into the old array unless spacing
+        is changed
+    """
+    if center is None:
+        center = arr.center
+    if extent is None:
+        extent = arr.extent
+    center = np.array(center)
+    extent = np.array(extent)
+    # we need to cut spacing and origin down to two dimensions if working with
+    # an Image
+    cut_center = (center - arr.origin[:arr.ndim])/arr.spacing[:arr.ndim]
+    shape = extent / arr.spacing[:arr.ndim]
+
+    extent = [slice(int(np.round(c -s/2)), int(np.round(c+s/2)))
+              for c, s in zip(cut_center, shape)]
+
+    arr = _checked_cut(arr, extent)
+    arr.center = center
+    if spacing is not None and np.any(spacing != arr.spacing):
+        shape = (arr.extent / spacing).astype('int')
+        arr = arr.resample(shape)
+
+    return arr
+
+# common code for subimage and resize
+def _checked_cut(arr, extent):
     for i, axis in enumerate(extent):
         if axis.start < 0 or axis.stop > arr.shape[i]:
             raise IndexError
 
-    return arr[[slice(c-s/2, c+s/2) for c, s in zip(center, shape)]]
+    return arr[extent]

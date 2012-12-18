@@ -29,25 +29,14 @@ from ..core.math import fft, ifft
 from ..core.helpers import _ensure_pair, _ensure_array
 from ..core import Volume, Image, Grid, UnevenGrid, VolumeSchema, Marray
 from ..core.marray import VectorGrid
-from holopy.core.marray import dict_without
+from holopy.core.marray import dict_without, resize
 
 # May eventually want to have this function take a propagation model
 # so that we can do things other than convolution
 
 def propagate(data, d, gradient_filter=False):
     """
-    Propagates a hologram a distance d along the optical axis.
-
-    Uses scalar diffraction theory calculate a hologram at a given
-    distance away.  If you are doing a series of propagations of the
-    same image (like in a reconstruction stack), you can save time by
-    doing the fourier transform once outside this function.  If you do
-    not provide the fourier transform, it will be computed here.
-    Propagate can apply an arbitrary array to the data as a fourier
-    filter, this will be multiplied by the hologram in the fourier
-    domain.  If you want to apply several, just multiply them
-    together.  This functionallity is used for efficiently applying
-    contrast enhancing masks to data.
+    Propagates a hologram along the optical axis
 
     Parameters
     ----------
@@ -65,7 +54,7 @@ def propagate(data, d, gradient_filter=False):
     -------
     data : :class:`.Image` or :class:`.Volume`
        The hologram progagated to a distance d from its current location.
-
+nose
     """
 
     if isinstance(d, VolumeSchema):
@@ -75,18 +64,7 @@ def propagate(data, d, gradient_filter=False):
         d = d + schema.origin[2]
         vol = propagate(data, d, gradient_filter)
 
-
-        if data.origin is None:
-            data_origin = 0, 0, 0
-        else:
-            data_origin = data.origin
-
-        offset = (schema.origin - np.array(data_origin))
-
-        x0, y0 = offset[:2] / data.spacing
-        x1, y1 = (offset[:2] + schema.extent[:2]) / data.spacing[:2]
-        vol = vol[x0:x1, y0:y1 :]
-        vol = vol.resample(schema.shape)
+        vol = resize(vol, schema.center, schema.extent, schema.spacing)
         return vol
 
     G = trans_func(data.shape[:2], data.positions.spacing,
@@ -101,9 +79,7 @@ def propagate(data, d, gradient_filter=False):
 
     res = np.squeeze(ifft(ft, overwrite=True))
 
-    origin = np.zeros(3)
-    if data.origin is not None:
-        origin = data.origin
+    origin = np.array(data.origin)
     origin[2] += _ensure_array(d)[0]
 
     if not np.isscalar(d) and not isinstance(data, VectorGrid):
@@ -113,7 +89,8 @@ def propagate(data, d, gradient_filter=False):
             # shape of none will have the shape inferred from arr
             spacing = np.append(data.spacing, dd[0])
             res = Volume(res, spacing = spacing, origin = origin,
-                         **dict_without(data._dict, ['spacing', 'dtype']))
+                         **dict_without(data._dict,
+                                        ['spacing', 'origin', 'dtype']))
         else:
             res = Marray(res, positions=positions, origin = origin,
                          **dict_without(data._dict, ['spacing', 'position', 'dtype']))
