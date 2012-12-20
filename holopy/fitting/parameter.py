@@ -45,14 +45,14 @@ class Parameter(HolopyObject):
         name based on the Parameter's position within the scatterer
     **kwargs : varies
         Additional information made available to the minimizer.  This can be
-        used for things like step sizes.  
+        used for things like step sizes.
     """
     def __init__(self, guess = None, limit = None, name = None, **kwargs):
         self.name = name
         self.guess = guess
         self.limit = limit
         self.kwargs = kwargs
-        
+
         if self.fixed:
             if guess is not None and guess != limit:
                 raise GuessOutOfBoundsError(self)
@@ -61,7 +61,7 @@ class Parameter(HolopyObject):
             if limit is not None and guess is not None:
                 if guess > limit[1] or guess < limit[0]:
                     raise GuessOutOfBoundsError(self)
-                                 
+
             if guess is not None:
                 if abs(guess) > 1e-12:
                     self.scale_factor = abs(guess)
@@ -73,7 +73,7 @@ class Parameter(HolopyObject):
             elif limit is not None:
                 # TODO: bug, this will fail for negative limits, but that is
                 # sufficently uncommon that I am not going to worry about it for
-                # now.  
+                # now.
                 self.scale_factor = np.sqrt(limit[0]*limit[1])
             else:
                 raise ParameterSpecificationError("In order to specify a parameter "
@@ -87,7 +87,7 @@ class Parameter(HolopyObject):
             except TypeError:
                 return True
         return False
-        
+
     def scale(self, physical):
         """
         Scales parameters to approximately unity
@@ -101,7 +101,7 @@ class Parameter(HolopyObject):
         scaled: np.array(dtype=float)
         """
         return physical / self.scale_factor
-     
+
     def unscale(self, scaled):
         """
         Inverts scale's transformation
@@ -133,7 +133,7 @@ class ComplexParameter(Parameter):
     name : string
         Short descriptive name of the ComplexParameter.  Do not provide this if
         using a ParameterizedScatterer, a name will be assigned based its
-        position within the scatterer. 
+        position within the scatterer.
     """
     def __init__(self, real, imag, name = None):
         '''
@@ -150,12 +150,7 @@ class ComplexParameter(Parameter):
 
     @property
     def guess(self):
-        try:
-            return self.real.guess + self.imag.guess*1.0j
-        except AttributeError: # in case self.imag is a scalar
-            #TODO: won't work if self.real is scalar, self.imag is a Parameter
-            return self.real.guess + self.imag * 1.j
+        return self.real.guess + self.imag.guess*1.0j
 
-    
 # provide a shortcut name for Parameter since users will have to type it a lot
 par = Parameter

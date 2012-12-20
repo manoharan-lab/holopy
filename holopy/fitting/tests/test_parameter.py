@@ -19,7 +19,7 @@ from __future__ import division
 
 from nose.tools import assert_raises, assert_equal
 
-from ..parameter import Parameter, par
+from ..parameter import Parameter, par, ComplexParameter
 from ..errors import GuessOutOfBoundsError
 from ...core.tests.common import assert_obj_close
 
@@ -37,7 +37,7 @@ def test_parameter():
     assert_equal(p3.guess, 7)
 
     assert_raises(GuessOutOfBoundsError, par, 7, [4, 6])
-                  
+
     assert_raises(GuessOutOfBoundsError, par, 6, 7)
 
     p4 = par(0, [-1, 1])
@@ -45,3 +45,15 @@ def test_parameter():
 
     p5 = par(limit = [1, 4])
     assert_equal(p5.scale_factor, 2.0)
+
+    # if given a guess of 0 and no limits, we fall through to the
+    # default of no scaling
+    p6 = par(guess = 0)
+    assert_equal(p6.scale_factor, 1)
+
+def test_complex_parameter():
+    p = ComplexParameter(1, 2)
+    assert_obj_close(p.real, par(1, 1))
+    assert_obj_close(p.imag, par(2, 2))
+
+    assert_equal(p.guess, 1+2j)
