@@ -24,10 +24,8 @@ import types
 import inspect
 import yaml
 from numpy.testing import assert_equal, assert_almost_equal
-from ..holopy_object import OrderedDict
 
 from ..io import load, save
-from ...scattering import scatterer
 
 # tests should fail if they give warnings
 import warnings
@@ -38,8 +36,7 @@ try:
     from numpy.testing import assert_allclose
 except ImportError:
     from numpy import allclose
-    def assert_allclose(actual, desired, rtol=1e-07, atol=0, err_msg='',
-                        verbose=True):
+    def assert_allclose(actual, desired, rtol=1e-07, atol=0, err_msg='', verbose=True):
         if not allclose(actual, desired, rtol=rtol, atol=atol):
             raise AssertionError("""Assertion Error:
 Not equal to tolerance rtol={0}, atol={1}
@@ -63,24 +60,6 @@ def assert_read_matches_write(o):
     loaded = load(tempf)
     assert_obj_close(o, loaded)
 
-# TODO: Kill this function, assert_obj_close should replace it
-def assert_parameters_allclose(actual, desired, rtol=1e-7, atol = 0):
-    if isinstance(actual, scatterer.Scatterer):
-        actual = actual.parameters
-    if isinstance(actual, OrderedDict):
-        actual = np.array([p[1] for p in actual.iteritems()])
-    if isinstance(desired, scatterer.Scatterer):
-        desired = desired.parameters
-    if isinstance(desired, OrderedDict):
-        desired = np.array([p[1] for p in desired.iteritems()])
-    if getattr(actual, 'dtype', None) == 'object' or getattr(desired, 'dtype', None) == 'object':
-        # regular allclose will probably fail on objects, so if the scatterer
-        # contains objects (like say paramters), compare them with our assert_obj_close
-        assert_obj_close(actual, desired)
-    else:
-        assert_allclose(actual, desired, rtol=rtol, atol = atol)
-
-
 def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_object'):
     # we go ahead and try to compare anything using numpy's assert allclose, if
     # it fails it probably gives more useful error messages than later options,
@@ -93,46 +72,48 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
 
     if isinstance(actual, dict) and isinstance(desired, dict):
         for key, val in actual.iteritems():
-            assert_obj_close(actual[key], desired[key], context =
-                             '{0}[{1}]'.format(context, key))
+            assert_obj_close(actual[key], desired[key], context = '{0}[{1}]'.format(context, key),
+                             rtol = rtol, atol = atol)
     elif hasattr(actual, '_dict') and hasattr(desired, '_dict'):
         assert_obj_close(actual._dict, desired._dict, rtol=rtol, atol=atol,
                          context = "{0}._dict".format(context))
     elif isinstance(actual, (list, tuple)):
         assert_equal(len(actual), len(desired), err_msg=context)
         for i, item in enumerate(actual):
-            assert_obj_close(actual[i], desired[i], context =
-                             '{0}[{1}]'.format(context, i))
+            assert_obj_close(actual[i], desired[i], context = '{0}[{1}]'.format(context, i),
+                             rtol = rtol, atol = atol)
     elif isinstance(actual, types.MethodType):
-        assert_equal(actual.im_func.func_name, desired.im_func.func_name,
-                     err_msg=context)
-
-        # We want to treat Mie.calc_holo and Mie().calc_holo as equal, this code
-        # here instantiates a class if possible so these match
-        act_obj = actual.im_self
-        try:
-            act_obj = act_obj()
-        except TypeError:
-            pass
-        des_obj = desired.im_self
-        try:
-            des_obj = des_obj()
-        except TypeError:
-            pass
-
-        # now actually compare things
-        assert_obj_close(act_obj, des_obj, rtol=rtol, atol=atol,
-                         context = context)
+        assert_method_equal(actual, desired, context)
     elif hasattr(actual, '__dict__'):
-        for key, val in actual.__dict__.iteritems():
-            assert_obj_close(getattr(actual, key), getattr(desired, key), rtol, atol,
-                             context = context+'.'+key)
+        assert_obj_close(actual.__dict__, desired.__dict__, rtol = rtol,
+                         atol = atol, context = context + '.__dict__')
     else:
         try:
-            assert_allclose(actual, desired, rtol=rtol, atol=atol,
-                            err_msg=context)
+            assert_allclose(actual, desired, rtol=rtol, atol=atol, err_msg=context)
         except (TypeError, NotImplementedError):
             assert_equal(actual, desired, err_msg=context)
+
+def assert_method_equal(actual, desired, context):
+    # Check that the functions are the same
+    assert_equal(actual.im_func.func_name, desired.im_func.func_name, err_msg=context)
+
+    # check that the objects are the same
+
+    # We want to treat Mie.calc_holo and Mie().calc_holo as equal, this code
+    # here instantiates a class if possible so these match
+    act_obj = actual.im_self
+    try:
+        act_obj = act_obj()
+    except TypeError:
+        pass
+    des_obj = desired.im_self
+    try:
+        des_obj = des_obj()
+    except TypeError:
+        pass
+
+    # now actually compare things
+    assert_obj_close(act_obj, des_obj, context = context)
 
 def verify(result, name, rtol=1e-7):
     location = os.path.split(os.path.abspath(__file__))[0]
