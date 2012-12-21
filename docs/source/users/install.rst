@@ -6,29 +6,27 @@ Dependencies
 
 Holopy requires:
 
-* python 2.6 or 2.7
+* python 2.7 (or python 2.6 + `ordereddict <http://pypi.python.org/pypi/ordereddict>`_)
 * numpy
 * scipy
 * `PyYAML <http://pypi.python.org/pypi/PyYAML/>`_
-* `ordereddict <http://pypi.python.org/pypi/ordereddict>`_ (not required if you have python 2.7 or above)
 
-For interactive use we suggest:
+For interactive use we suggest (highly suggest in the case of ipython and matplotlib):
 
-* ipython (better python terminal)
-* matplotlib (plotting for python)
-* mayavi2 (if you want to do 3d plotting)
+* `ipython <http://ipython.org>`_ (better python terminal)
+* `matplotlib <http://matplotlib.org>`_ (plotting for python)
+* `mayavi2 <http://docs.enthought.com/mayavi/mayavi/>`_ (if you want to do 3d plotting)
 
 Optional dependencies for certain calculations:
 
 * `a-dda <http://code.google.com/p/a-dda/>`_ (Discrete Dipole calculations of arbitrary scatterers)
 * `OpenOpt <http://openopt.org>`_ (More minimizers)
 
-And to run the tests you need:
+For Ubuntu/Debian users::
+  
+  sudo apt-get install mayavi2 python-scipy ipython python-matplotlib python-yaml
 
-* python-nose
-
-For windows users, the `Enthought Python Distribution <http://www.enthought.com/products/epd.php>`_
-should have everything you need for holopy and more (except a-dda). 
+  For windows users or mac users, the `Enthought Python Distribution <http://www.enthought.com/products/epd.php>`_ should have the basics to get you started. 
 
 If you want to build Holopy from source there are a few other python
 dependencies.  You will also need C and Fortran compilers.  Please see
@@ -37,17 +35,20 @@ dependencies.  You will also need C and Fortran compilers.  Please see
 Installing
 ----------
 
-The simplest way to install is to download a binary build.  [TODO:
-Some info on downloading binary packages (.tgz and .zip) for various
-platforms] 
+The simplest way to install is to download a binary build.  Download one from our `Downloads Page <http://www.manoharan.seas.harvard.edu/holopy/downloads.html>`_
+
+Then from a terminal as root/adiminstrator, in the archive directory, run::
+  
+  python setup.py install
+
+Or put the archive directory in your PYTHONPATH to import it directly from the archive. 
 
 .. _building:
 
 Building
 --------
 
-In addition to the python packages above, you will need the following
-to build:
+See :ref:`build_env` for platform specific instructions. In general what you need to build holopy (in addition to the packages above) is:
 
 * a fortran 90 compiler (gfortran works, but not version 4.6)
 * a fortran 77 compiler (gfortran works, but not version 4.6)
