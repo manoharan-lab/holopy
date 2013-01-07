@@ -26,13 +26,13 @@ from __future__ import division
 from ...core import Optics, ImageSchema
 from .common import verify
 from ..theory import Mie
-from ..scatterer import CoatedSphere
+from ..scatterer import Sphere
 
 from nose.plugins.attrib import attr
 
 @attr('medium')
 def test_Shell():
-    s = CoatedSphere(center=[7.141442573813124, 7.160766866147957, 11.095409800342143],
+    s = Sphere(center=[7.141442573813124, 7.160766866147957, 11.095409800342143],
               n=[(1.27121212428+0j), (1.49+0j)], r=[0.960957713253-0.0055,
                                                     0.960957713253])
 

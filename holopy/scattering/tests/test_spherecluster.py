@@ -28,7 +28,7 @@ from numpy.testing import assert_equal, assert_almost_equal
 from nose.plugins.attrib import attr
 
 from ...core.helpers import OrderedDict
-from ..scatterer import Sphere, CoatedSphere
+from ..scatterer import Sphere, Ellipsoid
 from ..scatterer import Spheres
 from ..errors import ScattererDefinitionError, OverlapWarning
 
@@ -65,7 +65,7 @@ def test_Spheres_construction_typechecking():
     s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
     s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,0,0])
-    cs = CoatedSphere(n=(1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6),
+    cs = Ellipsoid(n=1.59+0.0001j, r=(5e-7, 5e-7, 8e-7),
                       center=[-5e-6, 0,0])
     sc = Spheres(scatterers=[s1, s2, s3, cs])
 

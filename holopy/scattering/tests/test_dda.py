@@ -29,7 +29,7 @@ import numpy as np
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
 
-from ..scatterer import Sphere, Ellipsoid, CoatedSphere
+from ..scatterer import Sphere, Ellipsoid
 from ...core import ImageSchema, Optics, math
 from ..theory import Mie, DDA
 from ..scatterer.voxelated import ScattererByFunction, MultidomainScattererByFunction, VoxelatedScatterer
@@ -129,7 +129,7 @@ def test_voxelated_complex():
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_coated():
-    cs = CoatedSphere(
+    cs = Sphere(
         center=[7.141442573813124, 7.160766866147957, 11.095409800342143],
         n=[(1.27121212428+0j), (1.49+0j)], r=[.1-0.0055, 0.1])
 

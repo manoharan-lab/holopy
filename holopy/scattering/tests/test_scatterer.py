@@ -29,7 +29,7 @@ from nose.plugins.attrib import attr
 
 from ...core.helpers import OrderedDict
 
-from ..scatterer import (Sphere, CoatedSphere, Scatterer, Ellipsoid,
+from ..scatterer import (Sphere, Scatterer, Ellipsoid,
                          Scatterers, abstract_scatterer)
 
 from ..errors import ScattererDefinitionError
@@ -50,6 +50,15 @@ def test_Sphere_construction():
 
     with assert_raises(ScattererDefinitionError):
         Sphere(n=1.59, r = -2, center = (1, 1, 1))
+
+    # now test multilayer spheres
+    cs = Sphere(n=(1.59, 1.59), r=(5e-7, 1e-6), center=(1e-6, -1e-6, 10e-6))
+    cs = Sphere(n=(1.59, 1.33), r=(5e-7, 1e-6))
+    # index can be complex
+    cs = Sphere(n = (1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6))
+    center = np.array([1e-6, -1e-6, 10e-6])
+    cs = Sphere(n = (1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6),
+                      center = center)
 
 def test_Ellipsoid():
     s = Ellipsoid(n = 1.57, r = (1, 2, 3), center = (3, 2, 1))
@@ -98,29 +107,6 @@ def test_Sphere_parameters():
     assert_equal(s.n, sp.n)
     assert_equal(s.center, sp.center)
 
-@attr('fast')
-def test_CoatedSphere_construction():
-    cs = CoatedSphere(n=(1.59, 1.59), r=(5e-7, 1e-6), center=(1e-6, -1e-6, 10e-6))
-    cs = CoatedSphere(n=(1.59, 1.33), r=(5e-7, 1e-6))
-    # index can be complex
-    cs = CoatedSphere(n = (1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6))
-    center = np.array([1e-6, -1e-6, 10e-6])
-    cs = CoatedSphere(n = (1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6),
-                      center = center)
-    cs = CoatedSphere()
-
-def test_CoatedSphere_parameters():
-    cs = CoatedSphere(n = (1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6), center =
-                      (1, 2, 3))
-    assert_equal(cs.parameters, OrderedDict([('center[0]', 1), ('center[1]', 2),
-    ('center[2]', 3), ('n[0]', (1.59+0.0001j)), ('n[1]', (1.33+0.0001j)), ('r[0]',
-    5e-07), ('r[1]', 1e-6)]))
-
-    cp = CoatedSphere.from_parameters(cs.parameters)
-
-    assert_equal(cs.r, cp.r)
-    assert_equal(cs.n, cp.n)
-    assert_equal(cs.center, cp.center)
 
 @attr('fast')
 def test_Composite_construction():
@@ -135,7 +121,7 @@ def test_Composite_construction():
     comp_spheres = Scatterers(scatterers=[s1, s2, s3])
 
     # heterogeneous composite
-    cs = CoatedSphere(n=(1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6),
+    cs = Sphere(n=(1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6),
                       center=[-5e-6, 0,0])
     comp = Scatterers(scatterers=[s1, s2, s3, cs])
 

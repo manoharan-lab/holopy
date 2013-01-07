@@ -29,7 +29,7 @@ from __future__ import division
 import numpy as np
 from ...core.helpers import _ensure_array
 from ..errors import TheoryNotCompatibleError, UnrealizableScatterer
-from ..scatterer import Sphere, CoatedSphere, Scatterers
+from ..scatterer import Sphere, Scatterers
 from .scatteringtheory import FortranTheory
 from .mie_f import mieangfuncs, miescatlib
 from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
@@ -44,8 +44,8 @@ class Mie(FortranTheory):
     hence the approximation in the case of multiple spheres.  Neglecting
     multiple scattering is a good approximation if the particles are
     sufficiently seperated.
-    
-    This model can also calculate the exact scattered field from a 
+
+    This model can also calculate the exact scattered field from a
     spherically symmetric particle with an arbitrary number of layers
     with differing refractive indices, using Yang's recursive
     algorithm ([Yang2003]_).
@@ -55,7 +55,7 @@ class Mie(FortranTheory):
     # constructor
 
     def _calc_scat_matrix(self, scatterer, schema):
-        if isinstance(scatterer, (Sphere, CoatedSphere)):
+        if isinstance(scatterer, Sphere):
             scat_coeffs = self._scat_coeffs(scatterer, schema.optics)
 
             if scatterer.center is None:
@@ -86,11 +86,11 @@ class Mie(FortranTheory):
         Notes
         -----
         For multiple particles, this code superposes the fields
-        calculated from each particle (using calc_mie_fields()). 
+        calculated from each particle (using calc_mie_fields()).
         """
-        if isinstance(scatterer, (Sphere, CoatedSphere)):
+        if isinstance(scatterer, Sphere):
             scat_coeffs = self._scat_coeffs(scatterer, schema.optics)
-            
+
             # mieangfuncs.f90 works with everything dimensionless.
             # tranpose to get things in fortran format
             # TODO: move this transposing to a wrapper
@@ -101,17 +101,17 @@ class Mie(FortranTheory):
             return self._finalize_fields(scatterer.z, fields, schema)
         elif isinstance(scatterer, Scatterers):
             spheres = scatterer.get_component_list()
-            
+
             field = self._calc_field(spheres[0], schema)
             for sphere in spheres[1:]:
                 field += self._calc_field(sphere, schema)
             return field
         else:
             raise TheoryNotCompatibleError(self, scatterer)
-         
+
     def _calc_cross_sections(self, scatterer, optics):
         """
-        Calculate scattering, absorption, and extinction cross 
+        Calculate scattering, absorption, and extinction cross
         sections, and asymmetry parameter for spherically
         symmetric scatterers.
 
@@ -125,39 +125,38 @@ class Mie(FortranTheory):
         Returns
         -------
         cross_sections : array (4)
-            Dimensional scattering, absorption, and extinction 
-            cross sections, and <cos \theta> 
+            Dimensional scattering, absorption, and extinction
+            cross sections, and <cos \theta>
         """
         if isinstance(scatterer, Scatterers):
-            raise UnrealizableScatterer(self, scatterer, 
-                                        "Use Multisphere to calculate " + 
+            raise UnrealizableScatterer(self, scatterer,
+                                        "Use Multisphere to calculate " +
                                         "radiometric quantities")
         albl = self._scat_coeffs(scatterer, optics)
-       
+
         cscat, cext, cback = miescatlib.cross_sections(albl[0], albl[1]) * \
             (2. * np.pi / optics.wavevec**2)
 
         cabs = cext - cscat # conservation of energy
-        
+
         asym = 4. * np.pi / (optics.wavevec**2 * cscat) * \
             miescatlib.asymmetry_parameter(albl[0], albl[1])
 
         return np.array([cscat, cabs, cext, asym])
-        
+
     def _scat_coeffs(self, s, optics):
         x_arr = optics.wavevec * _ensure_array(s.r)
         m_arr = _ensure_array(s.n) / optics.index
-    
+
         # Check that the scatterer is in a range we can compute for
         if x_arr.max() > 1e3:
             raise UnrealizableScatterer(self, s, "radius too large, field "+
                                         "calculation would take forever")
-        
+
         if len(x_arr) == 1 and len(m_arr) == 1:
             # Could just use scatcoeffs_multi here, but jerome is in favor of
-            # keeping the simpler single layer code here 
+            # keeping the simpler single layer code here
             lmax = miescatlib.nstop(x_arr[0])
             return  miescatlib.scatcoeffs(x_arr[0], m_arr[0], lmax)
         else:
             return scatcoeffs_multi(m_arr, x_arr)
-        

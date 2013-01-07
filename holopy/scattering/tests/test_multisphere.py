@@ -36,7 +36,7 @@ from nose.plugins.attrib import attr
 from ...core import Optics, ImageSchema
 from ..theory import Multisphere
 from ..theory.multisphere import MultisphereExpansionNaN, ConvergenceFailureMultisphere
-from ..scatterer import Sphere, Spheres, CoatedSphere
+from ..scatterer import Sphere, Spheres
 from ..errors import UnrealizableScatterer, TheoryNotCompatibleError
 from .common import assert_allclose, verify, xschema, yschema
 from .common import scaling_alpha, sphere
@@ -113,7 +113,7 @@ def test_invalid():
 
     assert_raises(UnrealizableScatterer, Multisphere.calc_holo, sc, schema)
 
-    cs = CoatedSphere()
+    cs = Sphere()
 
     assert_raises(TheoryNotCompatibleError, Multisphere.calc_holo, cs, schema)
 

@@ -40,7 +40,7 @@ from nose.plugins.skip import SkipTest
 from .scatteringtheory import ScatteringTheory
 from .mie_f import mieangfuncs
 from ..errors import TheoryNotCompatibleError
-from ..scatterer import (Sphere, CoatedSphere, VoxelatedScatterer,
+from ..scatterer import (Sphere, VoxelatedScatterer,
                          ScattererByFunction, MultidomainScattererByFunction,
                          Ellipsoid, Spheres)
 from ...core.marray import VectorGridSchema
@@ -106,8 +106,6 @@ class DDA(ScatteringTheory):
 
         if isinstance(scatterer, Sphere):
             scat_args =  self._adda_sphere(scatterer, optics, temp_dir)
-        elif isinstance(scatterer, CoatedSphere):
-            scat_args = self._adda_coated(scatterer, optics, temp_dir)
         elif isinstance(scatterer, VoxelatedScatterer):
             scat_args = self._adda_general(scatterer, optics, temp_dir)
         elif isinstance(scatterer, ScattererByFunction):
@@ -124,6 +122,8 @@ class DDA(ScatteringTheory):
         subprocess.check_call(cmd, cwd=temp_dir)
 
     def _adda_sphere(self, scatterer, optics, temp_dir):
+        if not np.isscalar(scatterer.n):
+            return self._adda_coated(scatterer, optics, temp_dir)
         cmd = []
         cmd.extend(['-eq_rad', str(scatterer.r)])
         cmd.extend(['-m', str(scatterer.n.real/optics.index),
