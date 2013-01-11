@@ -43,7 +43,7 @@ class JanusSphere(CenteredScatterer):
         r : float, float
             Outer radius of each layer
         normal : (float, float)
-            Euler angles beta and gamma to rotate from the reference positino
+            Euler angles beta and gamma to rotate from the reference position
         center : (float, float, float)
             The "center" of the janus sphere. This "center" is actually the center of the full
             sphere, and is at the center of curvature of the shell, but it is not actually the
@@ -56,10 +56,10 @@ class JanusSphere(CenteredScatterer):
 
     @property
     def indicators(self):
-        s0 = Sphere(r = self.r[0], center = self.center)
-        s1 = Sphere(r = self.r[1], center = self.center)
+        s0 = Sphere(r = self.r[0], center = [0, 0, 0])
+        s1 = Sphere(r = self.r[1], center = [0, 0, 0])
         #TODO: check that this is the correct way to rotate a vector
-        normal = np.dot((0, 0, 1), rotation_matrix(0, *self.rotation))
+        normal = np.dot(rotation_matrix(0, *self.rotation),(0, 0, 1))
         def cap(point):
             return (np.dot(normal, point) > 0) and s1.contains(point) and not s0.contains(point)
         r = max(self.r)
