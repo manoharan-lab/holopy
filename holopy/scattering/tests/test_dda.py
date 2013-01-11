@@ -29,10 +29,10 @@ import numpy as np
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
 
-from ..scatterer import Sphere, Ellipsoid
+from ..scatterer import Sphere, Ellipsoid, Scatterer, JanusSphere
+
 from ...core import ImageSchema, Optics, math
 from ..theory import Mie, DDA
-from ..scatterer.voxelated import ScattererByFunction, MultidomainScattererByFunction, VoxelatedScatterer
 from .common import assert_allclose, verify
 
 
@@ -98,8 +98,7 @@ def test_DDA_voxelated():
 
     sphere_holo = dda.calc_holo(sc, schema)
 
-    s = ScattererByFunction(in_sphere(r), n, [[-r, r], [-r, r], [-r, r]],
-                            center)
+    s = Scatterer(sc.indicators, n, center)
 
     gen_holo = dda.calc_holo(s, schema)
 
@@ -111,14 +110,7 @@ def test_voxelated_complex():
     o = Optics(wavelen=.66, index=1.33)
     s = Sphere(n = 1.2+2j, r = .2, center = (5,5,5))
 
-    def sphere(r):
-        rsq = r**2
-        def test(point):
-            return (point**2).sum() < rsq
-        return test
-
-    sv = ScattererByFunction(sphere(s.r), s.n, [[-s.r, s.r], [-s.r, s.r], [-s.r,
-    s.r]], center = s.center)
+    sv = Scatterer(s.indicators, s.n, s.center)
 
     schema = ImageSchema(50, .1, optics = o)
 
@@ -148,50 +140,9 @@ def test_Ellipsoid_dda():
     assert_almost_equal(h.mean(), 0.99876620628942114)
     assert_almost_equal(h.std(), 0.06453155384119547)
 
-class HemisphericalShellTest:
-    def __init__(self, center, normal, innerRadius, outerRadius):
-        #store properties as arrays for easy numerical computation
-        self.center = np.array(center)
-        self.normal = np.array(normal)
-        self.innerRadiusSq = innerRadius*innerRadius
-        self.outerRadiusSq = outerRadius*outerRadius
-
-    def isPtIn(self, pt):
-        #vector center to pt
-        delta = np.array(pt) - self.center
-        #check which side of the plane we're on
-        if np.dot(delta, self.normal) < 0 :
-            return False
-        #check if we're within the specified distance from the center
-        distSq = np.dot(delta, delta)
-        if distSq >= self.innerRadiusSq and distSq <= self.outerRadiusSq:
-            return True
-        else:
-            return False
-
-
-class SphereTest:
-    def __init__(self, center, Radius):
-        #store properties as arrays for easy numerical computation
-        self.center = np.array(center)
-        self.RadiusSq = Radius*Radius
-
-    def isPtIn(self, pt):
-        #vector center to pt
-        delta = np.array(pt) - self.center
-
-        #check if we're within the specified distance from the center
-        distSq = np.dot(delta, delta)
-        if distSq <= self.RadiusSq:
-            return True
-        else:
-            return False
-
 def test_janus():
-    x = HemisphericalShellTest(np.array([0,0,0]), np.array([1,0,0]), .5, .51)
     schema = ImageSchema(60, .1, Optics(.66, 1.33))
-    y = SphereTest(np.array([0,0,0]), .5)
-    s = MultidomainScattererByFunction([x.isPtIn, y.isPtIn], [2.0+0j, 1.34+0j],[[-.51,.51],[-.51,.51],[-.51,.51]], (5,5,5))
+    s = JanusSphere(n = [1.34, 2.0], r = [.5, .51], rotation = (np.pi/2, 0), center = (5, 5, 5))
 
     holo = DDA.calc_holo(s, schema)
     verify(holo, 'janus_dda')

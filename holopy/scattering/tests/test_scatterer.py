@@ -30,14 +30,10 @@ from nose.plugins.attrib import attr
 from ...core.helpers import OrderedDict
 
 from ..scatterer import (Sphere, Scatterer, Ellipsoid,
-                         Scatterers, abstract_scatterer)
+                         Scatterers, scatterer)
 
 from ..errors import ScattererDefinitionError
 from .common import assert_allclose
-
-@attr('fast')
-def test_AbstractScatterer():
-    assert_raises(NotImplementedError, Scatterer)
 
 
 @attr('fast')
@@ -148,7 +144,7 @@ def test_like_me():
 @attr('fast')
 def test_translate():
     s = Sphere(n = 1.59, r = .5, center = (0, 0, 0))
-    s2 = s.translate(1, 1, 1)
+    s2 = s.translated(1, 1, 1)
     assert_equal(s.r, s2.r)
     assert_equal(s.n, s2.n)
     assert_allclose(s2.center, (1, 1, 1))

@@ -25,7 +25,7 @@ from __future__ import division
 
 import numpy as np
 
-from .abstract_scatterer import SingleScatterer
+from .scatterer import CenteredScatterer
 from ..errors import ScattererDefinitionError
 
 def isnumber(x):
@@ -37,9 +37,9 @@ def isnumber(x):
 
 def all_numbers(x):
     return reduce(lambda rest, i: isnumber(i) and rest, x, True)
-    
 
-class Ellipsoid(SingleScatterer):
+
+class Ellipsoid(CenteredScatterer):
     """
     Scattering object representing ellipsoidal scatterers
 
@@ -52,7 +52,7 @@ class Ellipsoid(SingleScatterer):
     center : 3-tuple, list or numpy array
         specifies coordinates of center of the scatterer
     """
-    
+
     def __init__(self, n=None, r=None, center=None):
         self.n = n
 
@@ -61,7 +61,7 @@ class Ellipsoid(SingleScatterer):
                                            "r should be "
                                            "specified as (r_x, r_y, r_z)"
                                            "".format(center), self)
- 
+
         self.r = r
-        
+
         super(Ellipsoid, self).__init__(center)

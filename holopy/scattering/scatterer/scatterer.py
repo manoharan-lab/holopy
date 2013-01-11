@@ -30,9 +30,9 @@ from itertools import chain
 from copy import copy
 
 import numpy as np
-import yaml
 
 from ...core.holopy_object  import HolopyObject
+from ...core.helpers import _ensure_array
 from ..errors import ScattererDefinitionError
 
 
@@ -41,10 +41,27 @@ class Scatterer(HolopyObject):
     Base class for scatterers
 
     """
-    def __init__(self):
-        raise NotImplementedError()
+    def __init__(self, indicators, n, location):
+        """
+        Parameters
+        ----------
+        indicators : function or list of functions
+            Function or functions returning true for points inside the scatterer (or
+            inside a specific domain) and false outside.
+        n : complex
+            Index of refraction of the scatterer or each domain.
+        bounding_box : ((float, float), (float, float), (float, float))
+            Optional. Box containing the scatterer. If a bounding box is not given, the
+            constructor will attempt to determine one.
+        """
+        if not isinstance(indicators, Indicators):
+            indicators = _ensure_array(indicators)
+            indicators = Indicators(indicators)
+        self.indicators = indicators
+        self.n = _ensure_array(n)
+        self.location = np.array(location)
 
-    def translate(self, x, y, z):
+    def translated(self, x, y, z):
         """
         Make a copy of this scatterer translated to a new location
 
@@ -58,8 +75,56 @@ class Scatterer(HolopyObject):
         translated : Scatterer
             A copy of this scatterer translated to a new location
         """
-        raise NotImplementedError() #pragma: no cover
+        new = copy(self)
+        new.location = self.location + np.array((x, y, z))
+        return new
 
+    def contains(self, point):
+        return np.any(self.indicators(np.array(point)-self.location))
+
+    def index_at(self, point):
+        for n, ind in zip(self.n, self.indicators(np.array(point)-self.location)):
+            if ind:
+                return n
+        return None
+
+    def in_domain(self, point):
+        for i, ind in enumerate(self.indicators(np.array(point)-self.location)):
+            if ind:
+                return i
+        return None
+
+    @property
+    def x(self):
+        return self.location[0]
+    @property
+    def y(self):
+        return self.location[1]
+    @property
+    def z(self):
+        return self.location[2]
+
+    def like_me(self, **overrides):
+        pars = dict(self._dict)
+        pars.update(overrides)
+
+        return self.__class__(**pars)
+
+
+class CenteredScatterer(Scatterer):
+    def __init__(self, center = None):
+        if center is not None and (np.isscalar(center) or len(center) != 3):
+            raise ScattererDefinitionError("center specified as {0}, center "
+                "should be specified as (x, y, z)".format(center), self)
+        self.location = center
+
+    @property
+    def center(self):
+        return self.location
+
+    @center.setter
+    def center(self, val):
+        self.location = val
 
     # eliminate parameters and from_parameters?  This is kind of fitting
     # specific information.  Or should it be in serializable?  In many ways this
@@ -98,8 +163,7 @@ class Scatterer(HolopyObject):
                 return [(key, par)]
 
         return OrderedDict(sorted(chain(*[expand(*p) for p in
-                                          self.__dict__.iteritems()])))
-
+                                          self._dict.iteritems()])))
 
     @classmethod
     def from_parameters(cls, parameters):
@@ -155,11 +219,7 @@ class Scatterer(HolopyObject):
 
         return cls(**built)
 
-    def like_me(self, **overrides):
-        pars = dict(self.__dict__)
-        pars.update(overrides)
 
-        return self.__class__(**pars)
 
 class SingleScatterer(Scatterer):
     def __init__(self, center = None):
@@ -168,7 +228,7 @@ class SingleScatterer(Scatterer):
                 "should be specified as (x, y, z)".format(center), self)
         self.center = center
 
-    def translate(self, x, y, z):
+    def translated(self, x, y, z):
         """
         Make a copy of this scatterer translated to a new location
 
@@ -195,15 +255,52 @@ class SingleScatterer(Scatterer):
     def z(self):
         return self.center[2]
 
-class SphericallySymmetricScatterer(SingleScatterer):
-    def rotate(self, alpha, beta, gamma):
-        return copy(self)
+def find_bounds(indicator):
+    """
+    Finds the bounds needed to contain a set of an indicator function
 
 
-    # Legacy, Deprecated.  Kept around in case anyone has files saved with
-    # xyzTriples, this should read thim into the new format, though I haven't
-    # tested it -tgd 2012-04-10
-def xyzTriple_yaml_constructor(loader, node):
-    value = loader.construct_scalar(node)
-    return [float(v) for v in value[1:-1].split(',')]
-yaml.add_constructor(u'!xyzTriple', xyzTriple_yaml_constructor)
+    """
+    # we don't know what units the user might be using, so start by
+    # assuming something really small and stepping up from there
+    bounds = [[-1e-9, 1e-9], [-1e-9, 1e-9], [-1e-9, 1e-9]]
+    for i in range(3):
+        for j in range(2):
+            point = [0, 0, 0]
+            point[i] = bounds[i][j]
+            # find the extent along this axis by sequential logarithmic search
+            while indicator(point):
+                point[i] *= 10
+            while not indicator(point):
+                point[i] /= 2
+            while indicator(point):
+                point[i] *= 1.1
+            bounds[i][j] = point[i]
+
+    #TO DO: add a check along the boundaries of the square to make sure
+    #something like an oblique ellipsoid doesn't get missed'
+
+def bound_union(d1, d2):
+    new = [[0, 0],[0, 0],[0, 0]]
+    for i in range(3):
+        new[i][0] = min(d1[i][0], d2[i][0])
+        new[i][1] = max(d1[i][1], d2[i][1])
+    return new
+
+class Indicators(HolopyObject):
+    def __init__(self, functions, bound = None):
+        try:
+            len(functions)
+        except TypeError:
+            functions = [functions]
+        self.functions = functions
+        if bound is not None:
+            self.bound = bound
+        else:
+            self.bound = [[0, 0], [0, 0], [0, 0]]
+            for function in functions:
+                self.bound = bound_union(self.bound, find_bounds(function))
+
+
+    def __call__(self, point):
+        return [test(point) for test in self.functions]

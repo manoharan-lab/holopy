@@ -22,10 +22,12 @@ Defines Sphere, a scattering primitive
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
-from .abstract_scatterer import SphericallySymmetricScatterer
+import numpy as np
+from .scatterer import CenteredScatterer, Indicators
 from ..errors import ScattererDefinitionError
+from copy import copy
 
-class Sphere(SphericallySymmetricScatterer):
+class Sphere(CenteredScatterer):
     '''
     Contains optical and geometrical properties of a sphere, a
     scattering primitive
@@ -48,3 +50,17 @@ class Sphere(SphericallySymmetricScatterer):
 
         if self.r < 0:
             raise ScattererDefinitionError("radius is negative", self)
+
+    @property
+    def indicators(self):
+        try:
+            len(self.r)
+            r = max(self.r)
+        except TypeError:
+            r = self.r
+
+        return Indicators(lambda point: (point**2).sum() < self.r**2,
+                          [[-r, r], [-r, r], [-r, r]])
+
+    def rotated(self, alpha, beta, gamma):
+        return copy(self)

@@ -24,6 +24,7 @@ Show sphere clusters using mayavi
 from __future__ import division
 
 from numpy import arange
+import numpy as np
 
 def show_sphere_cluster(s,color):
     # Delayed imports to avoid hard dependencies on plotting packages and to
@@ -63,3 +64,21 @@ def volume_contour(d):
     vol = mlab.pipeline.scalar_field(d)
     vol.spacing = d.spacing
     contours = mlab.pipeline.contour_surface(vol)
+
+def show_scatterer(scatterer):
+    # Mayavi moved namespaces in the upgrade to 2.4. This try block will
+    # allow using either the new or old namespace.
+    try:
+        from mayavi import mlab
+    except ImportError:
+        from enthought.mayavi import mlab
+
+    vol = np.zeros((100, 100, 100))
+    for i, x in enumerate(np.linspace(*scatterer.indicators.bound[0], num = 100)):
+        for j, y in enumerate(np.linspace(*scatterer.indicators.bound[1], num = 100)):
+            for k, z in enumerate(np.linspace(*scatterer.indicators.bound[2], num = 100)):
+                n = scatterer.index_at((x, y, z))
+                if n is None:
+                    n = 0
+                vol[i,j,k] = np.abs(n)
+    mlab.contour3d(vol)

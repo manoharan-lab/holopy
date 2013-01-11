@@ -24,7 +24,7 @@ import numpy as np
 from nose.tools import nottest
 from nose.plugins.attrib import attr
 from numpy.testing import assert_equal, assert_approx_equal, assert_allclose
-from ...scattering.scatterer import Sphere, Spheres, ScattererByFunction
+from ...scattering.scatterer import Sphere, Spheres, Scatterer
 from ...scattering.theory import Mie, Multisphere, DDA
 from ...core import Optics, ImageSchema, load, save
 from ...core.process import normalize
@@ -251,17 +251,9 @@ def test_dda_fit():
 
     h = Mie.calc_holo(s, schema)
 
-
-    def in_sphere(r):
-        def test(point):
-            point = np.array(point)
-            return (point**2).sum() < r**2
-        return test
-
-
     def make_scatterer(r, x, y, z):
-        return ScattererByFunction(in_sphere(r), s.n, [[-.3, .3],[-.3,.3],[-.3,.3]], (x, y, z))
-
+        local_s = Sphere(r = r, center = (x, y, z))
+        return Scatterer(local_s.indicators, n = s.n)
 
     parameters = [par(.18, [.1, .3], name='r', step=.1), par(5, [4, 6], 'x'),
                   par(5, [4,6], 'y'), par(5.2, [4, 6], 'z')]

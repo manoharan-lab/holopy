@@ -26,12 +26,11 @@ as Clusters.
 '''
 from __future__ import division
 
-from .abstract_scatterer import Scatterer
-import abstract_scatterer
+from .scatterer import Scatterer
+import scatterer
 
 from .sphere import Sphere
 from .composite import Scatterers
 from .spherecluster import Spheres
-from voxelated import (VoxelatedScatterer, ScattererByFunction,
-                       MultidomainScattererByFunction)
+from .janus import JanusSphere
 from .ellipsoid import Ellipsoid

@@ -25,10 +25,10 @@ sensible way.
 from __future__ import division
 
 import numpy as np
-from ..scattering.scatterer import Spheres
+from ..scattering.scatterer import Spheres, Scatterer
 from ..core import Image
 from .vis2d import show2d
-from .vis3d import show_sphere_cluster
+from .vis3d import show_sphere_cluster, show_scatterer
 
 class VisualizationNotImplemented(Exception):
     def __init__(self, o):
@@ -59,5 +59,7 @@ def show(o,color=(0,0,1)):
         show_sphere_cluster(o,color)
     elif isinstance(o, (Image, np.ndarray)):
         show2d(o)
+    elif isinstance(o, Scatterer):
+        show_scatterer(o)
     else:
         raise VisualizationNotImplemented(o)

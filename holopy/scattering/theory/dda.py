@@ -39,10 +39,7 @@ from nose.plugins.skip import SkipTest
 
 from .scatteringtheory import ScatteringTheory
 from .mie_f import mieangfuncs
-from ..errors import TheoryNotCompatibleError
-from ..scatterer import (Sphere, VoxelatedScatterer,
-                         ScattererByFunction, MultidomainScattererByFunction,
-                         Ellipsoid, Spheres)
+from ..scatterer import Sphere, Ellipsoid, Spheres
 from ...core.marray import VectorGridSchema
 
 class DependencyMissing(SkipTest, Exception):
@@ -106,16 +103,12 @@ class DDA(ScatteringTheory):
 
         if isinstance(scatterer, Sphere):
             scat_args =  self._adda_sphere(scatterer, optics, temp_dir)
-        elif isinstance(scatterer, VoxelatedScatterer):
-            scat_args = self._adda_general(scatterer, optics, temp_dir)
-        elif isinstance(scatterer, ScattererByFunction):
-            scat_args = self._adda_function_scatterer(scatterer, optics, temp_dir)
         elif isinstance(scatterer, Ellipsoid):
             scat_args = self._adda_ellipsoid(scatterer, optics, temp_dir)
         elif isinstance(scatterer, Spheres):
             scat_args = self._adda_bisphere(scatterer, optics, temp_dir)
         else:
-            raise TheoryNotCompatibleError(self, scatterer)
+            scat_args = self._adda_scatterer(scatterer, optics, temp_dir)
 
         cmd.extend(scat_args)
 
@@ -212,7 +205,7 @@ class DDA(ScatteringTheory):
         cmd.extend(['-m'])
         def add_ns(domain):
             cmd.extend([str(domain.n.real/optics.index),
-                    str(domain.n.imag/optics.index)])
+                        str(domain.n.imag/optics.index)])
         if isinstance(scatterer, MultidomainScattererByFunction):
             for domain in scatterer.domains:
                 add_ns(domain)
@@ -222,9 +215,48 @@ class DDA(ScatteringTheory):
 
         return cmd
 
+    def _adda_scatterer(self, scatterer, optics, temp_dir):
+        bound = scatterer.indicators.bound
+        spacing = self.required_spacing(optics, scatterer.n)
+        outf = tempfile.NamedTemporaryFile(dir = temp_dir, delete=False)
+        line = "{p[0]} {p[1]} {p[2]}"
+        if len(scatterer.n) > 1:
+            outf.write("Nmat={0}\n".format(len(scatterer.n)))
+            line += " {d}"
+        line += '\n'
+
+        for i, x in enumerate(np.arange(bound[0][0], bound[0][1], spacing)):
+            for j, y in enumerate(np.arange(bound[1][0], bound[1][1], spacing)):
+                for k, z in enumerate(np.arange(bound[2][0], bound[2][1], spacing)):
+                    point = np.array((x, y, z)) + scatterer.location
+                    domain = scatterer.in_domain(point)
+                    if domain is not None:
+                        # adda expects domain numbers to start with 1,
+                        # holopy follows the python convention and has
+                        # them start with 0
+                        outf.write(line.format(p = (i, j, k), d = domain+1))
+        outf.flush()
+
+        cmd = []
+        cmd.extend(['-shape', 'read', outf.name])
+        cmd.extend(['-dpl', str(self._dpl(optics, scatterer.n))])
+        cmd.extend(['-m'])
+        for n in scatterer.n:
+            cmd.extend([str(n.real/optics.index), str(n.imag/optics.index)])
+
+        return cmd
+
+
+
     @classmethod
     def _dpl(cls, optics, n):
-        return 10*(abs(n)/optics.index)
+        # if the object has multiple domains, we need to pick the
+        # largest required dipole number
+        n = np.abs(n)
+        if not np.isscalar(n):
+            n = max(n)
+        dpl = 10*(n/optics.index)
+        return dpl
 
     @classmethod
     def required_spacing(cls, optics, n):
@@ -236,7 +268,7 @@ class DDA(ScatteringTheory):
 
         temp_dir = tempfile.mkdtemp()
 
-        calc_points = schema.positions_kr_theta_phi(scatterer.center)
+        calc_points = schema.positions_kr_theta_phi(scatterer.location)
 
         angles = calc_points[:,1:] * 180/np.pi
 

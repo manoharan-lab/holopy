@@ -31,7 +31,6 @@ from copy import copy
 
 import numpy as np
 
-#from holopy.process.math import rotate_points
 
 from . import Scatterer
 from ...core.math import rotate_points
@@ -134,13 +133,13 @@ class Scatterers(Scatterer):
         return self._prettystr(0)
 
 
-    def translate(self, x, y, z):
-        trans = [s.translate(x, y, z) for s in self.scatterers]
+    def translated(self, x, y, z):
+        trans = [s.translated(x, y, z) for s in self.scatterers]
         new = copy(self)
         new.scatterers = trans
         return new
 
-    def rotate(self, alpha, beta, gamma):
+    def rotated(self, alpha, beta, gamma):
         centers = np.array([s.center for s in self.scatterers])
         com = centers.mean(0)
 
@@ -149,8 +148,8 @@ class Scatterers(Scatterer):
         scatterers = []
 
         for i in range(len(self.scatterers)):
-            scatterers.append(self.scatterers[i].translate(
-                *(new_centers[i,:] - centers[i,:])).rotate(alpha, beta, gamma))
+            scatterers.append(self.scatterers[i].translated(
+                *(new_centers[i,:] - centers[i,:])).rotated(alpha, beta, gamma))
 
         new = copy(self)
         new.scatterers = scatterers

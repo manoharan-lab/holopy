@@ -104,7 +104,7 @@ def test_Spheres_translation():
     s2 = Sphere(n = 1.59, r = 1, center=[0,0,0])
     sc = Spheres(scatterers = [s1, s2])
 
-    sc2 = sc.translate(1, 1, 1)
+    sc2 = sc.translated(1, 1, 1)
 
     assert_equal(sc.scatterers[0].r, sc2.scatterers[0].r)
     assert_equal(sc.scatterers[1].r, sc2.scatterers[1].r)
@@ -118,7 +118,7 @@ def test_Spheres_rotation():
     s2 = Sphere(n = 1.59, r = 1, center = [-1, 0, 1])
     sc = Spheres(scatterers = [s1, s2])
 
-    sc2 = sc.rotate(np.pi/2, 0, 0)
+    sc2 = sc.rotated(np.pi/2, 0, 0)
 
     assert_equal(sc.scatterers[0].r, sc2.scatterers[0].r)
     assert_equal(sc.scatterers[1].r, sc2.scatterers[1].r)
