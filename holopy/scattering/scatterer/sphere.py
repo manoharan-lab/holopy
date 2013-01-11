@@ -53,14 +53,14 @@ class Sphere(CenteredScatterer):
 
     @property
     def indicators(self):
-        try:
-            len(self.r)
-            r = max(self.r)
-        except TypeError:
+        if np.isscalar(self.r):
             r = self.r
+            func = lambda point: (point**2).sum() < self.r**2
+        else:
+            func = [lambda point: (point**2).sum() < r**2 for r in self.r]
+            r = max(self.r)
 
-        return Indicators(lambda point: (point**2).sum() < self.r**2,
-                          [[-r, r], [-r, r], [-r, r]])
+        return Indicators(func, [[-r, r], [-r, r], [-r, r]])
 
     def rotated(self, alpha, beta, gamma):
         return copy(self)

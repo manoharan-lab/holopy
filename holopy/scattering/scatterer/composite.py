@@ -155,3 +155,15 @@ class Scatterers(Scatterer):
         new.scatterers = scatterers
 
         return new
+
+    def in_domain(self, point):
+        for i, ind in enumerate([s.contains(point) for s in self.scatterers]):
+            if ind:
+                return i
+        return None
+
+    def index_at(self, point):
+        try:
+            return self.scatterers[self.in_domain(point)].index_at(point)
+        except TypeError:
+            return None

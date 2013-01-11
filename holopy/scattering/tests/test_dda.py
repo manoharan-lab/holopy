@@ -128,7 +128,7 @@ def test_DDA_coated():
     lmie_holo = Mie.calc_holo(cs, schema)
     dda_holo = DDA.calc_holo(cs, schema)
 
-    assert_allclose(lmie_holo, dda_holo, rtol = 5e-5)
+    assert_allclose(lmie_holo, dda_holo, rtol = 5e-4)
 
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_Ellipsoid_dda():

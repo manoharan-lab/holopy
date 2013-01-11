@@ -41,6 +41,7 @@ from .scatteringtheory import ScatteringTheory
 from .mie_f import mieangfuncs
 from ..scatterer import Sphere, Ellipsoid, Spheres
 from ...core.marray import VectorGridSchema
+from ...core.helpers import _ensure_array
 
 class DependencyMissing(SkipTest, Exception):
     def __init__(self, dep):
@@ -101,12 +102,8 @@ class DDA(ScatteringTheory):
         cmd.extend(['-lambda', str(optics.med_wavelen)])
         cmd.extend(['-save_geom'])
 
-        if isinstance(scatterer, Sphere):
-            scat_args =  self._adda_sphere(scatterer, optics, temp_dir)
-        elif isinstance(scatterer, Ellipsoid):
+        if isinstance(scatterer, Ellipsoid):
             scat_args = self._adda_ellipsoid(scatterer, optics, temp_dir)
-        elif isinstance(scatterer, Spheres):
-            scat_args = self._adda_bisphere(scatterer, optics, temp_dir)
         else:
             scat_args = self._adda_scatterer(scatterer, optics, temp_dir)
 
@@ -114,16 +111,8 @@ class DDA(ScatteringTheory):
 
         subprocess.check_call(cmd, cwd=temp_dir)
 
-    def _adda_sphere(self, scatterer, optics, temp_dir):
-        if not np.isscalar(scatterer.n):
-            return self._adda_coated(scatterer, optics, temp_dir)
-        cmd = []
-        cmd.extend(['-eq_rad', str(scatterer.r)])
-        cmd.extend(['-m', str(scatterer.n.real/optics.index),
-                    str(scatterer.n.imag/optics.index)])
-
-        return cmd
-
+    # TODO: figure out why our discritzation gives a different result
+    # and fix so that we can use that and eliminate this.
     def _adda_ellipsoid(self, scatterer, optics, temp_dir):
         cmd = []
         cmd.extend(['-eq_rad', str(scatterer.r[0])])
@@ -134,94 +123,14 @@ class DDA(ScatteringTheory):
 
         return cmd
 
-    def _adda_bisphere(self, scatterer, optics, temp_dir):
-        # A-DDA bisphere only takes a pair of identical spheres.  We could handle
-        # more complicated things by voxelating ourselves, but they are better
-        # than us at voxelating, so lets use their restrictions for now.
-        if (len(scatterer.r) != 2 or scatterer.r[0] != scatterer.r[1] or
-            scatterer.n[0] != scatterer.n[1]):
-            raise UnrealizableScatterer(self, scatterer, 'adda bisphere only '
-                                        'works for 2 identical spheres')
-
-        sep = hp.process.math.cartesian_distance(*scatterer.centers)
-
-        cmd = []
-        #        cmd.extend(['-size',
-        #        str(scatterer.r[0]/self.optics.med_wavelen)])
-        cmd.extend(['-eq_rad', str(scatterer.r[0])])
-        cmd.extend(['-shape', 'bisphere', str(sep/(scatterer.r[0]*2))])
-        cmd.extend(['-m', str(scatterer.n[0].real/optics.index),
-                    str(scatterer.n[0].imag/optics.index)])
-
-        return cmd
-
-
-    def _adda_coated(self, scatterer, optics, temp_dir):
-        cmd = []
-        cmd.extend(['-eq_rad', str(scatterer.r[1])])
-        cmd.extend(['-shape', 'coated', str(scatterer.r[0]/scatterer.r[1])])
-        # A-DDA thinks of it as a sphere with an inclusion, so their first index
-        # (the sphere) is our second, the outer layer.
-        cmd.extend(['-m', str(scatterer.n[1].real/optics.index),
-                    str(scatterer.n[1].imag/optics.index),
-                    str(scatterer.n[0].real/optics.index),
-                    str(scatterer.n[0].imag/optics.index)])
-
-        return cmd
-
-    def _adda_general(self, scatterer, optics, temp_dir):
-        ms = []
-        for n in scatterer.n:
-            ms.append(str(n.real/optics.index))
-            ms.append(str(n.imag/optics.index))
-
-        shape = scatterer.write_adda_file(temp_dir)
-
-        cmd = []
-        cmd.extend(['-shape', 'read', shape.name])
-        cmd.extend(['-dpl', str(scatterer.voxels_per_wavelen)])
-        cmd.extend(['-m'])
-        cmd.extend(ms)
-
-        return cmd
-        # TODO: figure out how adda is doing recentering and if we need to
-        # adjust for that
-
-    def _adda_function_scatterer(self, scatterer, optics, temp_dir):
-        outf = tempfile.NamedTemporaryFile(dir = temp_dir, delete=False)
-        if isinstance(scatterer, MultidomainScattererByFunction):
-            outf.write("Nmat={0}\n".format(len(scatterer.domains)))
-            for point in scatterer._points(self.required_spacing(optics, scatterer.n)):
-                outf.write('{0} {1} {2} {3}\n'.format(point[0], point[1],
-                                                    point[2], point[3]+1))
-        else:
-            for point in scatterer._points(self.required_spacing(optics, scatterer.n)):
-                outf.write('{0} {1} {2}\n'.format(*point))
-        outf.flush()
-
-        cmd = []
-        cmd.extend(['-shape', 'read', outf.name])
-        cmd.extend(['-dpl', str(self._dpl(optics, scatterer.n))])
-        cmd.extend(['-m'])
-        def add_ns(domain):
-            cmd.extend([str(domain.n.real/optics.index),
-                        str(domain.n.imag/optics.index)])
-        if isinstance(scatterer, MultidomainScattererByFunction):
-            for domain in scatterer.domains:
-                add_ns(domain)
-        else:
-            add_ns(scatterer)
-
-
-        return cmd
-
     def _adda_scatterer(self, scatterer, optics, temp_dir):
         bound = scatterer.indicators.bound
         spacing = self.required_spacing(optics, scatterer.n)
         outf = tempfile.NamedTemporaryFile(dir = temp_dir, delete=False)
         line = "{p[0]} {p[1]} {p[2]}"
-        if len(scatterer.n) > 1:
-            outf.write("Nmat={0}\n".format(len(scatterer.n)))
+        n = _ensure_array(scatterer.n)
+        if len(n) > 1:
+            outf.write("Nmat={0}\n".format(len(n)))
             line += " {d}"
         line += '\n'
 
@@ -241,7 +150,7 @@ class DDA(ScatteringTheory):
         cmd.extend(['-shape', 'read', outf.name])
         cmd.extend(['-dpl', str(self._dpl(optics, scatterer.n))])
         cmd.extend(['-m'])
-        for n in scatterer.n:
+        for n in n:
             cmd.extend([str(n.real/optics.index), str(n.imag/optics.index)])
 
         return cmd
@@ -264,8 +173,6 @@ class DDA(ScatteringTheory):
 
 
     def _calc_field(self, scatterer, schema):
-        time_start = time.time()
-
         temp_dir = tempfile.mkdtemp()
 
         calc_points = schema.positions_kr_theta_phi(scatterer.location)

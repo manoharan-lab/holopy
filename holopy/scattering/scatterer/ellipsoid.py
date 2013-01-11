@@ -25,7 +25,7 @@ from __future__ import division
 
 import numpy as np
 
-from .scatterer import CenteredScatterer
+from .scatterer import CenteredScatterer, Indicators
 from ..errors import ScattererDefinitionError
 
 def isnumber(x):
@@ -65,3 +65,10 @@ class Ellipsoid(CenteredScatterer):
         self.r = r
 
         super(Ellipsoid, self).__init__(center)
+
+    # TODO: does not handle rotations
+    @property
+    def indicators(self):
+        return Indicators(lambda point: ((point / self.r) ** 2).sum() < 1,
+                          [[-self.r[0], self.r[0]], [-self.r[1], self.r[1]],
+                            [-self.r[2], self.r[2]]])

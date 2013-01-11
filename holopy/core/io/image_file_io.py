@@ -200,29 +200,3 @@ def _read_tiff_12bit(filename, size):
 
     imarray = fromimage(im).astype('d')
     return imarray
-
-
-def _make_id(name):
-    """ Construct an identifying name for a image based on the file
-    or files it came from
-    """
-
-    if isinstance(name, np.ndarray):
-        # we can't really define a name from just an ndarray
-        return None
-
-    # Many of us have images of the form image1234, the word image
-    # adds no useful information and makes our already long names longer
-    def strip(name):
-        name = os.path.splitext(name)[0]
-        if name[:5] == 'image':
-            name = name[5:]
-        return name
-
-    if len(name) == 1:
-        name = name[0]
-
-    if np.isscalar(name):
-        return strip(name)
-    else:
-        return '{0}_to_{1}'.format(strip(name[0]), strip(name[-1]))

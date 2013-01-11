@@ -80,13 +80,14 @@ class Scatterer(HolopyObject):
         return new
 
     def contains(self, point):
-        return np.any(self.indicators(np.array(point)-self.location))
+        return self.in_domain(point) is not None
 
     def index_at(self, point):
-        for n, ind in zip(self.n, self.indicators(np.array(point)-self.location)):
-            if ind:
-                return n
-        return None
+        try:
+            return self.n[self.in_domain(point)]
+        except TypeError:
+            # domain is None
+            return None
 
     def in_domain(self, point):
         for i, ind in enumerate(self.indicators(np.array(point)-self.location)):
