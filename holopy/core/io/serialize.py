@@ -61,7 +61,7 @@ def save(outf, obj):
 
 def load(inf):
     if isinstance(inf, basestring):
-        inf = file(inf)
+        inf = file(inf, mode = 'rU')
 
     line = inf.readline()
     cls = line.strip('{} !\n')
