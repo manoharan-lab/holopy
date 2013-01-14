@@ -31,12 +31,8 @@ import copy
 import numpy as np
 import scipy.signal
 import errors
-<<<<<<< TREE
 from errors import UnspecifiedPosition
-from .holopy_object import HolopyObject
-=======
 from .holopy_object import HoloPyObject
->>>>>>> MERGE-SOURCE
 from .metadata import Grid, Angles
 from .helpers import _ensure_pair, _ensure_array
 import inspect

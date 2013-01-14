@@ -66,8 +66,8 @@ def test_ifft_1d_no_shift():
        -0.04443262+0.01863101j,  0.02483062-0.09611888j])
 
     assert_allclose(math.ifft(a, shift=False), scipy.fftpack.ifft(a))
-    
+
 def test_rotate_single_point():
     points = np.array([1.,1.,1.])
-    assert_allclose(rotate_points(points, pi, pi, pi), np.array([-1.,  1., -1.]), 1e-5)
-
+    assert_allclose(math.rotate_points(points, np.pi, np.pi, np.pi),
+                    np.array([-1.,  1., -1.]), 1e-5)

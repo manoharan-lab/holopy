@@ -19,7 +19,7 @@ from __future__ import division
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_raises
 from ..marray import (ImageSchema, VectorGrid, VectorGridSchema, Image,
-                      zeros_like, subimage, resize, Volume, PseudoVectorGrid)
+                      zeros_like, subimage, resize, Volume)
 from .common import assert_obj_close, get_example_data
 from ..errors import UnspecifiedPosition
 
@@ -36,9 +36,9 @@ def test_VectorGrid():
     vh = zeros_like(holo)
     assert_equal(vh.shape, holo.shape)
     assert_equal(vh.optics, holo.optics)
-    
+
     assert_raises(UnspecifiedPosition, holo.positions_theta)
-    
+
 
 def test_positions_in_spherical():
     schema = ImageSchema(shape = (2,2), spacing = 1)
