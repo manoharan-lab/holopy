@@ -135,7 +135,7 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
     Returns
     -------
     rot: array(3,3)
-        Rotation matrix, to rotate a vector x, use np.dot(x, rot) TODO: this maybe should be np.dot(rot, x)
+        Rotation matrix. To rotate a column vector x, use np.dot(rot, x.) 
 
     Notes
     -----
