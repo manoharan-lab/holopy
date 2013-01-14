@@ -11,8 +11,18 @@ some different plane.  HoloPy generalizes this concept and allows you
 to numerically propagate any hologram or electric field to another
 point in space.
 
-Import the code
+Propagating and viewing the result takes 3 steps:
+
+1. Import or calculate a hologram
+
+2. Propagate
+
+3. View
+
+Example
 ===============
+.. TODO: provide a complete example and refactor the rest to follow the
+.. three steps above
 
 To begin, import: ::
 
@@ -72,57 +82,3 @@ For viewing 2d slices, use :func:`hp.show <holopy.vis.show>`::
 By default hp.show shows the magnitude of a complex image.  For
 volume images, you can step through slices in the z plane by using the
 left and right arrow keys on your keyboard.
-
-
-To see three dimensional renderings, use holopy.render ::
-
-  holopy.render(rec_vol, 'contour')
-  
-This will show a contour surface plot of the reconstruction, using
-MayaVI.
-
-.. note::
-
-   Surface rendering of reconstructions is not implemented yet
-
-   
-Propagating through Non-Homogeneous Media
-=========================================
-
-.. note::
-
-  This is a feature preview, HoloPy does not yet support propagating
-  through nonuniform media.  
-
-The propagation discussed above assumes propagation through free space or a homogeneous dielectric medium.  However, holopy can also propagate a field  through an optical elements :: 
-
-  from holopy.propagation import ThinLens
-  rec = progagate(holo, 1e-5, optical_train = ThinLens(f = 1e-2, z =   1e-1)
-
-or an inhomogeneous medium ::
-
-  medium = holopy.load('medium.yaml')
-  rec = propagate(holo, 1e-5, medium = medium)
-
-HoloPy defaults to centering the medium or optical elements on the center of the data field (Or should we specify there center relative to the origin of the coordinate system (upper left corner for images)?  I think we will almost always want to center things, so it is better to make it default, there than the slight akwardness if the Data does not have a well defined center - tgd).  You can specify on offset vector if you don't want them centered ::
-
-  ThinLens(f = 1e-2, z = 1e-1, offset = (1e-4, 1e-4))
-
-
-Changing Propagation Model
-==========================
-
-.. note::
-
-   This is a feature preview.  HoloPy currently supports propagating
-   only by convolution.  
-
-HoloPy defaults to a linear model of propagation by convolution with pointspread functions.  If asked to compute propagation through a nonuniform medium it switches to its DDA propagation model.  If you wish to manually control the propagation model you can use ::
-
-  rec = propagate(holo, 1e-5, propagation = FresnelTransform)
-
-Be aware that not all propagation models can support all kinds of data, media, and optical elements, so you may get an exception if for example you try to use FresnelTransform with nonuniform media.  If you leave the propagation model unspecified holopy will try to find one that will work for your conditions and only fail if it has no valid model.  
-
-
-
-  

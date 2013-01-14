@@ -101,7 +101,6 @@ object anywhere an :class:`.ImageSchema` is needed, essentially
 telling HoloPy "calculate something in the same format as this data."
 
 
-
 Scattering Theory
 =================
 
@@ -121,71 +120,7 @@ scattered quantities and they are called the same way (except for
 calc_cross_sections which only an Optics object and not a full
 :class:`.Schema`).
 
-<<<<<<< TREE
-=======
-.. note::
-   All units in the above code sample are in microns. You are free to work in any self consistent set of units, for example you could work in pixels by doing: ::
-	
-     sphere = Sphere(center = (50, 50, 50), n = 1.59, r = 5)
-     schema = ImageSchema(spacing = 1, shape = 100, optics = Optics(wavelen = 6.58, index=1.33))
 
-   In a similar vein you could work in meters, inches, furlongs, smoots, or cubits. 
-	 
-<<<<<<< TREE
-More Examples
-========
-
-Now let's take this a step further and see how you can compute scattering from 
-objects more complex than a single sphere.  
-
-
-
-Cluster of Spheres
-------------------
-
-Calculating a hologram from a cluster of spheres is done in a very
-similar manner ::
-
-  from holopy.scattering.theory import Mie
-  from holopy.scattering.scatterer import Sphere, Spheres
-  schema = ImageSchema(spacing = 1, shape = 100, optics = Optics(wavelen = 6.58, index=1.33))
-  s1 = Sphere(center=(5, 5, 5), n = 1.59, r = 0.5)
-  s2 = Sphere(center=(4, 4, 5), n = 1.59, r = 0.5)
-  cluster = Spheres([s1, s2])
-  holo = Mie.calc_holo(cluster, schema)
-
-This will do the calculation with superposition of Mie solutions, if
-you want to solve the actual multisphere problem for higher accuracy
-you would instead use ::
-
-    from holopy.scattering.theory import Multisphere
-    holo = Multisphere.calc_holo(cluster, schema)
-
-Adding more spheres to the cluster is as simple as defining more
-sphere objects and passing a longer list of spheres to the
-:class:`.Spheres` constructor.
-
-Coated Spheres
---------------
-
-Coated (or layered) spheres can use the same Mie theory as normal
-spheres. Coated spheres differ from normal spheres only in taking a
-list of indexes and radii corresponding to the layers. The indices are
-given in order starting from the core. ::
-
-  from holopy.scattering.scatterer import CoatedSphere
-  from holopy.scattering.theory import Mie
-  schema = ImageSchema(spacing = 1, shape = 100, optics = Optics(wavelen = 6.58, index=1.33))
-  cs = CoatedSphere(center=(5, 5, 5), n = (1.59, 1.42), r = (0.3, 0.6))
-  holo = Mie.calc_holo(cs, schema)
-
-.. note::
-	The multisphere theory does not as yet work with coated spheres.
-
-=======
->>>>>>> MERGE-SOURCE
-
->>>>>>> MERGE-SOURCE
 Advanced Calculations
 =====================
 
@@ -229,9 +164,9 @@ If you wanted a rectangular detector with rectangular pixels, you could specify 
   schema = ImageSchema(spacing = (.1,.2), shape = (400,300), 
     optics = Optics(wavelen = .660, polarization = [1, 0], index=1.33))
 
-Most displays will default to square pixels, so your calculated hologram will look distorted unless 
-you take further precautions to correct the display.
-	
+Most displays will default to displaying square pixels, but if your hologram has
+an associated spacing (holo.spacing), and you use holopy.show(holo) to display the image, your hologram
+will display with pixels of the correct aspect ratio.
 	
 .. _Examples:
 

@@ -12,9 +12,45 @@ A fit needs:
    
 3) (Optional) a :class:`~holopy.fitting.minimizer.Minimizer` (holopy defaults to using the supplied :class:`~holopy.fitting.minimizer.Nmpfit`)
 
-The simplest fit will look like ::
+Example
+================
+Let's compute a hologram with known parameters and then fit it to make sure we 
+retrieve the right parameters. ::
 
-  result = fit(model, data)
+   import holopy
+   from holopy.core import ImageSchema, Optics
+   from holopy.fitting import Model, par, fit
+   from holopy.scattering.scatterer import Sphere
+   from holopy.scattering.theory import Mie
+
+   schema = ImageSchema(shape = 100, spacing = .1, 
+       optics = Optics(wavelen = .660, polarization = [1, 0], index = 1.33))
+   s = Sphere(center = (5, 5, 10.3), r = .5, n = 1.58)
+   holo = Mie.calc_holo(s, schema)
+
+   par_s = Sphere(center = (par(guess = 5.5, limit = [4,10]), par(4.5, [4, 10]), par(10, [5, 15])),
+                  r = .5, n = 1.58)
+
+   model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1]))
+   result = fit(model, holo)
+
+After running this, you can inspect result.scatterer and see that the initial guess of the sphere's location
+(5.5, 4.5, 10.0) was corrected by the fitter to (5.0,5.0,10.3). Success!
+
+In this first simple fit, we specify the three spatial coordinates as variable parameters, and set
+the index of refraction and radius of the sphere to constant values.
+
+``result.scatterer`` is the scatterer that best matches the hologram,
+``result.alpha`` is the alpha for the best fit.  ``result.chisq`` and
+``result.rsq`` are statistical measures of the the goodness of the fit.
+``result.model`` and ``result.minimizer`` are the Model and Minimizer
+objects used in the fit, and ``result.minimization_info`` contains any
+further information the minimization algorithm returned about the
+minimization procedure (for nmpfit this includes things like covariance
+matrices).  See the documentation of :class:`.FitResult`.
+
+
+
 
 Scattering Model
 ================
@@ -49,9 +85,10 @@ because you will be typing it a lot.
 If your model does not fit neatly into a parametrized scatterer like
 this, HoloPy provides a lower level interface ::
 
+  from holopy.fitting import Parametrization
   param = Parametrization(make_scatterer,
                           parameters = [par(guess = .5, name = 'r'),
-                                        par(guess = 0, name = euler_alpha'),
+                                        par(guess = 0, name = 'euler_alpha'),
                                         par(guess = 0, name = 'euler_beta')])
 
 Here make_scatterer needs to be a function that takes keyword
@@ -90,25 +127,6 @@ argument to the model ::
   
   model = Model(param_scat, Mie.calc_holo, alpha = par(.6, [0, 1]))
 
-.. note::
-
-   We are working on understanding the theory behind these scaling
-   factors and hope to be able to eliminate this scaling paramater.
-   Thus, we hope to remove this option at some point in the future
-   when it becomes unnecessary.  
-  
-If you want to fit to information normally provided in the metadata,
-you can provide a parametrized :class:`.Schema` object, any parameters
-specified here will override those specified in the data ::
-
-  model = Model(param_scat, mie.calc_holo,
-                target_overlay = DataTarget(optics = Optics(divergence
-				= par(0, [0, 1]))))
-
-.. note::
-
-   This is a feature preview.  HoloPy does not currently support
-   fitting to metadata.  
 
 Data
 ====
@@ -155,39 +173,7 @@ the par call as keyword args, for example ::
 Examples
 ========
 
-Sphere
-------
 
-Let's compute a hologram with known parameters and then fit it to make sure we retrieve the right parameters.  Instead, you can replace the
-calculated hologram (holo) with real data, if you like. TODO: result is not very accurate... why? ::
-
-   import holopy
-   from holopy.core import ImageSchema, Optics
-   from holopy.fitting import Model, par, fit
-   from holopy.scattering.scatterer import Sphere
-   from holopy.scattering.theory import Mie
-
-   target = ImageSchema(shape = 100, spacing = .1, optics = Optics(wavelen = .660, index = 1.33))
-   s = Sphere(center = (10.2, 9.8, 10.3), r = .5, n = 1.58)
-   holo = Mie.calc_holo(s, target)
-
-   par_s = Sphere(center = (par(guess = 10, limit = [5,15]), par(10, [5, 15]), par(10, [5, 15])),
-                  r = .5, n = 1.58)
-
-   model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1]))
-   result = fit(model, holo)
-
-Here we specify the three spatial coordinates as parameters, and fix
-the index of refraction and radius of the sphere.
-
-``result.scatterer`` is the scatterer that best matches the hologram,
-``result.alpha`` is the alpha for the best fit.  ``result.chisq`` and
-``result.rsq`` are statistical measures of the the goodness of the fit.
-``result.model`` and ``result.minimizer`` are the Model and Minimizer
-objects used in the fit, and ``result.minimization_info`` contains any
-further information the minimization algorithm returned about the
-minimization procedure (for nmpfit this includes things like covariance
-matrices).  See the documentation of :class:`.FitResult`.
 
 Saving Results
 ~~~~~~~~~~~~~~
@@ -242,20 +228,6 @@ In this example, we fit for the parameters of two spheres ::
     model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1]))
     result = fit(model, holo)
 
-Hologram with Beam Tilt
------------------------
-
-.. note::
-
-   This is a feature preview.  HoloPy does not yet support fitting to
-   metadata.  
-
-Here we override some of the parameters specified in the Data (or in fact you can leave them as none when specifying Metadata for this data) ::
-
-  model = Model(Sphere(...), target_overlay = DataTarget(optics = Optics(
-    ilum_vector = UnitVector(beta = par(0), gamma = par(0))))
-
-Fitting this model will vary the beam tilt.  UnitVector is a composite parameter like ComplexParameter with the special constraint that it stay normalized.  
 
 Static Light Scattering
 -----------------------
@@ -289,3 +261,72 @@ HoloPy also provides some additional views of scatterers that may be convenient 
 This contains the same number of paramters as a 2 sphere Spheres
 object and fully specifies a Spheres object, but provides a different
 set of knobs for the fitter to adjust.
+
+Fitting Time Series of Images
+-----------------------
+
+If you are taking video holograms (one of the most useful cases), you
+will probably find yourself wanting to fit long timeseries of data.
+This is done with :func:`holopy.fitting.fit.fit_series` ::
+
+  fit_series(model, dataset, prefit = None, postfit = None)
+
+for each image in the dataset, fit series will:
+
+1) Get the next data from the dataset, if it is a string, load an
+   image by that name from the current directory -> Data object
+ 
+2) Call prefit(data, model, **kwargs) -> Data object
+   
+3) Fit the model to the data -> FitResult object
+   
+4) Save the FitResult with holopy.save
+   
+5) Call postfit(fitresult, **kwargs) -> FitResult
+   
+6) Use the last FitResult to setup the guess for the next frame.  
+
+The fit_series arguments are:
+
+:model:
+
+   Described exactly as for a single fit.  The same model is used to
+   fit all of the data.  If you need to vary the model across the fit
+   you can instead provide a ModelFamily object and select between
+   models in prefiting
+
+:dataset:
+
+   The simplest dataset is a list of filenames, but it can be any
+   iterable that returns either a strings or a Data objects.  If the
+   dataset is string filenames, metadata will need to be provided as a
+   separate metadata keyword argument to fit_series, or the model
+   specified with a full set of metadata.  
+
+:prefit (optional):
+
+   Prefit gives you a chance to do any processing you want to do on
+   images before fitting them.  A user supplied prefit should
+   expect to be given a Data object and a Model object and should
+   return a Data object to fit.  The prefit function should accept
+   (but can ignore) arbitrary keyword arguments so that in the future
+   we can pass more information into prefit.
+
+:postfit (optional):
+
+   postfit will be called with the FitResult object as an
+   argument, should return a FitResult, and should also accept arbitrary
+   keyword arguments for future proofing.  
+
+Each frame fitted actually uses the Model from the previous fitresult.
+This allows you to modify the initial guesses for the next frame, but
+you can also swap out any arbitrary peices about the model if desired
+(switch from Mie to Multisphere theory, change the number of particles
+in a Spheres object, or anything else).  Just remember, with great
+power comes great responsibility.
+   
+If postfit raises a :class:`holopy.fitting.series.RejectFit` or
+subclass, the same data will be fit again.  The model for the retry
+will be extracted from RejectFit.result_override if it is not None,
+allowing you to set different guesses or model parameters.
+
