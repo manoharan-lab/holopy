@@ -34,8 +34,8 @@ from ...core.tests.common import assert_obj_close, get_example_data
 
 gold_alpha = .6497
 
-gold_sphere = Sphere(n = 1.582+1e-4j, r = 6.484e-7,
-                     center = (5.534e-6, 5.792e-6, 1.415e-5))
+gold_sphere = Sphere(1.582+1e-4j, 6.484e-7,
+                     (5.534e-6, 5.792e-6, 1.415e-5))
 
 @attr('medium')
 def test_fit_mie_single():
@@ -46,7 +46,6 @@ def test_fit_mie_single():
                   Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
                   Parameter(name='n', guess=1.59, limit = [1, 2]),
                   Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5])]
-
 
     def make_scatterer(x, y, z, r, n):
         return Sphere(n=n+1e-4j, r = r, center = (x, y, z))
@@ -92,12 +91,12 @@ def test_fit_random_subset():
 
 
     model = Model(s, Mie.calc_holo, schema_overlay=ImageSchema(use_random_fraction = .1), alpha = par(.6, [.1,1]))
-
+    np.random.seed(40)
     result = fit(model, holo)
 
     # we have to use a relatively loose tolerance here because the random
     # selection occasionally causes the fit to be a bit worse
-    assert_obj_close(result.scatterer, gold_sphere, rtol=2e-2)
+    assert_obj_close(result.scatterer, gold_sphere, rtol=1e-2)
     # TODO: figure out if it is a problem that alpha is frequently coming out
     # wrong in the 3rd decimal place.
     assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=2)
