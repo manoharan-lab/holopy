@@ -56,12 +56,18 @@ class plotter:
             im = self.im[...,self.i,self.j]
         self._title()
 
+        #to show non-square pixels correctly
+        if  hasattr(im, 'spacing'):       
+	        ratio = im.spacing[0]/im.spacing[1]
+        else:
+            ratio = 1.0
+		
         import sys; sys.stdout.flush()
         if self.plot is not None:
             self.plot.set_array(im)
         else:
             self.plot = self.ax.imshow(im, vmin=self.vmin, vmax=self.vmax,
-                                       interpolation="nearest")
+                                       interpolation="nearest", aspect=ratio)
         if not self.colorbar:
             self.colorbar = self.fig.colorbar(self.plot)
 
