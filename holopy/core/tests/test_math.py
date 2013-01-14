@@ -23,7 +23,6 @@ from nose.plugins.attrib import attr
 from .common import assert_allclose
 
 import scipy.fftpack
-from numpy.testing import assert_allclose
 
 @attr('fast')
 def test_fft_1d_no_shift():
@@ -71,3 +70,7 @@ def test_rotate_single_point():
     points = np.array([1.,1.,1.])
     assert_allclose(math.rotate_points(points, np.pi, np.pi, np.pi),
                     np.array([-1.,  1., -1.]), 1e-5)
+    
+def test_rotation_matrix_degrees():
+    assert_allclose(math.rotation_matrix(180., 180., 180., radians = False), 
+                    math.rotation_matrix(np.pi, np.pi, np.pi))
