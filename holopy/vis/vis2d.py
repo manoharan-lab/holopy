@@ -90,7 +90,7 @@ class plotter:
             else:
                 if getattr(self.im, 'spacing', None) is not None:
                     spacing = self.im.spacing[:2]
-                    print('{0}, {1}'.format(coord, tuple(coord * spacing +
+                    print('{0}, {1}'.format(coord, tuple(np.array(coord) * spacing +
                                             origin[:2])))
                 else:
                     print(coord)
