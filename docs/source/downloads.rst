@@ -1,4 +1,4 @@
-Holopy Downloads
+HoloPy Downloads
 ================
 
 1.9.dev

@@ -15,10 +15,8 @@ Please see the following references:
 
 .. [Yurkin2011] M\. A\. Yurkin and A\. G\. Hoekstra, "The discrete-dipole-approximation code ADDA: Capabilities and known limitations," *J. Quant. Spectrosc. Radiat. Transfer* **112**, 2234-2247 (2011).
 
-If you use Holopy, we ask that you cite the articles above that are
-relevant to your application.  You can also cite:
-
-[TODO add link]
+If you use HoloPy, we ask that you cite the articles above that are
+relevant to your application.
 
 The package includes code from several sources.  We thank Daniel
 Mackowski for allowing us to include his T-Matrix code, which computes
@@ -38,8 +36,8 @@ We thank A. Ross Barnett for permitting us to use his routine SBESJY.FOR_, which
 
 We include a copy Michele Simionato's decorator.py_ (v 3.3.3) which simplifies writing correct function decorators.  If you have that module installed it will be used preferentially.
 
-docorator.py is Copyright (c) 2005-2012, Michele Simionato
-All rights reserved.
+  decorator.py is Copyright (c) 2005-2012, Michele Simionato
+  All rights reserved.
 
 .. _decorator.py: http://pypi.python.org/pypi/decorator/3.3.3
 
@@ -53,4 +51,16 @@ met:
    notice, this list of conditions and the following disclaimer in
    the documentation and/or other materials provided with the
    distribution. 
-
+   
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+   HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+   INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+   BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+   OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+   ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+   TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+   USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+   DAMAGE.
