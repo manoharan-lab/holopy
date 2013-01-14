@@ -31,7 +31,7 @@ from nose.plugins.attrib import attr
 
 from ..scatterer import Sphere, Ellipsoid, Scatterer, JanusSphere
 
-from ...core import ImageSchema, Optics, math
+from ...core import ImageSchema, Optics
 from ..theory import Mie, DDA
 from .common import assert_allclose, verify
 
@@ -107,7 +107,7 @@ def test_DDA_voxelated():
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_voxelated_complex():
-    o = Optics(wavelen=.66, index=1.33)
+    o = Optics(wavelen=.66, index=1.33, polarization = (1, 0))
     s = Sphere(n = 1.2+2j, r = .2, center = (5,5,5))
 
     sv = Scatterer(s.indicators, s.n, s.center)
@@ -133,7 +133,7 @@ def test_DDA_coated():
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_Ellipsoid_dda():
     e = Ellipsoid(1.5, r = (.5, .1, .1), center = (1, -1, 10))
-    schema = ImageSchema(100, .1, optics = Optics(wavelen=.66, index=1.33))
+    schema = ImageSchema(100, .1, optics = Optics(wavelen=.66, index=1.33, polarization = (1,0)))
     h = DDA.calc_holo(e, schema)
 
     assert_almost_equal(h.max(), 1.3152766077267062)
@@ -141,7 +141,7 @@ def test_Ellipsoid_dda():
     assert_almost_equal(h.std(), 0.06453155384119547)
 
 def test_janus():
-    schema = ImageSchema(60, .1, Optics(.66, 1.33))
+    schema = ImageSchema(60, .1, Optics(.66, 1.33, (1, 0)))
     s = JanusSphere(n = [1.34, 2.0], r = [.5, .51], rotation = (np.pi/2, 0), center = (5, 5, 5))
 
     holo = DDA.calc_holo(s, schema)

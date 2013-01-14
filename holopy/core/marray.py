@@ -509,8 +509,8 @@ class VectorGridSchema(Schema, PseudoVectorGrid):
 
         new =  cls(components = components, shape = shape,
                    spacing = schema.positions.spacing,
-                   **dict_without(schema._dict, ['shape', 'positions',
-                                                       'spacing', 'dtype']))
+                   **dict_without(schema._dict, ['shape', 'positions', 'spacing', 'dtype',
+                                                 'components']))
         # we want to use the same random selection as the schema we come from did
         if hasattr(schema, '_selection'):
             new._selection = schema._selection

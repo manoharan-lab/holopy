@@ -271,7 +271,8 @@ def test_dda_fit():
 
 def test_integer_correctness():
     # we keep having bugs where the fitter doesn't
-    schema = ImageSchema(shape = 100, spacing = .1, optics = Optics(wavelen = .660, index = 1.33))
+    schema = ImageSchema(shape = 100, spacing = .1,
+                         optics = Optics(wavelen = .660, index = 1.33, polarization = (1, 0)))
     s = Sphere(center = (10.2, 9.8, 10.3), r = .5, n = 1.58)
     holo = Mie.calc_holo(s, schema)
 

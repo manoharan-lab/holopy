@@ -25,7 +25,7 @@ from ...core.tests.common import assert_obj_close
 # small tests against results from the previous version of holopy
 
 def test_positions_kr_theta_phi():
-    o = Optics(wavelen=.66, index=1.33)
+    o = Optics(wavelen=.66, index=1.33, polarization = (1, 0))
     t = ImageSchema(shape = (2,2), spacing = .1, optics = o)
     pos = t.positions_kr_theta_phi((0,0,1))
     assert_allclose(pos, np.array([[ 12.66157039,   0.        ,   0.        ],
@@ -34,7 +34,7 @@ def test_positions_kr_theta_phi():
        [ 12.78755927,   0.1404897 ,   0.78539816]]))
 
 def test_calc_field():
-    o = Optics(wavelen=.66, index=1.33)
+    o = Optics(wavelen=.66, index=1.33, polarization = (1,0))
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
     f = Mie.calc_field(s, t)
@@ -46,16 +46,16 @@ def test_calc_field():
                                   [ -4.91260953e-01 +2.32779296e+00j,
                                      9.21716363e-20 -5.72226912e-19j,
                                      2.99878926e-18 -1.41959276e-17j]],
-                                 
+
                                  [[ -4.89755627e-01 +2.31844748e+00j,
                                      0.00000000e+00 +0.00000000e+00j,
                                      4.89755627e-02 -2.31844748e-01j],
                                   [ -5.71886751e-01 +2.17145168e+00j,
                                      1.72579090e-03 -8.72241140e-03j,
                                      5.70160960e-02 -2.16272927e-01j]]]))
-                    
+
 def test_calc_holo():
-    o = Optics(wavelen=.66, index=1.33)
+    o = Optics(wavelen=.66, index=1.33, polarization = (1, 0))
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
     h = Mie.calc_holo(s, t)
@@ -64,7 +64,7 @@ def test_calc_holo():
                                  [ 5.63554802,  4.89856241]]))
 
 def test_calc_intensity():
-    o = Optics(wavelen=.66, index=1.33)
+    o = Optics(wavelen=.66, index=1.33, polarization = (1,0))
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
     i = Mie.calc_intensity(s, t)

@@ -58,7 +58,7 @@ def test_single_sphere():
     # for them
 
     # large radius (calculation not attempted because it would take forever
-    assert_raises(UnrealizableScatterer, Mie.calc_holo, Sphere(r=1), xschema)
+    assert_raises(UnrealizableScatterer, Mie.calc_holo, Sphere(r=1, n = 1.59), xschema)
 
 
 @attr('fast')
@@ -228,7 +228,7 @@ def test_radiometric():
 @attr('fast')
 def test_farfield():
     schema = Schema(positions = Angles(np.linspace(0, np.pi/2)), optics =
-                                           Optics(wavelen=.66, index = 1.33))
+                    Optics(wavelen=.66, index = 1.33, polarization = (1, 0)))
     sphere = Sphere(r = .5, n = 1.59)
 
     matr = Mie.calc_scat_matrix(sphere, schema)

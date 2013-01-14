@@ -24,6 +24,7 @@ Classes for defining metadata about experimental or calulated results.
 from __future__ import division
 
 import numpy as np
+from warnings import warn
 import copy
 from .helpers import _ensure_pair, _ensure_array
 from holopy_object import HoloPyObject
@@ -44,45 +45,44 @@ class Optics(HoloPyObject):
         Electric field amplitudes in x and y direction.
     divergence : float (optional)
         Divergence of the incident beam (currently unused)
-    pixel_size : tuple (optional)
+    pixel_size : tuple (optional)  (depriecated)
         Physical size of the camera's pixels.
     mag : float (optional)
         Magnification of optical train. Ignored if pixel_scale
         is specified.
-    pixel_scale : tuple (optional)
+    pixel_scale : tuple (optional) (deprecated)
         Size of pixel in the imaging plane. This is equal to the
         physical size of the pixel divided by the magnification.
 
     Notes
     -----
     You don't have to specify all of these parameters, but to get fits and
-    reconstructions to work you should specify at least `pixel_scale`,
-    `wavelen` in vacuo, and `index`.  Alternatively you can specify
-    `pixel_size`, `mag`, `wavelen`, and `index`.
+    reconstructions to work you should specify at least,
+    `wavelen` in vacuo, and `index`.
     """
 
-    def __init__(self, wavelen=None, index=None, polarization=(1.0, 0),
-                 divergence=0., pixel_size=None, train=None,
-                 mag=None, pixel_scale = None):
+    def __init__(self, wavelen=None, index=None, polarization=None,
+                 divergence=0., pixel_size=None, mag=None, pixel_scale = None):
         # source parameters
         self.wavelen = wavelen
         self.index = index
+        if polarization is None:
+            warn("Polarization not specified. You will not be able to use this optics "
+                    " for most calculations")
         self.polarization = np.array(polarization)
         self.divergence = divergence
+        if divergence != 0.0:
+            warn("HoloPy calculations currently ignore divergence")
 
         # optical train parameters
         self.mag = mag          # magnification
-        self.train = train
-        # TODO: code here to validate optical train, calculate
-        # magnification
 
-        # detector parameters
+        # detector parameters (deprecated: detector information should
+        # be in the Marray object since it isn't really associated
+        # withthe optical train)
         self.pixel_size = _ensure_pair(pixel_size)
         if pixel_scale is None:
-            if train is not None:
-                # calculate from optical train
-                pass # TODO: code here #pragma: no cover
-            elif mag is not None:
+            if mag is not None:
                 # calculate from specified magnification
                 self.pixel_scale = self.pixel_size/mag
             else:

@@ -27,7 +27,7 @@ from ...core.tests.common import assert_obj_close, verify
 
 class test_propagation():
     def __init__(self):
-        self.optics = Optics(.66, 1.33)
+        self.optics = Optics(.66, 1.33, (1,0))
         self.im_schema = ImageSchema(spacing = .1, shape = 100,
                                      optics = self.optics)
         self.sphere = Sphere(n = 1.59, r = .5, center = (5, 5, 5))
