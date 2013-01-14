@@ -62,7 +62,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('holopy.core.third_party')
     config.add_subpackage('holopy.core.tests')
     config.add_subpackage('holopy.scattering')
-    config.add_subpackage('holopy.scatterinkg.theory')
+    config.add_subpackage('holopy.scattering.theory')
     config.add_subpackage('holopy.scattering.theory.mie_f')
     config.add_subpackage('holopy.scattering.scatterer')
     config.add_subpackage('holopy.scattering.tests')
