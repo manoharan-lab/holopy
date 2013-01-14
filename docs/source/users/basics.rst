@@ -80,7 +80,28 @@ More complex detector geometries will define their own origin, or ask
 you to define one.
 	
 
+Rotations of Scatterers
+-----------------------
+Certain scattering calculations in HoloPy require specifying the orientation
+of a scatterer (such as a Janus sphere) relative to the HoloPy coordinate
+system. We do this in the most general way possible by specifying three
+Euler angles and a reference orientation. Rotating a scatterer initially
+in the reference orientation through the three Euler angles :math:`\alpha`,
+:math:`\beta`, and :math:`\gamma` (in the active transformation picture)
+yields the desired orientation. The reference orientation is specified by the 
+definition of the scatterer.
 
+The Euler rotations are performed in the following way:
+
+1. Rotate the scatterer an angle :math:`\alpha` about the HoloPy :math:`z` axis.
+2. Rotate the scatterer an angle :math:`\beta` about the HoloPy :math:`y` axis.
+3. Rotate the scatterer an angle :math:`\gamma` about the HoloPy :math:`z` axis.
+
+The sense of rotation is as follows: each angle is a rotation in the *counterclockwise*
+direction about the specified axis, viewed along the positive direction of the axis from
+the origin. This is the opposite sense of how rotations are typically defined, but this
+convention is adopted for compatability with software which adopts the usual convention
+but in a passive transformation picture.
 
 
 Overview
