@@ -1,20 +1,20 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
-# W. Perry, Jerome Fung, and Ryan McGorty
+# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 #
-# This file is part of Holopy.
+# This file is part of HoloPy.
 #
-# Holopy is free software: you can redistribute it and/or modify
+# HoloPy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Holopy is distributed in the hope that it will be useful,
+# HoloPy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
 Storing measurements and calculated results.  This is done through
 Arrays with metadata (Marray and subclases).  It also includes Schema which
@@ -31,7 +31,7 @@ import copy
 import numpy as np
 import scipy.signal
 import errors
-from .holopy_object import HolopyObject
+from .holopy_object import HoloPyObject
 from .metadata import Grid, Angles
 from .helpers import _ensure_pair, _ensure_array
 import inspect
@@ -62,7 +62,7 @@ def arr_like(arr, template):
     return template.__class__(arr, **template._dict)
 
 # Ancestor for all array like storage objects for data/calculations.
-class PseudoMarray(HolopyObject):
+class PseudoMarray(HoloPyObject):
     def __init__(self, positions = None, optics = None, origin = np.zeros(3),
                  use_random_fraction = None, **kwargs):
         self.positions = positions

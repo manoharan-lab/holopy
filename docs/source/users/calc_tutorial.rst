@@ -66,7 +66,7 @@ we will still be here when you get back.
 Defining a Schema
 ===============
 
-Schema objects tell Holopy what its calculated results should look
+Schema objects tell HoloPy what its calculated results should look
 like.  They are intentionally very similar to the objects you get back
 when you load data.  To compute a simulated hologram you can define a
 Schema like this::
@@ -86,16 +86,16 @@ relevant optical information.  The distinction between a
 :class:`.ImageSchema`'s do not contain all of the data values, only
 where they would be measured.  The astute reader might notice that a
 :class:`.Image` contains all the information that an :class:`.Image`
-does.  Because of this, Holopy lets you provide an :class:`.Image` or
+does.  Because of this, HoloPy lets you provide an :class:`.Image` or
 object anywhere an :class:`.ImageSchema` is needed, essentially
-telling Holopy "calculate something like this data."
+telling HoloPy "calculate something like this data."
 
 
 
 Scattering Theory
 =================
 
-Holopy contains a number of scattering theories that are useful for
+HoloPy contains a number of scattering theories that are useful for
 different kinds of scatterers.  Take a look at them in
 :mod:`holopy.scattering.theory`.
 
@@ -200,7 +200,7 @@ Hologram With Beam Tilt or Nonstandard Polarization
 
 .. note::
 
-   This description is provided as a preview, Holopy cannot actually
+   This description is provided as a preview, HoloPy cannot actually
    do beam tilts yet, and we have not tested varying polarization
 
 Tilted incident illumination can be specified in the Optics metadata ::

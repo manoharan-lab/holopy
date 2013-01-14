@@ -5,7 +5,7 @@ Initially you'll probably find it helpful to work from a python shell
 such as ipython.
 
 
-Holopy can work with many types of data, but we use it most for
+HoloPy can work with many types of data, but we use it most for
 working with digital holographic images, so we will start with an
 example of such.
 
@@ -15,10 +15,10 @@ Loading and viewing a hologram
 ------------------------------
 
 Let's say you have a digital hologram stored in the file
-``image0001.tif``.  Holopy can import many different image formats,
+``image0001.tif``.  HoloPy can import many different image formats,
 including TIFF files, numpy data format files, and any image format
 that can be handled by the Python Imaging Library.  But it's always
-good to load your images in Holopy and view them to see if they are
+good to load your images in HoloPy and view them to see if they are
 imported correctly.  You can do this as follows ::
 
    import holopy as hp
@@ -72,7 +72,7 @@ recorded. This additional information is referred to as
 :dfn:`metadata`, and you should provide such metadata whenever you want
 to do real calculations on your data.
 
-All of the objects Holopy uses for storing data also support the
+All of the objects HoloPy uses for storing data also support the
 addition of such metadata.  The most common metadata is pixel size and
 optical information, described by an :class:`.Optics` object.  Because
 of the prime importance of metadata, :func:`hp.load
@@ -100,7 +100,7 @@ If you want to background subtract the image, you can use::
 .. note::
 
     The wavelength specified in the Optics object is the wavelength in
-    vacuum. Holopy uses the given wavelength and medium refractive
+    vacuum. HoloPy uses the given wavelength and medium refractive
     index to calculate the wavelength in the medium. The wavelength in
     the medium is available as::
 
@@ -111,7 +111,7 @@ If you want to background subtract the image, you can use::
 Using YAML files
 ----------------
 
-Holopy can save and load all of its objects from `YAML
+HoloPy can save and load all of its objects from `YAML
 <http://www.yaml.org/>`_ files.  These are designed to be both human and
 computer readable and provide both our serialization format, and an
 alternative method for specifying things like optical metadata.

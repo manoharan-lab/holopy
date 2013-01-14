@@ -1,10 +1,10 @@
-Installing Holopy
+Installing HoloPy
 =========================
 
 Dependencies
 ------------
 
-Holopy requires:
+HoloPy requires:
 
 * python 2.7 (or python 2.6 + `ordereddict <http://pypi.python.org/pypi/ordereddict>`_)
 * numpy
@@ -28,7 +28,7 @@ For Ubuntu/Debian users::
 
   For windows users or mac users, the `Enthought Python Distribution <http://www.enthought.com/products/epd.php>`_ should have the basics to get you started. 
 
-If you want to build Holopy from source there are a few other python
+If you want to build HoloPy from source there are a few other python
 dependencies.  You will also need C and Fortran compilers.  Please see
 :ref:`building`.
 
@@ -109,7 +109,7 @@ module when you import it.
 
 Testing
 -------
-Holopy comes with a suite of tests that will ensure that all everything has built correctly and it is able to preform all of the calculations it should be able to.
+HoloPy comes with a suite of tests that will ensure that all everything has built correctly and it is able to preform all of the calculations it should be able to.
 To run these tests navigate to the root of the package and run:
 
 .. sourcecode:: bash

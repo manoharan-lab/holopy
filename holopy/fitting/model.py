@@ -1,20 +1,20 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 #
-# This file is part of Holopy.
+# This file is part of HoloPy.
 #
-# Holopy is free software: you can redistribute it and/or modify
+# HoloPy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Holopy is distributed in the hope that it will be useful,
+# HoloPy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
 Classes for defining models of scattering for fitting
 
@@ -27,10 +27,10 @@ import inspect
 from copy import copy
 from os.path import commonprefix
 
-from ..core.holopy_object import HolopyObject
+from ..core.holopy_object import HoloPyObject
 from .parameter import Parameter, ComplexParameter
 
-class Parametrization(HolopyObject):
+class Parametrization(HoloPyObject):
     """
     Description of free parameters and how to make a scatterer from them
 
@@ -70,14 +70,14 @@ class Parametrization(HolopyObject):
                                    parameters[arg + '.imag'])
             elif (arg + '.real') in self._fixed_params and \
                     (arg + '.imag') in parameters:
-                for_schema[arg] = (self._fixed_params[arg + '.real'] + 1.j * 
+                for_schema[arg] = (self._fixed_params[arg + '.real'] + 1.j *
                                    parameters[arg + '.imag'])
             elif (arg + '.real') in parameters and (arg + '.imag') in \
                     self._fixed_params:
-                for_schema[arg] = (parameters[arg + '.real'] + 1.j * 
+                for_schema[arg] = (parameters[arg + '.real'] + 1.j *
                                    self._fixed_params[arg + '.imag'])
             else:
-                for_schema[arg] = parameters[arg] 
+                for_schema[arg] = parameters[arg]
         return self.make_scatterer(**for_schema)
 
     @property
@@ -90,13 +90,13 @@ class Parametrization(HolopyObject):
 def tied_name(name1, name2):
     common_suffix = commonprefix([name1[::-1], name2[::-1]])[::-1]
     return common_suffix.strip(':_')
-    
+
 class ParameterizedObject(Parametrization):
     """
     Specify parameters for a fit by including them in an object
 
     Parameters are named automatically from their position in the object
-    
+
     Parameters
     ----------
     obj : :mod:`.scatterer`
@@ -114,7 +114,7 @@ class ParameterizedObject(Parametrization):
                 if p in parameters:
                     # if the parameter is already in the parameters list, it
                     # means the parameter is tied
-                    
+
                     # we will rename the parameter so that when it is printed it
                     # better reflects how it is used
                     new_name = tied_name(p.name, name)
@@ -131,7 +131,7 @@ class ParameterizedObject(Parametrization):
                     group.append(name)
                     ties[new_name] = group
                     p.name = new_name
-                    
+
                 else:
                     p.name = name
                     if not p.fixed:
@@ -152,19 +152,19 @@ class ParameterizedObject(Parametrization):
             if hasattr(pars[key], 'guess'):
                 pars[key] = pars[key].guess
         return self.make_from(pars)
-        
+
 
     def make_from(self, parameters):
         obj_pars = {}
 
-        
+
         for name, par in self.obj.parameters.iteritems():
             # if this par is in a tie group, we need to work with its tie group
             # name since that will be what is in parameters
             for groupname, group in self.ties.iteritems():
                 if name in group:
                     name = groupname
-                    
+
             def get_val(par, name):
                 if par.fixed:
                     return par.limit
@@ -179,27 +179,27 @@ class ParameterizedObject(Parametrization):
             else:
                 par_val = par
 
-            
+
             if name in self.ties:
                 for tied_name in self.ties[name]:
                     obj_pars[tied_name] = par_val
             else:
                 obj_pars[name] = par_val
-                
-                
+
+
 
         return self.obj.from_parameters(obj_pars)
 
 
 
-class Model(HolopyObject):
+class Model(HoloPyObject):
     """
     Representation of a model to fit to data
 
     Parameters
     ----------
     parameters: :class:`.Paramatrization`
-        The parameters which can be varied in this model.  
+        The parameters which can be varied in this model.
     theory : :func:`scattering.theory.ScatteringTheory.calc_*`
         The scattering calc function that should be used to compute results for
         comparison with the data
@@ -210,7 +210,7 @@ class Model(HolopyObject):
         par, or adding a use_random_fraction entry.
     alpha : float or Parameter
         Extra scaling parameter, hopefully this will be removed by improvements
-        in our theory soon.  
+        in our theory soon.
     """
     def __init__(self, scatterer, theory, schema_overlay=None, alpha = None):
         if not isinstance(scatterer, Parametrization):
@@ -235,7 +235,7 @@ class Model(HolopyObject):
         self.parameters = self.scatterer.parameters
         if isinstance(self.alpha, Parameter):
             self.parameters.append(self.alpha)
-        
+
 
     def get_alpha(self, pars):
         try:
@@ -269,6 +269,3 @@ class Model(HolopyObject):
     # as close to the minimizer as possible).
 
     # TODO: Allow a layer on top of theory to do things like moving sphere
-        
-
-    

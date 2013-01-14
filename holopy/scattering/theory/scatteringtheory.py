@@ -1,20 +1,20 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
-# W. Perry, Jerome Fung, and Ryan McGorty
+# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 #
-# This file is part of Holopy.
+# This file is part of HoloPy.
 #
-# Holopy is free software: you can redistribute it and/or modify
+# HoloPy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Holopy is distributed in the hope that it will be useful,
+# HoloPy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
 Base class for scattering theories.  Implements python-based
 calc_intensity and calc_holo, based on subclass's calc_field
@@ -27,11 +27,11 @@ calc_intensity and calc_holo, based on subclass's calc_field
 import numpy as np
 from ...core.marray import Image, VectorGrid, VectorGridSchema, dict_without
 from ...core import Optics
-from ...core.holopy_object import HolopyObject
+from ...core.holopy_object import HoloPyObject
 from ..binding_method import binding, finish_binding
 
 
-class ScatteringTheory(HolopyObject):
+class ScatteringTheory(HoloPyObject):
     """
     Defines common interface for all scattering theories.
 

@@ -7,7 +7,7 @@ Propagation/Reconstruction
 The classical way of working with holograms is to optically
 reconstruct them by shining light back through them.  This has the
 mathematical effect of propagating the field stored in the hologram to
-some different plane.  Holopy generalizes this concept and allows you
+some different plane.  HoloPy generalizes this concept and allows you
 to numerically propagate any hologram or electric field to another
 point in space.
 
@@ -58,7 +58,7 @@ Now that you have the reconstruction, you need to view it. A few
 resources come in handy when visualizing and working with the
 reconstructions.
 
-Holopy provides convenience wrappers around display routines from
+HoloPy provides convenience wrappers around display routines from
 `matplotlib <http://matplotlib.sourceforge.net/>`_ and `MayaVI
 <http://code.enthought.com/projects/mayavi/>`_ though since our Data
 is an numpy array, you can use the raw plotting libraries as well.
@@ -91,7 +91,7 @@ Propagating through Non-Homogeneous Media
 
 .. note::
 
-  This is a feature preview, Holopy does not yet support propagating
+  This is a feature preview, HoloPy does not yet support propagating
   through nonuniform media.  
 
 The propagation discussed above assumes propagation through free space or a homogeneous dielectric medium.  However, holopy can also propagate a field  through an optical elements :: 
@@ -104,7 +104,7 @@ or an inhomogeneous medium ::
   medium = holopy.load('medium.yaml')
   rec = propagate(holo, 1e-5, medium = medium)
 
-Holopy defaults to centering the medium or optical elements on the center of the data field (Or should we specify there center relative to the origin of the coordinate system (upper left corner for images)?  I think we will almost always want to center things, so it is better to make it default, there than the slight akwardness if the Data does not have a well defined center - tgd).  You can specify on offset vector if you don't want them centered ::
+HoloPy defaults to centering the medium or optical elements on the center of the data field (Or should we specify there center relative to the origin of the coordinate system (upper left corner for images)?  I think we will almost always want to center things, so it is better to make it default, there than the slight akwardness if the Data does not have a well defined center - tgd).  You can specify on offset vector if you don't want them centered ::
 
   ThinLens(f = 1e-2, z = 1e-1, offset = (1e-4, 1e-4))
 
@@ -114,10 +114,10 @@ Changing Propagation Model
 
 .. note::
 
-   This is a feature preview.  Holopy currently supports propagating
+   This is a feature preview.  HoloPy currently supports propagating
    only by convolution.  
 
-Holopy defaults to a linear model of propagation by convolution with pointspread functions.  If asked to compute propagation through a nonuniform medium it switches to its DDA propagation model.  If you wish to manually control the propagation model you can use ::
+HoloPy defaults to a linear model of propagation by convolution with pointspread functions.  If asked to compute propagation through a nonuniform medium it switches to its DDA propagation model.  If you wish to manually control the propagation model you can use ::
 
   rec = propagate(holo, 1e-5, propagation = FresnelTransform)
 

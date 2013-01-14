@@ -4,7 +4,7 @@ Fundamentals
 Units
 -----
 
-Holopy does **not** enforce any particular set of units. As long as
+HoloPy does **not** enforce any particular set of units. As long as
 you are consistent, you can use any set of units, for example pixels,
 meters, or microns.  So if you specify the wavelength of your red imaging
 laser as 658 then all other units (*x*, *y*, *z* position coordinates,
@@ -13,8 +13,8 @@ particle radii, etc.)  must also be specified in nanometers.
 Data
 ----
 
-Holopy is at its core a tool for working with optical data, either
-measurements from some experiment or simulations of such data.  Holopy
+HoloPy is at its core a tool for working with optical data, either
+measurements from some experiment or simulations of such data.  HoloPy
 works with all such data as :class:`holopy.core.marray.Marray` objects
 which are arrays of point measurements along with metadata about how
 to interpret those values.  Metadata might be:
@@ -38,7 +38,7 @@ to interpret those values.  Metadata might be:
 
 :Other Experimental Conditions:
 
-   Holopy can associate arbitrary metadata with data to describe any
+   HoloPy can associate arbitrary metadata with data to describe any
    relevant conditions of how the data was obtained or processing that
    has been done on the data.  
 
@@ -53,7 +53,7 @@ Data can be:
 :4-dimensional:
    timeseries of volume data
 
-Holopy will probably work to some degree with higher dimensional data
+HoloPy will probably work to some degree with higher dimensional data
 (because the underlying numpy arrays we use are n-dimensional), but
 many of its functions expect data in one of these forms.
 
@@ -61,13 +61,13 @@ Coordinate system
 -----------------
 
 For Image data (data points arrayed in a grid in a single plane),
-Holopy defaults to placing the origin, (0,0), at the top left corner
+HoloPy defaults to placing the origin, (0,0), at the top left corner
 as shown below. The x-axis runs vertically down, the y-axis runs
 horizontally to the right, and the z-axis points out of the screen,
 toward you.  This corresponds to the way that images are treated by
 most computer software.
 
-.. image:: ../images/HolopyCoordinateSystem.png
+.. image:: ../images/HoloPyCoordinateSystem.png
     :scale: 30 %
     :alt: Coordinate system used in holopy.
 
@@ -86,7 +86,7 @@ you to define one.
 Overview
 --------
 
-Holopy is divided into a number of packages that each serve specific
+HoloPy is divided into a number of packages that each serve specific
 purposes
 
 Core
@@ -99,7 +99,7 @@ cleaning up your data.  Most of these are simply higher level wrappers
 around scipy routines.  holopy.core can be used independently of the
 rest of holopy.
 
-Holopy Core is used at the beginning and end of your workflow:
+HoloPy Core is used at the beginning and end of your workflow:
 
   1) raw image (or other data) file(s) + metadata -> :class:`~holopy.core.marray.Marray` object
   2) Raw :class:`~holopy.core.marray.Marray` object + processing -> processed :class:`~holopy.core.marray.Marray` object
@@ -114,7 +114,7 @@ geometries, and theories to compute scattering from specified
 geometries.  Scattering depends on holopy.core (and certain scattering
 theories may depend on external scattering codes).
 
-Holopy Scattering is generally used to:
+HoloPy Scattering is generally used to:
 
   1) Describe geometry as :mod:`~holopy.scattering.scatterer` object
   2) Define the result you want as a :mod:`~holopy.core.marray.Schema` object

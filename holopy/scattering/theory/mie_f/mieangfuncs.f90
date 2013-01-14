@@ -1,23 +1,23 @@
-! Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
-! W. Perry, Jerome Fung, and Ryan McGorty
+! Copyright 2013, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+! W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 !
-! This file is part of Holopy.
+! This file is part of HoloPy.
 !
-! Holopy is free software: you can redistribute it and/or modify
+! HoloPy is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
 ! the Free Software Foundation, either version 3 of the License, or
 ! (at your option) any later version.
 !
-! Holopy is distributed in the hope that it will be useful,
+! HoloPy is distributed in the hope that it will be useful,
 ! but WITHOUT ANY WARRANTY; without even the implied warranty of
 ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ! GNU General Public License for more details.
 !
 ! You should have received a copy of the GNU General Public License
-! along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
+! along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 !
 ! mieangfuncs.f90
-! 
+!
 ! Author: Jerome Fung
 !
 ! Description:
@@ -31,7 +31,7 @@
         ! from incident polarization and amplitude scattering matrix.
         ! Parameters
         ! ----------
-        ! kr: real 
+        ! kr: real
         !     dimensionless distance from scatterer to field point
         ! phi: real
         !     azimuthal spherical coordinate to field point
@@ -39,7 +39,7 @@
         !     Amplitude scattering matrix
         ! einc: real array(2)
         !     Incident polarization vector
-        ! 
+        !
         ! Returns
         ! -------
         ! escat_sph: complex array (2)
@@ -52,7 +52,7 @@
         real (kind = 8), dimension(2) :: signarr, einc_sph
         complex (kind = 8) :: prefactor, ci
         data ci/(0.d0, 1.d0)/
-        
+
         ! convert polarization to spherical coords
         call incfield(einc(1), einc(2), phi, einc_sph)
         prefactor = ci / kr * exp(ci * kr) ! Bohren & Huffman formalism
@@ -66,7 +66,7 @@
       subroutine mie_fields(n_pts, calc_points, asbs, nstop, einc, es_x, &
            es_y, es_z)
         ! Calculate fields scattered by a sphere in the Lorenz-Mie solution,
-        ! at a list of selected points.  Use for hologram calculations or 
+        ! at a list of selected points.  Use for hologram calculations or
         ! general scattering.
         !
         ! Function calls from Python may need to transpose calc_points.
@@ -75,9 +75,9 @@
         ! ----------
         ! calc_points: array (3 x n_pts)
         !     Array of points over which scattered field is calculated. Points
-        !     should be in spherical coordinates relative to scatterer: 
+        !     should be in spherical coordinates relative to scatterer:
         !     non-dimensional radial coordinate (kr), theta and phi.
-        ! asbs: complex array (2, nstop) 
+        ! asbs: complex array (2, nstop)
         !     Mie coefficients from miescatlib.scatcoeffs(x_p, m_p, nstop)
         ! nstop: int
         !     Expansion order (from miescatlib.nstop(x_p))
@@ -86,7 +86,7 @@
         !
         ! Returns
         ! -------
-        ! es_x, es_y, es_z: complex array (n_pts) 
+        ! es_x, es_y, es_z: complex array (n_pts)
         !     The three electric field components at points in calc_points
         implicit none
         integer, intent(in) :: n_pts, nstop
@@ -100,8 +100,8 @@
         complex (kind = 8), dimension(2) :: escat_sph
         complex (kind = 8), dimension(3) :: escat_rect
         integer :: i
-      
-        ! Main loop over hologram points. 
+
+        ! Main loop over hologram points.
         do i = 1, n_pts, 1
            kr = calc_points(1, i)
            theta = calc_points(2, i)
@@ -112,7 +112,7 @@
 
            ! calculate scattered fields in spherical coordinates
            call calc_scat_field(kr, phi, asm_scat, einc, escat_sph)
-           
+
            ! convert to rectangular
            call fieldstocart(escat_sph, theta, phi, escat_rect)
            es_x(i) = escat_rect(1)
@@ -134,10 +134,10 @@
         ! ----------
         ! calc_points: array (3 x n_pts)
         !     Array of points over which scattered field is calculated. Points
-        !     should be in spherical coordinates relative to scatterer COM: 
+        !     should be in spherical coordinates relative to scatterer COM:
         !     non-dimensional radial coordinate (kr), theta and phi.
         ! amn: complex array (2, lmax * (lmax+2), 2) complex
-        !     Scattered field expansion coefficients calculated by 
+        !     Scattered field expansion coefficients calculated by
         !     scsmfo_min.amncalc(), stripped
         ! lmax: int
         !     Maximum order of scattered field expansion
@@ -148,7 +148,7 @@
         !
         ! Returns
         ! -------
-        ! es_x, es_y, es_z: complex array (n_pts) 
+        ! es_x, es_y, es_z: complex array (n_pts)
         !     The three electric field components at points in calc_points
 
         implicit none
@@ -173,15 +173,15 @@
            phi = calc_points(3, i)
 
            ! calculate amplitude scattering matrix from amn coefficients
-           ! subroutine asmfr is in uts_scsmfo.for 
+           ! subroutine asmfr is in uts_scsmfo.for
            call asmfr(amn, lmax, theta, phi + euler_gamma, kr, ascatmat)
            ! fudge factor of -0.5 for agreement with single sphere case
            asreshape = reshape(cshift(ascatmat, shift = 1), (/ 2, 2 /), &
-                order = (/ 2, 1 /)) * (-0.5) 
+                order = (/ 2, 1 /)) * (-0.5)
 
            ! calculate scattered fields in spherical coordinates
            call calc_scat_field(kr, phi, asreshape, inc_pol, escat_sph)
-       
+
            ! convert to rectangular
            call fieldstocart(escat_sph, theta, phi, escat_rect)
            es_x(i) = escat_rect(1)
@@ -208,7 +208,7 @@
         real (kind = 8), dimension(nstop) :: pi_n, tau_n
         real (kind = 8), dimension(0:nstop) :: jn, djn, yn, dyn
 
-        ! initialize 
+        ! initialize
         asm = (/0., 0., 0., 0. /)
         kr = sphcoords(1)
         theta = sphcoords(2)
@@ -226,7 +226,7 @@
            asm(1) = asm(1) + prefactor * ci**n * ( &
                 asbs(1,n)*pi_n(n)*dhl + ci*asbs(2,n)*tau_n(n)*hl)
            asm(2) = asm(2) + prefactor * ci**n * ( &
-                asbs(1,n)*tau_n(n)*dhl + ci*asbs(2,n)*pi_n(n)*hl)   
+                asbs(1,n)*tau_n(n)*dhl + ci*asbs(2,n)*pi_n(n)*hl)
         end do
 
         ! apply inverse prefactor so B/H far field formalism can be used
@@ -253,7 +253,7 @@
         !     Scattering coefficients
         ! theta (real)
         !     Spherical coordinate theta (radians).
-        !     In the Mie solution the amplitude scattering matrix is 
+        !     In the Mie solution the amplitude scattering matrix is
         !     independent of phi.
         !
         ! Outputs:
@@ -270,10 +270,10 @@
         real (kind = 8) :: prefactor
         real (kind = 8), dimension(nstop) :: pi_n, tau_n
 
-        ! initialize 
+        ! initialize
         asm = (/0., 0., 0., 0. /)
 
-        ! compute angular special functions 
+        ! compute angular special functions
         call pisandtaus(nstop, theta, pi_n, tau_n)
 
         ! main loop
@@ -282,9 +282,9 @@
            asm(1) = asm(1) + prefactor * ( &
                 asbs(1,n) * pi_n(n) + asbs(2,n) * tau_n(n))
            asm(2) = asm(2) + prefactor * ( &
-                asbs(1,n) * tau_n(n) + asbs(2,n) * pi_n(n))   
+                asbs(1,n) * tau_n(n) + asbs(2,n) * pi_n(n))
         end do
-        
+
         ! reshape into 2 x 2 form. Only diagonal elts are nonzero.
         asm_out = reshape(cshift(asm, shift = 1), (/ 2, 2 /), &
              order = (/ 2, 1 /))
@@ -301,7 +301,7 @@
 !f2py   intent(in) asph
 !f2py   intent(in) theta
 !f2py   intent(in) phi
-!f2py   intent(out) acart        
+!f2py   intent(out) acart
         ct = dcos(theta)
         st = dsin(theta)
         cp = dcos(phi)
@@ -336,7 +336,7 @@
 
         return
         end
-      
+
 
         subroutine incfield(ex, ey, phi, eincorigin)
 ! replacement of HoloSimClassMie2.IncField
@@ -373,7 +373,7 @@
 !f2py depend(n) pis, pisout, taus
 
       mu = dcos(theta)
-      
+
       pis(0) = 0.
       pis(1) = 1.
       taus(1) = mu
@@ -383,7 +383,7 @@
               (dble(cnt))/(dble(cnt) - 1.d0)*pis(cnt-2)
          taus(cnt) = dble(cnt)*mu*pis(cnt) - (dble(cnt)+1.d0)*pis(cnt-1)
       end do
-      
+
       pisout =  pis(1:n)
       return
       end

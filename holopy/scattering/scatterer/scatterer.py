@@ -1,20 +1,20 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca W. Perry,
-# Jerome Fung, and Ryan McGorty
+# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 #
-# This file is part of Holopy.
+# This file is part of HoloPy.
 #
-# Holopy is free software: you can redistribute it and/or modify
+# HoloPy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Holopy is distributed in the hope that it will be useful,
+# HoloPy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
 The abstract base class for all scattering objects
@@ -31,12 +31,12 @@ from copy import copy
 
 import numpy as np
 
-from ...core.holopy_object  import HolopyObject
+from ...core.holopy_object  import HoloPyObject
 from ...core.helpers import _ensure_array
 from ..errors import ScattererDefinitionError
 
 
-class Scatterer(HolopyObject):
+class Scatterer(HoloPyObject):
     """
     Base class for scatterers
 
@@ -288,7 +288,7 @@ def bound_union(d1, d2):
         new[i][1] = max(d1[i][1], d2[i][1])
     return new
 
-class Indicators(HolopyObject):
+class Indicators(HoloPyObject):
     def __init__(self, functions, bound = None):
         try:
             len(functions)

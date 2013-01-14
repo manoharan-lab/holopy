@@ -1,20 +1,20 @@
-# Copyright 2011, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
-# W. Perry, Jerome Fung, and Ryan McGorty
+# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 #
-# This file is part of Holopy.
+# This file is part of HoloPy.
 #
-# Holopy is free software: you can redistribute it and/or modify
+# HoloPy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Holopy is distributed in the hope that it will be useful,
+# HoloPy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Holopy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
 The centerfinder module is a group of functions for locating the
 center of a particle or dimer in a hologram. This can be useful for
@@ -38,7 +38,7 @@ def center_find(image, centers=1, scale=.5):
     holograms which basically show concentric circles. The optional
     scale parameter (between 0 and 1) gives a lower threshold of image
     intensity gradient relative to the maximum gradient (1) to take
-    into account when finding the center. 
+    into account when finding the center.
 
     Parameters
     ----------
@@ -70,7 +70,7 @@ def center_find(image, centers=1, scale=.5):
 
 
 def image_gradient(image):
-    """ 
+    """
     Uses the sobel operator as a numerical approximation of a
     derivative to find the x and y components of the image's intensity
     gradient at each pixel.
@@ -88,7 +88,7 @@ def image_gradient(image):
         y-components of intensity gradient
     """
     gradx = scipy.ndimage.sobel(image, axis = 0)
-    # - sign here from old Holopy coordinate convention? 
+    # - sign here from old HoloPy coordinate convention?
     grady = -1*scipy.ndimage.sobel(image, axis=1)
     return gradx, grady
 
@@ -99,7 +99,7 @@ def hough(x_deriv, y_deriv, centers=1, scale=.25):
     the most gradients point towards or away from. Uses only gradients
     with magnitude greater than scale*maximum gradient. Once the pixel
     is found, uses a brightness-weighted average around that pixel to
-    refine the center location to return. After the first center is 
+    refine the center location to return. After the first center is
     found, the sourrounding area is blocked out and another brightest
     pixel is searched for.
 
@@ -121,7 +121,7 @@ def hough(x_deriv, y_deriv, centers=1, scale=.25):
         row and column of center
     accumulator : ndarray
         accumulator array.  The maximum of this array should be the
-        center of the hologram 
+        center of the hologram
 
     """
     #Finding the center: Using the derivatives we have already found
@@ -131,17 +131,17 @@ def hough(x_deriv, y_deriv, centers=1, scale=.25):
     #concentric-circle-patterned hologram, the maximum of accumulator
     #should be the center of the pattern.  Rebecca W. Perry, Jerome Fung
     #11/20/2009
-    
+
     #Edited by Rebecca Dec. 1, 2009 to include weighted average
-    #Edited by Rebecca Perry June 9, 2011 to change default scale and 
+    #Edited by Rebecca Perry June 9, 2011 to change default scale and
     #modify weighted averaging box size for centers close to the edges.
-    
+
     accumulator = zeros(x_deriv.shape, dtype = int)
     dim_x = x_deriv.shape[0]
     dim_y = x_deriv.shape[1]
     gradient_mag = sqrt(x_deriv**2 + y_deriv**2)
     threshold = scale * gradient_mag.max()
-    
+
     points_to_vote = scipy.where(gradient_mag > threshold)
     points_to_vote = array([points_to_vote[0], points_to_vote[1]]).transpose()
 
@@ -167,10 +167,10 @@ def hough(x_deriv, y_deriv, centers=1, scale=.25):
     weightedColNum=zeros(centers)
     for i in arange(0,centers):
         #m is row number, n is column number
-        [m, n]=scipy.unravel_index(accumulator.argmax(), accumulator.shape) 
+        [m, n]=scipy.unravel_index(accumulator.argmax(), accumulator.shape)
         #brightness average around brightest pixel:
         boxsize = min(10, m, n, dim_x-1-m, dim_y-1-n) #boxsize changes with closeness to image edge
-        small_sq = accumulator[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1] 
+        small_sq = accumulator[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1]
         #the part of the accumulator to average over
         rowNum, colNum = numpy.mgrid[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1]
         #row and column of the revised center:

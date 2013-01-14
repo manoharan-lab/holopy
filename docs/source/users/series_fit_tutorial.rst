@@ -1,6 +1,6 @@
 .. note::
 
-   This is a feature preview.  Holopy does not currently have any
+   This is a feature preview.  HoloPy does not currently have any
    machinery for fitting series of images.  We currently do series
    fits with python scripts that call fit for each image, using the
    result from the previous image as an initial guess.  

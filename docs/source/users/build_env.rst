@@ -1,6 +1,6 @@
 .. _build_env:
 
-Setting up a Holopy Build Environment
+Setting up a HoloPy Build Environment
 =====================================
 
 Linux (Ubuntu)

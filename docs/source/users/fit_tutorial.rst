@@ -47,7 +47,7 @@ the provided shortcut ``par`` to mean :class:`~holopy.fitting.parameter.Paramete
 because you will be typing it a lot.
 
 If your model does not fit neatly into a parametrized scatterer like
-this, Holopy provides a lower level interface ::
+this, HoloPy provides a lower level interface ::
 
   param = Parametrization(make_scatterer,
                           parameters = [par(guess = .5, name = 'r'),
@@ -107,7 +107,7 @@ specified here will override those specified in the data ::
 
 .. note::
 
-   This is a feature preview.  Holopy does not currently support
+   This is a feature preview.  HoloPy does not currently support
    fitting to metadata.  
 
 Data
@@ -119,7 +119,7 @@ needed to perform a scattering calculation.
 
 .. note::
 
-   We have not tested Holopy at all extensively for fitting to
+   We have not tested HoloPy at all extensively for fitting to
    Marray's other than Image.  
 
 Minimizer
@@ -136,14 +136,14 @@ minimizer by passing a minimizer object to fit(), for example (To tell nmpfit to
 
   fit(model, data, minimizer = Nmpfit(ftol=1e-5, xtol = 1e-5, gtol=1e-5, niter=2))
 
-or to use OpenOpt's ralg minimizer instead of nmpfit  (This will fail unless you have OpenOpt installed and configured so that Holopy can
+or to use OpenOpt's ralg minimizer instead of nmpfit  (This will fail unless you have OpenOpt installed and configured so that HoloPy can
 find it.)::
 
   fit(model, data, minimizer = Ralg())
 
 .. note::
 
-   This is a feature preview.  Holopy currently only supports fitting
+   This is a feature preview.  HoloPy currently only supports fitting
    with the supplied Nmpfit.  
   
 If you need to provide information to the minimizer about specific
@@ -247,7 +247,7 @@ Hologram with Beam Tilt
 
 .. note::
 
-   This is a feature preview.  Holopy does not yet support fitting to
+   This is a feature preview.  HoloPy does not yet support fitting to
    metadata.  
 
 Here we override some of the parameters specified in the Data (or in fact you can leave them as none when specifying Metadata for this data) ::
@@ -278,10 +278,10 @@ Alternative Scatterer Parametrizations
 
 .. note::
 
-   This is a feature preview.  Holopy does not provide any
+   This is a feature preview.  HoloPy does not provide any
    Parametrizations of this sort yet.  
 
-Holopy also provides some additional views of scatterers that may be convenient for fitting.  For example ::
+HoloPy also provides some additional views of scatterers that may be convenient for fitting.  For example ::
 
   from holopy.fitting.views import Dimer
   s = Dimer([Sphere(n, r), Sphere(n, r)], gap, beta, gamma, center)
