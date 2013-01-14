@@ -1,29 +1,41 @@
 .. _calc_tutorial:
 
 ************************
-Scattering Calculations.
+Scattering Calculations
 ************************
 
 Optical physicists and astronomers have worked out how to compute the
-light scattering off of many kinds of objects.  Holopy provides an
-easy interface for computing many kinds of scattering from microscopic
+light scattering off of many kinds of objects.  HoloPy provides an
+easy interface for computing many types of scattering from microscopic
 objects.  These include scattered electric fields, scattered intensity
 (what you would record on a normal camera), holograms, and scattering
-matricies and cross sections 
+matrices and cross sections 
 
 
 Scattering calculations generally consist of three steps:
 
 1. Define a scatterer using a :mod:`~holopy.scattering.scatterer` object
 
-2. Specify wavelength and where to compute the values using a :mod:`~holopy.core.marray.Schema` object
+2. Specify a wavelength and where to compute the values using a :mod:`~holopy.core.marray.Schema` object
 
 3. Use a calc function from a :mod:`~holopy.scattering.theory` object
    to compute scattered quantities
 
+Example
+==================
+ ::
+
+  from holopy.scattering.scatterer import Sphere
+  from holopy.core import ImageSchema, Optics
+  from holopy.scattering.theory import Mie
+
+  sphere1 = Sphere(center=(3, 2, 5), n = 1.59, r = 0.5) #choice of units: microns
+  schema = ImageSchema(spacing = .1, shape = 100, 
+    optics = Optics(wavelen = .660, index=1.33)) #detector: 100x100 pixel camera, red laser
+  holo = Mie.calc_holo(sphere1, schema)
 
 
-Define a Scatterer
+Defining a Scatterer
 ==================
 
 Scatterer objects are used to describe the geometry and optical properties of objects that
@@ -32,9 +44,9 @@ index of refraction of the scatterers.  You define a scatterer like
 this: ::
 
   from holopy.scattering.scatterer import Sphere
-  sphere = Sphere(n = 1.59+.0001j, r = .5, center = (5, 5, 5))
+  sphere = Sphere(n = 1.59+.0001j, r = .5, center = (3, 2, 5))
 
-This scatterer is one we commonly use in our lab, a 1 micron
+This scatterer is one we commonly use in our lab: a 1 micron diameter
 polystyrene sphere.  Its index of refraction is 1.59 with a very small
 complex part, and here we have placed it 5 microns away from our
 imaging plane.
@@ -47,10 +59,11 @@ imaging plane.
    :math:`10^{-4}` should have negligible impact on the result.
   
 You can describe other objects or collections of objects with other
-scatterers in :mod:`holopy.scattering.scatterer`. Go on take a look,
+scatterers in :mod:`holopy.scattering.scatterer`. Go on take a look
+at the code or see the More Examples section below,
 we will still be here when you get back.
 
-Define a Schema
+Defining a Schema
 ===============
 
 Schema objects tell Holopy what its calculated results should look
@@ -106,10 +119,11 @@ calc_cross_sections which only an Optics object and not a full
 
    In a similar vein you could work in meters, inches, furlongs, smoots, or cubits. 
 	 
-Examples
+More Examples
 ========
 
-Now lets put this all together and see how you would compute scattering from some other objects.  
+Now let's take this a step further and see how you can compute scattering from 
+objects more complex than a single sphere.  
 
 
 
@@ -161,7 +175,7 @@ Advanced Calculations
 
 Scattering Matrices
 -------------------
-In a static light scattering measurement you record scattered intensity at a number of angles.  In this kind of experiment you are usually not interested in the exact distance from the particles, and so instead work with scattering matricies ::
+In a static light scattering measurement you record scattered intensity at a number of angles.  In this kind of experiment you are usually not interested in the exact distance from the particles, and so instead work with scattering matrices ::
 
   from holopy.core import Schema, Angles, Optics
   from holopy.scattering.scatterer import Sphere
