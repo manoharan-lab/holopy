@@ -25,7 +25,7 @@ from __future__ import division
 
 
 class Error(Exception):
-    def __init__(self, message):
+    def __init__(self, message = ""):
         self.message = message
     def __str__(self):
         return self.message
@@ -55,3 +55,6 @@ class PixelScaleNotSpecified(Exception):
         pass
     def __str__(self):
         return ("Pixel scale not specified in Optics instance.")
+
+class UnspecifiedPosition(Error):
+	pass

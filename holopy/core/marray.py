@@ -17,7 +17,7 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
 Storing measurements and calculated results.  This is done through
-Arrays with metadata (Marray and subclases).  It also includes Schema which
+arrays with metadata (Marray and subclasses).  It also includes Schema which
 specify how results should be computed in an analogous interface to how Marrays are
 specified.
 
@@ -31,13 +31,32 @@ import copy
 import numpy as np
 import scipy.signal
 import errors
+<<<<<<< TREE
+from errors import UnspecifiedPosition
+from .holopy_object import HolopyObject
+=======
 from .holopy_object import HoloPyObject
+>>>>>>> MERGE-SOURCE
 from .metadata import Grid, Angles
 from .helpers import _ensure_pair, _ensure_array
 import inspect
 
-
 def zeros_like(obj, dtype = None):
+    """
+    Make an empty marray with the same shape and metadata as the template.
+
+    Parameters
+    ----------
+    obj : :class:`.PseudoMarray`
+        Template object (schema or marray)
+    dtype : :class:`numpy.dtype`
+        Optional argument to override array type
+
+    Returns
+    -------
+    arr : :class:`.Marray`
+        Empty (all zeros) marray with shape and metadata copied from obj
+    """
     if isinstance(obj, np.ndarray):
         return obj.__class__(np.zeros_like(obj, dtype = dtype), **obj._dict)
     else:
@@ -56,6 +75,7 @@ def arr_like(arr, template):
         Marray to copy metadata from
 
     Returns
+    -------
     res : :class:`.Marray`
         Marray like template containing data from arr
     """
@@ -70,7 +90,6 @@ class PseudoMarray(HoloPyObject):
         self.origin = origin
         self.use_random_fraction = use_random_fraction
         super(PseudoMarray, self).__init__(**kwargs)
-
 
     @property
     def selection(self):

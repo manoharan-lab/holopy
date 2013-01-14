@@ -23,6 +23,7 @@ from nose.plugins.attrib import attr
 from .common import assert_allclose
 
 import scipy.fftpack
+from numpy.testing import assert_allclose
 
 @attr('fast')
 def test_fft_1d_no_shift():
@@ -65,3 +66,8 @@ def test_ifft_1d_no_shift():
        -0.04443262+0.01863101j,  0.02483062-0.09611888j])
 
     assert_allclose(math.ifft(a, shift=False), scipy.fftpack.ifft(a))
+    
+def test_rotate_single_point():
+    points = np.array([1.,1.,1.])
+    assert_allclose(rotate_points(points, pi, pi, pi), np.array([-1.,  1., -1.]), 1e-5)
+

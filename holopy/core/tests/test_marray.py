@@ -19,9 +19,9 @@ from __future__ import division
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_raises
 from ..marray import (ImageSchema, VectorGrid, VectorGridSchema, Image,
-                      zeros_like, subimage, resize, Volume)
-from .common import assert_obj_close
-
+                      zeros_like, subimage, resize, Volume, PseudoVectorGrid)
+from .common import assert_obj_close, get_example_data
+from ..errors import UnspecifiedPosition
 
 def test_VectorGrid():
     schema = ImageSchema(shape = (100,100), spacing = .1)
@@ -32,6 +32,13 @@ def test_VectorGrid():
     vd2 = VectorGrid(np.zeros((10, 10, 3)))
     assert_equal(vd2.components, ('x', 'y', 'z'))
 
+    holo = get_example_data('image0001.yaml')
+    vh = zeros_like(holo)
+    assert_equal(vh.shape, holo.shape)
+    assert_equal(vh.optics, holo.optics)
+    
+    assert_raises(UnspecifiedPosition, holo.positions_theta)
+    
 
 def test_positions_in_spherical():
     schema = ImageSchema(shape = (2,2), spacing = 1)
@@ -65,6 +72,7 @@ def test_resample():
 
     assert_obj_close(i, Image(np.arange(16).reshape((4,4)),
                               spacing = 1), context='image')
+
 def test_subimage():
     i = np.zeros((10,10))
     s = subimage(i, (5,5), 2)
