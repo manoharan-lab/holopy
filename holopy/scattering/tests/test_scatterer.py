@@ -32,6 +32,8 @@ from ...core.helpers import OrderedDict
 from ..scatterer import (Sphere, Scatterer, Ellipsoid,
                          Scatterers, scatterer)
 
+from ..scatterer.ellipsoid import isnumber
+
 from ..errors import ScattererDefinitionError
 from .common import assert_allclose
 from ..scatterer.scatterer import find_bounds
@@ -62,6 +64,8 @@ def test_Ellipsoid():
     assert_equal(s.r, (1, 2, 3))
     assert_equal(s.center, (3, 2, 1))
     assert_equal(str(s)[0:9], 'Ellipsoid')
+    assert_equal(True,isnumber(3))
+    assert_equal(False,isnumber('p'))
 
 @attr('fast')
 def test_Sphere_construct_list():
