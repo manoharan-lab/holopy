@@ -26,8 +26,8 @@ determining an initial parameter guess for hologram fitting.
 from __future__ import division
 
 import scipy
-import numpy
-from scipy import arange, around, array, int16, zeros, sqrt, ndimage, transpose
+import numpy as np
+from scipy import arange, around, array, zeros, sqrt, ndimage, transpose
 
 def center_find(image, centers=1, scale=.5):
     """
@@ -144,7 +144,7 @@ def hough(x_deriv, y_deriv, centers=1, scale=.25):
 
     points_to_vote = scipy.where(gradient_mag > threshold)
     points_to_vote = array([points_to_vote[0], points_to_vote[1]]).transpose()
-
+    import pdb; pdb.set_trace()
     for coords in points_to_vote:
         # draw a line
         # add it to the accumulator
@@ -154,17 +154,17 @@ def hough(x_deriv, y_deriv, centers=1, scale=.25):
             slope = y_deriv[coords[0], coords[1]]/x_deriv[coords[0], coords[1]]
         if slope > 1. or slope < -1.:
             # minus sign on slope from old convention?
-            rows = arange(dim_x, dtype = 'int16')
+            rows = arange(dim_x, dtype = 'int')
             line = around(coords[1] - slope * (rows - coords[0]))
             cols_to_use = (line >= 0) * (line < dim_y)
-            acc_cols = int16(line[cols_to_use])
+            acc_cols = np.int(line[cols_to_use])
             acc_rows = rows[cols_to_use]
         else:
             cols = arange(dim_y, dtype = 'int16')
             line = around(coords[0] - 1./slope * (cols - coords[1]))
             rows_to_use = (line >= 0) * (line < dim_x)
             acc_cols = cols[rows_to_use]
-            acc_rows = int16(line[rows_to_use])
+            acc_rows = np.int(line[rows_to_use])
         accumulator[acc_rows, acc_cols] += 1
     weightedRowNum=zeros(centers)
     weightedColNum=zeros(centers)
@@ -175,7 +175,7 @@ def hough(x_deriv, y_deriv, centers=1, scale=.25):
         boxsize = min(10, m, n, dim_x-1-m, dim_y-1-n) #boxsize changes with closeness to image edge
         small_sq = accumulator[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1]
         #the part of the accumulator to average over
-        rowNum, colNum = numpy.mgrid[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1]
+        rowNum, colNum = np.mgrid[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1]
         #row and column of the revised center:
         weightedRowNum[i] = scipy.average(rowNum,None,small_sq)
         weightedColNum[i] = scipy.average(colNum,None,small_sq)
