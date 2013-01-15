@@ -108,7 +108,7 @@ c  make bcof rank 1 since we only need its diagonal elements
 
 c *****************************************************************************
 
-      subroutine asmfr(amn0,nodrt,theta,phi,kr, sa)
+      subroutine asmfr(amn0,nodrt,theta,phi,kr,sa)
 c Calculate amplitude scattering matrix for given cluster as a function of 
 c angle.
 c Uses exact radial dependence of fields
@@ -117,7 +117,7 @@ c amn0 (array of amn coefficients obtained from amncalc subroutine
 c in scsmfo_min.for)
 c nodrt (maximum order of cluster expansion)
 c theta 
-c phi (orientation angles)
+c phi (detector spherical coordinate angles) 
 c kr (dimensionless wavevector*distance to detector point)
 c Outputs:
 c sa (2x2 complex array)
@@ -179,6 +179,72 @@ c
                sa(2) = sa(2) + kr * expir * radfunc(ip,n) * tau(ip) * a
                sa(3) = sa(3) + kr * expir * radfunc(ip,n) * tau(ip) * b
                sa(4) = sa(4) + ci*kr*expir * radfunc(ip,n) * tau(3-ip)*a
+            enddo
+         enddo
+      enddo
+
+      return
+      end
+
+c *****************************************************************************
+
+      subroutine asm(amn0,nodrt,theta,phi,sa)
+c Calculate amplitude scattering matrix for given cluster as a function of 
+c angle.
+c Uses far-field approximation.
+c Inputs:
+c amn0 (array of amn coefficients obtained from amncalc subroutine 
+c in scsmfo_min.for)
+c nodrt (maximum order of cluster expansion)
+c theta 
+c phi (detector spherical coordinates) 
+c Outputs:
+c sa (2x2 complex array)
+      include 'scfodim.for'
+      implicit real*8(a-h,o-z)
+c
+      parameter(nbd=nod*(nod+2),nbd2=nbd+nbd,
+     1          nbtd=notd*(notd+2),notd2=notd+notd,
+     1          nbc=2*notd2+4)
+      real*8 drot(-1:1,0:nodrt*(nodrt+2)),tau(2)
+      complex*16 ci,amn0(2,nodrt*(nodrt+2),2),cin,sa(4),
+     1           ephi(-notd-1:notd+1),a,b
+      data ci/(0.d0,1.d0)/
+cf2py intent(in) amn0, nodrt, theta, phi
+cf2py intent(out) sa
+
+      ct = dcos(theta)
+
+      call rotcoef(ct,1,nodrt,drot,1)
+      ephi(1)=cdexp(ci*phi)
+      ephi(-1)=conjg(ephi(1))
+      ephi(0)=1.d0
+      do m=2,nodrt+1
+         ephi(m)=ephi(1)*ephi(m-1)
+         ephi(-m)=conjg(ephi(m))
+      enddo
+      do i=1,4
+         sa(i)=0.
+      enddo
+
+      do n=1,nodrt
+         cin=(-ci)**n
+         nn1=n*(n+1)
+         do m=-n,n
+            mn=nn1+m
+            mnm=nn1-m
+            tau(1)=dsqrt(dble(n+n+1))*(drot(-1,mnm)-drot(1,mnm))
+            tau(2)=dsqrt(dble(n+n+1))*(drot(-1,mnm)+drot(1,mnm))
+            do ip=1,2
+               a=amn0(ip,mn,1)*ephi(m+1)+amn0(ip,mn,2)*ephi(m-1)
+               b=ci*(amn0(ip,mn,1)*ephi(m+1)-amn0(ip,mn,2)*ephi(m-1))
+c
+c  s1,s2,s3,s4: amplitude scattering matrix elements.
+c
+               sa(1)=sa(1)+cin*tau(3-ip)*b
+               sa(2)=sa(2)-ci*cin*tau(ip)*a
+               sa(3)=sa(3)-ci*cin*tau(ip)*b
+               sa(4)=sa(4)+cin*tau(3-ip)*a
             enddo
          enddo
       enddo
