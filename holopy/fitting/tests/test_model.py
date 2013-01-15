@@ -25,11 +25,38 @@ from nose.plugins.attrib import attr
 from numpy.testing import assert_equal
 from ...scattering.theory import Mie
 from ...scattering.scatterer import Sphere, Spheres, Scatterer
-from .. import fit, par, Model
+from .. import fit, par, Model, ComplexParameter, Parametrization
 from ...core.tests.common import assert_obj_close, get_example_data
 
+@attr('fast')
+def test_naming():
 
-@attr('medium')
+    #parameterizing with fixed params
+    def makeScatterer(n,m):
+        n**2+m
+        return fake_sph
+    parm = Parametrization(makeScatterer, [par(limit=4),par(2, [1,5])])
+    
+    assert_equal(parm._fixed_params,{None: 4})
+    
+@attr('fast')
+def test_Get_Alpha():
+
+    #checking get_alpha function
+    sc = Spheres([Sphere(n = 1.58, r = par(0.5e-6), center = np.array([10., 10., 20.])),
+              Sphere(n = 1.58, r = par(0.5e-6), center = np.array([9., 11., 21.]))])
+    model = Model(sc, Mie.calc_holo, alpha = par(.7,[.6,1]))
+
+    sc = Spheres([Sphere(n = 1.58, r = par(0.5e-6), center = np.array([10., 10., 20.])),
+              Sphere(n = 1.58, r = par(0.5e-6), center = np.array([9., 11., 21.]))])
+    model2 = Model(sc, Mie.calc_holo)
+              
+    assert_equal(model.get_alpha(model.parameters).guess, 0.7)
+    assert_equal(model.get_alpha(model.parameters).name, 'alpha')
+    assert_equal(model2.get_alpha(model2.parameters), 1.0)
+    
+    
+@attr('fast')
 def test_Tying():
 
     #tied parameters
@@ -41,3 +68,18 @@ def test_Tying():
     assert_equal(model.parameters[0].guess, 1.59)
     assert_equal(model.parameters[1].guess, 5e-7)
     assert_equal(len(model.parameters),4)
+    
+    
+@attr('fast')
+def test_ComplexPar():
+
+    #complex parameter
+    def makeScatterer(n):
+        n**2
+        return fake_sph
+        
+    parm = Parametrization(makeScatterer, [ComplexParameter(real = par(1.58),imag = par(.001), name='n')])
+    model = Model(parm, Mie.calc_holo, alpha = par(.7,[.6,1]))
+    
+    assert_equal(model.parameters[0].name,'n.real')
+    assert_equal(model.parameters[1].name,'n.imag')
