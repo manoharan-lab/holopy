@@ -217,6 +217,7 @@ class DDA(ScatteringTheory):
 
         return self._finalize_fields(scatterer.z, fields, schema)
 
+## TODO: pull from this release
     def calc_field_volume(self, volume):
         """
         Compute the Electric field in a volume
