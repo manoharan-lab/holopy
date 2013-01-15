@@ -19,9 +19,10 @@ from __future__ import division
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_raises
 from ..marray import (ImageSchema, VectorGrid, VectorGridSchema, Image,
-                      zeros_like, subimage, resize, Volume)
+                      zeros_like, subimage, resize, Volume, Schema)
 from .common import assert_obj_close, get_example_data
 from ..errors import UnspecifiedPosition
+from .. import Angles
 
 def test_VectorGrid():
     schema = ImageSchema(shape = (100,100), spacing = .1)
@@ -37,7 +38,7 @@ def test_VectorGrid():
     assert_equal(vh.shape, holo.shape)
     assert_equal(vh.optics, holo.optics)
 
-    assert_raises(UnspecifiedPosition, holo.positions_theta)
+    assert_raises(UnspecifiedPosition, holo.positions_theta_phi)
 
 
 def test_positions_in_spherical():
@@ -94,3 +95,12 @@ def test_resize():
     r = resize(v, spacing = (.2, .2, .2))
     assert_equal(r.spacing, (.2, .2, .2))
     assert_equal(r.shape, (5, 5, 5))
+
+def test_positions_theta_phi():
+    theta = np.linspace(0, np.pi)
+    phi = np.linspace(0, 2*np.pi)
+    a = Angles(theta, phi)
+    s = Schema((50, 2), a)
+    ptp = s.positions_theta_phi()
+    assert_equal(ptp[:,0], theta)
+    assert_equal(ptp[:,1], phi)

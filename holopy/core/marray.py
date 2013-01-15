@@ -103,9 +103,9 @@ class PseudoMarray(HoloPyObject):
         return np.random.random(self.shape) > 1.0-self.use_random_fraction
 
     # TODO: put this somewhere sensible, make it handle phi as well
-    def positions_theta(self):
+    def positions_theta_phi(self):
         if isinstance(self.positions, Angles):
-            return self.positions.theta
+            return np.vstack((self.positions.theta, self.positions.phi)).transpose()
         else:
             raise UnspecifiedPosition()
 
