@@ -111,7 +111,7 @@ module when you import it.
 
 Testing
 -------
-HoloPy comes with a suite of tests that will ensure that all everything has built correctly and it is able to preform all of the calculations it should be able to.
+HoloPy comes with a suite of tests that will ensure that all everything has built correctly and it is able to perform all of the calculations it should be able to.
 To run these tests navigate to the root of the package and run:
 
 .. sourcecode:: bash
