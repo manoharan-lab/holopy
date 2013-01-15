@@ -155,16 +155,18 @@ def hough(x_deriv, y_deriv, centers=1, scale=.25):
         if slope > 1. or slope < -1.:
             # minus sign on slope from old convention?
             rows = arange(dim_x, dtype = 'int')
-            line = around(coords[1] - slope * (rows - coords[0]))
+            line = around(coords[1] - slope * (rows - coords[0])).astype('int')
             cols_to_use = (line >= 0) * (line < dim_y)
-            acc_cols = np.int(line[cols_to_use])
+            acc_cols = line[cols_to_use]
+            #import pdb; pdb.set_trace()
             acc_rows = rows[cols_to_use]
         else:
             cols = arange(dim_y, dtype = 'int')
-            line = around(coords[0] - 1./slope * (cols - coords[1]))
+            line = around(coords[0] - 1./slope * (cols - 
+                                                  coords[1])).astype('int')
             rows_to_use = (line >= 0) * (line < dim_x)
             acc_cols = cols[rows_to_use]
-            acc_rows = np.int(line[rows_to_use])
+            acc_rows = line[rows_to_use]
         accumulator[acc_rows, acc_cols] += 1
     weightedRowNum=zeros(centers)
     weightedColNum=zeros(centers)
