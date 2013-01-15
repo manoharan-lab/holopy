@@ -105,9 +105,9 @@ all of the particles are constrained to have the same refractive
 index, but the index is determined by the fitter.  This may be done by
 defining a Parameter and using it in multiple places ::
   
-  n = par(1.59)
+  n1 = par(1.59)
   sc = Spheres([Sphere(n = nl, r = par(0.5e-6), center = array([10., 10., 20.])),
-                Sphere(n = n, r = par(0.5e-6), center = array([9., 11., 21.]))])
+                Sphere(n = n1, r = par(0.5e-6), center = array([9., 11., 21.]))])
 
 Theory
 ------

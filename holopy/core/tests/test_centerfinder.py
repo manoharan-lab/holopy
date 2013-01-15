@@ -21,6 +21,8 @@ from numpy.testing import assert_allclose
 from ..process.centerfinder import center_find
 from .common import get_example_data
 
+gold_location = np.array([48.52683097, 50.24042999])
+
 def test_FoundLocation():
     #load a hologram
     holo = get_example_data('image0001.yaml')
@@ -29,4 +31,4 @@ def test_FoundLocation():
     location = center_find(holo, scale=.25)
 	
     #check to make sure it matches the gold
-    assert_allclose(location, np.array([48.52683097, 50.24042999]))
+    assert_allclose(location, gold_location)
