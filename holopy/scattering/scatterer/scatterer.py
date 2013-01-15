@@ -278,7 +278,7 @@ def find_bounds(indicator):
                 point[i] *= 1.1
             bounds[i][j] = point[i]
 
-    #TO DO: add a check along the boundaries of the square to make sure
+    #TODO: add a check along the boundaries of the square to make sure
     #something like an oblique ellipsoid doesn't get missed'
 
 def bound_union(d1, d2):

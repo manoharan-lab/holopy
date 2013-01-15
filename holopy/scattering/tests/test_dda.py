@@ -68,8 +68,8 @@ def test_DDA_sphere():
 
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_dda_2_cpu():
-    sc = Sphere(n=1.59, r=3e-1, center=(1, -1, 30))
-
+    sc = Sphere(n=1.59, r=3e-1, center=(0, 0, 0))
+    sc = sc.translated(1, -1, 30)
     mie_holo = Mie.calc_holo(sc, schema)
     dda_n2 = DDA(n_cpu=2)
     dda_holo = dda_n2.calc_holo(sc, schema)
