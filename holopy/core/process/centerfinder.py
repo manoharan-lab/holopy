@@ -148,7 +148,10 @@ def hough(x_deriv, y_deriv, centers=1, scale=.25):
     for coords in points_to_vote:
         # draw a line
         # add it to the accumulator
-        slope = y_deriv[coords[0], coords[1]]/x_deriv[coords[0], coords[1]]
+        if x_deriv[coords[0], coords[1]]==0:
+            slope = y_deriv[coords[0], coords[1]]/.00001
+        else:
+            slope = y_deriv[coords[0], coords[1]]/x_deriv[coords[0], coords[1]]
         if slope > 1. or slope < -1.:
             # minus sign on slope from old convention?
             rows = arange(dim_x, dtype = 'int16')
