@@ -30,7 +30,8 @@ from ...core import Optics, ImageSchema, load, save
 from ...core.process import normalize
 from ...core.helpers import OrderedDict
 from .. import fit, Parameter, ComplexParameter, par, Parametrization, Model
-from ...core.tests.common import assert_obj_close, get_example_data
+from ...core.tests.common import (assert_obj_close, get_example_data,
+                                  assert_read_matches_write)
 from ..errors import InvalidMinimizer
 
 gold_alpha = .6497
@@ -80,6 +81,7 @@ def test_fit_mie_par_scatterer():
     # TODO: see if we can get this back to 3 sig figs correct alpha
     assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=3)
     assert_equal(model, result.model)
+    assert_read_matches_write(result)
 
 @attr('fast')
 def test_fit_random_subset():
@@ -103,6 +105,7 @@ def test_fit_random_subset():
     assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=2)
     assert_equal(model, result.model)
 
+    assert_read_matches_write(result)
 
 
 @nottest
@@ -150,6 +153,7 @@ def test_fit_superposition():
     assert_obj_close(result.scatterer, sc)
     assert_approx_equal(result.alpha, alpha, significant=4)
     assert_equal(result.model, model)
+    assert_read_matches_write(result)
 
 @nottest
 # TODO: disabled because it is old, slow, not functioning. Consider updating and

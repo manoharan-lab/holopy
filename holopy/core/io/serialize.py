@@ -38,12 +38,6 @@ from ..holopy_object import SerializableMetaclass
 from ..marray import Marray
 from  .. import marray
 
-class LoadError(Exception):
-    def __init__(self, msg):
-        self.msg = msg
-    def __str__(self):
-        return self.msg
-
 def save(outf, obj):
     if isinstance(outf, basestring):
         outf = file(outf, 'w')
@@ -74,7 +68,7 @@ def load(inf):
         head = ''.join(lines[1:])
         kwargs = yaml.load(head)
         if kwargs is None:
-            kwargs = {}
+            kwargs = {} #pragma: nocover
         return getattr(marray, cls)(arr, **kwargs)
 
 
@@ -88,8 +82,8 @@ def load(inf):
                 if isinstance(obj[key], basestring):
                     try:
                         obj[key] = float(obj[key])
-                    except ValueError:
-                        pass
+                    except ValueError: #pragma: nocover
+                        pass #pragma: nocover
 
         return obj
 
@@ -176,16 +170,6 @@ def instancemethod_constructor(loader, node):
     obj = yaml.load(obj)['dummy']
     return getattr(obj, method)
 yaml.add_constructor('!method', instancemethod_constructor)
-
-# legacy loader, this is only here because for a while we saved things as
-# !Minimizer {algorithm = nmpfit} and we still want to be able to read those yamls
-def minimizer_constructor(loader, node):
-    data = loader.construct_mapping(node, deep=True)
-    if data['algorithm'] == 'nmpfit':
-        return Nmpfit()
-    else:
-        raise LoadError('Could not load Minimizer with: {0}'.format(data))
-yaml.add_constructor("!Minimizer", minimizer_constructor)
 
 def function_representer(dumper, data):
     code = inspect.getsource(data)

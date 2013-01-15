@@ -24,11 +24,11 @@ import tempfile
 import os
 import shutil
 from nose.plugins.attrib import attr
-from numpy.testing import assert_raises
+from numpy.testing import assert_raises, assert_equal
 import numpy as np
 from ..errors import LoadError
 from ..io import save_image, load_image
-
+import yaml
 
 @attr('fast')
 def test_hologram_io():
@@ -55,7 +55,7 @@ def test_marray_io():
     d = Marray(np.random.random((10, 10)))
     assert_read_matches_write(d)
 
-def test_tif_io():
+def test_image_io():
     holo = get_example_data('image0001.yaml')
     t = tempfile.mkdtemp()
 
@@ -69,6 +69,12 @@ def test_tif_io():
     save_image(filename, holo)
     l = load(filename+'.tif')
     assert_obj_close(l, holo)
+
+    # test that yaml save works corretly with a string instead of a file
+    filename = os.path.join(t, 'image0001.yaml')
+    save(filename, holo)
+    loaded = load(filename)
+    assert_obj_close(loaded, holo)
 
     shutil.rmtree(t)
 
@@ -84,3 +90,23 @@ def test_non_tiff():
 
     assert_raises(LoadError, load_image, os.path.join(doc_images,
                                                       'image_5Particle_Hologram.jpg'), 4)
+
+# test a number of little prettying up of yaml output that we do for
+# numpy types
+def test_yaml_output():
+    # test that numpy types get cleaned up into python types for clean printing
+    a = np.ones(10, 'int')
+    assert_equal(yaml.dump(a.std()), '0.0\n...\n')
+
+    assert_equal(yaml.dump(a.max()), '1\n...\n')
+
+    assert_equal(yaml.dump(np.dtype('float')),"!dtype 'float64'\n")
+    assert_equal(yaml.load(yaml.dump(np.dtype('float'))), np.dtype('float64'))
+
+    assert_equal(yaml.dump(Optics), "!class 'holopy.core.metadata.Optics'\n")
+    assert_equal(yaml.load(yaml.dump(Optics)), Optics)
+
+    def test(x):
+        return x*x
+
+    assert_equal(yaml.dump(test), "!function 'return x*x'\n")
