@@ -34,7 +34,7 @@ from ..scatterer import (Sphere, Scatterer, Ellipsoid,
 
 from ..errors import ScattererDefinitionError
 from .common import assert_allclose
-
+from ..scatterer.scatterer import find_bounds
 
 @attr('fast')
 def test_Sphere_construction():
@@ -148,3 +148,12 @@ def test_translate():
     assert_equal(s.r, s2.r)
     assert_equal(s.n, s2.n)
     assert_allclose(s2.center, (1, 1, 1))
+    
+def test_find_bounds():
+    s = Sphere(n = 1.59, r = .5e-6, center = (0, 0, 0))
+    assert_allclose(find_bounds(s.indicators.functions[0])[0], np.array([-s.r,s.r]), rtol=0.1)
+    s = Sphere(n = 1.59, r = .5, center = (0, 0, 0))
+    assert_allclose(find_bounds(s.indicators.functions[0])[0], np.array([-s.r,s.r]), rtol=0.1)
+    s = Sphere(n = 1.59, r = .5e6, center = (0, 0, 0))
+    assert_allclose(find_bounds(s.indicators.functions[0])[0], np.array([-s.r,s.r]), rtol=0.1)
+    

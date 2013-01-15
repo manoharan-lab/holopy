@@ -258,7 +258,7 @@ class SingleScatterer(Scatterer):
 
 def find_bounds(indicator):
     """
-    Finds the bounds needed to contain a set of an indicator function
+    Finds the bounds needed to contain an indicator function
 
 
     """
@@ -280,7 +280,8 @@ def find_bounds(indicator):
 
     #TODO: add a check along the boundaries of the square to make sure
     #something like an oblique ellipsoid doesn't get missed'
-
+    return bounds
+    
 def bound_union(d1, d2):
     new = [[0, 0],[0, 0],[0, 0]]
     for i in range(3):

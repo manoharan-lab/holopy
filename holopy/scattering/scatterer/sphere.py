@@ -55,9 +55,9 @@ class Sphere(CenteredScatterer):
     def indicators(self):
         if np.isscalar(self.r):
             r = self.r
-            func = lambda point: (point**2).sum() < self.r**2
+            func = lambda point: (np.array(point)**2).sum() < self.r**2
         else:
-            func = [lambda point: (point**2).sum() < r**2 for r in self.r]
+            func = [lambda point: (np.array(point)**2).sum() < r**2 for r in self.r]
             r = max(self.r)
 
         return Indicators(func, [[-r, r], [-r, r], [-r, r]])
