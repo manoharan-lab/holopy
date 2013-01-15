@@ -33,7 +33,7 @@ from numpy.testing import (assert_equal, assert_array_almost_equal,
 
 from nose.plugins.attrib import attr
 
-from ...core import Optics, ImageSchema
+from ...core import Optics, ImageSchema, Schema, Angles
 from ..theory import Multisphere
 from ..theory.multisphere import MultisphereExpansionNaN, ConvergenceFailureMultisphere
 from ..scatterer import Sphere, Spheres
@@ -117,6 +117,13 @@ def test_invalid():
 
     assert_raises(TheoryNotCompatibleError, Multisphere.calc_holo, cs, schema)
 
+    # try a coated sphere
+    sc2 = Spheres([Sphere(center = [0., 0., 0.], 
+                          n = [1.+0.1j, 1.2], 
+                          r = [4e-7, 5e-7])])
+    assert_raises(TheoryNotCompatibleError, Multisphere.calc_cross_sections, 
+                  sc2, schema.optics)
+
 def test_overlap():
     # should raise a warning
     with warnings.catch_warnings(True) as w:
@@ -166,3 +173,30 @@ def test_niter():
     multi = Multisphere(niter = 2)
 
     assert_raises(ConvergenceFailureMultisphere, multi.calc_holo, sc, schema)
+
+def test_cross_sections():
+    opt = Optics(wavelen = 1., index = 1., polarization = [1., 0])
+    a = 1./(2 * np.pi) # size parameter 1
+    n = 1.5 + 0.1j
+    sc = Spheres([Sphere(n = n, r = a, center = [0., 0., a]),
+                  Sphere(n = n, r = a, center = [0., 0., -a])])
+    thry = Multisphere()
+    xsects = thry.calc_cross_sections(sc, opt)
+    
+    gold_xsects = np.array([0.03830316, 0.04877015, 0.08707331])
+    # calculated directly by SCSMFO. Efficiencies normalized
+    # in funny way by SCSMFO, based on "volume mean radius".
+    assert_allclose(xsects[:3], gold_xsects, rtol = 1e-3)
+
+def test_farfield():
+    schema = Schema(positions = Angles(np.linspace(0, np.pi/2), 
+                                       phi = np.zeros(50)), 
+                    optics = Optics(wavelen=.66, index = 1.33, 
+                                    polarization = (1, 0)))
+    n = 1.59+0.01j
+    r = 0.5
+    
+    cluster = Spheres([Sphere(n = n, r = r, center = [0., 0., r]),
+                       Sphere(n = n, r = r, center = [0., 0., -r])])
+
+    matr = Multisphere.calc_scat_matrix(cluster, schema)
