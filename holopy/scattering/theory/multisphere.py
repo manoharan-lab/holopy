@@ -28,8 +28,10 @@ dependence of spherical Hankel functions for the scattered field.
 from __future__ import division
 
 import numpy as np
+from scipy.integrate import dblquad
 from .mie_f import mieangfuncs
 from .mie_f import scsmfo_min
+from .mie_f import uts_scsmfo
 from ..scatterer import Spheres
 from ..errors import TheoryNotCompatibleError, UnrealizableScatterer
 from .scatteringtheory import FortranTheory
@@ -40,6 +42,7 @@ class Multisphere(FortranTheory):
     effects (see [Fung2011]_, [Mackowski1996]_).  This approach is much more
     accurate than Mie superposition, but it is also more computationally
     intensive.  The Multisphere code can handle any number of spheres.
+    TODO: mention scfodim somewhere.
 
     Attributes
     ----------
@@ -105,45 +108,46 @@ class Multisphere(FortranTheory):
         # call base class constructor
         super(Multisphere, self).__init__()
 
-    def _calc_field(self, scatterer, schema):
+    def _scsmfo_setup(self, scatterer, optics):
         """
-        Calculate fields for single or multiple spheres
+        Given multiple spheres, calculate amn coefficients for scattered
+        field expansion in VSH using SCSMFO.
 
         Parameters
         ----------
-        scatterer : :mod:`scatterpy.scatterer` object
+        scatterer : :mod:`.scatterer` object
             scatterer or list of scatterers to compute field for
-        selection : array of integers (optional)
-            a mask with 1's in the locations of pixels where you
-            want to calculate the field, defaults to all pixels
+        optics: :mod:`.Optics` object 
+            optical metadata
 
         Returns
         -------
-        xfield, yfield, zfield : complex arrays with shape `imshape`
-            x, y, z components of scattered fields
-
+        amn : arrays of field expansion coefficients
+            
         """
-
         if not isinstance(scatterer, Spheres):
             raise TheoryNotCompatibleError(self, scatterer)
+        # check for spheres being uniform
+        for sph in scatterer.scatterers:
+            if not np.isscalar(sph.n):
+                raise TheoryNotCompatibleError(self, scatterer)
 
         # check that the parameters are in a range where the multisphere
         # expansion will work
         for s in scatterer.scatterers:
-            if s.r * schema.optics.wavevec > 1e3:
+            if s.r * optics.wavevec > 1e3:
                 raise UnrealizableScatterer(self, s, "radius too large, field "+
                                             "calculation would take forever")
 
         # switch to centroid weighted coordinate system tmatrix code expects
         # and nondimensionalize
-        centers = (scatterer.centers - scatterer.centers.mean(0)) * schema.optics.wavevec
+        centers = (scatterer.centers - scatterer.centers.mean(0)) * optics.wavevec
 
-        m = scatterer.n / schema.optics.index
+        m = scatterer.n / optics.index
 
         if (centers > 1e4).any():
             raise UnrealizableScatterer(self, scatterer, "Particle separation "
                                         "too large, calculation would take forever")
-
 
         _, lmax, amn0, converged = scsmfo_min.amncalc(
             1, centers[:,0],  centers[:,1],
@@ -151,7 +155,7 @@ class Multisphere(FortranTheory):
             # propagation as positive, we have it negative), so we multiply the
             # z coordinate by -1 to correct for that.
             -1.0 * centers[:,2],  m.real, m.imag,
-            scatterer.r * schema.optics.wavevec, self.niter, self.eps,
+            scatterer.r * optics.wavevec, self.niter, self.eps,
             self.qeps1, self.qeps2,  self.meth, (0,0))
 
         # converged == 1 if the SCSMFO iterative solver converged
@@ -169,6 +173,28 @@ class Multisphere(FortranTheory):
         if np.isnan(amn).any():
             raise MultisphereExpansionNaN()
 
+        return amn, lmax
+
+    def _calc_field(self, scatterer, schema):
+        """
+        Calculate fields for single or multiple spheres
+
+        Parameters
+        ----------
+        scatterer : :mod:`.scatterer` object
+            scatterer or list of scatterers to compute field for
+        selection : array of integers (optional)
+            a mask with 1's in the locations of pixels where you
+            want to calculate the field, defaults to all pixels
+
+        Returns
+        -------
+        xfield, yfield, zfield : complex arrays with shape `imshape`
+            x, y, z components of scattered fields
+
+        """
+        amn, lmax = self._scsmfo_setup(scatterer, schema.optics)
+       
         positions = schema.positions_kr_theta_phi(origin = scatterer.centers.mean(0)).T
 
         fields = mieangfuncs.tmatrix_fields(positions, amn, lmax, 0, schema.optics.polarization)
@@ -177,6 +203,125 @@ class Multisphere(FortranTheory):
             raise MultisphereFieldNaN(self, scatterer, '')
 
         return self._finalize_fields(scatterer.z.mean(), fields, schema)
+
+    def _calc_cext(self, scatterer, optics, amn = None, lmax = None):
+        """
+        Calculate extinction cross section via optical theorem.
+        """
+        # normalize the polarization
+        pol = optics.polarization / np.sqrt((optics.polarization**2).sum())
+
+        # calculate amn coefficients if need be
+        if amn is None:
+            amn, lmax = self._scsmfo_setup(scatterer, optics)
+
+        # calculate forward scattering
+        asm_fwd = _asm_far(0., 0., amn, lmax)
+        ainc_sph = pol * np.array([1., -1.]) # assume theta, phi = 0 
+        ascat_sph = np.dot(asm_fwd, ainc_sph) * np.array([1., -1.]) 
+        # at theta, phi = 0, ascat_cart = ascat_sph
+        cext = 4. * np.pi / optics.wavevec**2 * np.dot(pol, ascat_sph).real
+        return cext
+
+    def _calc_scat_matrix(self, scatterer, schema):
+        amn, lmax = self._scsmfo_setup(scatterer, schema.optics)
+        # TODO: consult Tom on schema (not just thetas, but phis too)
+        # scat_matrs = []
+        # return np.array(scat_matrs)
+        
+    def _calc_cscat(self, scatterer, optics, amn = None, lmax = None):
+        """
+        Calculate scattering cross section by quadrature over solid angle.
+        """
+        # normalize the polarization
+        pol = optics.polarization / np.sqrt((optics.polarization**2).sum())
+
+        # calculate amn coefficients if need be
+        if amn is None:
+            amn, lmax = self._scsmfo_setup(scatterer, optics)
+
+        # define integrand: A^2 sin theta (vector scattering amplitude A)
+        def ampsq(theta, phi):
+            einc = mieangfuncs.incfield(*pol, phi = phi)
+            asm = _asm_far(theta, phi, amn, lmax)
+            ascat_sph = np.dot(asm, einc) # in par/perp basis
+            ascatsq = (np.abs(ascat_sph)**2).sum()
+            return ascatsq * np.sin(theta)
+
+        integral = _integrate4pi(ampsq)
+
+        cscat = integral / optics.wavevec**2
+        return cscat
+
+    def _calc_asym(self, optics, amn, lmax):
+        """
+        Calculate asymmetry parameter <cos theta> by quadrature over
+        solid angle.
+        """
+        # normalize the polarization
+        pol = optics.polarization / np.sqrt((optics.polarization**2).sum())
+
+        # define integrand: A^2 sin theta cos theta 
+        def costhetawt(theta, phi):
+            einc = mieangfuncs.incfield(*pol, phi = phi)
+            asm = _asm_far(theta, phi, amn, lmax)
+            ascat_sph = np.dot(asm, einc) # in par/perp basis
+            ascatsq = (np.abs(ascat_sph)**2).sum()
+            return ascatsq * np.sin(theta) * np.cos(theta)
+
+        integral = _integrate4pi(costhetawt)
+
+        asym = integral / optics.wavevec**2 # need to divide by cscat
+        return asym
+
+    def _calc_cross_sections(self, scatterer, optics):
+        """
+        Calculate scattering, absorption, and extinction cross
+        sections, and asymmetry parameter for sphere clusters
+        with polarized incident light.
+
+        The extinction cross section is calculated from the optical 
+        theorem. The scattering cross section is calculated by 
+        numerical quadrature of the scattered field, and the absorption
+        cross section is calculated from the difference of the extinction
+        cross section and the scattering cross section.
+
+        Parameters
+        ----------
+        scatterer : :mod:`scatterpy.scatterer` object
+            sphere cluster to compute for
+        
+        Returns
+        -------
+        cross_sections : array (4)
+            Dimensional scattering, absorption, and extinction
+            cross sections, and <cos \theta>
+        """
+        # normalize the polarization
+        pol = optics.polarization / np.sqrt((optics.polarization**2).sum())
+        # calculate amn coefficients
+        amn, lmax = self._scsmfo_setup(scatterer, optics)
+
+        cext = self._calc_cext(scatterer, optics, amn, lmax)
+        cscat = self._calc_cscat(scatterer, optics, amn, lmax)
+        cabs = cext - cscat
+        asym = self._calc_asym(optics, amn, lmax) / cscat
+
+        return np.array([cscat, cabs, cext, asym])
+
+
+def _asm_far(theta, phi, amn, lmax):
+        """
+        far field amplitude scattering matrix for fixed angles
+        """
+        asm = np.roll(uts_scsmfo.asm(amn, lmax, theta, phi), 
+                      -1).reshape((2,2)) * -0.5 # correction factor
+        return asm
+
+def _integrate4pi(integrand):
+    integral, error = dblquad(integrand, 0, 2 * np.pi, lambda theta:0., 
+                              lambda theta:np.pi)
+    return integral
 
 class MultisphereFieldNaN(UnrealizableScatterer):
     def __str__(self):
