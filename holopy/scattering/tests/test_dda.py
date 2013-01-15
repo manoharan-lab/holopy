@@ -28,7 +28,7 @@ from numpy.testing import assert_almost_equal
 import numpy as np
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
-
+from ...core.errors import ScattererDefinitionError
 from ..scatterer import Sphere, Ellipsoid, Scatterer, JanusSphere
 
 from ...core import ImageSchema, Optics
@@ -60,16 +60,16 @@ def teardown_optics():
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_sphere():
-    sc = Sphere(n=1.59, r=3e-1, center=(1, -1, 30))
-
+    sc = Sphere(n=1.59, r=3e-1, center=(0, 0, 0))
+    assert_raises(ScattererDefinitionError, Sphere, n=1.59, r=3e-1, center=(0, 0))
+    sc = sc.translated(1, -1, 30)
     mie_holo = Mie.calc_holo(sc, schema)
     dda_holo = DDA.calc_holo(sc, schema)
     assert_allclose(mie_holo, dda_holo, rtol=.0015)
 
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_dda_2_cpu():
-    sc = Sphere(n=1.59, r=3e-1, center=(0, 0, 0))
-    sc = sc.translated(1, -1, 30)
+    sc = Sphere(n=1.59, r=3e-1, center=(1, -1, 30))
     mie_holo = Mie.calc_holo(sc, schema)
     dda_n2 = DDA(n_cpu=2)
     dda_holo = dda_n2.calc_holo(sc, schema)
@@ -143,6 +143,6 @@ def test_Ellipsoid_dda():
 def test_janus():
     schema = ImageSchema(60, .1, Optics(.66, 1.33, (1, 0)))
     s = JanusSphere(n = [1.34, 2.0], r = [.5, .51], rotation = (np.pi/2, 0), center = (5, 5, 5))
-
+    assert_almost_equal(s.index_at([5,5,5]),1.34) 
     holo = DDA.calc_holo(s, schema)
     verify(holo, 'janus_dda')

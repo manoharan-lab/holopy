@@ -21,7 +21,7 @@ import tempfile
 
 import numpy as np
 
-from nose.tools import nottest
+from nose.tools import nottest, assert_raises
 from nose.plugins.attrib import attr
 from numpy.testing import assert_equal, assert_approx_equal, assert_allclose
 from ...scattering.scatterer import Sphere, Spheres, Scatterer
@@ -31,6 +31,7 @@ from ...core.process import normalize
 from ...core.helpers import OrderedDict
 from .. import fit, Parameter, ComplexParameter, par, Parametrization, Model
 from ...core.tests.common import assert_obj_close, get_example_data
+from ..errors import InvalidMinimizer
 
 gold_alpha = .6497
 
@@ -52,6 +53,8 @@ def test_fit_mie_single():
 
     model = Model(Parametrization(make_scatterer, parameters), Mie.calc_holo,
                   alpha=Parameter(name='alpha', guess=.6, limit = [.1, 1]))
+
+    assert_raises(InvalidMinimizer, fit, model, holo, minimizer=Sphere)
 
     result = fit(model, holo)
 

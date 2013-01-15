@@ -59,6 +59,3 @@ class PixelScaleNotSpecified(Exception):
 
 class UnspecifiedPosition(Error):
         pass
-	
-class InvalidMinimizer(Error):
-	pass
