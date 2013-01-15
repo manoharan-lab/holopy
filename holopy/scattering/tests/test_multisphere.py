@@ -117,6 +117,13 @@ def test_invalid():
 
     assert_raises(TheoryNotCompatibleError, Multisphere.calc_holo, cs, schema)
 
+    # try a coated sphere
+    sc2 = Spheres([Sphere(center = [0., 0., 0.], 
+                          n = [1.+0.1j, 1.2], 
+                          r = [4e-7, 5e-7])])
+    assert_raises(TheoryNotCompatibleError, Multisphere.calc_cross_sections, 
+                  sc2, schema.optics)
+
 def test_overlap():
     # should raise a warning
     with warnings.catch_warnings(True) as w:
@@ -166,3 +173,19 @@ def test_niter():
     multi = Multisphere(niter = 2)
 
     assert_raises(ConvergenceFailureMultisphere, multi.calc_holo, sc, schema)
+
+def test_cross_sections():
+    opt = Optics(wavelen = 1., index = 1., polarization = [1., 0])
+    a = 1./(2 * np.pi) # size parameter 1
+    n = 1.5 + 0.1j
+    sc = Spheres([Sphere(n = n, r = a, center = [0., 0., a]),
+                  Sphere(n = n, r = a, center = [0., 0., -a])])
+    thry = Multisphere()
+    xsects = thry.calc_cross_sections(sc, opt)
+    
+    gold_xsects = np.array([0.03830316, 0.04877015, 0.08707331])
+    # calculated directly by SCSMFO. Efficiencies normalized
+    # in funny way by SCSMFO, based on "volume mean radius".
+    assert_allclose(xsects[:3], gold_xsects, rtol = 1e-3)
+
+
