@@ -28,7 +28,7 @@ from numpy.testing import assert_almost_equal
 import numpy as np
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
-from ...core.errors import ScattererDefinitionError
+from ...scattering.errors import ScattererDefinitionError
 from ..scatterer import Sphere, Ellipsoid, Scatterer, JanusSphere
 
 from ...core import ImageSchema, Optics
