@@ -283,11 +283,3 @@ class DDA(ScatteringTheory):
         schema = VectorGridSchema.from_schema(volume)
 
         return schema.interpret_1d(e)
-
-def compose_adda_command(indicies, dpl):
-    cmd = ['adda']
-    cmd.extend(['-dpl', str(dpl)])
-    cmd.append('-m')
-    for index in indicies:
-        cmd.extend([str(np.real(index)), str(np.imag(index))])
-    return cmd
