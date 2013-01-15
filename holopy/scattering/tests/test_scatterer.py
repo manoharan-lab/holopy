@@ -121,6 +121,9 @@ def test_Composite_construction():
                       center=[-5e-6, 0,0])
     comp = Scatterers(scatterers=[s1, s2, s3, cs])
 
+    assert_equal(comp.in_domain([-5e-6,0,0]), 3)
+    assert_equal(comp.index_at([-5e-6,0,0]), cs.n[0])
+    
     # multi-level composite (contains another composite)
     s4 = Sphere(center=[0, 5e-6, 0])
     comp_spheres.add(s4)
