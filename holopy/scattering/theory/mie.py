@@ -128,6 +128,17 @@ class Mie(FortranTheory):
         cross_sections : array (4)
             Dimensional scattering, absorption, and extinction
             cross sections, and <cos \theta>
+
+        Notes
+        -----
+        The radiation pressure cross section C_pr is given by
+        C_pr = C_ext - <cos \theta> C_sca.
+
+        The radiation pressure force on a sphere is
+
+        F = (n_med I_0 C_pr) / c
+
+        where I_0 is the incident intensity.  See van de Hulst, p. 14.
         """
         if isinstance(scatterer, Scatterers):
             raise UnrealizableScatterer(self, scatterer,

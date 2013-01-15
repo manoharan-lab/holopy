@@ -43,3 +43,4 @@ def test_Shell():
     h = Mie.calc_holo(s, t, scaling = 0.4826042444701572)
 
     verify(h, 'shell')
+

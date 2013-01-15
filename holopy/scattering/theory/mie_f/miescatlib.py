@@ -54,6 +54,7 @@ def RicBesHank(x, nstop):
         xin = riccati_jn(nstop, x)[0] + 1j*riccati_yn(nstop, x)[0] 
         rbh = array([psin[0], xin])
     else:
+        # TODO: test this. Only used for scatterers in absorbing media.
         rbjns = x*sph_jn(nstop, x)[0]
         rbyns = x*sph_yn(nstop, x)[0]
         rbh = array([rbjns, (rbjns+1j*rbyns)])
@@ -138,42 +139,4 @@ def cross_sections(al, bl):
 
     return array([cscat, cext, cback])
 
-
-def rad_pressure_xsect(an, bn):
-    '''
-    Calculates radiation pressure efficiency C_pr. For a sphere, the radiation 
-    pressure force (in Mie scattering) is  
     
-    F = (n_med I_0 C_pr) / c
-
-    Note that C_pr = C_ext - <cos \theta> C_sca.
-
-    See van de Hulst, p. 14. We omit a factor of 2 \pi / k^2.
-    '''
-    xsects = cross_sections(an, bn)
-    avg_cos_theta = asymmetry_parameter(an, bn)
-    return xsects[1] - avg_cos_theta * 2. # due to scalings
-    
-
-def ascatmatrix_mie(theta, a_l, b_l):
-    '''
-    Calculate nonzero (diagonal) elements of the amplitude scattering matrix
-    for a sphere or coated sphere.
-
-    Input: scattering angle and scattering coefficients a_l and b_l
-
-    From the amplitude scattering matrix one can calculate fields for
-    arbitrary polarization.
-    '''
-    nstop = a_l.size
-   
-    n = scipy.arange(nstop)+1.
-    prefactor = (2*n+1.)/(n*(n+1.))
-
-    angfuncs = mieangfuncs.pisandtaus(nstop, theta)
-    pis = angfuncs[0]
-    taus = angfuncs[1]
-    
-    S1 = (prefactor*(a_l*pis + b_l*taus)).sum()
-    S2 = (prefactor*(a_l*taus + b_l[1]*pis)).sum()
-    return array([S2, S1])

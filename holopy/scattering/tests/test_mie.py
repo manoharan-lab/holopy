@@ -229,6 +229,8 @@ def test_radiometric():
 def test_farfield():
     schema = Schema(positions = Angles(np.linspace(0, np.pi/2), phi = np.zeros(50)), optics =
                     Optics(wavelen=.66, index = 1.33, polarization = (1, 0)))
-    sphere = Sphere(r = .5, n = 1.59)
+    sphere = Sphere(r = .5, n = 1.59+0.1j)
 
     matr = Mie.calc_scat_matrix(sphere, schema)
+
+
