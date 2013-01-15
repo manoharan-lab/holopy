@@ -225,13 +225,17 @@ class Multisphere(FortranTheory):
 
     def _calc_scat_matrix(self, scatterer, schema):
         amn, lmax = self._scsmfo_setup(scatterer, schema.optics)
-        # TODO: consult Tom on schema (not just thetas, but phis too)
-        # scat_matrs = []
-        # return np.array(scat_matrs)
+        scat_matrs = [_asm_far(theta, phi, amn, lmax) for
+                      theta, phi in schema.positions_theta_phi()]
+        return np.array(scat_matrs)
         
     def _calc_cscat(self, scatterer, optics, amn = None, lmax = None):
         """
         Calculate scattering cross section by quadrature over solid angle.
+
+        TODO: implement analytical integration in terms of summations
+        over amn coefficients. See SCSMFO. This may be unreliable when
+        there are strong field minima.
         """
         # normalize the polarization
         pol = optics.polarization / np.sqrt((optics.polarization**2).sum())
@@ -319,6 +323,10 @@ def _asm_far(theta, phi, amn, lmax):
         return asm
 
 def _integrate4pi(integrand):
+    '''
+    Integrate integrand(theta, phi) over 4 pi of spherical solid angle. 
+    Integrand should already have factor of sin theta.
+    '''
     integral, error = dblquad(integrand, 0, 2 * np.pi, lambda theta:0., 
                               lambda theta:np.pi)
     return integral

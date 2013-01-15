@@ -33,7 +33,7 @@ from numpy.testing import (assert_equal, assert_array_almost_equal,
 
 from nose.plugins.attrib import attr
 
-from ...core import Optics, ImageSchema
+from ...core import Optics, ImageSchema, Schema, Angles
 from ..theory import Multisphere
 from ..theory.multisphere import MultisphereExpansionNaN, ConvergenceFailureMultisphere
 from ..scatterer import Sphere, Spheres
@@ -188,4 +188,15 @@ def test_cross_sections():
     # in funny way by SCSMFO, based on "volume mean radius".
     assert_allclose(xsects[:3], gold_xsects, rtol = 1e-3)
 
+def test_farfield():
+    schema = Schema(positions = Angles(np.linspace(0, np.pi/2), 
+                                       phi = np.zeros(50)), 
+                    optics = Optics(wavelen=.66, index = 1.33, 
+                                    polarization = (1, 0)))
+    n = 1.59+0.01j
+    r = 0.5
+    
+    cluster = Spheres([Sphere(n = n, r = r, center = [0., 0., r]),
+                       Sphere(n = n, r = r, center = [0., 0., -r])])
 
+    matr = Multisphere.calc_scat_matrix(cluster, schema)
