@@ -56,6 +56,9 @@ def propagate(data, d, gradient_filter=False):
        The hologram progagated to a distance d from its current location.
 nose
     """
+    if np.isscalar(d) and d == 0:
+        # Propagationg no distance has no effect
+        return data
 
     if isinstance(d, VolumeSchema):
         schema = d
@@ -67,9 +70,23 @@ nose
         vol = resize(vol, schema.center, schema.extent, schema.spacing)
         return vol
 
+
+    # Computing the transfer function will fail for d = 0. So, if we
+    # are asked to compute a reconstruction for a set of distances
+    # containing 0, we pull that distance out and then add in a copy
+    # of the input at the end.
+    contains_zero = False
+    if not np.isscalar(d):
+        d = np.array(d)
+        if (d == 0).any():
+            contains_zero = True
+            d_old = d
+            d = np.delete(d, np.nonzero(d == 0))
+
     G = trans_func(data.shape[:2], data.positions.spacing,
                    data.optics.med_wavelen, d, squeeze=False,
                    gradient_filter=gradient_filter)
+
 
     ft = fft(data)
 
@@ -77,7 +94,15 @@ nose
 
     ft = apply_trans_func(ft, G)
 
-    res = np.squeeze(ifft(ft, overwrite=True))
+    res = ifft(ft, overwrite=True)
+
+    # This will not work correctly if you have 0 in the distances more
+    # than once. But why would you do that?
+    if contains_zero:
+        d = d_old
+        res = np.insert(res, np.nonzero(d==0)[0][0], data, axis=2)
+
+    res = np.squeeze(res)
 
     origin = np.array(data.origin)
     origin[2] += _ensure_array(d)[0]

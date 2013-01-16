@@ -20,7 +20,6 @@ from __future__ import division
 import numpy as np
 from ...core import ImageSchema, VolumeSchema, Optics
 from ...scattering.theory import Mie
-from ...scattering.theory.scatteringtheory import scattered_field_to_hologram
 from ...scattering.scatterer import Sphere
 from .. import propagate
 from ...core.tests.common import assert_obj_close, verify

@@ -24,19 +24,32 @@ from __future__ import division
 
 import numpy as np
 import scipy
-from ...core.tests.common import get_example_data, assert_obj_close
+from ...core.tests.common import (get_example_data, assert_obj_close,
+                                  assert_allclose)
 from .. import propagate
 from numpy.testing import assert_array_equal
 from nose.plugins.attrib import attr
 
+def scale_0_255(arr):
+    return np.around((arr-arr.min())/(arr-arr.min()).max()*255)
+
+@attr('fast')
+def test_recon_0_distance():
+    im = get_example_data('image0003.yaml')
+    rec_im = propagate(im, 0)
+    assert_array_equal(rec_im,im)
+
+    rec_im = propagate(im, [0, 4e-6])
+    assert_allclose(abs(rec_im[...,0]),im)
+    gold = get_example_data('recon_4.npy')
+    assert_allclose(scale_0_255(abs(rec_im[...,1])**2), gold)
 
 @attr('fast')
 def test_reconNear():
     im = get_example_data('image0003.yaml')
     gold = get_example_data('recon_4.npy')
     rec_im = propagate(im, 4e-6)
-    rec_im = abs(rec_im * scipy.conj(rec_im))
-    rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
+    rec_im = scale_0_255(abs(rec_im)**2)
     assert_array_equal(rec_im.astype('uint8'),gold)
     assert_obj_close(rec_im.optics, im.optics)
     assert_array_equal(rec_im.spacing, im.spacing)
@@ -46,8 +59,7 @@ def test_reconMiddle():
     gold = get_example_data('recon_7.npy')
     im = get_example_data('image0003.yaml',)
     rec_im = propagate(im, 7e-6)
-    rec_im = abs(rec_im * scipy.conj(rec_im))
-    rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
+    rec_im = scale_0_255(abs(rec_im)**2)
     assert_array_equal(rec_im.astype('uint8'),gold)
 
 @attr('fast')
@@ -55,6 +67,6 @@ def test_reconFar():
     gold = get_example_data('recon_10.npy')
     im = get_example_data('image0003.yaml')
     rec_im = propagate(im, 10e-6)
-    rec_im = abs(rec_im * scipy.conj(rec_im))
-    rec_im = np.around((rec_im-rec_im.min())/(rec_im-rec_im.min()).max()*255)
+    rec_im = scale_0_255(abs(rec_im)**2)
     assert_array_equal(rec_im.astype('uint8'),gold)
+x
