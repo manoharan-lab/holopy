@@ -141,7 +141,7 @@ def hough(x_deriv, y_deriv, centers=1, scale=.25):
 
     points_to_vote = scipy.where(gradient_mag > threshold)
     points_to_vote = array([points_to_vote[0], points_to_vote[1]]).transpose()
-    #import pdb; pdb.set_trace()
+
     for coords in points_to_vote:
         # draw a line
         # add it to the accumulator
