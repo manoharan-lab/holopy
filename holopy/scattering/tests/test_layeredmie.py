@@ -40,7 +40,8 @@ def test_Shell():
 
     t = ImageSchema(200, .071333, optics = optics)
 
-    h = Mie.calc_holo(s, t, scaling = 0.4826042444701572)
+    thry = Mie(False)
+    h = thry.calc_holo(s, t, scaling = 0.4826042444701572)
 
     verify(h, 'shell')
 

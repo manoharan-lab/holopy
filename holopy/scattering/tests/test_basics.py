@@ -37,7 +37,8 @@ def test_calc_field():
     o = Optics(wavelen=.66, index=1.33, polarization = (1,0))
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
-    f = Mie.calc_field(s, t)
+    thry = Mie(False)
+    f = thry.calc_field(s, t)
     assert_equal(t.optics, f.optics)
     assert_equal(t.spacing, f.spacing)
     assert_allclose(f, np.array([[[ -3.95866810e-01 +2.47924378e+00j,
@@ -59,7 +60,8 @@ def test_calc_holo():
     o = Optics(wavelen=.66, index=1.33, polarization = (1, 0))
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
-    h = Mie.calc_holo(s, t)
+    thry = Mie(False)
+    h = thry.calc_holo(s, t)
     assert_obj_close(h.positions, t.positions)
     assert_allclose(h, np.array([[ 6.51162661,  5.67743548],
                                  [ 5.63554802,  4.89856241]]))
@@ -68,6 +70,7 @@ def test_calc_intensity():
     o = Optics(wavelen=.66, index=1.33, polarization = (1,0))
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
-    i = Mie.calc_intensity(s, t)
+    thry = Mie(False)
+    i = thry.calc_intensity(s, t)
     assert_allclose(i, np.array([[ 6.30336023,  5.65995739],
                                  [ 5.61505927,  5.04233591]]))

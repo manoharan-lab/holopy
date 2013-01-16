@@ -54,6 +54,11 @@ class Mie(FortranTheory):
     # don't need to define __init__() because we'll use the base class
     # constructor
 
+    def __init__(self, compute_escat_radial = True):
+        self.compute_escat_radial = compute_escat_radial
+        # call base class constructor
+        super(Mie, self).__init__()
+
     def _calc_scat_matrix(self, scatterer, schema):
         if isinstance(scatterer, Sphere):
             scat_coeffs = self._scat_coeffs(scatterer, schema.optics)
@@ -95,10 +100,14 @@ class Mie(FortranTheory):
             # mieangfuncs.f90 works with everything dimensionless.
             # tranpose to get things in fortran format
             # TODO: move this transposing to a wrapper
-            fields = mieangfuncs.mie_fields(schema.positions_kr_theta_phi(
-                    origin = scatterer.center).T, scat_coeffs,
-                    schema.optics.polarization)
-
+            if self.compute_escat_radial:
+                fields = mieangfuncs.mie_fields(schema.positions_kr_theta_phi(
+                        origin = scatterer.center).T, scat_coeffs,
+                                                schema.optics.polarization, 1)
+            else:
+                fields = mieangfuncs.mie_fields(schema.positions_kr_theta_phi(
+                        origin = scatterer.center).T, scat_coeffs,
+                                                schema.optics.polarization, 0)
             return self._finalize_fields(scatterer.z, fields, schema)
         elif isinstance(scatterer, Scatterers):
             spheres = scatterer.get_component_list()

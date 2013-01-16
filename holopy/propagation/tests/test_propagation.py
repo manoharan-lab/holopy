@@ -30,7 +30,8 @@ class test_propagation():
         self.im_schema = ImageSchema(spacing = .1, shape = 100,
                                      optics = self.optics)
         self.sphere = Sphere(n = 1.59, r = .5, center = (5, 5, 5))
-        self.holo = Mie.calc_holo(self.sphere, self.im_schema)
+        thry = Mie(False)
+        self.holo = thry.calc_holo(self.sphere, self.im_schema)
 
     def test_propagate_volume(self):
         vol_schema = VolumeSchema(shape = (40, 40, 25), spacing = .2,
@@ -52,6 +53,7 @@ class test_propagation():
         assert_obj_close(r1, r2, context = 'propagated_volume')
 
     def test_propagate_e_field(self):
-        e = Mie.calc_field(self.sphere, self.im_schema)
+        thry = Mie(False)
+        e = thry.calc_field(self.sphere, self.im_schema)
         prop_e = propagate(e, 10)
         verify(prop_e, 'propagate_e_field')

@@ -94,7 +94,8 @@ def residfunct(p, fjac = None):
     # nmpfit calls residfunct w/fjac as a kwarg, we ignore
 
     sphere = Sphere(n=p[0]+n_particle_imag*1j, r=p[1], center = p[2:5])
-    calculated = Mie.calc_holo(sphere, holo, scaling=p[5])
+    thry = Mie(False)
+    calculated = thry.calc_holo(sphere, holo, scaling=p[5])
 
     status = 0
     derivates = holo - calculated

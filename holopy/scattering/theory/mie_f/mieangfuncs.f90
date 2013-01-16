@@ -63,8 +63,8 @@
         end
 
 
-      subroutine mie_fields(n_pts, calc_points, asbs, nstop, einc, es_x, &
-           es_y, es_z)
+      subroutine mie_fields(n_pts, calc_points, asbs, nstop, einc, rad, &
+           es_x, es_y, es_z)
         ! Calculate fields scattered by a sphere in the Lorenz-Mie solution,
         ! at a list of selected points.  Use for hologram calculations or
         ! general scattering.
@@ -83,6 +83,10 @@
         !     Expansion order (from miescatlib.nstop(x_p))
         ! einc: real array (2)
         !     polarization (from optics.polarization)
+        ! rad: logical
+        !     If .true., calculate radial component of the scattered field.
+        !     Neglected in most scattering calculations b/c radial component
+        !     falls off faster than 1/r.
         !
         ! Returns
         ! -------
@@ -91,17 +95,20 @@
         implicit none
         integer, intent(in) :: n_pts, nstop
         real (kind = 8), intent(in), dimension(3, n_pts) :: calc_points
+        logical, intent(in) :: rad
         complex (kind = 8), intent(out), dimension(n_pts) :: es_x, &
              es_y, es_z
         complex (kind = 8), intent(in), dimension(2, nstop) :: asbs
         real (kind = 8), intent(in), dimension(2) :: einc ! polarization
         real (kind = 8) :: kr, theta, phi
+        real (kind = 8), dimension(2) :: einc_sph
         complex (kind = 8), dimension(2,2) :: asm_scat
         complex (kind = 8), dimension(2) :: escat_sph
-        complex (kind = 8), dimension(3) :: escat_rect
+        complex (kind = 8), dimension(3) :: escat_rect, erad_cart
+        complex (kind = 8) :: escat_rad
         integer :: i
 
-        ! Main loop over hologram points.
+        ! Main loop over field points.
         do i = 1, n_pts, 1
            kr = calc_points(1, i)
            theta = calc_points(2, i)
@@ -115,13 +122,25 @@
 
            ! convert to rectangular
            call fieldstocart(escat_sph, theta, phi, escat_rect)
+
+           ! calculate radial components of scattered field
+           if (rad) then
+               call incfield(einc(1), einc(2), phi, einc_sph)
+               call radial_field_mie(nstop, asbs(1, :), kr, theta, escat_rad)
+               escat_rad = escat_rad * einc_sph(1)
+               call radial_vect_to_cart(escat_rad, theta, phi, erad_cart)
+               escat_rect = escat_rect + erad_cart
+           endif
+
            es_x(i) = escat_rect(1)
            es_y(i) = escat_rect(2)
            es_z(i) = escat_rect(3)
+
         end do
 
         return
         end
+
 
       subroutine tmatrix_fields(n_pts, calc_points, amn, lmax, euler_gamma, &
            inc_pol, es_x, es_y, es_z)
@@ -292,6 +311,77 @@
         return
         end
 
+     
+      subroutine radial_field_mie(nstop, as, kr, theta, erad_nd)
+        ! Calculate non-dimensional radial component of the scattered 
+        ! Lorenz-Mie electric field. Physical E_scat,radial requires
+        ! an overall prefactor of E_\parallel,inc (incident field parallel
+        ! to scattering plane).
+        !
+        ! Inputs
+        ! ======
+        ! nstop (int) :
+        !     Maximum order of electric field expansion.
+        ! as (complex, (1, nstop) :
+        !     Scattering coefficients a_l (B/H convention), to order nstop.
+        ! kr (real) :
+        !     Dimensionless spherical coordinate r (multiply by wavevector in
+        !     medium).
+        ! theta (real) :
+        !     Spherical coordinate theta (radians).
+        !
+        ! Outputs
+        ! =======
+        ! erad_nd (complex) :
+        !     Dimensionless radial component of scattered electric field.
+        !
+        ! Notes
+        ! =====
+        ! See Bohren & Huffman 94-95. The only VSHs with an r component
+        ! are the N_e1l, whose contributions to the scattered E field
+        ! are weighted by the a_l Mie coefficients. Note that N_e1l
+        ! goes as E_0 cos phi, but this is derived in a formalism assuming
+        ! x polarization, and hence the prefactor should physically be
+        ! E_\parallel,inc
+        !
+        ! Code below uses n instead of l for angular momentum quantum
+        ! number because it's easier to read.
+        !
+        ! TODO: for performance could be folded into asm_mie_fullradial,
+        ! b/c the special function calls are redundant.
+        !
+        implicit none
+        integer, intent(in) :: nstop
+        real (kind = 8), intent(in) :: kr, theta
+        complex (kind = 8), dimension(1, nstop), intent(in) :: as
+        complex (kind = 8), intent(out) :: erad_nd
+
+        real (kind = 8), dimension(nstop) :: pi_n, tau_n
+        real (kind = 8), dimension(0:nstop) :: jn, djn, yn, dyn
+        real (kind = 8) :: st
+        integer :: n, ifail, prefactor
+        complex (kind = 8) :: ci, hl
+        data ci/(0.d0, 1.d0)/
+
+        ! initialize output
+        erad_nd = 0.
+
+        ! compute special functions (angular and spherical bessel)
+        call pisandtaus(nstop, theta, pi_n, tau_n)
+        call sbesjy(kr, nstop, jn, yn, djn, dyn, ifail)
+        st = dsin(theta)
+
+        ! main loop
+        do n = 1, nstop, 1
+           prefactor = 2 * n + 1 
+           hl = jn(n) + ci * yn(n) ! spherical hankel
+           erad_nd = erad_nd + as(1, n) * prefactor * ci**(n + 1) * &
+                st * pi_n(n) * hl / kr
+        end do
+
+        return
+        end
+
 
       subroutine fieldstocart(asph, theta, phi, acart)
 ! Complex routine to convert scattered fields from scat. plane spherical to cartesian.
@@ -313,6 +403,28 @@
 
         return
         end
+
+
+      subroutine radial_vect_to_cart(a_r, theta, phi, acart)
+        ! Convert a radial vector component to a Cartesian vector.
+        implicit none
+        complex (kind = 8), intent(in) :: a_r
+        real (kind = 8), intent(in) :: theta, phi
+        complex (kind = 8), dimension(3), intent(out) :: acart
+        real (kind = 8) :: ct, st, cp, sp
+
+        ct = dcos(theta)
+        st = dsin(theta)
+        cp = dcos(phi)
+        sp = dsin(phi)
+        
+        acart(1) = st * cp * a_r
+        acart(2) = st * sp * a_r
+        acart(3) = ct * a_r
+
+        return
+        end
+
 
 ! Currently unused. Candidate for deletion?
       subroutine getsphercoords(x, y, z, sph)

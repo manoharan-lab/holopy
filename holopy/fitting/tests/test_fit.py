@@ -51,8 +51,9 @@ def test_fit_mie_single():
 
     def make_scatterer(x, y, z, r, n):
         return Sphere(n=n+1e-4j, r = r, center = (x, y, z))
-
-    model = Model(Parametrization(make_scatterer, parameters), Mie.calc_holo,
+    
+    thry = Mie(False)
+    model = Model(Parametrization(make_scatterer, parameters), thry.calc_holo,
                   alpha=Parameter(name='alpha', guess=.6, limit = [.1, 1]))
 
     assert_raises(InvalidMinimizer, fit, model, holo, minimizer=Sphere)
@@ -72,8 +73,8 @@ def test_fit_mie_par_scatterer():
                r = par(8.5e-7, (1e-8, 1e-5)),
                n = ComplexParameter(par(1.59, (1,2)), 1e-4j))
 
-
-    model = Model(s, Mie.calc_holo, alpha = par(.6, [.1,1]))
+    thry = Mie(False)
+    model = Model(s, thry.calc_holo, alpha = par(.6, [.1,1]))
 
     result = fit(model, holo)
 

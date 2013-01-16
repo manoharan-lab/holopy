@@ -45,11 +45,11 @@ from ...core.tests.common import assert_allclose
 @attr('fast')
 def test_single_sphere():
     # single sphere hologram (only tests that functions return)
+    thry = Mie(False)
+    holo = thry.calc_holo(sphere, xschema, scaling=scaling_alpha)
+    field = thry.calc_field(sphere, xschema)
 
-    holo = Mie.calc_holo(sphere, xschema, scaling=scaling_alpha)
-    field = Mie.calc_field(sphere, xschema)
-
-    intensity = Mie.calc_intensity(sphere, xschema)
+    intensity = thry.calc_intensity(sphere, xschema)
 
     verify(holo, 'single_holo')
     verify(field, 'single_field')
@@ -67,20 +67,21 @@ def test_Mie_multiple():
     s2 = Sphere(n = 1.59, r = 1e-6, center=[8e-6,5e-6,5e-6])
     s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,10e-6,3e-6])
     sc = Spheres(scatterers=[s1, s2, s3])
+    thry = Mie(False)
 
     schema = yschema
-    fields = Mie.calc_field(sc, schema)
+    fields = thry.calc_field(sc, schema)
 
     verify(fields, 'mie_multiple_fields')
-    Mie.calc_intensity(sc, schema)
+    thry.calc_intensity(sc, schema)
 
-    holo = Mie.calc_holo(sc, schema)
+    holo = thry.calc_holo(sc, schema)
     verify(holo, 'mie_multiple_holo')
 
     # should throw exception when fed a ellipsoid
     el = Ellipsoid(n = 1.59, r = (1e-6, 2e-6, 3e-6), center=[8e-6,5e-6,5e-6])
     with assert_raises(TheoryNotCompatibleError) as cm:
-        Mie.calc_field(el, schema)
+        thry.calc_field(el, schema)
     assert_equal(str(cm.exception), "The implementation of the Mie scattering "
                  "theory doesn't know how to handle scatterers of type "
                  "Ellipsoid")
@@ -99,9 +100,9 @@ def test_Mie_multiple():
 def test_mie_polarization():
     # test holograms for orthogonal polarizations; make sure they're
     # not the same, nor too different from one another.
-
-    xholo = Mie.calc_holo(sphere, xschema, scaling=scaling_alpha)
-    yholo = Mie.calc_holo(sphere, yschema, scaling=scaling_alpha)
+    thry = Mie(False)
+    xholo = thry.calc_holo(sphere, xschema, scaling=scaling_alpha)
+    yholo = thry.calc_holo(sphere, yschema, scaling=scaling_alpha)
 
     # the two arrays should not be equal
     try:
