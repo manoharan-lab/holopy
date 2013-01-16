@@ -29,7 +29,7 @@ from ..marray import Image
 from ..metadata import Optics
 
 
-def load(inf, pixel_size = None, optics = None):
+def load(inf, spacing = None, optics = None):
     """
     Load data or results
 
@@ -75,7 +75,7 @@ def load(inf, pixel_size = None, optics = None):
         if isinstance(optics, dict):
             optics = Optics(**optics)
 
-    return Image(arr, optics = optics, spacing = pixel_size)
+    return Image(arr, optics = optics, spacing = spacing)
 
 def save(outf, obj):
     """
