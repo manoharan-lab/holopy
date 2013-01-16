@@ -67,7 +67,7 @@ class Optics(HoloPyObject):
         self.wavelen = wavelen
         self.index = index
         if polarization is None:
-            warn("Polarization not specified. You will not be able to use this optics "
+            warn("Polarization not specified. You will not be able to use this optics"
                     " for most calculations")
         self.polarization = np.array(polarization)
         self.divergence = divergence

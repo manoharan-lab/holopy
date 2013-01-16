@@ -24,8 +24,10 @@ from __future__ import division
 
 import numpy as np
 from nose.tools import raises, assert_raises
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_warns
 from nose.plugins.attrib import attr
+
+from warnings import warn
 
 from ...core import ImageSchema, Optics
 from ...core.helpers import OrderedDict
@@ -36,7 +38,7 @@ from ..scatterer import (Sphere, Scatterer, Ellipsoid,
 from ..scatterer.ellipsoid import isnumber
 from ..scatterer.scatterer import find_bounds
 
-from ..errors import ScattererDefinitionError, NoCenter
+from ..errors import ScattererDefinitionError, NoCenter, NoPolarization
 from .common import assert_allclose
 from ..theory import Mie
 
@@ -170,3 +172,7 @@ def test_sphere_nocenter():
     sphere = Sphere(n = 1.59, r = .5)
     schema = ImageSchema(spacing=.1, shape=1, optics=Optics(wavelen = .660, polarization = [1, 0],index = 1.33))
     assert_raises(NoCenter, Mie.calc_holo, sphere, schema)
+    
+def test_calc_holo_nopolarization():
+    sphere = Sphere(n = 1.59, r = .5, center = (5, 5, 5))
+    assert_warns(UserWarning, Optics, wavelen = .660, index = 1.33)
