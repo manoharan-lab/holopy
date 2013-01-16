@@ -140,11 +140,14 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
     Notes
     -----
     The Euler angles rotate a vector (in the active picture) by alpha
-    counterclockwise about the fixed lab z axis, beta counterclockwise about
-    the lab y axis, and by gamma about the lab z axis.  Counterclockwise is
+    clockwise about the fixed lab z axis, beta clockwise about
+    the lab y axis, and by gamma about the lab z axis.  Clockwise is
     defined as viewed from the origin, looking in the positive direction
-    along an axis.  This is for compatability with the passive picture adopted
-    by SCSMFO.
+    along an axis.  
+
+    This breaks compatability with previous conventions, which were adopted for 
+    compatability with the passive picture adopted is for compatability with 
+    the passive picture used by SCSMFO.
 
     """
     if not radians:
@@ -159,9 +162,9 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
     cg = cos(gamma)
     sg = sin(gamma)
 
-    return np.array([ca*cb*cg - sa*sg, sa*cb*cg + ca*sg, -sb*cg,
-                     -ca*cb*sg - sa*cg, -sa*cb*sg + ca*cg, sb*sg,
-                     ca*sb, sa*sb, cb]).reshape((3,3)) # row major
+    return np.array([ca*cb*cg - sa*sg, -sa*cb*cg - ca*sg, sb*cg,
+                     ca*cb*sg + sa*cg, -sa*cb*sg + ca*cg, sb*sg,
+                     -ca*sb, sa*sb, cb]).reshape((3,3)) # row major
 
 # TODO: make this handle 2d
 def cartesian_distance(p1, p2):
