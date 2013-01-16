@@ -113,7 +113,7 @@ def test_invalid():
 
     assert_raises(UnrealizableScatterer, Multisphere.calc_holo, sc, schema)
 
-    cs = Sphere()
+    cs = Sphere(center = (0, 0, 0))
 
     assert_raises(TheoryNotCompatibleError, Multisphere.calc_holo, cs, schema)
 

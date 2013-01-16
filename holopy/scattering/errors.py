@@ -76,3 +76,6 @@ class InvalidSelection(Error):
 
 class ModelInputError(Error):
     pass
+
+class NoCenter(Error):
+    pass

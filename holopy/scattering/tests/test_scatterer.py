@@ -27,6 +27,7 @@ from nose.tools import raises, assert_raises
 from numpy.testing import assert_equal
 from nose.plugins.attrib import attr
 
+from ...core import ImageSchema, Optics
 from ...core.helpers import OrderedDict
 
 from ..scatterer import (Sphere, Scatterer, Ellipsoid,
@@ -35,8 +36,9 @@ from ..scatterer import (Sphere, Scatterer, Ellipsoid,
 from ..scatterer.ellipsoid import isnumber
 from ..scatterer.scatterer import find_bounds
 
-from ..errors import ScattererDefinitionError
+from ..errors import ScattererDefinitionError, NoCenter
 from .common import assert_allclose
+from ..theory import Mie
 
 @attr('fast')
 def test_Sphere_construction():
@@ -163,3 +165,8 @@ def test_find_bounds():
     assert_allclose(find_bounds(s.indicators.functions[0])[0], np.array([-s.r,s.r]), rtol=0.1)
     s = Sphere(n = 1.59, r = .5e6, center = (0, 0, 0))
     assert_allclose(find_bounds(s.indicators.functions[0])[0], np.array([-s.r,s.r]), rtol=0.1)
+
+def test_sphere_nocenter():
+    sphere = Sphere(n = 1.59, r = .5)
+    schema = ImageSchema(spacing=.1, shape=1, optics=Optics(wavelen = .660, polarization = [1, 0],index = 1.33))
+    assert_raises(NoCenter, Mie.calc_holo, sphere, schema)

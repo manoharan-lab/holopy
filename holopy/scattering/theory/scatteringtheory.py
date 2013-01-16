@@ -29,7 +29,9 @@ from ...core.marray import Image, VectorGrid, VectorGridSchema, dict_without
 from ...core import Optics
 from ...core.holopy_object import HoloPyObject
 from ..binding_method import binding, finish_binding
-
+from .. import errors
+from ..scatterer import Sphere
+from ..errors import NoCenter
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -142,6 +144,11 @@ class ScatteringTheory(HoloPyObject):
         instantiate a theory object if it has adjustable parameters and you want
         to use non-default values.
         """
+        
+        if isinstance(scatterer, Sphere) and scatterer.center == None:
+            raise NoCenter("Sphere is missing a center")
+        else:
+            pass
         scat = cls_self.calc_field(scatterer, schema = schema, scaling = scaling)
         return scattered_field_to_hologram(scat, schema.optics)
 

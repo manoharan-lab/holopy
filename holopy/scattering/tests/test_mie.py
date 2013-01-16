@@ -58,7 +58,7 @@ def test_single_sphere():
     # for them
 
     # large radius (calculation not attempted because it would take forever
-    assert_raises(UnrealizableScatterer, Mie.calc_holo, Sphere(r=1, n = 1.59), xschema)
+    assert_raises(UnrealizableScatterer, Mie.calc_holo, Sphere(r=1, n = 1.59, center = (5,5,5)), xschema)
 
 
 @attr('fast')
