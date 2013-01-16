@@ -32,7 +32,7 @@ import yaml
 
 @attr('fast')
 def test_hologram_io():
-    holo = normalize(get_example_datax('image0001.yaml'))
+    holo = normalize(get_example_data('image0001.yaml'))
 
     assert_read_matches_write(holo)
 

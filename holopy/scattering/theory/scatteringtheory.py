@@ -31,7 +31,7 @@ from ...core.holopy_object import HoloPyObject
 from ..binding_method import binding, finish_binding
 from .. import errors
 from ..scatterer import Sphere
-from ..errors import NoCenter
+from ..errors import NoCenter, NoPolarization
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -146,9 +146,15 @@ class ScatteringTheory(HoloPyObject):
         """
         
         if isinstance(scatterer, Sphere) and scatterer.center == None:
-            raise NoCenter("Sphere is missing a center")
+            raise NoCenter("Center is required for hologram calculation of a sphere")
         else:
             pass
+
+        if schema.optics.polarization.shape == (2,):
+            pass
+        else:    
+            raise NoPolarization("Polarization is required for hologram calculation")
+                        
         scat = cls_self.calc_field(scatterer, schema = schema, scaling = scaling)
         return scattered_field_to_hologram(scat, schema.optics)
 

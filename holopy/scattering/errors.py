@@ -79,3 +79,6 @@ class ModelInputError(Error):
 
 class NoCenter(Error):
     pass
+    
+class NoPolarization(Error):
+    pass
