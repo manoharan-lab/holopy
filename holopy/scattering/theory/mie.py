@@ -49,6 +49,9 @@ class Mie(FortranTheory):
     spherically symmetric particle with an arbitrary number of layers
     with differing refractive indices, using Yang's recursive
     algorithm ([Yang2003]_).
+
+    By default, calculates radial component of scattered electric fields,
+    which is nonradiative.
     """
 
     # don't need to define __init__() because we'll use the base class

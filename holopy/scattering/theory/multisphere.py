@@ -41,8 +41,8 @@ class Multisphere(FortranTheory):
     numerical method that accounts for multiple scattering and near-field
     effects (see [Fung2011]_, [Mackowski1996]_).  This approach is much more
     accurate than Mie superposition, but it is also more computationally
-    intensive.  The Multisphere code can handle any number of spheres.
-    TODO: mention scfodim somewhere.
+    intensive.  The Multisphere code can handle any number of spheres;
+    see notes below for details.
 
     Attributes
     ----------
@@ -83,6 +83,19 @@ class Multisphere(FortranTheory):
     Multisphere does not check for overlaps becaue overlapping spheres can be
     useful for getting fits to converge.  The results to be sensible for small
     overlaps even though mathemtically speaking they are not xstrictly valid.
+    
+    Currently, Multisphere does not calculate the radial component of 
+    scattered electric fields. This is a good approximation for large kr,
+    since the radial component falls off as 1/kr^2.
+
+    scfodim.for contains three parameters, all integers: 
+        npd: Maximum number of spheres
+        nod: Maximum order of individual sphere expansions. Will depend on
+            size of largest sphere in cluster.
+        notd: Maximum order of cluster-centered expansion. Will depend on
+            overall size of cluster.
+
+    Changing these values will require recompiling Fortran extensions.    
 
     References
     ----------
@@ -130,7 +143,9 @@ class Multisphere(FortranTheory):
         # check for spheres being uniform
         for sph in scatterer.scatterers:
             if not np.isscalar(sph.n):
-                raise TheoryNotCompatibleError(self, scatterer)
+                raise TheoryNotCompatibleError(self, scatterer, "Multisphere" +
+                                               " cannot compute scattering" +
+                                               " from layered particles.")
 
         # check that the parameters are in a range where the multisphere
         # expansion will work

@@ -22,6 +22,11 @@ The use case is currently limited to groups of spheres that all
 have the same radius and index of refraction. The c code in the
 kernel is a translation of the Fortran code: mieangfuncs.mie_fields().
 
+This does not compute the radial component of the scattered electric 
+field.  This should be a valid approximation for calculating holograms,
+where for pixels near normal incidence no radial component of E can 
+result in energy transport into the detector.
+
 .. moduleauthor:: Ray Griner <rg1658@yahoo.com>
 .. moduleauthor:: Rebecca W. Perry <perry.becca@gmail.com>
 '''

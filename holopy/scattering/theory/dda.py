@@ -54,7 +54,8 @@ class DDA(ScatteringTheory):
     Computes scattering using the the Discrete Dipole Approximation (DDA).
 
     It can (in principle) calculate scattering from any arbitrary scatterer.
-    The DDA uses a numerical method that represents arbitrary scatterers as an array
+    The DDA uses a numerical method that represents arbitrary scatterers as 
+    an array
     of point dipoles and then self-consistently solves Maxwell's equations
     to determine the scattered field. In practice, this model can be
     extremely computationally intensive, particularly if the size of the

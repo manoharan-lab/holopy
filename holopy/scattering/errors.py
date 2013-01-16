@@ -50,16 +50,25 @@ class ScattererDefinitionError(Error):
                 ".\n" + self.message)
 
 class TheoryNotCompatibleError(Error):
-    def __init__(self, theory, scatterer):
+    def __init__(self, theory, scatterer, message = None):
         self.theory = theory
         self.scatterer = scatterer
-        super(TheoryNotCompatibleError, self).__init__(None)
+        super(TheoryNotCompatibleError, self).__init__(message)
     def __str__(self):
-        return ("The implementation of the " +
-                self.theory.__class__.__name__ + 
-                " scattering theory doesn't know how to handle " +
-                "scatterers of type " + 
-                self.scatterer.__class__.__name__)
+        if self.message is None:
+            return ("The implementation of the " +
+                    self.theory.__class__.__name__ + 
+                    " scattering theory doesn't know how to handle " +
+                    "scatterers of type " + 
+                    self.scatterer.__class__.__name__)
+        else:
+            return ("The implementation of the " +
+                    self.theory.__class__.__name__ + 
+                    " scattering theory doesn't know how to handle " +
+                    "scatterers of type " + 
+                    self.scatterer.__class__.__name__ + 
+                    " because: " + self.message)
+
 
 class UnrealizableScatterer(Error):
     def __init__(self, theory, scatterer, message):

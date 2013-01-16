@@ -142,7 +142,8 @@ def test_Ellipsoid_dda():
 
 def test_janus():
     schema = ImageSchema(60, .1, Optics(.66, 1.33, (1, 0)))
-    s = JanusSphere(n = [1.34, 2.0], r = [.5, .51], rotation = (np.pi/2, 0), center = (5, 5, 5))
+    s = JanusSphere(n = [1.34, 2.0], r = [.5, .51], rotation = (-np.pi/2, 0), 
+                    center = (5, 5, 5))
     assert_almost_equal(s.index_at([5,5,5]),1.34) 
     holo = DDA.calc_holo(s, schema)
     verify(holo, 'janus_dda')
