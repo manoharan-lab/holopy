@@ -32,7 +32,7 @@ import yaml
 
 @attr('fast')
 def test_hologram_io():
-    holo = normalize(get_example_data('image0001.yaml'))
+    holo = normalize(get_example_datax('image0001.yaml'))
 
     assert_read_matches_write(holo)
 
@@ -119,6 +119,5 @@ Items are not equal:
  ACTUAL: '!!python/object/apply:numpy.core.multiarray.scalar [!dtype \'int32\', "\\x01\\0\\0\\0"]\n'
  DESIRED: '1\n...\n'""":
             raise AssertionError("You're probably running Windows.  Writing and reading files with integers might be buggy on Windows, so be careful. If you're not running Windows and you're still seeing this message, please let us know by filing a bug.")
-        else: 
+        else:
             raise err
-

@@ -227,7 +227,7 @@ def test_radiometric():
 
 @attr('fast')
 def test_farfield():
-    schema = Schema(positions = Angles(np.linspace(0, np.pi/2), phi = np.zeros(50)), optics =
+    schema = Schema(positions = Angles(np.linspace(0, np.pi/2)), optics =
                     Optics(wavelen=.66, index = 1.33, polarization = (1, 0)))
     sphere = Sphere(r = .5, n = 1.59+0.1j)
 
@@ -251,4 +251,3 @@ def test_radialEscat():
     else:
         raise AssertionError("Holograms w/ and w/o full radial fields" +
                              " are exactly equal")
-

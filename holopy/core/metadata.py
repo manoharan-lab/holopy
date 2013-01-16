@@ -160,10 +160,15 @@ class UnevenGrid(Grid):
     pass
 
 class Angles(PositionSpecification):
-    def __init__(self, theta = None, phi = None, units = 'radians'):
+    def __init__(self, theta, phi = [0], units = 'radians'):
         self.theta = theta
         self.phi = phi
         self.units = units
-        self.shape = theta.shape
-        if self.phi is not None:
-            assert self.phi.shape == self.shape
+        self.shape = len(self.theta), len(self.phi)
+
+    def positions_theta_phi(self):
+        pos = np.zeros((self.shape[0]*self.shape[1], 2))
+        for i, theta in enumerate(self.theta):
+            for j, phi in enumerate(self.phi):
+                pos[i*self.shape[1]+j] = theta, phi
+        return pos

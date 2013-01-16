@@ -63,13 +63,10 @@ class Mie(FortranTheory):
         if isinstance(scatterer, Sphere):
             scat_coeffs = self._scat_coeffs(scatterer, schema.optics)
 
-            if scatterer.center is None:
-                # TODO: actually use (rather than ignore) the phi
-                scat_matrs = [mieangfuncs.asm_mie_far(scat_coeffs, theta) for
-                              theta, phi in schema.positions_theta_phi()]
-                return np.array(scat_matrs)
-            else:
-                raise TheoryNotCompatibleError(self, scatterer)
+            # TODO: actually use (rather than ignore) the phi
+            scat_matrs = [mieangfuncs.asm_mie_far(scat_coeffs, theta) for
+                          theta, phi in schema.positions_theta_phi()]
+            return np.array(scat_matrs)
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 

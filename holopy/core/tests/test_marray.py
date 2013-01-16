@@ -102,5 +102,6 @@ def test_positions_theta_phi():
     a = Angles(theta, phi)
     s = Schema((50, 2), a)
     ptp = s.positions_theta_phi()
-    assert_equal(ptp[:,0], theta)
-    assert_equal(ptp[:,1], phi)
+    assert_equal(ptp.shape, (2500, 2))
+    assert_equal(ptp[-1], (np.pi, np.pi*2))
+    assert_allclose(ptp[182], np.array([ 0.19234241,  4.10330469]))
