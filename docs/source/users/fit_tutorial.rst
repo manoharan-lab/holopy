@@ -3,36 +3,63 @@ Fitting Models to Data
 **********************
 
 The most powerful use of HoloPy is to analyze data by fitting a scattering model to it.
-This can provide high precision measurements of physical quantities from holograms or other data.
+This provides high precision measurements of physical quantities from holographic or other types of data.
 
-Fitting requires a :class:`.Model` of the scattering system, the :class:`.Marray` containing data the fit is trying to match, and (optionally) a :class:`~holopy.fitting.minimizer.Minimizer`, where the supplied default is: :class:`~holopy.fitting.minimizer.Nmpfit`.
+Fitting requires a :class:`.Model` of the scattering system, the :class:`.Marray` containing data the fit is trying to match, and a :class:`~holopy.fitting.minimizer.Minimizer` (where the default is :class:`~holopy.fitting.minimizer.Nmpfit`).
 
 Example
 =======
-In the following, we fit to a hologram computed using known parameters: ::
+In the following, we fit for the position, radius, and refractive index of a microsphere whose hologram is computed using known values of these
+parameters: :: 
 
    import holopy
    from holopy.core import ImageSchema, Optics
-   from holopy.fitting import Model, par, fitq
+   from holopy.fitting import Model, par, fit
    from holopy.scattering.scatterer import Sphere
    from holopy.scattering.theory import Mie
 
-   # Scattering calculations
-   schema = ImageSchema(shape = 100, spacing = .1, 
-       optics = Optics(wavelen = .660, polarization = [1, 0], index = 1.33))
+   schema = ImageSchema(shape = 100, spacing = .1,
+       optics = Optics(wavelen = .660, polarization = [1, 0], \ 
+        index = 1.33))
    sphere = Sphere(center = (5, 5, 10.3), r = .5, n = 1.58)
-   holo = Mie.calc_holo(sphere, schema) #data to be fitted
+   holo = Mie.calc_holo(sphere, schema) 
 
-   # Fit calculations
-   par_s = Sphere(center = (par(guess = 5.5, limit = [4,10]), par(4.5, [4, 10]), par(10, [5, 15])),
-                  r = .5, n = 1.58) #guesses for position, radius, and refractive index
-   model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1])) #fitting model
-   result = fit(model, holo) #result of fit
+   par_s = Sphere(center = (par(guess = 5.5, limit = [4,10]), \
+   par(4.5, [4, 10]), par(10, [5, 15])), r = .5, n = 1.58) 
+   model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1])) 
+   result = fit(model, holo) 
 
-:ref:`calc_tutorial` explain the steps used above to compute the hologram.
-In this simple fit, we define initial guesses for the three spatial coordinates as variable parameters and the radius and refractive index and to be constant values.
-After running the ``fit`` function, you can inspect ``result.scatterer`` and see that the initial guess of the sphere's position (5.5, 4.5, 10.0) was corrected by the fitter to (5.0,5.0,10.3). Success!
+The first few lines import the HoloPy models that are needed to compute and fit for holograms: ::
 
+  import holopy
+  from holopy.core import ImageSchema, Optics
+  from holopy.fitting import Model, par, fit
+  from holopy.scattering.scatterer import Sphere
+  from holopy.scattering.theory import Mie
+
+Next, we compute the hologram for a microsphere using the same steps as those in :ref:`calc_tutorial`: ::
+
+  schema = ImageSchema(shape = 100, spacing = .1,
+       optics = Optics(wavelen = .660, polarization = [1, 0], \ 
+        index = 1.33))
+  sphere = Sphere(center = (5, 5, 10.3), r = .5, n = 1.58)
+  holo = Mie.calc_holo(sphere, schema) 
+
+Next, we provide initial guesses for the three spatial coordinates (`x`, `y`, and `z`, in that order) as bounded variable parameters in ``center``.
+For instance, the initial guess for the `x` position of the scatterer is 5.5 microns and bounded between 4 and 10 microns.
+Guesses for the radius (``r``) and refractive index of the sphere (``n``) are constant values included also in ``par_s``: ::
+
+  par_s = Sphere(center = (par(guess = 5.5, limit = [4,10]), \
+   par(4.5, [4, 10]), par(10, [5, 15])), r = .5, n = 1.58) 
+
+Then, using the scattering model specified in ``model`` where ``alpha`` is a fitting parameter first introduced by Lee et al. in [Lee2007] (see :ref:`credits` for additional details), the ``fit`` function performs the fit to the hologram computed in `holo`: ::
+  
+  result = fit(model, holo)
+
+After performing the fit, you can inspect the fitted values for `n`, `r`, and the position given by ``center`` in ``result.scatterer``. Note that the output values for ``center`` do not give the spatial coordinates of the fitted scatterer.
+We see that the initial guess of the sphere's position (5.5, 4.5, 10.0) was corrected by the fitter to (5.0,5.0,10.3). Success!
+
+From the fit,
 ``result.scatterer`` gives the scatterer that best matches the hologram,
 ``result.alpha`` is the alpha for the best fit.  ``result.chisq`` and
 ``result.rsq`` are statistical measures of the the goodness of the fit.
@@ -45,17 +72,18 @@ After running the ``fit`` function, you can inspect ``result.scatterer`` and see
         this includes things like covariance
         matrices).  Additional details are included in the documentation for :class:`.FitResult`.
 
-
-
+.. TODO additional examples require testing
 
 Scattering Model
 ================
 
-Model is a set of variable parameters a scattering theory for
+Model is a set of variable parameters and a scattering theory for
 computing simulated scattering data, and any ancillary information
 needed for this calculation.  ::
 
   model = Model(parametrization, theory.calc_*)
+
+.. TODO more detailed example
 
 Parametrization
 ---------------
@@ -66,26 +94,25 @@ to provide a :class:`~holopy.scattering.scatterer` object telling which
 values to fix and which to vary. ::
 
   from holopy.fitting import par
-  param_scat = Sphere(n = 1.59, r = par(guess = .5, limit = [.3, .8]),
-                      center = (par(10), par(10), par(10)))
+  param_scat = Sphere(n = 1.59, r = par(guess = .5, \
+    limit = [.3, .8]), center = (par(10), par(10), par(10)))
 
-This will tell holopy that you want to model scattering from a sphere
-of fixed index n = 1.59, and vary the sphere's radius and position to
+This will tell HoloPy that you want to model scattering from a sphere
+of fixed index `n` = 1.59, and vary the sphere's radius and center position to
 attempt to match a hologram.  Initial guesses are provided for the
-radius and three center coordinates, and the radius is constrained to
-lie between .3 and .8.  The three radii are allowed to vary without
-limit.  This example makes use of a shorthand, we encourage you use
-the provided shortcut ``par`` to mean :class:`~holopy.fitting.parameter.Parameter`
-because you will be typing it a lot.
+radius and three position coordinates, and the radius is constrained to
+lie between 0.3 and 0.8.  
+The three coordinates are allowed to vary without limit.  
+This example makes use of a shorthand ``par`` to mean :class:`~holopy.fitting.parameter.Parameter` since it will be typed a lot.
 
 If your model does not fit neatly into a parametrized scatterer like
 this, HoloPy provides a lower level interface ::
 
   from holopy.fitting import Parametrization
-  param = Parametrization(make_scatterer,
-                          parameters = [par(guess = .5, name = 'r'),
-                                        par(guess = 0, name = 'euler_alpha'),
-                                        par(guess = 0, name = 'euler_beta')])
+  param = Parametrization(make_scatterer, \
+    parameters = [par(guess = .5, name = 'r'), \
+    par(guess = 0, name = 'euler_alpha'), \
+    par(guess = 0, name = 'euler_beta')])
 
 Here make_scatterer needs to be a function that takes keyword
 arguments of the names of the parameters and returns a scatterer.
@@ -102,8 +129,9 @@ index, but the index is determined by the fitter.  This may be done by
 defining a Parameter and using it in multiple places ::
   
   n1 = par(1.59)
-  sc = Spheres([Sphere(n = nl, r = par(0.5e-6), center = array([10., 10., 20.])),
-                Sphere(n = n1, r = par(0.5e-6), center = array([9., 11., 21.]))])
+  sc = Spheres([Sphere(n = nl, r = par(0.5e-6), \
+    center = array([10., 10., 20.])), \
+    Sphere(n = n1, r = par(0.5e-6), center = array([9., 11., 21.]))])
 
 Theory
 ------

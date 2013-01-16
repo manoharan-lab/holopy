@@ -192,8 +192,7 @@ sphere objects and passing a longer list of spheres to the
 
 Non-default Theory Parameters
 -----------------------------
-.. TODO Multisphere broken
-
+.. TODO Mac compatibility for Multisphere() and multi.calc_holo()
 Some theories like
 :class:`~holopy.scattering.theory.multisphere.Multisphere` have
 adjustable parameters that relate to numerical tolerances.  In general
@@ -320,4 +319,3 @@ particles, and so it's most convenient to work with scattering matrices. ::
   
 Here we omit specifying the location (center) of the scatterer.  This is
 only valid when you're calculating a far-field quantity.
-
