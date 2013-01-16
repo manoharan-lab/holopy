@@ -90,7 +90,7 @@ def image_gradient(image):
     gradx = scipy.ndimage.sobel(image, axis = 0)
     # - sign here from old HoloPy coordinate convention?
     grady = -1*scipy.ndimage.sobel(image, axis=1)
-    return gradx, grady
+    return gradx.astype(float), grady.astype(float)
 
 
 def hough(x_deriv, y_deriv, centers=1, scale=.25):
@@ -107,7 +107,6 @@ def hough(x_deriv, y_deriv, centers=1, scale=.25):
     ----------
     x_deriv : numpy.ndarray
         x-component of image intensity gradient
-
     y_deriv : numpy.ndarray
         y-component of image intesity gradient
     scale : float (optional)
@@ -119,9 +118,7 @@ def hough(x_deriv, y_deriv, centers=1, scale=.25):
     -------
     res : ndarray
         row and column of center
-    accumulator : ndarray
-        accumulator array.  The maximum of this array should be the
-        center of the hologram
+
 
     """
     #Finding the center: Using the derivatives we have already found
@@ -162,6 +159,8 @@ def hough(x_deriv, y_deriv, centers=1, scale=.25):
             acc_rows = rows[cols_to_use]
         else:
             cols = arange(dim_y, dtype = 'int')
+            if slope==0:
+                slope=0.00001
             line = around(coords[0] - 1./slope * (cols - 
                                                   coords[1])).astype('int')
             rows_to_use = (line >= 0) * (line < dim_x)

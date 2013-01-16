@@ -21,7 +21,7 @@ from numpy.testing import assert_allclose
 from ..process.centerfinder import center_find
 from .common import get_example_data
 
-gold_location = np.array([48.52683097, 50.24042999])
+gold_location = np.array([44.32008768, 47.73093606])
 
 def test_FoundLocation():
     #load a hologram
