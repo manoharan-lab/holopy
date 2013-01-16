@@ -95,7 +95,7 @@ def fitseries(model, infilenames, opticsinfo, px_size, bg=None,
         
     for frame, outpath in zip(infilenames, outfilenames):
     
-        holo = load(frame, pixel_size=px_size, optics=opticsinfo)
+        holo = load(frame, spacing=px_size, optics=opticsinfo)
         imagetofit = preprocess_func(holo, bg)
         
         result = fit(model, imagetofit)
