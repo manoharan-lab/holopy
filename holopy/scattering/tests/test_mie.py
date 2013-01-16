@@ -37,7 +37,7 @@ from ..theory import Mie
 
 from ..theory.mie import UnrealizableScatterer
 from ..errors import TheoryNotCompatibleError
-from ...core import ImageSchema, Optics, Angles, Schema
+from ...core import ImageSchema, Optics, Angles, Schema, VolumeSchema
 from .common import verify, sphere, xschema, scaling_alpha, optics, yschema
 from .common import x, y, z, n, xoptics, radius
 from ...core.tests.common import assert_allclose
@@ -251,3 +251,8 @@ def test_radialEscat():
     else:
         raise AssertionError("Holograms w/ and w/o full radial fields" +
                              " are exactly equal")
+
+def test_calc_xz_plane():
+    s = Sphere(n = 1.59, r = .5, center = (0, 0, 5))
+    sch = VolumeSchema((50, 1, 50), .1, Optics(.66, 1.33, (1,0)))
+    e = Mie.calc_field(s, sch)

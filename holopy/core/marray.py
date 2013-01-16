@@ -317,6 +317,63 @@ class PseudoRegularGrid(PseudoMarray):
         call_super_init(PseudoRegularGrid, self, consumed = 'spacing',
                         positions = Grid(spacing))
 
+    def positions_r_theta_phi(self, origin):
+        """
+        Returns a list of positions of each data point, in spherical coordinates
+        relative to origin.
+
+        Parameters
+        ----------
+        origin : (real, real, real)
+            origin of the spherical cooridate system to return
+
+        Returns
+        -------
+        theta, phi : 1-D array
+            Angles
+        r : 2-D array
+            Distances
+        """
+
+        x, y, z = (origin - self.origin)
+
+        g = np.ogrid[[slice(0, d*s, s) for d, s in zip(self.shape, self.spacing)]]
+        if len(g) == 2:
+            xg, yg = g
+            zg = 0
+        else:
+            xg, yg, zg = g
+
+        x = xg - x
+        y = yg - y
+        # sign is reversed for z because of our choice of image
+        # centric rather than particle centric coordinate system
+        z = z - zg
+
+        r = np.sqrt(x**2 + y**2 + z**2)
+        theta = np.arctan2(np.sqrt(x**2 + y**2), z)
+        phi = np.arctan2(y, x)
+        # get phi between 0 and 2pi
+        phi = phi + 2*np.pi * (phi < 0)
+        # if z is an array, phi will be the wrong shape. Checking its
+        # last dimension will determine this so we can correct it
+        if phi.shape[-1] != r.shape[-1]:
+            phi = phi.repeat(r.shape[-1], -1)
+        points = np.concatenate([a[..., np.newaxis] for a in (r, theta, phi)], -1)
+        if hasattr(self, 'selection') and self.selection is not None:
+            points = points[self.selection]
+            if not self.selection.any():
+                raise errors.InvalidSelection("No pixels selected, can't compute fields")
+        else:
+            points = points.reshape((-1, 3))
+        return points
+        x, y, z = origin
+
+    def positions_kr_theta_phi(self, origin):
+        pos = self.positions_r_theta_phi(origin)
+        pos[:,0] *= self.optics.wavevec
+        return pos
+
     @property
     def spacing(self):
         return self.positions.spacing
@@ -395,6 +452,7 @@ class RegularGrid(Marray, PseudoRegularGrid):
         return new
 
 
+
 class PseudoImage(PseudoRegularGrid):
     def __init__(self, spacing = None, optics = None, origin = np.zeros(3),
                  use_random_fraction = None, **kwargs):
@@ -414,49 +472,6 @@ class PseudoImage(PseudoRegularGrid):
 
     # subclasses must provide a self.shape
 
-    # these functions can be generalized for other kinds of marrays (I think),
-    # look into changing the algorithms so we can push this up the inheritance tree
-    def positions_r_theta_phi(self, origin):
-        """
-        Returns a list of positions of each data point, in spherical coordinates
-        relative to origin.
-
-        Parameters
-        ----------
-        origin : (real, real, real)
-            origin of the spherical cooridate system to return
-
-        Returns
-        -------
-        theta, phi : 1-D array
-            Angles
-        r : 2-D array
-            Distances
-        """
-        x, y, z = origin
-        px, py = self.positions.spacing
-        xdim, ydim = self.shape
-        xg, yg = np.ogrid[0:xdim, 0:ydim]
-        x = xg*px - x
-        y = yg*py - y
-        r = np.sqrt(x**2 + y**2 + z**2)
-        theta = np.arctan2(np.sqrt(x**2 + y**2), z)
-        phi = np.arctan2(y, x)
-        # get phi between 0 and 2pi
-        phi = phi + 2*np.pi * (phi < 0)
-        points = np.dstack((r, theta, phi))
-        if hasattr(self, 'selection') and self.selection is not None:
-            points = points[self.selection]
-            if not self.selection.any():
-                raise errors.InvalidSelection("No pixels selected, can't compute fields")
-        else:
-            points = points.reshape((-1, 3))
-        return points
-
-    def positions_kr_theta_phi(self, origin):
-        pos = self.positions_r_theta_phi(origin)
-        pos[:,0] *= self.optics.wavevec
-        return pos
 
     @property
     def center(self):
