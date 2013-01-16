@@ -150,7 +150,11 @@ class ParameterizedObject(Parametrization):
         pars = self.obj.parameters
         for key in pars.keys():
             if hasattr(pars[key], 'guess'):
-                pars[key] = pars[key].guess
+                if isinstance(pars[key], ComplexParameter):
+                    pars[key+'.real'] = pars[key].real.guess
+                    pars[key+'.imag'] = pars[key].imag.guess
+                else:
+                    pars[key] = pars[key].guess
         return self.make_from(pars)
 
 
@@ -172,7 +176,7 @@ class ParameterizedObject(Parametrization):
                     return parameters[name]
 
             if isinstance(par, ComplexParameter):
-                par_val = (get_val(par.real, name+'.real') + 1.0j *
+                par_val = (get_val(par.real, name+'.real') + 
                                      get_val(par.imag, name+'.imag'))
             elif isinstance(par, Parameter):
                 par_val = get_val(par, name)

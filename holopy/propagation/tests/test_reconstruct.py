@@ -69,4 +69,3 @@ def test_reconFar():
     rec_im = propagate(im, 10e-6)
     rec_im = scale_0_255(abs(rec_im)**2)
     assert_array_equal(rec_im.astype('uint8'),gold)
-x

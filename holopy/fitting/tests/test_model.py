@@ -83,3 +83,30 @@ def test_ComplexPar():
     
     assert_equal(model.parameters[0].name,'n.real')
     assert_equal(model.parameters[1].name,'n.imag')
+
+
+def test_pullingoutguess():
+    g = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
+                   par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
+         r = par(8.5e-7, (1e-8, 1e-5)), n = ComplexParameter(par(1.59, (1,2)),1e-4j))
+
+    model = Model(g, Mie.calc_holo)
+
+    s = Sphere(center = [.567e-5, .567e-5, 15e-6], n = 1.59 + 1e-4j, r = 8.5e-7)
+
+    assert_equal(s.n, model.scatterer.guess.n)
+    assert_equal(s.r, model.scatterer.guess.r)
+    assert_equal(s.center, model.scatterer.guess.center)
+
+    g = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
+                   par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
+         r = par(8.5e-7, (1e-8, 1e-5)), n = 1.59 + 1e-4j)
+
+    model = Model(g, Mie.calc_holo)
+
+    s = Sphere(center = [.567e-5, .567e-5, 15e-6], n = 1.59 + 1e-4j, r = 8.5e-7)
+
+    assert_equal(s.n, model.scatterer.guess.n)
+    assert_equal(s.r, model.scatterer.guess.r)
+    assert_equal(s.center, model.scatterer.guess.center)
+
