@@ -10,4 +10,4 @@ User Guide
    basics
    firststeps
    tutorials
-
+   details

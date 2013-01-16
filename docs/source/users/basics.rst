@@ -1,6 +1,8 @@
 Fundamentals
 ============
 
+.. _units:
+
 Units
 -----
 
@@ -56,6 +58,8 @@ Data can be:
 HoloPy will probably work to some degree with higher dimensional data
 (because the underlying numpy arrays we use are n-dimensional), but
 many of its functions expect data in one of these forms.
+
+.. _coordinate_system: 
 
 Coordinate system
 -----------------

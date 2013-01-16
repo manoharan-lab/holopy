@@ -57,7 +57,7 @@ class plotter:
         self._title()
 
         #to show non-square pixels correctly
-        if  hasattr(im, 'spacing'):       
+        if  hasattr(im, 'spacing') and im.spacing is not None:       
 	        ratio = im.spacing[0]/im.spacing[1]
         else:
             ratio = 1.0

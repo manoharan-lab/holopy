@@ -2,52 +2,48 @@
 Fitting Models to Data
 **********************
 
-The most powerful use of holopy is to analyze data by fitting a model to it.  Given a correct model this can give high precision measurements of physical quantities from holographic or other data.
+The most powerful use of HoloPy is to analyze data by fitting a scattering model to it.
+This can provide high precision measurements of physical quantities from holograms or other data.
 
-A fit needs:
-
-1) A :class:`.Model` of the scattering system
-   
-2) The :class:`.Marray` containing data the fit is trying to match
-   
-3) (Optional) a :class:`~holopy.fitting.minimizer.Minimizer` (holopy defaults to using the supplied :class:`~holopy.fitting.minimizer.Nmpfit`)
+Fitting requires a :class:`.Model` of the scattering system, the :class:`.Marray` containing data the fit is trying to match, and (optionally) a :class:`~holopy.fitting.minimizer.Minimizer`, where the supplied default is: :class:`~holopy.fitting.minimizer.Nmpfit`.
 
 Example
 ================
-Let's compute a hologram with known parameters and then fit it to make sure we 
-retrieve the right parameters. ::
+In the following, we fit to a hologram computed using known parameters: ::
 
    import holopy
    from holopy.core import ImageSchema, Optics
-   from holopy.fitting import Model, par, fit
+   from holopy.fitting import Model, par, fitq
    from holopy.scattering.scatterer import Sphere
    from holopy.scattering.theory import Mie
 
+   # Scattering calculations
    schema = ImageSchema(shape = 100, spacing = .1, 
        optics = Optics(wavelen = .660, polarization = [1, 0], index = 1.33))
-   s = Sphere(center = (5, 5, 10.3), r = .5, n = 1.58)
-   holo = Mie.calc_holo(s, schema)
+   sphere = Sphere(center = (5, 5, 10.3), r = .5, n = 1.58)
+   holo = Mie.calc_holo(sphere, schema) #data to be fitted
 
+   # Fit calculations
    par_s = Sphere(center = (par(guess = 5.5, limit = [4,10]), par(4.5, [4, 10]), par(10, [5, 15])),
-                  r = .5, n = 1.58)
+                  r = .5, n = 1.58) #guesses for position, radius, and refractive index
+   model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1])) #fitting model
+   result = fit(model, holo) #result of fit
 
-   model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1]))
-   result = fit(model, holo)
+:ref:`calc_tutorial` explain the steps used above to compute the hologram.
+In this simple fit, we define initial guesses for the three spatial coordinates as variable parameters and the radius and refractive index and to be constant values.
+After running the ``fit`` function, you can inspect ``result.scatterer`` and see that the initial guess of the sphere's position (5.5, 4.5, 10.0) was corrected by the fitter to (5.0,5.0,10.3). Success!
 
-After running this, you can inspect result.scatterer and see that the initial guess of the sphere's location
-(5.5, 4.5, 10.0) was corrected by the fitter to (5.0,5.0,10.3). Success!
-
-In this first simple fit, we specify the three spatial coordinates as variable parameters, and set
-the index of refraction and radius of the sphere to constant values.
-
-``result.scatterer`` is the scatterer that best matches the hologram,
+``result.scatterer`` gives the scatterer that best matches the hologram,
 ``result.alpha`` is the alpha for the best fit.  ``result.chisq`` and
 ``result.rsq`` are statistical measures of the the goodness of the fit.
-``result.model`` and ``result.minimizer`` are the Model and Minimizer
-objects used in the fit, and ``result.minimization_info`` contains any
-further information the minimization algorithm returned about the
-minimization procedure (for nmpfit this includes things like covariance
-matrices).  See the documentation of :class:`.FitResult`.
+
+.. note::
+        ``result.model`` and ``result.minimizer`` are the Model and Minimizer
+        objects used in the fit, and ``result.minimization_info`` contains any
+        additional information the minimization algorithm returned about the
+        minimization procedure (for  :class:`~holopy.fitting.minimizer.Nmpfit` 
+        this includes things like covariance
+        matrices).  Additional details are included in the documentation for :class:`.FitResult`.
 
 
 

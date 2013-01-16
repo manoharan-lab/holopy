@@ -28,7 +28,7 @@ For Ubuntu/Debian users::
   
   sudo apt-get install mayavi2 python-scipy ipython python-matplotlib python-yaml
 
-  For windows users or mac users, the `Enthought Python Distribution <http://www.enthought.com/products/epd.php>`_ should have the basics to get you started. 
+For Windows or Mac users, the `Enthought Python Distribution <http://www.enthought.com/products/epd.php>`_ should have the basics to get you started. 
 
 If you want to build HoloPy from source there are a few other python
 dependencies.  You will also need C and Fortran compilers.  Please see
@@ -65,7 +65,7 @@ If you want to generate the documentation, you'll also need
 * a LaTeX distribution (to generate the equations in the documentation) - Note: many smaller distributions do not include utf8.def which is required for sphinx, so you may need to install extra packages
 * dvipng
 
-To build holopy run ``python setup.py build`` in the root directory.
+To build HoloPy run ``python setup.py build`` in the root directory.
 This will generate a build directory and put all the modules there.
 
 To compile the documentation run ``make html`` from the docs directory
@@ -79,17 +79,17 @@ directory.
 Instructions for Users
 ^^^^^^^^^^^^^^^^^^^^^^
 
-If you want to compile and install the binary build of holopy on your
+If you want to compile and install the binary build of HoloPy on your
 system, unpack the source archive and run
 
 ``python setup.py install``
 
-as root.  This will build the packages and install holopy in the local
+as root.  This will build the packages and install HoloPy in the local
 dist-packages directory of your python installation, so that python
 will automatically be able to find it when you type "import holopy".
 
 If you are a developer, you might not want to do this because you
-might eventually find yourself with two versions of holopy on your
+might eventually find yourself with two versions of HoloPy on your
 system, one installed globally and one installed locally.  An
 alternative is below.
 
@@ -97,7 +97,7 @@ alternative is below.
 Instructions for Developers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you are going to hack on holopy, you probably only want to compile
+If you are going to hack on HoloPy, you probably only want to compile
 the scattering extensions, but not install the module globally on your
 system.  Let's say you unpack the source archive in
 ``/home/me/holopy``.  Then cd to ``/home/me/holopy`` and run
@@ -111,12 +111,12 @@ module when you import it.
 
 Testing
 -------
-HoloPy comes with a suite of tests that will ensure that all everything has built correctly and it is able to perform all of the calculations it should be able to.
-To run these tests navigate to the root of the package and run:
+HoloPy comes with a suite of tests that ensure everything has been built correctly and that it's able to perform all of the calculations it is designed to do.
+To run these tests, navigate to the root of the package (e.g. ``/home/me/holopy``) and run:
 
 .. sourcecode:: bash
 
-    $ python run_tests.py
+    $ python run_nose.py
 
 or 
 

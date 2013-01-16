@@ -4,14 +4,11 @@
 Propagation/Reconstruction
 **************************
 
-The classical way of working with holograms is to optically
-reconstruct them by shining light back through them.  This has the
-mathematical effect of propagating the field stored in the hologram to
-some different plane.  HoloPy generalizes this concept and allows you
-to numerically propagate any hologram or electric field to another
-point in space.
+Holograms are typically reconstructed optically by shining light back through them.
+This corresponds mathematically to propagating the field stored in the hologram to some different plane.
+HoloPy generalizes this concept and allows you to numerically propagate any hologram (or electric field to another position in space.
 
-Propagating and viewing the result takes 3 steps:
+Propagation and viewing the results requires the following steps:
 
 1. Import or calculate a hologram
 
@@ -20,13 +17,13 @@ Propagating and viewing the result takes 3 steps:
 3. View
 
 Example
-===============
+=======
 .. TODO: provide a complete example and refactor the rest to follow the
 .. three steps above
 
 To begin, import: ::
 
-    import holopy
+    import holopy as hp
     from holopy import propagate, show, load
 
 
