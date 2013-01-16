@@ -24,6 +24,7 @@ import numpy as np
 from nose.tools import nottest, assert_raises
 from nose.plugins.attrib import attr
 from numpy.testing import assert_equal, assert_approx_equal, assert_allclose
+from ..minimizer import OpenOpt
 from ...scattering.scatterer import Sphere, Spheres, Scatterer
 from ...scattering.theory import Mie, Multisphere, DDA
 from ...core import Optics, ImageSchema, load, save
@@ -51,7 +52,7 @@ def test_fit_mie_single():
 
     def make_scatterer(x, y, z, r, n):
         return Sphere(n=n+1e-4j, r = r, center = (x, y, z))
-    
+
     thry = Mie(False)
     model = Model(Parametrization(make_scatterer, parameters), thry.calc_holo,
                   alpha=Parameter(name='alpha', guess=.6, limit = [.1, 1]))
@@ -83,6 +84,21 @@ def test_fit_mie_par_scatterer():
     assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=3)
     assert_equal(model, result.model)
     assert_read_matches_write(result)
+
+@attr('slow')
+def test_fit_single_openopt():
+    holo = normalize(get_example_data('image0001.yaml'))
+    s = Sphere(center = (par(guess=.567e-5, limit=[.4e-5,.6e-5]),
+                         par(.567e-5, (.4e-5, .6e-5)), par(15e-6, (1.3e-5, 1.8e-5))),
+               r = par(8.5e-7, (5e-7, 1e-6)),
+               n = ComplexParameter(par(1.59, (1.5,1.8)), 1e-4j))
+
+    model = Model(s, Mie(False).calc_holo, alpha = par(.6, [.1,1]))
+    result = fit(model, holo, OpenOpt('scipy_slsqp'))
+    assert_obj_close(result.scatterer, gold_sphere, rtol=1e-3)
+    # TODO: see if we can get this back to 3 sig figs correct alpha
+    assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=3)
+    assert_equal(model, result.model)
 
 @attr('fast')
 def test_fit_random_subset():

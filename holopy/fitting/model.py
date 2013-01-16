@@ -157,10 +157,8 @@ class ParameterizedObject(Parametrization):
                     pars[key] = pars[key].guess
         return self.make_from(pars)
 
-
     def make_from(self, parameters):
         obj_pars = {}
-
 
         for name, par in self.obj.parameters.iteritems():
             # if this par is in a tie group, we need to work with its tie group

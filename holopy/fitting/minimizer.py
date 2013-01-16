@@ -28,6 +28,7 @@ import numpy as np
 from ..core.holopy_object import HoloPyObject
 from ..core.helpers import OrderedDict
 from .errors import ParameterSpecificationError, MinimizerConvergenceFailed
+from ..scattering.errors import ScattererDefinitionError
 from .third_party import nmpfit
 
 
@@ -105,10 +106,6 @@ class Nmpfit(Minimizer):
         self.quiet = quiet
 
     def minimize(self, parameters, cost_func, debug = False):
-        def resid_wrapper(p, fjac=None):
-            status = 0
-            return [status, cost_func(self.pars_from_minimizer(parameters, p))]
-
         # marshall the paramters into a dict of the form nmpfit wants
         nmp_pars = []
         for par in parameters:
@@ -139,6 +136,10 @@ class Nmpfit(Minimizer):
                                                       " nmpfit")
             nmp_pars.append(d)
 
+        def resid_wrapper(p, fjac=None):
+            status = 0
+            return [status, cost_func(self.pars_from_minimizer(parameters, p))]
+
         # now fit it
         fitresult = nmpfit.mpfit(resid_wrapper, parinfo=nmp_pars, ftol = self.ftol,
                                  xtol = self.xtol, gtol = self.gtol, damp = self.damp,
@@ -153,5 +154,47 @@ class Nmpfit(Minimizer):
             return result_pars, fitresult, nmp_pars
         else:
             return result_pars, fitresult
+
+    minimize.__doc__ = Minimizer.minimize.__doc__
+
+class OpenOpt(Minimizer):
+    def __init__(self, algorithm = 'ralg', quiet = False, plot = False):
+        self.algorithm = algorithm
+        self.quiet = quiet
+        self.plot = plot
+        import openopt
+        openopt_nllsq = ['scipy_leastsq']
+        # scipy_leastsq cannot handle bounds
+        openopt_nlp = ['ralg', 'scipy_lbfgsb', 'scipy_slsqp']
+        openopt_global = ['galileo']
+        if algorithm in openopt_nlp:
+            self.problem_type = openopt.NLP
+        elif algorithm in openopt_global:
+            self.problem_type = openopt.GLP
+        elif algorithm in openopt_nllsq:
+            self.problem_type = openopt.NLLSP
+
+    def minimize(self, parameters, cost_func):
+        lb = []
+        ub = []
+        for p in parameters:
+            if p.limit is not None:
+                lb.append(p.scale(p.limit[0]))
+                ub.append(p.scale(p.limit[1]))
+            else:
+                lb.append(-np.inf)
+                ub.append(np.inf)
+        guess = [p.scale(p.guess) for p in parameters]
+        def resid_wrapper(p):
+            try:
+                resid = cost_func(self.pars_from_minimizer(parameters, p))
+                return np.dot(resid, resid)
+            except ScattererDefinitionError:
+                return np.inf
+        problem = self.problem_type(resid_wrapper, guess, lb=lb, ub=ub, iprint = self.quiet,
+                                    plot = self.plot)
+        r = problem.solve(self.algorithm)
+        result_pars = self.pars_from_minimizer(parameters, r.xf)
+        return result_pars, r
 
     minimize.__doc__ = Minimizer.minimize.__doc__

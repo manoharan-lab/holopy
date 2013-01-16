@@ -27,7 +27,7 @@ from ...scattering.theory import Mie
 from ...core import Optics, ImageSchema
 from ...core.helpers import OrderedDict
 from .. import fit, Parameter, par, Model
-from ..minimizer import Nmpfit
+from ..minimizer import Nmpfit, OpenOpt
 from ..errors import ParameterSpecificationError, MinimizerConvergenceFailed
 from ...core.tests.common import assert_obj_close
 
@@ -81,7 +81,9 @@ def test_minimizer():
     assert_equal(parinfo[2]['limited'], [True, True])
     assert_obj_close(gold_dict, result2, context = 'minimized_parameters_with_parinfo')
 
-
+    minimizer = OpenOpt()
+    result, details = minimizer.minimize(parameters, cost_func)
+    assert_obj_close(gold_dict, result, context = 'basic_minimized_parameters', rtol=1e-4)
 
 def test_iter_limit():
     #calculate a hologram with known particle positions to do a fit against
