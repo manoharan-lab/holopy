@@ -6,8 +6,9 @@ use images obtained from digital holography. Before executing the
 example scripts below, it may be helpful to change to the root
 directory of your HoloPy installation (e.g. ``/home/me/holopy``), or
 append this directory to your Python path.  Then you can copy and
-paste the examples directly into a Python shell such as IPython, which
-will allow you to explore and visualize the results of the script.
+paste the examples directly into a Python shell such as IPython with the Pylab
+extension (e.g. ``ipython --pylab`` from the command line)
+which will allow you to explore and visualize the results of the script.
 
 .. _loading:
 

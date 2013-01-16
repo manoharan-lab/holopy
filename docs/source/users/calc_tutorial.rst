@@ -119,12 +119,12 @@ particle.
 
 You can visualize the hologram by running ::
 
-_[ADD CODE HERE]
+  import holopy as hp
+  hp.show(holo)
 
-If all works well, you should have something that looks
-like the following: 
+.. TODO If all works well, you should have something that looks like the following: 
 
-_[SOMEONE PLEASE ADD SPHINX DIRECTIVES HERE TO RUN THE CODE ABOVE AND GENERATE AND EMBED AN IMAGE OF THE HOLOGRAM]
+.. [SOMEONE PLEASE ADD SPHINX DIRECTIVES HERE TO RUN THE CODE ABOVE AND GENERATE AND EMBED AN IMAGE OF THE HOLOGRAM]
 
 You can also calculate just the scattered field using
 ``Mie.calc_field``, or the scattered intensity using
@@ -158,11 +158,11 @@ similar manner to calculating a hologram from a single sphere ::
 
   from holopy.scattering.theory import Mie
   from holopy.scattering.scatterer import Sphere, Spheres
-  schema = ImageSchema(spacing = 1, shape = 100, 
-    optics = Optics(wavelen = 6.58, polarization = [1,0],\
-                    index=1.33))
-  s1 = Sphere(center=(5, 5, 5), n = 1.59, r = 0.5)
-  s2 = Sphere(center=(4, 4, 5), n = 1.59, r = 0.5)
+  schema = ImageSchema(spacing = .1, shape = 100, 
+    optics = Optics(wavelen = .660, polarization = [1,0],\
+                    index= 1.33))
+  s1 = Sphere(center=(5, 5, 5), n = 1.59, r = .5)
+  s2 = Sphere(center=(4, 4, 5), n = 1.59, r = .5)
   collection = Spheres([s1, s2])
   holo = Mie.calc_holo(collection, schema)
 
@@ -192,6 +192,7 @@ sphere objects and passing a longer list of spheres to the
 
 Non-default Theory Parameters
 -----------------------------
+.. TODO Multisphere broken
 
 Some theories like
 :class:`~holopy.scattering.theory.multisphere.Multisphere` have
@@ -253,7 +254,7 @@ with multiple layers: ::
 
 Ellipsoids
 ----------
-
+.. TODO not tested
 You can calculate a hologram of an ellipsoid by using the discrete
 dipole approximation (DDA). This requires first installing `ADDA
 <http://code.google.com/p/a-dda/>`_.  ::
@@ -296,7 +297,7 @@ with pixels of the correct aspect ratio.
 
 Static light scattering calculations 
 ------------------------------------
-
+.. TODO  broken
 In a static light scattering measurement you record the scattered
 intensity at a number of angles.  In this kind of experiment you are
 usually not interested in the exact distance of the detector from the
