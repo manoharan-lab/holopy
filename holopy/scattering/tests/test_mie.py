@@ -198,7 +198,6 @@ def test_nonlinearity():
 def test_selection():
     holo = Mie.calc_holo(sphere, xschema, scaling=scaling_alpha)
 
-
     subset_schema = ImageSchema(xschema.shape, xschema.spacing,
                                 optics = xschema.optics,
                                 use_random_fraction = .1)
@@ -234,4 +233,22 @@ def test_farfield():
 
     matr = Mie.calc_scat_matrix(sphere, schema)
 
+
+@attr('medium')
+def test_radialEscat():
+    thry_1 = Mie()
+    thry_2 = Mie(False)
+
+    sphere = Sphere(r = 1e-6, n = 1.4 + 0.01j, center = [10e-6, 10e-6,
+                                                         1.2e-6])
+    h1 = thry_1.calc_holo(sphere, xschema)
+    h2 = thry_2.calc_holo(sphere, xschema)
+
+    try:
+        assert_array_almost_equal(h1, h2, decimal=12)
+    except AssertionError:
+        pass    # no way to do "assert array not equal" in numpy.testing
+    else:
+        raise AssertionError("Holograms w/ and w/o full radial fields" +
+                             " are exactly equal")
 
