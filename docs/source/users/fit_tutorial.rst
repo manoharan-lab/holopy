@@ -8,7 +8,7 @@ This can provide high precision measurements of physical quantities from hologra
 Fitting requires a :class:`.Model` of the scattering system, the :class:`.Marray` containing data the fit is trying to match, and (optionally) a :class:`~holopy.fitting.minimizer.Minimizer`, where the supplied default is: :class:`~holopy.fitting.minimizer.Nmpfit`.
 
 Example
-================
+=======
 In the following, we fit to a hologram computed using known parameters: ::
 
    import holopy

@@ -1,7 +1,7 @@
 .. _install:
 
 Installing HoloPy
-=========================
+=================
 
 Dependencies
 ------------
@@ -26,9 +26,12 @@ Optional dependencies for certain calculations:
 
 For Ubuntu/Debian users::
   
-  sudo apt-get install mayavi2 python-scipy ipython python-matplotlib python-yaml
+  sudo apt-get install mayavi2 python-scipy \
+  ipython python-matplotlib python-yaml
 
-For Windows or Mac users, the `Enthought Python Distribution <http://www.enthought.com/products/epd.php>`_ should have the basics to get you started. 
+For Windows or Mac users, the `Enthought Python Distribution
+<http://www.enthought.com/products/epd.php>`_ should have the basics
+to get you started.
 
 If you want to build HoloPy from source there are a few other python
 dependencies.  You will also need C and Fortran compilers.  Please see
@@ -37,7 +40,9 @@ dependencies.  You will also need C and Fortran compilers.  Please see
 Installing
 ----------
 
-The simplest way to install is to download a binary build.  Download one from our `Downloads Page <http://www.manoharan.seas.harvard.edu/holopy/downloads.html>`_
+The simplest way to install is to download a binary build.  Download
+one from our `Downloads Page
+<http://www.manoharan.seas.harvard.edu/holopy/downloads.html>`_
 
 Then from a terminal as root/adiminstrator, in the archive directory, run::
   

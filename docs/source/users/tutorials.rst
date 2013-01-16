@@ -1,5 +1,7 @@
+.. _tutorials:
+
 Tutorials
-=========================
+=========
 
 .. toctree::
    :maxdepth: 3
@@ -9,3 +11,4 @@ Tutorials
    fit_tutorial
    series_fit_tutorial
    ddaintro
+   io_tutorial
