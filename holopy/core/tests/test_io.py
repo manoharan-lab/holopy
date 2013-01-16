@@ -98,8 +98,6 @@ def test_yaml_output():
     a = np.ones(10, 'int')
     assert_equal(yaml.dump(a.std()), '0.0\n...\n')
 
-    assert_equal(yaml.dump(a.max()), '1\n...\n')
-
     assert_equal(yaml.dump(np.dtype('float')),"!dtype 'float64'\n")
     assert_equal(yaml.load(yaml.dump(np.dtype('float'))), np.dtype('float64'))
 
@@ -110,3 +108,17 @@ def test_yaml_output():
         return x*x
 
     assert_equal(yaml.dump(test), "!function 'return x*x'\n")
+
+    # this should fail on Windows64 because int and long are both
+    # int32
+    try:
+        assert_equal(yaml.dump(a.max()), '1\n...\n')
+    except AssertionError as err:
+        if err.args[0] == r"""
+Items are not equal:
+ ACTUAL: '!!python/object/apply:numpy.core.multiarray.scalar [!dtype \'int32\', "\\x01\\0\\0\\0"]\n'
+ DESIRED: '1\n...\n'""":
+            raise AssertionError("You're probably running Windows.  Writing and reading files with integers might be buggy on Windows, so be careful. If you're not running Windows and you're still seeing this message, please let us know by filing a bug.")
+        else: 
+            raise err
+

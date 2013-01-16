@@ -40,7 +40,7 @@ from  .. import marray
 
 def save(outf, obj):
     if isinstance(outf, basestring):
-        outf = file(outf, 'w')
+        outf = file(outf, 'wb')
 
     yaml.dump(obj, outf)
     if isinstance(obj, Marray):
@@ -92,6 +92,17 @@ def load(inf):
 # Custom Yaml Representers
 ###################################################################
 
+def ignore_aliases(data):
+    try:
+        if data in [None, ()]:
+            return True
+        if isinstance(data, (str, unicode, bool, int, float)):
+            return True
+    except TypeError, e:
+        pass
+yaml.representer.SafeRepresenter.ignore_aliases = \
+    staticmethod(ignore_aliases)
+
 # Represent 1d ndarrays as lists in yaml files because it makes them much
 # prettier
 def ndarray_representer(dumper, data):
@@ -118,6 +129,7 @@ yaml.add_representer(np.float64, numpy_float_representer)
 def numpy_int_representer(dumper, data):
     return dumper.represent_int(int(data))
 yaml.add_representer(np.int64, numpy_int_representer)
+yaml.add_representer(np.int32, numpy_int_representer)
 
 def numpy_dtype_representer(dumper, data):
     return dumper.represent_scalar('!dtype', data.name)
