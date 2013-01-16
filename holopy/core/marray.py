@@ -335,7 +335,7 @@ class PseudoRegularGrid(PseudoMarray):
             Distances
         """
 
-        x, y, z = (origin - self.origin)
+        x, y, z = (np.array(origin) - self.origin)
 
         g = np.ogrid[[slice(0, d*s, s) for d, s in zip(self.shape, self.spacing)]]
         if len(g) == 2:
