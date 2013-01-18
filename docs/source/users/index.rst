@@ -10,8 +10,8 @@ get started quickly.
    :maxdepth: 2
 
    install
-   basics
-   overview
    firststeps
    tutorials
+   concepts
+   overview
 

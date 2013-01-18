@@ -9,14 +9,14 @@ theory Package
     :show-inheritance:
 
 .. autoclass:: holopy.scattering.theory.scatteringtheory.ScatteringTheory
-			   :members:
+	       :members:
 	
 :mod:`mie` Module
 -----------------
 
 .. automodule:: holopy.scattering.theory.mie
     :members:
-	:inherited-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`multisphere` Module
@@ -24,7 +24,7 @@ theory Package
 
 .. automodule:: holopy.scattering.theory.multisphere
     :members:
-	:inherited-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`dda` Module
@@ -32,5 +32,5 @@ theory Package
 
 .. automodule:: holopy.scattering.theory.dda
     :members:
-	:inherited-members:
+    :inherited-members:
     :show-inheritance:

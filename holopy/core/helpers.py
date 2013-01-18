@@ -32,6 +32,7 @@ try:
 except ImportError: #pragma: no cover
     from ordereddict import OrderedDict #pragma: no cover
 
+
 def _ensure_array(x):
     if np.isscalar(x):
         return np.array([x])

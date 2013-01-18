@@ -1,5 +1,5 @@
-:mod:`holopy` Package
----------------------
+:mod:`holopy` Code Reference
+----------------------------
 
 .. automodule:: holopy.__init__
     :members:

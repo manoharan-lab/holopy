@@ -39,11 +39,11 @@ To get started, please have a look at the :ref:`users`.
 Contents:
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
-   credits
    users/index
    reference/holopy
+   credits
 
 
 Indices and tables

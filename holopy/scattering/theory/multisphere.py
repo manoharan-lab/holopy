@@ -37,7 +37,10 @@ from ..errors import TheoryNotCompatibleError, UnrealizableScatterer
 from .scatteringtheory import FortranTheory
 
 class Multisphere(FortranTheory):
-    """Calculate the scattered field of a collection of spheres through a
+    """
+    Exact scattering from a cluster of spheres.
+
+    Calculate the scattered field of a collection of spheres through a
     numerical method that accounts for multiple scattering and near-field
     effects (see [Fung2011]_, [Mackowski1996]_).  This approach is much more
     accurate than Mie superposition, but it is also more computationally
@@ -46,17 +49,6 @@ class Multisphere(FortranTheory):
 
     Attributes
     ----------
-    imshape : float or tuple (optional)
-        Size of grid to calculate scattered fields or
-        intensities. This is the shape of the image that calc_field or
-        calc_intensity will return
-    phi : array
-        Specifies azimuthal scattering angles to calculate (incident
-        direction is z)
-    theta : array
-        Specifies polar scattering angles to calculate
-    optics : :class:`holopy.optics.Optics` object
-        specifies optical train
     niter : integer (optional)
         maximum number of iterations to use in solving the interaction
         equations
@@ -83,19 +75,19 @@ class Multisphere(FortranTheory):
     Multisphere does not check for overlaps becaue overlapping spheres can be
     useful for getting fits to converge.  The results to be sensible for small
     overlaps even though mathemtically speaking they are not xstrictly valid.
-    
-    Currently, Multisphere does not calculate the radial component of 
+
+    Currently, Multisphere does not calculate the radial component of
     scattered electric fields. This is a good approximation for large kr,
     since the radial component falls off as 1/kr^2.
 
-    scfodim.for contains three parameters, all integers: 
-        npd: Maximum number of spheres
-        nod: Maximum order of individual sphere expansions. Will depend on
+    scfodim.for contains three parameters, all integers:
+     * nod: Maximum number of spheres
+     * nod: Maximum order of individual sphere expansions. Will depend on
             size of largest sphere in cluster.
-        notd: Maximum order of cluster-centered expansion. Will depend on
+     * notd: Maximum order of cluster-centered expansion. Will depend on
             overall size of cluster.
 
-    Changing these values will require recompiling Fortran extensions.    
+    Changing these values will require recompiling Fortran extensions.
 
     References
     ----------
@@ -130,13 +122,13 @@ class Multisphere(FortranTheory):
         ----------
         scatterer : :mod:`.scatterer` object
             scatterer or list of scatterers to compute field for
-        optics: :mod:`.Optics` object 
+        optics: :mod:`.Optics` object
             optical metadata
 
         Returns
         -------
         amn : arrays of field expansion coefficients
-            
+
         """
         if not isinstance(scatterer, Spheres):
             raise TheoryNotCompatibleError(self, scatterer)
@@ -209,7 +201,7 @@ class Multisphere(FortranTheory):
 
         """
         amn, lmax = self._scsmfo_setup(scatterer, schema.optics)
-       
+
         positions = schema.positions_kr_theta_phi(origin = scatterer.centers.mean(0)).T
 
         fields = mieangfuncs.tmatrix_fields(positions, amn, lmax, 0, schema.optics.polarization)
@@ -232,8 +224,8 @@ class Multisphere(FortranTheory):
 
         # calculate forward scattering
         asm_fwd = _asm_far(0., 0., amn, lmax)
-        ainc_sph = pol * np.array([1., -1.]) # assume theta, phi = 0 
-        ascat_sph = np.dot(asm_fwd, ainc_sph) * np.array([1., -1.]) 
+        ainc_sph = pol * np.array([1., -1.]) # assume theta, phi = 0
+        ascat_sph = np.dot(asm_fwd, ainc_sph) * np.array([1., -1.])
         # at theta, phi = 0, ascat_cart = ascat_sph
         cext = 4. * np.pi / optics.wavevec**2 * np.dot(pol, ascat_sph).real
         return cext
@@ -243,7 +235,7 @@ class Multisphere(FortranTheory):
         scat_matrs = [_asm_far(theta, phi, amn, lmax) for
                       theta, phi in schema.positions_theta_phi()]
         return np.array(scat_matrs)
-        
+
     def _calc_cscat(self, scatterer, optics, amn = None, lmax = None):
         """
         Calculate scattering cross section by quadrature over solid angle.
@@ -280,7 +272,7 @@ class Multisphere(FortranTheory):
         # normalize the polarization
         pol = optics.polarization / np.sqrt((optics.polarization**2).sum())
 
-        # define integrand: A^2 sin theta cos theta 
+        # define integrand: A^2 sin theta cos theta
         def costhetawt(theta, phi):
             einc = mieangfuncs.incfield(*pol, phi = phi)
             asm = _asm_far(theta, phi, amn, lmax)
@@ -299,8 +291,8 @@ class Multisphere(FortranTheory):
         sections, and asymmetry parameter for sphere clusters
         with polarized incident light.
 
-        The extinction cross section is calculated from the optical 
-        theorem. The scattering cross section is calculated by 
+        The extinction cross section is calculated from the optical
+        theorem. The scattering cross section is calculated by
         numerical quadrature of the scattered field, and the absorption
         cross section is calculated from the difference of the extinction
         cross section and the scattering cross section.
@@ -309,7 +301,7 @@ class Multisphere(FortranTheory):
         ----------
         scatterer : :mod:`scatterpy.scatterer` object
             sphere cluster to compute for
-        
+
         Returns
         -------
         cross_sections : array (4)
@@ -333,16 +325,16 @@ def _asm_far(theta, phi, amn, lmax):
         """
         far field amplitude scattering matrix for fixed angles
         """
-        asm = np.roll(uts_scsmfo.asm(amn, lmax, theta, phi), 
+        asm = np.roll(uts_scsmfo.asm(amn, lmax, theta, phi),
                       -1).reshape((2,2)) * -0.5 # correction factor
         return asm
 
 def _integrate4pi(integrand):
     '''
-    Integrate integrand(theta, phi) over 4 pi of spherical solid angle. 
+    Integrate integrand(theta, phi) over 4 pi of spherical solid angle.
     Integrand should already have factor of sin theta.
     '''
-    integral, error = dblquad(integrand, 0, 2 * np.pi, lambda theta:0., 
+    integral, error = dblquad(integrand, 0, 2 * np.pi, lambda theta:0.,
                               lambda theta:np.pi)
     return integral
 

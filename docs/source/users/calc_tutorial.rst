@@ -90,9 +90,10 @@ That's what we'll do next.
   that it specifies the coordinates of the camera pixels and contains
   the same optical information. The two object classes differ in that
   an :class:`.Image` must contain data for all of the coordinates,
-  while an :class:`.ImageSchema` can contain data, but does not have
-  to. So, Holopy allows you to provide an :class:`Image` anywhere an
-  :class:`ImageSchema` is needed.  This comes in handy if _[SOMEONE FINISH THIS]...
+  while an :class:`.ImageSchema`contains only the locations. So,
+  Holopy allows you to provide an :class:`Image` anywhere an
+  :class:`ImageSchema` is needed.  This comes in handy when fitting to
+  an :class:`.Image` you have already loaded.
 
 If you want to model other kinds of detectors, you can specify all of
 the measurement locations using a pure :class:`.Schema` object or one
@@ -192,7 +193,9 @@ sphere objects and passing a longer list of spheres to the
 
 Non-default Theory Parameters
 -----------------------------
+
 .. TODO Mac compatibility for Multisphere() and multi.calc_holo()
+
 Some theories like
 :class:`~holopy.scattering.theory.multisphere.Multisphere` have
 adjustable parameters that relate to numerical tolerances.  In general
@@ -253,7 +256,9 @@ with multiple layers: ::
 
 Ellipsoids
 ----------
+
 .. TODO not tested
+
 You can calculate a hologram of an ellipsoid by using the discrete
 dipole approximation (DDA). This requires first installing `ADDA
 <http://code.google.com/p/a-dda/>`_.  ::
@@ -296,7 +301,9 @@ with pixels of the correct aspect ratio.
 
 Static light scattering calculations 
 ------------------------------------
+
 .. TODO  broken
+
 In a static light scattering measurement you record the scattered
 intensity at a number of angles.  In this kind of experiment you are
 usually not interested in the exact distance of the detector from the

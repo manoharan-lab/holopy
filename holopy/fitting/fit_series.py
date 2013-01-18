@@ -26,10 +26,9 @@ from __future__ import division
 
 import warnings
 
-from ..core.holopy_object import HoloPyObject
 from ..core.process import normalize
+from ..core import Image
 from ..core.io import load, save
-from ..core.metadata import Optics
 from . import fit
 
 #default preprocessing function
@@ -37,72 +36,74 @@ def div_normalize(holo, bg):
     if bg is not None:
         imagetofit = normalize(holo/bg)
     else:
-        imagetofit = normalize(holo)   
+        imagetofit = normalize(holo)
     return imagetofit
-    
+
 #default updating function
 def update_all(model, fitted_result):
     for p in model.parameters:
         name = p.name
         p.guess = fitted_result.parameters[name]
     return model
-        
-def fitseries(model, infilenames, opticsinfo, px_size, bg=None, 
-    outfilenames=None, preprocess_func=div_normalize, 
+
+def fit_series(model, data, data_optics=None, data_spacing=None, bg=None,
+    outfilenames=None, preprocess_func=div_normalize,
     update_func=update_all):
     """
     fit a model to each frame of data in a time series
 
     Parameters
     ----------
-    model : :class:`~holopy.fitting.model.Model` object
-        A model describing the scattering system which leads 
-        to your data and the parameters to vary to fit it 
+    model : :class:`.Model` object
+        A model describing the scattering system which leads
+        to your data and the parameters to vary to fit it
         to the data
-    infilenames : :list:`
-        Full paths to the data to fit
-    opticsinfo : :object:'
-        A HoloPy optics object
-    px_size : :float:' or :np.array:'
-        The size of a pixel-- single float implies square pixels
-    bg : :image:' or :path:'
-        Optional background image to be used for cleaning up 
+    data : list(filenames) or list(:class:`.Image`)
+        List of Image objects to fit, or full paths of images to load
+    data_optics : :class:`.Optics` (optional)
+        Optics information (only required if loading image files without
+        optical information)
+    data_spacing : float or np.array
+        Pixel spacing for data. (Only required if loading image files without
+        spacing information)
+    bg : :class:`.Image` object or path
+        Optional background image to be used for cleaning up
         the raw data images
-    outfilenames : :list:`
-        Full paths to save output for each image, if not 
+    outfilenames : list
+        Full paths to save output for each image, if not
         included, nothing saved
-    preprocess_func : :
-        Handles pre-processing images before fitting the model 
+    preprocess_func : function
+        Handles pre-processing images before fitting the model
         to them
-    update_func : : 
-        Updates the model (typically just the paramter guess) 
+    update_func : function
+        Updates the model (typically just the paramter guess)
         for the next frame
 
     Returns
     -------
     allresults : :list:`
         List of all the result objects (one per frame)
-    """    
-    
-    allresults = []
-    
-    if isinstance(bg, basestring):
-        bg = load(bg, px_size=px_size, optics=opticsinfo)
+    """
 
-    #to allow running without saving output   
+    allresults = []
+
+    if isinstance(bg, basestring):
+        bg = load(bg, spacing=data_spacing, optics=data_optics)
+
+    #to allow running without saving output
     if outfilenames is None:
-        outfilenames = ['']*len(infilenames)
-        
-    for frame, outpath in zip(infilenames, outfilenames):
-    
-        holo = load(frame, spacing=px_size, optics=opticsinfo)
-        imagetofit = preprocess_func(holo, bg)
-        
+        outfilenames = ['']*len(data)
+
+    for frame, outpath in zip(data, outfilenames):
+        if not isinstance(frame, Image):
+            frame = load(frame, spacing = data_spacing, optics = data_optics)
+        imagetofit = preprocess_func(frame, bg)
+
         result = fit(model, imagetofit)
         allresults.append(result)
         if outpath!='':
             save(outpath, result)
-        
+
         model = update_all(model, result)
 
     return allresults

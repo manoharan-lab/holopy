@@ -13,13 +13,6 @@ scatterer Package
     :show-inheritance:
 
 	   
-:mod:`coatedsphere` Module
---------------------------
-
-.. automodule:: holopy.scattering.scatterer.coatedsphere
-    :members:
-    :show-inheritance:
-
 
 :mod:`ellipsoid` Module
 -----------------------
@@ -36,10 +29,10 @@ scatterer Package
     :members:
     :show-inheritance:
 
-:mod:`voxelated` Module
+:mod:`janus` Module
 -----------------------
 
-.. automodule:: holopy.scattering.scatterer.voxelated
+.. automodule:: holopy.scattering.scatterer.janus
     :members:
     :show-inheritance:
 

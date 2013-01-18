@@ -19,3 +19,4 @@
 from fit import fit
 from model import Model, Parametrization
 from parameter import Parameter, par, ComplexParameter
+from fit_series import fit_series
