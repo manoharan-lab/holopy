@@ -21,14 +21,14 @@ from numpy.testing import assert_allclose
 from ..process.centerfinder import center_find
 from .common import get_example_data
 
-gold_location = np.array([44.32008768, 47.73093606])
+gold_location = np.array([ 48.62964885,  50.22328811])
 
 def test_FoundLocation():
     #load a hologram
     holo = get_example_data('image0001.yaml')
     
     #find the center of it
-    location = center_find(holo, scale=.25)
+    location = center_find(holo, threshold=.25)
 	
     #check to make sure it matches the gold
     assert_allclose(location, gold_location)

@@ -17,28 +17,30 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
 The centerfinder module is a group of functions for locating the
-center of a particle or dimer in a hologram. This can be useful for
-determining an initial parameter guess for hologram fitting.
+centers of holographic ring patterns. The module can find the center
+of a single-sphere holographic pattern, a dimer holographic pattern,
+or the centers of multiple (well-separated: clearly separate ring patterns with separate centers) single spheres or dimers. The intended use is for determining an initial parameter guess for hologram fitting.
 
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 """
+
 from __future__ import division
 
-import scipy
 import numpy as np
-from scipy import arange, around, array, zeros, sqrt, ndimage, transpose
+from .enhance import normalize
+from scipy import ndimage
 
-def center_find(image, centers=1, scale=.5):
+def center_find(image, centers=1, threshold=.5):
     """
     Finds the coordinates of the center of a holographic pattern
-    The coordinates returned are in pixels (row number, column number).
-
-    Intended for fiding the center of single particle or dimer
-    holograms which basically show concentric circles. The optional
-    scale parameter (between 0 and 1) gives a lower threshold of image
-    intensity gradient relative to the maximum gradient (1) to take
-    into account when finding the center.
+    The coordinates returned are in pixels (row number, column
+    number). Intended for finding the center of single particle or
+    dimer holograms which basically show concentric circles. The
+    optional threshold parameter (between 0 and 1) gives bound on
+    what magnitude of gradients to include in the calculation. For
+    example, threshold=.75 means ignore any gradients that are less
+    than 75% of the maximum gradient in the image.
 
     Parameters
     ----------
@@ -46,8 +48,9 @@ def center_find(image, centers=1, scale=.5):
         image to find the center(s) in
     centers : int
         number of centers to find
-    scale : float (optional)
-        gradient magnitude threshold
+    threshold : float (optional)
+        fraction of the maximum gradient below which all
+        other gradients will be ignored (range 0-.99)
 
     Returns
     -------
@@ -59,13 +62,12 @@ def center_find(image, centers=1, scale=.5):
     When scale is close to 1, the code will run quickly but may lack
     accuracy. When scale is set to 0, the gradient at all pixels will
     contribute to finding the centers and the code will take a little
-    bit longer. The user should pay attention to how the magnitude of
-    the gradients correlates with finding accurate centers.
+    bit longer.
     """
-    x_deriv, y_deriv = image_gradient(image)
-    res = hough(x_deriv, y_deriv, centers, scale)
+    col_deriv, row_deriv = image_gradient(image)
+    res = hough(col_deriv, row_deriv, centers, threshold)
     if centers==1:
-        res=res[0]
+        res = res[0]
     return res
 
 
@@ -87,98 +89,111 @@ def image_gradient(image):
     grady : ndarray
         y-components of intensity gradient
     """
-    gradx = scipy.ndimage.sobel(image, axis = 0)
-    # - sign here from old HoloPy coordinate convention?
-    grady = -1*scipy.ndimage.sobel(image, axis=1)
-    return gradx.astype(float), grady.astype(float)
+    image = normalize(image)
+    grad_col = ndimage.sobel(image, axis=0)
+    grad_row = -ndimage.sobel(image, axis=1)
+    return grad_col.astype(float), grad_row.astype(float)
 
 
-def hough(x_deriv, y_deriv, centers=1, scale=.25):
+def hough(col_deriv, row_deriv, centers=1, threshold=.25):
     """
     Following the approach of a Hough transform, finds the pixel which
     the most gradients point towards or away from. Uses only gradients
-    with magnitude greater than scale*maximum gradient. Once the pixel
-    is found, uses a brightness-weighted average around that pixel to
-    refine the center location to return. After the first center is
-    found, the sourrounding area is blocked out and another brightest
-    pixel is searched for.
+    with magnitude greater than threshold*maximum gradient. Once the
+    pixel is found, uses a brightness-weighted average around that
+    pixel to refine the center location to return. After the first
+    center is found, the sourrounding area is blocked out and another
+    brightest pixel is searched for if more centers are required.
 
     Parameters
     ----------
-    x_deriv : numpy.ndarray
-        x-component of image intensity gradient
-    y_deriv : numpy.ndarray
-        y-component of image intesity gradient
-    scale : float (optional)
-        gradient magnitude threshold
+    col_deriv : numpy.ndarray
+        y-component of image intensity gradient
+    row_deriv : numpy.ndarray
+        x-component of image intesity gradient
     centers : int
         number of centers to find
+    threshold : float (optional)
+        fraction of the maximum gradient below which all
+        other gradients will be ignored (range 0-.99)
 
     Returns
     -------
     res : ndarray
-        row and column of center
-
-
+        row and column of center or centers
     """
     #Finding the center: Using the derivatives we have already found
     #(effectively the gradient), we "draw" lines through pixels
     #parallel to the gradient and add all these lines together in the
     #array called "accumulator."  Because of the
     #concentric-circle-patterned hologram, the maximum of accumulator
-    #should be the center of the pattern.  Rebecca W. Perry, Jerome Fung
-    #11/20/2009
-
+    #should be the center of the pattern.  
+    #Rebecca W. Perry, Jerome Fung 11/20/2009
     #Edited by Rebecca Dec. 1, 2009 to include weighted average
     #Edited by Rebecca Perry June 9, 2011 to change default scale and
-    #modify weighted averaging box size for centers close to the edges.
+    #modify weighted averaging box size for centers 
+    #close to the edges.
+    
+    accumulator = np.zeros(col_deriv.shape, dtype = int)
+    dim_x = col_deriv.shape[0]
+    dim_y = col_deriv.shape[1]
+    gradient_mag = np.sqrt(col_deriv**2 + row_deriv**2)
+    abs_threshold = threshold * gradient_mag.max()
 
-    accumulator = zeros(x_deriv.shape, dtype = int)
-    dim_x = x_deriv.shape[0]
-    dim_y = x_deriv.shape[1]
-    gradient_mag = sqrt(x_deriv**2 + y_deriv**2)
-    threshold = scale * gradient_mag.max()
-
-    points_to_vote = scipy.where(gradient_mag > threshold)
-    points_to_vote = array([points_to_vote[0], points_to_vote[1]]).transpose()
+    points_to_vote = np.where(gradient_mag > abs_threshold)
+    points_to_vote = np.array([points_to_vote[0], 
+            points_to_vote[1]]).transpose()
 
     for coords in points_to_vote:
-        # draw a line
-        # add it to the accumulator
-        if x_deriv[coords[0], coords[1]]==0:
-            slope = y_deriv[coords[0], coords[1]]/.00001
+        # draw a line, and add it to the accumulator
+        if col_deriv[coords[0], coords[1]]==0:
+            slope = row_deriv[coords[0], coords[1]]/.00001
         else:
-            slope = y_deriv[coords[0], coords[1]]/x_deriv[coords[0], coords[1]]
+            slope = row_deriv[coords[0], 
+                coords[1]]/col_deriv[coords[0], coords[1]]
+        
         if slope > 1. or slope < -1.:
-            # minus sign on slope from old convention?
-            rows = arange(dim_x, dtype = 'int')
-            line = around(coords[1] - slope * (rows - coords[0])).astype('int')
+            rows = np.arange(dim_x, dtype = 'int')
+            line = np.around(coords[1] - slope * 
+                (rows - coords[0])).astype('int')
             cols_to_use = (line >= 0) * (line < dim_y)
             acc_cols = line[cols_to_use]
-            #import pdb; pdb.set_trace()
             acc_rows = rows[cols_to_use]
         else:
-            cols = arange(dim_y, dtype = 'int')
+            cols = np.arange(dim_y, dtype = 'int')
             if slope==0:
-                slope=0.00001
-            line = around(coords[0] - 1./slope * (cols - 
-                                                  coords[1])).astype('int')
+                slope = 0.00001
+            line = np.around(coords[0] - 1./slope * 
+                (cols - coords[1])).astype('int')
             rows_to_use = (line >= 0) * (line < dim_x)
             acc_cols = cols[rows_to_use]
             acc_rows = line[rows_to_use]
+        
         accumulator[acc_rows, acc_cols] += 1
-    weightedRowNum=zeros(centers)
-    weightedColNum=zeros(centers)
-    for i in arange(0,centers):
+
+    weightedRowNum = np.zeros(centers)
+    weightedColNum = np.zeros(centers)
+    
+    for i in np.arange(0,centers):
         #m is row number, n is column number
-        [m, n]=scipy.unravel_index(accumulator.argmax(), accumulator.shape)
+        [m, n] = np.unravel_index(accumulator.argmax(),
+                accumulator.shape)
+                
         #brightness average around brightest pixel:
-        boxsize = min(10, m, n, dim_x-1-m, dim_y-1-n) #boxsize changes with closeness to image edge
-        small_sq = accumulator[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1]
+        boxsize = min(10, m, n, dim_x-1-m, dim_y-1-n)
+        
+        #boxsize changes with closeness to image edge
+        small_sq = accumulator[m-boxsize:m+boxsize+1, 
+                n-boxsize:n+boxsize+1]
+                
         #the part of the accumulator to average over
-        rowNum, colNum = np.mgrid[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1]
+        rowNum, colNum = np.mgrid[m-boxsize:m+boxsize+1, 
+                n-boxsize:n+boxsize+1]
+                
         #row and column of the revised center:
-        weightedRowNum[i] = scipy.average(rowNum,None,small_sq)
-        weightedColNum[i] = scipy.average(colNum,None,small_sq)
-        accumulator[m-boxsize:m+boxsize+1, n-boxsize:n+boxsize+1]=accumulator.min()
-    return transpose(array([weightedRowNum, weightedColNum]))
+        weightedRowNum[i] = np.average(rowNum,None,small_sq)
+        weightedColNum[i] = np.average(colNum,None,small_sq)
+        accumulator[m-boxsize:m+boxsize+1, 
+                n-boxsize:n+boxsize+1]=accumulator.min()
+        
+    return np.array([weightedRowNum, weightedColNum]).T
