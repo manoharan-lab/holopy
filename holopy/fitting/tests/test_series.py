@@ -30,7 +30,7 @@ from ...core import Optics, ImageSchema, load, save
 from ...core.process import normalize
 from ...core.helpers import OrderedDict
 from .. import fit, Parameter, ComplexParameter, par, Parametrization, Model
-from ..fit_series import fitseries
+from ..fit_series import fit_series
 from ...core.tests.common import (assert_obj_close, get_example_data_path)
 
 from ..errors import InvalidMinimizer
@@ -52,6 +52,6 @@ def test_fit_series():
             get_example_data_path('image0001.yaml'),get_example_data_path('image0001.yaml')]
 
     #test with no saving
-    res = fitseries(model, inf, opticsinfo, px_size)
+    res = fit_series(model, inf, opticsinfo, px_size)
 
     assert_obj_close(res[2].scatterer, gold_sphere, rtol = 1e-3)
