@@ -22,6 +22,7 @@ import tempfile
 import numpy as np
 
 from nose.tools import nottest, assert_raises
+from nose.plugins.skip import SkipTest
 from nose.plugins.attrib import attr
 from numpy.testing import assert_equal, assert_approx_equal, assert_allclose
 from ..minimizer import OpenOpt
@@ -94,7 +95,11 @@ def test_fit_single_openopt():
                n = ComplexParameter(par(1.59, (1.5,1.8)), 1e-4j))
 
     model = Model(s, Mie(False).calc_holo, alpha = par(.6, [.1,1]))
-    result = fit(model, holo, OpenOpt('scipy_slsqp'))
+    try:
+        minimizer = OpenOpt('scipy_slsqp')
+    except ImportError:
+        raise SkipTest
+    result = fit(model, holo, minimizer = minimizer)
     assert_obj_close(result.scatterer, gold_sphere, rtol=1e-3)
     # TODO: see if we can get this back to 3 sig figs correct alpha
     assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=3)
