@@ -380,7 +380,7 @@ class PseudoRegularGrid(PseudoMarray):
 
     @property
     def extent(self):
-        return np.array(self.shape)  * self.spacing
+        return np.array(self.shape) * self.spacing
 
     @property
     def center(self):
@@ -395,6 +395,12 @@ class PseudoVectorGrid(PseudoRegularGrid):
                  origin = np.zeros(3), use_random_fraction = None, **kwargs):
         self.components = components
         call_super_init(PseudoVectorGrid, self, 'components')
+
+    @property
+    def extent(self):
+        # the last dimension of shape is the field components, we need
+        # to cut it to have the same dimension as self.shape
+        return np.array(self.shape)[:-1] * self.spacing
 
     def _make_selection(self):
         return np.random.random(self.shape[:-1]) > 1.0-self.use_random_fraction
