@@ -68,6 +68,20 @@ class plotter:
         else:
             self.plot = self.ax.imshow(im, vmin=self.vmin, vmax=self.vmax,
                                        interpolation="nearest", aspect=ratio)
+
+            #change the numbers displayed at the bottom to be in
+            #HoloPy coordinate convention
+            if hasattr(im, 'spacing') and im.spacing is not None:
+                scale_x = im.spacing[0]
+                scale_y = im.spacing[1]
+                self.ax.format_coord = lambda x, y:\
+                    'pixels: x = %d, y = %d; user\'s units: x=%.1e, y=%.1e' % (
+                    int(y+.5), int(x+.5), scale_x*int(y+.5), scale_y*int(x+.5))            
+            else:
+                self.ax.format_coord = lambda x, y: 'x = %d, y = %d' % (
+                    int(y+.5), int(x+.5))
+                
+
         if not self.colorbar:
             self.colorbar = self.fig.colorbar(self.plot)
 
