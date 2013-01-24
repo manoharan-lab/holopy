@@ -105,7 +105,7 @@ def assert_method_equal(actual, desired, context):
     # now actually compare things
     assert_obj_close(act_obj, des_obj, context = context)
 
-def verify(result, name, rtol=1e-7):
+def verify(result, name, rtol=1e-7, atol=1e-8):
     location = os.path.split(os.path.abspath(__file__))[0]
     # This gets the filename for the context verify was called from.  It feels
     # really hacky, but it should get the job done.
@@ -121,7 +121,7 @@ def verify(result, name, rtol=1e-7):
 
 
     if isinstance(result, dict):
-        assert_obj_close(result, gold_yaml, rtol)
+        assert_obj_close(result, gold_yaml, rtol, atol)
     else:
         for key, val in gold_yaml.iteritems():
             assert_almost_equal(getattr(result, key)(), val, decimal=int(-np.log10(rtol)))

@@ -42,7 +42,7 @@ def propagate(data, d, gradient_filter=False):
     ----------
     data : :class:`.Image` or :class:`.VectorGrid`
        Hologram to propagate
-    d : float, list of floats, or :class:`.VolumeSchema`
+    d : float or list of floats
        Distance to propagate, in meters, or desired schema.  A list tells to
        propagate to several distances and return the volume
     gradient_filter : float
@@ -60,17 +60,6 @@ nose
         # Propagationg no distance has no effect
         return data
 
-    if isinstance(d, VolumeSchema):
-        schema = d
-        # get the right z slices in the volume
-        d = np.arange(schema.shape[2]) * schema.spacing[2]
-        d = d + schema.origin[2]
-        vol = propagate(data, d, gradient_filter)
-
-        vol = resize(vol, schema.center, schema.extent, schema.spacing)
-        return vol
-
-
     # Computing the transfer function will fail for d = 0. So, if we
     # are asked to compute a reconstruction for a set of distances
     # containing 0, we pull that distance out and then add in a copy
@@ -83,10 +72,7 @@ nose
             d_old = d
             d = np.delete(d, np.nonzero(d == 0))
 
-    G = trans_func(data.shape[:2], data.positions.spacing,
-                   data.optics.med_wavelen, d, squeeze=False,
-                   gradient_filter=gradient_filter)
-
+    G = trans_func(data, d, squeeze=False, gradient_filter=gradient_filter)
 
     ft = fft(data)
 
@@ -143,7 +129,7 @@ def apply_trans_func(ft, G):
     return ft
 
 
-def trans_func(shape, spacing, wavelen, d, cfsp=0, squeeze=True,
+def trans_func(schema, d, cfsp=0, squeeze=True,
                gradient_filter=0):
     """
     Calculates the optical transfer function to use in reconstruction
@@ -191,8 +177,7 @@ def trans_func(shape, spacing, wavelen, d, cfsp=0, squeeze=True,
     """
     d = np.array([d])
 
-    dx, dy = spacing
-    xdim, ydim = _ensure_pair(shape)
+    wavelen = schema.optics.med_wavelen
 
     d = d.reshape([1, 1, d.size])
 
@@ -210,21 +195,11 @@ def trans_func(shape, spacing, wavelen, d, cfsp=0, squeeze=True,
 
     # for this we need to use the magnitude of d, size of the image
     # should be a positive number
-    try:
-        max_m = int(np.max(xdim**2*dx**2/np.abs(d)/wavelen/2))+1
-        max_n = int(np.max(ydim**2*dy**2/np.abs(d)/wavelen/2))+1
-    except OverflowError:
-        max_m = xdim/2
-        max_n = ydim/2
 
-    # make sure that the array is not larger than the hologram if we
-    # are using cascaded free space propagation
-    max_m = min(xdim, max_m*2)/2
-    max_n = min(ydim, max_n*2)/2
+    m, n = np.ogrid[[slice(-dim/(2*ext), dim/(2*ext), dim*1j) for
+                     (dim, ext) in zip(schema.shape[:2], schema.extent[:2])]]
 
-    m, n = np.ogrid[-max_m:max_m,-max_n:max_n]
-
-    root = 1.+0j-(wavelen*n/(xdim*dx))**2 - (wavelen*m/(ydim*dy))**2
+    root = 1.+0j-(wavelen*n)**2 - (wavelen*m)**2
 
     root *= (root >= 0)
 

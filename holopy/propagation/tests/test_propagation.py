@@ -22,38 +22,27 @@ from ...core import ImageSchema, VolumeSchema, Optics
 from ...scattering.theory import Mie
 from ...scattering.scatterer import Sphere
 from .. import propagate
-from ...core.tests.common import assert_obj_close, verify
+from ...core.tests.common import assert_obj_close, verify, get_example_data
 
-class test_propagation():
-    def __init__(self):
-        self.optics = Optics(.66, 1.33, (1,0))
-        self.im_schema = ImageSchema(spacing = .1, shape = 100,
-                                     optics = self.optics)
-        self.sphere = Sphere(n = 1.59, r = .5, center = (5, 5, 5))
-        thry = Mie(False)
-        self.holo = thry.calc_holo(self.sphere, self.im_schema)
+def test_propagate_e_field():
+    e = Mie(False).calc_field(Sphere(1.59, .5, (5, 5, 5)),
+                              ImageSchema(100, .1, Optics(.66, 1.33, (1,0))))
+    prop_e = propagate(e, 10)
+    verify(prop_e, 'propagate_e_field')
 
-    def test_propagate_volume(self):
-        vol_schema = VolumeSchema(shape = (40, 40, 25), spacing = .2,
-                                  optics = self.optics)
-        vol_schema.center = (5, 5, 7.5)
+def test_reconstruction():
+    im = get_example_data('image0003.yaml')
+    rec = propagate(im, 4e-6)
+    verify(rec, 'recon_single')
 
-        vol = propagate(self.holo, vol_schema)
-        verify(vol, 'propagate_into_volume')
+    rec = propagate(im, [4e-6, 7e-6, 10e-6])
+    verify(rec, 'recon_multiple')
 
+def test_propagate_0_distance():
+    im = get_example_data('image0003.yaml')
+    rec = propagate(im, 0)
+    # propagating no distance should leave the image unchanged
+    assert_obj_close(im, rec)
 
-    def test_d_vs_schema(self):
-        d = np.arange(5, 10, 1)
-        vol = VolumeSchema(shape = np.append(self.holo.shape, len(d)),
-                spacing = np.append(self.holo.positions.spacing, 1))
-        vol.center = (5, 5, 7.5)
-
-        r1 = propagate(self.holo, d)
-        r2 = propagate(self.holo, vol)
-        assert_obj_close(r1, r2, context = 'propagated_volume')
-
-    def test_propagate_e_field(self):
-        thry = Mie(False)
-        e = thry.calc_field(self.sphere, self.im_schema)
-        prop_e = propagate(e, 10)
-        verify(prop_e, 'propagate_e_field')
+    rec = propagate(im, [0, 3e-6])
+    verify(rec, 'recon_multiple_with_0')
