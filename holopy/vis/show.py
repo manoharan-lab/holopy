@@ -44,7 +44,7 @@ def show(o,color=(0,0,1)):
 
     Parameters
     ----------
-    o : :class:`holopy.core.marray.Image`, :class:`holopy.core.marray.Volume` or :class:`holopy.scattering.scatterer.spherecluster.SphereCluster`
+    o : :class:`.Image`, :class:`.Volume` or :class:`.SphereCluster`
        Object to visualize
 
     Notes
@@ -52,12 +52,10 @@ def show(o,color=(0,0,1)):
     Loads plotting library the first time it is required (so that we don't have
     to import all of matplotlib or mayavi just to load holopy)
     """
-    if isinstance(o, (list, tuple)):
-        o = np.dstack(o)
 
     if isinstance(o, Spheres):
         show_sphere_cluster(o,color)
-    elif isinstance(o, (Image, np.ndarray)):
+    elif isinstance(o, (Image, np.ndarray, list, tuple)):
         show2d(o)
     elif isinstance(o, Scatterer):
         show_scatterer(o)

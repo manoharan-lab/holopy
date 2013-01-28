@@ -24,16 +24,17 @@ New custom display functions for holograms and reconstructions.
 from __future__ import division
 
 import numpy as np
+from ..core.marray import squeeze
 
 class plotter:
-    def __init__(self, im, i=0, j=0, optics=None):
+    def __init__(self, im, i=0, j=0, axis_names = ('x', 'y')):
         # Delay the pylab import until we actually use it to avoid a hard
         # dependency on matplotlib, and to avoid paying the cost of importing it
         # for non interactive code
         import pylab
 
         self.im = im
-        self.optics = optics
+        self.axis_names = axis_names
         self.i = i
         self.j = j
         self.vmin = im.min()
@@ -41,6 +42,8 @@ class plotter:
         self.fig = pylab.figure()
         pylab.gray()
         self.ax = self.fig.add_subplot(111)
+        self.ax.set_xlabel(axis_names[1])
+        self.ax.set_ylabel(axis_names[0])
         self.plot = None
         self.colorbar = None
         self.draw()
@@ -57,12 +60,11 @@ class plotter:
         self._title()
 
         #to show non-square pixels correctly
-        if  hasattr(im, 'spacing') and im.spacing is not None:       
-	        ratio = im.spacing[0]/im.spacing[1]
+        if  hasattr(im, 'spacing') and im.spacing is not None:
+            ratio = im.spacing[0]/im.spacing[1]
         else:
             ratio = 1.0
-		
-        import sys; sys.stdout.flush()
+
         if self.plot is not None:
             self.plot.set_array(im)
         else:
@@ -72,42 +74,48 @@ class plotter:
             #change the numbers displayed at the bottom to be in
             #HoloPy coordinate convention
             if hasattr(im, 'spacing') and im.spacing is not None:
-                scale_x = im.spacing[0]
-                scale_y = im.spacing[1]
-                self.ax.format_coord = lambda x, y:\
-                    'pixels: x = %d, y = %d; user\'s units: x=%.1e, y=%.1e' % (
-                    int(y+.5), int(x+.5), scale_x*int(y+.5), scale_y*int(x+.5))            
+                def user_coords(x, y):
+                    s = ", units: {0[0]} = {1[0]:.1e}, {0[1]}={1[1]:.1e}"
+                    return s.format(self.axis_names, self.location(x, y))
             else:
-                self.ax.format_coord = lambda x, y: 'x = %d, y = %d' % (
-                    int(y+.5), int(x+.5))
-                
+                def user_coords(x, y):
+                    return ""
+            def format_coord(x, y):
+                # our coordinate convention is inverted from
+                # matplotlib's default, so we need to swap x and y
+                x, y = y, x
+                s = "pixels: {0[0]} = {1[0]}, {0[1]} = {1[1]}"
+                return (s.format(self.axis_names, self.pixel(x, y)) +
+                        user_coords(x, y))
+            self.ax.format_coord = format_coord
+
 
         if not self.colorbar:
             self.colorbar = self.fig.colorbar(self.plot)
 
+    def pixel(self, x, y):
+        index = [int(x+.5), int(y+.5)]
+        if self.im.ndim == 3:
+            index.append(self.i)
+        return index
+
+    def location(self, x, y):
+        index = [x, y]
+        if self.im.ndim == 3:
+            index.append(self.i)
+        return [p * s + c for p, s, c in
+                zip(index, self.im.spacing, self.im.origin)]
+
+
     def click(self, event):
         if event.ydata is not None and event.xdata is not None:
-            coord = np.array((event.ydata, event.xdata))
-            origin = np.zeros(3)
-            if self.im.origin is not None:
-                origin = self.im.origin
-            coord = tuple(coord.round().astype('int'))
-
-            if self.im.ndim == 3:
-                if getattr(self.im, 'spacing', None) is not None:
-                    z =  self.im.spacing[2] * self.i + origin[2]
-
-                    print('{0}, {1}'.format(tuple(np.append(coord, self.i)),
-                                            tuple(np.append(coord * self.im.spacing[:2] + origin[:2], z))))
-                else:
-                    print(coord)
+            x, y = np.array((event.ydata, event.xdata))
+            if getattr(self.im, 'spacing', None) is not None:
+                print("{0}, {1}".format(self.pixel(x, y), self.location(x, y)))
             else:
-                if getattr(self.im, 'spacing', None) is not None:
-                    spacing = self.im.spacing[:2]
-                    print('{0}, {1}'.format(coord, tuple(np.array(coord) * spacing +
-                                            origin[:2])))
-                else:
-                    print(coord)
+                print(self.pixel)
+            import sys; sys.stdout.flush()
+
 
     def __call__(self, event):
         if len(self.im.shape) > 2:
@@ -156,99 +164,25 @@ def show2d(im, i=0, t=0, phase = False):
        less than 4d array)
 
     """
-    if hasattr(im, 'optics'):
-        optics = im.optics
-    else:
-        optics = None
+    if isinstance(im, (list, tuple)):
+        im = np.dstack(im)
+
+    # Switch and show an x-z or y-z plane if the im has unit extent in
+    # y or x
+    axis_names = ['x', 'y']
+    if im.shape[0] == 1:
+        axis_names = ['y', 'z']
+    if im.shape[1] == 1:
+        axis_names = ['x', 'z']
+
+    im = squeeze(im)
+
+
+
     if np.iscomplexobj(im):
         if phase:
             im = np.angle(im)
         else:
             im = np.abs(im)
 
-    plotter(im, i, t, optics)
-
-
-# TODO: broken by refactors, see if we still want this, fix if we do
-def infocuscheck(hologram, scatterer, offset = 0):
-    """
-    Display a raw hologram, a calculated hologram, and reconstructions
-    of both.
-
-    Parameters
-    ----------
-    hologram : hologram object
-       Hologram to be shown
-    scatterer : scatterer object
-       Scattering object to calculate hologram from
-    offset : float
-       Offset from reconstructing at the z-distance given by the
-       mean z-distance of the scatterer.
-
-    """
-    # Delay the pylab import until we actually use it to avoid a hard
-    # dependency on matplotlib, and to avoid paying the cost of importing it
-    # for non interactive code
-    import pylab
-
-    distance = scatterer.centers[:,2].mean()+offset
-    #reconstruct the hologram
-    r = propagate(hologram,distance)
-    #reconstruct the scatterer
-    theory = Multisphere(hologram.optics,[256,256])
-    tmat = theory.calc_holo(scatterer)
-    r2 = propagate(tmat,distance)
-    #show the holograms and reconstructions
-    pylab.figure()
-    scalemin = min(abs(r[:,:,0,0]).min(), abs(r2[:,:,0,0]).min())
-    scalemax = max(abs(r[:,:,0,0]).max(), abs(r2[:,:,0,0]).max())
-    pylab.subplot(2,2,1)
-    pylab.imshow(hologram)
-    pylab.gray()
-    pylab.title('Hologram')
-    pylab.subplot(2,2,2)
-    pylab.imshow(tmat)
-    pylab.title('Calculated from Scatterer')
-    pylab.subplot(2,2,3)
-    pylab.imshow(abs(r[:,:,0,0]),vmin = scalemin,vmax = scalemax)
-    pylab.title(str(distance))
-    pylab.subplot(2,2,4)
-    pylab.imshow(abs(r2[:,:,0,0]),vmin = scalemin,vmax = scalemax)
-    pylab.title(str(distance))
-    pylab.show()
-
-# TODO: broken by refactors, see if we still want this, fix if we do
-# was in scattering.geometry
-def viewcluster(cluster):
-    # Delay the pylab import until we actually use it to avoid a hard
-    # dependency on matplotlib, and to avoid paying the cost of importing it
-    # for non interactive code
-    from matplotlib import pyplot
-
-    #this is not elegant, but lets you look at the cluster from three angles
-    #to check if it is the cluster you wanted
-    #warning: the particles are not shown to scale!!!!!! (markersize is in points)
-    dist = distances(cluster)
-    pyplot.figure(figsize=[14,4])
-    pyplot.subplot(1,3,1)
-    l = pyplot.plot(cluster.centers[:,0]-cluster.centers[:,0].mean(),
-        cluster.centers[:,1]-cluster.centers[:,1].mean(),'ro')
-    pyplot.setp(l, 'markersize', 60)
-    pyplot.xlim(-dist.max(),dist.max())
-    pyplot.ylim(-dist.max(),dist.max())
-    pyplot.subplot(1,3,2)
-    l = pyplot.plot(cluster.centers[:,0]-cluster.centers[:,0].mean(),
-        cluster.centers[:,2]-cluster.centers[:,2].mean(),'ro')
-    pyplot.setp(l, 'markersize', 60)
-    pyplot.xlim(min(pyplot.xlim()[0],pyplot.ylim()[0]),max(pyplot.xlim()[1],pyplot.ylim()[1]))
-    pyplot.ylim(min(pyplot.xlim()[0],pyplot.ylim()[0]),max(pyplot.xlim()[1],pyplot.ylim()[1]))
-    pyplot.xlim(-dist.max(),dist.max())
-    pyplot.ylim(-dist.max(),dist.max())
-    pyplot.subplot(1,3,3)
-    l = pyplot.plot(cluster.centers[:,1]-cluster.centers[:,1].mean(),
-        cluster.centers[:,2]-cluster.centers[:,2].mean(),'ro')
-    pyplot.setp(l, 'markersize', 60)
-    pyplot.xlim(min(pyplot.xlim()[0],pyplot.ylim()[0]),max(pyplot.xlim()[1],pyplot.ylim()[1]))
-    pyplot.ylim(min(pyplot.xlim()[0],pyplot.ylim()[0]),max(pyplot.xlim()[1],pyplot.ylim()[1]))
-    pyplot.xlim(-dist.max(),dist.max())
-    pyplot.ylim(-dist.max(),dist.max())
+    plotter(im, i, t, axis_names = axis_names)

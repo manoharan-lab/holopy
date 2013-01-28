@@ -86,7 +86,7 @@ class Mie(FortranTheory):
             want to calculate the field, defaults to all pixels
         Returns
         -------
-        field : :class:`scatterpy.theory.scatteringtheory.ElectricField`with shape `imshape`
+        field : :class:`.ElectricField`with shape `imshape`
             scattered electric field
 
         Notes

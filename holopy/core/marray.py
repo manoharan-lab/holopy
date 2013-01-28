@@ -59,7 +59,7 @@ def zeros_like(obj, dtype = None):
         return obj._corresponding_marray(np.zeros(obj.shape, dtype=dtype),
                    **dict_without(obj._dict, 'shape'))
 
-def arr_like(arr, template):
+def arr_like(arr, template, **override):
     """
     Make a new Marray with metadata like an old one
 
@@ -69,13 +69,18 @@ def arr_like(arr, template):
         Array data to add metadata to
     template : :class:`.Marray`
         Marray to copy metadata from
+    **override : kwargs
+        Optional additional keyword args. They will be used to override
+        specific metadata
 
     Returns
     -------
     res : :class:`.Marray`
         Marray like template containing data from arr
     """
-    return template.__class__(arr, **template._dict)
+    meta = template._dict
+    meta.update(override)
+    return template.__class__(arr, **meta)
 
 # Ancestor for all array like storage objects for data/calculations.
 class PseudoMarray(HoloPyObject):
@@ -415,7 +420,6 @@ class PseudoVectorGrid(PseudoRegularGrid):
             return new
 
 
-
 class RegularGrid(Marray, PseudoRegularGrid):
     def __init__(self, arr, spacing = None, optics = None, origin = np.zeros(3),
                  use_random_fraction = None, dtype = None, **kwargs):
@@ -526,7 +530,28 @@ class VectorGrid(RegularGrid, PseudoVectorGrid):
                  use_random_fraction = None, dtype = None,
                  components = ('x', 'y', 'z'), **kwargs):
         call_super_init(VectorGrid, self)
-    pass
+
+    @property
+    def x_comp(self):
+        return self._component(0)
+
+    @property
+    def y_comp(self):
+        return self._component(1)
+
+    @property
+    def z_comp(self):
+        return self._component(2)
+
+    def _component(self, comp):
+        if self.ndim == 2:
+            return Image(self[...,comp],
+                         **dict_without(self._dict, 'components'))
+        else:
+            return Volume(self[...,comp],
+                          **dict_without(self._dict, 'components'))
+
+
 
 
 class VectorGridSchema(Schema, PseudoVectorGrid):
@@ -650,6 +675,12 @@ def resize(arr, center = None, extent = None, spacing = None):
         arr = arr.resample(shape)
 
     return arr
+
+def squeeze(arr):
+    keep = [i for i, dim in enumerate(arr.shape) if dim != 1]
+    return arr_like(np.squeeze(arr), arr,
+                    spacing = np.take(arr.spacing, keep))
+
 
 # common code for subimage and resize
 def _checked_cut(arr, extent):

@@ -19,7 +19,8 @@ from __future__ import division
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_raises
 from ..marray import (ImageSchema, VectorGrid, VectorGridSchema, Image,
-                      zeros_like, subimage, resize, Volume, Schema)
+                      zeros_like, subimage, resize, Volume, Schema, squeeze)
+from .. import Optics
 from .common import assert_obj_close, get_example_data
 from ..errors import UnspecifiedPosition
 from .. import Angles
@@ -30,15 +31,21 @@ def test_VectorGrid():
     vd = zeros_like(vs)
     assert_equal(vd.shape, (100,100,3))
 
-    vd2 = VectorGrid(np.zeros((10, 10, 3)))
+    vd2 = VectorGrid(np.random.random((10, 10, 3)))
     assert_equal(vd2.components, ('x', 'y', 'z'))
 
+    v_z = vd2.z_comp
+    assert_equal(v_z.spacing, vd2.spacing)
+    assert_equal(v_z.optics, vd2.optics)
+    assert_allclose(v_z, vd2[...,2])
+    assert_allclose(vd2.x_comp, vd2[...,0])
+    assert_allclose(vd2.y_comp, vd2[...,1])
+
+def test_zeros_like():
     holo = get_example_data('image0001.yaml')
     vh = zeros_like(holo)
     assert_equal(vh.shape, holo.shape)
     assert_equal(vh.optics, holo.optics)
-
-    assert_raises(UnspecifiedPosition, holo.positions_theta_phi)
 
 
 def test_positions_in_spherical():
@@ -105,3 +112,15 @@ def test_positions_theta_phi():
     assert_equal(ptp.shape, (2500, 2))
     assert_equal(ptp[-1], (np.pi, np.pi*2))
     assert_allclose(ptp[182], np.array([ 0.19234241,  4.10330469]))
+
+    holo = get_example_data('image0001.yaml')
+    assert_raises(UnspecifiedPosition, holo.positions_theta_phi)
+
+
+def test_squeeze():
+    v = Volume(np.ones((10, 1, 10)), spacing = (1, 2, 3),
+                       optics = Optics(.66, 1, (1, 0)))
+    s = squeeze(v)
+    assert_equal(s.shape, (10, 10))
+    assert_equal(s.optics, v.optics)
+    assert_equal(s.spacing, (1, 3))
