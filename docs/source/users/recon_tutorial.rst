@@ -1,12 +1,14 @@
 .. _recon_tutorial:
 
-**************************
-Propagation/Reconstruction
-**************************
+*******************************
+Loading and Reconstructing Data
+*******************************
 
-Holograms are typically reconstructed optically by shining light back through them.
-This corresponds mathematically to propagating the field stored in the hologram to some different plane.
-HoloPy generalizes this concept and allows you to numerically propagate any hologram (or electric field to another position in space.
+Holograms are typically reconstructed optically by shining light back
+through them.  This corresponds mathematically to propagating the
+field stored in the hologram to some different plane.  HoloPy
+generalizes this concept and allows you to numerically propagate any
+hologram(or electric field to another position in space.
 
 Propagation and viewing the results requires the following steps:
 
@@ -18,8 +20,6 @@ Propagation and viewing the results requires the following steps:
 
 Example
 =======
-.. TODO: provide a complete example and refactor the rest to follow the
-.. three steps above
 
 To begin, import: ::
 

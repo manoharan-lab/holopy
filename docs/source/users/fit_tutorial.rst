@@ -1,3 +1,5 @@
+.. _fit_tutorial:
+
 **********************
 Fitting Models to Data
 **********************

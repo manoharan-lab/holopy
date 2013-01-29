@@ -1,9 +1,9 @@
-.. _io_tutorial:
+
 .. _yaml_ref:
 
-**************************************************
-Saving and loading your data, metadata and results
-**************************************************
+***************************************************
+Saving and loading your data, metadata, and results
+***************************************************
 
 HoloPy can save and load all of its objects using `YAML
 <http://www.yaml.org/>`_ files.  These are designed to be both human-

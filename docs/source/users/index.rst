@@ -1,5 +1,6 @@
-.. _users:
+.. _user_guide:
 
+==========
 User Guide
 ==========
 
@@ -10,7 +11,6 @@ get started quickly.
    :maxdepth: 2
 
    install
-   firststeps
    tutorials
    concepts
    overview

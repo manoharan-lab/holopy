@@ -10,8 +10,9 @@ pasting into a terminal or to serving a template for a script.
 .. toctree::
    :maxdepth: 3
 
-   calc_tutorial
+   load_tutorial
    recon_tutorial
+   calc_tutorial
    fit_tutorial
    dda_tutorial
    io_tutorial

@@ -1,3 +1,5 @@
+.. _dda_tutorial:
+
 *****************************************
 Using DDA (Discrete Dipole Approximation)
 *****************************************

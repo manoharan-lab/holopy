@@ -1,16 +1,7 @@
-First steps
-===========
-
-HoloPy works with many types of data, but most of our examples will
-use images obtained from digital holography. Before executing the
-example scripts below, it may be helpful to change to the root
-directory of your HoloPy installation (e.g. ``/home/me/holopy``), or
-append this directory to your Python path.  Then you can copy and
-paste the examples directly into a Python shell such as IPython with the Pylab
-extension (e.g. ``ipython --pylab`` from the command line)
-which will allow you to explore and visualize the results of the script.
-
 .. _loading:
+
+Loading Data
+============
 
 Loading and viewing a hologram
 ------------------------------
@@ -93,6 +84,4 @@ of the objective.
         optics.med_wavelen
         0.49624060150375937
 
-More advanced methods for saving and loading objects in HoloPy (e.g.
-as :ref:`yaml_ref`) can be found in the :ref:`Details` section of the
-User Guide.
+More advanced methods for saving and loading objects in HoloPy can be found in :ref:`yaml_ref`.

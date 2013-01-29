@@ -9,38 +9,42 @@ Holography and Light Scattering in Python
 :Release: |version|
 :Date: |today|
 
-The :mod:`HoloPy` package provides tools for working with digital
-holograms and light scattering data.  It provides user-friendly access
-to light scattering models and a number of tools for working with
-experimental data.  It allows you to reconstruct a 3D volume from a
-hologram (the digital equivalent of shining light through a
-holographic film), compute scattering patterns or holograms of
-objects, or fit scattering models to your data to obtain precise
-information about the positions and optical properties of the objects
-that were used to generate the optical data.
+:mod:`HoloPy` is a python based tool for working with digital
+holograms and light scattering. HoloPy's main purposes are to:
 
-The following features work and are well-tested:
+* :ref:`Load <loading>` images and associate them with experimental
+  :ref:`metadata <metadata>`
 
-* Calculating holograms using scattering models of:
+* :ref:`Reconstruct <recon_tutorial>` 3d volumes from digital holograms
 
-  * Single spheres (based on the Lorenz-Mie solution) 
-  * Arbitrary clusters of spheres (using multisphere superposition or Mie superposition)
-  * Elipsoids and other complicated structures (based on the Discrete Dipole Approximation or DDA)
+* Do :ref:`Scattering Calculations <calc_tutorial>`
 
-* Fitting any of the above scattering models to holograms
-* Reconstructing 3D volumes from holograms
+  * **Compute** Holograms, Electric fields, scattered intensity, 
+    cross sections, ...
+
+  * **From** spheres, clusters of spheres, and arbitrary structures 
+    (using :ref:`DDA <dda_tutorial>`)
+
+* Make precise measurements by :ref:`fitting scattering models
+  <fit_tutorial>` (based on the above structures) to experimental
+  data.
+ 
+HoloPy provides a powerful and (relatively) user friendly interface to
+scattering theories, nonlinear minimizers, and optical propagation. It
+provides a set of flexible objects that make it easy to describe
+complex experiments or theoretical situations.
+
+The easiest see what HoloPy is all about is to jump in to the examples
+in our :ref:`user_guide`.
 
 HoloPy started as a project in the `Manoharan Lab at Harvard
 University <http://manoharan.seas.harvard.edu/>`_. If you use HoloPy,
 you may wish to cite one or more of the sources listed in :ref:`credits`. 
 
-To get started, please have a look at the :ref:`users`.
-
-Contents:
-
 .. toctree::
    :maxdepth: 2
 
+   downloads
    users/index
    reference/holopy
    credits
