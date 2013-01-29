@@ -59,7 +59,7 @@ def zeros_like(obj, dtype = None):
         return obj._corresponding_marray(np.zeros(obj.shape, dtype=dtype),
                    **dict_without(obj._dict, 'shape'))
 
-def arr_like(arr, template, **override):
+def arr_like(arr, template = None, **override):
     """
     Make a new Marray with metadata like an old one
 
@@ -67,8 +67,9 @@ def arr_like(arr, template, **override):
     ----------
     arr : numpy.ndarray
         Array data to add metadata to
-    template : :class:`.Marray`
-        Marray to copy metadata from
+    template : :class:`.Marray` (optional)
+        Marray to copy metadata from. If not given, will be copied from arr
+        (probably used in this case for overrides)
     **override : kwargs
         Optional additional keyword args. They will be used to override
         specific metadata
@@ -78,6 +79,8 @@ def arr_like(arr, template, **override):
     res : :class:`.Marray`
         Marray like template containing data from arr
     """
+    if template is None:
+        template = arr
     meta = template._dict
     meta.update(override)
     return template.__class__(arr, **meta)

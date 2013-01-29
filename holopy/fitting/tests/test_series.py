@@ -20,6 +20,7 @@ from __future__ import division
 import tempfile
 
 import numpy as np
+import warnings
 
 from nose.tools import nottest, assert_raises
 from nose.plugins.attrib import attr
@@ -45,13 +46,15 @@ def test_fit_series():
                r = .5e-6, n = 1.58)
     model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1]))
 
-    opticsinfo = Optics(wavelen = .660e-6, polarization = [1, 0], index = 1.33)  
+    opticsinfo = Optics(wavelen = .658e-6, polarization = [1, 0], index = 1.33)
     px_size = .1151e-6
 
     inf = [get_example_data_path('image0001.yaml'),
             get_example_data_path('image0001.yaml'),get_example_data_path('image0001.yaml')]
 
-    #test with no saving
-    res = fit_series(model, inf, opticsinfo, px_size)
+    with warnings.catch_warnings() as w:
+        #test with no saving
+        warnings.simplefilter('ignore')
+        res = fit_series(model, inf, opticsinfo, px_size)
 
     assert_obj_close(res[2].scatterer, gold_sphere, rtol = 1e-3)

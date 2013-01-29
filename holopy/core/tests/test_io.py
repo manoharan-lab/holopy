@@ -17,12 +17,13 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 from .common import (assert_obj_close, assert_read_matches_write,
-                     get_example_data)
+                     get_example_data, get_example_data_path)
 from .. import Optics, Marray, load, save
 from .. process import normalize
 import tempfile
 import os
 import shutil
+import warnings
 from nose.plugins.attrib import attr
 from numpy.testing import assert_raises, assert_equal
 import numpy as np
@@ -75,6 +76,39 @@ def test_image_io():
     save(filename, holo)
     loaded = load(filename)
     assert_obj_close(loaded, holo)
+
+    f = get_example_data_path('image0001.yaml')
+    spacing = .1
+    optics = Optics(.66, 1.33, (1,0))
+    with warnings.catch_warnings(record =True) as w:
+        warnings.simplefilter('always')
+        h = load(f, spacing = spacing, optics = optics)
+        assert_obj_close(h.optics, optics)
+        assert_equal(h.spacing, spacing)
+        assert_equal(len(w), 1)
+        assert "Overriding spacing and optics of loaded yaml" in w[-1].message
+
+
+    with warnings.catch_warnings(record =True) as w:
+        warnings.simplefilter('always')
+        h = load(f, optics = optics)
+        assert_obj_close(h.optics, optics)
+        assert_equal(h.spacing, holo.spacing)
+        assert_equal(len(w), 1)
+        assert ("WARNING: overriding optics of loaded yaml without "
+                "overriding spacing, this is probably incorrect." in
+                w[-1].message)
+
+
+    with warnings.catch_warnings(record =True) as w:
+        warnings.simplefilter('always')
+        h = load(f, spacing = spacing)
+        assert_obj_close(h.optics, holo.optics)
+        assert_equal(h.spacing, spacing)
+        assert_equal(len(w), 1)
+        assert ("WARNING: overriding spacing of loaded yaml without "
+                "overriding optics, this is probably incorrect." in
+                w[-1].message)
 
     shutil.rmtree(t)
 

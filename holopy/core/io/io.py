@@ -22,10 +22,11 @@ functions.
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.havard.edu>
 """
 import os
+from warnings import warn
 import serialize
 from .image_file_io import load_image, save_image
 
-from ..marray import Image
+from ..marray import Image, arr_like
 from ..metadata import Optics
 
 
@@ -57,16 +58,6 @@ def load(inf, spacing = None, optics = None):
     obj : The object loaded, :class:`holopy.core.marray.Image`, or as loaded from yaml
 
     """
-
-    # this is probably a bad idea, but just try to read the file as a yaml, if
-    # we fail then maybe it is an image and we try to load it as such.  -tgd
-    # 2012-08-03
-    try:
-        return serialize.load(inf)
-    except serialize.ReaderError:
-        pass
-
-    arr = load_image(inf)
     if isinstance(optics, (basestring, file)):
         optics = serialize.load(optics)
         # In the past We allowed optics yamls to be written without an !Optics
@@ -75,7 +66,29 @@ def load(inf, spacing = None, optics = None):
         if isinstance(optics, dict):
             optics = Optics(**optics)
 
-    return Image(arr, optics = optics, spacing = spacing)
+    loaded_yaml = False
+    try:
+        loaded = serialize.load(inf)
+        loaded_yaml = True
+    except serialize.ReaderError:
+        pass
+
+
+    if not loaded_yaml:
+        loaded = Image(load_image(inf), spacing = spacing, optics = optics)
+    elif optics is not None and spacing is not None:
+        loaded = arr_like(loaded, spacing = spacing, optics = optics)
+        warn("Overriding spacing and optics of loaded yaml")
+    elif optics is not None:
+        loaded = arr_like(loaded, optics = optics)
+        warn("WARNING: overriding optics of loaded yaml without overriding "
+             "spacing, this is probably incorrect.")
+    elif spacing is not None:
+        loaded = arr_like(loaded, spacing = spacing)
+        warn("WARNING: overriding spacing of loaded yaml without overriding "
+             "optics, this is probably incorrect.")
+
+    return loaded
 
 def save(outf, obj):
     """
