@@ -108,16 +108,17 @@ class Mie(FortranTheory):
                 fields = mieangfuncs.mie_fields(schema.positions_kr_theta_phi(
                         origin = scatterer.center).T, scat_coeffs,
                                                 schema.optics.polarization, 0)
-            return self._finalize_fields(scatterer.z, fields, schema)
+            fields = self._finalize_fields(scatterer.z, fields, schema)
         elif isinstance(scatterer, Scatterers):
             spheres = scatterer.get_component_list()
 
             field = self._calc_field(spheres[0], schema)
             for sphere in spheres[1:]:
                 field += self._calc_field(sphere, schema)
-            return field
+            fields = field
         else:
             raise TheoryNotCompatibleError(self, scatterer)
+        return self._set_internal_fields(fields, scatterer)
 
     def _calc_cross_sections(self, scatterer, optics):
         """

@@ -92,7 +92,7 @@ def test_resize():
     i = Image(np.zeros((100, 100)), .1)
     r = resize(i, (5, 5), (8, 8))
     assert_equal(r.center, (5, 5, 0))
-    assert_equal(r.extent, (8, 8))
+    assert_equal(r.extent[:2], (8, 8))
 
     v = Volume(np.zeros((10, 10, 10)), .1)
     r = resize(v, extent =  (.8, .8, .8))

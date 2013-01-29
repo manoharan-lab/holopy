@@ -385,7 +385,10 @@ class PseudoRegularGrid(PseudoMarray):
 
     @property
     def extent(self):
-        return np.array(self.shape) * self.spacing
+        ext = np.array(self.shape) * self.spacing
+        if len(ext) == 2:
+            ext = np.append(ext, 0)
+        return ext
 
     @property
     def center(self):
@@ -393,7 +396,14 @@ class PseudoRegularGrid(PseudoMarray):
 
     @center.setter
     def center(self, value):
+        if len(value) == 2:
+            value = np.append(value, 0)
         self.origin = value - self.extent/2
+
+    def contains(self, point):
+        return ((point >=self.origin).all() and
+                (point <= self.origin+self.extent).all())
+
 
 class PseudoVectorGrid(PseudoRegularGrid):
     def __init__(self, spacing, components = ('x', 'y', 'z'), optics = None,
@@ -405,7 +415,10 @@ class PseudoVectorGrid(PseudoRegularGrid):
     def extent(self):
         # the last dimension of shape is the field components, we need
         # to cut it to have the same dimension as self.shape
-        return np.array(self.shape)[:-1] * self.spacing
+        ext = np.array(self.shape)[:-1] * self.spacing
+        if len(ext) == 2:
+            ext = np.append(ext, 0)
+        return ext
 
     def _make_selection(self):
         return np.random.random(self.shape[:-1]) > 1.0-self.use_random_fraction
@@ -481,17 +494,6 @@ class PseudoImage(PseudoRegularGrid):
         call_super_init(PseudoImage, self)
 
     # subclasses must provide a self.shape
-
-
-    @property
-    def center(self):
-        return self.origin + np.append(self.extent/2, 0)
-
-    @center.setter
-    def center(self, value):
-        if len(value) == 2:
-            value = np.append(value, 0)
-        self.origin = value - np.append(self.extent/2, 0)
 
 
 @_describe_init_signature

@@ -25,11 +25,11 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 import numpy as np
+from warnings import warn
 from ...core.marray import Image, VectorGrid, VectorGridSchema, dict_without
 from ...core import Optics
 from ...core.holopy_object import HoloPyObject
 from ..binding_method import binding, finish_binding
-from .. import errors
 from ..scatterer import Sphere
 from ..errors import NoCenter, NoPolarization
 
@@ -144,7 +144,7 @@ class ScatteringTheory(HoloPyObject):
         instantiate a theory object if it has adjustable parameters and you want
         to use non-default values.
         """
-        
+
         if isinstance(scatterer, Sphere) and scatterer.center == None:
             raise NoCenter("Center is required for hologram calculation of a sphere")
         else:
@@ -152,9 +152,9 @@ class ScatteringTheory(HoloPyObject):
 
         if schema.optics.polarization.shape == (2,):
             pass
-        else:    
+        else:
             raise NoPolarization("Polarization is required for hologram calculation")
-                        
+
         scat = cls_self.calc_field(scatterer, schema = schema, scaling = scaling)
         return scattered_field_to_hologram(scat, schema.optics)
 
@@ -231,6 +231,38 @@ class FortranTheory(ScatteringTheory):
     def _finalize_fields(self, z, fields, schema):
         return super(FortranTheory, self)._finalize_fields(
             z, np.vstack(fields).T, schema)
+
+    def _set_internal_fields(self, fields, scatterer):
+        center_to_center = scatterer.center - fields.center
+        unit_vector = center_to_center - abs(center_to_center).sum()
+        if fields.contains(scatterer.center - unit_vector):
+            warn("Fields inside your Sphere(s) set to 0 because {0} Theory "
+                 " does not yet support calculating internal "
+                 "fields".format(self.__class__.__name__))
+
+            origin = fields.origin
+            extent = fields.extent
+            shape = fields.shape
+            def points(i):
+                return enumerate(np.linspace(origin[i], origin[0]+extent[i], shape[i]))
+            # TODO: may be missing hitting a point or two because of
+            # integer truncation, see about fixing that
+
+            # TODO: vectorize or otherwise speed this up
+            if len(shape) == 2:
+                for i, x in points(0):
+                    for j, y in points(1):
+                        if scatterer.contains((x, y, fields.center[2])):
+                            fields[i, j] = 0
+            else:
+                for i, x in points(0):
+                    for j, y in points(1):
+                        for k, z in points(2):
+                            if scatterer.contains((x, y, z)):
+                                fields[i, j, k] = 0
+        return fields
+
+
 
 # this is pulled out separate from the calc_holo method because occasionally you
 # want to turn prepared  e_fields into holograms directly

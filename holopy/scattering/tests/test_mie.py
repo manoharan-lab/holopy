@@ -25,6 +25,7 @@ Test fortran-based Mie calculations and python interface.
 import os
 from nose.tools import with_setup, assert_raises
 import yaml
+import warnings
 
 import numpy as np
 from numpy.testing import assert_equal
@@ -256,3 +257,14 @@ def test_calc_xz_plane():
     s = Sphere(n = 1.59, r = .5, center = (0, 0, 5))
     sch = VolumeSchema((50, 1, 50), .1, Optics(.66, 1.33, (1,0)))
     e = Mie.calc_field(s, sch)
+
+def test_internal_fields():
+    s = Sphere(1.59, .5, (5, 5, 0))
+    sch = ImageSchema((100, 100), .1, Optics(.66, 1.33, (1, 0)))
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter('always')
+        f = Mie.calc_field(s, sch)
+        verify(f, 'mie_zeroed_internal')
+        assert len(w) == 1
+        assert issubclass(w[-1].category, UserWarning)
+        assert "Fields inside your Sphere(s) set to 0" in str(w[-1].message)

@@ -209,7 +209,8 @@ class Multisphere(FortranTheory):
         if np.isnan(fields[0][0]):
             raise MultisphereFieldNaN(self, scatterer, '')
 
-        return self._finalize_fields(scatterer.z.mean(), fields, schema)
+        return self._set_internal_fields(self._finalize_fields(
+            scatterer.z.mean(), fields, schema), scatterer)
 
     def _calc_cext(self, scatterer, optics, amn = None, lmax = None):
         """

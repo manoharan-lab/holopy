@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
 # Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 #
