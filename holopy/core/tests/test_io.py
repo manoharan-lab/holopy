@@ -118,6 +118,6 @@ def test_yaml_output():
 Items are not equal:
  ACTUAL: '!!python/object/apply:numpy.core.multiarray.scalar [!dtype \'int32\', "\\x01\\0\\0\\0"]\n'
  DESIRED: '1\n...\n'""":
-            raise AssertionError("You're probably running Windows.  Writing and reading files with integers might be buggy on Windows, so be careful. If you're not running Windows and you're still seeing this message, please let us know by filing a bug.")
+            raise AssertionError("You're probably running a 32 bit OS.  Writing and reading files with integers migth be buggy on 32 bit OS's, we don't think it will lead to data loss, but we make no guarantees'. If you see this on 64 bit operating systems, please let us know by filing a bug.")
         else:
             raise err

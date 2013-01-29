@@ -237,8 +237,8 @@ class FortranTheory(ScatteringTheory):
         unit_vector = center_to_center - abs(center_to_center).sum()
         if fields.contains(scatterer.center - unit_vector):
             warn("Fields inside your Sphere(s) set to 0 because {0} Theory "
-                 " does not yet support calculating internal "
-                 "fields".format(self.__class__.__name__))
+                 " does not yet support calculating internal fields".format(
+                     self.__class__.__name__))
 
             origin = fields.origin
             extent = fields.extent
