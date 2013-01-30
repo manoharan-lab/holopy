@@ -1,8 +1,8 @@
 .. _recon_tutorial:
 
-*******************************
-Loading and Reconstructing Data
-*******************************
+*******************************************
+Reconstructing Data (Numerical Propagation)
+*******************************************
 
 Holograms are typically reconstructed optically by shining light back
 through them.  This corresponds mathematically to propagating the
@@ -10,18 +10,20 @@ field stored in the hologram to some different plane.  HoloPy
 generalizes this concept and allows you to numerically propagate any
 hologram(or electric field to another position in space.
 
-Propagation and viewing the results requires the following steps:
+Reconstructions generally consist of the following steps
 
-1. Import or calculate a hologram
+1. :ref:`Load <loading>` or :ref:`calculate <calc_tutorial>` a
+   Hologram :class:`.Image`
 
-2. Propagate
+2. :ref:`Propagate <propagating>` the image to the desired distance or
+   set of distances.
 
-3. View
+3. :ref:`Visualize <visualize_recon>` the reconstruction. 
 
 Example
 =======
 
-To begin, import: ::
+::
 
   from numpy import linspace
   import holopy as hp
@@ -51,16 +53,20 @@ We use::
 
   holo = get_example_data('image0001.yaml')
 
-to load one of the example images shipped with holopy. For working
-with your data you will instead want to use::
+to load one of the example images shipped with HoloPy, it already
+contains all needed metadata. For working with your data you will
+instead want to use::
   
   holo = load('your_image.tif', spacing = 1e-7, 
-      optics = Optics(wavelen = 660e-9, index = 1.33, polarization = (1,0)))
+              optics = Optics(wavelen = 660e-9, index = 1.33, 
+                              polarization = (1,0)))
 
 The spacing and wavelength can be specified in whatever units you
-prefer, as long as you are consistent (see :ref:`units`). Holopy load any image formats
-`PIL <http://www.pythonware.com/products/pil/>`_ can load (which is
-most image formats).
+prefer, as long as you are consistent (see :ref:`units`). Holopy load
+any image formats `PIL <http://www.pythonware.com/products/pil/>`_ can
+load (which is most image formats).
+
+.. _propagating:
 
 Propagating
 -----------
@@ -72,6 +78,8 @@ The actual propagation is accomplished with :func:`.propagate`::
 Here we have used numpy's linspace to get a set of distances to
 propagate to. You can also propagate to a single distance, or to set
 of distances obtained in some other fashion.
+
+.. _visualize_recon:
 
 Visualizing Reconstructions
 ---------------------------

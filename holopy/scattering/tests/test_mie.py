@@ -233,7 +233,7 @@ def test_farfield():
     sphere = Sphere(r = .5, n = 1.59+0.1j)
 
     matr = Mie.calc_scat_matrix(sphere, schema)
-
+    verify(matr, 'farfield_matricies')
 
 @attr('medium')
 def test_radialEscat():

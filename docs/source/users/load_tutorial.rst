@@ -4,8 +4,7 @@ Loading Data
 ============
 
 HoloPy can work with any kind of image data, but we use it for digital
-holograms, and that is probably what it is most useful for, so our
-tutorials will mostly focus on hologram data.
+holograms, so our tutorials will focus mostly on hologram data.
 
 Loading and viewing a hologram
 ------------------------------

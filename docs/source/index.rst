@@ -10,10 +10,10 @@ Holography and Light Scattering in Python
 :Date: |today|
 
 :mod:`HoloPy` is a python based tool for working with digital
-holograms and light scattering. HoloPy's main purposes are to:
+holograms and light scattering. HoloPy's can:
 
-* :ref:`Load <loading>` images and associate them with experimental
-  :ref:`metadata <metadata>`
+* :ref:`Load <loading>` images, associate them with experimental
+  :ref:`metadata <metadata>`, and visualize loaded or calculated images.
 
 * :ref:`Reconstruct <recon_tutorial>` 3d volumes from digital holograms
 
