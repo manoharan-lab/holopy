@@ -1,34 +1,24 @@
 
 .. _yaml_ref:
 
-***************************************************
-Saving and loading your data, metadata, and results
-***************************************************
+*********************************
+Saving and Loading HoloPy Objects
+*********************************
 
 HoloPy can save and load all of its objects using `YAML
 <http://www.yaml.org/>`_ files.  These are designed to be both human-
-and computer-readable.  
+and computer-readable. This makes it easy to store results of a
+calculation or fit.
 
-You can easily save and load data and results for future use using yaml
-files.  For example, to save a hologram, type ::
+Saving Metadata
+===============
 
-  holopy.save('holo.yaml', holo)
-    
-This will save your hologram, including all metadata associated with it such
-as its optics and spacing (pixel size), as a plain text file.  (Opening this 
-file with a text editor, however, may be difficult; see note below.)  To
-reload a saved hologram, simply type ::
-
-  holopy.load('holo.yaml')
+HoloPy yaml files provide a handy way of dealing with metadata.  For
+example, you can save an optics object for future use with::
   
-You do not have to specify optics or spacing for your hologram in when
-loading it from a saved image, as all of this information is already
-specified in the yaml file.
-
-yaml files also provide a handy way of dealing with metadata.  For example,
-you can save an optics object for future use by simply typing ::
-
-  holopy.save('optics.yaml', optics)
+  import holopy as hp
+  optics = hp.core.Optics(.66, 1.33, (1, 0))
+  hp.save('optics.yaml', optics)
 
 optics.yaml is a plain text file that will look something like the
 following (though yours will not contain the explanatory comments
@@ -37,7 +27,7 @@ beginning with #):
 .. sourcecode:: yaml
   
   !Optics
-  wavelen: 0.660    # Wavelength of light (in vacuum) used in creating holograms
+  wavelen: 0.66     # Wavelength of light (in vacuum) used in creating holograms
   index: 1.33       # Index of medium
   polarization: [1.0, 0.0]
   divergence: 0.0
@@ -61,20 +51,101 @@ the yaml file. ::
 This is handy if you have a lot of data that was all created using the
 same optical train.
 
-_[TODO: NEED SOME MORE INFORMATION BEFORE THE NOTE BELOW. ADD EXAMPLES OF SAVING/LOADING DATA OBJECTS]:
+Saving Images
+=============
 
-.. Note::
+If you have a hologram ``holo``, from a calculation or preprocessing
+that you want to save, you can use::
+
+  holopy.save('holo.yaml', holo)
+    
+This will save your hologram, including all metadata associated with
+it such as its optics and spacing (pixel size), to the file
+``holo.yaml``.  (Opening this file with a text editor, however, may be
+difficult; see [#marray_yaml]_) To reload a saved hologram, simply
+type ::
+
+  holo = holopy.load('holo.yaml')
+
+  
+You do not have to specify optics or spacing for your hologram in when
+loading it from a saved image, as all of this information is already
+specified in the yaml file.
+
+Saving Fit Results
+==================
+
+In the :ref:`fit tutorial <fit_tutorial>` you saved the result of a fit with::
+
+  hp.save('result.yaml', result)
+
+If you examine that file, it will contain things like:
+
+.. sourcecode:: yaml
+
+  !FitResult
+  parameters: {alpha: 1.0, 'center[0]': 5.000000000000003, 'center[1]': 5.000000000000004,
+    'center[2]': 10.299999999999969}
+  scatterer: !Sphere
+    n: 1.58
+    r: 0.5
+    center: [5.000000000000003, 5.000000000000004, 10.299999999999969]
+  chisq: 2.8721763211759494e-25
+  rsq: 1.0
+  converged: true
+  time: 5.249035120010376
+  model: !Model
+    scatterer: !ParameterizedObject
+      obj: !Sphere
+        n: 1.58
+        r: 0.5
+        center:
+        - !Parameter
+          guess: 5.5
+          limit: [4, 10]
+          name: center[0]
+        - !Parameter
+          guess: 4.5
+          limit: [4, 10]
+          name: center[1]
+        - !Parameter
+          guess: 10
+          limit: [5, 15]
+          name: center[2]
+    theory: !method 'calc_holo of !Mie {compute_escat_radial: true, }'
+    alpha: !Parameter
+      guess: 0.6
+      limit: [0.1, 1]
+      name: alpha
+  # file truncated
+               
+You can notice that the result yaml contains the fitted results,
+information about the goodness of fit, time to fit, and information
+about how the fit was set up. Your file will also contain gory details
+about how the minimizer ran, but we have cut them off here to save
+space.
+
+You should save these files every time you do a fit that you are
+likely to care about again later. They are designed to hold all the
+information you might need to repeat a calculation or understand how a
+fit proceeded at some later point (like say when you are writing a
+paper).
+
+.. rubric:: Footnotes
+
+.. [#marray_yaml] 
    
-   Data objects are a special case for yaml output because they 
-   will likely contain a large array of data.  They can still be 
-   saved, but will generate very large files that may not be 
-   easily opened in a text editor like other HoloPy yamls.
+   :class:`.Image` objects and other :class:`.Marray` can be saved as
+   yaml files, but they will large and cannot easily be viewed in a
+   text editor like other HoloPy yamls.
 
    For the curious advanced user, what we actually do is put a yaml
    header with optics and other information, and then encode the array
-   of data as a .npy binary (as from np.save) all in the same file.  This
-   keeps the whole object in a single file, but generates a file
-   that is not quite as easy to work with as other yamls.
+   of data as a .npy binary (as from np.save) all in the same file.
+   This keeps the whole object in a single file, but generates a file
+   that is not technically a valid yaml file. HoloPy can load them
+   just fine, some tools (unix's more, some editors) will be able to
+   show you the text header (and then gibberish for the binary data)
 
 
 
