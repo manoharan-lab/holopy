@@ -3,41 +3,51 @@
 Loading Data
 ============
 
+HoloPy can work with any kind of image data, but we use it for digital
+holograms, and that is probably what it is most useful for, so our
+tutorials will mostly focus on hologram data.
+
 Loading and viewing a hologram
 ------------------------------
+
+We include a couple of example holograms with HoloPy. Lets start by
+loading and viewing one of them::
+  
+  import holopy as hp
+  from holopy.core.io import get_example_data
+  holo = get_example_data('image0001.yaml')
+  hp.show(holo)
+
+But you probably want to look at your data not ours. If you have an
+``image.tif`` in your current directory, you can do::
+
+  import holopy as hp
+  holo = hp.load('image.tif')
+  hp.show(holo)
 
 HoloPy can import many different image formats, including TIFF files,
 numpy data format files, and any image format that can be handled by
 the `Python Imaging Library
-<http://www.pythonware.com/products/pil/>`_.  It's often helpful to
-load your images in HoloPy and view them to see that they have
-imported correctly.  Let's say you have a digital hologram stored in
-the file ``image.tif``: ::
+<http://www.pythonware.com/products/pil/>`_. 
 
-   import holopy as hp
-   holo = hp.load('image.tif')
-   hp.show(holo)
-
-The function :func:`hp.load <holopy.core.io.io.load>` returns an
-:class:`.Image`, a 2D array of the pixel values of the image.
-
-Subtracting a background image taken with the same optical setup as
-that for ``image.tif`` but without the object of interest can frequently
-improve the hologram.
-Suppose the background image is saved as ``bg.tif``. Then you can
-subtract it: ::
+If you are able to take an image with the same optical setup but
+without the object of interest, removing that background can usually
+improve the image a lot.  Suppose the background image is saved as
+``bg.tif``. Then you can divide it out by::
 
   bg = hp.load('bg.tif')
-  holo = holo - bg
+  holo = holo / bg
 
-where the original image has been replaced with one where the background
-is subtracted.
+where the original image has been replaced with one with the
+background removed. This usually does a fairly good job of correcting
+for nonuniform illumination, dust elsewhere in the optics, and things
+of that sort.
 
 .. note ::
    
-  You can also do math or image processing operations on ``holo`` just like
-  you would on a normal `numpy
-  <http://docs.scipy.org/doc/numpy/reference/arrays.html>`_ array.  For
+  If you know numpy, our :class:`.Image` is a `numpy
+  <http://docs.scipy.org/doc/numpy/reference/arrays.html>`_ array
+  subclass, so you can use all the math numpy provides.  For
   example::
 
     import scipy.ndimage
@@ -47,8 +57,8 @@ is subtracted.
 
 .. _metadata:
 
-Telling holopy about your optical train
----------------------------------------
+Telling HoloPy about your Experimental Setup
+--------------------------------------------
 
 Simply loading a TIFF won't help you analyze your data, since the
 image file generally won't tell you where the camera is with respect
@@ -56,24 +66,26 @@ to the light source or how the images were recorded. This additional
 information is referred to as :dfn:`metadata`, which must be
 included when you do actual calculations on your data.
 
-All of the objects HoloPy uses for storing data also support the
-addition of such metadata.  The most common metadata are pixel size and
-optical information, described by an :class:`.Optics` object.
-Metadata can be loaded in :func:`hp.load
-<holopy.core.io.io.load>` along with the image data: ::
+In order to be able to do calculations with your data, you will need
+to specify this metadata when you load your image::
 
    import holopy as hp
-   optics = hp.core.Optics(wavelen=.660, index=1.33, \
+   optics = hp.core.Optics(wavelen=.660, index=1.33, 
                            polarization=[1.0, 0.0])
-   holo = hp.load('image.tif', pixel_size = .1,  optics = optics)
+   holo = hp.load('image.tif', spacing = .1,  optics = optics)
 
 Above, we have created an instance of the :class:`.Optics` metadata
-class for incident light at 660 nm (in vacuum) propagating in a medium
-with refractive index 1.33, and with a polarization in the
-x-direction. The pixel size of the image is 100 nm.  You can simulate
-the effect of adding an objective lens in the optical path simply by
-reducing the physical pixel size of your detector by the magnification
-of the objective.
+class for incident light at 660 nm (.66 micron) (in vacuum)
+propagating in a medium with refractive index 1.33, and with a
+polarization in the x-direction. The pixel spacing of the image is 100
+nm (.1 micron).  You can simulate the effect of adding an objective
+lens in the optical path simply by reducing the specified spacing by
+the magnification factor of the objective::
+  
+  magnification = 40
+  holo = hp.load('image.tif', spacing = 4.0/magnification,  
+                 optics = optics)
+  
 
 .. note::
 
@@ -84,4 +96,8 @@ of the objective.
         optics.med_wavelen
         0.49624060150375937
 
-More advanced methods for saving and loading objects in HoloPy can be found in :ref:`yaml_ref`.
+You may have noticed that the very first example loaded a ``.yaml``
+file instead of a tiff image. HoloPy's native data format is ``.yaml``
+files which can store all of our metadata. So in that example, we
+provide the metadata in the file. For more information about loading
+and saving HoloPy ``.yaml`` files see :ref:`yaml_ref`.

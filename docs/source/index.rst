@@ -44,7 +44,6 @@ you may wish to cite one or more of the sources listed in :ref:`credits`.
 .. toctree::
    :maxdepth: 2
 
-   downloads
    users/index
    reference/holopy
    credits
