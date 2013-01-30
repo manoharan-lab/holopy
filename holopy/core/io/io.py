@@ -118,3 +118,12 @@ def save(outf, obj):
             save_image(outf, obj)
             return
     serialize.save(outf, obj)
+
+def get_example_data_path(name):
+    path = os.path.abspath(__file__)
+    path = os.path.join(os.path.split(os.path.split(path)[0])[0],
+                        'tests', 'exampledata')
+    return os.path.join(path, name)
+
+def get_example_data(name):
+    return load(get_example_data_path(name))

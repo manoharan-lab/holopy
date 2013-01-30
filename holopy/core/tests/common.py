@@ -25,7 +25,9 @@ import inspect
 import yaml
 from numpy.testing import assert_equal, assert_almost_equal
 
+
 from .. import load, save
+from ..io import get_example_data, get_example_data_path
 
 # tests should fail if they give warnings
 import warnings
@@ -33,14 +35,6 @@ warnings.simplefilter("error")
 
 
 from numpy.testing import assert_allclose
-
-def get_example_data_path(name):
-    path = os.path.abspath(__file__)
-    path = os.path.join(os.path.split(path)[0], 'exampledata')
-    return os.path.join(path, name)
-
-def get_example_data(name):
-    return load(get_example_data_path(name))
 
 def assert_read_matches_write(o):
     tempf = tempfile.NamedTemporaryFile()
