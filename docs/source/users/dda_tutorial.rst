@@ -1,138 +1,81 @@
 .. _dda_tutorial:
 
-*****************************************
-Using DDA (Discrete Dipole Approximation)
-*****************************************
+*********************************************
+Scattering from Arbitrary Structures with DDA
+*********************************************
 
-If a light scattering model for your scatterer does not exist, you can still visualize how your object scatters light by using a discrete dipole approximation, often referred to as DDA. This technique subdivides an object into little 3D blocks, or 'voxels', and solves Maxwell's equations whilst treating each voxel as a dipole. It can be used for arbitrary shapes, and multiple media. We use the DDA code first developed in University of Amsterdam called ADDA (http://code.google.com/p/a-dda/), and it is now hooked up to HoloPy. To use DDA with HoloPy, you must first install `ADDA <http://code.google.com/p/a-dda/>`_.
+The discrete dipole approximation (DDA) lets us calculate scattering
+from any arbitrary object by representing it as a closely packed array
+of point dipoles. In HoloPy you can make use of the DDA by specifying
+a general :class:`.Scatterer` with an indicator function (or set of
+functions for a composite scatterer containing multiple media).
+
+HoloPy uses `ADDA <http://code.google.com/p/a-dda/>`_ to do the actual
+DDA calculations, so you will need to install ADDA and be able to run::
+
+  adda
+
+at a terminal for HoloPy DDA calculations to succeed.  
+
+A lot of the code associated with DDA is fairly new so be careful,
+there are probably bugs. If you find any, please `report
+<https://bugs.launchpad.net/holopy/+filebug>`_ them. 
 
 Defining the geometry of the scatterer
 ======================================
 
-To calculate the scattering pattern for an arbitrary object, you first need a function which outputs 'True' if a test coordinate lies within your scatterer, and 'False' if it doesn't.
+To calculate the scattering pattern for an arbitrary object, you first
+need an indicator function which outputs 'True' if a test coordinate
+lies within your scatterer, and 'False' if it doesn't.
 
-An example for a sphere is as follows. Basically, we define a radius, and if the distance between the test point and the center of your object is less than the radius, the code will return 'True.' ::
-
-	class Sphere:
-	    def __init__(self, center, Radius):
-		# store properties as arrays for easy numerical computation
-		self.center = np.array(center)
-		self.RadiusSq = Radius*Radius
-		
-	    def isPtIn(self, pt):
-		# vector center to pt
-		delta = np.array(pt) - self.center
-		
-		# check if we're within the specified distance from the center
-		distSq = np.dot(delta, delta)
-		if distSq <= self.RadiusSq:
-			return True
-		else:
-			return False
-
-Creating the scatterer
-======================
-
-The next thing to do is create your scattering object by creating a box of test points, and testing the points against your function to create a 3D array of 'True's and 'False's. First, import the following: ::
-
-  import holopy as hp
-  import numpy as np
-  from holopy.core import ImageSchema, Optics
-  from holopy.scattering.scatterer.voxelated import ScattererByFunction, MultidomainScattererByFunction
+For example, if you wanted to define a dumbbell consisting of the union
+of two overlapping spheres you could do::
+  
+  from holopy.core import Optics, ImageSchema
+  from holopy.scattering.scatterer import Scatterer, Sphere
   from holopy.scattering.theory import DDA
+  s1 = Sphere(r = .5, center = (0, -.4, 0))
+  s2 = Sphere(r = .5, center = (0, .4, 0))
+  schema = ImageSchema(100, .1, Optics(.66, 1.33, (1, 0)))
+  dumbbell = Scatterer(lambda point: s1.contains(point) or s2.contains(point),
+                       1.59, (5, 5, 5))
+  holo = DDA.calc_holo(dumbbell, schema)
 
-Then, create an appropriate image schema, and use the function ScattererByFunction to make your scatterer. It expects the following arguments::
+Here we take advantage of the fact that Spheres can tell us if a point
+lies inside them. We use ``s1`` and ``s2`` as purely geometrical
+constructs, so we do not give them indicies of refraction, instead
+specifying n when defining ``dumbell``.  
 
-  ScattererByFunction(test, index,[[lbx,ubx],[lby,uby],[lbz,ubz]], (x,y,z))
+Mutiple Materials: A Janus Sphere
+=================================
 
-where test is the function that you wrote (and should return True or False when tested against a point), index is the refractive index of your object, lb/ub are the lower and upper bounds for the box of test points that will be used to test your function with, and (x,y,z) is the center of the box. Choose the center and the box bounds such that it is the smallest box that will fit your scatterer. This will ensure we're not wasting time by testing points that are definitely not in the scatterer. Last, we give the schema and the scatterer to DDA so it can calculate a hologram. The code should look something like this: ::
+You can also provide a set of indicators and ns to define a scatterer
+containing multiple materials. As an example, lets look at a `janus
+sphere <http://en.wikipedia.org/wiki/Janus_particles>`_ consisting of
+a plastic sphere with a high index coating on the top half::
 
-  if __name__ == '__main__':
-	  o = hp.core.Optics(wavelen=.66, index=1.411, pixel_scale=.1, polarization=(1,0))
-	  schema = ImageSchema(shape = 100, spacing = o.pixel_scale, optics = o)
-	  x = Sphere(np.array([0,0,0]), .5)
-	  s = ScattererByFunction(x.isPtIn, 1.585+0j,[[-1.25,1.25],[-1.25,1.25],[-1.25,1.25]], (5,5,5))
-	  holo = DDA.calc_holo(s, schema)
+  from holopy.core import Optics, ImageSchema
+  from holopy.scattering.scatterer import Scatterer, Sphere
+  from holopy.scattering.scatterer import Indicators
+  from holopy.scattering.theory import DDA
+  s1 = Sphere(r = .5, center = (0, 0, 0))
+  s2 = Sphere(r = .51, center = (0, 0, 0))
+  schema = ImageSchema(100, .1, Optics(.66, 1.33, (1, 0)))
+  def cap(point):
+      return(point[2] > 0 and s2.contains(point) and not s1.contains(point))
+  indicators = Indicators([s1.contains, cap], 
+                          [[-.51, .51], [-.51, .51], [0, .51]])
+  janus = Scatterer(indicators, (1.34, 2.0), (5, 5, 5))
+  holo = DDA.calc_holo(janus, schema)
 
-Put both bits of code above into a file and name is 'test.py'. In your iPython shell, run the code and take a look at your sphere: ::
+We had to manually set up the bounds of the indicator functions here
+because the automatic bounds determination routine gets confused by
+the cap that does not contain the origin.
 
-  run test.py
-  hp.show(holo)
+We also provide a :class:`.JanusSphere` scatterer which is very
+similar to the scatterer defined above, but can also take a rotation
+angle to specify other orientations::
 
-
-Examples
-========
-
-Janus particle
---------------
-The Janus particle is simply a hemisphere with sphere (i.e. a sphere that's been coated with something on one half only).  The two halves have different refractive indices. Instead of using ScattererByFunction which takes a single test and refractive index, we use MultidomainScattererByFunction, which makes a composite scatterer froma list of tests and indices. The syntax is much the same as single-medium scatterers. ::
-
-	import numpy as np
-
-	class HemisphericalShell:
-	    def __init__(self, center, normal, innerRadius, outerRadius):
-		# store properties as arrays for easy numerical computation
-		self.center = np.array(center)
-		self.normal = np.array(normal)
-		self.innerRadiusSq = innerRadius*innerRadius
-		self.outerRadiusSq = outerRadius*outerRadius
-		
-	    def isPtIn(self, pt):
-		# vector center to pt
-		delta = np.array(pt) - self.center
-		
-	       	# check which side of the plane we're on
-		if np.dot(delta, self.normal) < 0 : 
-			return False
-	
-		# check if we're within the specified distance from the center
-		distSq = np.dot(delta, delta)
-		if distSq >= self.innerRadiusSq and distSq <= self.outerRadiusSq:
-			return True
-		else:
-			return False
-
-	class Sphere:
-	    def __init__(self, center, Radius):
-		# store properties as arrays for easy numerical computation
-		self.center = np.array(center)
-		self.RadiusSq = Radius*Radius
-		
-	    def isPtIn(self, pt):
-		# vector center to pt
-		delta = np.array(pt) - self.center
-		
-		# check if we're within the specified distance from the center
-		distSq = np.dot(delta, delta)
-		if distSq <= self.RadiusSq:
-			return True
-		else:
-			return False
-
-
-	if __name__ == '__main__':
-	    from holopy.scattering.scatterer.voxelated import ScattererByFunction, MultidomainScattererByFunction
-	    from holopy.scattering.theory import DDA
-	    import holopy as hp
-	    import numpy as np
-	    from holopy.core import ImageSchema, Optics
-	    o = hp.core.Optics(wavelen=.66, index=1.411, pixel_scale=.1, polarization=(1,0))
-	    x = HemisphericalShell(np.array([0,0,0]), np.array([1,0,0]), .5, .51)
-	    y = Sphere(np.array([0,0,0]), .5)
-	    s = MultidomainScattererByFunction([x.isPtIn, y.isPtIn], [1.5+0j, 2.5+0j],[[-1.25,1.25],[-1.25,1.25],[-1.25,1.25]], (5,5,5))
-	    schema = ImageSchema(shape = 100, spacing = o.pixel_scale, optics = o) 
-	    holo = DDA.calc_holo(s, schema)
-
-
-
-Saving Results
-~~~~~~~~~~~~~~
-
-You will most likely want to save the fit result ::
-
-  holopy.save('result.yaml', result)
-
-This saves all of the information about the fit to a yaml text
-file.  These files are reasonably human readable and serve as our archive format for data.  They can be loaded back into python with ::
-
-  loaded_result = holopy.load('result.yaml')
+  from holopy.scattering.scatterer import JanusSphere
+  janus = JanusSphere(n = [1.34, 2.0], r = [.5, .51], rotation = (-np.pi/2, 0), 
+                    center = (5, 5, 5))

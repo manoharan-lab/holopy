@@ -26,7 +26,7 @@ as Clusters.
 '''
 from __future__ import division
 
-from .scatterer import Scatterer
+from .scatterer import Scatterer, Indicators
 import scatterer
 
 from .sphere import Sphere

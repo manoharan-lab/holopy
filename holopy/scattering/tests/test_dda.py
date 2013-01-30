@@ -84,10 +84,7 @@ def in_sphere(r):
 
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
-def test_DDA_voxelated():
-    # test that DDA voxelated gets the same results as DDA sphere as a basic
-    # sanity check of dda
-
+def test_DDA_indicator():
     n = 1.59
     center = (1, 1, 30)
     r = .3
@@ -98,7 +95,7 @@ def test_DDA_voxelated():
 
     sphere_holo = dda.calc_holo(sc, schema)
 
-    s = Scatterer(sc.indicators, n, center)
+    s = Scatterer(Sphere(r=r, center = (0, 0, 0)).contains, n, center)
 
     gen_holo = dda.calc_holo(s, schema)
 
@@ -142,8 +139,8 @@ def test_Ellipsoid_dda():
 
 def test_janus():
     schema = ImageSchema(60, .1, Optics(.66, 1.33, (1, 0)))
-    s = JanusSphere(n = [1.34, 2.0], r = [.5, .51], rotation = (-np.pi/2, 0), 
+    s = JanusSphere(n = [1.34, 2.0], r = [.5, .51], rotation = (-np.pi/2, 0),
                     center = (5, 5, 5))
-    assert_almost_equal(s.index_at([5,5,5]),1.34) 
+    assert_almost_equal(s.index_at([5,5,5]),1.34)
     holo = DDA.calc_holo(s, schema)
     verify(holo, 'janus_dda')

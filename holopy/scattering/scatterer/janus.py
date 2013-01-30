@@ -63,4 +63,4 @@ class JanusSphere(CenteredScatterer):
         def cap(point):
             return (np.dot(normal, point) > 0) and s1.contains(point) and not s0.contains(point)
         r = max(self.r)
-        return Indicators([s0.indicators.functions[0], cap], [[-r, r], [-r, r], [-r, r]])
+        return Indicators([s0.contains, cap], [[-r, r], [-r, r], [-r, r]])

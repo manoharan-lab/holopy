@@ -55,7 +55,6 @@ class Scatterer(HoloPyObject):
             constructor will attempt to determine one.
         """
         if not isinstance(indicators, Indicators):
-            indicators = _ensure_array(indicators)
             indicators = Indicators(indicators)
         self.indicators = indicators
         self.n = _ensure_array(n)
@@ -260,6 +259,9 @@ def find_bounds(indicator):
     """
     Finds the bounds needed to contain an indicator function
 
+    Notes
+    -----
+    Will probably determine incorrect bounds for functions which are not convex
 
     """
     # we don't know what units the user might be using, so start by
@@ -272,16 +274,21 @@ def find_bounds(indicator):
             # find the extent along this axis by sequential logarithmic search
             while indicator(point):
                 point[i] *= 10
-            while not indicator(point):
+            iter = 0
+            while not indicator(point) and iter < 10:
                 point[i] /= 2
+                iter += 1
             while indicator(point):
                 point[i] *= 1.1
             bounds[i][j] = point[i]
 
+    #TODO: handle non convex functions
+    #TODO: handle functions not containing the origin
+
     #TODO: add a check along the boundaries of the square to make sure
     #something like an oblique ellipsoid doesn't get missed'
     return bounds
-    
+
 def bound_union(d1, d2):
     new = [[0, 0],[0, 0],[0, 0]]
     for i in range(3):

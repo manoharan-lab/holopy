@@ -8,7 +8,7 @@ in HoloPy. Each example starts with a full code listing suitable for
 pasting into a terminal or to serving a template for a script.
 
 You will be happiest running these examples in an IPython terminal
-(``ipython --pylab``, also called the pylab in EPD). It is our intent
+(``ipython --pylab``, also called pylab shell in EPD). It is our intent
 that these tutorials be easy to follow for anyone with a little
 knowledge of python, holography, and scattering. If you find anything
 confusing, we consider it a bug, and would like you to `report
