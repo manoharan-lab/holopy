@@ -181,6 +181,8 @@ def test_cross_sections():
     sc = Spheres([Sphere(n = n, r = a, center = [0., 0., a]),
                   Sphere(n = n, r = a, center = [0., 0., -a])])
     thry = Multisphere()
+    # this ends up testing the angular dependence of scattering
+    # as well as all the scattering coefficients
     xsects = thry.calc_cross_sections(sc, opt)
     
     gold_xsects = np.array([0.03830316, 0.04877015, 0.08707331])

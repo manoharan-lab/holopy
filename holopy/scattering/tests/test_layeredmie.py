@@ -45,3 +45,6 @@ def test_Shell():
 
     verify(h, 'shell')
 
+# TODO: check physical correctness of radiometric quantities (which checks
+# scattering coefficients), in comparison w/ B&H or "tougher" results in
+# Yang, p. 1717, table 3.

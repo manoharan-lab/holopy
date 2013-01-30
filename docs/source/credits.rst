@@ -18,6 +18,12 @@ Please see the following references:
 If you use HoloPy, we ask that you cite the articles above that are
 relevant to your application.
 
+For scattering calculations and formalism, we draw heavily on
+the treatise of Bohren & Huffman.  We generally follow their conventions
+except where noted.
+
+.. [Bohren1983] C\. F\. Bohren and D\. R\. Huffman, *Absorption and Scattering of Light by Small Particles*, Wiley (1983).
+
 The package includes code from several sources.  We thank Daniel
 Mackowski for allowing us to include his T-Matrix code, which computes
 scattering from clusters of spheres:  SCSMFO1B_.

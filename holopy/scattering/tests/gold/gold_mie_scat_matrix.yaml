@@ -1,0 +1,8 @@
+# See Bohren & Huffman, p. 482, for theta = 45.  Note that these quantities
+# are normalized in a funny way detailed in the BHMIE listing.
+S11: 0.0701845
+pol: 0.959953e-2
+S33: 0.959825
+S34: -0.280434
+
+
