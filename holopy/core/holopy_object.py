@@ -53,6 +53,12 @@ class Serializable(yaml.YAMLObject):
                                             flow_style=cls.yaml_flow_style)
 
 class HoloPyObject(Serializable):
+    """Ancestor class for all HoloPy classes.
+
+    HoloPy object's purpose is to provide the machinery for saving to
+    and loading from HoloPy yaml files
+
+    """
     @property
     def _dict(self):
         dump_dict = OrderedDict()
