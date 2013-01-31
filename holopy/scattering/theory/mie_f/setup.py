@@ -26,17 +26,17 @@ compilers.  Note that f2py by default compiles with optimization
 flags.
 
 Ignore compiler warnings of unused variables, unused dummy
-arguments, and variables being used uninitialized from compiling 
-scsmfo_min. The former is relics of how scsmfo was written which I 
+arguments, and variables being used uninitialized from compiling
+scsmfo_min. The former is relics of how scsmfo was written which I
 am not touching. The latter is likely due to some GOTO statements that
 could cause a variable to be referenced before it's initialized. Under
-normal usage I wouldn't worry about it. 
+normal usage I wouldn't worry about it.
 '''
 
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
     from numpy.distutils.command import build_ext
-    config = Configuration('tmatrix', parent_package, top_path)
+    config = Configuration('mie_f', parent_package, top_path)
     config.add_extension('uts_scsmfo',
                          ['uts_scsmfo.for',
                           '../../third_party/SBESJY.F']
