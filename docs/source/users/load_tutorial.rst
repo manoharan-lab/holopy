@@ -10,12 +10,10 @@ Loading and viewing a hologram
 ------------------------------
 
 We include a couple of example holograms with HoloPy. Lets start by
-loading and viewing one of them::
+loading and viewing one of them
   
-  import holopy as hp
-  from holopy.core.io import get_example_data
-  holo = get_example_data('image0001.yaml')
-  hp.show(holo)
+.. plot:: pyplots/show_example_holo.py
+   :include-source:
 
 But you probably want to look at your data not ours. If you have an
 ``image.tif`` in your current directory, you can do::
