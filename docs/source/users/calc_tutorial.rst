@@ -261,22 +261,10 @@ Static light scattering calculations
 In a static light scattering measurement you record the scattered
 intensity at a number of angles.  In this kind of experiment you are
 usually not interested in the exact distance of the detector from the
-particles, and so it's most convenient to work with scattering matrices. ::
+particles, and so it's most convenient to work with scattering matrices. 
 
-  from holopy.core import Schema, Angles, Optics
-  from holopy.scattering.scatterer import Sphere
-  from holopy.scattering.theory import Mie
-  schema = Schema(positions = Angles(np.linspace(0, np.pi, 100)), optics =
-                  Optics(wavelen=.66, index = 1.33, polarization = (1, 0)))
-
-  sphere = Sphere(r = .5, n = 1.59)
-
-  matr = Mie.calc_scat_matrix(sphere, schema)
-  # It is typical to look at scattering matrices on a semilog plot.
-  # You can make one as follows:
-  figure()
-  semilogy(np.linspace(0, np.pi, 100), abs(matr[:,0,0])**2)
-  semilogy(np.linspace(0, np.pi, 100), abs(matr[:,1,1])**2)
+.. plot:: pyplots/calc_scat_matr.py
+   :include-source:
   
 Here we omit specifying the location (center) of the scatterer.  This is
 only valid when you're calculating a far-field quantity.
