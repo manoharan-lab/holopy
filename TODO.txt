@@ -1,5 +1,0 @@
-Remove use of assert_allclose (or decide that we require newer version of numpy)
-
-Clean up scatterpy imports (some are breaking on becca's computer)
-
-try putting in flushes in fit loop to get fitter to print iterations better (not save a number up)

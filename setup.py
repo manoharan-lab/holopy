@@ -48,7 +48,6 @@ C compilers, as well as f2py and cython. On Ubuntu, you will need the
 '''
 
 from numpy.distutils.core import setup, Extension
-import numpy as np
 
 
 # this will automatically build the scattering extensions, using the
@@ -56,35 +55,46 @@ import numpy as np
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     config = Configuration('',parent_package,top_path)
+    config.add_subpackage('holopy')
     config.add_subpackage('holopy.core')
     config.add_subpackage('holopy.core.process')
     config.add_subpackage('holopy.core.io')
     config.add_subpackage('holopy.core.third_party')
     config.add_subpackage('holopy.core.tests')
+    config.add_subpackage('holopy.propagation')
+    config.add_subpackage('holopy.propagation.tests')
     config.add_subpackage('holopy.scattering')
     config.add_subpackage('holopy.scattering.theory')
     config.add_subpackage('holopy.scattering.theory.mie_f')
     config.add_subpackage('holopy.scattering.scatterer')
     config.add_subpackage('holopy.scattering.tests')
+    config.add_subpackage('holopy.scattering.third_party')
+    config.add_subpackage('holopy.fitting')
+    config.add_subpackage('holopy.fitting.tests')
+    config.add_subpackage('holopy.fitting.third_party')
+    config.add_subpackage('holopy.vis')
     config.add_data_files(['.',['AUTHORS']])
+    config.add_data_files('holopy/propagation/tests/gold/*.yaml')
+    config.add_data_files('holopy/scattering/tests/gold/*.yaml')
+    config.add_data_files('holopy/core/tests/exampledata/*.yaml')
+    config.add_data_files('holopy/core/tests/exampledata/*.npy')
 
     config.get_version()
     return config
 
 __version__ = 'unknown'
 try:
-    from holopy._version import __version__
+    from holopy import __version__
 except ImportError:
     # no version specified, or file got deleted in bzr
     pass
 
 if __name__ == "__main__":
-    from numpy.distutils.core import setup
     setup(configuration=configuration,
-          name='holopy',
+          name='HoloPy',
           version=__version__,
           description='Holography in Python',
           author='Manoharan Lab, Harvard University',
           author_email='vnm@seas.harvard.edu',
           url='http://manoharan.seas.harvard.edu/holopy',
-          package=['holopy'])
+          package=['HoloPy'])

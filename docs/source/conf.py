@@ -45,8 +45,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'holopy'
-copyright = u'2011, Manoharan Lab, Harvard University'
+project = u'HoloPy'
+copyright = u'2011-2013, Manoharan Lab, Harvard University'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -54,13 +54,12 @@ copyright = u'2011, Manoharan Lab, Harvard University'
 #
 __version__ = 'unknown'
 try:
-    from holopy._version import __version__
+    from holopy import __version__
 except ImportError:
     # version doesn't exist, or got deleted in bzr
     pass
 # The short X.Y version.
-#version = '1.0.0'
-version = __version__
+version = '.'.join(__version__.split('.')[:2])
 # The full version, including alpha/beta/rc tags.
 #release = '1.0.0'
 release = __version__

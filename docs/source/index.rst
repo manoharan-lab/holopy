@@ -6,7 +6,8 @@
 Holography and Light Scattering in Python
 =========================================
 
-:Release: |version|
+
+:Release: |release|
 :Date: |today|
 
 :mod:`HoloPy` is a python based tool for working with digital
@@ -39,7 +40,11 @@ in our :ref:`user_guide`.
 
 HoloPy started as a project in the `Manoharan Lab at Harvard
 University <http://manoharan.seas.harvard.edu/>`_. If you use HoloPy,
-you may wish to cite one or more of the sources listed in :ref:`credits`. 
+you may wish to cite one or more of the sources listed in
+:ref:`credits`. We also encourage you to sign up for our `User Mailing
+List <https://groups.google.com/d/forum/holopy-users>`_ so we can keep
+you up to date on releases, answer questions, and you can benefit from
+other user's questions.
 
 .. toctree::
    :maxdepth: 2
