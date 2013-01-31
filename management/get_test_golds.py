@@ -30,7 +30,7 @@ downloadds in general.
 # http://stackoverflow.com/a/22776/250992
 import urllib2
 
-url = "http://manoharan.seas.harvard.edu/holopy/files/golds.zip"
+url = "http://manoharan.seas.harvard.edu/holopy/files/holopy-2.0.0_test_gold_data.zip"
 
 file_name = url.split('/')[-1]
 u = urllib2.urlopen(url)
