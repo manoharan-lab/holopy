@@ -5,9 +5,13 @@ References and credits
 **********************
 Please see the following references:
 
-.. [Lee2007] S\. H\. Lee *et al.*, "Characterizing and tracking single colloidal particles with video holographic microscopy," *Optics Express* **15**, 18275-18282, (2007).
+.. [Fung2012] Fung, J., Perry, R. W., Dimiduk, T. G., & Manoharan, V. N. (2012). Imaging multiple colloidal particles by fitting electromagnetic scattering solutions to digital holograms. Journal of Quantitative Spectroscopy and Radiative Transfer, (0). doi:10.1016/j.jqsrt.2012.06.007
+
+.. [Perry2012] Perry, R. W., Meng, G., Dimiduk, T. G., Fung, J., & Manoharan, V. N. (2012). Real-space studies of the structure and dynamics of self-assembled colloidal clusters. Faraday Discussions. doi:10.1039/c2fd20061a
 
 .. [Fung2011] J\. Fung *et al.*, "Measuring translational, rotational, and vibrational dynamics in colloids with digital holographic microscopy," *Optics Express* **19**, 8051-8065, (2011).
+
+.. [Lee2007] S\. H\. Lee *et al.*, "Characterizing and tracking single colloidal particles with video holographic microscopy," *Optics Express* **15**, 18275-18282, (2007).
 
 .. [Mackowski1996] D\. W\. Mackowski and M\. I\. Mishchenko, "Calculation of the T matrix and the scattering matrix for ensembles of spheres," *J. Opt. Soc. Am. A.* **13**, 2266-2278, (1996).
 
@@ -30,17 +34,22 @@ scattering from clusters of spheres:  SCSMFO1B_.
 
 .. _SCSMFO1B: ftp://ftp.eng.auburn.edu/pub/dmckwski/scatcodes/index.html
 
-We also make use of a modified version of the Python version of mpfit_, originally developed by Craig Markwardt. The modified version we use is drawn from the stsci_python_ package.
+We also make use of a modified version of the Python version of
+mpfit_, originally developed by Craig Markwardt. The modified version
+we use is drawn from the stsci_python_ package.
 
 .. _mpfit: http://www.physics.wisc.edu/~craigm/idl/fitting.html
 .. _stsci_python: http://www.stsci.edu/resources/software_hardware/pyraf/stsci_python
 
-We thank A. Ross Barnett for permitting us to use his routine SBESJY.FOR_, which computes spherical Bessel functions.
+We thank A. Ross Barnett for permitting us to use his routine
+SBESJY.FOR_, which computes spherical Bessel functions.
 
 .. _SBESJY.FOR: http://www.fresco.org.uk/programs/barnett/index.htm
 
 
-We include a copy Michele Simionato's decorator.py_ (v 3.3.3) which simplifies writing correct function decorators.  If you have that module installed it will be used preferentially.
+We include a copy Michele Simionato's decorator.py_ (v 3.3.3) which
+simplifies writing correct function decorators.  If you have that
+module installed it will be used preferentially.
 
   decorator.py is Copyright (c) 2005-2012, Michele Simionato
   All rights reserved.
