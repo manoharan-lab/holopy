@@ -47,7 +47,7 @@ For interactive use we suggest (highly suggest in the case of ipython and matplo
 
 * `matplotlib <http://matplotlib.org>`_ (plotting for python)
 
-* `mayavi2 <http://docs.enthought.com/mayavi/mayavi/>`_ (if you want to do 3d plotting)
+* `mayavi2 <http://docs.enthought.com/mayavi/mayavi/>`_ (if you want to do 3D plotting)
 
 Optional dependencies for certain calculations:
 
@@ -65,7 +65,7 @@ Linux (Ubuntu/Debian)
 
   sudo apt-get install python-scipy ipython python-matplotlib python-yaml mayavi2
 
-Other linuxes should be a similar set of packages. 
+Other flavors of linux might have slightly different package names.
 
 Windows/Mac
 ~~~~~~~~~~~
@@ -84,7 +84,8 @@ Building
 
 `Download
 <http://www.manoharan.seas.harvard.edu/holopy/downloads.html>`_ and
-unpack a source build, or check out the source from launchpad::
+unpack a source build, or 
+check out the source from launchpad::
 
   bzr branch lp:holopy
 

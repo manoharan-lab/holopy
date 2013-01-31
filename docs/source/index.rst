@@ -16,11 +16,11 @@ holograms and light scattering. HoloPy can:
 * :ref:`Load <loading>` images, associate them with experimental
   :ref:`metadata <metadata>`, and visualize loaded or calculated images.
 
-* :ref:`Reconstruct <recon_tutorial>` 3d volumes from digital holograms
+* :ref:`Reconstruct <recon_tutorial>` 3D volumes from digital holograms
 
 * Do :ref:`Scattering Calculations <calc_tutorial>`
 
-  * **Compute** Holograms, Electric fields, scattered intensity, 
+  * **Compute** Holograms, electric fields, scattered intensity, 
     cross sections, ...
 
   * **From** spheres, clusters of spheres, and arbitrary structures 
