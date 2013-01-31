@@ -15,15 +15,16 @@ the archive directory, run::
   
   python setup.py install
 
-Or put the archive directory in your PYTHONPATH to import it directly from the archive.
+Or put the archive directory in your PYTHONPATH to import it directly
+from the archive.
 
 Once you have done that, start up python (we would suggest as
 ``ipython --pylab`` or the pylab console from EPD or similar) and run::
 
   import holopy
 
-If you get your prompt back without errors, congratulations you have
-successfully installed HoloPy! Proceed to the :ref:`tutorials`. if you
+If you get your prompt back without errors, congratulations! You have
+successfully installed HoloPy. Proceed to the :ref:`tutorials`. If you
 get errors or just want to learn more, keep reading.
 
 .. _dependencies:
