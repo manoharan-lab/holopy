@@ -5,7 +5,7 @@ Tutorials
 
 This section contains examples of how to use most of the functionality
 in HoloPy. Each example starts with a full code listing suitable for
-pasting into a terminal or to serving a template for a script.
+pasting into a terminal or for serving as a template for a script.
 
 You will be happiest running these examples in an IPython terminal
 (``ipython --pylab``, also called pylab shell in EPD). It is our intent

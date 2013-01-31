@@ -148,4 +148,5 @@ To compile the documentation run (from the docs directory)::
 
 (or type ``make`` to see the different kinds of formats you can
 create).  This will generate documentation in the ``docs/build``
-directory.
+directory.  Building the docs requires matplotlib version 1.1 
+or newer.
