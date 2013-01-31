@@ -17,7 +17,7 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
 Exceptions used in scatterpy module.  These are separated out from the
-other exceptions in other parts of holopy to keep things modular.
+other exceptions in other parts of HoloPy to keep things modular.
 
 .. moduleauthor :: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 """

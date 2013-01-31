@@ -17,7 +17,7 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
 Routines that operate on files, including routines that import various
-image file formats used for holograms. S
+image file formats used for holograms.
 
 .. moduleauthor:: Jerome Fung <jfung@physics.harvard.edu>
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
@@ -44,7 +44,7 @@ def save_image(filename, im):
     im : ndarray or :class:`holopy.image.Image`
         image to save.
     filename : basestring
-        filename in which to save image. If im is a image the
+        filename in which to save image. If im is an image the
         function should default to the image's name field if no
         filename is specified
     """
@@ -56,7 +56,7 @@ def save_image(filename, im):
 
 def load_image(filename, channel=0):
     """
-    Handler for opening various types of image image files.
+    Handler for opening various types of image files.
 
     Parameters
     ----------
@@ -115,7 +115,7 @@ def load_image(filename, channel=0):
 
 def _read_tiff(filename):
     """
-    Reads a TIFF and returns the image as a Numpy array (double
+    Reads a TIFF and returns the image as a NumPy array (double
     precision).
 
     Uses tifffile.py (by Christoph Gohlke) to detect size and depth of
@@ -166,7 +166,7 @@ def _read_tiff(filename):
 
 def _read_tiff_12bit(filename, size):
     """
-    Reads a 12 bit greyscale TIFF file and returns image as a Numpy array.
+    Reads a 12 bit greyscale TIFF file and returns image as a NumPy array.
 
     Parameters
     ----------

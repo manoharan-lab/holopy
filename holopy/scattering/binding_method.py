@@ -38,8 +38,8 @@ joe
 Foo('bob').bar()
 bob
 
-The bar method will be given an default instance of the class if called as a
-classmethod, or will behave as a normal instance method if called on an
+The bar method will be given a default instance of the class if called as a
+classmethod or will behave as a normal instance method if called on an
 instance
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
@@ -58,7 +58,7 @@ def finish_binding(obj):
     """
     binds classmethods decorated with the binding decorator to obj
 
-    This is intended for to be called within __init__ and will replace any
+    This is intended to be called within __init__ and will replace any
     @classmethod methods that are also decorated with @binding with instance methods
     """
     # use inspect to find all of the methods of the supplied class that have a

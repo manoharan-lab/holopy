@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
-Classes for defining metadata about experimental or calulated results.
+Classes for defining metadata about experimental or calculated results.
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 
@@ -42,10 +42,10 @@ class Optics(HoloPyObject):
     index : float (optional)
         Refractive index of medium
     polarization : tuple or array (optional)
-        Electric field amplitudes in x and y direction.
+        Electric field amplitudes in x and y directions.
     divergence : float (optional)
         Divergence of the incident beam (currently unused)
-    pixel_size : tuple (optional)  (depriecated)
+    pixel_size : tuple (optional)  (deprecated)
         Physical size of the camera's pixels.
     mag : float (optional)
         Magnification of optical train. Ignored if pixel_scale
@@ -58,7 +58,7 @@ class Optics(HoloPyObject):
     -----
     You don't have to specify all of these parameters, but to get fits and
     reconstructions to work you should specify at least,
-    `wavelen` in vacuo, and `index`.
+    `wavelen` in vacuo and `index`.
     """
 
     def __init__(self, wavelen=None, index=None, polarization=None,
@@ -160,10 +160,10 @@ class UnevenGrid(Grid):
     pass
 
 class Angles(PositionSpecification):
-    """Specify farfield positions as a grid of angles
+    """Specify far field positions as a grid of angles
 
     The list of thetas and phis are used to construct a grid of
-    positions Angles should be specified in radians.
+    positions angles should be specified in radians.
 
     Parameters
     ----------

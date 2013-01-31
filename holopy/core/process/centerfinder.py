@@ -33,11 +33,11 @@ from scipy import ndimage
 
 def center_find(image, centers=1, threshold=.5):
     """
-    Finds the coordinates of the center of a holographic pattern
+    Finds the coordinates of the center of a holographic pattern.
     The coordinates returned are in pixels (row number, column
     number). Intended for finding the center of single particle or
     dimer holograms which basically show concentric circles. The
-    optional threshold parameter (between 0 and 1) gives bound on
+    optional threshold parameter (between 0 and 1) gives a bound on
     what magnitude of gradients to include in the calculation. For
     example, threshold=.75 means ignore any gradients that are less
     than 75% of the maximum gradient in the image.
@@ -73,7 +73,7 @@ def center_find(image, centers=1, threshold=.5):
 
 def image_gradient(image):
     """
-    Uses the sobel operator as a numerical approximation of a
+    Uses the Sobel operator as a numerical approximation of a
     derivative to find the x and y components of the image's intensity
     gradient at each pixel.
 
@@ -99,7 +99,7 @@ def hough(col_deriv, row_deriv, centers=1, threshold=.25):
     """
     Following the approach of a Hough transform, finds the pixel which
     the most gradients point towards or away from. Uses only gradients
-    with magnitude greater than threshold*maximum gradient. Once the
+    with magnitudes greater than threshold*maximum gradient. Once the
     pixel is found, uses a brightness-weighted average around that
     pixel to refine the center location to return. After the first
     center is found, the sourrounding area is blocked out and another
@@ -110,7 +110,7 @@ def hough(col_deriv, row_deriv, centers=1, threshold=.25):
     col_deriv : numpy.ndarray
         y-component of image intensity gradient
     row_deriv : numpy.ndarray
-        x-component of image intesity gradient
+        x-component of image intensity gradient
     centers : int
         number of centers to find
     threshold : float (optional)

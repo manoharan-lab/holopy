@@ -54,7 +54,7 @@ def propagate(data, d, gradient_filter=False):
     -------
     data : :class:`.Image` or :class:`.Volume`
        The hologram progagated to a distance d from its current location.
-nose
+
     """
     if np.isscalar(d) and d == 0:
         # Propagationg no distance has no effect
@@ -144,7 +144,7 @@ def trans_func(schema, d, cfsp=0, squeeze=True,
     shape : (int, int)
        maximum dimensions of the transfer function
     spacing : (float, float)
-       the spacing between point is the grid to calculate
+       the spacing between points is the grid to calculate
     wavelen : float
        the wavelength in the medium you are propagating through
     d : float or list of floats

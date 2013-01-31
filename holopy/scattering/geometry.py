@@ -57,7 +57,8 @@ def distances(cluster, gaponly=False):
     for i in np.arange(0,num):
         for j in np.arange(0,num):
             dist[i,j] = hp.process.cartesian_distance(cluster.centers[i,:],cluster.centers[j,:])
-            #modification to change center to center distances to gap distances if asked for
+            #modification to change center to center distances 
+            #to gap distances if asked for
             if gaponly==True and i!=j:
                 dist[i,j] = dist[i,j]-cluster.r[i]-cluster.r[j]
     return dist
@@ -130,7 +131,8 @@ def make_tricluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
 
 def make_sqcluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
     """
-    Returns a sphere cluster of four particles forming a square centered on a given center of mass.
+    Returns a sphere cluster of four particles forming a 
+    square centered on a given center of mass.
 
     Parameters
     ----------
@@ -160,8 +162,8 @@ def make_sqcluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
 
 def make_tetracluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
     """
-    Returns a sphere cluster of four particles forming a tetrahedron centered on
-    a given center of mass.
+    Returns a sphere cluster of four particles forming a 
+    tetrahedron centered on a given center of mass.
 
     Parameters
     ----------
@@ -338,4 +340,3 @@ def make_polytetracluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
         Sphere(n=index, r = radius, center = (xs[4], ys[4], zs[4])),
         Sphere(n=index, r = radius, center = (xs[5], ys[5], zs[5]))])
     return polytetra
-
