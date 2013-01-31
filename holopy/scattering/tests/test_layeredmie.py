@@ -23,9 +23,15 @@ Test fortran-based multilayered Mie calculations and python interface.
 '''
 from __future__ import division
 
+import numpy as np
+from numpy import sqrt
+from numpy.testing import assert_allclose
+import yaml
+import os
 from ...core import Optics, ImageSchema
 from .common import verify
 from ..theory import Mie
+from ..theory.mie_f import multilayer_sphere_lib, miescatlib
 from ..scatterer import Sphere
 
 from nose.plugins.attrib import attr
@@ -45,6 +51,51 @@ def test_Shell():
 
     verify(h, 'shell')
 
-# TODO: check physical correctness of radiometric quantities (which checks
-# scattering coefficients), in comparison w/ B&H or "tougher" results in
-# Yang, p. 1717, table 3.
+@attr('medium')
+def test_sooty_particles():
+    '''
+    Test multilayered sphere scattering coefficients by comparison of
+    radiometric quantities.
+
+    We will use the data in [Yang2003]_ Table 3 on  p. 1717, cases
+    2, 3, and 4 as our gold standard.
+    '''
+    x_L = 100
+    m_med = 1.33
+    m_abs = 2. + 1.j
+    f_v = 0.1
+
+    def efficiencies_from_scat_units(m, x):
+        asbs = multilayer_sphere_lib.scatcoeffs_multi(m, x)
+        qs = miescatlib.cross_sections(*asbs) * 2 / x_L**2
+        # there is a factor of 2 conventional difference between
+        # "backscattering" and "radar backscattering" efficiencies.
+        return np.array([qs[1], qs[0], qs[2]/2.])
+
+    # first case: absorbing core
+    x_ac = np.array([f_v**(1./3.) * x_L, x_L])
+    m_ac = np.array([m_abs, m_med])
+    
+    # second case: absorbing shell
+    x_as = np.array([(1. - f_v)**(1./3.), 1.]) * x_L
+    m_as = np.array([m_med, m_abs])
+
+    # third case: smooth distribution (900 layers)
+    n_layers = 900
+    x_sm = np.arange(1, n_layers + 1) * x_L / n_layers
+    beta = (m_abs**2 - m_med**2) / (m_abs**2 + 2. * m_med**2)
+    f = 4./3. * (x_sm / x_L) * f_v 
+    m_sm = m_med * sqrt(1. + 3. * f * beta / (1. - f * beta))
+
+    location = os.path.split(os.path.abspath(__file__))[0]
+    gold_name = os.path.join(location, 'gold',
+                             'gold_multilayer')
+    gold = np.array(yaml.load(file(gold_name + '.yaml')))
+
+    assert_allclose(efficiencies_from_scat_units(m_ac, x_ac), gold[0],
+                    rtol = 2e-5)
+    assert_allclose(efficiencies_from_scat_units(m_as, x_as), gold[1],
+                    rtol = 2e-5)
+    assert_allclose(efficiencies_from_scat_units(m_sm, x_sm), gold[2],
+                    rtol = 1e-3)
+

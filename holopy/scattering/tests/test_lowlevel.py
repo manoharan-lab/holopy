@@ -41,7 +41,7 @@ import yaml
 from nose.tools import assert_raises
 from numpy.testing import assert_allclose
 import numpy as np
-from numpy import sqrt, dot, pi, conj, real, imag
+from numpy import sqrt, dot, pi, conj, real, imag, exp
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
 
@@ -94,7 +94,7 @@ def test_polarization_to_scatt_coords():
     assert_allclose(fortran_result, dot(conversion_mat, test_vect))
 
 
-@attr('fast')
+@attr('medium')
 def test_mie_amplitude_scattering_matrices():
     '''
     Test calculation of Mie amplitude scattering matrix elements.
@@ -165,9 +165,22 @@ def test_mie_amplitude_scattering_matrices():
         raise AssertionError("Near-field amplitude scattering matrix " +
                              "suspiciously close to far-field result.")
 
+@attr('fast')
+def test_scattered_field_from_asm():
+    '''
+    Test the calculation of the scattered field, given the amplitude
+    scattering matrix.  We will here use a fictitious (and probably
+    unphysical) amplitude scattering matrix.
+    '''
+    asm = np.array([[1., -1.j],
+                   [2., -0.1]])
+    fortran_test = mieangfuncs.calc_scat_field(kr, phi, asm, np.array([1., 0.]))
+    gold = (1./sqrt(2)) * 0.1j * exp(10.j) * np.array([1. + 1.j, -2.1])
+    assert_allclose(fortran_test, gold)
+
+
 # TODO: another check on the near-field result: calculate the scattered
 # power by 4pi integration of E_scat^2 over 4pi. The result should be
 # independent of kr and close to the analytical result.
 
-# TODO: check on matrix multiplication in mieangfuncs.calc_scat_field
 

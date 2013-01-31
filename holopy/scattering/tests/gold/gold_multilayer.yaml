@@ -1,0 +1,14 @@
+# Data from Yang, Applied Optics 2003, Table 3, cases 2-4. 
+# We use Q_ext, Q_sca, and Q_back only.
+-
+  - 2.20718 
+  - 1.87320 
+  - 2.61685
+-
+  - 2.09947
+  - 1.29372
+  - 0.19948
+-
+  - 2.08933
+  - 1.12213
+  - 0.03399
