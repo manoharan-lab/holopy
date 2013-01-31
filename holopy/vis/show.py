@@ -44,7 +44,7 @@ def show(o,color=(0,0,1)):
 
     Parameters
     ----------
-    o : :class:`.Image`, :class:`.Volume` or :class:`.SphereCluster`
+    o : :class:`.Image`, :class:`.Volume` or :class:`.Spheres`
        Object to visualize
 
     Notes

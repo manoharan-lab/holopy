@@ -532,6 +532,10 @@ class Image(RegularGrid, ImageSchema):
 
 
 class VectorGrid(RegularGrid, VectorGridSchema):
+    """Vector Data on a Rectangular Grid
+
+    {attrs}
+    """
     def __init__(self, arr, spacing=None, optics=None, origin=np.zeros(3),
                  use_random_fraction=None, dtype=None,
                  components=('x', 'y', 'z'), **kwargs):

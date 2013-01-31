@@ -13,5 +13,4 @@ get started quickly.
    install
    tutorials
    concepts
-   overview
 

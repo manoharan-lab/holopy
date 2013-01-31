@@ -1,8 +1,7 @@
 propagation Package
 ===================
 
-:mod:`convolution_propagation` Module
--------------------------------------
+.. automodule:: holopy.propagation
 
 .. autofunction:: holopy.propagation.convolution_propagation.propagate
 

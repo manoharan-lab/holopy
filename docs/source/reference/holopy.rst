@@ -1,9 +1,7 @@
 :mod:`holopy` Code Reference
 ----------------------------
 
-.. automodule:: holopy.__init__
-    :members:
-    :show-inheritance:
+.. automodule:: holopy
 
 .. toctree::
 

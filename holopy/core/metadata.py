@@ -160,10 +160,24 @@ class UnevenGrid(Grid):
     pass
 
 class Angles(PositionSpecification):
+    """Specify farfield positions as a grid of angles
+
+    The list of thetas and phis are used to construct a grid of
+    positions Angles should be specified in radians.
+
+    Parameters
+    ----------
+    theta : list or ndarray
+        coordinates for the polar angle
+    phi : list or ndarray
+        coordinates for the azimuthal angle
+
+    Notes
+
+    """
     def __init__(self, theta, phi = [0], units = 'radians'):
         self.theta = theta
         self.phi = phi
-        self.units = units
         self.shape = len(self.theta), len(self.phi)
 
     def positions_theta_phi(self):

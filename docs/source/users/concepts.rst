@@ -12,56 +12,6 @@ meters, or microns.  So if you specify the wavelength of your red imaging
 laser as 658 then all other units (*x*, *y*, *z* position coordinates,
 particle radii, etc.)  must also be specified in nanometers.
 
-Data
-----
-
-HoloPy is at its core a tool for working with optical data, either
-measurements from some experiment or simulations of such data.  HoloPy
-works with all such data as :class:`holopy.core.marray.Marray` objects,
-which are arrays of point measurements along with metadata about how
-to interpret those values.  Metadata might be:
-
-:Measurement Locations:
-   
-   All :class:`~holopy.core.marray.Marray` objects must know where in
-   space their measurements were taken.  This is specified as a
-   :class:`~holopy.core.metadata.PositionSpecification` object, which
-   could specify the pixel spacing on a rectangular detector such as a
-   camera or a list of angular positions taken by a far-field detector
-   such as a photodiode.  In general it is a list of coordinates
-   specifying each measurement location.
-
-:Optical Setup:
-   
-   Details about the optical system and optical path are specified as
-   a :class:`.metadata.Optics` object containing the wavelength and
-   polarization of the illumination source (assumed to be a plane
-   wave) and the index of refraction of the medium the scatterers are
-   in.
-
-:Other Experimental Conditions:
-
-   HoloPy can associate arbitrary metadata with data to describe how
-   the data was obtained or any processing that was been done on the
-   data.
-
-Data can be:
-
-:1-dimensional:
-   for example, data from static light scattering measurements
-:2-dimensional:
-   for example, data from a camera
-   (:class:`holopy.core.marray.Image`), or a timeseries of 1d data sets 
-:3-dimensional:
-   volumetric data (:class:`holopy.core.marray.Volume`) such as image
-   stacks, or a timeseries of images
-:4-dimensional:
-   for example, a timeseries of volume data
-
-HoloPy will probably work with higher dimensional data (because the
-underlying NumPy arrays we use are n-dimensional), but many of its
-functions expect data in one of these forms.
-
 .. _coordinate_system: 
 
 Coordinate system

@@ -16,15 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
-Holographic imaging and light scattering.  Work with experimental data, compute
-holograms or light scattering of objects, and fit modeled scattering to measured
-data.
+HoloPy is a set of tools for working with digital holograms and light
+scattering. It contains tools for working loading data and associating
+it with expermiental metadata, reconstructing holograms, calculating
+light scattering, fitting scattering models to data, and visualizing
+images and calculations.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
+
 """
 
 

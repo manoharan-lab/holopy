@@ -15,17 +15,19 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
+"""Visualize HoloPy objects
 
-"""
-Visualization of holopy and scatterpy objects using matplotlib and mayavi.
+Uses Matplotlib and Mayavi to visualize holopy objects.
+
+1. :class:`.Image`, :class:`.Volume`, or :class:`.Spheres` object =>
+   plot or rendering
 
 This module does not import plotting packages until they are actually needed so
 that holopy does not have a hard dependency on mayavi or matplotlib.  Because of
-this you may see a small lag on your first plot.  
+this you may see a small lag on your first plot.
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 from __future__ import division
 
 from show import show
-

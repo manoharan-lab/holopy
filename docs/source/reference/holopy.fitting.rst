@@ -1,6 +1,8 @@
 fitting Package
 ===============
 
+.. automodule:: holopy.fitting
+
 :mod:`fit` Module
 ----------------------
 

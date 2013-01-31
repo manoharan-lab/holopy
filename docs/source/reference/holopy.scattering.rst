@@ -1,17 +1,12 @@
 scattering Package
 ==================
 
+.. automodule:: holopy.scattering
+
 .. toctree::
 
     holopy.scattering.scatterer
     holopy.scattering.theory
-
-:mod:`errors` Module
---------------------
-
-.. automodule:: holopy.scattering.errors
-    :members:
-    :show-inheritance:
 
 :mod:`geometry` Module
 ----------------------

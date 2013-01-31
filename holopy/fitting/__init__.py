@@ -15,6 +15,23 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
+"""Fit models of scattering to data
+
+Make precision measurements of a scattering system by fitting a model
+of it to data
+
+The fitting module is used to:
+
+1. Define Scattering Model -> :class:`~holopy.fitting.model.Model` object
+2. Fit model to data -> :class:`.FitResult` object
+3. Fit model to timeseries -> list of :class:`.FitResult` objects
+
+.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
+.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
+
+"""
 
 from fit import fit
 from model import Model, Parametrization

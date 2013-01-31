@@ -1,26 +1,34 @@
 core Package
 ============
 
-:mod:`marray` Module
---------------------
+.. automodule:: holopy.core
 
-.. automodule:: holopy.core.marray
-    :members:
-    :show-inheritance:
+:mod:`.marray` Module
+---------------------
 
-:mod:`metadata` Module
-----------------------
+Classes
+^^^^^^^
+* :class:`.Image`
+* :class:`.ImageSchema`
+* :class:`.Marray`
+* :class:`.Schema`
+* :class:`.Volume`
+* :class:`.VolumeSchema`
 
-.. automodule:: holopy.core.metadata
-    :members:
-    :show-inheritance:
+Functions
+^^^^^^^^^
+* :func:`.arr_like`
+* :func:`.resize`
+* :func:`.subimage`
+* :func:`.zeros_like`
+
+:mod:`.metadata` Module
+-----------------------
+
+* :class:`.Optics` class
+* :class:`.Angles` class
+
 	   
-:mod:`math` Module
-------------------
-
-.. automodule:: holopy.core.math
-    :members:
-    :show-inheritance:
 
 :mod:`io` Package
 -----------------
@@ -31,10 +39,34 @@ core Package
 .. autofunction:: holopy.core.io.io.save   
 	:noindex:
 
-:mod:`process` Package
+:mod:`math` Module
+------------------
+
+Functions for mathematical transformation
+
+* :func:`.fft`
+* :func:`.ifft`
+* :func:`.rotation_matrix`
+
+:class:`.HoloPyObject` Class
+----------------------------
+
+.. autoclass:: holopy.core.holopy_object.HoloPyObject
+
+:mod:`.process` Module
 ----------------------
 
-.. toctree::
-    holopy.core.process
+Most important functions
 
+* :func:`.center_find`
+* :func:`.normalize`
+
+
+.. toctree::
+    :hidden:
+
+    holopy.core.marray
+    holopy.core.metadata
+    holopy.core.math
+    holopy.core.process
 
