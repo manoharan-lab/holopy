@@ -11,16 +11,16 @@ Holography and Light Scattering in Python
 :Date: |today|
 
 :mod:`HoloPy` is a python based tool for working with digital
-holograms and light scattering. HoloPy's can:
+holograms and light scattering. HoloPy can:
 
 * :ref:`Load <loading>` images, associate them with experimental
   :ref:`metadata <metadata>`, and visualize loaded or calculated images.
 
-* :ref:`Reconstruct <recon_tutorial>` 3d volumes from digital holograms
+* :ref:`Reconstruct <recon_tutorial>` 3D volumes from digital holograms
 
 * Do :ref:`Scattering Calculations <calc_tutorial>`
 
-  * **Compute** Holograms, Electric fields, scattered intensity, 
+  * **Compute** Holograms, electric fields, scattered intensity, 
     cross sections, ...
 
   * **From** spheres, clusters of spheres, and arbitrary structures 
@@ -35,7 +35,7 @@ scattering theories, nonlinear minimizers, and optical propagation. It
 provides a set of flexible objects that make it easy to describe
 complex experiments or theoretical situations.
 
-The easiest see what HoloPy is all about is to jump in to the examples
+The easiest way to see what HoloPy is all about is to jump into the examples
 in our :ref:`user_guide`.
 
 HoloPy started as a project in the `Manoharan Lab at Harvard
@@ -44,7 +44,7 @@ you may wish to cite one or more of the sources listed in
 :ref:`credits`. We also encourage you to sign up for our `User Mailing
 List <https://groups.google.com/d/forum/holopy-users>`_ so we can keep
 you up to date on releases, answer questions, and you can benefit from
-other user's questions.
+other users' questions.
 
 .. toctree::
    :maxdepth: 2
