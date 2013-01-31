@@ -12,17 +12,18 @@ A fit generally consists of the following steps:
 
 1. :ref:`Prepare <prepare_data>` your data for fitting. 
 
-2. :ref:`Specify a scattering model <define_model>` the system your
+2. :ref:`Specify a scattering model <define_model>` for the system your
    data was recorded from. 
 
-3. :ref:`Fit <run_fit>` model to the data. 
+3. :ref:`Fit <run_fit>` the model to the data. 
 
 A Simple Fit
 ============
 
 In the following, we fit for the position, radius, and refractive
 index of a microsphere whose hologram is computed using known values
-of these parameters::
+of these parameters. Fitting a model to a computed hologram is a 
+convenient test as we know what answer we should get::
 
   import holopy as hp
   from holopy.core import ImageSchema, Optics
@@ -73,7 +74,7 @@ if you had ``data.tif`` and ``bg.tif`` you would use something like::
   from holopy.core import Optics
   from holopy.core.process import normalize
   optics = Optics(wavelen = .660, polarization = [1, 0],  
-                  index = 1.33))
+                  index = 1.33)
   holo = normalize(hp.load('data.tif', spacing = .1, optics = optics) /
                    hp.load('bg.tif', spacing = .1, optics = optics))
 
@@ -87,12 +88,12 @@ Next, we provide initial guesses for the three spatial coordinates
 ``center``.  For instance, the initial guess for the `x` position of
 the scatterer is 5.5 microns and bounded between 4 and 10 microns.
 Guesses for the radius (``r``) and refractive index of the sphere
-(``n``) are constant values included also in ``par_s``: ::
+(``n``) are constant values also included in ``par_s``: ::
 
   par_s = Sphere(center = (par(guess = 5.5, limit = [4,10]), 
       par(4.5, [4, 10]), par(10, [5, 15])), r = .5, n = 1.58) 
 
-Then this parametrized scatterer, along with a calculation theory is
+Then this parametrized scatterer, along with a calculation theory, is
 used to define a model::
 
    model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1])) 
@@ -201,13 +202,13 @@ This is done with :func:`.fit_series` ::
 This is very similar to fit a single hologram (and this explanation
 only calls out the differences), except instead we calculate and fit
 two holograms. In the code below we define two spheres with the second
-offset slightly (as if it was moving).::
+offset slightly (as if it was moving)::
 
    sphere1 = Sphere(center = (5, 5, 10.3), r = .5, n = 1.58)
    sphere2 = Sphere(center = (5, 5, 10.5), r = .5, n = 1.58)
 
 And then compute two holograms from them using a `list comprehension
-<http://docs.python.org/2/tutorial/datastructures.html#list-comprehensions>`_.::
+<http://docs.python.org/2/tutorial/datastructures.html#list-comprehensions>`_::
 
    holos = [Mie.calc_holo(s, schema) for s in (sphere1, sphere2)]
 
@@ -215,7 +216,7 @@ And finally, fit the holograms::
 
    results = fit_series(model, holos)
 
-the results are a list of :class:`.FitResult` objects. 
+The results are a list of :class:`.FitResult` objects. 
 
 
 Advanced Parameter Specification
@@ -265,12 +266,12 @@ Custom Parametrization
 ----------------------
 
 So far you have been specifying parametrizations of a scatterer by
-directly directly specifying parameters within the scatterer. This is
+directly specifying parameters within the scatterer. This is
 the most convenient method, but sometimes it is not flexible enough.
 
 If you need more control over how parameters define a scatterer,
-HoloPy provides a lower level interface the
-:class:`.Parametrization`. This allows you to do things like define a
+HoloPy provides a lower level interface, the 
+:class:`.Parametrization` class. This allows you to do things like define a
 cluster and fit by rotating it::
 
   from holopy.fitting import Parametrization
@@ -321,9 +322,9 @@ If you do not provide a minimizer, fits will default to using the
 supplied :class:`.Nmpfit` minimizer with a set of sensible defaults. 
 
 You can choose another minimizer or provide non-default options to a
-minimizer by passing a minimizer object to fit(), for example (To tell
-nmpfit to use looser tolerances and a small iteration limit (to get a
-fast result to check things out).)::
+minimizer by passing a minimizer object to fit(), for example (to tell
+nmpfit to use looser tolerances and a small iteration limit to get a
+fast result to loosely check things out)::
 
   fit(model, data, minimizer = Nmpfit(ftol=1e-5, xtol = 1e-5, 
                                       gtol=1e-5, niter=2))
