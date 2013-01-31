@@ -23,7 +23,7 @@ A Simple Fit
 In the following, we fit for the position, radius, and refractive
 index of a microsphere whose hologram is computed using known values
 of these parameters. Fitting a model to a computed hologram is a 
-convenient test as we know what answer we should get::
+convenient test, as we know what answer we should get::
 
   import holopy as hp
   from holopy.core import ImageSchema, Optics
@@ -45,7 +45,7 @@ convenient test as we know what answer we should get::
 
 
 The first few lines import the HoloPy models that are needed to
-compute and fit for holograms: ::
+compute and fit to holograms: ::
 
   from holopy.core import ImageSchema, Optics
   from holopy.fitting import Model, par, fit

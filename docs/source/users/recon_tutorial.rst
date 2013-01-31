@@ -20,8 +20,7 @@ Reconstructions generally consist of the following steps
 
 3. :ref:`Visualize <visualize_recon>` the reconstruction. 
 
-Example
-=======
+Here is an example:
 
 .. plot:: pyplots/basic_recon.py
    :include-source:
@@ -79,9 +78,9 @@ You can then visualize the reconstruction with :func:`.show`::
   hp.show(rec_vol)
 
 You can step through volume slices with the left and right arrow keys
-(Don't use the down arrow key, it will mess up the stepping due to a
+(Don't use the down arrow key; it will mess up the stepping due to a
 peculiarity of Matplotlib. If this happens, close your plot window and
-show it again.). 
+show it again. Sorry.). 
 
 Reconstructions are actually comprised of complex numbers. hp.show
 defaults to showing you the amplitude of the image. You can get
