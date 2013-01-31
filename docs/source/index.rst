@@ -60,3 +60,6 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+HoloPy is based upon work supported by the National Science Foundation
+under Grant No. CBET-0747625 and performed in the `Manoharan Lab at
+Harvard University <http://manoharan.seas.harvard.edu>`_

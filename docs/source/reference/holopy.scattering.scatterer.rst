@@ -6,7 +6,7 @@ scatterer Package
     :show-inheritance:
 
 :class:`.Scatterer` Class
----------------
+-------------------------
 
 .. autoclass:: holopy.scattering.scatterer.Scatterer
     :members:
