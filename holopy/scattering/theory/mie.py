@@ -34,6 +34,11 @@ from .scatteringtheory import FortranTheory
 from .mie_f import mieangfuncs, miescatlib
 from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
 
+#DH testing. Remove for final edition
+import time
+import matplotlib.pyplot as plt
+import scipy.interpolate
+
 
 class Mie(FortranTheory):
     """
@@ -109,6 +114,7 @@ class Mie(FortranTheory):
                         origin = scatterer.center).T, scat_coeffs,
                                                 schema.optics.polarization, 0)
             fields = self._finalize_fields(scatterer.z, fields, schema)
+        
         elif isinstance(scatterer, Scatterers):
             spheres = scatterer.get_component_list()
 
@@ -118,7 +124,92 @@ class Mie(FortranTheory):
             fields = field
         else:
             raise TheoryNotCompatibleError(self, scatterer)
+    
         return self._set_internal_fields(fields, scatterer)
+        
+        
+        
+        
+        
+    def _calc_internal_field(self, scatterer, schema):
+        """calculate the internal field for a spherical scatterer"""
+        
+        if not isinstance(scatterer, Sphere):
+            raise TheoryNotCompatibleError(self, scatterer)
+        else:
+            scat_coeffs = self._scat_coeffs(scatterer, schema.optics)
+            
+            center_to_center = scatterer.center - schema.center
+            unit_vector = center_to_center - abs(center_to_center).sum()
+
+            if not schema.contains(scatterer.center - unit_vector):
+                print 'scatterer not in schema'
+                #raise some error since the scatterer is not in the schema
+            else:
+                origin = schema.origin
+                extent = schema.extent
+                shape  = schema.shape
+                
+                spherical_coords = schema.positions_r_theta_phi(
+                        origin = scatterer.center)
+                
+                r,theta,phi = spherical_coords[:,0],spherical_coords[:,1],spherical_coords[:,2]
+            
+                xo,yo,zo = schema.center
+                x = r*np.sin(theta)*np.cos(phi) + xo
+                y = r*np.sin(theta)*np.sin(phi) + yo
+                z = r*np.cos(theta)             + zo
+                
+                #ind is a list of the indices of the spherical coords that are within the scatterer
+                ind = np.nonzero(np.array([scatterer.contains(xyz) for xyz in zip(x,y,z)]).T)
+                            
+                points_in_scatterer = schema.positions_kr_theta_phi(
+                        origin = scatterer.center)[ind]
+                  
+                #This will be replaced with a call to the fortran function to find the internal fields        
+                fields = mieangfuncs.mie_fields(points_in_scatterer.T, scat_coeffs,
+                                                schema.optics.polarization, 0)
+                
+                #### The call to finalize fields does not work yet!                                
+                #fields = self._finalize_fields(scatterer.z, fields, schema)
+                            
+                #fields = self._finalize_fields(scatterer.z, fields, schema)
+               #  xi = np.linspace(0,300,100)
+#                 zi = np.linspace(0,300,100)
+#                 X,Z = np.meshgrid(xi,zi)
+#                 fields = np.array(fields).T[:,2]
+#                 grid = scipy.interpolate.griddata((x[ind],z[ind]),fields,(X,Z))
+#                 
+#                 plt.imshow(np.abs(grid),clim=(0,1))
+#                 
+            
+            return np.array(fields)
+            
+           #  
+
+# 
+# 
+
+#                                     
+#                 
+# 
+#                 fields = mieangfuncs.mie_fields(schema.positions_kr_theta_phi(
+#                         origin = scatterer.center).T, scat_coeffs,
+#                                                 schema.optics.polarization, 0)
+#             fields = self._finalize_fields(scatterer.z, fields, schema)
+#                 
+
+#         
+
+#     
+#         return self._set_internal_fields(fields, scatterer)
+#     
+    
+        
+                                
+        ####
+    
+    
 
     def _calc_cross_sections(self, scatterer, optics):
         """

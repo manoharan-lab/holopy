@@ -81,6 +81,35 @@ class ScatteringTheory(HoloPyObject):
         to use non-default values.
         """
         return cls_self._calc_field(scatterer, schema) * scaling
+        
+    @classmethod
+    @binding
+    def calc_internal_field(cls_self, scatterer, schema, scaling = 1.0):
+        """
+        Calculate fields.  Implemented in derived classes only.
+
+        Parameters
+        ----------
+        scatterer : :mod:`.scatterer` object
+            (possibly composite) scatterer for which to compute scattering
+
+        Returns
+        -------
+        e_field : :mod:`.VectorGrid`
+            scattered electric field
+
+
+        Notes
+        -----
+        calc_* functions can be called on either a theory class or a theory
+        object.  If called on a theory class, they use a default theory object
+        which is correct for the vast majority of situations.  You only need to
+        instantiate a theory object if it has adjustable parameters and you want
+        to use non-default values.
+        """
+        #return cls_self._calc_internal_field(scatterer, schema) * scaling
+        return cls_self._calc_internal_field(scatterer, schema)
+
 
     @classmethod
     @binding
