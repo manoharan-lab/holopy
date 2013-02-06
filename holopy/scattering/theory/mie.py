@@ -179,6 +179,6 @@ class Mie(FortranTheory):
             # Could just use scatcoeffs_multi here, but jerome is in favor of
             # keeping the simpler single layer code here
             lmax = miescatlib.nstop(x_arr[0])
-            return  miescatlib.scatcoeffs(x_arr[0], m_arr[0], lmax)
+            return  miescatlib.scatcoeffs(m_arr[0], x_arr[0], lmax)
         else:
             return scatcoeffs_multi(m_arr, x_arr)

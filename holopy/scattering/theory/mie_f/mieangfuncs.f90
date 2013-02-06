@@ -78,7 +78,7 @@
         !     should be in spherical coordinates relative to scatterer:
         !     non-dimensional radial coordinate (kr), theta and phi.
         ! asbs: complex array (2, nstop)
-        !     Mie coefficients from miescatlib.scatcoeffs(x_p, m_p, nstop)
+        !     Mie coefficients from miescatlib.scatcoeffs(m_p, x_p, nstop)
         ! nstop: int
         !     Expansion order (from miescatlib.nstop(x_p))
         ! einc: real array (2)

@@ -19,86 +19,50 @@
 '''
 MieScatLib.py
 
-Library of code to do Mie scattering calculations
+Library of code to do Mie scattering calculations.
 
-Caution: these use SciPy's special function libraries; the code is
-hidden in Fortran.  It is not clear what numerical methods are used
-(upwards vs. downwards recursion).  Numerical stability not guaranteed
-for large nstop, so do not use for calculating very large size
-parameters.
-
-05-18-08: Started by JF
-05-26-08: Bug discovered in LogDerPsi (it does not correctly deal
-w/complex argument). Fixed by writing LogDerPsi2 (calculates
-logarithmic derivative by downward recursion, as in BHMIE).
-05-27-08: Added calculation of backscattering cross section
-07-07-08: Generalized RicBesHank to handle Riccati-Bessel functions of
-complex arguments
+.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 '''
 
-import scipy
 import numpy as np
-import mieangfuncs # use Fortran angular functions to avoid duplication
+import mie_specfuncs
 
-from scipy import sin, cos, array
-from scipy.special import lpn, riccati_jn, riccati_yn, sph_jn, sph_yn
+from numpy import sin, cos, array
 
-
-def RicBesHank(x, nstop): 
-    # modification: generalize to allow for complex x
-    if scipy.imag(x) == 0:
-        psin = riccati_jn(nstop, x)
-        # construct riccati hankel function of 1st kind by linear
-        # combination of RB's based on j_n and y_n 
-        # scipy sign on y_n consistent with B/H
-        xin = riccati_jn(nstop, x)[0] + 1j*riccati_yn(nstop, x)[0] 
-        rbh = array([psin[0], xin])
-    else:
-        # TODO: test this. Only used for scatterers in absorbing media.
-        rbjns = x*sph_jn(nstop, x)[0]
-        rbyns = x*sph_yn(nstop, x)[0]
-        rbh = array([rbjns, (rbjns+1j*rbyns)])
-    return rbh
-
-
-def LogDerPsi2(z, nmx, nstop):
-    # function LogDerPsi gives incorrect values for complex argument
-    # calculate instead using downward recursion as in BHMIE
-    # we could use the method of Lentz to more accurately calculate
-    # the highest order of D_n(z), but it's not clear how much
-    # would be gained  
-    dn = scipy.zeros(nmx+1, dtype = 'complex128')
-    # initialize w/zeros
-    for i in scipy.arange(nmx-1, -1, -1):
-        # 1's must be floats to avoid division problems
-        dn[i] = (i+1.)/z - 1.0/(dn[i+1.] + (i+1.)/z)
-    #for i in scipy.arange(1, nmx+1):
-    #	dn[nmx-i] = (nmx-i+1.)/z - 1./(dn[nmx-i+1.] + (nmx-i+1.)/z )
-    return dn[0:nstop+1]
-
-
-def scatcoeffs(x, m, nstop): # see B/H eqn 4.88
+def scatcoeffs(m, x, nstop): # see B/H eqn 4.88
     # implement criterion used by BHMIE plus a couple more orders to
     # be safe 
-    nmx = array([nstop, scipy.round_(scipy.absolute(m*x))]).max() + 20
-    Dnmx = LogDerPsi2(m*x, nmx, nstop) # corrected version w/down recurrence 
-    n = scipy.arange(nstop+1)
-    psiandxi = RicBesHank(x, nstop)
-    psi = psiandxi[0]
-    xi = psiandxi[1]
-    psishift = scipy.concatenate((scipy.zeros(1), psi))[0:nstop+1]
-    xishift = scipy.concatenate((scipy.zeros(1), xi))[0:nstop+1]
+    nmx = array([nstop, np.round_(np.absolute(m*x))]).max() + 20
+    Dnmx = mie_specfuncs.log_der_1(m*x, nmx, nstop) 
+    n = np.arange(nstop+1)
+    psi, xi = mie_specfuncs.riccati_psi_xi(x, nstop)
+    psishift = np.concatenate((np.zeros(1), psi))[0:nstop+1]
+    xishift = np.concatenate((np.zeros(1), xi))[0:nstop+1]
     an = ( (Dnmx/m + n/x)*psi - psishift ) / ( (Dnmx/m + n/x)*xi - xishift )
     bn = ( (Dnmx*m + n/x)*psi - psishift ) / ( (Dnmx*m + n/x)*xi - xishift )
-    return scipy.array([an[1:nstop+1], bn[1:nstop+1]]) # output begins at n=1
+    return array([an[1:nstop+1], bn[1:nstop+1]]) # output begins at n=1
 
+def internal_coeffs(m, x, n_max):
+    '''
+    Calculate internal Mie coefficients c_n and d_n given 
+    relative index, size parameter, and maximum order of expansion.
+
+    Follow Bohren & Huffman's convention. Note that van de Hulst and Kerker
+    have different conventions (labeling of c_n and d_n and factors of m)
+    for their internal coefficients.
+    '''
+    ratio = mie_specfuncs.R_psi(x, m * x, n_max)
+    D1x, D3x = mie_specfuncs.log_der_13(x, n_max)
+    D1mx = mie_specfuncs.log_der_1(m * x, n_max + 15, n_max)
+    cl = m * ratio * (D3x - D1x) / (D3x - m * D1mx)
+    dl = m * ratio * (D3x - D1x) / (m * D3x - D1mx)
+    return cl[1:], dl[1:] # start from l = 1
 
 def nstop(x): 
     #takes size parameter, outputs order to compute to according to
     # Wiscombe, Applied Optics 19, 1505 (1980).
     # 7/7/08: generalize to apply same criterion when x is complex
-    return scipy.round_(scipy.absolute(x+4.05*x**(1./3.)+2))
-
+    return np.round_(np.absolute(x+4.05*x**(1./3.)+2))
 
 def asymmetry_parameter(al, bl):
     '''
@@ -115,7 +79,6 @@ def asymmetry_parameter(al, bl):
     crossterm = ((2. * l + 1.)/(l * (l + 1)) * 
                  np.real(al * np.conj(bl))).sum()
     return selfterm + crossterm
-
 
 def cross_sections(al, bl): 
     '''
