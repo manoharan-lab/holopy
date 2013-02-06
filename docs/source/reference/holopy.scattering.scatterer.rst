@@ -4,6 +4,12 @@ scatterer Package
 .. automodule:: holopy.scattering.scatterer
     :members:
     :show-inheritance:
+
+:class:`.Scatterer` Class
+-------------------------
+
+.. autoclass:: holopy.scattering.scatterer.Scatterer
+    :members:
 	   
 :mod:`sphere` Module
 --------------------
@@ -11,8 +17,6 @@ scatterer Package
 .. automodule:: holopy.scattering.scatterer.sphere
     :members:
     :show-inheritance:
-
-	   
 
 :mod:`ellipsoid` Module
 -----------------------
@@ -35,4 +39,3 @@ scatterer Package
 .. automodule:: holopy.scattering.scatterer.janus
     :members:
     :show-inheritance:
-

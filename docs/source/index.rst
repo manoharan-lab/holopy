@@ -1,8 +1,3 @@
-.. holopy documentation master file, created by
-   sphinx-quickstart on Wed Dec 30 20:43:15 2009.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Holography and Light Scattering in Python
 =========================================
 
@@ -30,21 +25,21 @@ holograms and light scattering. HoloPy can:
   <fit_tutorial>` (based on the above structures) to experimental
   data.
  
-HoloPy provides a powerful and (relatively) user friendly interface to
-scattering theories, nonlinear minimizers, and optical propagation. It
-provides a set of flexible objects that make it easy to describe
-complex experiments or theoretical situations.
+HoloPy provides a powerful and user-friendly interface to scattering
+and optical propagation theories. It also provides a set of flexible
+objects that make it easy to describe and analyze data from complex
+experiments or simulations.
 
-The easiest way to see what HoloPy is all about is to jump into the examples
-in our :ref:`user_guide`.
+The easiest way to see what HoloPy is all about is to jump to the
+examples in our :ref:`user_guide`.
 
 HoloPy started as a project in the `Manoharan Lab at Harvard
 University <http://manoharan.seas.harvard.edu/>`_. If you use HoloPy,
 you may wish to cite one or more of the sources listed in
 :ref:`credits`. We also encourage you to sign up for our `User Mailing
-List <https://groups.google.com/d/forum/holopy-users>`_ so we can keep
-you up to date on releases, answer questions, and you can benefit from
-other users' questions.
+List <https://groups.google.com/d/forum/holopy-users>`_ to keep up to
+date on releases, answer questions, and benefit from other users'
+questions.
 
 .. toctree::
    :maxdepth: 2
@@ -60,3 +55,6 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+HoloPy is based upon work supported by the National Science Foundation
+under Grant No. CBET-0747625 and performed in the `Manoharan Lab at
+Harvard University <http://manoharan.seas.harvard.edu>`_

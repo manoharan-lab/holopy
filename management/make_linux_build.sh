@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
-bzr branch -r tag:2.0.rc1 lp:holopy holopy-2.0.0
+bzr branch -r tag:2.0.0 lp:holopy holopy-2.0.0
 
 cd holopy-2.0.0/docs
 make html

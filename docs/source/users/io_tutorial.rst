@@ -54,7 +54,7 @@ same optical train.
 Saving Images
 =============
 
-If you have a hologram ``holo``, from a calculation or preprocessing
+If you have a hologram called ``holo`` from a calculation or preprocessing
 that you want to save, you can use::
 
   holopy.save('holo.yaml', holo)
@@ -68,8 +68,8 @@ type ::
   holo = holopy.load('holo.yaml')
 
   
-You do not have to specify optics or spacing for your hologram in when
-loading it from a saved image, as all of this information is already
+You do not have to specify optics or spacing for your hologram when
+loading it from a saved hologram, as all of this information is already
 specified in the yaml file.
 
 Saving Fit Results
@@ -136,7 +136,7 @@ paper).
 .. [#marray_yaml] 
    
    :class:`.Image` objects and other :class:`.Marray` can be saved as
-   yaml files, but they will large and cannot easily be viewed in a
+   yaml files, but they will be large and cannot easily be viewed in a
    text editor like other HoloPy yamls.
 
    For the curious advanced user, what we actually do is put a yaml
@@ -145,7 +145,7 @@ paper).
    This keeps the whole object in a single file, but generates a file
    that is not technically a valid yaml file. HoloPy can load them
    just fine, some tools (unix's more, some editors) will be able to
-   show you the text header (and then gibberish for the binary data)
+   show you the text header (and then gibberish for the binary data).
 
 
 

@@ -36,7 +36,7 @@ def load(inf, spacing = None, optics = None):
 
     Parameters
     ----------
-    inf : singe or list of basestring or files
+    inf : single or list of basestring or files
         File to load.  If the file is a yaml file, all other arguments are
         ignored.  If inf is a list of image files or filenames they are all
         loaded as a a timeseries hologram
@@ -107,7 +107,7 @@ def save(outf, obj):
 
     Notes
     -----
-    Marray objects are actually saved as an custom yaml file consisting of a yaml
+    Marray objects are actually saved as a custom yaml file consisting of a yaml
     header and a numpy .npy binary array.  This is done because yaml's saving of
     binary array is very slow for large arrays.  HoloPy can read these 'yaml'
     files, but any other yaml implementation will get confused.

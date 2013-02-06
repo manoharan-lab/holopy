@@ -17,7 +17,7 @@ DDA calculations, so you will need to install ADDA and be able to run::
 
 at a terminal for HoloPy DDA calculations to succeed.  
 
-A lot of the code associated with DDA is fairly new so be careful,
+A lot of the code associated with DDA is fairly new so be careful;
 there are probably bugs. If you find any, please `report
 <https://bugs.launchpad.net/holopy/+filebug>`_ them. 
 
@@ -29,7 +29,7 @@ need an indicator function which outputs 'True' if a test coordinate
 lies within your scatterer, and 'False' if it doesn't.
 
 For example, if you wanted to define a dumbbell consisting of the union
-of two overlapping spheres you could do::
+of two overlapping spheres you could do so like this::
   
   from holopy.core import Optics, ImageSchema
   from holopy.scattering.scatterer import Scatterer, Sphere
@@ -49,7 +49,7 @@ specifying n when defining ``dumbell``.
 Mutiple Materials: A Janus Sphere
 =================================
 
-You can also provide a set of indicators and ns to define a scatterer
+You can also provide a set of indicators and indices to define a scatterer
 containing multiple materials. As an example, lets look at a `janus
 sphere <http://en.wikipedia.org/wiki/Janus_particles>`_ consisting of
 a plastic sphere with a high index coating on the top half::

@@ -161,7 +161,7 @@ def show2d(im, i=0, t=0, phase = False):
        time, for reconstructions this will be z
     t : int
        slice along t to show for reconstructions.  Ignored for holograms (or any
-       less than 4d array)
+       less than 4D array)
 
     """
     if isinstance(im, (list, tuple)):

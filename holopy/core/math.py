@@ -34,7 +34,7 @@ def fft(a, overwrite=False, shift=True):
 
     An easier to use fft function, it will pick the correct fft to do
     based on the shape of the Marray, and do the fftshift for you.  This
-    is indendended for working with images, and thus for dimensions
+    is intended for working with images, and thus for dimensions
     greater than 2 does slicewise transforms of each "image" in a
     multidimensional stack
 
@@ -123,7 +123,7 @@ def rotate_points(points, theta, phi, psi):
 
 def rotation_matrix(alpha, beta, gamma, radians = True):
     """
-    Return a 3d rotation matrix
+    Return a 3D rotation matrix
 
     Parameters
     ----------
@@ -146,8 +146,7 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
     along an axis.  
 
     This breaks compatability with previous conventions, which were adopted for 
-    compatability with the passive picture adopted is for compatability with 
-    the passive picture used by SCSMFO.
+    compatability with the passive picture used by SCSMFO.
 
     """
     if not radians:
@@ -166,6 +165,6 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
                      ca*cb*sg + sa*cg, -sa*cb*sg + ca*cg, sb*sg,
                      -ca*sb, sa*sb, cb]).reshape((3,3)) # row major
 
-# TODO: make this handle 2d
+# TODO: make this handle 2D
 def cartesian_distance(p1, p2):
     return np.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2+(p1[2]-p2[2])**2)

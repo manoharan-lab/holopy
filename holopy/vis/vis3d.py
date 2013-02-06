@@ -19,6 +19,7 @@
 Show sphere clusters using mayavi
 
 .. moduleauthor:: Tom Dimduk <tdimiduk@physics.harvard.edu>
+.. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 """
 
 from __future__ import division

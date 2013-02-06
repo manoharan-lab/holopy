@@ -18,7 +18,7 @@
 """
 Storing measurements and calculated results.  This is done through
 arrays with metadata (Marray and subclasses).  It also includes Schema which
-specify how results should be computed in an analogous interface to how Marrays are
+specifies how results should be computed in an analogous interface to how Marrays are
 specified.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
@@ -91,7 +91,7 @@ def _describe_init_signature(cls):
 
     This decorator documents the attributes of a class's constructor using a
     common set of decriptions for arguments.  {attrs} in the class's docstring
-    will be replaced with a numpy docstring formatted decription of the
+    will be replaced with a NumPy docstring formatted decription of the
     arguments the class's __init__ takes.
     """
 
@@ -329,7 +329,7 @@ class RegularGridSchema(Schema):
         Parameters
         ----------
         origin : (real, real, real)
-            origin of the spherical cooridate system to return
+            origin of the spherical coordinate system to return
 
         Returns
         -------
@@ -476,7 +476,7 @@ class RegularGrid(Marray, RegularGridSchema):
 
         Notes
         -----
-        This algorithm does 2 1-D resamplings.
+        This algorithm does two 1D resamplings.
 
         """
         shape = _ensure_array(shape)
@@ -567,7 +567,7 @@ class VolumeSchema(RegularGridSchema):
     """
     Description of a desired Volume.
 
-    An VolumeSchema contains all of the information needed to calculate an Volume
+    An VolumeSchema contains all of the information needed to calculate a Volume
 
     {attrs}
     """
