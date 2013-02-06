@@ -141,8 +141,12 @@ class Mie(FortranTheory):
         -------
         field : :class:`.ElectricField`with shape `imshape`
             scattered electric field
-
-   
+            
+        So far this should only work for spheres.
+        
+        Currently, this only return the field from "mie_fields".
+        This is incorrect and we need to call a new Fortran function to generate
+        the true internal fields. -DH Feb 06 2013
         """
         
         if not isinstance(scatterer, Sphere):
