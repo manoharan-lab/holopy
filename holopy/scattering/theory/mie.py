@@ -34,6 +34,9 @@ from .scatteringtheory import FortranTheory
 from .mie_f import mieangfuncs, miescatlib
 from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
 
+#I think that I need copy.copy to make a copy of a Schema, but there probably is a better way
+import copy
+
 #DH testing. Remove for final edition
 import time
 import matplotlib.pyplot as plt
@@ -128,9 +131,6 @@ class Mie(FortranTheory):
         return self._set_internal_fields(fields, scatterer)
         
         
-        
-        
-        
     def _calc_internal_field(self, scatterer, schema):
         """calculate the internal field for a spherical scatterer"""
         
@@ -161,53 +161,27 @@ class Mie(FortranTheory):
                 z = r*np.cos(theta)             + zo
                 
                 #ind is a list of the indices of the spherical coords that are within the scatterer
-                ind = np.nonzero(np.array([scatterer.contains(xyz) for xyz in zip(x,y,z)]).T)
+                ind = np.array([scatterer.contains(xyz) for xyz in zip(x,y,z)]).T
                             
                 points_in_scatterer = schema.positions_kr_theta_phi(
                         origin = scatterer.center)[ind]
-                  
-                #This will be replaced with a call to the fortran function to find the internal fields        
+                        
+                #######################
+                ######This will be replaced with a call to the fortran function to find the internal fields        
                 fields = mieangfuncs.mie_fields(points_in_scatterer.T, scat_coeffs,
                                                 schema.optics.polarization, 0)
                 
-                #### The call to finalize fields does not work yet!                                
-                #fields = self._finalize_fields(scatterer.z, fields, schema)
-                            
-                #fields = self._finalize_fields(scatterer.z, fields, schema)
-               #  xi = np.linspace(0,300,100)
-#                 zi = np.linspace(0,300,100)
-#                 X,Z = np.meshgrid(xi,zi)
-#                 fields = np.array(fields).T[:,2]
-#                 grid = scipy.interpolate.griddata((x[ind],z[ind]),fields,(X,Z))
-#                 
-#                 plt.imshow(np.abs(grid),clim=(0,1))
-#                 
-            
-            return np.array(fields)
-            
-           #  
-
-# 
-# 
-
-#                                     
-#                 
-# 
-#                 fields = mieangfuncs.mie_fields(schema.positions_kr_theta_phi(
-#                         origin = scatterer.center).T, scat_coeffs,
-#                                                 schema.optics.polarization, 0)
-#             fields = self._finalize_fields(scatterer.z, fields, schema)
-#                 
-
-#         
-
-#     
-#         return self._set_internal_fields(fields, scatterer)
-#     
-    
-        
-                                
-        ####
+                #Hopefully this will be real soon:                                
+#                 fields = mieangfuncs.mie_internal_fields(points_in_scatterer.T, scat_coeffs,
+#                                 schema.optics.polarization, 0)
+                ###############
+                
+                # We create a selection schema to pass to _finalize_fields so that it knows that 
+                # we are only interested in the internal fields
+                selection_schema = copy.copy(schema)
+                selection_schema._selection = np.reshape(ind,(shape))
+                                  
+            return self._finalize_fields(scatterer.z, fields, selection_schema)
     
     
 
