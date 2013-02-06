@@ -106,10 +106,11 @@ class ScatteringTheory(HoloPyObject):
         which is correct for the vast majority of situations.  You only need to
         instantiate a theory object if it has adjustable parameters and you want
         to use non-default values.
+        
+        So far this should only work for Spheres.
+        
         """
         return cls_self._calc_internal_field(scatterer, schema) * scaling
-        #return cls_self._calc_internal_field(scatterer, schema)
-
 
     @classmethod
     @binding

@@ -37,11 +37,6 @@ from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
 #I think that I need copy.copy to make a copy of a Schema, but there probably is a better way
 import copy
 
-#DH testing. Remove for final edition
-import time
-import matplotlib.pyplot as plt
-import scipy.interpolate
-
 
 class Mie(FortranTheory):
     """
@@ -132,7 +127,23 @@ class Mie(FortranTheory):
         
         
     def _calc_internal_field(self, scatterer, schema):
-        """calculate the internal field for a spherical scatterer"""
+         """
+        Calculate fields for single or multiple spheres
+
+        Parameters
+        ----------
+        scatterer : :mod:`scatterpy.scatterer` object
+            scatterer or list of scatterers to compute field for
+
+        schema :
+        
+        Returns
+        -------
+        field : :class:`.ElectricField`with shape `imshape`
+            scattered electric field
+
+   
+        """
         
         if not isinstance(scatterer, Sphere):
             raise TheoryNotCompatibleError(self, scatterer)
@@ -171,7 +182,7 @@ class Mie(FortranTheory):
                 fields = mieangfuncs.mie_fields(points_in_scatterer.T, scat_coeffs,
                                                 schema.optics.polarization, 0)
                 
-                #Hopefully this will be real soon:                                
+                #Hopefully we can switch to this soon:                                
 #                 fields = mieangfuncs.mie_internal_fields(points_in_scatterer.T, scat_coeffs,
 #                                 schema.optics.polarization, 0)
                 ###############
