@@ -277,13 +277,15 @@ class FortranTheory(ScatteringTheory):
                 return enumerate(np.linspace(origin[i], origin[0]+extent[i], shape[i]))
             # TODO: may be missing hitting a point or two because of
             # integer truncation, see about fixing that
-
+        
+            
             # TODO: vectorize or otherwise speed this up
             if len(shape) == 2:
                 for i, x in points(0):
                     for j, y in points(1):
                         if scatterer.contains((x, y, fields.center[2])):
                             fields[i, j] = 0
+                            
             else:
                 for i, x in points(0):
                     for j, y in points(1):

@@ -127,7 +127,7 @@ class Mie(FortranTheory):
         
         
     def _calc_internal_field(self, scatterer, schema):
-         """
+        """
         Calculate fields for single or multiple spheres
 
         Parameters
@@ -148,7 +148,6 @@ class Mie(FortranTheory):
         This is incorrect and we need to call a new Fortran function to generate
         the true internal fields. -DH Feb 06 2013
         """
-        
         if not isinstance(scatterer, Sphere):
             raise TheoryNotCompatibleError(self, scatterer)
         else:
@@ -161,19 +160,31 @@ class Mie(FortranTheory):
                 print 'scatterer not in schema'
                 #raise some error since the scatterer is not in the schema
             else:
+                
                 origin = schema.origin
                 extent = schema.extent
                 shape  = schema.shape
                 
-                spherical_coords = schema.positions_r_theta_phi(
-                        origin = scatterer.center)
-                
-                r,theta,phi = spherical_coords[:,0],spherical_coords[:,1],spherical_coords[:,2]
-            
                 xo,yo,zo = schema.center
-                x = r*np.sin(theta)*np.cos(phi) + xo
-                y = r*np.sin(theta)*np.sin(phi) + yo
-                z = r*np.cos(theta)             + zo
+                
+#                 spherical_coords = schema.positions_r_theta_phi(
+#                         origin = scatterer.center)
+#                 
+#                 r,theta,phi = spherical_coords[:,0],spherical_coords[:,1],spherical_coords[:,2]
+#             
+#              
+#                 
+#                 x = r*np.sin(theta)*np.cos(phi) + xo
+#                 y = r*np.sin(theta)*np.sin(phi) + yo
+#                 z = r*np.cos(theta)             + zo
+                
+                xyzs = schema.positions_xyz()
+                
+                xs,ys,zs = scatterer.center
+                
+                x = xyzs[:,0] + xo - xs
+                y = xyzs[:,1] + xo - xs
+                z = xyzs[:,2] + xo + xs
                 
                 #ind is a list of the indices of the spherical coords that are within the scatterer
                 ind = np.array([scatterer.contains(xyz) for xyz in zip(x,y,z)]).T

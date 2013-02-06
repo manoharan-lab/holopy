@@ -320,6 +320,47 @@ class RegularGridSchema(Schema):
             spacing = np.repeat(spacing, len(shape))
         call_super_init(RegularGridSchema, self, consumed = 'spacing',
                         positions = Grid(spacing))
+                        
+                        
+    def positions_xyz(self):
+        """
+        Returns a list of positions of each data point in x,y,z coordinates
+
+        Parameters
+        ----------
+       
+
+        Returns
+        -------
+        xyz, a Nx3 array of the x,y,z coordinates
+        
+        
+        """
+        x, y, z = self.origin
+
+        g = np.ogrid[[slice(0, d*s, s) for d, s in zip(self.shape, self.spacing)]]
+        if len(g) == 2:
+            xg, yg = g
+            zg = 0
+        else:
+            xg, yg, zg = g
+
+        x = xg - x
+        y = yg - y
+        # sign is reversed for z because of our choice of image
+        # centric rather than particle centric coordinate system
+        z = z - zg
+                
+        xyz = np.array([0,0,0])
+        
+        for xi in x[:,0,0]: 
+            for yi in y[0,:,0]:
+                for zi in z[0,0,:]: 
+                    xyz = np.vstack((xyz,(xi,yi,zi)))
+        
+        xyz = xyz[1:]
+   
+        return xyz
 
     def positions_r_theta_phi(self, origin):
         """
@@ -353,9 +394,9 @@ class RegularGridSchema(Schema):
         # sign is reversed for z because of our choice of image
         # centric rather than particle centric coordinate system
         z = z - zg
-
+        
         r = np.sqrt(x**2 + y**2 + z**2)
-        theta = np.arctan2(np.sqrt(x**2 + y**2), z)
+        theta = np.arctan2(np.sqrt(x**2 + y**2), z) 
         phi = np.arctan2(y, x)
         # get phi between 0 and 2pi
         phi = phi + 2*np.pi * (phi < 0)
@@ -363,6 +404,7 @@ class RegularGridSchema(Schema):
         # last dimension will determine this so we can correct it
         if phi.shape[-1] != r.shape[-1]:
             phi = phi.repeat(r.shape[-1], -1)
+
         points = np.concatenate([a[..., np.newaxis] for a in (r, theta, phi)], -1)
         if hasattr(self, 'selection') and self.selection is not None:
             points = points[self.selection]
