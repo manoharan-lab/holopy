@@ -195,8 +195,45 @@ def test_mie_internal_coeffs():
     assert_allclose(cl, (jlx - hlx * bl) / jlmx, rtol = 1e-6, atol = 1e-6)
     assert_allclose(dl, (jlx - hlx * al)/ (m * jlmx), rtol = 1e-6, atol = 1e-6)
     
+@attr('fast')
+def test_mie_bndy_conds():
+    '''
+    Check that appropriate boundary conditions are satisfied:
+    m^2 E_radial continuous (bound charge Gaussian pillbox)
+    E_parallel continuous (Amperian loop)
 
+    Checks to do (all on E_x):
+    theta = 0, phi = 0 (theta component)
+    theta = 90, phi = 0 (radial component)
+    theta = 90, phi = 90 (phi component)
+    '''
+    m = 1.2 + 0.01j
+    x = 10.
+    pol = np.array([1., 0.]) # assume x polarization
+    n_stop = miescatlib.nstop(x)
+    asbs = miescatlib.scatcoeffs(m, x, n_stop)
+    csds = miescatlib.internal_coeffs(m, x, n_stop)
 
+    # define field points
+    eps = 1e-6 # get just inside/outside boundary
+    kr_ext = np.ones(3) * (x + eps)
+    kr_int = np.ones(3) * (x - eps)
+    thetas = np.array([0., pi/2., pi/2.])
+    phis = np.array([0., 0., pi/2.])
+    points_int = np.vstack((kr_int, thetas, phis))
+    points_ext = np.vstack((kr_ext, thetas, phis))
+
+    # calc escat
+    es_x, es_y, es_z = mieangfuncs.mie_fields(points_ext, asbs, pol, 1)
+    # calc eint
+    eint_x, eint_y, eint_z = mieangfuncs.mie_internal_fields(points_int, m,
+                                                             csds, pol)
+    # theta check
+    assert_allclose(eint_x[0], es_x[0] + exp(1.j * (x + eps)), rtol = 5e-6)
+    # r check
+    assert_allclose(m**2 * eint_x[1], es_x[1] + 1., rtol = 5e-6)
+    # phi check
+    assert_allclose(eint_x[2], es_x[2] + 1., rtol = 5e-6)
 
 
 # TODO: another check on the near-field result: calculate the scattered

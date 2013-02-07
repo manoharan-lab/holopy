@@ -142,6 +142,75 @@
         end
 
 
+      subroutine mie_internal_fields(n_pts, calc_points, m, csds, nstop, &
+           einc, eint_x, eint_y, eint_z)
+        ! Calculate internal fields inside a sphere in the Lorenz-Mie solution,
+        ! at a list of selected points.  
+        !
+        ! Function calls from Python may need to transpose calc_points.
+        !
+        ! Parameters
+        ! ----------
+        ! calc_points: array (3 x n_pts)
+        !     Array of points over which internal field is calculated. Points
+        !     should be in spherical coordinates relative to scatterer:
+        !     non-dimensional radial coordinate (kr), theta and phi.
+        !     They should also truly be inside the particle (no check here).
+        ! m: complex
+        !     Relative index of particle (n_particle/n_medium)
+        ! csds: complex array (2, nstop)
+        !     Mie internal coefficients from 
+        !     miescatlib.internal_coeffs(m_p, x_p, nstop)
+        ! nstop: int
+        !     Expansion order (from miescatlib.nstop(x_p))
+        ! einc: real array (2)
+        !     polarization (from optics.polarization)
+        !
+        ! Returns
+        ! -------
+        ! eint_x, eint_y, eint_z: complex array (n_pts)
+        !     The three electric field components at points in calc_points
+        implicit none
+        integer, intent(in) :: n_pts, nstop
+        complex (kind = 8), intent(in) :: m
+        real (kind = 8), intent(in), dimension(3, n_pts) :: calc_points
+        complex (kind = 8), intent(in), dimension(2, nstop) :: csds
+        real (kind = 8), intent(in), dimension(2) :: einc ! polarization
+        real (kind = 8) :: theta, phi
+        complex (kind = 8) :: mkr
+        real (kind = 8), dimension(2) :: einc_sph
+        complex (kind = 8), intent(out), dimension(n_pts) :: eint_x, &
+             eint_y, eint_z
+        integer :: i
+        complex (kind = 8), dimension(3) :: eint_sph, eint_cart1, eint_cart2
+        
+        ! Loop over field points
+        do i = 1, n_pts, 1
+           mkr = m * calc_points(1, i)
+           theta = calc_points(2, i)
+           phi = calc_points(3, i)
+
+           ! get incident field in spherical
+           call incfield(einc(1), einc(2), phi, einc_sph)
+
+           ! calculate the field amplitudes
+           call mie_int_point(nstop, csds, mkr, theta, eint_sph)
+           eint_sph(1) = eint_sph(1) * einc_sph(1)
+           eint_sph(2) = eint_sph(2) * einc_sph(1)
+           eint_sph(3) = eint_sph(3) * einc_sph(2)
+
+           ! convert to rectangular
+           call fieldstocart(eint_sph(2:3), theta, phi, eint_cart1)
+           call radial_vect_to_cart(eint_sph(1), theta, phi, eint_cart2)
+           eint_x(i) = eint_cart1(1) + eint_cart2(1)
+           eint_y(i) = eint_cart1(2) + eint_cart2(2)
+           eint_z(i) = eint_cart1(3) + eint_cart2(3)
+        end do
+      
+        return
+        end
+
+
       subroutine tmatrix_fields(n_pts, calc_points, amn, lmax, euler_gamma, &
            inc_pol, es_x, es_y, es_z)
         ! Calculate fields scattered by a cluster of spheres using
@@ -208,6 +277,48 @@
            es_z(i) = escat_rect(3)
         end do
 
+        return
+        end
+
+
+      subroutine mie_int_point(nstop, csds, mkr, theta, esph_out)
+        ! calculate summations for internal field (analogous to per-point asm)
+        ! multiply output by E_par,i or E_perp,i to get actual field.
+        implicit none
+        integer, intent(in) :: nstop
+        real (kind = 8), intent(in) :: theta
+        complex (kind = 8), intent(in) :: mkr
+        complex (kind = 8), dimension(2, nstop), intent(in) :: csds
+        complex (kind = 8), dimension(3), intent(out) :: esph_out
+        complex (kind = 8) :: ci, derj
+        complex (kind = 8), dimension(0:nstop) :: jl, djl, yl, dyl
+        real (kind = 8), dimension(nstop) :: pi_l, tau_l
+        real (kind = 8) :: st, pref_up, pref_dn
+        integer :: n, nmx_csphjy
+
+        ! initialize
+        data ci/(0.d0, 1.d0)/
+        esph_out = (/ 0., 0., 0. /)
+        
+        ! special function calls
+        call pisandtaus(nstop, theta, pi_l, tau_l)
+        call csphjy(nstop, mkr, nmx_csphjy, jl, djl, yl, dyl)
+        st = dsin(theta)
+
+        do n = 1, nstop, 1
+           pref_up = 2. * n + 1.
+           pref_dn = n * (n + 1.)
+           derj = jl(n) / mkr + djl(n) 
+           ! radial
+           esph_out(1) = esph_out(1) + ci**(n-1) * pref_up * csds(2, n) * & 
+                st * pi_l(n) * jl(n) / mkr
+           ! theta
+           esph_out(2) = esph_out(2) + ci**n * pref_up / pref_dn * &
+                (-ci*csds(2,n)*tau_l(n)*derj + csds(1,n)*pi_l(n)*jl(n))
+           ! phi
+           esph_out(3) = esph_out(3) + ci**n * pref_up / pref_dn * &
+                (ci*csds(2,n)*pi_l(n)*derj - csds(1,n)*tau_l(n)*jl(n))
+        end do
         return
         end
 

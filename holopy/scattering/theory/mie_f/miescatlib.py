@@ -56,7 +56,7 @@ def internal_coeffs(m, x, n_max):
     D1mx = mie_specfuncs.log_der_1(m * x, n_max + 15, n_max)
     cl = m * ratio * (D3x - D1x) / (D3x - m * D1mx)
     dl = m * ratio * (D3x - D1x) / (m * D3x - D1mx)
-    return cl[1:], dl[1:] # start from l = 1
+    return array([cl[1:], dl[1:]]) # start from l = 1
 
 def nstop(x): 
     #takes size parameter, outputs order to compute to according to
