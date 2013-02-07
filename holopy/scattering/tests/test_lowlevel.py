@@ -47,6 +47,8 @@ from nose.plugins.attrib import attr
 
 from ..theory.mie_f import mieangfuncs, miescatlib, multilayer_sphere_lib
 
+from scipy.special import sph_jn, sph_yn
+
 # basic defs
 kr = 10.
 kr_asym = 1.9e4
@@ -112,7 +114,7 @@ def test_mie_amplitude_scattering_matrices():
     m = 1.55
     x = 2. * pi * 0.525 / 0.6328
     
-    asbs = miescatlib.scatcoeffs(x, m, miescatlib.nstop(x))
+    asbs = miescatlib.scatcoeffs(m, x, miescatlib.nstop(x))
     amp_scat_mat = mieangfuncs.asm_mie_far(asbs, theta)
     amp_scat_mat_asym = mieangfuncs.asm_mie_fullradial(asbs, np.array([kr_asym,
                                                                        theta,
@@ -177,6 +179,61 @@ def test_scattered_field_from_asm():
     fortran_test = mieangfuncs.calc_scat_field(kr, phi, asm, np.array([1., 0.]))
     gold = (1./sqrt(2)) * 0.1j * exp(10.j) * np.array([1. + 1.j, -2.1])
     assert_allclose(fortran_test, gold)
+
+
+@attr('medium')
+def test_mie_internal_coeffs():
+    m = 1.5 + 0.1j
+    x = 50.
+    n_stop = miescatlib.nstop(x)
+    al, bl = miescatlib.scatcoeffs(m, x, n_stop)
+    cl, dl = miescatlib.internal_coeffs(m, x, n_stop)
+    jlx = sph_jn(n_stop, x)[0][1:]
+    jlmx = sph_jn(n_stop, m * x)[0][1:]
+    hlx = jlx + 1.j * sph_yn(n_stop, x)[0][1:]
+    
+    assert_allclose(cl, (jlx - hlx * bl) / jlmx, rtol = 1e-6, atol = 1e-6)
+    assert_allclose(dl, (jlx - hlx * al)/ (m * jlmx), rtol = 1e-6, atol = 1e-6)
+    
+@attr('fast')
+def test_mie_bndy_conds():
+    '''
+    Check that appropriate boundary conditions are satisfied:
+    m^2 E_radial continuous (bound charge Gaussian pillbox)
+    E_parallel continuous (Amperian loop)
+
+    Checks to do (all on E_x):
+    theta = 0, phi = 0 (theta component)
+    theta = 90, phi = 0 (radial component)
+    theta = 90, phi = 90 (phi component)
+    '''
+    m = 1.2 + 0.01j
+    x = 10.
+    pol = np.array([1., 0.]) # assume x polarization
+    n_stop = miescatlib.nstop(x)
+    asbs = miescatlib.scatcoeffs(m, x, n_stop)
+    csds = miescatlib.internal_coeffs(m, x, n_stop)
+
+    # define field points
+    eps = 1e-6 # get just inside/outside boundary
+    kr_ext = np.ones(3) * (x + eps)
+    kr_int = np.ones(3) * (x - eps)
+    thetas = np.array([0., pi/2., pi/2.])
+    phis = np.array([0., 0., pi/2.])
+    points_int = np.vstack((kr_int, thetas, phis))
+    points_ext = np.vstack((kr_ext, thetas, phis))
+
+    # calc escat
+    es_x, es_y, es_z = mieangfuncs.mie_fields(points_ext, asbs, pol, 1)
+    # calc eint
+    eint_x, eint_y, eint_z = mieangfuncs.mie_internal_fields(points_int, m,
+                                                             csds, pol)
+    # theta check
+    assert_allclose(eint_x[0], es_x[0] + exp(1.j * (x + eps)), rtol = 5e-6)
+    # r check
+    assert_allclose(m**2 * eint_x[1], es_x[1] + 1., rtol = 5e-6)
+    # phi check
+    assert_allclose(eint_x[2], es_x[2] + 1., rtol = 5e-6)
 
 
 # TODO: another check on the near-field result: calculate the scattered

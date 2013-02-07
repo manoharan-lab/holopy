@@ -33,8 +33,6 @@ from ..scatterer import Sphere, Scatterers
 from .scatteringtheory import FortranTheory
 from .mie_f import mieangfuncs, miescatlib
 from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
-
-#I think that I need copy.copy to make a copy of a Schema, but there probably is a better way
 import copy
 
 
@@ -126,6 +124,8 @@ class Mie(FortranTheory):
         return self._set_internal_fields(fields, scatterer)
         
         
+        
+        
     def _calc_internal_field(self, scatterer, schema):
         """
         Calculate fields for single or multiple spheres
@@ -152,6 +152,7 @@ class Mie(FortranTheory):
             raise TheoryNotCompatibleError(self, scatterer)
         else:
             scat_coeffs = self._scat_coeffs(scatterer, schema.optics)
+            scat_coeffs_internal = self._scat_coeffs_internal(scatterer, schema.optics)
             
             center_to_center = scatterer.center - schema.center
             unit_vector = center_to_center - abs(center_to_center).sum()
@@ -167,6 +168,8 @@ class Mie(FortranTheory):
                 
                 xo,yo,zo = schema.center
                 
+                
+  #########   Method #1            
 #                 spherical_coords = schema.positions_r_theta_phi(
 #                         origin = scatterer.center)
 #                 
@@ -177,7 +180,9 @@ class Mie(FortranTheory):
 #                 x = r*np.sin(theta)*np.cos(phi) + xo
 #                 y = r*np.sin(theta)*np.sin(phi) + yo
 #                 z = r*np.cos(theta)             + zo
-                
+ ##############               
+ 
+ ### ##########  Method #2
                 xyzs = schema.positions_xyz()
                 
                 xs,ys,zs = scatterer.center
@@ -185,21 +190,24 @@ class Mie(FortranTheory):
                 x = xyzs[:,0] + xo - xs
                 y = xyzs[:,1] + xo - xs
                 z = xyzs[:,2] + xo + xs
-                
+                #z = np.flipud(z)
+
+ ##########################               
                 #ind is a list of the indices of the spherical coords that are within the scatterer
                 ind = np.array([scatterer.contains(xyz) for xyz in zip(x,y,z)]).T
                             
                 points_in_scatterer = schema.positions_kr_theta_phi(
                         origin = scatterer.center)[ind]
-                        
-                #######################
-                ######This will be replaced with a call to the fortran function to find the internal fields        
-                fields = mieangfuncs.mie_fields(points_in_scatterer.T, scat_coeffs,
-                                                schema.optics.polarization, 0)
                 
+                n_scatterer = scatterer.parameters['n']
+                n_medium    = schema.optics.index
+                rel_index   = n_scatterer/n_medium
+
+                
+                print np.shape(points_in_scatterer)[0]
                 #Hopefully we can switch to this soon:                                
-#                 fields = mieangfuncs.mie_internal_fields(points_in_scatterer.T, scat_coeffs,
-#                                 schema.optics.polarization, 0)
+                fields = mieangfuncs.mie_internal_fields(points_in_scatterer.T, rel_index, scat_coeffs,
+                                schema.optics.polarization)
                 ###############
                 
                 # We create a selection schema to pass to _finalize_fields so that it knows that 
@@ -270,6 +278,24 @@ class Mie(FortranTheory):
             # Could just use scatcoeffs_multi here, but jerome is in favor of
             # keeping the simpler single layer code here
             lmax = miescatlib.nstop(x_arr[0])
-            return  miescatlib.scatcoeffs(x_arr[0], m_arr[0], lmax)
+            return  miescatlib.scatcoeffs(m_arr[0], x_arr[0], lmax)
         else:
             return scatcoeffs_multi(m_arr, x_arr)
+            
+            
+    def _scat_coeffs_internal(self, s, optics):
+        x_arr = optics.wavevec * _ensure_array(s.r)
+        m_arr = _ensure_array(s.n) / optics.index
+
+        # Check that the scatterer is in a range we can compute for
+        if x_arr.max() > 1e3:
+            raise UnrealizableScatterer(self, s, "radius too large, field "+
+                                        "calculation would take forever")
+
+        if len(x_arr) == 1 and len(m_arr) == 1:
+            # Could just use scatcoeffs_multi here, but jerome is in favor of
+            # keeping the simpler single layer code here
+            lmax = miescatlib.nstop(x_arr[0])
+            return  miescatlib.internal_coeffs(m_arr[0], x_arr[0], lmax)
+        # else:
+#             return scatcoeffs_multi(m_arr, x_arr)

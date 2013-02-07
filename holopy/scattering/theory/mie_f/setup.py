@@ -44,7 +44,8 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('mieangfuncs',
                          ['mieangfuncs.f90',
                           'uts_scsmfo.for',
-                          '../../third_party/SBESJY.F']
+                          '../../third_party/SBESJY.F',
+                          '../../third_party/csphjy.for']
                          )
     config.add_extension('scsmfo_min',
                          ['scsmfo_min.for']

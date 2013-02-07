@@ -35,85 +35,7 @@ import miescatlib
 from ...errors import ModelInputError
 
 from numpy import exp, sin, cos, real, imag
-
-def LogDer13(z, nstop):
-    '''
-    Calculate logarithmic derivatives of Riccati-Bessel functions psi
-    and xi for complex arguments.  Riccati-Bessel conventions follow
-    Bohren & Huffman.
-
-    See Mackowski et al., Applied Optics 29, 1555 (1990).
-
-    Input:
-    z: complex number
-    nstop: maximum order of computation
-    '''
-    z = np.complex128(z) # convert to double precision
-
-    # Calculate Dn_1 (based on \psi(z)) using downward recursion.
-    # See Mackowski eqn. 62
-    nmx = np.maximum(nstop, np.round_(np.absolute(z))) + 15
-    dn1 = np.zeros(nmx+1, dtype = 'complex128') # initialize w/zeros
-    for i in np.arange(nmx-1, -1, -1): # down recurrence
-        dn1[i] = (i+1.)/z - 1.0/(dn1[i+1.] + (i+1.)/z)
-	
-    # Calculate Dn_3 (based on \xi) by up recurrence
-    # initialize
-    dn3 = np.zeros(nstop+1, dtype = 'complex128')
-    psixi = np.zeros(nstop+1, dtype = 'complex128')
-    dn3[0] = 1j
-    psixi[0] = -1j*exp(1j*z)*sin(z)
-    for dindex in np.arange(1, nstop+1):
-        # Mackowski eqn 63
-        psixi[dindex] = psixi[dindex-1] * ( (dindex/z) - dn1[dindex-1]) * (
-            (dindex/z) - dn3[dindex-1])
-        # Mackowski eqn 64
-        dn3[dindex] = dn1[dindex] + 1j/psixi[dindex]
-
-    return dn1[0:nstop+1], dn3
-
-
-# calculate ratio of RB's defined in Yang eqn. 23 by up recursion relation 
-def Qratio(z1, z2, nstop, dns1 = None, dns2 = None): 
-    '''
-    Calculate ratio of Riccati-Bessel functions defined in Yang eq. 23
-    by up recursion.
-
-    Logarithmic derivatives calculated automatically if not specified.
-    '''
-    # convert z1 and z2 to 128 bit complex to prevent division problems
-    z1 = np.complex128(z1)
-    z2 = np.complex128(z2)
-
-    if dns1 == None:
-        logdersz1 = LogDer13(z1, nstop)
-        logdersz2 = LogDer13(z2, nstop)
-        d1z1 = logdersz1[0]
-        d3z1 = logdersz1[1]
-        d1z2 = logdersz2[0]
-        d3z2 = logdersz2[1]
-    else:
-        d1z1 = dns1[0]
-        d3z1 = dns1[1]
-        d1z2 = dns2[0]
-        d3z2 = dns2[1]
-	
-    qns = np.zeros(nstop+1, dtype = 'complex128')
-	
-    # initialize according to Yang eqn. 34
-    a1 = real(z1)
-    a2 = real(z2)
-    b1 = imag(z1)
-    b2 = imag(z2)
-    qns[0] = exp(-2.*(b2-b1)) * (exp(-1j*2.*a1)-exp(-2.*b1)) / (exp(-1j*2.*a2)
-                                                                - exp(-2.*b2)) 
-    # Loop to do upwards recursion in eqn. 33
-    for i in np.arange(1, nstop+1):
-        qns[i] = qns[i-1]* ( (d3z1[i] + i/z1) * (d1z2[i] + i/z2) 
-	       		     )  / ((d3z2[i] + i/z2) * (d1z1[i] + i/z1) )
-
-    return qns
-
+from mie_specfuncs import Qratio, log_der_13, riccati_psi_xi
 
 def scatcoeffs_multi(marray, xarray):
     '''
@@ -139,7 +61,7 @@ def scatcoeffs_multi(marray, xarray):
     nstop = miescatlib.nstop(xarray.max())
 
     # initialize H_n^a and H_n^b in the core, see eqns. 12a and 13a
-    intl = LogDer13(marray[0]*xarray[0], nstop)[0]
+    intl = log_der_13(marray[0]*xarray[0], nstop)[0]
     hans = intl
     hbns = intl
 	
@@ -148,8 +70,8 @@ def scatcoeffs_multi(marray, xarray):
         z2 = marray[lay]*xarray[lay]  # m_l x_l
 
         # calculate logarithmic derivatives D_n^1 and D_n^3
-        derz1s = LogDer13(z1, nstop)
-        derz2s = LogDer13(z2, nstop)
+        derz1s = log_der_13(z1, nstop)
+        derz2s = log_der_13(z2, nstop)
 
         # calculate G1, G2, Gtilde1, Gtilde2 according to 
         # eqns 26-29
@@ -170,7 +92,7 @@ def scatcoeffs_multi(marray, xarray):
 
     # Relate H^a and H^b in the outer layer to the Mie scat coeffs
     # see Yang eqns 14 and 15
-    psiandxi = miescatlib.RicBesHank(xarray.max(), nstop) # n = 0 to nstop
+    psiandxi = riccati_psi_xi(xarray.max(), nstop) # n = 0 to nstop
     n = np.arange(nstop+1)
     psi = psiandxi[0]
     xi = psiandxi[1]
