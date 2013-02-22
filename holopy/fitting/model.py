@@ -175,7 +175,7 @@ class ParameterizedObject(Parametrization):
 
             if isinstance(par, ComplexParameter):
                 par_val = (get_val(par.real, name+'.real') + 
-                                     get_val(par.imag, name+'.imag'))
+                           1j * get_val(par.imag, name+'.imag'))
             elif isinstance(par, Parameter):
                 par_val = get_val(par, name)
             else:
