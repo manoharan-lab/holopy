@@ -212,7 +212,7 @@
 
 
       subroutine tmatrix_fields(n_pts, calc_points, amn, lmax, euler_gamma, &
-           inc_pol, es_x, es_y, es_z)
+           inc_pol, rad, es_x, es_y, es_z)
         ! Calculate fields scattered by a cluster of spheres using
         ! D. Mackowski's code SCSMFO.
         !
@@ -233,6 +233,10 @@
         !     Euler angle gamma to rotate cluster frame into laboratory frame.
         ! inc_pol: real array (2)
         !     polarization (from optics.polarization)
+        ! rad: logical
+        !     If .true., calculate radial component of the scattered field.
+        !     Neglected in most scattering calculations b/c radial component
+        !     falls off faster than 1/r.
         !
         ! Returns
         ! -------
@@ -245,13 +249,16 @@
         complex (kind = 8), intent(in), dimension(2,lmax*(lmax+2),2) :: amn
         real (kind = 8), intent(in) :: euler_gamma
         real (kind = 8), intent(in), dimension(2) :: inc_pol
+        logical, intent(in) :: rad
         complex (kind = 8), intent(out), dimension(n_pts) :: es_x, &
              es_y, es_z
         complex (kind = 8), dimension(4) :: ascatmat
         complex (kind = 8), dimension(2,2) :: asreshape
         real (kind = 8) :: kr, theta, phi
-        complex (kind = 8), dimension(3) :: escat_rect
-        complex (kind = 8), dimension(2) :: escat_sph
+        real (kind = 8), dimension(2) :: einc_sph
+        complex (kind = 8), dimension(3) :: escat_rect, erad_cart
+        complex (kind = 8), dimension(2) :: escat_sph, rad_amplitude
+        complex (kind = 8) :: escat_rad
         integer :: i
 
         ! Main loop over hologram points
@@ -272,6 +279,19 @@
 
            ! convert to rectangular
            call fieldstocart(escat_sph, theta, phi, escat_rect)
+
+           ! calculate radial components of scattered field
+           if (rad) then
+               call incfield(inc_pol(1), inc_pol(2), phi, einc_sph)
+               call ms_radial_fields(amn, lmax, theta, phi + euler_gamma, &
+                    rad_amplitude)
+               ! order in dot product matters b/c of complex conjugate
+               ! again, fudge factor of -0.5 for single sphere agreement
+               escat_rad = dot_product(einc_sph, rad_amplitude) * (-0.5)
+               call radial_vect_to_cart(escat_rad, theta, phi, erad_cart)
+               escat_rect = escat_rect + erad_cart
+           endif
+
            es_x(i) = escat_rect(1)
            es_y(i) = escat_rect(2)
            es_z(i) = escat_rect(3)

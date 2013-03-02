@@ -103,12 +103,14 @@ class Multisphere(FortranTheory):
 
     """
 
-    def __init__(self, niter=200, eps=1e-6, meth=1, qeps1=1e-5, qeps2=1e-8):
+    def __init__(self, niter=200, eps=1e-6, meth=1, qeps1=1e-5, qeps2=1e-8,
+                 compute_escat_radial = False):
         self.niter = niter
         self.eps = eps
         self.meth = meth
         self.qeps1 = qeps1
         self.qeps2 = qeps2
+        self.compute_escat_radial = compute_escat_radial
 
         # call base class constructor
         super(Multisphere, self).__init__()
@@ -203,9 +205,14 @@ class Multisphere(FortranTheory):
         amn, lmax = self._scsmfo_setup(scatterer, schema.optics)
 
         positions = schema.positions_kr_theta_phi(origin = scatterer.centers.mean(0)).T
-
-        fields = mieangfuncs.tmatrix_fields(positions, amn, lmax, 0, schema.optics.polarization)
-
+    
+        if self.compute_escat_radial:
+            fields = mieangfuncs.tmatrix_fields(positions, amn, lmax, 0, 
+                                                schema.optics.polarization, 1)
+        else:
+            fields = mieangfuncs.tmatrix_fields(positions, amn, lmax, 0, 
+                                                schema.optics.polarization, 0)
+            
         if np.isnan(fields[0][0]):
             raise MultisphereFieldNaN(self, scatterer, '')
 
