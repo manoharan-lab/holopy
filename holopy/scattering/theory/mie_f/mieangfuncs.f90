@@ -284,7 +284,7 @@
            if (rad) then
                call incfield(inc_pol(1), inc_pol(2), phi, einc_sph)
                call ms_radial_fields(amn, lmax, theta, phi + euler_gamma, &
-                    rad_amplitude)
+                    kr, rad_amplitude)
                ! order in dot product matters b/c of complex conjugate
                ! again, fudge factor of -0.5 for single sphere agreement
                escat_rad = dot_product(einc_sph, rad_amplitude) * (-0.5)

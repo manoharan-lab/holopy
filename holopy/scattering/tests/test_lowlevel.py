@@ -45,7 +45,8 @@ from numpy import sqrt, dot, pi, conj, real, imag, exp
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
 
-from ..theory.mie_f import mieangfuncs, miescatlib, multilayer_sphere_lib
+from ..theory.mie_f import mieangfuncs, miescatlib, multilayer_sphere_lib, \
+    scsmfo_min
 
 from scipy.special import sph_jn, sph_yn
 
@@ -241,3 +242,39 @@ def test_mie_bndy_conds():
 # independent of kr and close to the analytical result.
 
 
+@attr('medium')
+def test_mie_multisphere_singlesph():
+    '''
+    Check that fields from mie_fields and tmatrix_fields are consistent
+    at several points. This includes a check on the radial component of E_scat.
+    '''
+    # sphere params
+    x = 5.
+    m = 1.2+0.1j
+    pol = np.array([1., 0.]) # assume x polarization
+    
+    # points to check
+    # at last two points: E_s
+    kr = np.ones(4) * 6.
+    thetas = np.array([0., pi/3., pi/2., pi/2.])
+    phis = np.array([0., pi/6., 0., pi/2.])
+    field_pts = np.vstack((kr, thetas, phis))
+
+    # calculate fields with Mie
+    n_stop_mie = miescatlib.nstop(x)
+    asbs = miescatlib.scatcoeffs(m, x, n_stop_mie)
+    emie_x, emie_y, emie_z = mieangfuncs.mie_fields(field_pts, asbs, pol, 1)
+
+    # calculate fields with Multisphere
+    _, lmax, amn0, conv = scsmfo_min.amncalc(1, 0., 0., 0., m.real, m.imag,
+                                             x, 100, 1e-6, 1e-8, 1e-8, 1, 
+                                             (0., 0.))
+    # increase qeps1 from usual here
+    limit = lmax**2 + 2 * lmax
+    amn = amn0[:, 0:limit, :]
+    etm_x, etm_y, etm_z = mieangfuncs.tmatrix_fields(field_pts, amn, lmax,
+                                                     0., pol, 1)
+
+    assert_allclose(etm_x, emie_x, rtol = 1e-6, atol = 1e-6)
+    assert_allclose(etm_y, emie_y, rtol = 1e-6, atol = 1e-6)
+    assert_allclose(etm_z, emie_z, rtol = 1e-6, atol = 1e-6)
