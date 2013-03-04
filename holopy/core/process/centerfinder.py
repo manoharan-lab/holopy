@@ -19,7 +19,18 @@
 The centerfinder module is a group of functions for locating the
 centers of holographic ring patterns. The module can find the center
 of a single-sphere holographic pattern, a dimer holographic pattern,
-or the centers of multiple (well-separated: clearly separate ring patterns with separate centers) single spheres or dimers. The intended use is for determining an initial parameter guess for hologram fitting.
+or the centers of multiple (well-separated: clearly separate ring 
+patterns with separate centers) single spheres or dimers. The intended 
+use is for determining an initial parameter guess for hologram fitting.
+
+We thank the Grier Group at NYU for suggesting the use of the Hough 
+transform. For their independent implementation of a Hough-based 
+holographic feature detection algorithm, see:
+http://physics.nyu.edu/grierlab/software/circletransform.pro
+For a case study and further reading, see:
+F. C. Cheong, B. Sun, R. Dreyfus, J. Amato-Grill, K. Xiao, L. Dixon
+& D. G. Grier, Flow visualization and flow cytometry with holographic 
+video microscopy, Optics Express 17, 13071-13079 (2009).
 
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>

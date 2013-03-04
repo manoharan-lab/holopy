@@ -28,7 +28,7 @@ from numpy.testing import assert_equal, assert_approx_equal, assert_allclose
 from ..minimizer import OpenOpt
 from ...scattering.scatterer import Sphere, Spheres, Scatterer
 from ...scattering.theory import Mie, Multisphere, DDA
-from ...core import Optics, ImageSchema, load, save
+from ...core import Optics, ImageSchema, load, save, Schema, Angles, Marray
 from ...core.process import normalize
 from ...core.helpers import OrderedDict
 from .. import fit, Parameter, ComplexParameter, par, Parametrization, Model
@@ -313,3 +313,46 @@ def test_model_guess():
     ps = Sphere(n=par(1.59, [1.5,1.7]), r = .5, center=(5,5,5))
     m = Model(ps, Mie)
     assert_obj_close(m.scatterer.guess, Sphere(n=1.59, r=0.5, center=[5, 5, 5]))
+
+
+@attr('fast')
+def test_fit_complex_parameter():
+    '''
+    Test that complex parameters are handled correctly when fit.
+    '''
+    
+    # use a Sphere with complex n
+    # a fake scattering model
+    def scat_func(sph, schema, scaling = None): 
+        # TODO: scaling kwarg required, seems like a silly kluge
+        def silly_function(theta):
+            return theta * sph.r + sph.n.real * theta **2  + 2. * sph.n.imag
+        #import pdb
+        #pdb.set_trace()
+        return Marray(np.array([silly_function(theta) for theta, phi in 
+                                schema.positions_theta_phi()]), 
+                      **schema._dict)
+
+    # generate data
+    schema = Schema(positions = Angles(np.linspace(0., np.pi/2., 6)))
+    ref_sph = Sphere(r = 1.5, n = 0.4 + 0.8j)
+    data = scat_func(ref_sph, schema)                
+  
+    # varying both real and imaginary parts
+    par_s = Sphere(r = par(1.49), 
+                   n = ComplexParameter(real = par(0.405), imag = par(0.81)))
+    model = Model(par_s, scat_func)
+    result = fit(model, data)               
+    assert_allclose(result.scatterer.r, ref_sph.r)
+    assert_allclose(result.scatterer.n.real, ref_sph.n.real)
+    assert_allclose(result.scatterer.n.imag, ref_sph.n.imag)
+
+    # varying just the real part
+    par_s2 = Sphere(r = par(1.49), n = ComplexParameter(real = par(0.405), 
+                                                       imag = 0.8))
+    model2 = Model(par_s2, scat_func)
+    result2 = fit(model2, data)
+    assert_allclose(result2.scatterer.r, ref_sph.r)
+    assert_allclose(result2.scatterer.n.real, ref_sph.n.real)
+    assert_allclose(result2.scatterer.n.imag, ref_sph.n.imag)
+                   

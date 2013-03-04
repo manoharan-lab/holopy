@@ -88,7 +88,7 @@ def test_ComplexPar():
 def test_pullingoutguess():
     g = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
                    par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
-         r = par(8.5e-7, (1e-8, 1e-5)), n = ComplexParameter(par(1.59, (1,2)),1e-4j))
+         r = par(8.5e-7, (1e-8, 1e-5)), n = ComplexParameter(par(1.59, (1,2)),1e-4))
 
     model = Model(g, Mie.calc_holo)
 

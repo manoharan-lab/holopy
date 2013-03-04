@@ -188,6 +188,87 @@ c
 
 c *****************************************************************************
 
+      subroutine ms_radial_fields(amn0, nodrt, theta, phi, kr, as_rad)
+c Calculate nondimensional radial components of scattered field for a cluster
+c given spherical coordinates. 
+c E_s,r = as_rad(1) * Einc, par + as_rad(2) * Einc, perp
+c
+c Inputs:
+c amn0 (array of amn coefficients obtained from amncalc subroutine 
+c in scsmfo_min.for)
+c nodrt (maximum order of cluster expansion)
+c theta 
+c phi (detector spherical coordinate angles) 
+c kr (dimensionless wavevector*distance to detector point)
+c Outputs:
+c as_rad (complex array, len(2))
+      include 'scfodim.for'
+      implicit real*8(a-h,o-z)
+c
+      parameter(nbd=nod*(nod+2),nbd2=nbd+nbd,
+     1          nbtd=notd*(notd+2),notd2=notd+notd,
+     1          nbc=2*notd2+4)
+      real*8 drot(-1:1,0:nodrt*(nodrt+2)),tau2, kr
+      complex*16 ci,amn0(2,nodrt*(nodrt+2),2),cin, as_rad(2), expir,
+     1           ephi(-notd-1:notd+1),a,b, radfunc(1:nodrt)
+      real*8 jn(0:nodrt), djn(0:nodrt), yn(0:nodrt), dyn(0:nodrt)
+      data ci/(0.d0,1.d0)/
+cf2py intent(in) amn0, nodrt, theta, phi, kr
+cf2py intent(out) as_rad
+
+      ct = dcos(theta)
+      st = dsin(theta)
+
+      call rotcoef(ct,1,nodrt,drot,1)
+      ephi(1)=cdexp(ci*phi)
+      ephi(-1)=conjg(ephi(1))
+      ephi(0)=1.d0
+      do m=2,nodrt+1
+         ephi(m)=ephi(1)*ephi(m-1)
+         ephi(-m)=conjg(ephi(m))
+      enddo
+      do i=1,2
+         as_rad(i)=0.
+      enddo
+     
+      expir = cdexp(-ci*kr)
+
+c calculate radial functions to order nodrt
+      call sbesjy(kr, nodrt, jn, yn, djn, dyn, ifail)
+      do ncount = 1, nodrt
+         radfunc(ncount) = (jn(ncount) + ci * yn(ncount)) / kr
+      enddo
+
+      do n=1,nodrt
+         cin=(-ci)**n
+         nn1=n*(n+1)
+         do m=-n,n
+            if (m .ne. 0) then
+              mn=nn1+m
+              mnm=nn1-m
+              tau2 = dsqrt(dble(n+n+1))*(drot(-1,mnm)+drot(1,mnm))
+c scsmfo.ps equation 20, a'_mnp,\par. note phi dependence included
+              a=amn0(1,mn,1)*ephi(m+1)+amn0(1,mn,2)*ephi(m-1)
+c scsmfo.ps equation 22, a'_mnp,\perp
+              b=ci*(amn0(1,mn,1)*ephi(m+1)-amn0(1,mn,2)*ephi(m-1))
+
+              pref = nn1 * (1. / m)
+              as_rad(1) = as_rad(1) + pref * st * tau2 * radfunc(n) * a
+              as_rad(2) = as_rad(2) + pref * st * tau2 * radfunc(n) * b
+            else 
+              continue
+            endif
+         enddo
+      enddo
+
+      return
+      end
+
+c *****************************************************************************
+
+
+
+
       subroutine asm(amn0,nodrt,theta,phi,sa)
 c Calculate amplitude scattering matrix for given cluster as a function of 
 c angle.

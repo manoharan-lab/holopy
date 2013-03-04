@@ -29,7 +29,7 @@ import numpy as np
 import warnings
 from nose.tools import assert_raises, with_setup
 from numpy.testing import (assert_equal, assert_array_almost_equal,
-                           assert_almost_equal)
+                           assert_almost_equal, assert_allclose)
 
 from nose.plugins.attrib import attr
 
@@ -92,6 +92,28 @@ def test_2_sph():
     assert_almost_equal(holo.mean(), 0.9955420925817654)
     assert_almost_equal(holo.std(), 0.09558537595025796)
 
+
+def test_radial_holos():
+    # Check that holograms computed with and w/o radial part of E_scat differ
+    sc = Spheres(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
+                                       n=1.5811+1e-4j, r=5e-07),
+                                Sphere(center=[6e-6, 7e-6, 10e-6],
+                                       n=1.5811+1e-4j, r=5e-07)])
+    thry_nonrad = Multisphere()
+    thry_rad = Multisphere(compute_escat_radial = True)
+
+    holo_nonrad = thry_nonrad.calc_holo(sc, schema)
+    holo_rad = thry_rad.calc_holo(sc, schema)
+
+    # the two arrays should not be equal
+    try:
+        assert_allclose(holo_nonrad, holo_rad)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("Holograms computed with and without radial component of scattered electric field are too similar.")
+
+
 @attr('fast')
 def test_invalid():
     sc = Spheres(scatterers=[Sphere(center=[7.1, 7e-6, 10e-6],
@@ -123,6 +145,7 @@ def test_invalid():
                           r = [4e-7, 5e-7])])
     assert_raises(TheoryNotCompatibleError, Multisphere.calc_cross_sections, 
                   sc2, schema.optics)
+
 
 def test_overlap():
     # should raise a warning
