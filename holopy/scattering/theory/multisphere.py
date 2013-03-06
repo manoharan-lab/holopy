@@ -28,6 +28,7 @@ dependence of spherical Hankel functions for the scattered field.
 from __future__ import division
 
 import numpy as np
+from numpy import arctan2, sin, cos
 from scipy.integrate import dblquad
 from .mie_f import mieangfuncs
 from .mie_f import scsmfo_min
@@ -221,7 +222,11 @@ class Multisphere(FortranTheory):
 
     def _calc_cext(self, scatterer, optics, amn = None, lmax = None):
         """
-        Calculate extinction cross section via optical theorem.
+        Calculate extinction cross section via optical theorem for 
+        cluster-centered field expansion.
+
+        Note that it is also possible to calclate C_ext from the 
+        sphere-centered field expansions. We do not do this here.
         """
         # normalize the polarization
         pol = optics.polarization / np.sqrt((optics.polarization**2).sum())
@@ -245,12 +250,53 @@ class Multisphere(FortranTheory):
         return np.array(scat_matrs)
 
     def _calc_cscat(self, scatterer, optics, amn = None, lmax = None):
+        '''
+        Calculate scattering cross section from cluster-centered field
+        expansion, by analytically summing expansion coefficients.
+
+        Note that a direct calculation of the C_scat from the sphere-centered
+        expansion is not implemented in SCSMFO and is difficult because of
+        cross terms.  The sphere-centered approach is to get C_ext from the
+        optical theorem and then analytically integrate the Poynting vector
+        over the surface of each sphere to get C_abs.  C_scat is then 
+        C_ext - C_scat.  Here, instead, we calculate C_scat and subtract
+        from C_ext to get C_abs.  
+
+        The cluster-centered expansion is easier to work with. However,
+        we note that there is the risk of round-off or loss of precision
+        when translating the sphere-centered expansion to the cluster-centered
+        expansion when the constituent spheres are very far apart or 
+        the tolerances are not set low enough. Since the present approach
+        does not directly calculate C_abs, there may be some loss of accuracy
+        in C_abs (it may come out negative) for non-absorbing or very weakly
+        absorbing spheres.  If you are interested in C_abs, it may be 
+        preferable to calculate it directly from the sphere-centered 
+        expansion (not implemented).
+        '''
+        # normalize the polarization
+        pol = optics.polarization / np.sqrt((optics.polarization**2).sum())
+        # calculate polarization angle
+        gamma = arctan2(pol[1], pol[0])
+
+        # calculate amn coefficients if need be
+        if amn is None:
+            amn, lmax = self._scsmfo_setup(scatterer, optics)
+
+        # See lines 331-360 of scsmfo1b.for
+        qscat_0 = (np.abs(amn[:,:,0] + amn[:,:,1])**2).sum()
+        qscat_pi2 = (np.abs(amn[:,:,0] - amn[:,:,1])**2).sum()
+        qscat_pi4 = (np.abs(amn[:,:,0] - 1.j * amn[:,:,1])**2).sum()
+        
+        # See line 81 (header doc) of scsmfo1b.for
+        qscat = (qscat_0 + qscat_pi2 + cos(2. * gamma) * (qscat_0 - qscat_pi2)
+                 + sin(2. * gamma) * (2. * qscat_pi4 - qscat_0 -qscat_pi2)) / 2.
+
+        print qscat_0, qscat_pi2, qscat_pi4, qscat
+        return qscat * 4. * np.pi / optics.wavevec**2
+
+    def _calc_cscat_quad(self, scatterer, optics, amn = None, lmax = None):
         """
         Calculate scattering cross section by quadrature over solid angle.
-
-        TODO: implement analytical integration in terms of summations
-        over amn coefficients. See SCSMFO. This may be unreliable when
-        there are strong field minima.
         """
         # normalize the polarization
         pol = optics.polarization / np.sqrt((optics.polarization**2).sum())
