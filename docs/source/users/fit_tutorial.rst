@@ -327,7 +327,7 @@ nmpfit to use looser tolerances and a small iteration limit to get a
 fast result to loosely check things out)::
 
   fit(model, data, minimizer = Nmpfit(ftol=1e-5, xtol = 1e-5, 
-                                      gtol=1e-5, niter=2))
+                                      gtol=1e-5, maxiter=2))
 
 or if you have OpenOpt and DerApproximator installed, you can use to
 use one of OpenOpt's minimizers instead::
