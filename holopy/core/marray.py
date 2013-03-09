@@ -603,7 +603,15 @@ def subimage(arr, center, shape):
 
     extent = [slice(c-s/2, c+s/2) for c, s in zip(center, shape)]
     # TODO: BUG: get coordinate offset correct (reset origin)
-    return _checked_cut(arr, extent)
+    output = _checked_cut(arr, extent)
+    
+    if isinstance(output, Marray):
+        if output.spacing != None:
+             for i in range(len(extent)):
+                output.origin[i] = extent[i].start * output.spacing[i]
+        else:
+            output.origin = None
+    return output
 
 def resize(arr, center=None, extent=None, spacing=None):
     """
