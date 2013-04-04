@@ -344,7 +344,9 @@ class RegularGridSchema(Schema):
 
         x, y, z = (np.array(origin) - self.origin)
 
-        g = np.ogrid[[slice(0, d*s, s) for d, s in zip(self.shape, self.spacing)]]
+        g = np.ogrid[[slice(0, d) for d in self.shape]]
+        g = [a*s for a, s in zip(g, self.spacing)]
+
         if len(g) == 2:
             xg, yg = g
             zg = 0
@@ -374,7 +376,6 @@ class RegularGridSchema(Schema):
         else:
             points = points.reshape((-1, 3))
         return points
-        x, y, z = origin
 
     def positions_kr_theta_phi(self, origin):
         pos = self.positions_r_theta_phi(origin)

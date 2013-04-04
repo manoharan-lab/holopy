@@ -116,6 +116,10 @@ def test_positions_theta_phi():
     holo = get_example_data('image0001.yaml')
     assert_raises(UnspecifiedPosition, holo.positions_theta_phi)
 
+def test_positions_shape():
+    schema = ImageSchema(shape = 105, spacing = 0.041)
+    pos = schema.positions_r_theta_phi([0,0,0])
+    assert_equal(pos.shape[0], schema.shape[0]**2)
 
 def test_squeeze():
     v = Volume(np.ones((10, 1, 10)), spacing = (1, 2, 3),
