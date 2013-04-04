@@ -81,6 +81,9 @@ def arr_like(arr, template=None, **override):
     """
     if template is None:
         template = arr
+
+    if not hasattr(template, '_dict'):
+        return arr
     meta = template._dict
     meta.update(override)
     return template.__class__(arr, **meta)
@@ -668,9 +671,17 @@ class Volume(RegularGrid, VolumeSchema):
 
 
 def squeeze(arr):
+    """"
+    Turns an NxMx1 array into an NxM array.
+
+    """"
     keep = [i for i, dim in enumerate(arr.shape) if dim != 1]
+    if not hasattr(arr,'spacing') or arr.spacing == None:
+        spacing = None
+    else:
+        spacing = np.take(arr.spacing, keep)
     return arr_like(np.squeeze(arr), arr,
-                    spacing = np.take(arr.spacing, keep))
+                    spacing = spacing)
 
 
 # common code for subimage and resize
