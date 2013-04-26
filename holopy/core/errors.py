@@ -41,7 +41,7 @@ class LoadError(Error):
 class NotImplementedError(Error):
     def __str__(self):
         return "Capability not implemented: " + self.message
-    
+
 class OpticsError(Error):
     def __str__(self):
         return "Optics instance not specified! " + self.message
@@ -56,6 +56,9 @@ class PixelScaleNotSpecified(Exception):
         pass
     def __str__(self):
         return ("Pixel scale not specified in Optics instance.")
+
+class InvalidSelection(Error):
+    pass
 
 class UnspecifiedPosition(Error):
         pass
