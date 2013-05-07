@@ -174,7 +174,7 @@ class ParameterizedObject(Parametrization):
                     return parameters[name]
 
             if isinstance(par, ComplexParameter):
-                par_val = (get_val(par.real, name+'.real') + 
+                par_val = (get_val(par.real, name+'.real') +
                            1j * get_val(par.imag, name+'.imag'))
             elif isinstance(par, Parameter):
                 par_val = get_val(par, name)
@@ -223,6 +223,9 @@ class Model(HoloPyObject):
 
         # TODO: make schema_overlay a Parametrization so that you can fit to
         # things in the schema metadata
+        # TODO: BUG: schema_overlay will get a default origin, which
+        # would override the orgin of your data if you had a non
+        # default one. Need to change
         self.schema_overlay = schema_overlay
 
         if isinstance(alpha, Parameter) and alpha.name is None:
@@ -251,6 +254,8 @@ class Model(HoloPyObject):
         return (data - calc).ravel()
 
     def get_schema(self, data):
+        # TODO: make this not copy whole holograms. It should pull out
+        # just a schema if data is a full Marray
         schema = copy(data)
         if self.schema_overlay is not None:
             for key, val in self.schema_overlay._dict.iteritems():

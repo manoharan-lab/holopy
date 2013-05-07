@@ -70,6 +70,19 @@ class FitResult(HoloPyObject):
         self.minimizer = minimizer
         self.minimization_details = minimization_details
 
+    @property
+    def alpha(self):
+        return self.model.get_alpha(self.parameters)
+
+    def fitted_holo(self, schema):
+        return self.model.theory(self.scatterer, schema, self.alpha)
+
+
+def chisq(fit, data):
+    return float((((fit-data))**2).sum() / fit.size)
+
+def rsq(fit, data):
+    return float(1 - ((data - fit)**2).sum()/((data - data.mean())**2).sum())
 
 
 def fit(model, data, minimizer=Nmpfit):
@@ -117,10 +130,14 @@ def fit(model, data, minimizer=Nmpfit):
     fitted_scatterer = model.scatterer.make_from(fitted_pars)
     fitted_holo = model.theory(fitted_scatterer, model.get_schema(data),
                                scaling = model.get_alpha(fitted_pars))
-    chisq = float((((fitted_holo-data))**2).sum() / fitted_holo.size)
-    rsq = float(1 - ((data - fitted_holo)**2).sum()/((data - data.mean())**2).sum())
+    if fitted_holo.use_random_fraction is not None and fitted_holo.use_random_fraction != 1:
+        print("Using subset to compute statistics")
+        sel = fitted_holo.selection
+        fitted_holo = fitted_holo[sel]
+        data = data[sel]
 
     time_stop = time.time()
 
-    return FitResult(fitted_pars, fitted_scatterer, chisq, rsq, converged,
-                     time_stop - time_start, model, minimizer, minimizer_info)
+    return FitResult(fitted_pars, fitted_scatterer, chisq(fitted_holo, data),
+                     rsq(fitted_holo, data), converged, time_stop - time_start,
+                     model, minimizer, minimizer_info)

@@ -18,7 +18,7 @@
 '''
 Routines for image processing.  Useful for pre-processing raw
 holograms prior to extracting final data or post-processing
-reconstructions. 
+reconstructions.
 
 .. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
@@ -27,6 +27,7 @@ reconstructions.
 '''
 from __future__ import division
 
-from .enhance import normalize, background, detrend 
+from .enhance import normalize, background, detrend
 from .filter import pillbox, zero_filter, lowpass
 from .centerfinder import center_find
+from simulate_noise import add_noise
