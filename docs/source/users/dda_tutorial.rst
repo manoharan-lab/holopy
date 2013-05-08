@@ -15,11 +15,11 @@ DDA calculations, so you will need to install ADDA and be able to run::
 
   adda
 
-at a terminal for HoloPy DDA calculations to succeed.  
+at a terminal for HoloPy DDA calculations to succeed.
 
 A lot of the code associated with DDA is fairly new so be careful;
 there are probably bugs. If you find any, please `report
-<https://bugs.launchpad.net/holopy/+filebug>`_ them. 
+<https://bugs.launchpad.net/holopy/+filebug>`_ them.
 
 Defining the geometry of the scatterer
 ======================================
@@ -30,7 +30,7 @@ lies within your scatterer, and 'False' if it doesn't.
 
 For example, if you wanted to define a dumbbell consisting of the union
 of two overlapping spheres you could do so like this::
-  
+
   from holopy.core import Optics, ImageSchema
   from holopy.scattering.scatterer import Scatterer, Sphere
   from holopy.scattering.theory import DDA
@@ -44,7 +44,7 @@ of two overlapping spheres you could do so like this::
 Here we take advantage of the fact that Spheres can tell us if a point
 lies inside them. We use ``s1`` and ``s2`` as purely geometrical
 constructs, so we do not give them indicies of refraction, instead
-specifying n when defining ``dumbell``.  
+specifying n when defining ``dumbell``.
 
 Mutiple Materials: A Janus Sphere
 =================================
@@ -63,8 +63,8 @@ a plastic sphere with a high index coating on the top half::
   schema = ImageSchema(100, .1, Optics(.66, 1.33, (1, 0)))
   def cap(point):
       return(point[2] > 0 and s2.contains(point) and not s1.contains(point))
-  indicators = Indicators([s1.contains, cap], 
-                          [[-.51, .51], [-.51, .51], [0, .51]])
+  indicators = Indicators([s1.contains, cap],
+                          [[-.51, .51], [-.51, .51], [-.51, .51]])
   janus = Scatterer(indicators, (1.34, 2.0), (5, 5, 5))
   holo = DDA.calc_holo(janus, schema)
 
@@ -77,5 +77,5 @@ similar to the scatterer defined above, but can also take a rotation
 angle to specify other orientations::
 
   from holopy.scattering.scatterer import JanusSphere
-  janus = JanusSphere(n = [1.34, 2.0], r = [.5, .51], rotation = (-np.pi/2, 0), 
+  janus = JanusSphere(n = [1.34, 2.0], r = [.5, .51], rotation = (-np.pi/2, 0),
                     center = (5, 5, 5))
