@@ -54,7 +54,7 @@ class DDA(ScatteringTheory):
     Computes scattering using the the Discrete Dipole Approximation (DDA).
 
     It can (in principle) calculate scattering from any arbitrary scatterer.
-    The DDA uses a numerical method that represents arbitrary scatterers as 
+    The DDA uses a numerical method that represents arbitrary scatterers as
     an array
     of point dipoles and then self-consistently solves Maxwell's equations
     to determine the scattered field. In practice, this model can be
@@ -125,7 +125,6 @@ class DDA(ScatteringTheory):
         return cmd
 
     def _adda_scatterer(self, scatterer, optics, temp_dir):
-        bound = scatterer.indicators.bound
         spacing = self.required_spacing(optics, scatterer.n)
         outf = tempfile.NamedTemporaryFile(dir = temp_dir, delete=False)
         line = "{p[0]} {p[1]} {p[2]}"
@@ -135,16 +134,13 @@ class DDA(ScatteringTheory):
             line += " {d}"
         line += '\n'
 
-        for i, x in enumerate(np.arange(bound[0][0], bound[0][1], spacing)):
-            for j, y in enumerate(np.arange(bound[1][0], bound[1][1], spacing)):
-                for k, z in enumerate(np.arange(bound[2][0], bound[2][1], spacing)):
-                    point = np.array((x, y, z)) + scatterer.location
-                    domain = scatterer.in_domain(point)
-                    if domain is not None:
-                        # adda expects domain numbers to start with 1,
-                        # holopy follows the python convention and has
-                        # them start with 0
-                        outf.write(line.format(p = (i, j, k), d = domain+1))
+        for v_ijk, v_xyz in scatterer._voxel_generator(spacing):
+            domain = scatterer.in_domain(v_xyz)
+            if domain is not None:
+                # adda expects domain numbers to start with 1,
+                # holopy follows the python convention and has
+                # them start with 0
+                outf.write(line.format(p = v_ijk, d = domain+1))
         outf.flush()
 
         cmd = []

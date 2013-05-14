@@ -82,11 +82,13 @@ class Scatterer(HoloPyObject):
         return self.in_domain(point) is not None
 
     def index_at(self, point):
-        try:
-            return self.n[self.in_domain(point)]
-        except TypeError:
-            # domain is None
+        domain = self.in_domain(point)
+        if domain is None:
             return None
+        elif np.isscalar(self.n):
+            return self.n
+        else:
+            return self.n[self.in_domain(point)]
 
     def in_domain(self, point):
         for i, ind in enumerate(self.indicators(np.array(point)-self.location)):
@@ -109,6 +111,38 @@ class Scatterer(HoloPyObject):
         pars.update(overrides)
 
         return self.__class__(**pars)
+
+    @property
+    def bounds(self):
+        return [(c+b[0], c+b[1]) for c, b in zip(self.location,
+                                                 self.indicators.bound)]
+
+
+    def _voxel_coords(self, spacing):
+        if np.isscalar(spacing) or len(spacing) == 1:
+            spacing = np.ones(3) * spacing
+
+        xs, ys, zs = np.ogrid[[slice(b[0], b[1], s) for b, s in
+                            zip(self.bounds, spacing)]]
+        return (xs, ys, zs)
+
+    def _voxel_generator(self, spacing):
+        xs, ys, zs = self._voxel_coords(spacing)
+        for i, x in enumerate(xs.flatten()):
+            for j, y in enumerate(ys.flatten()):
+                for k, z in enumerate(zs.flatten()):
+                    yield (i, j, k), (x, y, z)
+
+    def voxelate(self, spacing, medium_index=1):
+        xs, ys, zs = self._voxel_coords(spacing)
+
+        def label_index(x, y, z):
+            n = self.index_at((x, y, z))
+            if n is None:
+                n = medium_index
+            return n
+        vlabel = np.vectorize(label_index)
+        return vlabel(xs, ys, zs)
 
 
 class CenteredScatterer(Scatterer):

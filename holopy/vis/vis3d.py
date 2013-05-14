@@ -27,17 +27,21 @@ from __future__ import division
 from numpy import arange
 import numpy as np
 
-def show_sphere_cluster(s,color):
-    # Delayed imports to avoid hard dependencies on plotting packages and to
-    # avoid the cost of importing them in noninteractive code
-    from matplotlib import cm
+def import_mayavi():
     # Mayavi moved namespaces in the upgrade to 2.4. This try block will
     # allow using either the new or old namespace.
     try:
         from mayavi import mlab
     except ImportError:
         from enthought.mayavi import mlab
+    return mlab
 
+def show_sphere_cluster(s,color):
+    # Delayed imports to avoid hard dependencies on plotting packages and to
+    # avoid the cost of importing them in noninteractive code
+    from matplotlib import cm
+
+    mlab = import_mayavi()
 
     # scale factor is 2 because mayavi interprets 4th
     # argument as a diameter, we keep track of radii
@@ -55,31 +59,18 @@ def show_sphere_cluster(s,color):
         mlab.view(-90,0,s.z[:].mean())
 
 def volume_contour(d):
-    # Mayavi moved namespaces in the upgrade to 2.4. This try block will
-    # allow using either the new or old namespace.
-    try:
-        from mayavi import mlab
-    except ImportError:
-        from enthought.mayavi import mlab
+    mlab = import_mayavi()
 
     vol = mlab.pipeline.scalar_field(d)
     vol.spacing = d.spacing
     contours = mlab.pipeline.contour_surface(vol)
 
-def show_scatterer(scatterer):
-    # Mayavi moved namespaces in the upgrade to 2.4. This try block will
-    # allow using either the new or old namespace.
-    try:
-        from mayavi import mlab
-    except ImportError:
-        from enthought.mayavi import mlab
-
-    vol = np.zeros((100, 100, 100))
-    for i, x in enumerate(np.linspace(*scatterer.indicators.bound[0], num = 100)):
-        for j, y in enumerate(np.linspace(*scatterer.indicators.bound[1], num = 100)):
-            for k, z in enumerate(np.linspace(*scatterer.indicators.bound[2], num = 100)):
-                n = scatterer.index_at((x, y, z))
-                if n is None:
-                    n = 0
-                vol[i,j,k] = np.abs(n)
+# TODO: not quite working yet
+def show_scatterer(scatterer, spacing=None):
+    mlab = import_mayavi()
+    if spacing == None:
+        # if no spacing given, represent the object with 100 voxels
+        # along each dimension
+        spacing = [(b[1]-b[0])/100 for b in scatterer.bounds]
+    vol = scatterer.voxelate(spacing, 0)
     mlab.contour3d(vol)

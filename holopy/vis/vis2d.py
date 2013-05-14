@@ -186,3 +186,15 @@ def show2d(im, i=0, t=0, phase = False):
             im = np.abs(im)
 
     plotter(im, i, t, axis_names = axis_names)
+
+def show_scatterer_slices(scatterer, spacing):
+    """
+    Show slices of a scatterer voxelation
+
+    scatterer : .Scatterer
+        scatterer to visualize
+    spacing : float or (float, float, float)
+        voxel spacing for the visualization
+    """
+    vol = scatterer.voxelate(spacing, 0)
+    show2d(vol)
