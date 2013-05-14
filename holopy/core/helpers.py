@@ -47,3 +47,19 @@ def _ensure_pair(x):
         return np.array(x)
     except (IndexError, TypeError):
         return np.array([x, x])
+
+def mkdir_p(path):
+    '''
+    Equivalent to mkdir -p at the shell, this function makes a
+    directory and its parents as needed, silently doing nothing if it
+    exists.
+
+    Mainly a convenience function for including in scripts that crunch
+    through a lot of files.
+    '''
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST:
+            pass
+        else: raise
