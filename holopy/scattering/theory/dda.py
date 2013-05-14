@@ -34,6 +34,7 @@ import tempfile
 import glob
 import os
 import time
+from ..binding_method import binding, finish_binding
 
 from nose.plugins.skip import SkipTest
 
@@ -64,18 +65,12 @@ class DDA(ScatteringTheory):
 
     Attributes
     ----------
-    imshape : float or tuple (optional)
-        Size of grid to calculate scattered fields or
-        intensities. This is the shape of the image that calc_field or
-        calc_intensity will return
-    phi : array
-        Specifies azimuthal scattering angles to calculate (incident
-        direction is z)
-    theta : array
-        Specifies polar scattering angles to calculate
-    optics : :class:`holopy.optics.Optics` object
-        specifies optical train
-
+    n_cpu : int (optional)
+        Number of threads to use for the DDA calculation
+    max_dpl_size : float (optional)
+        Force a maximum dipole size. This is useful for forcing extra dipoles if
+        necessary to resolve features in an object. This may make dda
+        calculations take much longer.
     Notes
     -----
     Does not handle near fields.  This introduces ~5% error at 10 microns.
@@ -83,7 +78,8 @@ class DDA(ScatteringTheory):
     This can in principle handle any scatterer, but in practice it will need
     excessive memory or computation time for particularly large scatterers.
     """
-    def __init__(self, n_cpu = 1):
+    def __init__(self, n_cpu = 1, max_dpl_size=None):
+
         # Check that adda is present and able to run
         try:
             subprocess.check_call(['adda', '-V'])
@@ -91,6 +87,7 @@ class DDA(ScatteringTheory):
             raise DependencyMissing('adda')
 
         self.n_cpu = n_cpu
+        self.max_dpl_size = max_dpl_size
         super(DDA, self).__init__()
 
     def _run_adda(self, scatterer, optics, temp_dir):
@@ -155,18 +152,24 @@ class DDA(ScatteringTheory):
 
 
     @classmethod
-    def _dpl(cls, optics, n):
+    @binding
+    def _dpl(cls_self, optics, n):
         # if the object has multiple domains, we need to pick the
         # largest required dipole number
         n = np.abs(n)
         if not np.isscalar(n):
             n = max(n)
         dpl = 10*(n/optics.index)
+        # This allows you to fix a largest allowable dipole size (ie
+        # so you can resolve features in an object)
+        if cls_self.max_dpl_size is not None:
+            dpl = max(dpl, optics.med_wavelen / cls_self.max_dpl_size)
         return dpl
 
     @classmethod
-    def required_spacing(cls, optics, n):
-        return optics.med_wavelen / cls._dpl(optics, n)
+    @binding
+    def required_spacing(cls_self, optics, n):
+        return optics.med_wavelen / cls_self._dpl(optics, n)
 
 
     def _calc_field(self, scatterer, schema):
