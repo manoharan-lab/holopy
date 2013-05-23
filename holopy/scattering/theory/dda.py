@@ -33,6 +33,7 @@ import subprocess
 import tempfile
 import glob
 import os
+import shutil
 import time
 from ..binding_method import binding, finish_binding
 
@@ -172,7 +173,7 @@ class DDA(ScatteringTheory):
         return optics.med_wavelen / cls_self._dpl(optics, n)
 
 
-    def _calc_field(self, scatterer, schema):
+    def _calc_field(self, scatterer, schema, delete=True):
         temp_dir = tempfile.mkdtemp()
 
         calc_points = schema.positions_kr_theta_phi(scatterer.location)
@@ -192,7 +193,8 @@ class DDA(ScatteringTheory):
 
         # Go into the results directory, there should only be one run
         result_dir = glob.glob(os.path.join(temp_dir, 'run000*'))[0]
-        self._last_result_dir = result_dir
+        if not delete:
+            self._last_result_dir = result_dir
 
         adda_result = np.loadtxt(os.path.join(result_dir, 'ampl_scatgrid'),
                                  skiprows=1)
@@ -214,5 +216,8 @@ class DDA(ScatteringTheory):
             escat_sph = mieangfuncs.calc_scat_field(kr, phi, scat_matr[i],
                                                     schema.optics.polarization)
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
+
+        if delete:
+            shutil.rmtree(temp_dir)
 
         return self._finalize_fields(scatterer.z, fields, schema)
