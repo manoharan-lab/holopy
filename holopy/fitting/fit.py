@@ -32,6 +32,8 @@ from ..core.holopy_object import HoloPyObject
 from .errors import MinimizerConvergenceFailed, InvalidMinimizer
 from .minimizer import Minimizer, Nmpfit
 
+from copy import copy
+
 class FitResult(HoloPyObject):
     """
     The results of a fit.
@@ -76,6 +78,14 @@ class FitResult(HoloPyObject):
 
     def fitted_holo(self, schema):
         return self.model.theory(self.scatterer, schema, self.alpha)
+
+    def summary(self):
+        d = copy(self.parameters)
+        d['rsq'] = self.rsq
+        d['chisq'] = self.chisq
+        d['time'] = self.time
+        d['converged'] = self.converged
+        return d
 
 
 def chisq(fit, data):
