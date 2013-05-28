@@ -242,13 +242,20 @@ class Model(HoloPyObject):
             self.parameters.append(self.alpha)
 
 
-    def get_alpha(self, pars):
+    def get_alpha(self, pars=None):
         try:
             return pars['alpha']
         except (KeyError, TypeError):
             if self.alpha is None:
                 return 1.0
             return self.alpha
+
+    def guess_holo(self, schema):
+        if isinstance(self.alpha, Parameter):
+            alpha = self.alpha.guess
+        else:
+            alpha = self.alpha
+        return self.theory(self.scatterer.guess, self.get_schema(schema), alpha)
 
     def compare(self, calc, data, selection = None):
         return (data - calc).ravel()
