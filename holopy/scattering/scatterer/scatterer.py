@@ -81,10 +81,10 @@ class Scatterer(HoloPyObject):
     def contains(self, point):
         return self.in_domain(point) is not None
 
-    def index_at(self, point):
+    def index_at(self, point, background = None):
         domain = self.in_domain(point)
         if domain is None:
-            return None
+            return background
         elif np.isscalar(self.n):
             return self.n
         else:
@@ -134,14 +134,31 @@ class Scatterer(HoloPyObject):
                     yield (i, j, k), (x, y, z)
 
     def voxelate(self, spacing, medium_index=1):
+        """
+        Represent a scatterer by discretizing into voxels
+
+        Parameters
+        ----------
+        spacing : float
+            The spacing between voxels in the returned voxelation
+        medium_index : float
+            The background index of refraction to fill in at regions where the
+            scatterer is not present
+
+        Returns
+        -------
+        voxelation : np.ndarray
+            An array with refractive index at every pixel
+        """
         xs, ys, zs = self._voxel_coords(spacing)
 
         def label_index(x, y, z):
-            n = self.index_at((x, y, z))
-            if n is None:
-                n = medium_index
-            return n
-        vlabel = np.vectorize(label_index)
+            return self.index_at((x, y, z), medium_index)
+        if np.iscomplex([self.n]).any() or np.iscomplex(medium_index):
+            dtype = np.complex
+        else:
+            dtype = np.float
+        vlabel = np.vectorize(label_index, otypes=[dtype])
         return vlabel(xs, ys, zs)
 
 

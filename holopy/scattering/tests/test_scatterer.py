@@ -131,7 +131,7 @@ def test_Composite_construction():
 
     assert_equal(comp.in_domain([-5e-6,0,0]), 3)
     assert_equal(comp.index_at([-5e-6,0,0]), cs.n[0])
-    
+
     # multi-level composite (contains another composite)
     s4 = Sphere(center=[0, 5e-6, 0])
     comp_spheres.add(s4)
@@ -159,7 +159,7 @@ def test_translate():
     assert_equal(s.r, s2.r)
     assert_equal(s.n, s2.n)
     assert_allclose(s2.center, (1, 1, 1))
-    
+
 def test_find_bounds():
     s = Sphere(n = 1.59, r = .5e-6, center = (0, 0, 0))
     assert_allclose(find_bounds(s.indicators.functions[0])[0], np.array([-s.r,s.r]), rtol=0.1)
@@ -172,7 +172,13 @@ def test_sphere_nocenter():
     sphere = Sphere(n = 1.59, r = .5)
     schema = ImageSchema(spacing=.1, shape=1, optics=Optics(wavelen = .660, polarization = [1, 0],index = 1.33))
     assert_raises(NoCenter, Mie.calc_holo, sphere, schema)
-    
+
 def test_calc_holo_nopolarization():
     sphere = Sphere(n = 1.59, r = .5, center = (5, 5, 5))
     assert_warns(UserWarning, Optics, wavelen = .660, index = 1.33)
+
+def test_voxelate():
+    sph = Sphere(n=1.59, r=0.5, center=(5, 5, 5))
+    v = sph.voxelate(.1)
+    assert_equal(v.max(), sph.n)
+    assert_equal(v[5,5,5], sph.n)
