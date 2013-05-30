@@ -61,6 +61,6 @@ class JanusSphere(CenteredScatterer):
         #TODO: check that this is the correct way to rotate a vector
         normal = np.dot(rotation_matrix(0, *self.rotation),(0, 0, 1))
         def cap(point):
-            return (np.dot(normal, point) > 0) and s1.contains(point) and not s0.contains(point)
+            return (np.dot(point, normal) > 0) & s1.contains(point)
         r = max(self.r)
         return Indicators([s0.contains, cap], [[-r, r], [-r, r], [-r, r]])

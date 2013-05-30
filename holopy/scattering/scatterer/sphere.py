@@ -26,6 +26,7 @@ import numpy as np
 from .scatterer import CenteredScatterer, Indicators
 from ..errors import ScattererDefinitionError
 from copy import copy
+from ...core.helpers import _ensure_array
 
 class Sphere(CenteredScatterer):
     '''
@@ -53,14 +54,10 @@ class Sphere(CenteredScatterer):
 
     @property
     def indicators(self):
-        if np.isscalar(self.r):
-            r = self.r
-            func = lambda point: (np.array(point)**2).sum() < self.r**2
-        else:
-            func = [lambda point: (np.array(point)**2).sum() < r**2 for r in self.r]
-            r = max(self.r)
-
-        return Indicators(func, [[-r, r], [-r, r], [-r, r]])
+        rs = _ensure_array(self.r)
+        funcs = [(lambda points, ri=ri: (points**2).sum(-1) < ri**2) for ri in rs]
+        r = max(rs)
+        return Indicators(funcs, [[-r, r], [-r, r], [-r, r]])
 
     def rotated(self, alpha, beta, gamma):
         return copy(self)

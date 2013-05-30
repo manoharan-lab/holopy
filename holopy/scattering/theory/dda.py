@@ -125,27 +125,27 @@ class DDA(ScatteringTheory):
     def _adda_scatterer(self, scatterer, optics, temp_dir):
         spacing = self.required_spacing(optics, scatterer.n)
         outf = tempfile.NamedTemporaryFile(dir = temp_dir, delete=False)
-        line = "{p[0]} {p[1]} {p[2]}"
-        n = _ensure_array(scatterer.n)
-        if len(n) > 1:
-            outf.write("Nmat={0}\n".format(len(n)))
-            line += " {d}"
-        line += '\n'
 
-        for v_ijk, v_xyz in scatterer._voxel_generator(spacing):
-            domain = scatterer.in_domain(v_xyz)
-            if domain is not None:
-                # adda expects domain numbers to start with 1,
-                # holopy follows the python convention and has
-                # them start with 0
-                outf.write(line.format(p = v_ijk, d = domain+1))
-        outf.flush()
+        vox = scatterer.voxelate_domains(spacing)
+        idx = np.concatenate([g[..., np.newaxis] for g in
+                              np.mgrid[[slice(0,d) for d in vox.shape]]],
+                             3).reshape((-1, 3))
+        vox = vox.flatten()
+        ns = _ensure_array(scatterer.n)
+        n_domains = len(ns)
+        if n_domains > 1:
+            out = np.hstack((idx, vox[...,np.newaxis]))
+            outf.write("Nmat={0}\n".format(n_domains))
+        else:
+            out = idx
+        np.savetxt(outf, out[np.nonzero(vox)], fmt='%d')
+        outf.close()
 
         cmd = []
         cmd.extend(['-shape', 'read', outf.name])
         cmd.extend(['-dpl', str(self._dpl(optics, scatterer.n))])
         cmd.extend(['-m'])
-        for n in n:
+        for n in ns:
             cmd.extend([str(n.real/optics.index), str(n.imag/optics.index)])
 
         return cmd

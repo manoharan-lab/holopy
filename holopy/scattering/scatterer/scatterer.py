@@ -78,23 +78,49 @@ class Scatterer(HoloPyObject):
         new.location = self.location + np.array((x, y, z))
         return new
 
-    def contains(self, point):
-        return self.in_domain(point) is not None
+    def contains(self, points):
+        return self.in_domain(points) > 0
 
-    def index_at(self, point, background = None):
-        domain = self.in_domain(point)
-        if domain is None:
-            return background
-        elif np.isscalar(self.n):
-            return self.n
+    def index_at(self, points, background = 0):
+        domains = self.in_domain(points)
+        ns = _ensure_array(self.n)
+        if np.iscomplex(np.append(self.n, background)).any():
+            dtype = np.complex
         else:
-            return self.n[self.in_domain(point)]
+            dtype = np.float
+        index = np.ones_like(domains, dtype=dtype) * background
+        for i, n in enumerate(ns):
+            index[domains==i+1] = n
+        return index
 
-    def in_domain(self, point):
-        for i, ind in enumerate(self.indicators(np.array(point)-self.location)):
-            if ind:
-                return i
-        return None
+    def in_domain(self, points):
+        """
+        Tell which domain of a scatterer points are in
+
+        Paramaters
+        ----------
+        points : np.ndarray (Nx3)
+           Point or list of points to evaluate
+
+        Returns
+        -------
+        domain : np.ndarray (N)
+           The domain of each point. Domain 0 means not in the particle
+        """
+        points = np.array(points)
+        if points.ndim==1:
+            points = points.reshape((1, 3))
+        domains = np.zeros(points.shape[:-1], dtype='int')
+        # Indicators earlier in the list have priority
+        for i, ind in reversed(list(enumerate(self.indicators(points-self.location)))):
+            domains[np.nonzero(ind)] = i+1
+        return domains
+
+    def _index_type(self, background=0.):
+        if np.iscomplex([self.n]).any() or np.iscomplex(background):
+            return np.complex
+        else:
+            return np.float
 
     @property
     def x(self):
@@ -117,23 +143,15 @@ class Scatterer(HoloPyObject):
         return [(c+b[0], c+b[1]) for c, b in zip(self.location,
                                                  self.indicators.bound)]
 
-
     def _voxel_coords(self, spacing):
         if np.isscalar(spacing) or len(spacing) == 1:
             spacing = np.ones(3) * spacing
 
-        xs, ys, zs = np.ogrid[[slice(b[0], b[1], s) for b, s in
+        grid = np.mgrid[[slice(b[0], b[1], s) for b, s in
                             zip(self.bounds, spacing)]]
-        return (xs, ys, zs)
+        return np.concatenate([g[...,np.newaxis] for g in grid], 3)
 
-    def _voxel_generator(self, spacing):
-        xs, ys, zs = self._voxel_coords(spacing)
-        for i, x in enumerate(xs.flatten()):
-            for j, y in enumerate(ys.flatten()):
-                for k, z in enumerate(zs.flatten()):
-                    yield (i, j, k), (x, y, z)
-
-    def voxelate(self, spacing, medium_index=1):
+    def voxelate(self, spacing, medium_index=0):
         """
         Represent a scatterer by discretizing into voxels
 
@@ -150,16 +168,10 @@ class Scatterer(HoloPyObject):
         voxelation : np.ndarray
             An array with refractive index at every pixel
         """
-        xs, ys, zs = self._voxel_coords(spacing)
+        return self.index_at(self._voxel_coords(spacing))
 
-        def label_index(x, y, z):
-            return self.index_at((x, y, z), medium_index)
-        if np.iscomplex([self.n]).any() or np.iscomplex(medium_index):
-            dtype = np.complex
-        else:
-            dtype = np.float
-        vlabel = np.vectorize(label_index, otypes=[dtype])
-        return vlabel(xs, ys, zs)
+    def voxelate_domains(self, spacing):
+        return self.in_domain(self._voxel_coords(spacing))
 
 
 class CenteredScatterer(Scatterer):
@@ -320,7 +332,7 @@ def find_bounds(indicator):
     bounds = [[-1e-9, 1e-9], [-1e-9, 1e-9], [-1e-9, 1e-9]]
     for i in range(3):
         for j in range(2):
-            point = [0, 0, 0]
+            point = np.zeros(3)
             point[i] = bounds[i][j]
             # find the extent along this axis by sequential logarithmic search
             while indicator(point):
@@ -348,6 +360,14 @@ def bound_union(d1, d2):
     return new
 
 class Indicators(HoloPyObject):
+    """
+    Class holding functions describing a scatterer
+
+    One or more functions (one per domain) that take Nx3 arrays of points and
+    return a boolean array of membership in each domain. More than one indicator
+    is allowed to return true for a given point, in that case the point is
+    considered a member of the first domain with a true value.
+    """
     def __init__(self, functions, bound = None):
         try:
             len(functions)
@@ -362,5 +382,5 @@ class Indicators(HoloPyObject):
                 self.bound = bound_union(self.bound, find_bounds(function))
 
 
-    def __call__(self, point):
-        return [test(point) for test in self.functions]
+    def __call__(self, points):
+        return [test(points) for test in self.functions]

@@ -33,7 +33,7 @@ from ...core import ImageSchema, Optics
 from ...core.helpers import OrderedDict
 
 from ..scatterer import (Sphere, Scatterer, Ellipsoid,
-                         Scatterers, scatterer)
+                         Scatterers)
 
 from ..scatterer.ellipsoid import isnumber
 from ..scatterer.scatterer import find_bounds
@@ -176,9 +176,3 @@ def test_sphere_nocenter():
 def test_calc_holo_nopolarization():
     sphere = Sphere(n = 1.59, r = .5, center = (5, 5, 5))
     assert_warns(UserWarning, Optics, wavelen = .660, index = 1.33)
-
-def test_voxelate():
-    sph = Sphere(n=1.59, r=0.5, center=(5, 5, 5))
-    v = sph.voxelate(.1)
-    assert_equal(v.max(), sph.n)
-    assert_equal(v[5,5,5], sph.n)
