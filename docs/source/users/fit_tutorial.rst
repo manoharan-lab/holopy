@@ -227,14 +227,18 @@ Complex Index of Refraction
   
 You can specify a complex index with ::
 
-  Sphere(n = ComplexParameter(real = par(1.58), imag = 1e-4))
+  from holopy.fitting import ComplexParameter
+
+  Sphere(n = ComplexParameter(real = par(1.58, step = 0.01), imag = 1e-4))
 
 This will fit to the real part of index of refraction while holding
 the imaginary part fixed.  You can fit to it as well by specifying
 ``imag = par(1e-4)`` instead of ``imag = 1e-4``. In a case like this
 where we are providing a small imaginary part for numerical stability,
 you would not want to fit to it. However fitting to an imaginary index
-component could be useful for a metal particle.
+component could be useful for a metal particle. Setting the key word argument ``step = 0.01`` specifies the the step size used in calculating
+the numerical derivatives of this parameter. Specifying a small step 
+size is often necessary when fitting for an index of refraction.
 
 Tying Parameters
 ----------------
