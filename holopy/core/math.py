@@ -165,6 +165,21 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
                      ca*cb*sg + sa*cg, -sa*cb*sg + ca*cg, sb*sg,
                      -ca*sb, sa*sb, cb]).reshape((3,3)) # row major
 
-# TODO: make this handle 2D
 def cartesian_distance(p1, p2):
-    return np.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2+(p1[2]-p2[2])**2)
+    """
+    Return the Cartesian distance between points p1 and p2.
+
+    Parameters
+    ----------
+    p1, p2: array or list
+        Coordinates of point 1 and point 2 in N-dimensions
+
+    Returns
+    -------
+    dist: float64
+        Cartesian distance between points p1 and p2 
+
+    """
+    p1 = np.array(p1)
+    p2 = np.array(p2)
+    return np.sqrt(np.sum((p1-p2)**2))
