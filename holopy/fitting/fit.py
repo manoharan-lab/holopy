@@ -80,12 +80,40 @@ class FitResult(HoloPyObject):
         return self.model.theory(self.scatterer, schema, self.alpha)
 
     def summary(self):
+        """
+        Put just the essential components of a fit result in a dictionary
+        """
         d = copy(self.parameters)
         d['rsq'] = self.rsq
         d['chisq'] = self.chisq
         d['time'] = self.time
         d['converged'] = self.converged
         return d
+
+    @classmethod
+    def from_summary(cls, summary, scatterer_cls):
+        """
+        Build a FitResult from a summary.
+
+        The returned FitResult will be incomplete because summaries do
+        not contain all of the minimizer information that full results do
+
+        Parameters
+        ----------
+        summary : dict
+            A dict as from cls.summary containing information about a fit.
+        """
+        summary = copy(summary)
+        misc = {}
+        for key in cls.summary_misc:
+            misc[key] = summary.pop(key)
+        scatterer = scatterer_cls.from_parameters(summary)
+        return cls(scatterer.parameters, scatterer, model=None, minimizer=None,
+                   minimization_details=None, **misc)
+
+    summary_misc = ['rsq', 'chisq', 'time', 'converged']
+
+
 
 
 def chisq(fit, data):
