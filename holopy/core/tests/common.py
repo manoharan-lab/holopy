@@ -23,6 +23,7 @@ import os
 import types
 import inspect
 import yaml
+import shutil
 from numpy.testing import assert_equal, assert_almost_equal
 
 
@@ -100,7 +101,6 @@ def assert_method_equal(actual, desired, context):
     assert_obj_close(act_obj, des_obj, context = context)
 
 def verify(result, name, rtol=1e-7, atol=1e-8):
-    location = os.path.split(os.path.abspath(__file__))[0]
     # This gets the filename for the context verify was called from.  It feels
     # really hacky, but it should get the job done.
     filename = inspect.currentframe().f_back.f_code.co_filename
@@ -121,7 +121,7 @@ def verify(result, name, rtol=1e-7, atol=1e-8):
             assert_almost_equal(getattr(result, key)(), val, decimal=int(-np.log10(rtol)))
 
 # TODO: update me
-def make_golds(result, name):
+def make_golds(result, name, moveto=None):
     '''
     Make new golds for a test
 
@@ -149,7 +149,15 @@ def make_golds(result, name):
     simple_checks = 'gold_{0}.yaml'.format(name)
     save(simple_checks, gold_dict)
 
-    print('move {0} to the gold/ directory, and {1} to the gold/full_data/ '
-          'directory to regold your local test.  You should also see about '
-          'getting the full data somewhere useful for fetching by '
-          'others'.format(simple_checks, gold_name))
+    if moveto:
+        root = os.path.split(os.path.abspath(__file__))[0]
+        location = os.path.join(root, 'holopy', moveto, 'tests')
+        gold_dir = os.path.join(location, 'gold')
+        full_dir = os.path.join(gold_dir, 'full_data')
+        shutil.move(simple_checks, gold_dir)
+        shutil.move(gold_name, full_dir)
+    else:
+        print('move {0} to the gold/ directory, and {1} to the gold/full_data/ '
+              'directory to regold your local test.  You should also see about '
+              'getting the full data somewhere useful for fetching by '
+              'others'.format(simple_checks, gold_name))
