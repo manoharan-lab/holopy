@@ -29,7 +29,7 @@ import scipy as sp
 import Image as PILImage
 import os
 import warnings
-from scipy.misc.pilutil import fromimage
+from scipy.misc import fromimage
 from ..third_party.tifffile import TIFFfile
 from ..errors import LoadError
 
@@ -52,7 +52,7 @@ def save_image(filename, im):
     if os.path.splitext(filename)[1] is '':
         filename += '.tif'
 
-    sp.misc.pilutil.toimage(im).save(filename)
+    sp.misc.toimage(im).save(filename)
 
 def load_image(filename, channel=0):
     """

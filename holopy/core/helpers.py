@@ -26,6 +26,7 @@ import os
 import shutil
 import errno
 import numpy as np
+from copy import copy
 
 try:
     from collections import OrderedDict
@@ -63,3 +64,60 @@ def mkdir_p(path):
         if exc.errno == errno.EEXIST:
             pass
         else: raise
+
+def coord_grid(bounds, spacing=None):
+    """
+    Return a nd grid of coordinates
+
+    Parameters
+    ----------
+    bounds : tuple of tuples or ndarray
+        Upper and lower bounds of the region
+    spacing : float or complex (optional)
+        Spacing between points, or if complex, number of points along each
+        dimension. If spacing is not provided, then bounds should be integers,
+        and coord_grid will return integer indexs in that range
+    exact_bounds : bool
+        If True (default) prefer having the bounds right at the cost of a small
+        change in spacing, if False prefer having the spacing right at the cost of
+        missing exact bounds
+    """
+    bounds = np.array(bounds)
+    if bounds.ndim == 1:
+        bounds = np.vstack(np.zeros(3), bounds).T
+
+    if spacing:
+        if np.isscalar(spacing) or len(spacing) == 1:
+            spacing = np.ones(3) * spacing
+    else:
+        spacing = [None, None, None]
+
+    grid = np.mgrid[[slice(b[0], b[1], s) for b, s in
+                     zip(bounds, spacing)]]
+    return np.concatenate([g[...,np.newaxis] for g in grid], 3)
+
+def dict_without(d, keys):
+    """
+    Exclude a list of keys from a dictionary
+
+    Silently ignores any key in keys that is not in the dict (this is
+    intended to be used to make sure a dict does not contain specific
+    keys)
+
+    Parameters
+    ----------
+    d : dict
+        The dictionary to operate on
+    keys : list(string)
+        The keys to exclude
+    returns : d2
+        A copy of dict without any of the specified keys
+
+    """
+    d = copy(d)
+    for key in _ensure_array(keys):
+        try:
+            del d[key]
+        except KeyError:
+            pass
+    return d

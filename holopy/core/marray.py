@@ -34,7 +34,7 @@ import errors
 from errors import UnspecifiedPosition
 from .holopy_object import HoloPyObject
 from .metadata import Grid, Angles
-from .helpers import _ensure_pair, _ensure_array
+from .helpers import _ensure_pair, _ensure_array, dict_without
 import inspect
 
 def zeros_like(obj, dtype=None):
@@ -206,16 +206,6 @@ class Schema(HoloPyObject):
 
     # TODO: need equivalents for set_metadata or to rewrite other code so it
     # doesn't need it.
-
-
-def dict_without(d, items):
-    d = copy.copy(d)
-    for item in _ensure_array(items):
-        try:
-            del d[item]
-        except KeyError:
-            pass
-    return d
 
 def call_super_init(cls, self, consumed=[], **kwargs):
     # this function uses a little inspect magic to call the superclass's __init__
@@ -608,7 +598,7 @@ def subimage(arr, center, shape):
     extent = [slice(c-s/2, c+s/2) for c, s in zip(center, shape)]
     # TODO: BUG: get coordinate offset correct (reset origin)
     output = _checked_cut(arr, extent)
-    
+
     if isinstance(output, Marray):
         if output.spacing != None:
              for i in range(len(extent)):

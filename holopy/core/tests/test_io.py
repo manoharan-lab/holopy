@@ -61,6 +61,7 @@ def test_image_io():
     t = tempfile.mkdtemp()
 
     filename = os.path.join(t, 'image0001.tif')
+    warnings.filterwarnings('once', category=DeprecationWarning)
     save(filename, holo)
     l = load(filename)
     assert_obj_close(l, holo)
