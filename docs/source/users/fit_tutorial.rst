@@ -311,8 +311,8 @@ scattering calculation is used to compare with data. For example when
 fitting against static light scattering data you might use a model
 like one of these::
 
-  model = Model(paremetrization, Mie.calc_scat_matr)
-  model = Model(paremetrization, Mie.calc_scat_intensity)
+  model = Model(parametrization, Mie.calc_scat_matr)
+  model = Model(parametrization, Mie.calc_scat_intensity)
 
 Technically, you can use any function here as long as it takes a
 scatterer and a :class:`.Schema` (and optionally additional keyword
