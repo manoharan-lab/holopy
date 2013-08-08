@@ -114,7 +114,7 @@ class ScatteringTheory(HoloPyObject):
         """
         field = cls_self.calc_field(scatterer, schema = schema, scaling = scaling)
         normal = np.array([0, 0, 1])
-        normal = normal.reshape((1, 1, 3))
+        normal = normal.reshape(_field_scalar_shape(field))
         return (abs(field*(1-normal))**2).sum(-1)
 
 
@@ -262,7 +262,10 @@ class FortranTheory(ScatteringTheory):
                                 fields[i, j, k] = 0
         return fields
 
-
+def _field_scalar_shape(e):
+    # this is a clever hack with list arithmetic to get [1, 3] or [1,
+    # 1, 3] as needed
+    return [1]*(e.ndim-1) + [3]
 
 # this is pulled out separate from the calc_holo method because occasionally you
 # want to turn prepared  e_fields into holograms directly
@@ -281,11 +284,12 @@ def scattered_field_to_hologram(scat, ref, detector_normal = (0, 0, 1)):
         Vector normal to the detector the hologram should be measured at
         (defaults to z hat, a detector in the x, y plane)
     """
+    shape = _field_scalar_shape(scat)
     if isinstance(ref, Optics):
         # add the z component to polarization and adjust the shape so that it is
         # broadcast correctly
-        ref = VectorGrid(np.append(ref.polarization, 0).reshape(1, 1, 3))
-    detector_normal = np.array(detector_normal).reshape((1, 1, 3))
+        ref = VectorGrid(np.append(ref.polarization, 0).reshape(shape))
+    detector_normal = np.array(detector_normal).reshape(shape)
 
     return Image(((abs(scat)**2 + abs(ref)**2 + 2* np.real(scat*ref)) *
                   (1 - detector_normal)).sum(axis=-1),

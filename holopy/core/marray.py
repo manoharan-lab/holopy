@@ -168,11 +168,12 @@ class Schema(HoloPyObject):
     """
     def __init__(self, shape=None, positions=None, optics=None,
                  origin=np.zeros(3), use_random_fraction=None,
-                 **kwargs):
+                 flatten_if_subset=None, **kwargs):
         self.positions = positions
         self.optics = optics
         self.origin = origin
         self.use_random_fraction = use_random_fraction
+        self.flatten_if_subset = flatten_if_subset
         # if we are a np.ndarray subclass (if this constructor is
         # called from Marray or subclass) we will already have a shape
         # and should not try to do anything with our shape argument.
@@ -241,8 +242,9 @@ class Marray(np.ndarray, Schema):
 
     {attrs}
     """
-    def __new__(cls, arr, positions=None, optics=None, origin=np.zeros(3),
-                use_random_fraction=None, dtype=None, **kwargs):
+    def __new__(cls, arr, positions=None, optics=None,
+                origin=np.zeros(3), use_random_fraction=None,
+                flatten_if_subset=None, dtype=None, **kwargs):
         # things like numpy.std give us 0d arrays, the user probably expects
         # python scalars, so return one instead.
         if hasattr(arr, 'ndim') and arr.ndim == 0:
@@ -250,8 +252,9 @@ class Marray(np.ndarray, Schema):
             return arr.max()
         return np.asarray(arr, dtype = dtype).view(cls)
 
-    def __init__(self, arr, positions=None, optics=None, origin=np.zeros(3),
-                 use_random_fraction=None, dtype=None, **kwargs):
+    def __init__(self, arr, positions=None, optics=None,
+                 origin=np.zeros(3), use_random_fraction=None,
+                 flatten_if_subset=None, dtype=None, **kwargs):
         call_super_init(Marray, self, ['arr', 'dtype'])
 
     def __array_finalize__(self, obj):
@@ -305,7 +308,7 @@ class Marray(np.ndarray, Schema):
 class RegularGridSchema(Schema):
     def __init__(self, shape=None, spacing=None, optics=None,
                  origin=np.zeros(3), use_random_fraction=None,
-                 **kwargs):
+                 flatten_if_subset=None, **kwargs):
 
         if np.isscalar(spacing):
             if hasattr(self, 'shape'):
@@ -401,9 +404,10 @@ class RegularGridSchema(Schema):
 class VectorGridSchema(RegularGridSchema):
     def __init__(self, shape=None, spacing=None,
                  components=('x', 'y', 'z'), optics=None,
-                 origin=np.zeros(3), use_random_fraction=None, **kwargs):
+                 origin=np.zeros(3), use_random_fraction=None,
+                 flatten_if_subset=None, **kwargs):
         self.components = components
-        call_super_init(VectorGridSchema, self, 'components')
+        call_super_init(VectorGridSchema, self, ['components'])
 
     @property
     def extent(self):
@@ -420,8 +424,16 @@ class VectorGridSchema(RegularGridSchema):
     def interpret_1d(self, arr):
         if self.selection is None:
             return VectorGrid(arr.reshape(self.shape),
-                                  **dict_without(self._dict, ['shape']))
+                              **dict_without(self._dict, ['shape']))
         else:
+            if getattr(self, 'flatten_if_subset', False) == True:
+                # A flatten_if_subset attr will be added by fitting cost
+                # function to indicate that we shouldn't bother
+                # reassembling a 2d array with lots of 0s in the case of a
+                # random subset, since we will only want to compare at the
+                # nonzero pixels.
+                return VectorGrid(arr, **dict_without(self._dict, ['shape']))
+
             new = zeros_like(self, dtype = arr.dtype)
             new[self.selection] = arr
             return new
@@ -445,8 +457,9 @@ class VectorGridSchema(RegularGridSchema):
 
 
 class RegularGrid(Marray, RegularGridSchema):
-    def __init__(self, arr, spacing=None, optics=None, origin=np.zeros(3),
-                 use_random_fraction=None, dtype=None, **kwargs):
+    def __init__(self, arr, spacing=None, optics=None,
+                 origin=np.zeros(3), use_random_fraction=None,
+                 flatten_if_subset=None, dtype=None, **kwargs):
         call_super_init(RegularGrid, self)
 
     def resample(self, shape, window=None):
@@ -496,7 +509,8 @@ class ImageSchema(RegularGridSchema):
     {attrs}
     """
     def __init__(self, shape=None, spacing=None, optics=None,
-                 origin=np.zeros(3), use_random_fraction=None, **kwargs):
+                 origin=np.zeros(3), use_random_fraction=None,
+                 flatten_if_subset=None, **kwargs):
         if shape is not None:
             shape = _ensure_pair(shape)
 
@@ -531,7 +545,7 @@ class VectorGrid(RegularGrid, VectorGridSchema):
     {attrs}
     """
     def __init__(self, arr, spacing=None, optics=None, origin=np.zeros(3),
-                 use_random_fraction=None, dtype=None,
+                 use_random_fraction=None, flatten_if_subset=None, dtype=None,
                  components=('x', 'y', 'z'), **kwargs):
         call_super_init(VectorGrid, self)
 
@@ -566,7 +580,8 @@ class VolumeSchema(RegularGridSchema):
     {attrs}
     """
     def __init__(self, shape=None, spacing=None, optics=None,
-                 origin=np.zeros(3), use_random_fraction=None, **kwargs):
+                 origin=np.zeros(3), use_random_fraction=None,
+                 flatten_if_subset=None, **kwargs):
         call_super_init(VolumeSchema, self)
 
 

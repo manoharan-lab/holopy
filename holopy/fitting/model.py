@@ -272,6 +272,13 @@ class Model(HoloPyObject):
 
     def cost_func(self, data):
         schema = self.get_schema(data)
+        # if the user has not specified whether to flatten subsets,
+        # default to doing so because it will make chisq's reported
+        # more correct, and also saves some computational effort.
+        if schema.flatten_if_subset is None:
+            schema.flatten_if_subset = True
+        if schema.selection is not None:
+            data = data[schema.selection]
         def cost(pars):
             calc = self.theory(self.scatterer.make_from(pars), schema, scaling =
                           self.get_alpha(pars))
