@@ -603,7 +603,9 @@ def subimage(arr, center, shape):
     Returns
     -------
     sub : numpy.ndarray
-        Subset of shape shape centered at center
+        Subset of shape shape centered at center. For marrays, marray.origin
+        will be set such that the upper left corner of the output has 
+        coordinates relative to the input.
     """
     assert len(center) == arr.ndim
     if np.isscalar(shape):

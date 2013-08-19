@@ -28,6 +28,16 @@ way that images are treated by most computer software.
    :scale: 30 %
    :alt: Coordinate system used in HoloPy.
 
+.. note::
+
+  Using :func:`.subimage` changes the origin attribute of an 
+  :class:`~holopy.core.marray.Image` to be relative to the original input.
+  This is particularly relevant for using subimaged images as a 
+  :class:`~holopy.core.marray.Schema` for scattering calculations (such as
+  computing holograms): coordinates of 
+  :class:`~holopy.scattering.scatterer.Scatterer` objects need to be specified 
+  relative to the original image.
+
 In sample space, we choose the z axis so that distances to objects
 from the camera/focal plane are positive (have positive z
 coordinates).  The price we pay for this choice is that the
