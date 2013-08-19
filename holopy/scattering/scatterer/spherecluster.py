@@ -34,12 +34,12 @@ from ..errors import OverlapWarning, ScattererDefinitionError
 from ...core.math import cartesian_distance, rotate_points
 
 # default to always warning the user about overlaps.  This can be overriden by
-# calling this function again with a different action.  
+# calling this function again with a different action.
 warnings.simplefilter('always', OverlapWarning)
 
 class Spheres(Scatterers):
     '''
-    Contains optical and geometrical properties of a cluster of spheres. 
+    Contains optical and geometrical properties of a cluster of spheres.
 
     Attributes
     ----------
@@ -56,7 +56,7 @@ class Spheres(Scatterers):
             if not isinstance(s, Sphere):
                 raise ScattererDefinitionError(
                     "Spheres expects all component " +
-                    "scatterers to be Spheres.\n" + 
+                    "scatterers to be Spheres.\n" +
                     repr(s) + " is not a Sphere", self)
         self.scatterers = scatterers
 
@@ -75,10 +75,20 @@ class Spheres(Scatterers):
                 except:
                     # if the coordinates are not something that we can do
                     # arithmatic on, just pass for now, hopefully the overlap
-                    # will be caught later. 
+                    # will be caught later.
                     pass
         return overlaps
-            
+
+    def largest_overlap(self):
+        largest = 0
+        for i, s1 in enumerate(self.scatterers):
+            for j in range(i+1, len(self.scatterers)):
+                s2= self.scatterers[j]
+                largest = max(largest, (np.max(s1.r) + np.max(s2.r)) -
+                                       cartesian_distance(s1.center, s2.center))
+
+        return largest
+
     @property
     def n(self):
         return np.array([s.n for s in self.scatterers])
@@ -115,10 +125,10 @@ class Spheres(Scatterers):
 # it should become a method (and override Scatterer.rotate()) rather
 # than a function.  I would propose moving this to Scatterers, where it
 # can be made more general and inheritable.
-    
+
 def rotate(cluster, theta, phi, psi):
     com = cluster.centers.mean(0)
-        
+
     return Spheres([Sphere(n=s.n, r=s.r, center =
                                  com+rotate_points(s.center-com, theta,
                                                    phi, psi)) for s in
