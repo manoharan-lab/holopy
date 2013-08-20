@@ -84,7 +84,7 @@ def coord_grid(bounds, spacing=None):
     """
     bounds = np.array(bounds)
     if bounds.ndim == 1:
-        bounds = np.vstack(np.zeros(3), bounds).T
+        bounds = np.vstack((np.zeros(3), bounds)).T
 
     if spacing:
         if np.isscalar(spacing) or len(spacing) == 1:

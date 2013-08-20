@@ -20,7 +20,7 @@ import numpy as np
 from numpy.testing import assert_equal
 from nose.plugins.attrib import attr
 
-from ..helpers import _ensure_array
+from ..helpers import _ensure_array, coord_grid
 
 
 @attr('fast')
@@ -28,3 +28,17 @@ def test_ensure_array():
     assert_equal(_ensure_array(1.0), np.array([1.0]))
     assert_equal(_ensure_array([1.0]), np.array([1.0]))
     assert_equal(_ensure_array(np.array([1.0])), np.array([1.0]))
+
+@attr('fast')
+def test_coord_grid():
+    assert_equal(coord_grid(([0,5],[0,5],[0,5])).shape, (5,5,5,3))
+    assert_equal(coord_grid(([0,1],[0,1],[0,1]), .2).shape, (5, 5, 5, 3))
+    assert_equal(coord_grid(([0,1],[0,1],[0,1]), .5),
+                 np.array([[[[ 0. ,  0. ,  0. ],
+                             [ 0. ,  0. ,  0.5]],
+                            [[ 0. ,  0.5,  0. ],
+                             [ 0. ,  0.5,  0.5]]],
+                           [[[ 0.5,  0. ,  0. ],
+                             [ 0.5,  0. ,  0.5]],
+                            [[ 0.5,  0.5,  0. ],
+                             [ 0.5,  0.5,  0.5]]]]))
