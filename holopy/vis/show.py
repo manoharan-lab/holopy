@@ -38,7 +38,7 @@ class VisualizationNotImplemented(Exception):
             self.o.__class__.__name__)
 
 
-def show(o,color=(0,0,1)):
+def show(o,color=(.5, .5, .5)):
     """
     Visualize a scatterer, hologram, or reconstruction
 
