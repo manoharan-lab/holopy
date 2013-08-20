@@ -84,10 +84,8 @@ class FitResult(HoloPyObject):
         Put just the essential components of a fit result in a dictionary
         """
         d = copy(self.parameters)
-        d['rsq'] = self.rsq
-        d['chisq'] = self.chisq
-        d['time'] = self.time
-        d['converged'] = self.converged
+        for par in self.summary_misc:
+            d[par] = getattr(self, par)
         return d
 
     @classmethod
@@ -105,13 +103,18 @@ class FitResult(HoloPyObject):
         """
         summary = copy(summary)
         misc = {}
-        for key in cls.summary_misc:
-            misc[key] = summary.pop(key)
+        for key in cls.summary_misc[:-1]:
+            misc[key] = summary.pop(key, None)
         scatterer = scatterer_cls.from_parameters(summary)
         return cls(scatterer.parameters, scatterer, model=None, minimizer=None,
                    minimization_details=None, **misc)
 
-    summary_misc = ['rsq', 'chisq', 'time', 'converged']
+    summary_misc = ['rsq', 'chisq', 'time', 'converged', 'niter']
+
+    def niter(self):
+        # TODO: have this correctly pull number of iterations from
+        # non-nmpfit minimizers.
+        return self.minimization_details.niter
 
 
 

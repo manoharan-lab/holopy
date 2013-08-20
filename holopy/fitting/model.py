@@ -274,7 +274,7 @@ class Model(HoloPyObject):
         schema = self.get_schema(data)
         # if the user has not specified whether to flatten subsets,
         # default to doing so because it will make chisq's reported
-        # more correct, and also saves some computational effort.
+        # more correct and also saves some computational effort.
         if schema.flatten_if_subset is None:
             schema.flatten_if_subset = True
         if schema.selection is not None:
