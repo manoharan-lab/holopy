@@ -26,7 +26,7 @@ from __future__ import division
 import inspect
 from copy import copy
 from os.path import commonprefix
-
+import warnings
 from ..core.holopy_object import HoloPyObject
 from .parameter import Parameter, ComplexParameter
 
@@ -214,12 +214,13 @@ class Model(HoloPyObject):
         Extra scaling parameter, hopefully this will be removed by improvements
         in our theory soon.
     """
-    def __init__(self, scatterer, theory, schema_overlay=None, alpha = None):
+    def __init__(self, scatterer, theory, schema_overlay=None, alpha =
+                 None, use_random_fraction=None):
         if not isinstance(scatterer, Parametrization):
             scatterer = ParameterizedObject(scatterer)
         self.scatterer = scatterer
-
         self.theory = theory
+        self.use_random_fraction = use_random_fraction
 
         # TODO: make schema_overlay a Parametrization so that you can fit to
         # things in the schema metadata
@@ -265,9 +266,14 @@ class Model(HoloPyObject):
         # just a schema if data is a full Marray
         schema = copy(data)
         if self.schema_overlay is not None:
+            warnings.warn(warnings.DepricationWarning(
+                "Setting random subset by schema_overlay is depricated, use the "
+                "use_random_fraction argument instead"))
             for key, val in self.schema_overlay._dict.iteritems():
                 if val is not None:
                     setattr(schema, key, val)
+        if self.use_random_fraction is not None:
+            schema.use_random_fraction = self.use_random_fraction
         return schema
 
     def cost_func(self, data):
