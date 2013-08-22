@@ -196,7 +196,13 @@ class Schema(HoloPyObject):
         return self._selection
 
     def _make_selection(self):
+        # TODO: BUG: this will give something that is only
+        # stochastically the right number of pixels. I have a better
+        # implementation for ImageSchema, the only case we actually
+        # use at the moment, but this could be a problem later.
         return np.random.random(self.shape) > 1.0-self.use_random_fraction
+
+
 
     # TODO: put this somewhere sensible, make it handle phi as well
     def positions_theta_phi(self):
@@ -528,6 +534,20 @@ class ImageSchema(RegularGridSchema):
 
         call_super_init(ImageSchema, self)
 
+    @property
+    def size(self):
+        return self.shape[0]*self.shape[1]
+
+    def _make_selection(self):
+        n_sel = int(np.ceil(self.size*self.use_random_fraction))
+        sample = np.random.choice(self.size, n_sel, replace=False)
+
+        pairs = sample // self.shape[1], sample % self.shape[1]
+        selection = np.zeros(self.shape, dtype='bool')
+        selection[pairs] = 1
+        return selection
+
+
 
 @_describe_init_signature
 class Image(RegularGrid, ImageSchema):
@@ -604,7 +624,7 @@ def subimage(arr, center, shape):
     -------
     sub : numpy.ndarray
         Subset of shape shape centered at center. For marrays, marray.origin
-        will be set such that the upper left corner of the output has 
+        will be set such that the upper left corner of the output has
         coordinates relative to the input.
     """
     assert len(center) == arr.ndim

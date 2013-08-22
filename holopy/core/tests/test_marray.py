@@ -128,3 +128,10 @@ def test_squeeze():
     assert_equal(s.shape, (10, 10))
     assert_equal(s.optics, v.optics)
     assert_equal(s.spacing, (1, 3))
+
+def test_random_fraction():
+    a = ImageSchema(shape=(50,50), use_random_fraction=.1)
+    assert_equal(a.selection.sum(), 250)
+
+    b = ImageSchema(shape=(5, 5), use_random_fraction=.1)
+    assert_equal(b.selection.sum(), 3)
