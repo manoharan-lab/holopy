@@ -540,7 +540,9 @@ class ImageSchema(RegularGridSchema):
 
     def _make_selection(self):
         n_sel = int(np.ceil(self.size*self.use_random_fraction))
-        sample = np.random.choice(self.size, n_sel, replace=False)
+        indices = np.arange(self.size)
+        np.random.shuffle(indices)
+        sample = indices[:n_sel]
 
         pairs = sample // self.shape[1], sample % self.shape[1]
         selection = np.zeros(self.shape, dtype='bool')

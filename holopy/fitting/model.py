@@ -266,8 +266,8 @@ class Model(HoloPyObject):
         # just a schema if data is a full Marray
         schema = copy(data)
         if self.schema_overlay is not None:
-            warnings.warn(warnings.DepricationWarning(
-                "Setting random subset by schema_overlay is depricated, use the "
+            warnings.warn(DeprecationWarning(
+                "Setting random subset by schema_overlay is deprecated, use the "
                 "use_random_fraction argument instead"))
             for key, val in self.schema_overlay._dict.iteritems():
                 if val is not None:
