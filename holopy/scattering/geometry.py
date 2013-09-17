@@ -56,7 +56,7 @@ def distances(cluster, gaponly=False):
     dist = np.zeros([num,num])
     for i in np.arange(0,num):
         for j in np.arange(0,num):
-            dist[i,j] = hp.process.cartesian_distance(cluster.centers[i,:],cluster.centers[j,:])
+            dist[i,j] = hp.core.math.cartesian_distance(cluster.centers[i,:],cluster.centers[j,:])
             #modification to change center to center distances 
             #to gap distances if asked for
             if gaponly==True and i!=j:
