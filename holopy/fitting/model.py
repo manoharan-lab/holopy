@@ -192,7 +192,8 @@ class ParameterizedObject(Parametrization):
 
         return self.obj.from_parameters(obj_pars)
 
-
+def compare_subtract(calc, data):
+    return (data - calc).ravel()
 
 class Model(HoloPyObject):
     """
@@ -258,9 +259,6 @@ class Model(HoloPyObject):
             alpha = self.alpha
         return self.theory(self.scatterer.guess, self.get_schema(schema), alpha)
 
-    def compare(self, calc, data, selection = None):
-        return (data - calc).ravel()
-
     def get_schema(self, data):
         # TODO: make this not copy whole holograms. It should pull out
         # just a schema if data is a full Marray
@@ -288,7 +286,7 @@ class Model(HoloPyObject):
         def cost(pars):
             calc = self.theory(self.scatterer.make_from(pars), schema, scaling =
                           self.get_alpha(pars))
-            return self.compare(calc, data)
+            return compare_subtract(calc, data)
         return cost
 
     # TODO: make a user overridable cost function that gets physical
