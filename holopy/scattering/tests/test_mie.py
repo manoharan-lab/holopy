@@ -206,6 +206,7 @@ def test_selection():
     subset_holo = Mie.calc_holo(sphere, subset_schema, scaling=scaling_alpha)
 
     assert_allclose(subset_holo[subset_schema.selection], holo[subset_schema.selection])
+    assert_allclose(subset_holo.use_random_fraction, subset_schema.use_random_fraction)
 
 @attr('fast')
 def test_radiometric():

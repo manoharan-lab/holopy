@@ -19,7 +19,7 @@
 Routines for common calculations and transformations of groups of spheres.
 
 This code is in need of significant refactoring and simplification, refactoring
-which may break code that depends on it.  
+which may break code that depends on it.
 
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 
@@ -28,13 +28,13 @@ from __future__ import division
 
 import numpy as np
 from numpy import sqrt
-import holopy as hp
+from holopy.core.math import cartesian_distance
 from .scatterer import Sphere, Spheres
 
 def distances(cluster, gaponly=False):
     """
     calculate the distances between each sphere in a cluster and each of the others
-    
+
     Parameters
     ----------
     cluster: :class:`holopy.scattering.scatterer.Scatterer`
@@ -42,22 +42,22 @@ def distances(cluster, gaponly=False):
     gaponly: bool
         Whether to calculate the distances between particle centers
         or between particle surfaces (gap distances).
-        
+
     Notes
     -----
     The returned array of distances includes redundant information.
     The identical distances between sphere 1 and sphere 2 and between sphere 2
     and sphere 1 are both in the returned array. Calculating and returning
-    the full array makes it easy for the user to access all the interparticle 
+    the full array makes it easy for the user to access all the interparticle
     distances starting from any sphere of interest.
-    
+
     """
     num = len(cluster.centers)
     dist = np.zeros([num,num])
     for i in np.arange(0,num):
         for j in np.arange(0,num):
-            dist[i,j] = hp.core.math.cartesian_distance(cluster.centers[i,:],cluster.centers[j,:])
-            #modification to change center to center distances 
+            dist[i,j] = cartesian_distance(cluster.centers[i,:],cluster.centers[j,:])
+            #modification to change center to center distances
             #to gap distances if asked for
             if gaponly==True and i!=j:
                 dist[i,j] = dist[i,j]-cluster.r[i]-cluster.r[j]
@@ -66,21 +66,21 @@ def distances(cluster, gaponly=False):
 def angles(cluster, degrees=True):
     """
     calculate the angles between one particle and every pair of other particles
-    
+
     Parameters
     ----------
     cluster: :class:`holopy.scattering.scatterer.Scatterer`
         A sphere cluster to determine the interparticle distances of.
     degrees: bool
         Whether to return angles in degrees (True) or in radians (False).
-        
+
     Notes
     -----
     Angle abc is the acute angle formed by edges conecting points ab and bc.
     If a, b, and c are locations of particles (vertices),
     the returned 3D array has non-zero values for angles abc, zeros
     for angles aba, and NAN's for "angles" aab.
-    
+
     """
     num = len(cluster.centers)
     ang = np.zeros([num,num,num])
@@ -101,7 +101,7 @@ def make_tricluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
     """
     Returns a sphere cluster of three particles forming an equilateral triangle
     centered on a given center of mass.
-    
+
     Parameters
     ----------
     index:
@@ -116,7 +116,7 @@ def make_tricluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
         Center of mass y-coordinate
     zcom:
         Center of mass z-coordinate
-        
+
     """
     #currently restricted to all identical spheres
     xs = np.array([1/sqrt(3)*(radius+gap/2.0),
@@ -131,7 +131,7 @@ def make_tricluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
 
 def make_sqcluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
     """
-    Returns a sphere cluster of four particles forming a 
+    Returns a sphere cluster of four particles forming a
     square centered on a given center of mass.
 
     Parameters
@@ -162,7 +162,7 @@ def make_sqcluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
 
 def make_tetracluster(index,radius,gap,xcom=0,ycom=0,zcom=0):
     """
-    Returns a sphere cluster of four particles forming a 
+    Returns a sphere cluster of four particles forming a
     tetrahedron centered on a given center of mass.
 
     Parameters

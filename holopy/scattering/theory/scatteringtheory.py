@@ -80,7 +80,10 @@ class ScatteringTheory(HoloPyObject):
         instantiate a theory object if it has adjustable parameters and you want
         to use non-default values.
         """
-        return cls_self._calc_field(scatterer, schema) * scaling
+
+        fields = cls_self._calc_field(scatterer, schema) * scaling
+        fields.get_metadata_from(schema)
+        return fields
 
     @classmethod
     @binding

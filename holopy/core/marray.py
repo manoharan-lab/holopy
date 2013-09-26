@@ -214,6 +214,37 @@ class Schema(HoloPyObject):
     # TODO: need equivalents for set_metadata or to rewrite other code so it
     # doesn't need it.
 
+    def get_metadata_from(self, schema, prefer_self=True):
+        """
+        Fill in the metadata for this schema from another
+
+        Parameters
+        ----------
+        schema : Schema
+            Other schema from which to get metadata for this one
+        prefer_mine : Bool
+            If true, use values in self any case they exist and only get values
+            from schema where they are absent. If true, overwrite self's values
+            with those from schema
+
+        Returns
+        -------
+        Nothing : updates in place
+        """
+        if prefer_self:
+            newdict = copy.copy(schema._dict)
+            newdict.update(self._dict)
+        else:
+            newdict = self._dict
+            newdict.update(schema._dict)
+        if isinstance(self, np.ndarray):
+            newdict = dict_without(newdict, 'shape')
+
+        for key, item in newdict.iteritems():
+            setattr(self, key, item)
+
+
+
 def call_super_init(cls, self, consumed=[], **kwargs):
     # this function uses a little inspect magic to call the superclass's __init__
     # the arguments to the current __init__ modulo the arguments consumed or
@@ -384,6 +415,9 @@ class RegularGridSchema(Schema):
     @property
     def spacing(self):
         return self.positions.spacing
+    @spacing.setter
+    def spacing(self, val):
+        self.positions.spacing = val
 
     @property
     def extent(self):
