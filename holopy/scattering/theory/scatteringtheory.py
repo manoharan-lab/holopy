@@ -30,8 +30,8 @@ from ...core.marray import Image, VectorGrid, VectorGridSchema, dict_without
 from ...core import Optics
 from ...core.holopy_object import HoloPyObject
 from ..binding_method import binding, finish_binding
-from ..scatterer import Sphere
-from ..errors import NoCenter, NoPolarization
+from ..scatterer import Sphere, Scatterers
+from ..errors import NoCenter, NoPolarization, TheoryNotCompatibleError
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -228,12 +228,28 @@ class ScatteringTheory(HoloPyObject):
 # Subclass of scattering theory, overrides functions that depend on array
 # ordering and handles the tranposes for sending values to/from fortran
 class FortranTheory(ScatteringTheory):
-    def _list_of_sph_coords(self, center, selection=None):
-        return super(FortranTheory, self)._list_of_sph_coords(center,
-                                                              selection).T
-    def _finalize_fields(self, z, fields, schema):
-        return super(FortranTheory, self)._finalize_fields(
-            z, np.vstack(fields).T, schema)
+    def _calc_field(self, scatterer, schema):
+        def get_field(s):
+            positions = schema.positions_kr_theta_phi(origin = s.center).T
+            field = np.vstack(self._raw_fields(positions, s, schema.optics)).T
+            phase = np.exp(-1j*np.pi*2*s.center[2] / schema.optics.med_wavelen)
+            field *= phase
+            return VectorGridSchema.from_schema(schema).interpret_1d(field)
+
+
+        # See if we can handle the scatterer in one step
+        if self._can_handle(scatterer):
+            field = get_field(scatterer)
+        elif isinstance(scatterer, Scatterers):
+        # if it is a composite, try superposition
+            scatterers = scatterer.get_component_list()
+            field = get_field(scatterers[0])
+            for s in scatterers[1:]:
+                field += get_field(s)
+        else:
+            raise TheoryNotCompatibleError(self, scatterer)
+
+        return self._set_internal_fields(field, scatterer)
 
     def _set_internal_fields(self, fields, scatterer):
         center_to_center = scatterer.center - fields.center

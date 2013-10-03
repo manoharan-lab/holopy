@@ -62,6 +62,9 @@ class Mie(FortranTheory):
         # call base class constructor
         super(Mie, self).__init__()
 
+    def _can_handle(self, scatterer):
+        return isinstance(scatterer, Sphere)
+
     def _calc_scat_matrix(self, scatterer, schema):
         if isinstance(scatterer, Sphere):
             scat_coeffs = self._scat_coeffs(scatterer, schema.optics)
@@ -73,52 +76,10 @@ class Mie(FortranTheory):
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
-    def _calc_field(self, scatterer, schema):
-        """
-        Calculate fields for single or multiple spheres
-
-        Parameters
-        ----------
-        scatterer : :mod:`scatterpy.scatterer` object
-            scatterer or list of scatterers to compute field for
-        selection : array of integers (optional)
-            a mask with 1's in the locations of pixels where you
-            want to calculate the field, defaults to all pixels
-        Returns
-        -------
-        field : :class:`.ElectricField`with shape `imshape`
-            scattered electric field
-
-        Notes
-        -----
-        For multiple particles, this code superposes the fields
-        calculated from each particle (using calc_mie_fields()).
-        """
-        if isinstance(scatterer, Sphere):
-            scat_coeffs = self._scat_coeffs(scatterer, schema.optics)
-
-            # mieangfuncs.f90 works with everything dimensionless.
-            # tranpose to get things in fortran format
-            # TODO: move this transposing to a wrapper
-            if self.compute_escat_radial:
-                fields = mieangfuncs.mie_fields(schema.positions_kr_theta_phi(
-                        origin = scatterer.center).T, scat_coeffs,
-                                                schema.optics.polarization, 1)
-            else:
-                fields = mieangfuncs.mie_fields(schema.positions_kr_theta_phi(
-                        origin = scatterer.center).T, scat_coeffs,
-                                                schema.optics.polarization, 0)
-            fields = self._finalize_fields(scatterer.z, fields, schema)
-        elif isinstance(scatterer, Scatterers):
-            spheres = scatterer.get_component_list()
-
-            field = self._calc_field(spheres[0], schema)
-            for sphere in spheres[1:]:
-                field += self._calc_field(sphere, schema)
-            fields = field
-        else:
-            raise TheoryNotCompatibleError(self, scatterer)
-        return self._set_internal_fields(fields, scatterer)
+    def _raw_fields(self, positions, scatterer, optics):
+        scat_coeffs = self._scat_coeffs(scatterer, optics)
+        return mieangfuncs.mie_fields(positions, scat_coeffs, optics.polarization,
+                                      self.compute_escat_radial)
 
     def _calc_cross_sections(self, scatterer, optics):
         """

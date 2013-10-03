@@ -116,6 +116,9 @@ class Multisphere(FortranTheory):
         # call base class constructor
         super(Multisphere, self).__init__()
 
+    def _can_handle(self, scatterer):
+        return isinstance(scatterer, Spheres)
+
     def _scsmfo_setup(self, scatterer, optics):
         """
         Given multiple spheres, calculate amn coefficients for scattered
@@ -185,47 +188,22 @@ class Multisphere(FortranTheory):
 
         return amn, lmax
 
-    def _calc_field(self, scatterer, schema):
-        """
-        Calculate fields for single or multiple spheres
-
-        Parameters
-        ----------
-        scatterer : :mod:`.scatterer` object
-            scatterer or list of scatterers to compute field for
-        selection : array of integers (optional)
-            a mask with 1's in the locations of pixels where you
-            want to calculate the field, defaults to all pixels
-
-        Returns
-        -------
-        xfield, yfield, zfield : complex arrays with shape `imshape`
-            x, y, z components of scattered fields
-
-        """
-        amn, lmax = self._scsmfo_setup(scatterer, schema.optics)
-
-        positions = schema.positions_kr_theta_phi(origin = scatterer.centers.mean(0)).T
-    
-        if self.compute_escat_radial:
-            fields = mieangfuncs.tmatrix_fields(positions, amn, lmax, 0, 
-                                                schema.optics.polarization, 1)
-        else:
-            fields = mieangfuncs.tmatrix_fields(positions, amn, lmax, 0, 
-                                                schema.optics.polarization, 0)
-            
+    def _raw_fields(self, positions, scatterer, optics):
+        amn, lmax = self._scsmfo_setup(scatterer, optics)
+        fields = mieangfuncs.tmatrix_fields(positions, amn, lmax, 0,
+                                            optics.polarization,
+                                            self.compute_escat_radial)
         if np.isnan(fields[0][0]):
             raise MultisphereFieldNaN(self, scatterer, '')
 
-        return self._set_internal_fields(self._finalize_fields(
-            scatterer.z.mean(), fields, schema), scatterer)
+        return fields
 
     def _calc_cext(self, scatterer, optics, amn = None, lmax = None):
         """
-        Calculate extinction cross section via optical theorem for 
+        Calculate extinction cross section via optical theorem for
         cluster-centered field expansion.
 
-        Note that it is also possible to calclate C_ext from the 
+        Note that it is also possible to calclate C_ext from the
         sphere-centered field expansions. We do not do this here.
         """
         # normalize the polarization
@@ -258,19 +236,19 @@ class Multisphere(FortranTheory):
         expansion is not implemented in SCSMFO and is difficult because of
         cross terms.  The sphere-centered approach is to get C_ext from the
         optical theorem and then analytically integrate the Poynting vector
-        over the surface of each sphere to get C_abs.  C_scat is then 
+        over the surface of each sphere to get C_abs.  C_scat is then
         C_ext - C_scat.  Here, instead, we calculate C_scat and subtract
-        from C_ext to get C_abs.  
+        from C_ext to get C_abs.
 
         The cluster-centered expansion is easier to work with. However,
         we note that there is the risk of round-off or loss of precision
         when translating the sphere-centered expansion to the cluster-centered
-        expansion when the constituent spheres are very far apart or 
+        expansion when the constituent spheres are very far apart or
         the tolerances are not set low enough. Since the present approach
         does not directly calculate C_abs, there may be some loss of accuracy
         in C_abs (it may come out negative) for non-absorbing or very weakly
-        absorbing spheres.  If you are interested in C_abs, it may be 
-        preferable to calculate it directly from the sphere-centered 
+        absorbing spheres.  If you are interested in C_abs, it may be
+        preferable to calculate it directly from the sphere-centered
         expansion (not implemented).
         '''
         # normalize the polarization
@@ -286,7 +264,7 @@ class Multisphere(FortranTheory):
         qscat_0 = (np.abs(amn[:,:,0] + amn[:,:,1])**2).sum()
         qscat_pi2 = (np.abs(amn[:,:,0] - amn[:,:,1])**2).sum()
         qscat_pi4 = (np.abs(amn[:,:,0] - 1.j * amn[:,:,1])**2).sum()
-        
+
         # See line 81 (header doc) of scsmfo1b.for
         qscat = (qscat_0 + qscat_pi2 + cos(2. * gamma) * (qscat_0 - qscat_pi2)
                  + sin(2. * gamma) * (2. * qscat_pi4 - qscat_0 -qscat_pi2)) / 2.
@@ -376,12 +354,12 @@ class Multisphere(FortranTheory):
 
 
 def _asm_far(theta, phi, amn, lmax):
-        """
-        far field amplitude scattering matrix for fixed angles
-        """
-        asm = np.roll(uts_scsmfo.asm(amn, lmax, theta, phi),
-                      -1).reshape((2,2)) * -0.5 # correction factor
-        return asm
+    """
+    far field amplitude scattering matrix for fixed angles
+    """
+    asm = np.roll(uts_scsmfo.asm(amn, lmax, theta, phi),
+                  -1).reshape((2,2)) * -0.5 # correction factor
+    return asm
 
 def _integrate4pi(integrand):
     '''

@@ -91,11 +91,6 @@ def test_Mie_multiple():
     assert_raises(TheoryNotCompatibleError, Mie.calc_intensity,
                   el, schema)
     assert_raises(TheoryNotCompatibleError, Mie.calc_holo, el, schema)
-    # and when the list of scatterers includes a coated sphere
-    sc.add(el)
-    assert_raises(TheoryNotCompatibleError, Mie.calc_field, sc, schema)
-    assert_raises(TheoryNotCompatibleError, Mie.calc_intensity, sc, schema)
-    assert_raises(TheoryNotCompatibleError, Mie.calc_holo, sc, schema)
 
 @attr('fast')
 def test_mie_polarization():

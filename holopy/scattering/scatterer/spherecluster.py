@@ -89,6 +89,14 @@ class Spheres(Scatterers):
 
         return largest
 
+    def add(self, scatterer):
+        if not isinstance(scatterer, Sphere):
+            raise ScattererDefinitionError(
+                "Spheres expects all component " +
+                "scatterers to be Spheres.\n" +
+                repr(scatterer) + " is not a Sphere", self)
+        self.scatterers.append(scatterer)
+
     @property
     def n(self):
         return np.array([s.n for s in self.scatterers])
