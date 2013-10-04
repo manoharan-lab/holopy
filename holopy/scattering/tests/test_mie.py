@@ -201,7 +201,7 @@ def test_selection():
     subset_fields = Mie.calc_field(sphere, subset_schema, scaling=scaling_alpha)
     subset_holo = Mie.calc_holo(sphere, subset_schema, scaling=scaling_alpha)
 
-    assert_equal(subset_schema.selection, subset_holo.selection,
+    assert_equal(subset_schema.selection, subset_fields.selection,
                  err_msg="Subset of computed fields differs from input schema")
     assert_equal(subset_schema.selection, subset_holo.selection,
                  err_msg="Subset of hologram differs from input schema")

@@ -26,9 +26,11 @@ from __future__ import division
 import inspect
 from copy import copy
 from os.path import commonprefix
+import numpy as np
 import warnings
 from ..core.holopy_object import HoloPyObject
 from .parameter import Parameter, ComplexParameter
+
 
 class Parametrization(HoloPyObject):
     """
@@ -192,9 +194,6 @@ class ParameterizedObject(Parametrization):
 
         return self.obj.from_parameters(obj_pars)
 
-def compare_subtract(calc, data):
-    return (data - calc).ravel()
-
 class Model(HoloPyObject):
     """
     Representation of a model to fit to data
@@ -243,7 +242,6 @@ class Model(HoloPyObject):
         if isinstance(self.alpha, Parameter):
             self.parameters.append(self.alpha)
 
-
     def get_alpha(self, pars=None):
         try:
             return pars['alpha']
@@ -258,39 +256,5 @@ class Model(HoloPyObject):
         else:
             alpha = self.alpha
         return self.theory(self.scatterer.guess, self.get_schema(schema), alpha)
-
-    def get_schema(self, data):
-        # TODO: make this not copy whole holograms. It should pull out
-        # just a schema if data is a full Marray
-        schema = copy(data)
-        if self.schema_overlay is not None:
-            warnings.warn(DeprecationWarning(
-                "Setting random subset by schema_overlay is deprecated, use the "
-                "use_random_fraction argument instead"))
-            for key, val in self.schema_overlay._dict.iteritems():
-                if val is not None:
-                    setattr(schema, key, val)
-        if self.use_random_fraction is not None:
-            schema.use_random_fraction = self.use_random_fraction
-        return schema
-
-    def cost_func(self, data):
-        schema = self.get_schema(data)
-        # if the user has not specified whether to flatten subsets,
-        # default to doing so because it will make chisq's reported
-        # more correct and also saves some computational effort.
-        if schema.flatten_if_subset is None:
-            schema.flatten_if_subset = True
-        if schema.selection is not None:
-            data = data[schema.selection]
-        def cost(pars):
-            calc = self.theory(self.scatterer.make_from(pars), schema, scaling =
-                          self.get_alpha(pars))
-            return compare_subtract(calc, data)
-        return cost
-
-    # TODO: make a user overridable cost function that gets physical
-    # parameters so that the unscaling happens only in one place (and
-    # as close to the minimizer as possible).
 
     # TODO: Allow a layer on top of theory to do things like moving sphere

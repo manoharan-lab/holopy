@@ -31,6 +31,7 @@ import time
 from ..core.holopy_object import HoloPyObject
 from .errors import MinimizerConvergenceFailed, InvalidMinimizer
 from .minimizer import Minimizer, Nmpfit
+import numpy as np
 
 from copy import copy
 
@@ -125,6 +126,52 @@ def chisq(fit, data):
 def rsq(fit, data):
     return float(1 - ((data - fit)**2).sum()/((data - data.mean())**2).sum())
 
+class CostComputer(HoloPyObject):
+    def __init__(self, data, model):
+        self.model = model
+        # TODO: make this not copy whole holograms. It should pull out
+        # just a schema if data is a full Marray
+        schema = copy(data)
+        if model.schema_overlay is not None:
+            warnings.warn(DeprecationWarning(
+                "Setting random subset by schema_overlay is deprecated, use the "
+                "use_random_fraction argument instead"))
+            for key, val in self.schema_overlay._dict.iteritems():
+                if val is not None:
+                    setattr(schema, key, val)
+        if model.use_random_fraction is not None:
+            schema.use_random_fraction = model.use_random_fraction
+            # if the user has not specified whether to flatten subsets,
+            # default to doing so because it will make chisq's reported
+            # more correct and also saves some computational effort.
+            if schema.flatten_if_subset is None:
+                schema.flatten_if_subset = True
+            #schema.flatten_if_subset = False
+        self.schema = schema
+
+        if schema.selection is not None:
+            if schema.flatten_if_subset:
+                data = data[schema.selection]
+            else:
+                temp = np.ones_like(data)
+                temp[schema.selection] = data[schema.selection]
+                data = temp
+        self.data = data
+
+    def _calc(self, pars):
+        return self.model.theory(self.model.scatterer.make_from(pars),
+                                 self.schema,
+                                 scaling = self.model.get_alpha(pars))
+    def flattened_difference(self, pars):
+        return (self._calc(pars) -  self.data).ravel()
+
+    def rsq(self, pars):
+        return rsq(self._calc(pars), self.data)
+
+    def chisq(self, pars):
+        return chisq(self._calc(pars), self.data)
+
+
 
 def fit(model, data, minimizer=Nmpfit):
     """
@@ -154,9 +201,10 @@ def fit(model, data, minimizer=Nmpfit):
             raise InvalidMinimizer("Object supplied as a minimizer could not be"
                                    "interpreted as a minimizer")
 
+    coster = CostComputer(data, model)
     try:
         fitted_pars, minimizer_info = minimizer.minimize(model.parameters,
-                                                         model.cost_func(data))
+                                                         coster.flattened_difference)
         converged = True
     except MinimizerConvergenceFailed as cf:
         warnings.warn("Minimizer Convergence Failed, your results may not be "
@@ -167,18 +215,10 @@ def fit(model, data, minimizer=Nmpfit):
         fitted_pars, minimizer_info  = cf.result, cf.details
         converged = False
 
-    # compute goodness of fit parameters
     fitted_scatterer = model.scatterer.make_from(fitted_pars)
-    fitted_holo = model.theory(fitted_scatterer, model.get_schema(data),
-                               scaling = model.get_alpha(fitted_pars))
-    if fitted_holo.use_random_fraction is not None and fitted_holo.use_random_fraction != 1:
-        print("Using subset to compute statistics")
-        sel = fitted_holo.selection
-        fitted_holo = fitted_holo[sel]
-        data = data[sel]
 
     time_stop = time.time()
 
-    return FitResult(fitted_pars, fitted_scatterer, chisq(fitted_holo, data),
-                     rsq(fitted_holo, data), converged, time_stop - time_start,
+    return FitResult(fitted_pars, fitted_scatterer, coster.chisq(fitted_pars),
+                     coster.rsq(fitted_pars), converged, time_stop - time_start,
                      model, minimizer, minimizer_info)

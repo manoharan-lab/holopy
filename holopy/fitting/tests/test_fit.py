@@ -34,6 +34,7 @@ from ...core.helpers import OrderedDict
 from .. import fit, Parameter, ComplexParameter, par, Parametrization, Model
 from ...core.tests.common import (assert_obj_close, get_example_data,
                                   assert_read_matches_write)
+from ..fit import CostComputer
 from ..errors import InvalidMinimizer
 
 gold_alpha = .6497
@@ -109,11 +110,9 @@ def test_fit_single_openopt():
 def test_fit_random_subset():
     holo = normalize(get_example_data('image0001.yaml'))
 
-
     s = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
                          par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
                r = par(8.5e-7, (1e-8, 1e-5)), n = ComplexParameter(par(1.59, (1,2)),1e-4j))
-
 
     model = Model(s, Mie.calc_holo, use_random_fraction=.1, alpha = par(.6, [.1,1]))
     np.random.seed(40)
@@ -128,6 +127,21 @@ def test_fit_random_subset():
     assert_equal(model, result.model)
 
     assert_read_matches_write(result)
+
+def test_random_selection():
+    sph = Sphere(.5, 1.6, (5,5,5))
+    sch = ImageSchema(shape=[100, 100], spacing=[0.1, 0.1],
+                      optics=Optics(wavelen=0.66,
+                                    index=1.33,
+                                    polarization=[1, 0],
+                                    divergence=0.0),
+                      origin=[0.0, 0.0, 0.0])
+
+    holo = Mie.calc_holo(sph, sch)
+    model = Model(sph, Mie.calc_holo, use_random_fraction=.1, alpha=1)
+    coster = CostComputer(holo, model)
+    assert_allclose(coster.flattened_difference([]), 0)
+
 
 
 @nottest
