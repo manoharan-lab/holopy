@@ -233,10 +233,13 @@ class Schema(HoloPyObject):
         """
         if prefer_self:
             newdict = copy.copy(schema._dict)
+            newdict['_selection'] = schema.selection
             newdict.update(self._dict)
         else:
             newdict = self._dict
+            newdict['_selection'] = self.selection
             newdict.update(schema._dict)
+            newdict['_selection'] = schema.selection
         if isinstance(self, np.ndarray):
             newdict = dict_without(newdict, 'shape')
 
@@ -472,10 +475,13 @@ class VectorGridSchema(RegularGridSchema):
                 # reassembling a 2d array with lots of 0s in the case of a
                 # random subset, since we will only want to compare at the
                 # nonzero pixels.
-                return VectorGrid(arr, **dict_without(self._dict, ['shape']))
+                return VectorGrid(arr, **dict_without(self._dict,
+                                                      ['shape',
+                                                       'use_random_fraction']))
 
             new = zeros_like(self, dtype = arr.dtype)
             new[self.selection] = arr
+            new._selection = self.selection
             return new
 
     @classmethod

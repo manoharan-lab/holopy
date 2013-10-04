@@ -198,7 +198,13 @@ def test_selection():
                                 optics = xschema.optics,
                                 use_random_fraction = .1)
 
+    subset_fields = Mie.calc_field(sphere, subset_schema, scaling=scaling_alpha)
     subset_holo = Mie.calc_holo(sphere, subset_schema, scaling=scaling_alpha)
+
+    assert_equal(subset_schema.selection, subset_holo.selection,
+                 err_msg="Subset of computed fields differs from input schema")
+    assert_equal(subset_schema.selection, subset_holo.selection,
+                 err_msg="Subset of hologram differs from input schema")
 
     assert_allclose(subset_holo[subset_schema.selection], holo[subset_schema.selection])
     assert_allclose(subset_holo.use_random_fraction, subset_schema.use_random_fraction)
