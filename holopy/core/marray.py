@@ -30,7 +30,6 @@ import warnings
 import copy
 import numpy as np
 import scipy.signal
-import errors
 from errors import UnspecifiedPosition
 from .holopy_object import HoloPyObject
 from .metadata import Grid, Angles
@@ -357,7 +356,76 @@ class RegularGridSchema(Schema):
         call_super_init(RegularGridSchema, self, consumed = 'spacing',
                         positions = Grid(spacing))
 
+    def positions_xyz(self):
+        """
+        Returns a list of positions of each data point in x,y,z coordinates
+
+        Returns
+        -------
+        xyz : np.ndarray
+            Nx3 array of the x,y,z coordinates
+        """
+        grid_slice = [slice(0, d) for d in self.shape]
+        # make it 3d even if the image is 2d
+        if len(grid_slice) == 2:
+            grid_slice.append(slice(0,1))
+            spacing = np.append(self.spacing, 1)
+        else:
+            spacing = self.spacing
+
+        xyz = np.mgrid[grid_slice].astype('float64')
+        for i, s in enumerate(spacing):
+            xyz[i, ...] *= s
+        if self.selection is not None:
+            xyz = xyz[:,self.selection,:]
+        xyz = xyz.reshape(3, -1)
+        return xyz.T
+
     def positions_r_theta_phi(self, origin):
+        """
+        Returns a list of positions of each data point, in spherical coordinates
+        relative to origin.
+
+        Parameters
+        ----------
+        origin : (real, real, real)
+            origin of the spherical coordinate system to return
+
+        Returns
+        -------
+        theta, phi : 1-D array
+            Angles
+        r : 2-D array
+            Distances
+        """
+        xg, yg, zg = self.positions_xyz().T
+        x, y, z = origin
+
+        x = xg - x
+        y = yg - y
+        # sign is reversed for z because of our choice of image
+        # centric rather than particle centric coordinate system
+        z = z - zg
+
+        r = np.sqrt(x**2 + y**2 + z**2)
+        theta = np.arctan2(np.sqrt(x**2 + y**2), z)
+        phi = np.arctan2(y, x)
+        # get phi between 0 and 2pi
+        phi = phi + 2*np.pi * (phi < 0)
+        # if z is an array, phi will be the wrong shape. Checking its
+        # last dimension will determine this so we can correct it
+        if phi.shape[-1] != r.shape[-1]:
+            phi = phi.repeat(r.shape[-1], -1)
+
+        return np.vstack((r, theta, phi)).T
+
+
+    def positions_kr_theta_phi(self, origin):
+        pos = self.positions_r_theta_phi(origin)
+        pos[:,0] *= self.optics.wavevec
+        return pos
+
+    def positions_r_theta_phi_old(self, origin):
         """
         Returns a list of positions of each data point, in spherical coordinates
         relative to origin.
@@ -410,10 +478,6 @@ class RegularGridSchema(Schema):
             points = points.reshape((-1, 3))
         return points
 
-    def positions_kr_theta_phi(self, origin):
-        pos = self.positions_r_theta_phi(origin)
-        pos[:,0] *= self.optics.wavevec
-        return pos
 
     @property
     def spacing(self):

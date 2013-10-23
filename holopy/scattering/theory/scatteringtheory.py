@@ -80,10 +80,39 @@ class ScatteringTheory(HoloPyObject):
         instantiate a theory object if it has adjustable parameters and you want
         to use non-default values.
         """
-
         fields = cls_self._calc_field(scatterer, schema) * scaling
         fields.get_metadata_from(schema)
         return fields
+
+    @classmethod
+    @binding
+    def calc_internal_field(cls_self, scatterer, schema, scaling = 1.0):
+        """
+        Calculate fields.  Implemented in derived classes only.
+
+        Parameters
+        ----------
+        scatterer : :mod:`.scatterer` object
+            (possibly composite) scatterer for which to compute scattering
+
+        Returns
+        -------
+        e_field : :mod:`.VectorGrid`
+            scattered electric field
+
+
+        Notes
+        -----
+        calc_* functions can be called on either a theory class or a theory
+        object.  If called on a theory class, they use a default theory object
+        which is correct for the vast majority of situations.  You only need to
+        instantiate a theory object if it has adjustable parameters and you want
+        to use non-default values.
+
+        So far this should only work for Spheres.
+
+        """
+        return cls_self._calc_internal_field(scatterer, schema) * scaling
 
     @classmethod
     @binding
@@ -267,12 +296,14 @@ class FortranTheory(ScatteringTheory):
             # TODO: may be missing hitting a point or two because of
             # integer truncation, see about fixing that
 
+
             # TODO: vectorize or otherwise speed this up
             if len(shape) == 2:
                 for i, x in points(0):
                     for j, y in points(1):
                         if scatterer.contains((x, y, fields.center[2])):
                             fields[i, j] = 0
+
             else:
                 for i, x in points(0):
                     for j, y in points(1):
