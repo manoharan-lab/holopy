@@ -23,7 +23,7 @@ Test fortran-based Mie calculations and python interface.
 '''
 
 import os
-from nose.tools import with_setup, assert_raises
+from nose.tools import with_setup, assert_raises, nottest
 import yaml
 import warnings
 
@@ -190,6 +190,10 @@ def test_nonlinearity():
 
     # uncomment to debug
     #return holo_1, holo_2, holo_super
+
+# TODO: Marray selections are going away soon so this test will
+# probably disappear --tgd 2013-10-24
+@nottest
 @attr('fast')
 def test_selection():
     holo = Mie.calc_holo(sphere, xschema, scaling=scaling_alpha)
@@ -260,6 +264,8 @@ def test_calc_xz_plane():
     sch = VolumeSchema((50, 1, 50), .1, Optics(.66, 1.33, (1,0)))
     e = Mie.calc_field(s, sch)
 
+# TODO: finish internal fields
+@nottest
 def test_internal_fields():
     s = Sphere(1.59, .5, (5, 5, 0))
     sch = ImageSchema((100, 100), .1, Optics(.66, 1.33, (1, 0)))

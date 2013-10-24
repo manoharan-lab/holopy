@@ -27,7 +27,7 @@ from ...core.tests.common import assert_obj_close
 def test_positions_kr_theta_phi():
     o = Optics(wavelen=.66, index=1.33, polarization = (1, 0))
     t = ImageSchema(shape = (2,2), spacing = .1, optics = o)
-    pos = t.positions_kr_theta_phi((0,0,1))
+    pos = t.positions.kr_theta_phi((0,0,1), o)
     assert_allclose(pos, np.array([[ 12.66157039,   0.        ,   0.        ],
        [ 12.72472076,   0.09966865,   1.57079633],
        [ 12.72472076,   0.09966865,   0.        ],
@@ -53,7 +53,7 @@ def test_calc_field():
                                      4.89755627e-02 -2.31844748e-01j],
                                   [ -5.71886751e-01 +2.17145168e+00j,
                                      1.72579090e-03 -8.72241140e-03j,
-                                     5.70160960e-02 -2.16272927e-01j]]]), 
+                                     5.70160960e-02 -2.16272927e-01j]]]),
                     atol=1e-8)
 
 def test_calc_holo():

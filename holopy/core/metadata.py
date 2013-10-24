@@ -141,6 +141,51 @@ class PositionSpecification(HoloPyObject):
     """
     pass
 
+class Positions(np.ndarray, HoloPyObject):
+    """
+    Positions of pixels of an Marray
+
+    Parameters
+    ----------
+    arr : ndarray
+        Pixel positions, in Cartesian xyz coordinates
+    """
+    def __new__(cls, arr):
+        return np.asarray(arr).view(cls)
+
+    def __array_wrap(self, out_arr, context=None):
+        return np.ndarray.__array_wrap__(self, out_arr, context)
+
+    def xyz(self):
+        return self.reshape(3, -1).T
+
+    def r_theta_phi(self, origin):
+        xg, yg, zg = self.xyz().T
+        x, y, z = origin
+
+        x = xg - x
+        y = yg - y
+        # sign is reversed for z because of our choice of image
+        # centric rather than particle centric coordinate system
+        z = z - zg
+
+        r = np.sqrt(x**2 + y**2 + z**2)
+        theta = np.arctan2(np.sqrt(x**2 + y**2), z)
+        phi = np.arctan2(y, x)
+        # get phi between 0 and 2pi
+        phi = phi + 2*np.pi * (phi < 0)
+        # if z is an array, phi will be the wrong shape. Checking its
+        # last dimension will determine this so we can correct it
+        if phi.shape[-1] != r.shape[-1]:
+            phi = phi.repeat(r.shape[-1], -1)
+
+        return np.vstack((r, theta, phi)).T
+
+    def kr_theta_phi(self, origin, optics):
+        pos = self.r_theta_phi(origin)
+        pos[:,0] *= optics.wavevec
+        return pos
+
 class Grid(PositionSpecification):
     """
     Rectangular grid of measurements

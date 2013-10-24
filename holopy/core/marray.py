@@ -32,7 +32,7 @@ import numpy as np
 import scipy.signal
 from errors import UnspecifiedPosition
 from .holopy_object import HoloPyObject
-from .metadata import Grid, Angles
+from .metadata import Angles, Positions
 from .helpers import _ensure_pair, _ensure_array, dict_without
 import inspect
 
@@ -349,142 +349,45 @@ class RegularGridSchema(Schema):
                  origin=np.zeros(3), use_random_fraction=None,
                  flatten_if_subset=None, **kwargs):
 
-        if np.isscalar(spacing):
-            if hasattr(self, 'shape'):
-                shape = self.shape
-            spacing = np.repeat(spacing, len(shape))
-        call_super_init(RegularGridSchema, self, consumed = 'spacing',
-                        positions = Grid(spacing))
+        call_super_init(RegularGridSchema, self, consumed = ['spacing'])
 
-    def positions_xyz(self):
-        """
-        Returns a list of positions of each data point in x,y,z coordinates
-
-        Returns
-        -------
-        xyz : np.ndarray
-            Nx3 array of the x,y,z coordinates
-        """
-        grid_slice = [slice(0, d) for d in self.shape]
-        # make it 3d even if the image is 2d
-        if len(grid_slice) == 2:
-            grid_slice.append(slice(0,1))
-            spacing = np.append(self.spacing, 1)
-        else:
-            spacing = self.spacing
-
-        xyz = np.mgrid[grid_slice].astype('float64')
-        for i, s in enumerate(spacing):
-            xyz[i, ...] *= s
-        if self.selection is not None:
-            xyz = xyz[:,self.selection,:]
-        xyz = xyz.reshape(3, -1)
-        return xyz.T
-
-    def positions_r_theta_phi(self, origin):
-        """
-        Returns a list of positions of each data point, in spherical coordinates
-        relative to origin.
-
-        Parameters
-        ----------
-        origin : (real, real, real)
-            origin of the spherical coordinate system to return
-
-        Returns
-        -------
-        theta, phi : 1-D array
-            Angles
-        r : 2-D array
-            Distances
-        """
-        xg, yg, zg = self.positions_xyz().T
-        x, y, z = origin
-
-        x = xg - x
-        y = yg - y
-        # sign is reversed for z because of our choice of image
-        # centric rather than particle centric coordinate system
-        z = z - zg
-
-        r = np.sqrt(x**2 + y**2 + z**2)
-        theta = np.arctan2(np.sqrt(x**2 + y**2), z)
-        phi = np.arctan2(y, x)
-        # get phi between 0 and 2pi
-        phi = phi + 2*np.pi * (phi < 0)
-        # if z is an array, phi will be the wrong shape. Checking its
-        # last dimension will determine this so we can correct it
-        if phi.shape[-1] != r.shape[-1]:
-            phi = phi.repeat(r.shape[-1], -1)
-
-        return np.vstack((r, theta, phi)).T
+        # the setter will set the positions correctly
+        self.spacing = spacing
 
 
-    def positions_kr_theta_phi(self, origin):
-        pos = self.positions_r_theta_phi(origin)
-        pos[:,0] *= self.optics.wavevec
-        return pos
-
-    def positions_r_theta_phi_old(self, origin):
-        """
-        Returns a list of positions of each data point, in spherical coordinates
-        relative to origin.
-
-        Parameters
-        ----------
-        origin : (real, real, real)
-            origin of the spherical coordinate system to return
-
-        Returns
-        -------
-        theta, phi : 1-D array
-            Angles
-        r : 2-D array
-            Distances
-        """
-
-        x, y, z = (np.array(origin) - self.origin)
-
-        g = np.ogrid[[slice(0, d) for d in self.shape]]
-        g = [a*s for a, s in zip(g, self.spacing)]
-
-        if len(g) == 2:
-            xg, yg = g
-            zg = 0
-        else:
-            xg, yg, zg = g
-
-        x = xg - x
-        y = yg - y
-        # sign is reversed for z because of our choice of image
-        # centric rather than particle centric coordinate system
-        z = z - zg
-
-        r = np.sqrt(x**2 + y**2 + z**2)
-        theta = np.arctan2(np.sqrt(x**2 + y**2), z)
-        phi = np.arctan2(y, x)
-        # get phi between 0 and 2pi
-        phi = phi + 2*np.pi * (phi < 0)
-        # if z is an array, phi will be the wrong shape. Checking its
-        # last dimension will determine this so we can correct it
-        if phi.shape[-1] != r.shape[-1]:
-            phi = phi.repeat(r.shape[-1], -1)
-        points = np.concatenate([a[..., np.newaxis] for a in (r, theta, phi)], -1)
-        if hasattr(self, 'selection') and self.selection is not None:
-            points = points[self.selection]
-            if not self.selection.any():
-                raise errors.InvalidSelection("No pixels selected, can't compute fields")
-        else:
-            points = points.reshape((-1, 3))
-        return points
 
 
     @property
     def spacing(self):
-        return self.positions.spacing
+        return getattr(self, '_spacing', None)
     @spacing.setter
-    def spacing(self, val):
-        self.positions.spacing = val
+    def spacing(self, spacing):
+        if getattr(self, 'spacing', None) is spacing or self.shape is None:
+            # Fast path, since there are a number of things that will
+            # set schema attributes to the same as they already are
+            return
+        else:
+            if np.isscalar(spacing):
+                spacing = np.repeat(spacing, len(self.shape))
+
+            self._spacing = spacing
+            if self.shape is None:
+                self.positions = Positions()
+            else:
+                # Compute the coordinates of each point in the grid
+                grid_slice = [slice(0, d) for d in self.shape]
+                # make it 3d even if the image is 2d
+                if len(grid_slice) == 2:
+                    grid_slice.append(slice(0,1))
+                    spacing = np.append(spacing, 1)
+                else:
+                    spacing = spacing
+                xyz = np.mgrid[grid_slice].astype('float64')
+                for i, s in enumerate(spacing):
+                    xyz[i, ...] *= s
+                self.positions = Positions(xyz)
+
+
 
     @property
     def extent(self):
@@ -556,7 +459,7 @@ class VectorGridSchema(RegularGridSchema):
             shape = np.append(schema.shape, len(components))
 
         new =  cls(components = components, shape = shape,
-                   spacing = schema.positions.spacing,
+                   spacing = schema.spacing,
                    **dict_without(schema._dict, ['shape', 'positions', 'spacing', 'dtype',
                                                  'components']))
         # we want to use the same random selection as the schema we come from did
@@ -598,14 +501,14 @@ class RegularGrid(Marray, RegularGridSchema):
         """
         shape = _ensure_array(shape)
         new = self
-        factors = {}
+        factors = np.zeros(len(shape))
         for i, s in enumerate(shape):
             if s != self.shape[i]:
                 factors[i] = 1.0 * self.shape[i] / s
                 new = scipy.signal.resample(new, s, axis=i, window=window)
 
                 new = self.__class__(new, **self._dict)
-        new.positions = self.positions.resample_by_factors(factors)
+        new.spacing = self.spacing * factors
         return new
 
 

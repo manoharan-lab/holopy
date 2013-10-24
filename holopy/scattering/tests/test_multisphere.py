@@ -27,7 +27,7 @@ import os
 import numpy as np
 
 import warnings
-from nose.tools import assert_raises, with_setup
+from nose.tools import assert_raises, with_setup, nottest
 from numpy.testing import (assert_equal, assert_array_almost_equal,
                            assert_almost_equal, assert_allclose)
 
@@ -140,10 +140,10 @@ def test_invalid():
     assert_raises(TheoryNotCompatibleError, Multisphere.calc_holo, cs, schema)
 
     # try a coated sphere
-    sc2 = Spheres([Sphere(center = [0., 0., 0.], 
-                          n = [1.+0.1j, 1.2], 
+    sc2 = Spheres([Sphere(center = [0., 0., 0.],
+                          n = [1.+0.1j, 1.2],
                           r = [4e-7, 5e-7])])
-    assert_raises(TheoryNotCompatibleError, Multisphere.calc_cross_sections, 
+    assert_raises(TheoryNotCompatibleError, Multisphere.calc_cross_sections,
                   sc2, schema.optics)
 
 
@@ -172,6 +172,9 @@ def test_overlap():
 
     verify(holo, '2_sphere_allow_overlap')
 
+# TODO: Marray selections are going away soon so this test will
+# probably disappear --tgd 2013-10-24
+@nottest
 @attr('fast')
 def test_selection():
     sc = Spheres(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
@@ -207,20 +210,20 @@ def test_cross_sections():
     # this ends up testing the angular dependence of scattering
     # as well as all the scattering coefficients
     xsects = thry.calc_cross_sections(sc, opt)
-    
+
     gold_xsects = np.array([0.03830316, 0.04877015, 0.08707331])
     # calculated directly by SCSMFO. Efficiencies normalized
     # in funny way by SCSMFO, based on "volume mean radius".
     assert_allclose(xsects[:3], gold_xsects, rtol = 1e-3)
 
 def test_farfield():
-    schema = Schema(positions = Angles(np.linspace(0, np.pi/2), 
-                                       phi = np.zeros(50)), 
-                    optics = Optics(wavelen=.66, index = 1.33, 
+    schema = Schema(positions = Angles(np.linspace(0, np.pi/2),
+                                       phi = np.zeros(50)),
+                    optics = Optics(wavelen=.66, index = 1.33,
                                     polarization = (1, 0)))
     n = 1.59+0.01j
     r = 0.5
-    
+
     cluster = Spheres([Sphere(n = n, r = r, center = [0., 0., r]),
                        Sphere(n = n, r = r, center = [0., 0., -r])])
 

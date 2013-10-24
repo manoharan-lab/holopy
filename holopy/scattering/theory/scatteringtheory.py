@@ -259,7 +259,7 @@ class ScatteringTheory(HoloPyObject):
 class FortranTheory(ScatteringTheory):
     def _calc_field(self, scatterer, schema):
         def get_field(s):
-            positions = schema.positions_kr_theta_phi(origin = s.center).T
+            positions = schema.positions.kr_theta_phi(s.center, schema.optics).T
             field = np.vstack(self._raw_fields(positions, s, schema.optics)).T
             phase = np.exp(-1j*np.pi*2*s.center[2] / schema.optics.med_wavelen)
             field *= phase

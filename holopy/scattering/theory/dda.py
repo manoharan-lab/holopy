@@ -176,7 +176,7 @@ class DDA(ScatteringTheory):
     def _calc_field(self, scatterer, schema, delete=True):
         temp_dir = tempfile.mkdtemp()
 
-        calc_points = schema.positions_kr_theta_phi(scatterer.location)
+        calc_points = schema.positions.kr_theta_phi(scatterer.location, schema.optics)
 
         angles = calc_points[:,1:] * 180/np.pi
 
