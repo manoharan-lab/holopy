@@ -120,11 +120,6 @@ def _describe_init_signature(cls):
              'origin' : """
     origin : (float, float, float)
         Offset for the origin of the space represented by this Schema.  """,
-             'use_random_fraction' : """
-    use_random_fraction : float
-        Use only a random fraction of the pixels specified by this Schema
-        when doing calculations.  This can give a good representation of the
-        whole field with much lower computation times.""",
              'components' : """
     components : list(string) default 'x', 'y', 'x'
         Names of the vector components for this {name}""",
@@ -166,13 +161,10 @@ class Schema(HoloPyObject):
     {attrs}
     """
     def __init__(self, shape=None, positions=None, optics=None,
-                 origin=np.zeros(3), use_random_fraction=None,
-                 flatten_if_subset=None, **kwargs):
+                 origin=np.zeros(3), **kwargs):
         self.positions = positions
         self.optics = optics
         self.origin = origin
-        self.use_random_fraction = use_random_fraction
-        self.flatten_if_subset = flatten_if_subset
         # if we are a np.ndarray subclass (if this constructor is
         # called from Marray or subclass) we will already have a shape
         # and should not try to do anything with our shape argument.
@@ -181,27 +173,6 @@ class Schema(HoloPyObject):
                 shape = positions.shape[:-1]
             self.shape = shape
         super(Schema, self).__init__(**kwargs)
-
-    @property
-    def selection(self):
-        # we only generate a random selection once
-        if not hasattr(self, '_selection'):
-            if self.use_random_fraction is not None:
-                self._selection = self._make_selection()
-            else:
-                self._selection = None
-
-        # if it already exists, we just return the cached _selection
-        return self._selection
-
-    def _make_selection(self):
-        # TODO: BUG: this will give something that is only
-        # stochastically the right number of pixels. I have a better
-        # implementation for ImageSchema, the only case we actually
-        # use at the moment, but this could be a problem later.
-        return np.random.random(self.shape) > 1.0-self.use_random_fraction
-
-
 
     # TODO: put this somewhere sensible, make it handle phi as well
     def positions_theta_phi(self):
@@ -232,13 +203,10 @@ class Schema(HoloPyObject):
         """
         if prefer_self:
             newdict = copy.copy(schema._dict)
-            newdict['_selection'] = schema.selection
             newdict.update(self._dict)
         else:
             newdict = self._dict
-            newdict['_selection'] = self.selection
             newdict.update(schema._dict)
-            newdict['_selection'] = schema.selection
         if isinstance(self, np.ndarray):
             newdict = dict_without(newdict, 'shape')
 
@@ -282,8 +250,7 @@ class Marray(np.ndarray, Schema):
     {attrs}
     """
     def __new__(cls, arr, positions=None, optics=None,
-                origin=np.zeros(3), use_random_fraction=None,
-                flatten_if_subset=None, dtype=None, **kwargs):
+                origin=np.zeros(3), dtype=None, **kwargs):
         # things like numpy.std give us 0d arrays, the user probably expects
         # python scalars, so return one instead.
         if hasattr(arr, 'ndim') and arr.ndim == 0:
@@ -292,8 +259,7 @@ class Marray(np.ndarray, Schema):
         return np.asarray(arr, dtype = dtype).view(cls)
 
     def __init__(self, arr, positions=None, optics=None,
-                 origin=np.zeros(3), use_random_fraction=None,
-                 flatten_if_subset=None, dtype=None, **kwargs):
+                 origin=np.zeros(3), dtype=None, **kwargs):
         call_super_init(Marray, self, ['arr', 'dtype'])
 
     def __array_finalize__(self, obj):
@@ -346,8 +312,7 @@ class Marray(np.ndarray, Schema):
 
 class RegularGridSchema(Schema):
     def __init__(self, shape=None, spacing=None, optics=None,
-                 origin=np.zeros(3), use_random_fraction=None,
-                 flatten_if_subset=None, **kwargs):
+                 origin=np.zeros(3), **kwargs):
 
         call_super_init(RegularGridSchema, self, consumed = ['spacing'])
 
@@ -418,8 +383,7 @@ class RegularGridSchema(Schema):
 class VectorSchema(Schema):
     def __init__(self, shape=None, positions=None,
                  components=('x', 'y', 'z'), optics=None,
-                 origin=np.zeros(3), use_random_fraction=None,
-                 flatten_if_subset=None, **kwargs):
+                 origin=np.zeros(3), **kwargs):
         self.components = components
         call_super_init(VectorSchema, self, ['components'])
 
@@ -429,8 +393,7 @@ class VectorSchema(Schema):
 class VectorGridSchema(RegularGridSchema, VectorSchema):
     def __init__(self, shape=None, spacing=None,
                  components=('x', 'y', 'z'), optics=None,
-                 origin=np.zeros(3), use_random_fraction=None,
-                 flatten_if_subset=None, **kwargs):
+                 origin=np.zeros(3), **kwargs):
         call_super_init(VectorGridSchema, self)
 
     @property
@@ -442,28 +405,9 @@ class VectorGridSchema(RegularGridSchema, VectorSchema):
             ext = np.append(ext, 0)
         return ext
 
-    def _make_selection(self):
-        return np.random.random(self.shape[:-1]) > 1.0-self.use_random_fraction
-
     def interpret_1d(self, arr):
-        if self.selection is None:
-            return VectorGrid(arr.reshape(self.shape),
-                              **dict_without(self._dict, ['shape']))
-        else:
-            if getattr(self, 'flatten_if_subset', False) == True:
-                # A flatten_if_subset attr will be added by fitting cost
-                # function to indicate that we shouldn't bother
-                # reassembling a 2d array with lots of 0s in the case of a
-                # random subset, since we will only want to compare at the
-                # nonzero pixels.
-                return VectorGrid(arr, **dict_without(self._dict,
-                                                      ['shape',
-                                                       'use_random_fraction']))
-
-            new = zeros_like(self, dtype = arr.dtype)
-            new[self.selection] = arr
-            new._selection = self.selection
-            return new
+        return VectorGrid(arr.reshape(self.shape),
+                          **dict_without(self._dict, ['shape']))
 
 
 def make_vector_schema(schema, components=('x', 'y', 'z')):
@@ -478,17 +422,12 @@ def make_vector_schema(schema, components=('x', 'y', 'z')):
         new =  VectorSchema(components = components, shape = shape,
                    **dict_without(schema._dict, ['shape', 'dtype', 'components']))
 
-    # we want to use the same random selection as the schema we come from did
-    if hasattr(schema, '_selection'):
-        new._selection = schema._selection
-
     return new
 
 
 class RegularGrid(Marray, RegularGridSchema):
     def __init__(self, arr, spacing=None, optics=None,
-                 origin=np.zeros(3), use_random_fraction=None,
-                 flatten_if_subset=None, dtype=None, **kwargs):
+                 origin=np.zeros(3), dtype=None, **kwargs):
         call_super_init(RegularGrid, self)
 
     def resample(self, shape, window=None):
@@ -538,8 +477,7 @@ class ImageSchema(RegularGridSchema):
     {attrs}
     """
     def __init__(self, shape=None, spacing=None, optics=None,
-                 origin=np.zeros(3), use_random_fraction=None,
-                 flatten_if_subset=None, **kwargs):
+                 origin=np.zeros(3), **kwargs):
         if shape is not None:
             shape = _ensure_pair(shape)
 
@@ -561,18 +499,6 @@ class ImageSchema(RegularGridSchema):
     def size(self):
         return self.shape[0]*self.shape[1]
 
-    def _make_selection(self):
-        n_sel = int(np.ceil(self.size*self.use_random_fraction))
-        indices = np.arange(self.size)
-        np.random.shuffle(indices)
-        sample = indices[:n_sel]
-
-        pairs = sample // self.shape[1], sample % self.shape[1]
-        selection = np.zeros(self.shape, dtype='bool')
-        selection[pairs] = 1
-        return selection
-
-
 
 @_describe_init_signature
 class Image(RegularGrid, ImageSchema):
@@ -586,8 +512,7 @@ class Image(RegularGrid, ImageSchema):
 class VectorMarray(Marray, VectorSchema):
     def __init__(self, arr, positions=None,
                  components=('x', 'y', 'z'),
-                 optics=None, origin=np.zeros(3), use_random_fraction=None,
-                 flatten_if_subset=None, **kwargs):
+                 optics=None, origin=np.zeros(3), **kwargs):
         call_super_init(VectorMarray, self, ['components'])
 
 class VectorGrid(RegularGrid, VectorGridSchema, VectorMarray):
@@ -596,8 +521,7 @@ class VectorGrid(RegularGrid, VectorGridSchema, VectorMarray):
     {attrs}
     """
     def __init__(self, arr, spacing=None, components=('x', 'y', 'z'),
-                 optics=None, origin=np.zeros(3),
-                 use_random_fraction=None, flatten_if_subset=None, dtype=None,
+                 optics=None, origin=np.zeros(3), dtype=None,
                  **kwargs):
         call_super_init(VectorGrid, self)
 
@@ -632,8 +556,7 @@ class VolumeSchema(RegularGridSchema):
     {attrs}
     """
     def __init__(self, shape=None, spacing=None, optics=None,
-                 origin=np.zeros(3), use_random_fraction=None,
-                 flatten_if_subset=None, **kwargs):
+                 origin=np.zeros(3), **kwargs):
         call_super_init(VolumeSchema, self)
 
 

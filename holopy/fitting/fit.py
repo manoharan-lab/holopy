@@ -32,6 +32,7 @@ from ..core.holopy_object import HoloPyObject
 from .errors import MinimizerConvergenceFailed, InvalidMinimizer
 from .minimizer import Minimizer, Nmpfit
 import numpy as np
+from ..core.marray import Schema
 
 from copy import copy
 
@@ -129,39 +130,26 @@ def rsq(fit, data):
 class CostComputer(HoloPyObject):
     def __init__(self, data, model):
         self.model = model
-        # TODO: make this not copy whole holograms. It should pull out
-        # just a schema if data is a full Marray
-        schema = copy(data)
-        if model.schema_overlay is not None:
-            warnings.warn(DeprecationWarning(
-                "Setting random subset by schema_overlay is deprecated, use the "
-                "use_random_fraction argument instead"))
-            for key, val in self.schema_overlay._dict.iteritems():
-                if val is not None:
-                    setattr(schema, key, val)
-        if model.use_random_fraction is not None:
-            schema.use_random_fraction = model.use_random_fraction
-            # if the user has not specified whether to flatten subsets,
-            # default to doing so because it will make chisq's reported
-            # more correct and also saves some computational effort.
-            if schema.flatten_if_subset is None:
-                schema.flatten_if_subset = True
-            #schema.flatten_if_subset = False
-        self.schema = schema
 
-        if schema.selection is not None:
-            if schema.flatten_if_subset:
-                data = data[schema.selection]
-            else:
-                temp = np.ones_like(data)
-                temp[schema.selection] = data[schema.selection]
-                data = temp
-        self.data = data
+        schema = data
+
+        if model.use_random_fraction is not None:
+            n_sel = int(np.ceil(data.size*model.use_random_fraction))
+            self.selection = np.random.choice(data.size, n_sel, replace=False)
+            self.data = data.ravel()[self.selection]
+            positions = schema.positions.xyz()[self.selection]
+            self.schema = Schema(positions=positions,
+                                 origin=schema.origin,
+                                 optics=schema.optics)
+        else:
+            self.selection = None
+            self.data = data
+            self.schema = schema
+
 
     def _calc(self, pars):
-        return self.model.theory(self.model.scatterer.make_from(pars),
-                                 self.schema,
-                                 scaling = self.model.get_alpha(pars))
+        s = self.model.scatterer.make_from(pars)
+        return self.model.theory(s, self.schema, scaling=self.model.get_alpha(pars))
     def flattened_difference(self, pars):
         return (self._calc(pars) -  self.data).ravel()
 

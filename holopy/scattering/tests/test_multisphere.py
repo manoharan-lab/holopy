@@ -172,23 +172,6 @@ def test_overlap():
 
     verify(holo, '2_sphere_allow_overlap')
 
-# TODO: Marray selections are going away soon so this test will
-# probably disappear --tgd 2013-10-24
-@nottest
-@attr('fast')
-def test_selection():
-    sc = Spheres(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
-                                       n=1.5811+1e-4j, r=5e-07),
-                                Sphere(center=[6e-6, 7e-6, 10e-6],
-                                       n=1.5811+1e-4j, r=5e-07)])
-    subset_schema = ImageSchema(schema.shape, schema.spacing,
-                                optics = schema.optics, use_random_fraction=.1)
-
-    holo = Multisphere.calc_holo(sc, schema, scaling=scaling_alpha)
-
-    subset_holo = Multisphere.calc_holo(sc, subset_schema, scaling=scaling_alpha)
-
-    assert_allclose(subset_holo[subset_schema.selection], holo[subset_schema.selection])
 
 @attr('fast')
 def test_niter():

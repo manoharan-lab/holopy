@@ -205,16 +205,11 @@ class Model(HoloPyObject):
     theory : :func:`scattering.theory.ScatteringTheory.calc_*`
         The scattering calc function that should be used to compute results for
         comparison with the data
-    schema_overlay : :class:`~core.marray.Schema`
-        A Schema object with overrides for and of the metadata of the data
-        you fit to.  Do not bother to provide entries for shape, position, and
-        things that are provided in the data, use this for replacing wavelen with a
-        par, or adding a use_random_fraction entry.
     alpha : float or Parameter
         Extra scaling parameter, hopefully this will be removed by improvements
         in our theory soon.
     """
-    def __init__(self, scatterer, theory, schema_overlay=None, alpha =
+    def __init__(self, scatterer, theory, alpha =
                  None, use_random_fraction=None):
         if not isinstance(scatterer, Parametrization):
             scatterer = ParameterizedObject(scatterer)
@@ -222,22 +217,10 @@ class Model(HoloPyObject):
         self.theory = theory
         self.use_random_fraction = use_random_fraction
 
-        # TODO: make schema_overlay a Parametrization so that you can fit to
-        # things in the schema metadata
-        # TODO: BUG: schema_overlay will get a default origin, which
-        # would override the orgin of your data if you had a non
-        # default one. Need to change
-        self.schema_overlay = schema_overlay
-
         if isinstance(alpha, Parameter) and alpha.name is None:
             alpha.name = 'alpha'
         self.alpha = alpha
 
-        # TODO: put this code back once schema_overlay is a Paramtrization
-#        self.parameters = []
-#        for parameterizition in (self.scatterer, self.schema_overlay):
-#            if parameterizition is not None:
-#                self.parameters.extend(parameterizition.parameters)
         self.parameters = self.scatterer.parameters
         if isinstance(self.alpha, Parameter):
             self.parameters.append(self.alpha)

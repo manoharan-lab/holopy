@@ -131,25 +131,13 @@ def test_squeeze():
     assert_equal(s.optics, v.optics)
     assert_equal(s.spacing, (1, 3))
 
-# TODO: Marray selections are going away soon so this test will
-# probably disappear --tgd 2013-10-24
-@nottest
-def test_random_fraction():
-    a = ImageSchema(shape=(50,50), use_random_fraction=.1)
-    assert_equal(a.selection.sum(), 250)
-
-    b = ImageSchema(shape=(5, 5), use_random_fraction=.1)
-    assert_equal(b.selection.sum(), 3)
-
 def test_metadata_transfer():
     s = Schema(100)
-    o = Schema(200, use_random_fraction=.1)
+    o = Schema(200)
     s.get_metadata_from(o)
     assert_equal(s.shape, 100)
-    assert_equal(s.use_random_fraction, .1)
 
     s2 = Schema(100)
-    o2 = Schema(200, use_random_fraction=.1)
+    o2 = Schema(200)
     s2.get_metadata_from(o2, False)
     assert_equal(s2.shape, 200)
-    assert_equal(s2.use_random_fraction, .1)
