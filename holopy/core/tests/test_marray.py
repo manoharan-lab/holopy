@@ -19,8 +19,9 @@ from __future__ import division
 import numpy as np
 from nose.tools import nottest
 from numpy.testing import assert_equal, assert_allclose, assert_raises
-from ..marray import (ImageSchema, VectorGrid, VectorGridSchema, Image,
-                      zeros_like, subimage, resize, Volume, Schema, squeeze)
+from ..marray import (ImageSchema, VectorGrid, make_vector_schema,
+                      Image, zeros_like, subimage, resize, Volume,
+                      Schema, squeeze)
 from .. import Optics
 from .common import assert_obj_close, get_example_data
 from ..errors import UnspecifiedPosition
@@ -28,7 +29,7 @@ from .. import Angles
 
 def test_VectorGrid():
     schema = ImageSchema(shape = (100,100), spacing = .1)
-    vs = VectorGridSchema.from_schema(schema)
+    vs = make_vector_schema(schema)
     vd = zeros_like(vs)
     assert_equal(vd.shape, (100,100,3))
 
@@ -65,7 +66,7 @@ def test_from1d():
                        [5, 8, 9]])
     assembled = VectorGrid([[[1, 0, 0], [0, 1, 2]], [[1, 2, 3], [5, 8, 9]]])
 
-    vf = VectorGridSchema.from_schema(schema).interpret_1d(im)
+    vf = make_vector_schema(schema).interpret_1d(im)
     assert_equal(vf, assembled)
 
 def test_Image():

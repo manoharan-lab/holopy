@@ -178,7 +178,7 @@ class Schema(HoloPyObject):
         # and should not try to do anything with our shape argument.
         if not hasattr(self, 'shape'):
             if shape is None and hasattr(positions, 'shape'):
-                shape = positions.shape
+                shape = positions.shape[:-1]
             self.shape = shape
         super(Schema, self).__init__(**kwargs)
 
@@ -362,6 +362,8 @@ class RegularGridSchema(Schema):
         return getattr(self, '_spacing', None)
     @spacing.setter
     def spacing(self, spacing):
+        # if we change the spacing, we have to change our positions
+        # object to match
         if getattr(self, 'spacing', None) is spacing or self.shape is None:
             # Fast path, since there are a number of things that will
             # set schema attributes to the same as they already are
@@ -375,17 +377,20 @@ class RegularGridSchema(Schema):
                 self.positions = Positions()
             else:
                 # Compute the coordinates of each point in the grid
-                grid_slice = [slice(0, d) for d in self.shape]
+
                 # make it 3d even if the image is 2d
-                if len(grid_slice) == 2:
-                    grid_slice.append(slice(0,1))
+                if len(self.shape) == 2:
+                    shape = np.append(self.shape, 1)
                     spacing = np.append(spacing, 1)
                 else:
-                    spacing = spacing
+                    shape = self.shape
+                    spacing = self.spacing
+                grid_slice = [slice(0, d) for d in shape]
                 xyz = np.mgrid[grid_slice].astype('float64')
+                pos = np.zeros(np.append(shape, 3))
                 for i, s in enumerate(spacing):
-                    xyz[i, ...] *= s
-                self.positions = Positions(xyz)
+                    pos[..., i] = xyz[i, ...] * s
+                self.positions = Positions(pos)
 
 
 
@@ -410,14 +415,23 @@ class RegularGridSchema(Schema):
         return ((point >=self.origin).all() and
                 (point <= self.origin+self.extent).all())
 
-
-class VectorGridSchema(RegularGridSchema):
-    def __init__(self, shape=None, spacing=None,
+class VectorSchema(Schema):
+    def __init__(self, shape=None, positions=None,
                  components=('x', 'y', 'z'), optics=None,
                  origin=np.zeros(3), use_random_fraction=None,
                  flatten_if_subset=None, **kwargs):
         self.components = components
-        call_super_init(VectorGridSchema, self, ['components'])
+        call_super_init(VectorSchema, self, ['components'])
+
+    def interpret_1d(self, arr):
+        return VectorMarray(arr.reshape(self.shape), **dict_without(self._dict, ['shape']))
+
+class VectorGridSchema(RegularGridSchema, VectorSchema):
+    def __init__(self, shape=None, spacing=None,
+                 components=('x', 'y', 'z'), optics=None,
+                 origin=np.zeros(3), use_random_fraction=None,
+                 flatten_if_subset=None, **kwargs):
+        call_super_init(VectorGridSchema, self)
 
     @property
     def extent(self):
@@ -451,22 +465,24 @@ class VectorGridSchema(RegularGridSchema):
             new._selection = self.selection
             return new
 
-    @classmethod
-    def from_schema(cls, schema, components=('x', 'y', 'z')):
-        if isinstance(schema, VectorGridSchema):
-            shape = schema.shape
-        else:
-            shape = np.append(schema.shape, len(components))
 
-        new =  cls(components = components, shape = shape,
-                   spacing = schema.spacing,
-                   **dict_without(schema._dict, ['shape', 'positions', 'spacing', 'dtype',
-                                                 'components']))
-        # we want to use the same random selection as the schema we come from did
-        if hasattr(schema, '_selection'):
-            new._selection = schema._selection
+def make_vector_schema(schema, components=('x', 'y', 'z')):
+    if isinstance(schema, VectorSchema):
+        shape = schema.shape
+    else:
+        shape = np.append(schema.shape, len(components))
+    if isinstance(schema, RegularGridSchema):
+        new = VectorGridSchema(components=components, shape=shape,
+                               **dict_without(schema._dict, ['shape', 'dtype', 'components']))
+    else:
+        new =  VectorSchema(components = components, shape = shape,
+                   **dict_without(schema._dict, ['shape', 'dtype', 'components']))
 
-        return new
+    # we want to use the same random selection as the schema we come from did
+    if hasattr(schema, '_selection'):
+        new._selection = schema._selection
+
+    return new
 
 
 class RegularGrid(Marray, RegularGridSchema):
@@ -567,15 +583,22 @@ class Image(RegularGrid, ImageSchema):
     """
     pass
 
+class VectorMarray(Marray, VectorSchema):
+    def __init__(self, arr, positions=None,
+                 components=('x', 'y', 'z'),
+                 optics=None, origin=np.zeros(3), use_random_fraction=None,
+                 flatten_if_subset=None, **kwargs):
+        call_super_init(VectorMarray, self, ['components'])
 
-class VectorGrid(RegularGrid, VectorGridSchema):
+class VectorGrid(RegularGrid, VectorGridSchema, VectorMarray):
     """Vector Data on a Rectangular Grid
 
     {attrs}
     """
-    def __init__(self, arr, spacing=None, optics=None, origin=np.zeros(3),
+    def __init__(self, arr, spacing=None, components=('x', 'y', 'z'),
+                 optics=None, origin=np.zeros(3),
                  use_random_fraction=None, flatten_if_subset=None, dtype=None,
-                 components=('x', 'y', 'z'), **kwargs):
+                 **kwargs):
         call_super_init(VectorGrid, self)
 
     @property

@@ -157,7 +157,7 @@ class Positions(np.ndarray, HoloPyObject):
         return np.ndarray.__array_wrap__(self, out_arr, context)
 
     def xyz(self):
-        return self.reshape(3, -1).T
+        return Positions(self.reshape(-1, 3))
 
     def r_theta_phi(self, origin):
         xg, yg, zg = self.xyz().T

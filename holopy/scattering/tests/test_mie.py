@@ -276,3 +276,16 @@ def test_internal_fields():
         assert len(w) == 1
         assert issubclass(w[-1].category, UserWarning)
         assert "Fields inside your Sphere(s) set to 0" in str(w[-1].message)
+
+def test_1d():
+    s = Sphere(1.59, .5, (5, 5, 0))
+    sch = ImageSchema((10, 10), .1, Optics(.66, 1.33, (1, 0)))
+    holo = Mie.calc_holo(s, sch)
+    field = Mie.calc_field(s, sch)
+    flatsch = Schema(positions=sch.positions.xyz(), optics=sch.optics)
+
+    flatholo = Mie.calc_holo(s, flatsch)
+    flatfield = Mie.calc_field(s, flatsch)
+
+    assert_equal(holo.ravel(), flatholo)
+    assert_equal(flatfield, field.reshape(flatfield.shape))

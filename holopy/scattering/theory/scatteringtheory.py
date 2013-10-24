@@ -26,7 +26,7 @@ calc_intensity and calc_holo, based on subclass's calc_field
 
 import numpy as np
 from warnings import warn
-from ...core.marray import Image, VectorGrid, VectorGridSchema, dict_without
+from ...core.marray import Image, VectorGrid, VectorSchema, dict_without, make_vector_schema
 from ...core import Optics
 from ...core.holopy_object import HoloPyObject
 from ..binding_method import binding, finish_binding
@@ -249,7 +249,7 @@ class ScatteringTheory(HoloPyObject):
     def _finalize_fields(self, z, fields, schema):
         # expects fields as an Nx3 ndarray
         phase = np.exp(-1j*np.pi*2*z / schema.optics.med_wavelen)
-        schema = VectorGridSchema.from_schema(schema)
+        schema = make_vector_schema(schema)
         result = schema.interpret_1d(fields)
         return result * phase
 
@@ -263,7 +263,7 @@ class FortranTheory(ScatteringTheory):
             field = np.vstack(self._raw_fields(positions, s, schema.optics)).T
             phase = np.exp(-1j*np.pi*2*s.center[2] / schema.optics.med_wavelen)
             field *= phase
-            return VectorGridSchema.from_schema(schema).interpret_1d(field)
+            return make_vector_schema(schema).interpret_1d(field)
 
 
         # See if we can handle the scatterer in one step
@@ -278,7 +278,10 @@ class FortranTheory(ScatteringTheory):
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
-        return self._set_internal_fields(field, scatterer)
+        return field
+        # TODO: fix internal field and re-enable this
+#        return self._set_internal_fields(field, scatterer)
+
 
     def _set_internal_fields(self, fields, scatterer):
         center_to_center = scatterer.center - fields.center
