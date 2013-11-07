@@ -128,13 +128,17 @@ def rsq(fit, data):
     return float(1 - ((data - fit)**2).sum()/((data - data.mean())**2).sum())
 
 class CostComputer(HoloPyObject):
-    def __init__(self, data, model):
+    def __init__(self, data, model, use_random_fraction=None):
         self.model = model
 
         schema = data
 
-        if model.use_random_fraction is not None:
-            n_sel = int(np.ceil(data.size*model.use_random_fraction))
+        if use_random_fraction is None and model.use_random_fraction is not None:
+            random_fraction = model.use_random_fraction
+            warnings.warn("Setting random fraction from model is depricated, use the random fraction option in fit")
+
+        if use_random_fraction is not None:
+            n_sel = int(np.ceil(data.size*use_random_fraction))
             self.selection = np.random.choice(data.size, n_sel, replace=False)
             self.data = data.ravel()[self.selection]
             positions = schema.positions.xyz()[self.selection]
@@ -161,7 +165,7 @@ class CostComputer(HoloPyObject):
 
 
 
-def fit(model, data, minimizer=Nmpfit):
+def fit(model, data, minimizer=Nmpfit, use_random_fraction=None):
     """
     fit a model to some data
 
@@ -189,7 +193,7 @@ def fit(model, data, minimizer=Nmpfit):
             raise InvalidMinimizer("Object supplied as a minimizer could not be"
                                    "interpreted as a minimizer")
 
-    coster = CostComputer(data, model)
+    coster = CostComputer(data, model, use_random_fraction)
     try:
         fitted_pars, minimizer_info = minimizer.minimize(model.parameters,
                                                          coster.flattened_difference)

@@ -114,9 +114,9 @@ def test_fit_random_subset():
                          par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
                r = par(8.5e-7, (1e-8, 1e-5)), n = ComplexParameter(par(1.59, (1,2)),1e-4j))
 
-    model = Model(s, Mie.calc_holo, use_random_fraction=.1, alpha = par(.6, [.1,1]))
+    model = Model(s, Mie.calc_holo, alpha = par(.6, [.1,1]))
     np.random.seed(40)
-    result = fit(model, holo)
+    result = fit(model, holo, use_random_fraction=.1)
 
     # we have to use a relatively loose tolerance here because the random
     # selection occasionally causes the fit to be a bit worse
@@ -138,8 +138,8 @@ def test_random_selection():
                       origin=[0.0, 0.0, 0.0])
 
     holo = Mie.calc_holo(sph, sch)
-    model = Model(sph, Mie.calc_holo, use_random_fraction=.1, alpha=1)
-    coster = CostComputer(holo, model)
+    model = Model(sph, Mie.calc_holo, alpha=1)
+    coster = CostComputer(holo, model, use_random_fraction=.1)
     assert_allclose(coster.flattened_difference([]), 0)
 
 
