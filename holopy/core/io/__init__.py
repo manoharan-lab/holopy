@@ -15,5 +15,5 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-from io import load, load_image, save, get_example_data, get_example_data_path
+from io import load, load_image, save, get_example_data, get_example_data_path, average_images
 from image_file_io import save_image, load_image

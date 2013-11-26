@@ -22,12 +22,14 @@ functions.
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.havard.edu>
 """
 import os
+import glob
 from warnings import warn
 import serialize
 from .image_file_io import load_image, save_image
 
 from ..marray import Image, arr_like
 from ..metadata import Optics
+from ..errors import Error
 
 
 def load(inf, spacing = None, optics = None):
@@ -127,3 +129,37 @@ def get_example_data_path(name):
 
 def get_example_data(name):
     return load(get_example_data_path(name))
+
+def average_images(images, spacing=None, optics=None, image_glob='*.tif'):
+    """
+    Average a set of images (usually as a background)
+
+    Parameters
+    ----------
+    images : string or list(string)
+        Directory or list of filenames or filepaths. If images is a directory,
+        it will average all images matching image_glob.
+    spacing : float
+        Spacing between pixels in the images
+    optics : :class:`.Optics` object
+        Optics for the images
+    image_glob : string
+        Glob used to select images (if images is a directory)
+
+    Returns
+    -------
+    averaged_image : :class:`.Image` object
+        Image which is an average of images
+    """
+
+    if os.path.isdir(images):
+        images = glob.glob(os.path.join(images, image_glob))
+
+    if len(images) < 1:
+        raise Error("No images found")
+
+    accumulator = load(images[0], spacing, optics)
+    for image in images[1:]:
+        accumulator += load(image, spacing, optics)
+
+    return accumulator/len(images)
