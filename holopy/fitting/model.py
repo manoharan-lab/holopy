@@ -200,7 +200,7 @@ class Model(HoloPyObject):
 
     Parameters
     ----------
-    parameters: :class:`.Paramatrization`
+    parameters: :class:`.Parametrization`
         The parameters which can be varied in this model.
     theory : :func:`scattering.theory.ScatteringTheory.calc_*`
         The scattering calc function that should be used to compute results for

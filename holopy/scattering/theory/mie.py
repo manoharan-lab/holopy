@@ -44,7 +44,7 @@ class Mie(FortranTheory):
     results for groups of spheres.  It does not account for multiple scattering,
     hence the approximation in the case of multiple spheres.  Neglecting
     multiple scattering is a good approximation if the particles are
-    sufficiently seperated.
+    sufficiently separated.
 
     This model can also calculate the exact scattered field from a
     spherically symmetric particle with an arbitrary number of layers

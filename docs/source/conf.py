@@ -24,7 +24,7 @@ sys.path.append(os.path.abspath('./'))
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.todo',
-              'sphinx.ext.coverage', 'sphinx.ext.pngmath', 'sphinx.ext.ifconfig',
+              'sphinx.ext.coverage', 'sphinx.ext.mathjax', 'sphinx.ext.ifconfig',
               'matplotlib.sphinxext.plot_directive',
               'matplotlib.sphinxext.only_directives',
               'sphinxext.ipython_console_highlighting',

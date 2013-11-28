@@ -161,7 +161,7 @@ class ScatteringTheory(HoloPyObject):
         ----------
         scatterer : :mod:`.scatterer` object
             (possibly composite) scatterer for which to compute scattering
-        alpha : scaling value for intensity of reference wave
+        scaling : scaling value (alpha) for intensity of reference wave
 
         Returns
         -------
@@ -333,7 +333,7 @@ def scattered_field_to_hologram(scat, ref, detector_normal = (0, 0, 1)):
     ref : :class:`.VectorGrid` or :class:`.Optics`
         The reference field, it can also be inferred from polarization of an
         Optics object
-    dectector_normal : (float, float, float)
+    detector_normal : (float, float, float)
         Vector normal to the detector the hologram should be measured at
         (defaults to z hat, a detector in the x, y plane)
     """

@@ -121,15 +121,15 @@ class ComplexParameter(Parameter):
     A complex free parameter
 
     ComplexParameters have a real and imaginary part which can (potentially)
-    vary seperately.
+    vary separately.
 
     Parameters
     ----------
     real, imag : float or :class:`Parameter`
         The real and imaginary parts of this parameter.  Assign floats to fix
         that portion or parameters to allow it to vary.  The parameters must be
-        pure real.  You should omit name's for the parameters, Complexparameter
-        will name them
+        purely real.  You should omit name's for the parameters;
+        ComplexParameter will name them 
     name : string
         Short descriptive name of the ComplexParameter.  Do not provide this if
         using a ParameterizedScatterer, a name will be assigned based its
