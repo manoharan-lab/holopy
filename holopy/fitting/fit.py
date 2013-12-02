@@ -30,6 +30,7 @@ import time
 
 from ..core.holopy_object import HoloPyObject
 from .errors import MinimizerConvergenceFailed, InvalidMinimizer
+from holopy.scattering.errors import MultisphereFieldNaN
 from .minimizer import Minimizer, Nmpfit
 import numpy as np
 from ..core.marray import Schema
@@ -134,7 +135,7 @@ class CostComputer(HoloPyObject):
         schema = data
 
         if use_random_fraction is None and model.use_random_fraction is not None:
-            random_fraction = model.use_random_fraction
+            use_random_fraction = model.use_random_fraction
             warnings.warn("Setting random fraction from model is depricated, use the random fraction option in fit")
 
         if use_random_fraction is not None:
@@ -153,7 +154,18 @@ class CostComputer(HoloPyObject):
 
     def _calc(self, pars):
         s = self.model.scatterer.make_from(pars)
-        return self.model.theory(s, self.schema, scaling=self.model.get_alpha(pars))
+
+        valid = True
+        for constraint in self.model.constraints:
+            valid = valid and constraint(s)
+        if not valid:
+            return np.ones_like(self.schema) * np.inf
+
+        try:
+            return self.model.theory(s, self.schema, scaling=self.model.get_alpha(pars))
+        except MultisphereFieldNaN:
+            return np.ones_like(self.schema) * np.inf
+
     def flattened_difference(self, pars):
         return (self._calc(pars) -  self.data).ravel()
 
@@ -161,8 +173,8 @@ class CostComputer(HoloPyObject):
         return rsq(self._calc(pars), self.data)
 
     def chisq(self, pars):
-        return chisq(self._calc(pars), self.data)
-
+        return chisq(self._calc(pars), self.data
+)
 
 
 def fit(model, data, minimizer=Nmpfit, use_random_fraction=None):

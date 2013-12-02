@@ -34,7 +34,10 @@ from .mie_f import mieangfuncs
 from .mie_f import scsmfo_min
 from .mie_f import uts_scsmfo
 from ..scatterer import Spheres
-from ..errors import TheoryNotCompatibleError, UnrealizableScatterer
+from ..errors import (TheoryNotCompatibleError, UnrealizableScatterer,
+                      MultisphereFieldNaN,
+                      ConvergenceFailureMultisphere,
+                      MultisphereExpansionNaN)
 from .scatteringtheory import FortranTheory
 
 class Multisphere(FortranTheory):
@@ -369,19 +372,3 @@ def _integrate4pi(integrand):
     integral, error = dblquad(integrand, 0, 2 * np.pi, lambda theta:0.,
                               lambda theta:np.pi)
     return integral
-
-class MultisphereFieldNaN(UnrealizableScatterer):
-    def __str__(self):
-        return "Fields computed with Multisphere are NaN, this probably represents a failure of \
-the code to converge, check your scatterer."
-
-
-class MultisphereExpansionNaN(Exception):
-    def __str__(self):
-        return ("Internal expansion for Multisphere coefficients contains "
-                "NaN.  This probably means your scatterer is unphysical.")
-
-class ConvergenceFailureMultisphere(Exception):
-    def __str__(self):
-        return ("Multisphere calculations failed to converge, this probably means "
-                "your scatterer is unphysical, or possibly just huge")

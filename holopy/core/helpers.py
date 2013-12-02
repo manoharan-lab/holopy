@@ -40,6 +40,15 @@ def _ensure_array(x):
     else:
         return np.array(x)
 
+def ensure_listlike(x):
+    if x is None:
+        return []
+    try:
+        iter(x)
+        return x
+    except TypeError:
+        return [x]
+
 def _ensure_pair(x):
     if x is None:
         return None

@@ -29,7 +29,9 @@ import exceptions
 from ..core.errors import Error
 
 class InvalidScatterer(Exception):
-    pass
+    def __init__(self, scatterer, message):
+        self.scatterer = scatterer
+        super(InvalidScatterer, self).__init__(message)
 
 class OverlapWarning(exceptions.UserWarning):
     def __init__(self, scatterer, overlaps):
@@ -45,7 +47,7 @@ class ScattererDefinitionError(Error):
         self.scatterer = scatterer
         super(ScattererDefinitionError, self).__init__(message)
     def __str__(self):
-        return ("Error defining scatterer object of type " + 
+        return ("Error defining scatterer object of type " +
                 self.scatterer.__class__.__name__ +
                 ".\n" + self.message)
 
@@ -57,18 +59,17 @@ class TheoryNotCompatibleError(Error):
     def __str__(self):
         if self.message is None:
             return ("The implementation of the " +
-                    self.theory.__class__.__name__ + 
+                    self.theory.__class__.__name__ +
                     " scattering theory doesn't know how to handle " +
-                    "scatterers of type " + 
+                    "scatterers of type " +
                     self.scatterer.__class__.__name__)
         else:
             return ("The implementation of the " +
-                    self.theory.__class__.__name__ + 
+                    self.theory.__class__.__name__ +
                     " scattering theory doesn't know how to handle " +
-                    "scatterers of type " + 
-                    self.scatterer.__class__.__name__ + 
+                    "scatterers of type " +
+                    self.scatterer.__class__.__name__ +
                     " because: " + self.message)
-
 
 class UnrealizableScatterer(Error):
     def __init__(self, theory, scatterer, message):
@@ -80,14 +81,27 @@ class UnrealizableScatterer(Error):
                 + " scattering theory for a scatterer of type " +
                 self.scatterer.__class__.__name__ + " because: " + self.message)
 
-class InvalidSelection(Error):
-    pass
-
 class ModelInputError(Error):
     pass
 
 class NoCenter(Error):
     pass
-    
+
 class NoPolarization(Error):
     pass
+
+class MultisphereFieldNaN(UnrealizableScatterer):
+    def __str__(self):
+        return "Fields computed with Multisphere are NaN, this probably "
+        "represents a failure of the code to converge, check your scatterer."
+
+
+class MultisphereExpansionNaN(Exception):
+    def __str__(self):
+        return ("Internal expansion for Multisphere coefficients contains "
+                "NaN.  This probably means your scatterer is unphysical.")
+
+class ConvergenceFailureMultisphere(Exception):
+    def __str__(self):
+        return ("Multisphere calculations failed to converge, this probably means "
+                "your scatterer is unphysical, or possibly just huge")

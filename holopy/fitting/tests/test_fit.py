@@ -18,7 +18,7 @@
 from __future__ import division
 
 import tempfile
-
+import warnings
 import numpy as np
 
 from nose.tools import nottest, assert_raises
@@ -36,6 +36,7 @@ from ...core.tests.common import (assert_obj_close, get_example_data,
                                   assert_read_matches_write)
 from ..fit import CostComputer
 from ..errors import InvalidMinimizer
+from ..model import limit_overlaps
 
 gold_alpha = .6497
 
@@ -129,7 +130,7 @@ def test_fit_random_subset():
     assert_read_matches_write(result)
 
 def test_random_selection():
-    sph = Sphere(.5, 1.6, (5,5,5))
+    sph = Sphere(par(.5), 1.6, (5,5,5))
     sch = ImageSchema(shape=[100, 100], spacing=[0.1, 0.1],
                       optics=Optics(wavelen=0.66,
                                     index=1.33,
@@ -137,10 +138,10 @@ def test_random_selection():
                                     divergence=0.0),
                       origin=[0.0, 0.0, 0.0])
 
-    holo = Mie.calc_holo(sph, sch)
     model = Model(sph, Mie.calc_holo, alpha=1)
+    holo = Mie.calc_holo(model.scatterer.guess, sch)
     coster = CostComputer(holo, model, use_random_fraction=.1)
-    assert_allclose(coster.flattened_difference([]), 0)
+    assert_allclose(coster.flattened_difference({'n' : .5}), 0)
 
 
 
@@ -369,3 +370,18 @@ def test_fit_complex_parameter():
     assert_allclose(result2.scatterer.r, ref_sph.r)
     assert_allclose(result2.scatterer.n.real, ref_sph.n.real)
     assert_allclose(result2.scatterer.n.imag, ref_sph.n.imag)
+
+def test_constraint():
+    sch = ImageSchema(100)
+    with warnings.catch_warnings():
+        # TODO: we should really only supress overlap warnings here,
+        # but I am too lazy to figure it out right now, and I don't
+        # think we are likely to hit warnings here that won't get
+        # caught elsewhere -tgd 2013-12-01
+        warnings.simplefilter("ignore")
+        spheres = Spheres([Sphere(r=.5, center=(0,0,0)),
+                           Sphere(r=.5, center=(0,0,par(.2)))])
+        model = Model(spheres, Multisphere.calc_holo, constraints=limit_overlaps())
+        coster = CostComputer(sch, model)
+        cost = coster._calc({'1:Sphere.center[2]' : .2})
+        assert_equal(cost, np.ones_like(sch)*np.inf)

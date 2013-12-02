@@ -21,16 +21,16 @@ in the Lorenz-Mie scattering solution and related problems such as layered
 spheres.
 
 These functions are not to be used for calculations at each field point.
-Rather, they should be used once for the calculation of scattering 
-coefficients, which then get passed to faster Fortran code for field 
-calculations. 
+Rather, they should be used once for the calculation of scattering
+coefficients, which then get passed to faster Fortran code for field
+calculations.
 
 Papers referenced herein:
 
 D. W. Mackowski, R. A. Altenkirch, and M. P. Menguc, "Internal absorption
 cross sections in a stratified sphere," Applied Optics 29, 1551-1559, (1990).
 
-Yang, "Improved recursive algorithm for light scattering by a multilayered 
+Yang, "Improved recursive algorithm for light scattering by a multilayered
 sphere," Applied Optics 42, 1710-1720, (1993).
 
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
@@ -44,14 +44,14 @@ from numpy import array, sin, cos, zeros, arange, real, imag, exp
 import scipy
 from scipy.special import riccati_jn, riccati_yn
 
-def riccati_psi_xi(x, nstop): 
+def riccati_psi_xi(x, nstop):
     if np.imag(x) != 0.:
         raise TypeError('Cannot handle complex arguments.')
     psin = riccati_jn(nstop, x)
     # construct riccati hankel function of 1st kind by linear
-    # combination of RB's based on j_n and y_n 
+    # combination of RB's based on j_n and y_n
     # scipy sign on y_n consistent with B/H
-    xin = psin[0] + 1j*riccati_yn(nstop, x)[0] 
+    xin = psin[0] + 1j*riccati_yn(nstop, x)[0]
     rbh = array([psin[0], xin])
     return rbh
 
@@ -96,7 +96,7 @@ def log_der_13(z, nstop):
     # See Mackowski eqn. 62
     nmx = np.maximum(nstop, np.round_(np.absolute(z))) + 15
     dn1 = log_der_1(z, nmx, nstop)
-	
+
     # Calculate Dn_3 (based on \xi) by up recurrence
     # initialize
     dn3 = zeros(nstop+1, dtype = 'complex128')
@@ -112,8 +112,8 @@ def log_der_13(z, nstop):
 
     return dn1, dn3
 
-# calculate ratio of RB's defined in Yang eqn. 23 by up recursion relation 
-def Qratio(z1, z2, nstop, dns1 = None, dns2 = None): 
+# calculate ratio of RB's defined in Yang eqn. 23 by up recursion relation
+def Qratio(z1, z2, nstop, dns1 = None, dns2 = None):
     '''
     Calculate ratio of Riccati-Bessel functions defined in Yang eq. 23
     by up recursion.
@@ -136,19 +136,19 @@ def Qratio(z1, z2, nstop, dns1 = None, dns2 = None):
         d3z1 = dns1[1]
         d1z2 = dns2[0]
         d3z2 = dns2[1]
-	
+
     qns = zeros(nstop+1, dtype = 'complex128')
-	
+
     # initialize according to Yang eqn. 34
     a1 = real(z1)
     a2 = real(z2)
     b1 = imag(z1)
     b2 = imag(z2)
     qns[0] = exp(-2.*(b2-b1)) * (exp(-1j*2.*a1)-exp(-2.*b1)) / (exp(-1j*2.*a2)
-                                                                - exp(-2.*b2)) 
+                                                                - exp(-2.*b2))
     # Loop to do upwards recursion in eqn. 33
     for i in arange(1, nstop+1):
-        qns[i] = qns[i-1]* ( (d3z1[i] + i/z1) * (d1z2[i] + i/z2) 
+        qns[i] = qns[i-1]* ( (d3z1[i] + i/z1) * (d1z2[i] + i/z2)
 	       		     )  / ((d3z2[i] + i/z2) * (d1z1[i] + i/z1) )
     return qns
 
@@ -167,5 +167,3 @@ def R_psi(z1, z2, nmax):
     for i in arange(1, nmax + 1):
         output[i] = output[i - 1] * (dnz2[i] + i / z2) / (dnz1[i] + i / z1)
     return output
-
-

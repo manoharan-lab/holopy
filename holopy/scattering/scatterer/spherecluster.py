@@ -50,7 +50,7 @@ class Spheres(Scatterers):
     -----
     '''
 
-    def __init__(self, scatterers):
+    def __init__(self, scatterers, warn=True):
         # make sure all components are spheres
         for s in scatterers:
             if not isinstance(s, Sphere):

@@ -24,12 +24,12 @@ Classes for defining models of scattering for fitting
 from __future__ import division
 
 import inspect
-from copy import copy
-from os.path import commonprefix
 import numpy as np
-import warnings
+from os.path import commonprefix
+from .errors import ModelDefinitionError
 from ..core.holopy_object import HoloPyObject
 from .parameter import Parameter, ComplexParameter
+from holopy.core.helpers import ensure_listlike
 
 
 class Parametrization(HoloPyObject):
@@ -194,13 +194,35 @@ class ParameterizedObject(Parametrization):
 
         return self.obj.from_parameters(obj_pars)
 
+def limit_overlaps(fraction=.1):
+    """
+    Generator for constraint prohibiting overlaps beyond a certain tolerance
+
+    Parameters
+    ----------
+    fraction : float
+        Fraction of the sphere radius that the spheres should be allowed to
+        overlap by
+
+
+    Returns
+    -------
+    constraint : function (scatterer -> bool)
+        A function which tests scatterers to see if the exceed the specified
+        tolerance
+    """
+    def constraint(s):
+        return s.largest_overlap < np.min(s.r) * 2
+    return constraint
+
+
 class Model(HoloPyObject):
     """
     Representation of a model to fit to data
 
     Parameters
     ----------
-    parameters: :class:`.Parametrization`
+    parameters  :class:`.Paramatrization`
         The parameters which can be varied in this model.
     theory : :func:`scattering.theory.ScatteringTheory.calc_*`
         The scattering calc function that should be used to compute results for
@@ -208,9 +230,13 @@ class Model(HoloPyObject):
     alpha : float or Parameter
         Extra scaling parameter, hopefully this will be removed by improvements
         in our theory soon.
+    constraints : function or list of functions
+        One or a list of constraint functions. A constraint function should take
+        a scaterer as an argument and return False if you wish to disallow that
+        scatterer (usually because it is un-physical for some reason)
     """
-    def __init__(self, scatterer, theory, alpha =
-                 None, use_random_fraction=None):
+    def __init__(self, scatterer, theory, alpha=None,
+                 use_random_fraction=None, constraints=[]):
         if not isinstance(scatterer, Parametrization):
             scatterer = ParameterizedObject(scatterer)
         self.scatterer = scatterer
@@ -224,6 +250,12 @@ class Model(HoloPyObject):
         self.parameters = self.scatterer.parameters
         if isinstance(self.alpha, Parameter):
             self.parameters.append(self.alpha)
+
+        if len(self.parameters) == 0:
+            raise ModelDefinitionError("You must specify at least one parameter to vary in a fit")
+
+        self.constraints = ensure_listlike(constraints)
+
 
     def get_alpha(self, pars=None):
         try:
