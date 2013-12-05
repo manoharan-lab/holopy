@@ -82,6 +82,10 @@ class Mie(FortranTheory):
         return mieangfuncs.mie_fields(positions, scat_coeffs, optics.polarization,
                                       self.compute_escat_radial)
 
+    def _raw_internal_fields(self, positions, scatterer, optics):
+        scat_coeffs = self._scat_coeffs(scatterer, optics)
+        return mieangfuncs.mie_fields(positions, scat_coeffs, optics.polarization)
+
 
 #     def _calc_internal_field(self, scatterer, schema):
 #         """
