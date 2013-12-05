@@ -84,35 +84,6 @@ class ScatteringTheory(HoloPyObject):
         fields.get_metadata_from(schema)
         return fields
 
-    @classmethod
-    @binding
-    def calc_internal_field(cls_self, scatterer, schema, scaling = 1.0):
-        """
-        Calculate fields.  Implemented in derived classes only.
-
-        Parameters
-        ----------
-        scatterer : :mod:`.scatterer` object
-            (possibly composite) scatterer for which to compute scattering
-
-        Returns
-        -------
-        e_field : :mod:`.VectorGrid`
-            scattered electric field
-
-
-        Notes
-        -----
-        calc_* functions can be called on either a theory class or a theory
-        object.  If called on a theory class, they use a default theory object
-        which is correct for the vast majority of situations.  You only need to
-        instantiate a theory object if it has adjustable parameters and you want
-        to use non-default values.
-
-        So far this should only work for Spheres.
-
-        """
-        return cls_self._calc_internal_field(scatterer, schema) * scaling
 
     @classmethod
     @binding
@@ -259,9 +230,14 @@ class ScatteringTheory(HoloPyObject):
 class FortranTheory(ScatteringTheory):
     def _calc_field(self, scatterer, schema):
         def get_field(s):
-            positions = schema.positions.kr_theta_phi(s.center, schema.optics).T
-            field = np.vstack(self._raw_fields(positions, s, schema.optics)).T
+            positions = schema.positions.kr_theta_phi(s.center, schema.optics)
+            field = np.vstack(self._raw_fields(positions.T, s, schema.optics)).T
             phase = np.exp(-1j*np.pi*2*s.center[2] / schema.optics.med_wavelen)
+            if self._scatterer_overlaps_schema(scatterer, schema):
+                inner = scatterer.contains(schema.positions.xyz())
+                field[inner] = np.vstack(
+                    self._raw_internal_fields(positions[inner].T, s,
+                                              schema.optics)).T
             field *= phase
             return make_vector_schema(schema).interpret_1d(field)
 
@@ -282,6 +258,14 @@ class FortranTheory(ScatteringTheory):
         # TODO: fix internal field and re-enable this
 #        return self._set_internal_fields(field, scatterer)
 
+
+    def _scatterer_overlaps_schema(self, scatterer, schema):
+        if hasattr(schema, 'center'):
+            center_to_center = scatterer.center - schema.center
+            unit_vector = center_to_center - abs(center_to_center).sum()
+            return schema.contains(scatterer.center - unit_vector)
+        else:
+            return scatterer.contains(schema.positions.xyz()).any()
 
     def _set_internal_fields(self, fields, scatterer):
         center_to_center = scatterer.center - fields.center

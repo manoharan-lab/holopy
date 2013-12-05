@@ -29,6 +29,7 @@ from __future__ import division
 
 import numpy as np
 from numpy import arctan2, sin, cos
+from warnings import warn
 from scipy.integrate import dblquad
 from .mie_f import mieangfuncs
 from .mie_f import scsmfo_min
@@ -200,6 +201,13 @@ class Multisphere(FortranTheory):
             raise MultisphereFieldNaN(self, scatterer, '')
 
         return fields
+
+    def _raw_internal_fields(self, positions, scatterer, optics):
+        warn("Fields inside your Sphere(s) set to 0 because {0} Theory "
+             " does not yet support calculating internal fields".format(
+                 self.__class__.__name__))
+        return [np.zeros(positions[1].shape, dtype='complex') for i in
+                range(3)]
 
     def _calc_cext(self, scatterer, optics, amn = None, lmax = None):
         """
