@@ -244,17 +244,10 @@ def test_calc_xz_plane():
     e = Mie.calc_field(s, sch)
 
 # TODO: finish internal fields
-@nottest
 def test_internal_fields():
     s = Sphere(1.59, .5, (5, 5, 0))
     sch = ImageSchema((100, 100), .1, Optics(.66, 1.33, (1, 0)))
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter('always')
-        f = Mie.calc_field(s, sch)
-        verify(f, 'mie_zeroed_internal')
-        assert len(w) == 1
-        assert issubclass(w[-1].category, UserWarning)
-        assert "Fields inside your Sphere(s) set to 0" in str(w[-1].message)
+    # TODO: actually test correctness
 
 def test_1d():
     s = Sphere(1.59, .5, (5, 5, 0))

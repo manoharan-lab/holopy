@@ -201,7 +201,7 @@ def limit_overlaps(fraction=.1):
     Parameters
     ----------
     fraction : float
-        Fraction of the sphere radius that the spheres should be allowed to
+        Fraction of the sphere diameter that the spheres should be allowed to
         overlap by
 
 
@@ -212,7 +212,7 @@ def limit_overlaps(fraction=.1):
         tolerance
     """
     def constraint(s):
-        return s.largest_overlap < np.min(s.r) * 2
+        return s.largest_overlap() < ((np.min(s.r) * 2) * fraction)
     return constraint
 
 
