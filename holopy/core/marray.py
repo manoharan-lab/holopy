@@ -33,7 +33,7 @@ import scipy.signal
 from errors import UnspecifiedPosition
 from .holopy_object import HoloPyObject
 from .metadata import Angles, Positions
-from .helpers import _ensure_pair, _ensure_array, dict_without
+from .helpers import _ensure_pair, _ensure_array, dict_without, ensure_3d
 import inspect
 
 def zeros_like(obj, dtype=None):
@@ -162,7 +162,7 @@ class Schema(HoloPyObject):
     """
     def __init__(self, shape=None, positions=None, optics=None,
                  origin=np.zeros(3), **kwargs):
-        self.positions = positions
+        self._positions = positions
         self.optics = optics
         self.origin = origin
         # if we are a np.ndarray subclass (if this constructor is
@@ -173,6 +173,14 @@ class Schema(HoloPyObject):
                 shape = positions.shape[:-1]
             self.shape = shape
         super(Schema, self).__init__(**kwargs)
+
+    @property
+    def positions(self):
+        return self._positions
+
+    @positions.setter
+    def positions(self, val):
+        self._positions = val
 
     # TODO: put this somewhere sensible, make it handle phi as well
     def positions_theta_phi(self):
@@ -319,9 +327,6 @@ class RegularGridSchema(Schema):
         # the setter will set the positions correctly
         self.spacing = spacing
 
-
-
-
     @property
     def spacing(self):
         return getattr(self, '_spacing', None)
@@ -338,25 +343,37 @@ class RegularGridSchema(Schema):
                 spacing = np.repeat(spacing, len(self.shape))
 
             self._spacing = spacing
-            if self.shape is None:
-                self.positions = Positions()
-            else:
-                # Compute the coordinates of each point in the grid
 
-                # make it 3d even if the image is 2d
-                if len(self.shape) == 2:
-                    shape = np.append(self.shape, 1)
-                    spacing = np.append(spacing, 1)
-                else:
-                    shape = self.shape
-                    spacing = self.spacing
-                grid_slice = [slice(0, d) for d in shape]
-                xyz = np.mgrid[grid_slice].astype('float64')
-                pos = np.zeros(np.append(shape, 3))
-                for i, s in enumerate(spacing):
-                    pos[..., i] = xyz[i, ...] * s
-                self.positions = Positions(pos)
+    # This could be cached, it only changes when the shape, spacing or
+    # origin is changed, which is less common than we call
+    # positions. However, that is only a minor optimization, (doing
+    # something with the positions almost always takes much longer
+    # than computing them) so I am not bothering with it at the moment
+    # -tgd 2013-12-09
+    @property
+    def positions(self):
+        if self.shape is None:
+            return Positions()
+        # Compute the coordinates of each point in the grid
 
+        # make it 3d even if the image is 2d
+        if len(self.shape) == 2:
+            shape = np.append(self.shape, 1)
+            spacing = np.append(self.spacing, 1)
+        else:
+            shape = self.shape
+            spacing = self.spacing
+        grid_slice = [slice(0, d) for d in shape]
+        xyz = np.mgrid[grid_slice].astype('float64')
+        pos = np.zeros(np.append(shape, 3))
+        for i, s in enumerate(spacing):
+            pos[..., i] = xyz[i, ...] * s
+        return Positions(pos + self.origin)
+
+    @positions.setter
+    def positions(self, val):
+        raise Error("Positions of RegularGrids are determined automatically, "
+                    "you should not try to set them directly")
 
 
     @property
@@ -372,13 +389,15 @@ class RegularGridSchema(Schema):
 
     @center.setter
     def center(self, value):
-        if len(value) == 2:
-            value = np.append(value, 0)
-        self.origin = value - self.extent/2
+        self.origin = ensure_3d(value) - self.extent/2
 
     def contains(self, point):
         return ((point >=self.origin).all() and
                 (point <= self.origin+self.extent).all())
+
+    @property
+    def ndim(self):
+        return len(self.shape)
 
 class VectorSchema(Schema):
     def __init__(self, shape=None, positions=None,
@@ -577,24 +596,22 @@ def subimage(arr, center, shape):
 
     Returns
     -------
-    sub : numpy.ndarray
+    sub : numpy.ndarray or :class:`.RegularGrid` marray object
         Subset of shape shape centered at center. For marrays, marray.origin
         will be set such that the upper left corner of the output has
         coordinates relative to the input.
     """
-    assert len(center) == arr.ndim
     if np.isscalar(shape):
         shape = np.repeat(shape, arr.ndim)
     assert len(shape) == arr.ndim
 
-    extent = [slice(c-s/2, c+s/2) for c, s in zip(center, shape)]
+    extent = [slice(c-s/2, c+s/2) for c, s in zip(center, shape)] + [Ellipsis]
     # TODO: BUG: get coordinate offset correct (reset origin)
     output = _checked_cut(arr, extent)
 
-    if isinstance(output, Marray):
+    if isinstance(output, RegularGridSchema):
         if output.spacing != None:
-             for i in range(len(extent)):
-                output.origin[i] = extent[i].start * output.spacing[i]
+            output.center = arr.origin + ensure_3d(center) * ensure_3d(arr.spacing)
         else:
             output.origin = None
     return output
@@ -669,10 +686,10 @@ def squeeze(arr):
 # common code for subimage and resize
 def _checked_cut(arr, extent):
     for i, axis in enumerate(extent):
-        if axis.start < 0 or axis.stop > arr.shape[i]:
+        if axis is not Ellipsis and (axis.start < 0 or axis.stop > arr.shape[i]):
             raise IndexError
 
-    return arr[extent]
+    return arr[extent].copy()
 
 ImageSchema._corresponding_marray = Image
 VolumeSchema._corresponding_marray = Volume

@@ -58,6 +58,29 @@ def _ensure_pair(x):
     except (IndexError, TypeError):
         return np.array([x, x])
 
+def ensure_3d(x):
+    """
+    Make sure you have a 3d coordinate.
+
+    If given a 2d coordinate, add a z=0 to make it 3d
+
+    Parameters
+    ----------
+    x : list, array or tuple with 2 or 3 elements
+        a the coordinate that should be 3d
+
+    Returns
+    -------
+    x3d : np.ndarray
+        A coordinate that has 3 elements
+    """
+    if len(x) not in [2, 3]:
+        raise Error("{0} cannot be interpreted as a coordinate")
+    if len(x) == 2:
+        return np.append(x, 0)
+    else:
+        return np.array(x)
+
 def mkdir_p(path):
     '''
     Equivalent to mkdir -p at the shell, this function makes a

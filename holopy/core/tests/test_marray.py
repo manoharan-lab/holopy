@@ -88,6 +88,11 @@ def test_subimage():
     s = subimage(i, (5,5), 2)
     assert s.shape == (2,2)
 
+    i2 = Image(i, 1)
+    s2 = subimage(i2, (5, 5), 2)
+
+    assert_equal(s2.positions, subimage(i2.positions, (5,5), 2))
+
     assert_raises(IndexError, subimage, i, (2,2), 10)
 
 def test_resize():

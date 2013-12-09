@@ -38,10 +38,11 @@ from ..theory import Mie
 
 from ..theory.mie import UnrealizableScatterer
 from ..errors import TheoryNotCompatibleError
-from ...core import ImageSchema, Optics, Angles, Schema, VolumeSchema
+from ...core import (ImageSchema, Image, Optics, Angles, Schema, VolumeSchema,
+                     subimage)
 from .common import verify, sphere, xschema, scaling_alpha, optics, yschema
 from .common import x, y, z, n, xoptics, radius
-from ...core.tests.common import assert_allclose
+from ...core.tests.common import assert_allclose, assert_obj_close
 
 @attr('fast')
 def test_single_sphere():
@@ -60,6 +61,17 @@ def test_single_sphere():
 
     # large radius (calculation not attempted because it would take forever
     assert_raises(UnrealizableScatterer, Mie.calc_holo, Sphere(r=1, n = 1.59, center = (5,5,5)), xschema)
+
+@attr('fast')
+def test_subimaged():
+    # make a dummy image so that we can pretend we are working with
+    # data we want to subimage
+    im = Image(np.zeros(xschema.shape), xschema.spacing, xschema.optics)
+    h = Mie.calc_holo(sphere, im)
+    sub = (60, 70), 30
+    hs = Mie.calc_holo(sphere, subimage(im, *sub))
+
+    assert_obj_close(subimage(h, *sub), hs)
 
 
 @attr('fast')
