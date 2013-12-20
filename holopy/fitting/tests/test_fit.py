@@ -20,11 +20,12 @@ from __future__ import division
 import tempfile
 import warnings
 import numpy as np
+import holopy as hp
 
 from nose.tools import nottest, assert_raises
 from nose.plugins.skip import SkipTest
 from nose.plugins.attrib import attr
-from numpy.testing import assert_equal, assert_approx_equal, assert_allclose
+from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, assert_array_equal
 from ..minimizer import OpenOpt
 from ...scattering.scatterer import Sphere, Spheres, Scatterer
 from ...scattering.theory import Mie, Multisphere, DDA
@@ -385,3 +386,13 @@ def test_constraint():
         coster = CostComputer(sch, model)
         cost = coster._calc({'1:Sphere.center[2]' : .2})
         assert_equal(cost, np.ones_like(sch)*np.inf)
+
+def test_layered():
+    s = Sphere(n = (1,2), r = (1, 2), center = (2, 2, 2))
+    sch = ImageSchema((10, 10), .2, Optics(.66, 1, (1, 0)))
+    hs = Mie.calc_holo(s, sch)
+
+    guess = hp.scattering.scatterer.sphere.LayeredSphere((1,2), (par(1.01), par(.99)), (2, 2, 2))
+    model = Model(guess, Mie.calc_holo)
+    res = fit(model, hs)
+    assert_allclose(res.scatterer.t, (1, 1), rtol = 1e-12)

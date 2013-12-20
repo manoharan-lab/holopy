@@ -20,6 +20,7 @@
 Defines Sphere, a scattering primitive
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
+.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
 import numpy as np
@@ -31,20 +32,22 @@ from ...core.helpers import _ensure_array
 class Sphere(CenteredScatterer):
     '''
     Contains optical and geometrical properties of a sphere, a
-    scattering primitive
+    scattering primitive.
+
+    This can be a multiple layered sphere by making r and n lists.
 
     Attributes
     ----------
-    n : complex
-        Index of refraction of sphere
-    r : float
-        Radius of sphere
-    center : 3-tuple, list or numpy array
+    n : complex or list of complex
+        index of refraction of each layer of the sphere
+    r : float or list of float
+        radius of the sphere or outer radius of each sphere.
+    center : length 3 listlike
         specifies coordinates of center of sphere
 
     '''
 
-    def __init__(self, n = None, r = 0.5e-6, center = None):
+    def __init__(self, n = None, r = .5, center = None):
         self.n = n
         self.r = r
         super(Sphere, self).__init__(center)
@@ -61,3 +64,30 @@ class Sphere(CenteredScatterer):
 
     def rotated(self, alpha, beta, gamma):
         return copy(self)
+
+class LayeredSphere(Sphere):
+    """
+    Alternative description of a sphere where you specify layer
+    thicknesses instead of radii
+
+    Attributes
+    ----------
+    n : list of complex
+        Index of each each layer
+    t : list of complex
+        Thickness of each layer
+    center : length 3 listlike
+        specifies coordinates of center of sphere
+    """
+    def __init__(self, n = None, t = None, center = None):
+        self.n = _ensure_array(n)
+        self.t = _ensure_array(t)
+        self.center = center
+
+    @property
+    def r(self):
+        r = np.zeros(len(self.t))
+        r[0] = self.t[0]
+        for i, t in enumerate(self.t[1:]):
+            r[i+1] = r[i] + t
+        return r

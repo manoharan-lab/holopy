@@ -34,6 +34,7 @@ from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
 from nose.plugins.attrib import attr
 
 from ..scatterer import Sphere, Spheres, Ellipsoid
+from holopy.scattering.scatterer.sphere import LayeredSphere
 from ..theory import Mie
 
 from ..theory.mie import UnrealizableScatterer
@@ -273,3 +274,11 @@ def test_1d():
 
     assert_equal(holo.ravel(), flatholo)
     assert_equal(flatfield, field.reshape(flatfield.shape))
+
+def test_layered():
+    l = LayeredSphere(n = (1, 2), t = (1, 1), center = (2, 2, 2))
+    s = Sphere(n = (1,2), r = (1, 2), center = (2, 2, 2))
+    sch = ImageSchema((10, 10), .2, Optics(.66, 1, (1, 0)))
+    hl = Mie.calc_holo(l, sch)
+    hs = Mie.calc_holo(s, sch)
+    assert_equal(hl, hs)
