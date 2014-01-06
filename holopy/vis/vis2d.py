@@ -113,7 +113,7 @@ class plotter:
             if getattr(self.im, 'spacing', None) is not None:
                 print("{0}, {1}".format(self.pixel(x, y), self.location(x, y)))
             else:
-                print(self.pixel)
+                print(self.pixel(x, y))
             import sys; sys.stdout.flush()
 
 
