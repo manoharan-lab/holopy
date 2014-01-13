@@ -35,12 +35,12 @@ convenient test, as we know what answer we should get::
       optics = Optics(wavelen = .660, polarization = [1, 0],
       index = 1.33))
   sphere = Sphere(center = (5, 5, 10.3), r = .5, n = 1.58)
-  holo = Mie.calc_holo(sphere, schema)
+  data_holo = Mie.calc_holo(sphere, schema)
 
   par_s = Sphere(center = (par(guess = 5.5, limit = [4,10]),
        par(4.5, [4, 10]), par(10, [5, 15])), r = .5, n = 1.58)
   model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1]))
-  result = fit(model, holo)
+  result = fit(model, data_holo)
   hp.save('result.yaml', result)
 
 
@@ -64,7 +64,7 @@ as those in :ref:`calc_tutorial`::
       optics = Optics(wavelen = .660, polarization = [1, 0],
       index = 1.33))
   sphere = Sphere(center = (5, 5, 10.3), r = .5, n = 1.58)
-  holo = Mie.calc_holo(sphere, schema)
+  data_holo = Mie.calc_holo(sphere, schema)
 
 If you are working with your own data, it is important to remember to
 normalize the data, since calculations return a normalized result. So
@@ -75,7 +75,7 @@ if you had ``data.tif`` and ``bg.tif`` you would use something like::
   from holopy.core.process import normalize
   optics = Optics(wavelen = .660, polarization = [1, 0],
                   index = 1.33)
-  holo = normalize(hp.load('data.tif', spacing = .1, optics = optics) /
+  data_holo = normalize(hp.load('data.tif', spacing = .1, optics = optics) /
                    hp.load('bg.tif', spacing = .1, optics = optics))
 
 .. _define_model:
@@ -101,6 +101,15 @@ used to define a model::
 ``alpha`` is an additional fitting parameter first introduced by Lee
 et al. in [Lee2007] (see :ref:`credits` for additional details).
 
+To see how well the guess in your model lines up with the hologram you
+are fitting to, use ::
+
+  guess_holo = model.guess_holo(data_holo)
+
+This will compute a hologram with the same dimensions as the data you
+are attempting to fit. This simplest and best way to see what the
+minimizer will be working from when it attempts to fit your hologram.
+
 .. _run_fit:
 
 Run the Fit
@@ -109,7 +118,7 @@ Run the Fit
 Once you have all of that set up, running the fit is almost
 trivially simple::
 
-  result = fit(model, holo)
+  result = fit(model, data_holo)
 
 
 You can examine the fitted position in ``result.scatterer.center``. We
@@ -120,6 +129,11 @@ From the fit,
 ``result.scatterer`` gives the scatterer that best matches the hologram,
 ``result.alpha`` is the alpha for the best fit.  ``result.chisq`` and
 ``result.rsq`` are statistical measures of the the goodness of the fit.
+
+You can also compute a hologram of the final fit result to compare to
+the data with ::
+
+  result_holo = result.fitted_holo(data_holo)
 
 .. note::
 
@@ -162,7 +176,7 @@ In this example, we fit for the parameters of two spheres ::
     s1 = Sphere(center=(15, 15, 20), n = 1.59, r = 0.5)
     s2 = Sphere(center=(14, 14, 20), n = 1.59, r = 0.5)
     cluster = Spheres([s1, s2])
-    holo = Mie.calc_holo(cluster, target)
+    data_holo = Mie.calc_holo(cluster, target)
 
     #now do the fit
     guess1 = Sphere(center = (par(guess = 15.5, limit = [5,25]),
@@ -172,7 +186,7 @@ In this example, we fit for the parameters of two spheres ::
     par_s = Spheres([guess1,guess2])
 
     model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1]))
-    result = fit(model, holo)
+    result = fit(model, data_holo)
 
 
 Fitting a Time Series of Images
@@ -192,12 +206,12 @@ This is done with :func:`.fit_series` ::
        index = 1.33))
    sphere1 = Sphere(center = (5, 5, 10.3), r = .5, n = 1.58)
    sphere2 = Sphere(center = (5, 5, 10.5), r = .5, n = 1.58)
-   holos = [Mie.calc_holo(s, schema) for s in (sphere1, sphere2)]
+   data_holos = [Mie.calc_holo(s, schema) for s in (sphere1, sphere2)]
 
    par_s = Sphere(center = (par(guess = 5.5, limit = [4,10]),
        par(4.5, [4, 10]), par(10, [5, 15])), r = .5, n = 1.58)
    model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1]))
-   results = fit_series(model, holos)
+   results = fit_series(model, data_holos)
 
 This is very similar to fit a single hologram (and this explanation
 only calls out the differences), except instead we calculate and fit
@@ -210,11 +224,11 @@ offset slightly (as if it was moving)::
 And then compute two holograms from them using a `list comprehension
 <http://docs.python.org/2/tutorial/datastructures.html#list-comprehensions>`_::
 
-   holos = [Mie.calc_holo(s, schema) for s in (sphere1, sphere2)]
+   data_holos = [Mie.calc_holo(s, schema) for s in (sphere1, sphere2)]
 
 And finally, fit the holograms::
 
-   results = fit_series(model, holos)
+   results = fit_series(model, data_holos)
 
 The results are a list of :class:`.FitResult` objects.
 
@@ -225,11 +239,9 @@ A hologram usually contains far more information than is needed to
 determine the number of parameters you are interested in. Because of
 this, you can often get a significantly faster fit with no little or
 no loss in accuracy by fitting to only a random fraction of the pixels
-in a hologram. You can do this simply by adding one additional
-argument to your model (the example here is for the sphere fit at the
-start of this tutorial)::
+in a hologram. ::
 
-  model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1]), use_random_fraction=.1)
+  result = fit(model, data, use_random_fraction=.1)
 
 You will want to do some testing to make sure that you still get
 acceptable answers with your data, but our investigations have shown
