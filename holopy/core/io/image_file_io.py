@@ -26,7 +26,13 @@ from __future__ import division
 
 import numpy as np
 import scipy as sp
-import Image as PILImage
+# some ways of installing PIL give Image, others give image, this can
+# handle both
+# Hopefully this will clean up once we switch to pillow
+try:
+    import Image as PILImage
+except ImportError:
+    import image as PILImage
 import os
 import warnings
 from scipy.misc import fromimage
