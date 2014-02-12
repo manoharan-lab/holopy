@@ -1,0 +1,7 @@
+*.pyc
+*.so
+dist
+build
+docs/build
+holopy/propagation/tests/gold/full_data
+holopy/scattering/tests/gold/full_data
