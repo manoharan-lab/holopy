@@ -16,10 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
-from .common import (assert_obj_close, assert_read_matches_write,
-                     get_example_data, get_example_data_path)
-from .. import Optics, Marray, load, save
-from .. process import normalize
+from holopy.core.tests.common import (assert_obj_close,
+                                      assert_read_matches_write,
+                                      get_example_data,
+                                      get_example_data_path)
+from holopy.core import Optics, Marray, load, save
+from holopy.core.process import normalize
 import tempfile
 import os
 import shutil
@@ -27,8 +29,8 @@ import warnings
 from nose.plugins.attrib import attr
 from numpy.testing import assert_raises, assert_equal
 import numpy as np
-from ..errors import LoadError
-from ..io import save_image, load_image
+from holopy.core.errors import LoadError
+from holopy.core.io import save_image, load_image
 import yaml
 
 @attr('fast')
@@ -61,7 +63,6 @@ def test_image_io():
     t = tempfile.mkdtemp()
 
     filename = os.path.join(t, 'image0001.tif')
-    warnings.filterwarnings('once', category=DeprecationWarning)
     save(filename, holo)
     l = load(filename)
     assert_obj_close(l, holo)

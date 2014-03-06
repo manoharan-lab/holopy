@@ -33,10 +33,10 @@ import re
 import inspect
 import types
 
-from ..helpers import OrderedDict
-from ..holopy_object import SerializableMetaclass
-from ..marray import Marray
-from  .. import marray
+from holopy.core.helpers import OrderedDict
+from holopy.core.holopy_object import SerializableMetaclass
+from holopy.core.marray import Marray
+from holopy.core import marray
 
 def save(outf, obj):
     if isinstance(outf, basestring):

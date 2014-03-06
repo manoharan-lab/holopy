@@ -35,15 +35,14 @@ except ImportError:
     import image as PILImage
 import os
 import warnings
-from scipy.misc import fromimage
-from ..third_party.tifffile import TIFFfile
-from ..errors import LoadError
+from scipy.misc import fromimage, bytescale
+from holopy.core.errors import Error
+from holopy.core.third_party.tifffile import TIFFfile
+from holopy.core.errors import LoadError
 
-def save_image(filename, im):
-    """
-    Saves an ndarray or image as a tiff.
-
-    If the array is complex, it will save the magnitude by default.
+def save_image(filename, im, scaling='auto', range=(None, None),
+               depth=8):
+    """Save an ndarray or image as a tiff.
 
     Parameters
     ----------
@@ -53,12 +52,53 @@ def save_image(filename, im):
         filename in which to save image. If im is an image the
         function should default to the image's name field if no
         filename is specified
+    scaling : 'auto', None, or (None|Int, None|Int)
+        How the image should be scaled for saving. Ignored for float
+        output. It defaults to auto, use the full range of the output
+        format. Other options are None, meaning no scaling, or a pair
+        of integers specifying the values which should be set to the
+        maximum and minimum values of the image format.
+    depth : 8, 16 or 'float'
+        What type of image to save. Options other than 8bit may not be supported
+        for many image types. You probably don't want to save 8bit images without
+        some kind of scaling.
+
     """
     # if we don't have an extension, default to tif
     if os.path.splitext(filename)[1] is '':
         filename += '.tif'
 
-    sp.misc.toimage(im).save(filename)
+    # to replicate old behavior from using sp.misc.toimage
+    if depth == 8:
+        if scaling == 'auto':
+            cmin, cmax = None, None
+        else:
+            cmin, cmax = scaling
+        im = bytescale(im)
+    elif depth != 'float':
+        if scaling is not None:
+            if scaling == 'auto':
+                min = im.min()
+                max = im.max()
+            elif len(scaling) == 2:
+                min, max = scaling
+            else:
+                raise Error("Invalid image scaling")
+            if min is not None:
+                im = im - min
+            if max is not None:
+                im = im * ((2**depth-1)/max)
+        if depth == 8:
+            im = (im+.4999).astype('uint8')
+        elif depth == 16:
+            # PIL can't handle uint16, but seems to do the right thing
+            # with int16, so go ahead and use it
+            im = (im+.4999).astype('int16')
+        else:
+            raise Error("Unknown image depth")
+
+    PILImage.fromarray(im).save(filename, autoscale=False)
+
 
 def load_image(filename, channel=0):
     """
