@@ -77,7 +77,7 @@ def load(inf, spacing = None, optics = None):
 
 
     if not loaded_yaml:
-        loaded = Image(load_image(inf), spacing = spacing, optics = optics)
+        loaded = load_image(inf, spacing=spacing, optics=optics)
     elif optics is not None and spacing is not None:
         loaded = arr_like(loaded, spacing = spacing, optics = optics)
         warn("Overriding spacing and optics of loaded yaml")

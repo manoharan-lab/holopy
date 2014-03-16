@@ -161,10 +161,11 @@ class Schema(HoloPyObject):
     {attrs}
     """
     def __init__(self, shape=None, positions=None, optics=None,
-                 origin=np.zeros(3), **kwargs):
+                 origin=np.zeros(3), metadata={}, **kwargs):
         self._positions = positions
         self.optics = optics
         self.origin = origin
+        self.metadata = metadata
         # if we are a np.ndarray subclass (if this constructor is
         # called from Marray or subclass) we will already have a shape
         # and should not try to do anything with our shape argument.
@@ -446,7 +447,7 @@ def make_vector_schema(schema, components=('x', 'y', 'z')):
 
 class RegularGrid(Marray, RegularGridSchema):
     def __init__(self, arr, spacing=None, optics=None,
-                 origin=np.zeros(3), dtype=None, **kwargs):
+                 origin=np.zeros(3), metadata={}, dtype=None, **kwargs):
         call_super_init(RegularGrid, self)
 
     def resample(self, shape, window=None):
@@ -496,7 +497,7 @@ class ImageSchema(RegularGridSchema):
     {attrs}
     """
     def __init__(self, shape=None, spacing=None, optics=None,
-                 origin=np.zeros(3), **kwargs):
+                 origin=np.zeros(3), metadata={}, **kwargs):
         if shape is not None:
             shape = _ensure_pair(shape)
 
