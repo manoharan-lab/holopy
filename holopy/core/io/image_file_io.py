@@ -35,10 +35,13 @@ except ImportError:
     import image as PILImage
 import os
 import warnings
+from copy import copy
+import json
 from scipy.misc import fromimage, bytescale
 from holopy.core.errors import Error
 from holopy.core.third_party.tifffile import TIFFfile
 from holopy.core.errors import LoadError
+from holopy.core import Image
 
 def save_image(filename, im, scaling='auto', range=(None, None),
                depth=8):
@@ -100,7 +103,7 @@ def save_image(filename, im, scaling='auto', range=(None, None),
     PILImage.fromarray(im).save(filename, autoscale=False)
 
 
-def load_image(filename, channel=0):
+def load_image(filename, channel=0, spacing=None, optics=None):
     """
     Handler for opening various types of image files.
 
@@ -134,10 +137,11 @@ def load_image(filename, channel=0):
 
     might_be_color = True
     try:
-        arr, might_be_color = _read_tiff(filename)
+        arr, might_be_color, description = _read_tiff(filename)
     except (ValueError, TypeError):
         im = PILImage.open(filename)
         arr = fromimage(im).astype('d')
+        description = "{}"
 
 
     # pick out only one channel of a color image
@@ -156,8 +160,9 @@ def load_image(filename, channel=0):
     if arr.shape[0] < arr.shape[1]:
         arr = np.transpose(arr)
 
+    metadata = json.loads(description)
 
-    return arr
+    return Image(arr, spacing=spacing, optics=optics, metadata=metadata)
 
 def _read_tiff(filename):
     """
@@ -176,9 +181,11 @@ def _read_tiff(filename):
     """
     tif = TIFFfile(filename)
 
+    might_be_color = True
     if len(tif.pages) > 1:
         try:
-            return tif.asarray().transpose(), False
+            arr = tif.asarray().transpose()
+            might_be_color = False
         except Exception:
             print('failed to read multipage tiff, attempting to read a single page')
 
@@ -208,7 +215,13 @@ def _read_tiff(filename):
         arr = tif.asarray().astype('d')
         tif.close()
 
-    return arr, True
+    try:
+        # 270 is the image description tag
+        description = PILImage.open(filename).tag[270]
+    except KeyError:
+        description = "{}"
+
+    return arr, might_be_color, description
 
 def _read_tiff_12bit(filename, size):
     """
