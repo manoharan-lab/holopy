@@ -270,6 +270,6 @@ class Model(HoloPyObject):
             alpha = self.alpha.guess
         else:
             alpha = self.alpha
-        return self.theory(self.scatterer.guess, self.get_schema(schema), alpha)
+        return self.theory(self.scatterer.guess, schema, alpha)
 
     # TODO: Allow a layer on top of theory to do things like moving sphere

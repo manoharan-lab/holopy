@@ -32,12 +32,17 @@ from ..core.io import load, save
 from . import fit
 
 #default preprocessing function
-def div_normalize(holo, bg):
+def div_normalize(holo, bg, model):
     if bg is not None:
         imagetofit = normalize(holo/bg)
     else:
         imagetofit = normalize(holo)
     return imagetofit
+
+def make_subimaging_preprocessor(size):
+    def preprocess(holo, bg, model):
+        xy = np.array(model.scatterer.guess.center[:2])
+
 
 #default updating function
 def update_all(model, fitted_result):
@@ -97,7 +102,7 @@ def fit_series(model, data, data_optics=None, data_spacing=None, bg=None,
     for frame, outpath in zip(data, outfilenames):
         if not isinstance(frame, Image):
             frame = load(frame, spacing = data_spacing, optics = data_optics)
-        imagetofit = preprocess_func(frame, bg)
+        imagetofit = preprocess_func(frame, bg, model)
 
         result = fit(model, imagetofit)
         allresults.append(result)

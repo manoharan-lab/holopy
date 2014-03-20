@@ -103,7 +103,7 @@ def save_image(filename, im, scaling='auto', range=(None, None),
     PILImage.fromarray(im).save(filename, autoscale=False)
 
 
-def load_image(filename, channel=0, spacing=None, optics=None):
+def load_image(filename, channel=None, spacing=None, optics=None):
     """
     Handler for opening various types of image files.
 
@@ -113,7 +113,7 @@ def load_image(filename, channel=0, spacing=None, optics=None):
         name of file to open.
     channel : int (optional)
         number of channel in color image (in general 0=red,
-        1=green, 2=blue)
+        1=green, 2=blue), if None, return all colors
 
     Returns
     -------
@@ -145,7 +145,7 @@ def load_image(filename, channel=0, spacing=None, optics=None):
 
 
     # pick out only one channel of a color image
-    if len(arr.shape) > 2 and might_be_color:
+    if channel is not None and len(arr.shape) > 2 and might_be_color:
         if channel >= arr.shape[2]:
             raise LoadError(filename,
                 "The image doesn't have a channel number {0}".format(channel))
