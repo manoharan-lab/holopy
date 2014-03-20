@@ -154,12 +154,6 @@ def load_image(filename, channel=None, spacing=None, optics=None):
     elif channel > 0:
         warnings.warn("Warning: not a color image (channel number ignored)")
 
-    # we choose a convention that the large dimension of an image is
-    # always x
-    # here we rotate if the file does not obey this convention
-    if arr.shape[0] < arr.shape[1]:
-        arr = np.transpose(arr)
-
     metadata = json.loads(description)
 
     return Image(arr, spacing=spacing, optics=optics, metadata=metadata)
