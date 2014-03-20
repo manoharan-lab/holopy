@@ -43,8 +43,7 @@ from holopy.core.third_party.tifffile import TIFFfile
 from holopy.core.errors import LoadError
 from holopy.core import Image
 
-def save_image(filename, im, scaling='auto', range=(None, None),
-               depth=8):
+def save_image(filename, im, scaling='auto', depth=8):
     """Save an ndarray or image as a tiff.
 
     Parameters
