@@ -157,11 +157,11 @@ class Scatterers(Scatterer):
         return new
 
     def in_domain(self, points):
-        ind = self.scatterers[0].contains(points)
-        for s in self.scatterers[1:]:
+        ind = self.scatterers[0].contains(points).astype('int')
+        for i, s in enumerate(self.scatterers[1:]):
             contained = s.contains(points)
             nz = np.nonzero(contained)
-            ind[nz] = contained[nz]
+            ind[nz] = i+1
         return ind
 
     def index_at(self, point):
