@@ -38,23 +38,26 @@ from ..errors import InvalidMinimizer
 
 
 gold_sphere = Sphere(n=1.58, r=5e-7, center=[5.5308956e-6,5.7935436e-6,1.337183988e-5])
+gold_alpha = .6497
 
 @attr('medium')
 def test_fit_series():
 
-    par_s = Sphere(center = (par(guess = 5e-6, limit = [0,10e-6]), par(5e-6, [0, 10e-6]), par(10.3e-6, [5e-6, 15e-6])),
+    par_s = Sphere(center = (par(guess = 5.5e-6, limit = [0,10e-6]), par(5.8e-6, [0, 10e-6]), par(13.3e-6, [5e-6, 15e-6])),
                r = .5e-6, n = 1.58)
-    model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1]))
+    model = Model(par_s, Mie.calc_holo, alpha = gold_alpha)
 
     opticsinfo = Optics(wavelen = .658e-6, polarization = [1, 0], index = 1.33)
     px_size = .1151e-6
 
     inf = [get_example_data_path('image0001.yaml'),
-            get_example_data_path('image0001.yaml'),get_example_data_path('image0001.yaml')]
+            get_example_data_path('image0001.yaml')]
+
+    np.random.seed(40)
 
     with warnings.catch_warnings() as w:
         #test with no saving
         warnings.simplefilter('ignore')
-        res = fit_series(model, inf, opticsinfo, px_size)
+        res = fit_series(model, inf, opticsinfo, px_size, use_random_fraction=.01)
 
-    assert_obj_close(res[2].scatterer, gold_sphere, rtol = 1e-3)
+    assert_obj_close(res[-1].scatterer, gold_sphere, rtol = 1e-2)

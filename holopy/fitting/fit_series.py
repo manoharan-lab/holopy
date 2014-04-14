@@ -26,10 +26,13 @@ from __future__ import division
 
 import warnings
 
-from ..core.process import normalize
-from ..core import Image
-from ..core.io import load, save
-from . import fit
+import os
+import numpy as np
+from holopy.core.process import normalize
+from holopy.core import subimage, Image
+from holopy.core.helpers import mkdir_p
+from holopy.core.io import load, save
+from holopy.fitting import fit
 
 #default preprocessing function
 def div_normalize(holo, bg, model):
@@ -39,9 +42,11 @@ def div_normalize(holo, bg, model):
         imagetofit = normalize(holo)
     return imagetofit
 
-def make_subimaging_preprocessor(size):
+def scatterer_centered_subimage(size):
     def preprocess(holo, bg, model):
-        xy = np.array(model.scatterer.guess.center[:2])
+        center = np.array(model.scatterer.guess.center[:2])/holo.spacing
+        return normalize(subimage(holo/bg, center, size))
+    return preprocess
 
 
 #default updating function
@@ -53,7 +58,7 @@ def update_all(model, fitted_result):
 
 def fit_series(model, data, data_optics=None, data_spacing=None, bg=None,
     outfilenames=None, preprocess_func=div_normalize,
-    update_func=update_all):
+               update_func=update_all, **kwargs):
     """
     fit a model to each frame of data in a time series
 
@@ -83,6 +88,8 @@ def fit_series(model, data, data_optics=None, data_spacing=None, bg=None,
     update_func : function
         Updates the model (typically just the paramter guess)
         for the next frame
+    kwargs : varies
+        additional arguments to pass to fit for each frame
 
     Returns
     -------
@@ -98,17 +105,19 @@ def fit_series(model, data, data_optics=None, data_spacing=None, bg=None,
     #to allow running without saving output
     if outfilenames is None:
         outfilenames = ['']*len(data)
+    else:
+        mkdir_p(os.path.split(outfilenames[0])[0])
 
-    for frame, outpath in zip(data, outfilenames):
+    for frame, outf in zip(data, outfilenames):
         if not isinstance(frame, Image):
-            frame = load(frame, spacing = data_spacing, optics = data_optics)
+            frame = load(frame, spacing=data_spacing, optics=data_optics)
         imagetofit = preprocess_func(frame, bg, model)
 
-        result = fit(model, imagetofit)
+        result = fit(model, imagetofit, **kwargs)
         allresults.append(result)
-        if outpath!='':
-            save(outpath, result)
+        if outf != '':
+            save(outf, result)
 
-        model = update_all(model, result)
+        model = update_func(model, result)
 
     return allresults
