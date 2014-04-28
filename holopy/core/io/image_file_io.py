@@ -30,9 +30,12 @@ import scipy as sp
 # handle both
 # Hopefully this will clean up once we switch to pillow
 try:
-    import Image as PILImage
+    import PIL.Image as PILImage
 except ImportError:
-    import image as PILImage
+    try:
+        import Image as PILImage
+    except ImportError:
+        import image as PILImage
 import os
 import warnings
 from copy import copy
