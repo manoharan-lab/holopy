@@ -34,10 +34,11 @@ of two overlapping spheres you could do so like this::
   from holopy.core import Optics, ImageSchema
   from holopy.scattering.scatterer import Scatterer, Sphere
   from holopy.scattering.theory import DDA
+  import numpy as np
   s1 = Sphere(r = .5, center = (0, -.4, 0))
   s2 = Sphere(r = .5, center = (0, .4, 0))
   schema = ImageSchema(100, .1, Optics(.66, 1.33, (1, 0)))
-  dumbbell = Scatterer(lambda point: s1.contains(point) or s2.contains(point),
+  dumbbell = Scatterer(lambda point: np.logical_or(s1.contains(point), s2.contains(point)),
                        1.59, (5, 5, 5))
   holo = DDA.calc_holo(dumbbell, schema)
 
@@ -58,11 +59,13 @@ a plastic sphere with a high index coating on the top half::
   from holopy.scattering.scatterer import Scatterer, Sphere
   from holopy.scattering.scatterer import Indicators
   from holopy.scattering.theory import DDA
+  import numpy as np
   s1 = Sphere(r = .5, center = (0, 0, 0))
   s2 = Sphere(r = .51, center = (0, 0, 0))
   schema = ImageSchema(100, .1, Optics(.66, 1.33, (1, 0)))
   def cap(point):
-      return(point[2] > 0 and s2.contains(point) and not s1.contains(point))
+      return(np.logical_and(np.logical_and(point[...,2] > 0, s2.contains(point)),
+             np.logical_not(s1.contains(point))))
   indicators = Indicators([s1.contains, cap],
                           [[-.51, .51], [-.51, .51], [-.51, .51]])
   janus = Scatterer(indicators, (1.34, 2.0), (5, 5, 5))
