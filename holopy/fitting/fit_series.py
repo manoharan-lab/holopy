@@ -35,15 +35,17 @@ from holopy.core.io import load, save
 from holopy.fitting import fit
 
 #default preprocessing function
-def div_normalize(holo, bg, d, model):
+def div_normalize(holo, bg, df, model):
+    if df is None:
+        df = np.zeros_like(holo)
     if bg is not None:
-        imagetofit = normalize(holo/bg)
+        imagetofit = normalize((holo-df)/(bg-df))
     else:
         imagetofit = normalize(holo)
     return imagetofit
 
 def scatterer_centered_subimage(size):
-    def preprocess(holo, bg, model):
+    def preprocess(holo, bg, df, model):
         center = np.array(model.scatterer.guess.center[:2])/holo.spacing
         return normalize(subimage(holo/bg, center, size))
     return preprocess
@@ -56,7 +58,7 @@ def update_all(model, fitted_result):
         p.guess = fitted_result.parameters[name]
     return model
 
-def fit_series(model, data, data_optics=None, data_spacing=None, bg=None, d=None,
+def fit_series(model, data, data_optics=None, data_spacing=None, bg=None, df=None,
     outfilenames=None, preprocess_func=div_normalize,
                update_func=update_all, **kwargs):
     """
@@ -78,6 +80,9 @@ def fit_series(model, data, data_optics=None, data_spacing=None, bg=None, d=None
         spacing information)
     bg : :class:`.Image` object or path
         Optional background image to be used for cleaning up
+        the raw data images
+    df : :class:`.Image` object or path
+        Optional darkfield image to be used for cleaning up
         the raw data images
     outfilenames : list
         Full paths to save output for each image, if not
@@ -111,7 +116,7 @@ def fit_series(model, data, data_optics=None, data_spacing=None, bg=None, d=None
     for frame, outf in zip(data, outfilenames):
         if not isinstance(frame, Image):
             frame = load(frame, spacing=data_spacing, optics=data_optics)
-        imagetofit = preprocess_func(frame, bg, d, model)
+        imagetofit = preprocess_func(frame, bg, df, model)
 
         result = fit(model, imagetofit, **kwargs)
         allresults.append(result)
