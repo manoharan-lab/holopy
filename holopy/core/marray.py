@@ -588,9 +588,9 @@ def subimage(arr, center, shape):
     ----------
     arr : numpy.ndarray
         The array to subimage
-    center : tuple of ints
+    center : tuple of ints or floats
         The desired center of the region, should have the same number of
-        elements as the arr has dimensions
+        elements as the arr has dimensions. Floats will be rounded
     shape : int or tuple of ints
         Desired shape of the region.  If a single int is given the region will
         be that dimension in along every axis.  Shape should be even
@@ -602,12 +602,13 @@ def subimage(arr, center, shape):
         will be set such that the upper left corner of the output has
         coordinates relative to the input.
     """
+    center = np.round(center)).astype(int)
+
     if np.isscalar(shape):
         shape = np.repeat(shape, arr.ndim)
     assert len(shape) == arr.ndim
 
     extent = [slice(c-s/2, c+s/2) for c, s in zip(center, shape)] + [Ellipsis]
-    # TODO: BUG: get coordinate offset correct (reset origin)
     output = _checked_cut(arr, extent)
 
     if isinstance(output, RegularGridSchema):

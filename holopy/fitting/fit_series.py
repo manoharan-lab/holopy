@@ -35,7 +35,7 @@ from holopy.core.io import load, save
 from holopy.fitting import fit
 
 #default preprocessing function
-def div_normalize(holo, bg, model):
+def div_normalize(holo, bg, d, model):
     if bg is not None:
         imagetofit = normalize(holo/bg)
     else:
@@ -56,7 +56,7 @@ def update_all(model, fitted_result):
         p.guess = fitted_result.parameters[name]
     return model
 
-def fit_series(model, data, data_optics=None, data_spacing=None, bg=None,
+def fit_series(model, data, data_optics=None, data_spacing=None, bg=None, d=None,
     outfilenames=None, preprocess_func=div_normalize,
                update_func=update_all, **kwargs):
     """
@@ -111,7 +111,7 @@ def fit_series(model, data, data_optics=None, data_spacing=None, bg=None,
     for frame, outf in zip(data, outfilenames):
         if not isinstance(frame, Image):
             frame = load(frame, spacing=data_spacing, optics=data_optics)
-        imagetofit = preprocess_func(frame, bg, model)
+        imagetofit = preprocess_func(frame, bg, d, model)
 
         result = fit(model, imagetofit, **kwargs)
         allresults.append(result)
