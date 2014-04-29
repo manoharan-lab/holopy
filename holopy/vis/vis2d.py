@@ -140,10 +140,10 @@ class plotter:
                                                 self.i)
         elif hasattr(self.im, 'filenames'):
             titlestring += self.im.filenames[self.i]
-        else:
+        elif self.im.ndim > 2:
             titlestring += "image {0}".format(self.i)
-
-        self.ax.set_title(titlestring)
+        if titlestring is not "":
+            self.ax.set_title(titlestring)
 
 def show2d(im, i=0, t=0, phase = False):
     """
