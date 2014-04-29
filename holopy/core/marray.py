@@ -602,7 +602,7 @@ def subimage(arr, center, shape):
         will be set such that the upper left corner of the output has
         coordinates relative to the input.
     """
-    center = np.round(center)).astype(int)
+    center = (np.round(center)).astype(int)
 
     if np.isscalar(shape):
         shape = np.repeat(shape, arr.ndim)
