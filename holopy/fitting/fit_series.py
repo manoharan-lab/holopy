@@ -50,7 +50,6 @@ def scatterer_centered_subimage(size):
         return normalize(subimage(holo/bg, center, size))
     return preprocess
 
-
 #default updating function
 def update_all(model, fitted_result):
     for p in model.parameters:

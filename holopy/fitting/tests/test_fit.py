@@ -26,18 +26,19 @@ from nose.tools import nottest, assert_raises
 from nose.plugins.skip import SkipTest
 from nose.plugins.attrib import attr
 from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, assert_array_equal
-from ..minimizer import OpenOpt
-from ...scattering.scatterer import Sphere, Spheres, Scatterer
-from ...scattering.theory import Mie, Multisphere, DDA
-from ...core import Optics, ImageSchema, load, save, Schema, Angles, Marray
-from ...core.process import normalize
-from ...core.helpers import OrderedDict
-from .. import fit, Parameter, ComplexParameter, par, Parametrization, Model
-from ...core.tests.common import (assert_obj_close, get_example_data,
+from holopy.fitting.minimizer import OpenOpt
+from holopy.scattering.scatterer import Sphere, Spheres, Scatterer
+from holopy.scattering.theory import Mie, Multisphere, DDA
+from holopy.core import Optics, ImageSchema, load, save, Schema, Angles, Marray
+from holopy.core.process import normalize
+from holopy.core.helpers import OrderedDict
+from holopy.fitting import fit, Parameter, ComplexParameter, par, Parametrization, Model
+from holopy.core.tests.common import (assert_obj_close, get_example_data,
                                   assert_read_matches_write)
-from ..fit import CostComputer
+from holopy.fitting.fit import CostComputer
+from holopy.fitting import Model, FitResult
 from ..errors import InvalidMinimizer
-from ..model import limit_overlaps
+from holopy.fitting.model import limit_overlaps, ParameterizedObject
 
 gold_alpha = .6497
 
@@ -130,7 +131,39 @@ def test_fit_random_subset():
 
     assert_read_matches_write(result)
 
-def test_random_selection():
+@attr('fast')
+def test_next_model():
+    exampleresult = FitResult(parameters={
+        'center[1]': 31.367170884695756, 'r': 0.6465280831465722, 
+        'center[0]': 32.24150087110443, 
+        'center[2]': 35.1651561654966, 
+        'alpha': 0.7176299231169572, 
+        'n': 1.580122175314896}, 
+        scatterer=Sphere(n=1.580122175314896, r=0.6465280831465722, 
+        center=[32.24150087110443, 31.367170884695756, 35.1651561654966]), 
+        chisq=0.0001810513851216454, rsq=0.9727020197282801, 
+        converged=True, time=5.179728031158447, 
+        model=Model(scatterer=ParameterizedObject(obj=
+        Sphere(n=Parameter(guess=1.59, limit=[1.4, 1.7], name='n'), 
+        r=Parameter(guess=0.65, limit=[0.6, 0.7], name='r'), 
+        center=[Parameter(guess=32.110424836601304, limit=[2, 40], name='center[0]'), 
+        Parameter(guess=31.56683986928105, limit=[4, 40], name='center[1]'), 
+        Parameter(guess=33, limit=[5, 45], name='center[2]')])), 
+        theory=Mie.calc_holo, alpha=Parameter(guess=0.6, limit=[0.1, 1], name='alpha'), 
+        constraints=[]), minimizer = None, minimization_details = None)
+
+    gold = Model(scatterer=ParameterizedObject(obj=Sphere(
+        n=Parameter(guess=1.580122175314896, limit=[1.4, 1.7], name='n'), 
+        r=Parameter(guess=0.6465280831465722, limit=[0.6, 0.7], name='r'), 
+        center=[Parameter(guess=32.24150087110443, limit=[2, 40], name='center[0]'), 
+        Parameter(guess=31.367170884695756, limit=[4, 40], name='center[1]'), 
+        Parameter(guess=35.1651561654966, limit=[5, 45], name='center[2]')])), 
+        theory=Mie.calc_holo, alpha=Parameter(guess=0.7176299231169572, limit=[0.1, 1], name='alpha'), 
+        constraints=[])
+
+    assert_obj_close(gold, exampleresult.next_model())
+
+def test_n():
     sph = Sphere(par(.5), 1.6, (5,5,5))
     sch = ImageSchema(shape=[100, 100], spacing=[0.1, 0.1],
                       optics=Optics(wavelen=0.66,
@@ -143,8 +176,6 @@ def test_random_selection():
     holo = Mie.calc_holo(model.scatterer.guess, sch)
     coster = CostComputer(holo, model, use_random_fraction=.1)
     assert_allclose(coster.flattened_difference({'n' : .5}), 0)
-
-
 
 @nottest
 @attr('slow')

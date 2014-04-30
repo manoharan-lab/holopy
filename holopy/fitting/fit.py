@@ -35,7 +35,7 @@ from .minimizer import Minimizer, Nmpfit
 import numpy as np
 from ..core.marray import Schema
 
-from copy import copy
+from copy import copy, deepcopy
 
 class FitResult(HoloPyObject):
     """
@@ -90,6 +90,17 @@ class FitResult(HoloPyObject):
         for par in self.summary_misc:
             d[par] = getattr(self, par)
         return d
+
+    def next_model(self):
+        """
+        Construct a model to fit the next frame in a time series
+        """
+        nextmodel = deepcopy(self.model)
+
+        for p in nextmodel.parameters:
+            name = p.name
+            p.guess = self.parameters[name]
+        return nextmodel
 
     @classmethod
     def from_summary(cls, summary, scatterer_cls):

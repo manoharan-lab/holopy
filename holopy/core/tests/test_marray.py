@@ -95,6 +95,12 @@ def test_subimage():
 
     assert_raises(IndexError, subimage, i, (2,2), 10)
 
+def test_subimage_floats():
+    i = Image(np.zeros((100, 100)), .1)
+    s1 = subimage(i, (5.2,5.6), 2)
+    s2 = subimage(i, (5,6), 2)
+    assert_equal(s1, s2)
+
 def test_resize():
     i = Image(np.zeros((100, 100)), .1)
     r = resize(i, (5, 5), (8, 8))
