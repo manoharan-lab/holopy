@@ -73,6 +73,9 @@ class DDA(ScatteringTheory):
         Force a maximum dipole size. This is useful for forcing extra dipoles if
         necessary to resolve features in an object. This may make dda
         calculations take much longer.
+    keep_raw_calculations : bool
+        If true, do not delete the temporary file we run ADDA in, instead print
+        its path so you can inspect its raw results
     Notes
     -----
     Does not handle near fields.  This introduces ~5% error at 10 microns.
@@ -80,7 +83,7 @@ class DDA(ScatteringTheory):
     This can in principle handle any scatterer, but in practice it will need
     excessive memory or computation time for particularly large scatterers.
     """
-    def __init__(self, n_cpu = 1, max_dpl_size=None):
+    def __init__(self, n_cpu = 1, max_dpl_size=None, keep_raw_calculations=False):
 
         # Check that adda is present and able to run
         try:
@@ -90,6 +93,7 @@ class DDA(ScatteringTheory):
 
         self.n_cpu = n_cpu
         self.max_dpl_size = max_dpl_size
+        self.keep_raw_calculations = keep_raw_calculations
         super(DDA, self).__init__()
 
     def _run_adda(self, scatterer, optics, temp_dir):
@@ -178,7 +182,7 @@ class DDA(ScatteringTheory):
         return optics.med_wavelen / cls_self._dpl(optics, n)
 
 
-    def _calc_field(self, scatterer, schema, delete=True):
+    def _calc_field(self, scatterer, schema):
         temp_dir = tempfile.mkdtemp()
 
         calc_points = schema.positions.kr_theta_phi(scatterer.location, schema.optics)
@@ -198,7 +202,7 @@ class DDA(ScatteringTheory):
 
         # Go into the results directory, there should only be one run
         result_dir = glob.glob(os.path.join(temp_dir, 'run000*'))[0]
-        if not delete:
+        if self.keep_raw_calculations:
             self._last_result_dir = result_dir
 
         adda_result = np.loadtxt(os.path.join(result_dir, 'ampl_scatgrid'),
@@ -222,7 +226,9 @@ class DDA(ScatteringTheory):
                                                     schema.optics.polarization)
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
 
-        if delete:
+        if self.keep_raw_calculations:
+            print("Raw calculations are in: {0}".format(temp_dir))
+        else:
             shutil.rmtree(temp_dir)
 
         return self._finalize_fields(scatterer.z, fields, schema)
