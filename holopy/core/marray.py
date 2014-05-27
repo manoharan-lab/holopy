@@ -608,7 +608,7 @@ def subimage(arr, center, shape):
         shape = np.repeat(shape, arr.ndim)
     assert len(shape) == arr.ndim
 
-    extent = [slice(c-s/2, c+s/2) for c, s in zip(center, shape)] + [Ellipsis]
+    extent = [slice(int(np.round(c-s/2)), int(np.round(c+s/2))) for c, s in zip(center, shape)] + [Ellipsis]
     output = _checked_cut(arr, extent)
 
     if isinstance(output, RegularGridSchema):

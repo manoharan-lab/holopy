@@ -136,7 +136,8 @@ def fit_series(model, data, data_optics=None, data_spacing=None,
         if restart and os.path.exists(outf):
             result = load(outf)
         else:
-            mkdir_p(os.path.split(outf)[0])
+            if outf != '':
+                mkdir_p(os.path.split(outf)[0])
             if not isinstance(frame, Image):
                 frame = load(frame, spacing=data_spacing, optics=data_optics)
             imagetofit = preprocess_func(frame, bg, df, model)

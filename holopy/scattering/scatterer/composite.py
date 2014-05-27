@@ -166,6 +166,10 @@ class Scatterers(Scatterer):
 
     def index_at(self, point):
         try:
-            return self.scatterers[self.in_domain(point)].index_at(point)
+            # This will pick out the first scatterer if you have
+            # multiple overlapping ones. You shouldn't really have
+            # overlapping scatterers with different indicies, so this
+            # shouldn't be a problem
+            return self.scatterers[self.in_domain(point)[0]].index_at(point)
         except TypeError:
             return None

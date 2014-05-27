@@ -109,22 +109,22 @@ def propagate(data, d, gradient_filter=False):
     return res
 
 def apply_trans_func(ft, G):
-    mm, nn = [dim/2 for dim in G.shape[:2]]
+    mm, nn = [int(dim/2) for dim in G.shape[:2]]
     m, n = ft.shape[:2]
 
     if ft.ndim == 4:
         # vector field input, so we need to add a dimension to G so it
         # broadcasts correctly
         G = G[...,np.newaxis]
-    ft[(m/2-mm):(m/2+mm),(n/2-nn):(n/2+nn)] *= G[:(mm*2),:(nn*2)]
+    ft[(m//2-mm):(m//2+mm),(n//2-nn):(n//2+nn)] *= G[:(mm*2),:(nn*2)]
 
     # Transfer function may not cover the whole image, any values
     # outside it need to be set to zero to make the reconstruction
     # correct
-    ft[0:n/2-nn,...] = 0
-    ft[n/2+nn:n,...] = 0
-    ft[:,0:m/2-mm,...] = 0
-    ft[:,m/2+mm:m,...] = 0
+    ft[0:n//2-nn,...] = 0
+    ft[n//2+nn:n,...] = 0
+    ft[:,0:m//2-mm,...] = 0
+    ft[:,m//2+mm:m,...] = 0
 
     return ft
 

@@ -94,7 +94,7 @@ def log_der_13(z, nstop):
 
     # Calculate Dn_1 (based on \psi(z)) using downward recursion.
     # See Mackowski eqn. 62
-    nmx = np.maximum(nstop, np.round_(np.absolute(z))) + 15
+    nmx = np.maximum(nstop, int(np.round_(np.absolute(z)))) + 15
     dn1 = log_der_1(z, nmx, nstop)
 
     # Calculate Dn_3 (based on \xi) by up recurrence
