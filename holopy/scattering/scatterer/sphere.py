@@ -74,7 +74,7 @@ class LayeredSphere(Sphere):
     ----------
     n : list of complex
         Index of each each layer
-    t : list of complex
+    t : list of float
         Thickness of each layer
     center : length 3 listlike
         specifies coordinates of center of sphere

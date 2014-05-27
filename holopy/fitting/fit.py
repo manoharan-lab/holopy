@@ -37,6 +37,59 @@ from ..core.marray import Schema
 
 from copy import copy, deepcopy
 
+def fit(model, data, minimizer=Nmpfit, random_subset=None):
+    """
+    fit a model to some data
+
+    Parameters
+    ----------
+    model : :class:`~holopy.fitting.model.Model` object
+        A model describing the scattering system which leads to your data and
+        the parameters to vary to fit it to the data
+    data : :class:`~holopy.core.marray.Marray` object
+        The data to fit
+    minimizer : (optional) :class:`~holopy.fitting.minimizer.Minimizer`
+        The minimizer to use to do the fit
+    random_subset : float (optional)
+        Fit only a randomly selected fraction of the data points in data
+
+    Returns
+    -------
+    result : :class:`FitResult`
+        an object containing the best fit parameters and information about the fit
+    """
+    time_start = time.time()
+
+    if not isinstance(minimizer, Minimizer):
+        if issubclass(minimizer, Minimizer):
+            minimizer = minimizer()
+        else:
+            raise InvalidMinimizer("Object supplied as a minimizer could not be"
+                                   "interpreted as a minimizer")
+
+    coster = CostComputer(data, model, random_subset)
+    try:
+        fitted_pars, minimizer_info = minimizer.minimize(model.parameters,
+                                                         coster.flattened_difference)
+        converged = True
+    except MinimizerConvergenceFailed as cf:
+        warnings.warn("Minimizer Convergence Failed, your results may not be "
+                      "correct")
+        # we still return the data even if the minimizer fails to converge
+        # because often the data is of some value, and may in fact be what the
+        # user wants if they have set low iteration limits for a "rough fit"
+        fitted_pars, minimizer_info  = cf.result, cf.details
+        converged = False
+
+    fitted_scatterer = model.scatterer.make_from(fitted_pars)
+
+    time_stop = time.time()
+
+    return FitResult(fitted_pars, fitted_scatterer, coster.chisq(fitted_pars),
+                     coster.rsq(fitted_pars), converged, time_stop - time_start,
+                     model, minimizer, minimizer_info)
+
+
 class FitResult(HoloPyObject):
     """
     The results of a fit.
@@ -140,17 +193,17 @@ def rsq(fit, data):
     return float(1 - ((data - fit)**2).sum()/((data - data.mean())**2).sum())
 
 class CostComputer(HoloPyObject):
-    def __init__(self, data, model, use_random_fraction=None):
+    def __init__(self, data, model, random_subset=None):
         self.model = model
 
         schema = data
 
-        if use_random_fraction is None and model.use_random_fraction is not None:
-            use_random_fraction = model.use_random_fraction
+        if random_subset is None and model.use_random_fraction is not None:
+            random_fraction = model.use_random_fraction
             warnings.warn("Setting random fraction from model is depricated, use the random fraction option in fit")
 
-        if use_random_fraction is not None:
-            n_sel = int(np.ceil(data.size*use_random_fraction))
+        if random_subset is not None:
+            n_sel = int(np.ceil(data.size*random_subset))
             self.selection = np.random.choice(data.size, n_sel, replace=False)
             self.data = data.ravel()[self.selection]
             positions = schema.positions.xyz()[self.selection]
@@ -186,54 +239,3 @@ class CostComputer(HoloPyObject):
     def chisq(self, pars):
         return chisq(self._calc(pars), self.data
 )
-
-
-def fit(model, data, minimizer=Nmpfit, use_random_fraction=None):
-    """
-    fit a model to some data
-
-    Parameters
-    ----------
-    model : :class:`~holopy.fitting.model.Model` object
-        A model describing the scattering system which leads to your data and
-        the parameters to vary to fit it to the data
-    data : :class:`~holopy.core.marray.Marray` object
-        The data to fit
-    minimizer : (optional) :class:`~holopy.fitting.minimizer.Minimizer`
-        The minimizer to use to do the fit
-
-    Returns
-    -------
-    result : :class:`FitResult`
-        an object containing the best fit paramters and information about the fit
-    """
-    time_start = time.time()
-
-    if not isinstance(minimizer, Minimizer):
-        if issubclass(minimizer, Minimizer):
-            minimizer = minimizer()
-        else:
-            raise InvalidMinimizer("Object supplied as a minimizer could not be"
-                                   "interpreted as a minimizer")
-
-    coster = CostComputer(data, model, use_random_fraction)
-    try:
-        fitted_pars, minimizer_info = minimizer.minimize(model.parameters,
-                                                         coster.flattened_difference)
-        converged = True
-    except MinimizerConvergenceFailed as cf:
-        warnings.warn("Minimizer Convergence Failed, your results may not be "
-                      "correct")
-        # we still return the data even if the minimizer fails to converge
-        # because often the data is of some value, and may in fact be what the
-        # user wants if they have set low iteration limits for a "rough fit"
-        fitted_pars, minimizer_info  = cf.result, cf.details
-        converged = False
-
-    fitted_scatterer = model.scatterer.make_from(fitted_pars)
-
-    time_stop = time.time()
-
-    return FitResult(fitted_pars, fitted_scatterer, coster.chisq(fitted_pars),
-                     coster.rsq(fitted_pars), converged, time_stop - time_start,
-                     model, minimizer, minimizer_info)

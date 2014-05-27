@@ -58,6 +58,6 @@ def test_fit_series():
     with warnings.catch_warnings() as w:
         #test with no saving
         warnings.simplefilter('ignore')
-        res = fit_series(model, inf, opticsinfo, px_size, use_random_fraction=.01)
+        res = fit_series(model, inf, opticsinfo, px_size, random_subset=.01)
 
     assert_obj_close(res[-1].scatterer, gold_sphere, rtol = 1e-2)

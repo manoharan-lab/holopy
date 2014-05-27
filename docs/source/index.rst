@@ -15,16 +15,16 @@ holograms and light scattering. HoloPy can:
 
 * Do :ref:`Scattering Calculations <calc_tutorial>`
 
-  * **Compute** Holograms, electric fields, scattered intensity, 
+  * **Compute** Holograms, electric fields, scattered intensity,
     cross sections, ...
 
-  * **From** spheres, clusters of spheres, and arbitrary structures 
+  * **From** spheres, clusters of spheres, and arbitrary structures
     (using :ref:`DDA <dda_tutorial>`)
 
 * Make precise measurements by :ref:`fitting scattering models
   <fit_tutorial>` (based on the above structures) to experimental
   data.
- 
+
 HoloPy provides a powerful and user-friendly interface to scattering
 and optical propagation theories. It also provides a set of flexible
 objects that make it easy to describe and analyze data from complex
@@ -45,6 +45,7 @@ questions.
    :maxdepth: 2
 
    users/index
+   changes
    reference/holopy
    credits
 

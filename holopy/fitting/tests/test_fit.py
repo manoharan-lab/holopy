@@ -119,7 +119,7 @@ def test_fit_random_subset():
 
     model = Model(s, Mie.calc_holo, alpha = par(.6, [.1,1]))
     np.random.seed(40)
-    result = fit(model, holo, use_random_fraction=.1)
+    result = fit(model, holo, random_subset=.1)
 
     # we have to use a relatively loose tolerance here because the random
     # selection occasionally causes the fit to be a bit worse
@@ -174,7 +174,7 @@ def test_n():
 
     model = Model(sph, Mie.calc_holo, alpha=1)
     holo = Mie.calc_holo(model.scatterer.guess, sch)
-    coster = CostComputer(holo, model, use_random_fraction=.1)
+    coster = CostComputer(holo, model, random_subset=.1)
     assert_allclose(coster.flattened_difference({'n' : .5}), 0)
 
 @nottest

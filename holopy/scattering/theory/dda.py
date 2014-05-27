@@ -36,6 +36,7 @@ import os
 import shutil
 import time
 from ..binding_method import binding, finish_binding
+import warnings
 
 from nose.plugins.skip import SkipTest
 
@@ -146,7 +147,11 @@ class DDA(ScatteringTheory):
         cmd.extend(['-dpl', str(self._dpl(optics, scatterer.n))])
         cmd.extend(['-m'])
         for n in ns:
-            cmd.extend([str(n.real/optics.index), str(n.imag/optics.index)])
+            m = n.real/optics.index
+            if m == 1:
+                warnings.warn("Adda cannot compute particles with index equal to medium index, adjusting particle index {} to {}".format(m, m+1e-6))
+                m += 1e-6
+            cmd.extend([str(m), str(n.imag/optics.index)])
 
         return cmd
 
