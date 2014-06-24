@@ -63,7 +63,7 @@
         end
 
 
-      subroutine mie_fields(n_pts, calc_points, asbs, nstop, einc, rad, &
+      subroutine mie_fields(n_pts, calc_points, asbs, nstop, einc, rad, rad_dep, &
            es_x, es_y, es_z)
         ! Calculate fields scattered by a sphere in the Lorenz-Mie solution,
         ! at a list of selected points.  Use for hologram calculations or
@@ -95,7 +95,7 @@
         implicit none
         integer, intent(in) :: n_pts, nstop
         real (kind = 8), intent(in), dimension(3, n_pts) :: calc_points
-        logical, intent(in) :: rad
+        logical, intent(in) :: rad, rad_dep
         complex (kind = 8), intent(out), dimension(n_pts) :: es_x, &
              es_y, es_z
         complex (kind = 8), intent(in), dimension(2, nstop) :: asbs
@@ -115,8 +115,12 @@
            phi = calc_points(3, i)
 
            ! calculate the amplitude scattering matrix
-           call asm_mie_fullradial(nstop, asbs, calc_points(:, i), asm_scat)
-
+           if (rad_dep) then
+               call asm_mie_fullradial(nstop, asbs, calc_points(:, i), asm_scat)
+           else
+               call asm_mie_far(nstop, asbs, theta, asm_scat)
+           endif
+           
            ! calculate scattered fields in spherical coordinates
            call calc_scat_field(kr, phi, asm_scat, einc, escat_sph)
 

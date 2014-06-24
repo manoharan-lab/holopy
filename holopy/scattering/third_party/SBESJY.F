@@ -127,7 +127,11 @@ C---------------------------------------------------------------------
  1000   FORMAT(' X NEGATIVE !',1PE15.5,'    USE REFLECTION FORMULA'/)
  1001   FORMAT(' WITH X = ',1PE15.5,'    TRY SMALL-X SOLUTIONS',/,
      X  '    j/L/(X)  ->   X**L / (2L+1)!!          AND',/,
-     X  '    y/L/(X)  ->  -(2L-1)!! / X**(L+1)'/)
+     X  '    y/L/(X)  ->  -(2L-1)!! / X**(L+1)',/,
+     X  ' Calculating Hankel functions too far from scatterrer.' ,/,
+     X  ' Do not calculate radial components and use far field-approx' ,/,
+     X  ' by calling Mie(False,False).calc_* .'/)
+C------ These last two sentences added by Aaron Goldfain on June 24, 2014
         RETURN
         END
 C---------------------------------------------------------------------

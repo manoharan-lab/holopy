@@ -58,8 +58,12 @@ class Mie(FortranTheory):
     # don't need to define __init__() because we'll use the base class
     # constructor
 
-    def __init__(self, compute_escat_radial = True):
+    def __init__(self, compute_escat_radial = True, full_radial_dependence = True):
+        #compute_escat_radial determines if radial components will be calculated
+        #full_radial dependence deermines if the full spherical Hankel function 
+        # will be used, or if it will be approximated to be in the far field. 
         self.compute_escat_radial = compute_escat_radial
+        self.full_radial_dependence = full_radial_dependence
         # call base class constructor
         super(Mie, self).__init__()
 
@@ -80,7 +84,8 @@ class Mie(FortranTheory):
     def _raw_fields(self, positions, scatterer, optics):
         scat_coeffs = self._scat_coeffs(scatterer, optics)
         return mieangfuncs.mie_fields(positions, scat_coeffs, optics.polarization,
-                                      self.compute_escat_radial)
+                                      self.compute_escat_radial, 
+                                      self.full_radial_dependence)
 
     def _raw_internal_fields(self, positions, scatterer, optics):
         scat_coeffs = self._scat_coeffs(scatterer, optics)

@@ -225,7 +225,7 @@ def test_mie_bndy_conds():
     points_ext = np.vstack((kr_ext, thetas, phis))
 
     # calc escat
-    es_x, es_y, es_z = mieangfuncs.mie_fields(points_ext, asbs, pol, 1)
+    es_x, es_y, es_z = mieangfuncs.mie_fields(points_ext, asbs, pol, 1, 1)
     # calc eint
     eint_x, eint_y, eint_z = mieangfuncs.mie_internal_fields(points_int, m,
                                                              csds, pol)
@@ -263,7 +263,7 @@ def test_mie_multisphere_singlesph():
     # calculate fields with Mie
     n_stop_mie = miescatlib.nstop(x)
     asbs = miescatlib.scatcoeffs(m, x, n_stop_mie)
-    emie_x, emie_y, emie_z = mieangfuncs.mie_fields(field_pts, asbs, pol, 1)
+    emie_x, emie_y, emie_z = mieangfuncs.mie_fields(field_pts, asbs, pol, 1, 1)
 
     # calculate fields with Multisphere
     _, lmax, amn0, conv = scsmfo_min.amncalc(1, 0., 0., 0., m.real, m.imag,

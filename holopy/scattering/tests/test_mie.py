@@ -62,6 +62,31 @@ def test_single_sphere():
 
     # large radius (calculation not attempted because it would take forever
     assert_raises(UnrealizableScatterer, Mie.calc_holo, Sphere(r=1, n = 1.59, center = (5,5,5)), xschema)
+    
+@attr('fast')
+def test_farfield_holo():
+    # Tests that a far field calculation gives a hologram that is 
+    # different from a full radial dependence calculation, but not too different
+    holo_full = Mie.calc_holo(sphere, xschema, scaling=scaling_alpha)
+    holo_far = Mie(False,False).calc_holo(sphere, xschema, scaling=scaling_alpha)
+    
+
+    # the two arrays should not be equal
+    try:
+        assert_array_almost_equal(holo_full, holo_far)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("Holograms computed for near and far field "
+                             "are too similar.")
+
+
+    # but their max and min values should be close
+    assert_almost_equal(holo_full.max(), holo_far.max(), 1, 
+                        "Near and Far field holograms too different")
+    assert_almost_equal(holo_full.min(), holo_far.min(), 1,
+                        "Near and Far field holograms too different")
+
 
 @attr('fast')
 def test_subimaged():
@@ -225,7 +250,7 @@ def test_radiometric():
         assert_almost_equal(gold[key], val, decimal = 5)
 
 @attr('fast')
-def test_farfield():
+def test_farfield_matr():
     schema = Schema(positions = Angles(np.linspace(0, np.pi/2)), optics =
                     Optics(wavelen=.66, index = 1.33, polarization = (1, 0)))
     sphere = Sphere(r = .5, n = 1.59+0.1j)
