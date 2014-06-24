@@ -109,7 +109,7 @@ def _describe_init_signature(cls):
     arr : array
         raw array data/calculations (without metadata)""",
              'positions' : """
-    positions : :class:`.PositionSpecification` object
+    positions : :class:`.Positions` object
         Specification of the locations of measurements""",
              'spacing' : """
     spacing : array(dtype=float)

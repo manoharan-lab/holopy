@@ -147,7 +147,7 @@ class Positions(np.ndarray, HoloPyObject):
 
     Parameters
     ----------
-    arr : ndarray
+    arr : ndarray (shape ...,3)
         Pixel positions, in Cartesian xyz coordinates
     """
     def __new__(cls, arr):
