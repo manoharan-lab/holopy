@@ -8,6 +8,7 @@ env:
 
 
 install:
+  - apt-get install gfortran
   - conda create -n testenv --yes pip python=$TRAVIS_PYTHON_VERSION
   - source activate testenv
   - conda install --yes $DEPS
