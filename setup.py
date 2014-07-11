@@ -94,6 +94,7 @@ if __name__ == "__main__":
           name='HoloPy',
           version=__version__,
           description='Holography in Python',
+          requires=['numpy', 'scipy', 'PyYAML', 'pillow'],
           author='Manoharan Lab, Harvard University',
           author_email='vnm@seas.harvard.edu',
           url='http://manoharan.seas.harvard.edu/holopy',
