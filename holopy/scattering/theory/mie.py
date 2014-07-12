@@ -31,7 +31,7 @@ from ...core.helpers import _ensure_array
 from ..errors import TheoryNotCompatibleError, UnrealizableScatterer
 from ..scatterer import Sphere, Scatterers
 from .scatteringtheory import FortranTheory
-from .mie_f import mieangfuncs, miescatlib
+from holopy.scattering.theory.mie_f import mieangfuncs, miescatlib
 from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
 import copy
 
@@ -60,8 +60,8 @@ class Mie(FortranTheory):
 
     def __init__(self, compute_escat_radial = True, full_radial_dependence = True):
         #compute_escat_radial determines if radial components will be calculated
-        #full_radial dependence deermines if the full spherical Hankel function 
-        # will be used, or if it will be approximated to be in the far field. 
+        #full_radial dependence deermines if the full spherical Hankel function
+        # will be used, or if it will be approximated to be in the far field.
         self.compute_escat_radial = compute_escat_radial
         self.full_radial_dependence = full_radial_dependence
         # call base class constructor
@@ -84,7 +84,7 @@ class Mie(FortranTheory):
     def _raw_fields(self, positions, scatterer, optics):
         scat_coeffs = self._scat_coeffs(scatterer, optics)
         return mieangfuncs.mie_fields(positions, scat_coeffs, optics.polarization,
-                                      self.compute_escat_radial, 
+                                      self.compute_escat_radial,
                                       self.full_radial_dependence)
 
     def _raw_internal_fields(self, positions, scatterer, optics):

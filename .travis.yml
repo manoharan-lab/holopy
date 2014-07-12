@@ -4,15 +4,17 @@ python:
   - 2.7
 
 env:
-  - DEPS="numpy scipy nose matplotlib pandas pillow pyyaml"
+  - DEPS="numpy scipy nose pyyaml pil"
 
 
 install:
+  - sudo apt-get install gfortran
   - conda create -n testenv --yes pip python=$TRAVIS_PYTHON_VERSION
   - source activate testenv
   - conda install --yes $DEPS
 # TODO Remove these once setup.py handles dependencies correctly.
   - python setup.py install
+  - python setup.py build_ext --inplace
 
 before_install:
   - if [ ${TRAVIS_PYTHON_VERSION:0:1} == "2" ]; then wget http://repo.continuum.io/miniconda/Miniconda-2.2.2-Linux-x86_64.sh -O miniconda.sh; else wget http://repo.continuum.io/miniconda/Miniconda3-2.2.2-Linux-x86_64.sh -O miniconda.sh; fi
