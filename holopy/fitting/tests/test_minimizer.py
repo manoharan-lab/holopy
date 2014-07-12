@@ -24,7 +24,7 @@ import numpy as np
 from numpy.testing import assert_equal, assert_raises, assert_allclose
 from nose.plugins.skip import SkipTest
 from ...scattering.scatterer import Sphere, Spheres
-from ...scattering.theory import Mie
+from ...scattering.theory.mie import Mie
 from ...core import Optics, ImageSchema
 from ...core.helpers import OrderedDict
 from .. import fit, Parameter, par, Model
