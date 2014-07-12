@@ -1,6 +1,9 @@
 Holography and Light Scattering in Python
 =========================================
 
+.. image:: https://travis-ci.org/manoharan-lab/holopy.png
+    :target: http://travis-ci.org/manoharan-lab/holopy
+
 `HoloPy <http://manoharan.seas.harvard.edu/holopy>`_ is a python based
 tool for working with digital holograms and light scattering. HoloPy
 can:
