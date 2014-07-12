@@ -8,7 +8,7 @@ env:
 
 
 install:
-  - pip install pillow
+  - pip install PIL
   - sudo apt-get install gfortran
   - conda create -n testenv --yes pip python=$TRAVIS_PYTHON_VERSION
   - source activate testenv
