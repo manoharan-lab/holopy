@@ -4,10 +4,11 @@ python:
   - 2.7
 
 env:
-  - DEPS="numpy scipy nose matplotlib pandas pillow pyyaml"
+  - DEPS="numpy scipy nose matplotlib pandas pyyaml"
 
 
 install:
+  - pip install pillow
   - sudo apt-get install gfortran
   - conda create -n testenv --yes pip python=$TRAVIS_PYTHON_VERSION
   - source activate testenv
