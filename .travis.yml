@@ -4,11 +4,11 @@ python:
   - 2.7
 
 env:
-  - DEPS="numpy scipy nose pyyaml"
+  - DEPS="numpy scipy nose pyyaml pil"
 
 
 install:
-  - sudo apt-get install gfortran python-pil
+  - sudo apt-get install gfortran
   - conda create -n testenv --yes pip python=$TRAVIS_PYTHON_VERSION
   - source activate testenv
   - conda install --yes $DEPS
