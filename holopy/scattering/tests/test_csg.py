@@ -44,3 +44,7 @@ def test_csg_dda():
     sch = ImageSchema(10, .1, Optics(.66, 1.33, (0, 1)))
     h = DDA.calc_holo(pacman, sch)
     verify(h, 'dda_csg')
+
+    hr = DDA.calc_holo(pacman.rotated(np.pi/2, 0, 0), sch)
+    rotated_pac = pacman.rotated(np.pi/2, 0, 0)
+    verify(h/hr, 'dda_csg_rotated_div')

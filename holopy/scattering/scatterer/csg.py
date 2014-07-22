@@ -24,6 +24,7 @@ the DDA th
 '''
 from holopy.scattering.errors import InvalidScatterer
 from holopy.scattering.scatterer import Scatterer
+from holopy.core.math import rotate_points
 
 import numpy as np
 from numpy import logical_and, logical_not, logical_or
@@ -31,6 +32,9 @@ from copy import copy
 
 class CsgScatterer(Scatterer):
     def __init__(self, s1, s2):
+        # For now we just treat s1's location as the location of the composite.
+        # This is probably not the best way to do it, but it is simple to
+        # implement for now.
         self.location = s1.location
         self.s1 = s1
         self.s2 = s2
@@ -43,10 +47,18 @@ class CsgScatterer(Scatterer):
         if s1.n != s2.n:
             raise InvalidScatterer(self, "Components of a CSG scatterer must not have different indicies")
 
-
     @property
     def bounds(self):
         return [(min(b1[0], b2[0]), max(b1[1], b2[1])) for b1, b2 in zip(self.s1.bounds, self.s2.bounds)]
+
+    def rotated(self, alpha, beta, gamma):
+        centers = np.array([s.center for s in (self.s1, self.s2)])
+        new_centers = self.location + rotate_points(centers - self.location, alpha, beta, gamma)
+
+        s1, s2 = [s.translated(*(c-n)).rotated(alpha, beta, gamma) for s, c, n
+                  in zip((self.s1, self.s2), centers, new_centers)]
+        return self.__class__(s1, s2)
+
 
 class Union(CsgScatterer):
     def in_domain(self, points):
