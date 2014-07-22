@@ -65,6 +65,16 @@ class Sphere(CenteredScatterer):
     def rotated(self, alpha, beta, gamma):
         return copy(self)
 
+    @property
+    def num_domains(self):
+        if self.n:
+            if np.isscalar(self.n):
+                return 1
+            else:
+                return len(self.n)
+        else:
+            return 0
+
 class LayeredSphere(Sphere):
     """
     Alternative description of a sphere where you specify layer

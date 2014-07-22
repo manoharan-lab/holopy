@@ -34,3 +34,4 @@ from .composite import Scatterers
 from .spherecluster import Spheres
 from .janus import JanusSphere
 from .ellipsoid import Ellipsoid
+from csg import Union, Difference, Intersection

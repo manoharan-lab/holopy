@@ -116,6 +116,10 @@ class Scatterer(HoloPyObject):
             domains[np.nonzero(ind)] = i+1
         return domains
 
+    @property
+    def num_domains(self):
+        return len(self.indicators)
+
     def _index_type(self, background=0.):
         if np.iscomplex([self.n]).any() or np.iscomplex(background):
             return np.complex
