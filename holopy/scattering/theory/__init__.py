@@ -46,3 +46,8 @@ try:
     from dda import DDA
 except ImportError:
     pass
+
+try:
+    from tmatrix import Tmatrix
+except ImportError:
+    pass
