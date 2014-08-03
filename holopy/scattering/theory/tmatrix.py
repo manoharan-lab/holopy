@@ -39,10 +39,6 @@ from .scatteringtheory import ScatteringTheory
 from .mie_f import mieangfuncs
 from ...core.helpers import _ensure_array
 
-
-## Please enter path for T-matrix executable, S.exe:
-tmatrixlocation = '/home/annawang/code/githolopy/holopy/holopy/scattering/theory/tmatrix_doubleprecision/S.exe'
-
 class DependencyMissing(SkipTest, Exception):
     def __init__(self, dep):
         self.dep = dep
@@ -73,8 +69,10 @@ class Tmatrix(ScatteringTheory):
 
     def _calc_field(self, scatterer, schema, delete=True):
         temp_dir = tempfile.mkdtemp()
-        shutil.copy(tmatrixlocation, temp_dir)
         current_directory = os.getcwd()
+        path, _ = os.path.split(os.path.abspath(__file__))
+        tmatrixlocation = os.path.join(path, 'tmatrix_doubleprecision', 'S.exe')
+        shutil.copy(tmatrixlocation, temp_dir)
         os.chdir(temp_dir)
         calc_points = schema.positions.kr_theta_phi(scatterer.location, schema.optics)
 

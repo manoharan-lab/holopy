@@ -12,11 +12,10 @@ C      but this is corrected for in HoloPy:holopy/scattering/theory/tmatrix.py
 C   6. The Phase matrix part of the calculation is removed.
 C
 C   To compile with gfortran, use the following lines after cd-ing into the
-C   directory containing S.lp.f lpd.f and ampld.par.f
+C   directory containing S.lp.f lpd.f and ampld.par.f (holopy/scattering/theory/tmatrix_doubleprecision/)
 C       gfortran -c S.lp.f lpd.f
 C       gfortran -o S.exe S.lp.o lpd.o
-C   This should create an executable, S.exe. You should provide the location
-C   of this executable to holopy/scattering/theory/tmatrix.py.
+C   This should create an executable, S.exe.
 
 C***********************************************************************************
 
