@@ -26,9 +26,12 @@ or detrending
 """
 from __future__ import division
 
+from ..errors import ImageError
+
+
 import scipy
 import numpy as np
-from .filter import zero_filter
+
 subtract = 0
 divide = 1
 
@@ -49,37 +52,6 @@ def normalize(image):
     """
     return image * 1.0 / image.sum() * image.size
 
-def background(holo, bg, kind = divide):
-    '''
-    Improve an image by eliminating a background.
-
-    Parameters
-    ----------
-    holo : :class:`holopy.hologram.Hologram`
-       Image to process
-    bg : ndarray
-       Background image to remove
-    kind : 'subtract' or 'divide'
-       Type of background elimination to perform
-
-    Returns
-    -------
-    holo : :class:`holopy.hologram.Hologram`
-       Hologram with background eliminated
-    '''
-    if bg.ndim < holo.ndim:
-        bg = bg[..., np.newaxis]
-    
-    if kind is subtract or kind is 'subtract':
-        name = "%sbgs%s" % (holo.name, bg.name)
-        ar = holo - bg
-    else:
-        name = "%sbgd%s" % (holo.name, bg.name)
-        ar = holo / zero_filter(bg)
-    ar.name = name
-        
-    return ar
-
 def detrend(image):
     '''
     Remove linear trends from an image.
@@ -97,4 +69,44 @@ def detrend(image):
        Image with linear trends removed
     '''
     return scipy.signal.detrend(scipy.signal.detrend(image, 0), 1)
-    
+
+def zero_filter(image):
+    '''
+    Search for and interpolate pixels equal to 0.
+    This is to avoid NaN's when a hologram is divided by a BG with 0's.
+
+    Parameters
+    ----------
+    image : ndarray
+       Image to process
+
+    Returns
+    -------
+    image : ndimage
+       Image where pixels = 0 are instead given values equal to average of
+       neighbors.  dtype is the same as the input image
+    '''
+    zero_pix = np.where(image == 0)
+    output = image.copy()
+
+    # check to see if adjacent pixels are 0, if more than 1 dead pixel
+    if len(zero_pix[0]) > 1:
+        delta_rows = zero_pix[0] - np.roll(zero_pix[0], 1)
+        delta_cols = zero_pix[1] - np.roll(zero_pix[1], 1)
+        if ((1 in delta_rows[np.where(delta_cols == 0)]) or
+            (1 in delta_cols[np.where(delta_rows == 0)])):
+            raise ImageError('adjacent dead pixels')
+
+    for row, col in zip(zero_pix[0], zero_pix[1]):
+        # in the bulk
+        if ((row > 0) and (row < (image.shape[0]-1)) and
+            (col > 0) and (col < image.shape[1]-1)):
+            output[row, col] = np.sum(image[row-1:row+2, col-1:col+2]) / 8.
+        else: # deal with edges by padding
+            im_avg = image.sum()/(image.size - len(zero_pix[0]))
+            padded_im = np.ones((image.shape[0]+2, image.shape[1]+2)) * im_avg
+            padded_im[1:-1, 1:-1] = image
+            output[row, col] = np.sum(padded_im[row:row+3, col:col+3]) / 8.
+        print 'Pixel with value 0 reset to nearest neighbor average'
+
+    return output

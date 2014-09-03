@@ -27,7 +27,6 @@ reconstructions.
 '''
 from __future__ import division
 
-from .enhance import normalize, background, detrend
-from .filter import pillbox, zero_filter, lowpass
+from .enhance import normalize, detrend, zero_filter
 from .centerfinder import center_find
 from simulate_noise import add_noise
