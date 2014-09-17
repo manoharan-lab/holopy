@@ -27,6 +27,7 @@ import shutil
 import errno
 import numpy as np
 from copy import copy
+from types import NoneType
 
 try:
     from collections import OrderedDict
@@ -153,3 +154,18 @@ def dict_without(d, keys):
         except KeyError:
             pass
     return d
+
+def is_none(o):
+    """
+    Check if something is None.
+
+    This can't be done with a simple is check anymore because numpy decided that
+    array is None should do an element wise comparison.
+
+    Parameters
+    ----------
+    o : object
+        Anything you want to see if is None
+    """
+
+    return isinstance(o, NoneType)

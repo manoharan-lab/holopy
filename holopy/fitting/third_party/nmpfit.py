@@ -23,9 +23,9 @@ Levenberg-Marquardt minimizer obtained from
 http://stsdas.stsci.edu/pyraf/stscidocs/pytools_pkg/pytools_api/pytools.nmpfit-module.html
 
 The source code above was modified by Jerome Fung (fung@physics.harvard.edu) to
-be independent of the rest of the stsci_python package, since holopy does 
- 
-use Numeric. 
+be independent of the rest of the stsci_python package, since holopy does
+
+use Numeric.
 '''
 
 '''
@@ -35,27 +35,27 @@ The license for stsci_python is included below:
 
 Copyright (C) 2005 Association of Universities for Research in Astronomy (AURA)
 
-Redistribution and use in source and binary forms, with or without 
+Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
-1. Redistributions of source code must retain the above copyright notice, this 
+1. Redistributions of source code must retain the above copyright notice, this
 list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright notice, 
-this list of conditions and the following disclaimer in the documentation 
+2. Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
 and/or other materials provided with the distribution.
-3. The name of AURA and its representatives may not be used to endorse or 
-promote products derived from this software without specific prior written 
+3. The name of AURA and its representatives may not be used to endorse or
+promote products derived from this software without specific prior written
 permission.
 
-THIS SOFTWARE IS PROVIDED BY AURA ``AS IS'' AND ANY EXPRESS OR IMPLIED 
-WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
-MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO 
-EVENT SHALL AURA BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+THIS SOFTWARE IS PROVIDED BY AURA ``AS IS'' AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+EVENT SHALL AURA BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
-OF SUCH DAMAGE. 
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGE.
 
 """
 
@@ -464,9 +464,9 @@ Perform Levenberg-Marquardt least-squares minimization, based on MINPACK-1.
         August, 2002.  Mark Rivers
 """
 
-#The following lines are irrelevant to holopy and were commented out 
+#The following lines are irrelevant to holopy and were commented out
 #from the stsci_python version by J. Fung.
-#import numerixenv 
+#import numerixenv
 #numerixenv.check()
 
 import numpy
@@ -655,7 +655,8 @@ import types
 #
 #     **********
 
-from ...core.holopy_object import Serializable
+from holopy.core.holopy_object import Serializable
+from holopy.core.helpers import is_none
 
 class mpfit(Serializable):
     def __init__(self, fcn, xall=None, functkw={}, parinfo=None,
@@ -1018,7 +1019,7 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
         limited = self.parinfo(parinfo, 'limited', default=[0,0], n=npar)
         limits = self.parinfo(parinfo, 'limits', default=[0.,0.], n=npar)
 
-        if (limited != None) and (limits != None):
+        if (not is_none(limited)) and (not is_none(limits)):
             ## Error checking on limits in parinfo
             wh = numpy.nonzero((limited[:,0] & (xall < limits[:,0])) |
                                                                     (limited[:,1] & (xall > limits[:,1])))
@@ -1122,7 +1123,7 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
                                                     epsfcn=epsfcn,
                                                     autoderivative=autoderivative, dstep=dstep,
                                                     functkw=functkw, ifree=ifree, xall=self.params)
-            if (fjac == None):
+            if (is_none(fjac)):
                 self.errmsg = 'WARNING: premature termination by FDJAC2'
                 return
 
@@ -1388,8 +1389,8 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
         self.perror = None
         ## (very carefully) set the covariance matrix COVAR
         if ((self.status > 0) and (nocovar==0) and (n != None)
-                                                and (fjac != None) and (ipvt != None)):
-            sz = numpy.shape(fjac)
+                                                and (not is_none(fjac)) and (ipvt != None)):
+            sz = numpy.shape(Jack)
             if ((n > 0) and (sz[0] >= n) and (sz[1] >= n)
                             and (len(ipvt) >= n)):
                 catch_msg = 'computing the covariance matrix'
@@ -1542,9 +1543,9 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
         if (self.debug): print 'Entering fdjac2...'
         machep = self.machar.machep
         if epsfcn == None:  epsfcn = machep
-        if xall == None:    xall = x
-        if ifree == None:   ifree = numpy.arange(len(xall))
-        if step == None:    step = x * 0.
+        if is_none(xall):    xall = x
+        if is_none(ifree):   ifree = numpy.arange(len(xall))
+        if is_none(step):    step = x * 0.
         nall = len(xall)
 
         eps = numpy.sqrt(max([epsfcn, machep]))
@@ -1578,7 +1579,7 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
         h = eps * abs(x)
 
         ## if STEP is given, use that
-        if step != None:
+        if not is_none(step):
             stepi = numpy.take(step, ifree)
             wh = (numpy.nonzero(stepi > 0) )[0]
             if (len(wh) > 0): numpy.put(h, wh, numpy.take(stepi, wh))

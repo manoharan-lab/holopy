@@ -33,7 +33,7 @@ import scipy.signal
 from errors import UnspecifiedPosition
 from .holopy_object import HoloPyObject
 from .metadata import Angles, Positions
-from .helpers import _ensure_pair, _ensure_array, dict_without, ensure_3d
+from .helpers import _ensure_pair, _ensure_array, dict_without, ensure_3d, is_none
 import inspect
 
 def zeros_like(obj, dtype=None):
@@ -612,7 +612,7 @@ def subimage(arr, center, shape):
     output = _checked_cut(arr, extent)
 
     if isinstance(output, RegularGridSchema):
-        if output.spacing != None:
+        if not is_none(output.spacing):
             output.center = arr.origin + ensure_3d(center) * ensure_3d(arr.spacing)
         else:
             output.origin = None
