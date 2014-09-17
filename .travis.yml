@@ -24,4 +24,4 @@ before_install:
   # Learned the hard way: miniconda is not always up-to-date with conda.
   - conda update --yes conda
 
-script: nosetests -a '!slow'
+script: python run_nose.py
