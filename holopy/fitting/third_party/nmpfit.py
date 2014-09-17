@@ -1389,8 +1389,8 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
         self.perror = None
         ## (very carefully) set the covariance matrix COVAR
         if ((self.status > 0) and (nocovar==0) and (n != None)
-                                                and (not is_none(fjac)) and (ipvt != None)):
-            sz = numpy.shape(Jack)
+                                                and (not is_none(fjac)) and (not is_none(ipvt))):
+            sz = numpy.shape(fjac)
             if ((n > 0) and (sz[0] >= n) and (sz[1] >= n)
                             and (len(ipvt) >= n)):
                 catch_msg = 'computing the covariance matrix'
@@ -2262,7 +2262,7 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
     def calc_covar(self, rr, ipvt=None, tol=1.e-14):
 
         if (self.debug): print 'Entering calc_covar...'
-        if numpy.rank(rr) != 2:
+        if rr.ndim != 2:
             print 'ERROR: r must be a two-dimensional matrix'
             return(-1)
         s = numpy.shape(rr)
@@ -2271,7 +2271,7 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
             print 'ERROR: r must be a square matrix'
             return(-1)
 
-        if (ipvt == None): ipvt = numpy.arange(n)
+        if (is_none(ipvt)): ipvt = numpy.arange(n)
         r = rr.copy()
         r.shape = [n,n]
 
