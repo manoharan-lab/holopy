@@ -33,7 +33,7 @@ import re
 import inspect
 import types
 
-from holopy.core.helpers import OrderedDict
+from holopy.core.helpers import OrderedDict, is_none
 from holopy.core.holopy_object import SerializableMetaclass
 from holopy.core.marray import Marray
 from holopy.core import marray
@@ -94,7 +94,8 @@ def load(inf):
 
 def ignore_aliases(data):
     try:
-        if data in [None, ()]:
+        # numpy arrays no longer want to be compared to None, so instead check for a none by looking for if it is an instance of NoneType
+        if is_none(data) or data is ():
             return True
         if isinstance(data, (str, unicode, bool, int, float)):
             return True

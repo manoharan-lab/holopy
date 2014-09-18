@@ -27,6 +27,7 @@ calc_intensity and calc_holo, based on subclass's calc_field
 import numpy as np
 from warnings import warn
 from ...core.marray import Image, VectorGrid, VectorSchema, dict_without, make_vector_schema
+from holopy.core.helpers import is_none
 from ...core import Optics
 from ...core.holopy_object import HoloPyObject
 from ..binding_method import binding, finish_binding
@@ -148,7 +149,7 @@ class ScatteringTheory(HoloPyObject):
         to use non-default values.
         """
 
-        if isinstance(scatterer, Sphere) and scatterer.center == None:
+        if isinstance(scatterer, Sphere) and is_none(scatterer.center):
             raise NoCenter("Center is required for hologram calculation of a sphere")
         else:
             pass

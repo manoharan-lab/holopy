@@ -130,7 +130,7 @@ def test_iter_limit():
     with warnings.catch_warnings(record=True) as w:
         # Cause all warnings to always be triggered.
         warnings.simplefilter("always")
-        result = fit(model, holo, minimizer = Nmpfit(maxiter=2))
+        result = fit(model, holo, minimizer = Nmpfit(maxiter=2), random_subset=.1)
 
         assert len(w) == 1
         assert issubclass(w[-1].category, UserWarning)
