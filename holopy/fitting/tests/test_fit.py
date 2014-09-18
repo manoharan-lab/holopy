@@ -45,6 +45,11 @@ gold_alpha = .6497
 gold_sphere = Sphere(1.582+1e-4j, 6.484e-7,
                      (5.534e-6, 5.792e-6, 1.415e-5))
 
+# TODO: mie_single and mie_par_scatterer do not behave well under
+# random subset fitting (par_scatterer will error with
+# random_subset=.99). This could be a sign of some deeper problem, so
+# it might be worth investigating - tgd 2014-09-18
+
 @attr('slow')
 def test_fit_mie_single():
     holo = normalize(get_example_data('image0001.yaml'))
@@ -64,7 +69,6 @@ def test_fit_mie_single():
 
     assert_raises(InvalidMinimizer, fit, model, holo, minimizer=Sphere)
 
-    np.random.seed(40)
     result = fit(model, holo)
 
     assert_obj_close(result.scatterer, gold_sphere, rtol = 1e-3)
@@ -83,7 +87,6 @@ def test_fit_mie_par_scatterer():
     thry = Mie(False)
     model = Model(s, thry.calc_holo, alpha = par(.6, [.1,1]))
 
-    np.random.seed(0)
     result = fit(model, holo)
 
     assert_obj_close(result.scatterer, gold_sphere, rtol=1e-3)
