@@ -45,7 +45,7 @@ gold_alpha = .6497
 gold_sphere = Sphere(1.582+1e-4j, 6.484e-7,
                      (5.534e-6, 5.792e-6, 1.415e-5))
 
-@attr('medium')
+@attr('slow')
 def test_fit_mie_single():
     holo = normalize(get_example_data('image0001.yaml'))
 
@@ -64,13 +64,14 @@ def test_fit_mie_single():
 
     assert_raises(InvalidMinimizer, fit, model, holo, minimizer=Sphere)
 
+    np.random.seed(40)
     result = fit(model, holo)
 
     assert_obj_close(result.scatterer, gold_sphere, rtol = 1e-3)
     assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=3)
     assert_equal(model, result.model)
 
-@attr('medium')
+@attr('slow')
 def test_fit_mie_par_scatterer():
     holo = normalize(get_example_data('image0001.yaml'))
 
@@ -82,6 +83,7 @@ def test_fit_mie_par_scatterer():
     thry = Mie(False)
     model = Model(s, thry.calc_holo, alpha = par(.6, [.1,1]))
 
+    np.random.seed(0)
     result = fit(model, holo)
 
     assert_obj_close(result.scatterer, gold_sphere, rtol=1e-3)
@@ -123,10 +125,10 @@ def test_fit_random_subset():
 
     # we have to use a relatively loose tolerance here because the random
     # selection occasionally causes the fit to be a bit worse
-    assert_obj_close(result.scatterer, gold_sphere, rtol=1e-2)
+    assert_obj_close(result.scatterer, gold_sphere, rtol=1e-3)
     # TODO: figure out if it is a problem that alpha is frequently coming out
     # wrong in the 3rd decimal place.
-    assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=2)
+    assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=3)
     assert_equal(model, result.model)
 
     assert_read_matches_write(result)
@@ -134,31 +136,31 @@ def test_fit_random_subset():
 @attr('fast')
 def test_next_model():
     exampleresult = FitResult(parameters={
-        'center[1]': 31.367170884695756, 'r': 0.6465280831465722, 
-        'center[0]': 32.24150087110443, 
-        'center[2]': 35.1651561654966, 
-        'alpha': 0.7176299231169572, 
-        'n': 1.580122175314896}, 
-        scatterer=Sphere(n=1.580122175314896, r=0.6465280831465722, 
-        center=[32.24150087110443, 31.367170884695756, 35.1651561654966]), 
-        chisq=0.0001810513851216454, rsq=0.9727020197282801, 
-        converged=True, time=5.179728031158447, 
+        'center[1]': 31.367170884695756, 'r': 0.6465280831465722,
+        'center[0]': 32.24150087110443,
+        'center[2]': 35.1651561654966,
+        'alpha': 0.7176299231169572,
+        'n': 1.580122175314896},
+        scatterer=Sphere(n=1.580122175314896, r=0.6465280831465722,
+        center=[32.24150087110443, 31.367170884695756, 35.1651561654966]),
+        chisq=0.0001810513851216454, rsq=0.9727020197282801,
+        converged=True, time=5.179728031158447,
         model=Model(scatterer=ParameterizedObject(obj=
-        Sphere(n=Parameter(guess=1.59, limit=[1.4, 1.7], name='n'), 
-        r=Parameter(guess=0.65, limit=[0.6, 0.7], name='r'), 
-        center=[Parameter(guess=32.110424836601304, limit=[2, 40], name='center[0]'), 
-        Parameter(guess=31.56683986928105, limit=[4, 40], name='center[1]'), 
-        Parameter(guess=33, limit=[5, 45], name='center[2]')])), 
-        theory=Mie.calc_holo, alpha=Parameter(guess=0.6, limit=[0.1, 1], name='alpha'), 
+        Sphere(n=Parameter(guess=1.59, limit=[1.4, 1.7], name='n'),
+        r=Parameter(guess=0.65, limit=[0.6, 0.7], name='r'),
+        center=[Parameter(guess=32.110424836601304, limit=[2, 40], name='center[0]'),
+        Parameter(guess=31.56683986928105, limit=[4, 40], name='center[1]'),
+        Parameter(guess=33, limit=[5, 45], name='center[2]')])),
+        theory=Mie.calc_holo, alpha=Parameter(guess=0.6, limit=[0.1, 1], name='alpha'),
         constraints=[]), minimizer = None, minimization_details = None)
 
     gold = Model(scatterer=ParameterizedObject(obj=Sphere(
-        n=Parameter(guess=1.580122175314896, limit=[1.4, 1.7], name='n'), 
-        r=Parameter(guess=0.6465280831465722, limit=[0.6, 0.7], name='r'), 
-        center=[Parameter(guess=32.24150087110443, limit=[2, 40], name='center[0]'), 
-        Parameter(guess=31.367170884695756, limit=[4, 40], name='center[1]'), 
-        Parameter(guess=35.1651561654966, limit=[5, 45], name='center[2]')])), 
-        theory=Mie.calc_holo, alpha=Parameter(guess=0.7176299231169572, limit=[0.1, 1], name='alpha'), 
+        n=Parameter(guess=1.580122175314896, limit=[1.4, 1.7], name='n'),
+        r=Parameter(guess=0.6465280831465722, limit=[0.6, 0.7], name='r'),
+        center=[Parameter(guess=32.24150087110443, limit=[2, 40], name='center[0]'),
+        Parameter(guess=31.367170884695756, limit=[4, 40], name='center[1]'),
+        Parameter(guess=35.1651561654966, limit=[5, 45], name='center[2]')])),
+        theory=Mie.calc_holo, alpha=Parameter(guess=0.7176299231169572, limit=[0.1, 1], name='alpha'),
         constraints=[])
 
     assert_obj_close(gold, exampleresult.next_model())

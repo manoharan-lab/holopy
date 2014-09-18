@@ -51,7 +51,7 @@ def test_Shell():
 
     verify(h, 'shell')
 
-@attr('medium')
+@attr('slow')
 def test_sooty_particles():
     '''
     Test multilayered sphere scattering coefficients by comparison of
@@ -75,7 +75,7 @@ def test_sooty_particles():
     # first case: absorbing core
     x_ac = np.array([f_v**(1./3.) * x_L, x_L])
     m_ac = np.array([m_abs, m_med])
-    
+
     # second case: absorbing shell
     x_as = np.array([(1. - f_v)**(1./3.), 1.]) * x_L
     m_as = np.array([m_med, m_abs])
@@ -84,7 +84,7 @@ def test_sooty_particles():
     n_layers = 900
     x_sm = np.arange(1, n_layers + 1) * x_L / n_layers
     beta = (m_abs**2 - m_med**2) / (m_abs**2 + 2. * m_med**2)
-    f = 4./3. * (x_sm / x_L) * f_v 
+    f = 4./3. * (x_sm / x_L) * f_v
     m_sm = m_med * sqrt(1. + 3. * f * beta / (1. - f * beta))
 
     location = os.path.split(os.path.abspath(__file__))[0]
@@ -98,4 +98,3 @@ def test_sooty_particles():
                     rtol = 2e-5)
     assert_allclose(efficiencies_from_scat_units(m_sm, x_sm), gold[2],
                     rtol = 1e-3)
-
