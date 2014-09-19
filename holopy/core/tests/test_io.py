@@ -30,7 +30,7 @@ from nose.plugins.attrib import attr
 from numpy.testing import assert_raises, assert_equal
 import numpy as np
 from holopy.core.errors import LoadError
-from holopy.core.io import save_image, load_image
+from holopy.core.file_io import save_image, load_image
 import yaml
 
 @attr('fast')
