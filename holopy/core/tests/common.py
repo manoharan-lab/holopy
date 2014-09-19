@@ -26,9 +26,7 @@ import yaml
 import shutil
 from numpy.testing import assert_equal, assert_almost_equal
 
-
-from .. import load, save
-from ..io import get_example_data, get_example_data_path
+from holopy.core.file_io import get_example_data, get_example_data_path, load, save
 
 # tests should fail if they give warnings
 import warnings

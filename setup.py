@@ -58,7 +58,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('holopy')
     config.add_subpackage('holopy.core')
     config.add_subpackage('holopy.core.process')
-    config.add_subpackage('holopy.core.io')
+    config.add_subpackage('holopy.core.file_io')
     config.add_subpackage('holopy.core.third_party')
     config.add_subpackage('holopy.core.tests')
     config.add_subpackage('holopy.propagation')

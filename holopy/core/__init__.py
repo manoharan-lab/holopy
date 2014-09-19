@@ -42,6 +42,6 @@ from marray import (Marray, Image, Schema, ImageSchema, Volume,
                     VolumeSchema, VectorGrid, VectorGridSchema,
                     subimage)
 from metadata import Optics, Grid, Angles, UnevenGrid
-from io import load, load_image, save
+from file_io import load, load_image, save
 import process
 import helpers
