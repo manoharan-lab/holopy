@@ -519,6 +519,27 @@ class ImageSchema(RegularGridSchema):
     def size(self):
         return self.shape[0]*self.shape[1]
 
+@_describe_init_signature
+class ImageSequence(ImageSchema):
+    """A sequence of images (usually a timeseries)
+
+    Backed by pims or an hdf5 file, these images are only loaded into memory
+    on demand, so you can safely work with long series.
+
+    {attrs}
+
+    """
+    def __init__(self, arr, spacing=None, optics=None,
+                 origin=np.zeros(3), metadata={}, **kwargs):
+        self.arr = arr
+        call_super_init(ImageSequence, self, consumed=['arr'])
+
+    def __getitem__(self, val):
+        return self.arr['images'][val]
+
+    def get_frame(self, n):
+        return self.arr['images'][..., n]
+
 
 @_describe_init_signature
 class Image(RegularGrid, ImageSchema):
