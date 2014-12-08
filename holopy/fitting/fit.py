@@ -35,6 +35,7 @@ from .minimizer import Minimizer, Nmpfit
 import numpy as np
 from ..core.marray import Schema
 
+import pandas as pd
 from copy import copy, deepcopy
 
 def fit(model, data, minimizer=Nmpfit, random_subset=None):
@@ -155,6 +156,20 @@ class FitResult(HoloPyObject):
             p.guess = self.parameters[name]
         return nextmodel
 
+    def DataFrame_row(self):
+        r = self.summary()
+        md = copy(self.minimization_details.__dict__)
+        unneeded = 'ptied', 'qanytied', 'machar'
+        for p in unneeded:
+            del md[p]
+        md['covar'] = pd.DataFrame(md['covar'])
+        md['params'] = pd.Series(md['params'])
+        md['perror'] = pd.Series(md['perror'])
+        r['covar'] = md['covar']
+        r['minimization_details'] = md
+        return pd.DataFrame([r])
+
+
     @classmethod
     def from_summary(cls, summary, scatterer_cls):
         """
@@ -178,6 +193,7 @@ class FitResult(HoloPyObject):
 
     summary_misc = ['rsq', 'chisq', 'time', 'converged', 'niter']
 
+    @property
     def niter(self):
         # TODO: have this correctly pull number of iterations from
         # non-nmpfit minimizers.

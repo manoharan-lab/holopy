@@ -35,6 +35,7 @@ from .holopy_object import HoloPyObject
 from .metadata import Angles, Positions
 from .helpers import _ensure_pair, _ensure_array, dict_without, ensure_3d, is_none
 import inspect
+import h5py
 
 def zeros_like(obj, dtype=None):
     """
@@ -501,6 +502,7 @@ class ImageSchema(RegularGridSchema):
         if shape is not None:
             shape = _ensure_pair(shape)
 
+
         # legacy code.  We have allowed specifying spacing in the optics, I am
         # trying to depricate that now, but this will keep it working as people
         # expect.
@@ -531,14 +533,28 @@ class ImageSequence(ImageSchema):
     """
     def __init__(self, arr, spacing=None, optics=None,
                  origin=np.zeros(3), metadata={}, **kwargs):
+        if isinstance(arr, h5py._hl.files.File):
+            self.file = arr
+            arr = arr['images']
         self.arr = arr
         call_super_init(ImageSequence, self, consumed=['arr'])
 
+    @property
+    def shape(self):
+        return self.arr.shape
+
     def __getitem__(self, val):
-        return self.arr['images'][val]
+        return RectangularGrid(self.arr[val], spacing=self.spacing,
+                               optics=self.optics)
 
     def get_frame(self, n):
-        return self.arr['images'][..., n]
+
+        return Image(self.arr[..., n], spacing=self.spacing[:2],
+                     optics=self.optics)
+
+    def __iter__(self):
+        for i in range(self.arr.shape[2]):
+            yield self.get_frame(i)
 
 
 @_describe_init_signature
