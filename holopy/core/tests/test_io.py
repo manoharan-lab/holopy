@@ -30,6 +30,7 @@ from nose.plugins.attrib import attr
 from numpy.testing import assert_raises, assert_equal
 import numpy as np
 from holopy.core.io import save_image, load_image
+from holopy.core.holopy_object import Serializable
 import yaml
 
 @attr('fast')
@@ -154,3 +155,9 @@ Items are not equal:
             raise AssertionError("You're probably running a 32 bit OS.  Writing and reading files with integers migth be buggy on 32 bit OS's, we don't think it will lead to data loss, but we make no guarantees'. If you see this on 64 bit operating systems, please let us know by filing a bug.")
         else:
             raise err
+
+    class S(Serializable):
+        def __init__(self, a):
+            self.a = a
+
+    assert yaml.dump(S('a')) == '!S {a: a}\n'
