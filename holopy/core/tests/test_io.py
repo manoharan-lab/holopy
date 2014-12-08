@@ -29,7 +29,6 @@ import warnings
 from nose.plugins.attrib import attr
 from numpy.testing import assert_raises, assert_equal
 import numpy as np
-from holopy.core.errors import LoadError
 from holopy.core.io import save_image, load_image
 import yaml
 
@@ -124,8 +123,6 @@ def test_non_tiff():
     load(os.path.join(doc_images, 'image_5Particle_Hologram.jpg'))
     load(os.path.join(doc_images, 'ReconVolume_mlab_5Particle_Hologram.png'))
 
-    assert_raises(LoadError, load_image, os.path.join(doc_images,
-                                                      'image_5Particle_Hologram.jpg'), 4)
 
 # test a number of little prettying up of yaml output that we do for
 # numpy types

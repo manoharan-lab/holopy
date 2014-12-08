@@ -26,14 +26,13 @@ from __future__ import division
 import warnings
 import exceptions
 
-from ..core.errors import Error
-
 class InvalidScatterer(Exception):
     def __init__(self, scatterer, message):
         self.scatterer = scatterer
         super(InvalidScatterer, self).__init__(message)
 
-class OverlapWarning(exceptions.UserWarning):
+
+class OverlapWarning(exceptions. UserWarning):
     def __init__(self, scatterer, overlaps):
         self.scatterer = scatterer
         self.overlaps = overlaps
@@ -42,52 +41,46 @@ class OverlapWarning(exceptions.UserWarning):
                                                               self.overlaps)
 warnings.simplefilter('always', OverlapWarning)
 
-class ScattererDefinitionError(Error):
+
+class ScattererDefinitionError(Exception):
     def __init__(self, message, scatterer):
         self.scatterer = scatterer
-        super(ScattererDefinitionError, self).__init__(message)
-    def __str__(self):
-        return ("Error defining scatterer object of type " +
-                self.scatterer.__class__.__name__ +
-                ".\n" + self.message)
+        super(ScattererDefinitionError, self).__init__(
+            "Error defining scatterer object of type " +
+            self.scatterer.__class__.__name__ +
+            ".\n" + message)
 
-class TheoryNotCompatibleError(Error):
-    def __init__(self, theory, scatterer, message = None):
+
+class TheoryNotCompatibleError(Exception):
+    def __init__(self, theory, scatterer, reason=None):
         self.theory = theory
         self.scatterer = scatterer
-        super(TheoryNotCompatibleError, self).__init__(message)
-    def __str__(self):
-        if self.message is None:
-            return ("The implementation of the " +
-                    self.theory.__class__.__name__ +
-                    " scattering theory doesn't know how to handle " +
-                    "scatterers of type " +
+        message = (self.theory.__class__.__name__ +
+                   " scattering theory can't handle scatterers of type " +
                     self.scatterer.__class__.__name__)
-        else:
-            return ("The implementation of the " +
-                    self.theory.__class__.__name__ +
-                    " scattering theory doesn't know how to handle " +
-                    "scatterers of type " +
-                    self.scatterer.__class__.__name__ +
-                    " because: " + self.message)
+        if reason is not None:
+            message += " because: " + message
+        super(TheoryNotCompatibleError, self).__init__(message)
 
-class UnrealizableScatterer(Error):
-    def __init__(self, theory, scatterer, message):
+
+class UnrealizableScatterer(Exception):
+    def __init__(self, theory, scatterer, reason=None):
         self.theory = theory
         self.scatterer = scatterer
-        super(UnrealizableScatterer, self).__init__(message)
-    def __str__(self):
-        return ("Cannot compute scattering with "+ self.theory.__class__.__name__
+        message = ("Cannot compute scattering with "+ self.theory.__class__.__name__
                 + " scattering theory for a scatterer of type " +
-                self.scatterer.__class__.__name__ + " because: " + self.message)
+                self.scatterer.__class__.__name__)
+        if reason is not None:
+            message += ' because: ' + reason
+        super(UnrealizableScatterer, self).__init__(message)
 
-class ModelInputError(Error):
+class ModelInputError(Exception):
     pass
 
-class NoCenter(Error):
+class NoCenter(Exception):
     pass
 
-class NoPolarization(Error):
+class NoPolarization(Exception):
     pass
 
 class MultisphereFieldNaN(UnrealizableScatterer):

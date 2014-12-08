@@ -41,9 +41,7 @@ import warnings
 from copy import copy
 import json
 from scipy.misc import fromimage, bytescale
-from holopy.core.errors import Error
 from holopy.core.third_party.tifffile import TIFFfile
-from holopy.core.errors import LoadError
 from holopy.core import Image
 
 def save_image(filename, im, scaling='auto', depth=8):
@@ -204,8 +202,6 @@ def _read_tiff(filename):
         tif.close()
         if width == height:
             arr = _read_tiff_12bit(filename, height)
-        else:
-            raise NotImplementedError("Read non-square 12 bit tiff")
     else:
         # use the tifffile representation
         arr = tif.asarray().astype('d')

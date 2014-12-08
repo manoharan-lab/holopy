@@ -62,14 +62,14 @@ def test_single_sphere():
 
     # large radius (calculation not attempted because it would take forever
     assert_raises(UnrealizableScatterer, Mie.calc_holo, Sphere(r=1, n = 1.59, center = (5,5,5)), xschema)
-    
+
 @attr('fast')
 def test_farfield_holo():
-    # Tests that a far field calculation gives a hologram that is 
+    # Tests that a far field calculation gives a hologram that is
     # different from a full radial dependence calculation, but not too different
     holo_full = Mie.calc_holo(sphere, xschema, scaling=scaling_alpha)
     holo_far = Mie(False,False).calc_holo(sphere, xschema, scaling=scaling_alpha)
-    
+
 
     # the two arrays should not be equal
     try:
@@ -82,7 +82,7 @@ def test_farfield_holo():
 
 
     # but their max and min values should be close
-    assert_almost_equal(holo_full.max(), holo_far.max(), 1, 
+    assert_almost_equal(holo_full.max(), holo_far.max(), 1,
                         "Near and Far field holograms too different")
     assert_almost_equal(holo_full.min(), holo_far.min(), 1,
                         "Near and Far field holograms too different")
@@ -121,9 +121,8 @@ def test_Mie_multiple():
     el = Ellipsoid(n = 1.59, r = (1e-6, 2e-6, 3e-6), center=[8e-6,5e-6,5e-6])
     with assert_raises(TheoryNotCompatibleError) as cm:
         thry.calc_field(el, schema)
-    assert_equal(str(cm.exception), "The implementation of the Mie scattering "
-                 "theory doesn't know how to handle scatterers of type "
-                 "Ellipsoid")
+    assert_equal(str(cm.exception), "Mie scattering theory can't handle "
+                 "scatterers of type Ellipsoid")
 
     assert_raises(TheoryNotCompatibleError, Mie.calc_field, el, schema)
     assert_raises(TheoryNotCompatibleError, Mie.calc_intensity,
