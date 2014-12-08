@@ -73,6 +73,12 @@ def test_image_io():
     l = load(filename+'.tif')
     assert_obj_close(l, holo)
 
+    # check saving 16 bit
+    filename = os.path.join(t, 'image0003')
+    save_image(filename, holo, scaling=None, depth=16)
+    l = load(filename+'.tif')
+    assert_obj_close(l, holo)
+
     # test that yaml save works corretly with a string instead of a file
     filename = os.path.join(t, 'image0001.yaml')
     save(filename, holo)

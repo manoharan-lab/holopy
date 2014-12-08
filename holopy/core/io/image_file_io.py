@@ -31,7 +31,7 @@ import scipy as sp
 # Hopefully this will clean up once we switch to pillow
 try:
     import PIL.Image as PILImage
-except ImportError:
+except ImportError: # pragma: no cover
     try:
         import Image as PILImage
     except ImportError:
