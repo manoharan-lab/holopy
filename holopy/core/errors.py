@@ -24,41 +24,13 @@ Error classes used in holopy
 from __future__ import division
 
 
-
-class Error(Exception):
-    def __init__(self, message = ""):
-        self.message = message
-    def __str__(self):
-        return self.message
-
-class LoadError(Error):
+class LoadError(Exception):
     def __init__(self, filename, message):
         self.filename = filename
-        super(LoadError, self).__init__(message)
-    def __str__(self):
-        return "Error loading file " + self.filename + ": " + self.message
+        super(LoadError, self).__init__("Error loading file " + self.filename + ": " + self.message)
 
-class NotImplementedError(Error):
-    def __str__(self):
-        return "Capability not implemented: " + self.message
-
-class OpticsError(Error):
-    def __str__(self):
-        return "Optics instance not specified! " + self.message
-
-class ImageError(Error):
-    def __str__(self):
-        return "Faulty image: " + self.message
-
-
-class PixelScaleNotSpecified(Exception):
-    def __init__(self):
-        pass
-    def __str__(self):
-        return ("Pixel scale not specified in Optics instance.")
-
-class InvalidSelection(Error):
+class BadImage(Exception):
     pass
 
-class UnspecifiedPosition(Error):
+class UnspecifiedPosition(Exception):
         pass

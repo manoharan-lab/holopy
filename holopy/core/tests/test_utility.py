@@ -18,9 +18,14 @@
 
 import numpy as np
 from numpy.testing import assert_equal
+from nose.tools import assert_raises
 from nose.plugins.attrib import attr
+import tempfile
+import os
+import shutil
 
-from ..helpers import _ensure_array, coord_grid
+from holopy.core.helpers import (_ensure_array, coord_grid, ensure_listlike,
+                                 mkdir_p, ensure_3d)
 
 
 @attr('fast')
@@ -31,9 +36,10 @@ def test_ensure_array():
 
 @attr('fast')
 def test_coord_grid():
-    assert_equal(coord_grid(([0,5],[0,5],[0,5])).shape, (5,5,5,3))
-    assert_equal(coord_grid(([0,1],[0,1],[0,1]), .2).shape, (5, 5, 5, 3))
-    assert_equal(coord_grid(([0,1],[0,1],[0,1]), .5),
+    assert_equal(coord_grid(([0, 5], [0, 5], [0, 5])).shape, (5, 5, 5, 3))
+    assert_equal(coord_grid((5, 5, 5)).shape, (5, 5, 5, 3))
+    assert_equal(coord_grid(([0, 1], [0, 1], [0, 1]), .2).shape, (5, 5, 5, 3))
+    assert_equal(coord_grid(([0, 1], [0, 1], [0, 1]), .5),
                  np.array([[[[ 0. ,  0. ,  0. ],
                              [ 0. ,  0. ,  0.5]],
                             [[ 0. ,  0.5,  0. ],
@@ -42,3 +48,15 @@ def test_coord_grid():
                              [ 0.5,  0. ,  0.5]],
                             [[ 0.5,  0.5,  0. ],
                              [ 0.5,  0.5,  0.5]]]]))
+
+def test_ensure_listlike():
+    assert ensure_listlike(None) == []
+
+def test_ensure3d():
+    assert_raises(Exception, ensure_3d, [1])
+
+def test_mkdir_p():
+    tempdir = tempfile.mkdtemp()
+    mkdir_p(os.path.join(tempdir, 'a', 'b'))
+    mkdir_p(os.path.join(tempdir, 'a', 'b'))
+    shutil.rmtree(tempdir)

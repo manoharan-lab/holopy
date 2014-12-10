@@ -26,7 +26,7 @@ or detrending
 """
 from __future__ import division
 
-from ..errors import ImageError
+from ..errors import BadImage
 
 
 import scipy
@@ -95,7 +95,7 @@ def zero_filter(image):
         delta_cols = zero_pix[1] - np.roll(zero_pix[1], 1)
         if ((1 in delta_rows[np.where(delta_cols == 0)]) or
             (1 in delta_cols[np.where(delta_rows == 0)])):
-            raise ImageError('adjacent dead pixels')
+            raise UnusableImage('Image has adjacent dead pixels, cannot remove dead pixels')
 
     for row, col in zip(zero_pix[0], zero_pix[1]):
         # in the bulk

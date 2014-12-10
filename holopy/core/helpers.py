@@ -76,7 +76,7 @@ def ensure_3d(x):
         A coordinate that has 3 elements
     """
     if len(x) not in [2, 3]:
-        raise Error("{0} cannot be interpreted as a coordinate")
+        raise Exception("{0} cannot be interpreted as a coordinate")
     if len(x) == 2:
         return np.append(x, 0)
     else:
@@ -87,16 +87,13 @@ def mkdir_p(path):
     Equivalent to mkdir -p at the shell, this function makes a
     directory and its parents as needed, silently doing nothing if it
     exists.
-
-    Mainly a convenience function for including in scripts that crunch
-    through a lot of files.
     '''
     try:
         os.makedirs(path)
     except OSError as exc:
         if exc.errno == errno.EEXIST:
             pass
-        else: raise
+        else: raise # pragma: no cover
 
 def coord_grid(bounds, spacing=None):
     """
@@ -110,10 +107,6 @@ def coord_grid(bounds, spacing=None):
         Spacing between points, or if complex, number of points along each
         dimension. If spacing is not provided, then bounds should be integers,
         and coord_grid will return integer indexs in that range
-    exact_bounds : bool
-        If True (default) prefer having the bounds right at the cost of a small
-        change in spacing, if False prefer having the spacing right at the cost of
-        missing exact bounds
     """
     bounds = np.array(bounds)
     if bounds.ndim == 1:

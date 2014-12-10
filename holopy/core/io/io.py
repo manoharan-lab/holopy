@@ -29,7 +29,6 @@ from holopy.core.io.image_file_io import load_image, save_image
 
 from holopy.core.marray import Image, arr_like
 from holopy.core.metadata import Optics
-from holopy.core.errors import Error
 
 
 def load(inf, spacing = None, optics = None):
