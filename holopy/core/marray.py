@@ -544,17 +544,33 @@ class ImageSequence(ImageSchema):
         return self.arr.shape
 
     def __getitem__(self, val):
-        return RectangularGrid(self.arr[val], spacing=self.spacing,
+        return RegularGrid(self.arr[val], spacing=self.spacing,
                                optics=self.optics)
 
-    def get_frame(self, n):
+    @property
+    def image_spacing(self):
+        if self.spacing is not None:
+            return self.spacing[:2]
+        else:
+            return None
 
-        return Image(self.arr[..., n], spacing=self.spacing[:2],
+    def get_frame(self, n):
+        return Image(self.arr[..., n], spacing=self.image_spacing,
                      optics=self.optics)
 
     def __iter__(self):
         for i in range(self.arr.shape[2]):
             yield self.get_frame(i)
+
+    def mean(self, chunksize=100):
+        i = 0
+        sum = 0
+        while i + chunksize < self.shape[2]:
+            sum += self.arr[..., i:i+chunksize].sum(2)
+            i += chunksize
+        sum += self.arr[..., i:].sum(2)
+        return Image(sum/self.shape[2], spacing=self.image_spacing, optics=self.optics)
+
 
 
 @_describe_init_signature

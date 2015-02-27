@@ -25,7 +25,11 @@ Routine for fitting a time series of holograms to an exact solution
 from tempfile import NamedTemporaryFile
 import pandas as pd
 from holopy.fitting import fit as fit_single
+from holopy.fitting import FitResult
 import os
+import numpy as np
+from holopy.core.process import normalize
+from holopy.core import subimage
 
 #default preprocessing function
 def div_normalize(holo, bg, df, model):
@@ -65,14 +69,28 @@ class SeriesResult(object):
         if file is None:
             file = NamedTemporaryFile
             self.file = file.name
+        self.rows = 0
 
         self.store = pd.HDFStore(file)
 
-    def append(self, result):
-        self.store.append('fit_result', result.DataFrame_row())
+    # __enter__ and __exit__ let SeriesResult behave properly in a
+    # context manager and make sure the HDFStore gets properly flushed
+    # and closed
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.store.flush()
+        self.store.close()
+
+    def append(self, result, flush=False):
+        self.store.append('fit_result', pd.DataFrame([result.summary()], [self.rows]))
+        self.rows += 1
+        if flush:
+            self.store.flush()
 
     def __getitem__(self, v):
-        self.store.select('fit_result')[v]
+        return self.store.select('fit_result').iloc[v]
 
     def save(self, name):
         self.store.flush()
@@ -83,18 +101,19 @@ class SeriesResult(object):
 def fit(model, data, bg=None, df=None, output_file=None,
         preprocess_func=div_normalize, update_func=update_all, restart=False,
         **kwargs):
-    if os.path.splitext(output_file)[1] not in ['.h5', '.hdf5']:
+    if (output_file is not None and
+        os.path.splitext(output_file)[1] not in ['.h5', '.hdf5']):
         output_file += '.h5'
-    results = SeriesResult(output_file)
-    if isinstance(bg, basestring):
-        bg = load(bg, spacing=data_spacing, optics=data_optis)
-    if isinstance(df, basestring):
-        df = load(df, spacing=data_spacing, optics=data_optics)
+    with SeriesResult(output_file) as results:
+        if isinstance(bg, basestring):
+            bg = load(bg, spacing=data_spacing, optics=data_optis)
+        if isinstance(df, basestring):
+            df = load(df, spacing=data_spacing, optics=data_optics)
 
-    for i, frame in enumerate(data):
-        imagetofit = preprocess_func(frame, bg, df, model)
-        result = fit_single(model, imagetofit, **kwargs)
-        results.append(fit_single(model, imagetofit, **kwargs))
-        print("Fit frame {}, rsq={}".format(i, results.rsq))
+        for i, frame in enumerate(data):
+            imagetofit = preprocess_func(frame, bg, df, model)
+            result = fit_single(model, imagetofit, **kwargs)
+            results.append(fit_single(model, imagetofit, **kwargs), True)
+            print("Fit frame {}, rsq={}".format(i, result.rsq))
 
-    return results
+        return results

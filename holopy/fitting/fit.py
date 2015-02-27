@@ -165,8 +165,9 @@ class FitResult(HoloPyObject):
         md['covar'] = pd.DataFrame(md['covar'])
         md['params'] = pd.Series(md['params'])
         md['perror'] = pd.Series(md['perror'])
-        r['covar'] = md['covar']
-        r['minimization_details'] = md
+        # TODO: figure out how to save covar in hdf5
+        #r['covar'] = md['covar']
+        #r['minimization_details'] = md
         return pd.DataFrame([r])
 
 
@@ -183,10 +184,13 @@ class FitResult(HoloPyObject):
         summary : dict
             A dict as from cls.summary containing information about a fit.
         """
-        summary = copy(summary)
+        summary = dict(summary)
         misc = {}
-        for key in cls.summary_misc[:-1]:
+        for key in cls.summary_misc:
             misc[key] = summary.pop(key, None)
+        # TODO: Need to get these two stored correctlyish
+        summary.pop('alpha', None)
+        misc.pop('niter', None)
         scatterer = scatterer_cls.from_parameters(summary)
         return cls(scatterer.parameters, scatterer, model=None, minimizer=None,
                    minimization_details=None, **misc)
