@@ -23,10 +23,11 @@ import numpy as np
 
 from nose.plugins.attrib import attr
 from numpy.testing import assert_equal
-from ...scattering.theory import Mie
-from ...scattering.scatterer import Sphere, Spheres, Scatterer
-from .. import fit, par, Model, ComplexParameter, Parametrization
-from ...core.tests.common import assert_obj_close, get_example_data
+from holopy.scattering.theory import Mie
+from holopy.scattering.scatterer import Sphere, Spheres, Scatterer
+from holopy.fitting import fit, par, Model, ComplexParameter, Parametrization
+from holopy.core.tests.common import assert_obj_close, get_example_data
+from holopy.core.tests.common import assert_read_matches_write
 
 @attr('fast')
 def test_naming():
@@ -36,9 +37,9 @@ def test_naming():
         n**2+m
         return fake_sph
     parm = Parametrization(makeScatterer, [par(limit=4),par(2, [1,5])])
-    
+
     assert_equal(parm._fixed_params,{None: 4})
-    
+
 @attr('fast')
 def test_Get_Alpha():
 
@@ -50,12 +51,12 @@ def test_Get_Alpha():
     sc = Spheres([Sphere(n = 1.58, r = par(0.5e-6), center = np.array([10., 10., 20.])),
               Sphere(n = 1.58, r = par(0.5e-6), center = np.array([9., 11., 21.]))])
     model2 = Model(sc, Mie.calc_holo)
-              
+
     assert_equal(model.get_alpha(model.parameters).guess, 0.7)
     assert_equal(model.get_alpha(model.parameters).name, 'alpha')
     assert_equal(model2.get_alpha(model2.parameters), 1.0)
-    
-    
+
+
 @attr('fast')
 def test_Tying():
 
@@ -64,12 +65,12 @@ def test_Tying():
     sc = Spheres([Sphere(n = n1, r = par(0.5e-6), center = np.array([10., 10., 20.])),
               Sphere(n = n1, r = par(0.5e-6), center = np.array([9., 11., 21.]))])
     model = Model(sc, Mie.calc_holo, alpha = par(.7,[.6,1]))
-              
+
     assert_equal(model.parameters[0].guess, 1.59)
     assert_equal(model.parameters[1].guess, 5e-7)
     assert_equal(len(model.parameters),4)
-    
-    
+
+
 @attr('fast')
 def test_ComplexPar():
 
@@ -77,10 +78,10 @@ def test_ComplexPar():
     def makeScatterer(n):
         n**2
         return fake_sph
-        
+
     parm = Parametrization(makeScatterer, [ComplexParameter(real = par(1.58),imag = par(.001), name='n')])
     model = Model(parm, Mie.calc_holo, alpha = par(.7,[.6,1]))
-    
+
     assert_equal(model.parameters[0].name,'n.real')
     assert_equal(model.parameters[1].name,'n.imag')
 
@@ -110,3 +111,9 @@ def test_pullingoutguess():
     assert_equal(s.r, model.scatterer.guess.r)
     assert_equal(s.center, model.scatterer.guess.center)
 
+def test_io():
+    model = Model(Sphere(par(1)), Mie.calc_holo)
+    assert_read_matches_write(model)
+
+    model = Model(Sphere(par(1)), Mie(False).calc_holo)
+    assert_read_matches_write(model)
