@@ -36,6 +36,6 @@ The fitting module is used to:
 from fit import fit, rsq, chisq, FitResult
 from model import Model, Parametrization
 from parameter import Parameter, par, ComplexParameter
-import series
+import fit_series as series
 from fit_series import fit_series, series_guess, series_preprocess_data
 from minimizer import Nmpfit
