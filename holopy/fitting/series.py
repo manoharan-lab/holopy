@@ -30,6 +30,7 @@ import os
 import numpy as np
 from holopy.core.process import normalize
 from holopy.core import subimage
+import yaml
 
 #default preprocessing function
 def div_normalize(holo, bg, df, model):
@@ -64,7 +65,8 @@ def update_all(model, fitted_result):
     return model
 
 class SeriesResult(object):
-    def __init__(self, file=None):
+    dataset = 'fit_result'
+    def __init__(self, file=None, initial_model=None):
         self.file = file
         if file is None:
             file = NamedTemporaryFile
@@ -72,6 +74,15 @@ class SeriesResult(object):
         self.rows = 0
 
         self.store = pd.HDFStore(file)
+        if initial_model is None:
+            # See if we can get a initial_model from the data
+            try:
+                initial_model = self.storer.get_storer(dataset).attrs['initial_model']
+            except:
+                # No worries if we can't, just don't have one
+                pass
+        self.initial_model = initial_model
+
 
     # __enter__ and __exit__ let SeriesResult behave properly in a
     # context manager and make sure the HDFStore gets properly flushed
@@ -84,18 +95,28 @@ class SeriesResult(object):
         self.store.close()
 
     def append(self, result, flush=False):
-        self.store.append('fit_result', pd.DataFrame([result.summary()], [self.rows]))
+        self.store.append(dataset, pd.DataFrame([result.summary()], [self.rows]))
         self.rows += 1
+        # the dataset does not exist until we have written at least
+        # one result, so we have to add the initial_model to its
+        # metadata afterwards. The if ensures that we only add it
+        # once. It would be nice if there was a cleaner way to do
+        # this.
+        if not hasattr(self.store.get_storer(dataset).attrs, 'initial_model'):
+            self.store.get_storer(dataset).attrs.initial_model = yaml.dump(self.initial_model)
         if flush:
             self.store.flush()
 
     def __getitem__(self, v):
-        return self.store.select('fit_result').iloc[v]
+        return self.store.select(dataset).iloc[v]
 
     def save(self, name):
         self.store.flush()
         if self.file != name:
             os.renames(self.file, name)
+
+#def load_series_result(filename):
+
 
 
 def fit(model, data, bg=None, df=None, output_file=None,

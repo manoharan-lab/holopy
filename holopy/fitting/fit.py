@@ -189,7 +189,7 @@ class FitResult(HoloPyObject):
         for key in cls.summary_misc:
             misc[key] = summary.pop(key, None)
         # TODO: Need to get these two stored correctlyish
-        summary.pop('alpha', None)
+        alpha = summary.pop('alpha', None)
         misc.pop('niter', None)
         scatterer = scatterer_cls.from_parameters(summary)
         return cls(scatterer.parameters, scatterer, model=None, minimizer=None,

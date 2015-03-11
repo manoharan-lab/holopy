@@ -74,7 +74,7 @@ def load(inf, spacing = None, optics = None):
     try:
         loaded = h5py.File(inf)
         return ImageSequence(loaded, spacing=spacing, optics=optics)
-    except IOError:
+    except (IOError, AttributeError):
         pass
 
     try:
