@@ -240,6 +240,13 @@ class Model(HoloPyObject):
         if not isinstance(scatterer, Parametrization):
             scatterer = ParameterizedObject(scatterer)
         self.scatterer = scatterer
+
+        if isinstance(theory, basestring):
+            import holopy.scattering.theory as theory_module
+            kind, func = theory.split('.')
+            theory = getattr(getattr(theory_module, kind), func)
+
+
         self.theory = theory
         self.use_random_fraction = use_random_fraction
 
@@ -273,3 +280,15 @@ class Model(HoloPyObject):
         return self.theory(self.scatterer.guess, schema, alpha)
 
     # TODO: Allow a layer on top of theory to do things like moving sphere
+
+    @property
+    def _dict(self):
+        d = super(Model, self)._dict
+        theory = d['theory']
+        # if the theory is something like Mie.calc_holo, rather than
+        # Mie().calc_holo, we need to represent it differently
+        if isinstance(theory.im_class, type):
+            theory_class = theory.im_self.__name__
+            theory_func = theory.im_func.__name__
+            d['theory'] = '.'.join((theory_class, theory_func))
+        return d
