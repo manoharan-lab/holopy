@@ -25,7 +25,10 @@ import os
 import glob
 from warnings import warn
 import serialize
-import h5py
+try:
+    import h5py
+except ImportError:
+    h5py = None
 
 
 from holopy.core.io.image_file_io import load_image, save_image
@@ -69,14 +72,14 @@ def load(inf, spacing = None, optics = None):
         if isinstance(optics, dict):
             optics = Optics(**optics)
 
-    loaded_yaml = False
-    loaded_h5 = False
-    try:
-        loaded = h5py.File(inf)
-        return ImageSequence(loaded, spacing=spacing, optics=optics)
-    except (IOError, AttributeError):
-        pass
+    if h5py is not None:
+        try:
+            loaded = h5py.File(inf)
+            return ImageSequence(loaded, spacing=spacing, optics=optics)
+        except (IOError, AttributeError):
+            pass
 
+    loaded_yaml = False
     try:
         loaded = serialize.load(inf)
         loaded_yaml = True

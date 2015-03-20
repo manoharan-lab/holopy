@@ -35,7 +35,10 @@ from .holopy_object import HoloPyObject
 from .metadata import Angles, Positions
 from .helpers import _ensure_pair, _ensure_array, dict_without, ensure_3d, is_none
 import inspect
-import h5py
+try:
+    import h5py
+except ImportError:
+    h5py = None
 
 def zeros_like(obj, dtype=None):
     """
