@@ -534,13 +534,13 @@ class ImageSequence(ImageSchema):
     {attrs}
 
     """
-    def __init__(self, arr, spacing=None, optics=None,
+    def __init__(self, h5file, spacing=None, optics=None,
                  origin=np.zeros(3), metadata={}, **kwargs):
-        if isinstance(arr, h5py._hl.files.File):
-            self.file = arr
-            arr = arr['images']
-        self.arr = arr
-        call_super_init(ImageSequence, self, consumed=['arr'])
+        if not isinstance(h5file, h5py._hl.files.File):
+            raise Error("You did not provide a proper hdf5 file")
+        self.file = h5file
+        self.arr = h5file['images']
+        call_super_init(ImageSequence, self, consumed=['h5file'])
 
     @property
     def shape(self):
@@ -556,6 +556,9 @@ class ImageSequence(ImageSchema):
             if self.arr.attrs.get('layout') == 'txy':
                 return self.spacing[1:]
             else:
+                # Assume the layout is 'xyt' because this is
+                # how the legacy camera controller code saved
+                # files.
                 return self.spacing[:2]
         else:
             return None
