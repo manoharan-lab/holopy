@@ -553,7 +553,10 @@ class ImageSequence(ImageSchema):
     @property
     def image_spacing(self):
         if self.spacing is not None:
-            return self.spacing[:2]
+            if self.arr.attrs.get('layout') == 'txy':
+                return self.spacing[1:]
+            else:
+                return self.spacing[:2]
         else:
             return None
 
