@@ -21,6 +21,8 @@ Routine for fitting a time series of holograms to an exact solution
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 
 """
+from __future__ import division
+
 from tempfile import NamedTemporaryFile
 import pandas as pd
 from holopy.fitting import fit as fit_single
@@ -41,6 +43,8 @@ def div_normalize(holo, bg, df, model):
         imagetofit = normalize(holo)
     return imagetofit
 
+# Alternate preprocessing function which fits to a smaller subimage centered
+# around the scatterer
 def scatterer_centered_subimage(size, recenter_at_edge=False):
     def preprocess(holo, bg, df, model):
         center = np.array(model.scatterer.guess.center[:2])/holo.spacing
@@ -121,6 +125,35 @@ class SeriesResult(object):
 def fit(model, data, bg=None, df=None, output_file=None,
         preprocess_func=div_normalize, update_func=update_all, restart=False,
         **kwargs):
+    """
+    fit a model to a timeseries of data.
+
+    Parameters
+    ----------
+    model : :class:`~holopy.fitting.model.Model` object
+        A model describing the scattering system which leads to your data and
+        the parameters to vary to fit it to the data
+    data : :class:`~holopy.core.marray.ImageSequence` object
+        The data to fit
+    bg : :class:`~holopy.core.marray.Image` object
+        A background image to apply to each frame before fitting
+    df : :class:`~holopy.core.marray.Image` object
+        A darkfield image to apply to each frame before fitting
+    preprocess_func : function(frame, bg, df, model)
+        A function to preprocess the data before fitting each frame. It will get
+        as aguments the raw frame, the bg, df, and the model. The default is
+        to do basic background/darkfield division and then normalize
+    update_func : function(model, result)
+        A function to produce the initial guess for the next frame. It will get
+        as arguments the model and result from the last frame.
+    **kwargs : various
+        Keyword arguments to pass through to the minimizer
+    Returns
+    -------
+    result : :class:`SeriesResult`
+        an object containing the best fit parameters and information about the fit
+
+    """
     if (output_file is not None and
         os.path.splitext(output_file)[1] not in ['.h5', '.hdf5']):
         output_file += '.h5'
@@ -135,5 +168,6 @@ def fit(model, data, bg=None, df=None, output_file=None,
             result = fit_single(model, imagetofit, **kwargs)
             results.append(fit_single(model, imagetofit, **kwargs), True)
             print("Fit frame {}, rsq={}".format(i, result.rsq))
+            model = update_func(model, result)
 
         return results
