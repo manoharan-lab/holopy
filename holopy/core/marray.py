@@ -550,29 +550,16 @@ class ImageSequence(ImageSchema):
         return RegularGrid(self.arr[val], spacing=self.spacing,
                                optics=self.optics)
 
-    @property
-    def image_spacing(self):
-        if self.spacing is not None:
-            if self.arr.attrs.get('layout') == 'txy':
-                return self.spacing[1:]
-            else:
-                # Assume the layout is 'xyt' because this is
-                # how the legacy camera controller code saved
-                # files.
-                return self.spacing[:2]
-        else:
-            return None
-
     def get_frame(self, n):
         if self.arr.attrs.get('layout') == 'txy':
             return Image(self.arr[n],
-                    spacing=self.image_spacing,
+                    spacing=self.spacing,
                     optics=self.optics)
         else:
             # Assume the layout is 'xyt' because this is
             # how the legacy camera controller code saved
             # files.
-            return Image(self.arr[..., n], spacing=self.image_spacing,
+            return Image(self.arr[..., n], spacing=self.spacing,
                      optics=self.optics)
 
     def __iter__(self):
@@ -595,7 +582,7 @@ class ImageSequence(ImageSchema):
             sum += self.arr[..., i:].sum(2)
             img_mean = sum/self.shape[2]
 
-        return Image(img_mean, spacing=self.image_spacing, optics=self.optics)
+        return Image(img_mean, spacing=self.spacing, optics=self.optics)
 
 
 
