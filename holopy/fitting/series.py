@@ -49,14 +49,20 @@ def scatterer_centered_subimage(size, recenter_at_edge=False):
     def preprocess(holo, bg, df, model):
         center = np.array(model.scatterer.guess.center[:2])/holo.spacing
         try:
-            return normalize(subimage(holo/bg, center, size))
+            return div_normalize(subimage(holo, center, size),
+                                 subimage(bg, center, size),
+                                 subimage(df, center, size),
+                                 model)
         except IndexError:
             if not recenter_at_edge:
                 raise
             new_center = np.array(model.scatterer.guess.center[:2])
             new_center -= np.clip(new_center-np.array(size)/2, -np.inf, 0)
             new_center += np.clip(holo.shape[:2]-(new_center + np.array(size)/2), -np.inf, 0)
-            return normalize(subimage(holo/bg, new_center, size))
+            return div_normalize(subimage(holo, center, size),
+                                 subimage(bg, center, size),
+                                 subimage(df, center, size),
+                                 model)
 
     return preprocess
 
