@@ -564,7 +564,7 @@ class ImageSequence(ImageSchema):
             return None
 
     def get_frame(self, n):
-        if self.arr.attrs.get('layout') == 'txy':
+        if self.arr.attrs.get('layout') == 'TX':
             return Image(self.arr[n],
                     spacing=self.image_spacing,
                     optics=self.optics)
@@ -582,11 +582,20 @@ class ImageSequence(ImageSchema):
     def mean(self, chunksize=100):
         i = 0
         sum = 0
-        while i + chunksize < self.shape[2]:
-            sum += self.arr[..., i:i+chunksize].sum(2)
-            i += chunksize
-        sum += self.arr[..., i:].sum(2)
-        return Image(sum/self.shape[2], spacing=self.image_spacing, optics=self.optics)
+        if self.arr.attrs.get('layout') == 'txy':
+            while i + chunksize < self.shape[0]:
+                sum += self.arr[i:i+chunksize, ...].sum(0)
+                i += chunksize
+            sum += self.arr[i:, ...].sum(0)
+            img_mean = sum/self.shape[0]
+        else:
+            while i + chunksize < self.shape[2]:
+                sum += self.arr[..., i:i+chunksize].sum(2)
+                i += chunksize
+            sum += self.arr[..., i:].sum(2)
+            img_mean = sum/self.shape[2]
+
+        return Image(img_mean, spacing=self.image_spacing, optics=self.optics)
 
 
 
