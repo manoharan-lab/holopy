@@ -564,7 +564,7 @@ class ImageSequence(ImageSchema):
             return None
 
     def get_frame(self, n):
-        if self.arr.attrs.get('layout') == 'TX':
+        if self.arr.attrs.get('layout') == 'txy':
             return Image(self.arr[n],
                     spacing=self.image_spacing,
                     optics=self.optics)
