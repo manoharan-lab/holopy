@@ -555,7 +555,15 @@ class ImageSequence(ImageSchema):
             return None
 
     def get_frame(self, n):
-        return Image(self.arr[..., n], spacing=self.image_spacing,
+        if self.arr.attrs.get('layout') == 'txy':
+            return Image(self.arr[n],
+                    spacing=self.image_spacing,
+                    optics=self.optics)
+        else:
+            # Assume the layout is 'xyt' because this is
+            # how the legacy camera controller code saved
+            # files.
+            return Image(self.arr[..., n], spacing=self.image_spacing,
                      optics=self.optics)
 
     def __iter__(self):
