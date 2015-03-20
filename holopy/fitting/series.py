@@ -19,7 +19,6 @@
 Routine for fitting a time series of holograms to an exact solution
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 
 """
 from tempfile import NamedTemporaryFile
