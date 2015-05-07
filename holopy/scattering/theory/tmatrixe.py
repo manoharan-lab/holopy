@@ -62,7 +62,7 @@ class TmatrixE(ScatteringTheory):
     Does not handle near fields.  This introduces ~5% error at 10 microns.
     """
     def __init__(self):
-        super(Tmatrix, self).__init__()
+        super(TmatrixE, self).__init__()
 
     def _run_tmat(self, scatterer, optics, temp_dir):
         cmd = ['./S.exe']
