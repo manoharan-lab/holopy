@@ -51,3 +51,8 @@ try:
     from tmatrix import Tmatrix
 except ImportError:
     pass
+
+try:
+    from tmatrixe import TmatrixE
+except ImportError:
+    pass
