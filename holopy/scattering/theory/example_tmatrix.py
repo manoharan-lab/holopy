@@ -8,9 +8,11 @@ schema = ImageSchema(shape = 200, spacing = .1,
                      optics = Optics(wavelen = .660, index = 1.33,
                                      polarization = [1,0]))
 
-ps = Spheroid(n = 1.585, r = [.4,1.5], rotation=[pi/2, 2], center = [10,10,20])
-holo = DDA.calc_holo(ps,schema)
-hp.show(holo)
+#ps = Spheroid(n = 1.585, r = [.4,1.5], rotation=[pi/2, 2], center = [10,10,20])
+#holo = DDA.calc_holo(ps,schema)
+#hp.show(holo)
+
+ps = Axisymmetric(n = 1.585, r = [.4,1.5], rotation=[pi/2, 2], center = [10,10,20])
 holo = Tmatrix.calc_holo(ps,schema)
 hp.show(holo)
 

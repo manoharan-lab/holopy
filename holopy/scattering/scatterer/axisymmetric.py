@@ -62,4 +62,5 @@ class Axisymmetric(CenteredScatterer):
         self.r = r
         self.rotation = rotation
         self.center = center
+        self.shape = shape
 

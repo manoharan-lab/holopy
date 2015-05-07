@@ -223,7 +223,7 @@ C  INPUT DATA ********************************************************
       !MRR=1.2 D0
       !MRI=0.0001 D0 
       !EPS=1.00000 D0 
-      NP=-1
+      !NP=-1
       DDELT=0.001D0 
       NDGS=2
 
@@ -246,7 +246,7 @@ C  INPUT DATA ********************************************************
       READ(15,*) EPS
       READ(15,*) ALPHA
       READ(15,*) BETA
-
+      READ(15,*) NP
 
       ! # scattering angles
       READ(15,*) nScat

@@ -74,9 +74,6 @@ class Spheroid(CenteredScatterer):
     @property
     def indicators(self):
         inverserotate = np.linalg.inv(rotation_matrix(0, *self.rotation))
-        def spheroidbody(point):
-            threeaxes = np.array([self.r[0], self.r[0], self.r[1]])
-            rotatedpoint = np.dot(inverserotate, point.transpose())
-            return np.less((np.divide(rotatedpoint.transpose(),threeaxes)**2).sum(axis=1), 1)
+        threeaxes = np.array([self.r[0], self.r[0], self.r[1]])
         r = max(self.r)
-        return Indicators([spheroidbody], [[-r, r], [-r, r], [-r, r]])
+        return Indicators(lambda point: ((np.dot(inverserotate, point.reshape(-1, 3).transpose()).transpose() / threeaxes)**2).sum(-1) < 1, [[-r, r], [-r, r], [-r, r]])

@@ -8,15 +8,14 @@ C   4. Incident light is set to [1,0] polarization
 C   5. The code loops over all the angles required by Schema in HoloPy and 
 C      calculates the scattering matrices for all of these. They are for 
 C      different basis vectors to those used by HoloPy (Bohren and Huffman),
-C      but this is corrected for in HoloPy:holopy/scattering/theory/nonspherical.py
+C      but this is corrected for in HoloPy:holopy/scattering/theory/tmatrix.py
 C   6. The Phase matrix part of the calculation is removed.
 C
 C   To compile with gfortran, use the following lines after cd-ing into the
-C   directory containing S.lp.f lpd.f and ampld.par.f
+C   directory containing S.lp.f lpd.f and ampld.par.f (holopy/scattering/theory/tmatrix_doubleprecision/)
 C       gfortran -c S.lp.f lpd.f
 C       gfortran -o S.exe S.lp.o lpd.o
-C   This should create an executable, S.exe. You should provide the location
-C   of this executable to holopy/scattering/theory/tmatrix.py.
+C   This should create an executable, S.exe.
 
 C***********************************************************************************
 
@@ -224,7 +223,7 @@ C  INPUT DATA ********************************************************
       !MRR=1.2 D0
       !MRI=0.0001 D0 
       !EPS=1.00000 D0 
-      NP=-1
+      !NP=-1
       DDELT=0.001D0 
       NDGS=2
 
@@ -247,7 +246,7 @@ C  INPUT DATA ********************************************************
       READ(15,*) EPS
       READ(15,*) ALPHA
       READ(15,*) BETA
-
+      READ(15,*) NP
 
       ! # scattering angles
       READ(15,*) nScat
