@@ -62,7 +62,7 @@ class TmatrixE(ScatteringTheory):
     Does not handle near fields.  This introduces ~5% error at 10 microns.
     """
     def __init__(self):
-        super(nonspherical, self).__init__()
+        super(Tmatrix, self).__init__()
 
     def _run_tmat(self, scatterer, optics, temp_dir):
         cmd = ['./S.exe']
@@ -80,17 +80,38 @@ class TmatrixE(ScatteringTheory):
 
         angles = calc_points[:,1:] * 180/np.pi
         outf = file(os.path.join(temp_dir, 'tmatrix_tmp.inp'), 'w')
-
+ 
         # write the info into the scattering angles file in the following order:
-        outf.write(str((scatterer.r[1]*scatterer.r[0]**2)**(1/3.))+'\n')     
-        outf.write(str(schema.optics.med_wavelen)+'\n')
-        outf.write(str(scatterer.n.real/schema.optics.index)+'\n')
-        outf.write(str(scatterer.n.imag/schema.optics.index)+'\n')
-        outf.write(str(scatterer.r[0]/scatterer.r[1])+'\n')
-        outf.write(str(scatterer.rotation[1]*180/np.pi)+'\n')
-        outf.write(str(scatterer.rotation[0]*180/np.pi)+'\n')
-        outf.write(str(scatterer.shape)+'\n')
-        outf.write(str(angles.shape[0])+'\n')
+
+        if isinstance(scatterer, Sphere):
+            outf.write(str(scatterer.r)+'\n')
+            outf.write(str(schema.optics.med_wavelen)+'\n')
+            outf.write(str(scatterer.n.real/schema.optics.index)+'\n')
+            outf.write(str(scatterer.n.imag/schema.optics.index)+'\n')
+            outf.write(str(scatterer.r[0]/scatterer.r[1])+'\n')
+            outf.write(str(0)+'\n')
+            outf.write(str(0)+'\n')
+            outf.write(str(angles.shape[0])+'\n')
+        elif scatterer.shape == -1:            
+            outf.write(str((scatterer.r[1]*scatterer.r[0]**2)**(1/3.))+'\n')
+            outf.write(str(schema.optics.med_wavelen)+'\n')
+            outf.write(str(scatterer.n.real/schema.optics.index)+'\n')
+            outf.write(str(scatterer.n.imag/schema.optics.index)+'\n')
+            outf.write(str(scatterer.r[0]/scatterer.r[1])+'\n')
+            outf.write(str(scatterer.rotation[1]*180/np.pi)+'\n')
+            outf.write(str(scatterer.rotation[0]*180/np.pi)+'\n')
+            outf.write(str(scatterer.shape)+'\n')
+            outf.write(str(angles.shape[0])+'\n')
+        elif scatterer.shape == -2:            
+            outf.write(str((3/2.*scatterer.r[1]*scatterer.r[0]**2)**(1/3.))+'\n')
+            outf.write(str(schema.optics.med_wavelen)+'\n')
+            outf.write(str(scatterer.n.real/schema.optics.index)+'\n')
+            outf.write(str(scatterer.n.imag/schema.optics.index)+'\n')
+            outf.write(str(scatterer.r[0]/scatterer.r[1])+'\n')
+            outf.write(str(scatterer.rotation[1]*180/np.pi)+'\n')
+            outf.write(str(scatterer.rotation[0]*180/np.pi)+'\n')
+            outf.write(str(scatterer.shape)+'\n')
+            outf.write(str(angles.shape[0])+'\n')
 
         # Now write all the angles
         np.savetxt(outf, angles)
