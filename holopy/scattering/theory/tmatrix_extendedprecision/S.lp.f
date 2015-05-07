@@ -1,3 +1,26 @@
+C***********************************************************************************
+C   This code has been modified by Anna Wang <annawang@seas.harvard.edu> and 
+C   Christopher Chan Miller <cmiller@fas.harvard.edu> in the following ways:                                                         
+C   1. Input data is now taken from a file written by HoloPy, tmatrix_tmp.inp
+C   2. Output data is given to HoloPy in tmatrix_tmp.out
+C   3. Incident light is set to normal incidence
+C   4. Incident light is set to [1,0] polarization
+C   5. The code loops over all the angles required by Schema in HoloPy and 
+C      calculates the scattering matrices for all of these. They are for 
+C      different basis vectors to those used by HoloPy (Bohren and Huffman),
+C      but this is corrected for in HoloPy:holopy/scattering/theory/tmatrix.py
+C   6. The Phase matrix part of the calculation is removed.
+C
+C   To compile with gfortran, use the following lines after cd-ing into the
+C   directory containing S.lp.f lpd.f and ampld.par.f (holopy/scattering/theory/tmatrix_extendedprecision/)
+C       ifort -c S.lp.f lpq.f
+C       ifort -o S.exe S.lp.o lpq.o
+C   This should create an executable, S.exe.
+
+C***********************************************************************************
+
+C   Permission from Michael Mishchenko in permissions.txt.
+C   Michael Mishchenko's original comments:
 
 C   New release including the LAPACK matrix inversion procedure.
 C   We thank Cory Davis (University of Edinburgh) for pointing

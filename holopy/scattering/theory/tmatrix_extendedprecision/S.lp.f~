@@ -299,6 +299,7 @@ C  INPUT DATA ********************************************************
       READ(15,*) EPS
       READ(15,*) ALPHA
       READ(15,*) BETA
+      READ(15,*) NP
 
       ! # scattering angles
       READ(15,*) nScat
