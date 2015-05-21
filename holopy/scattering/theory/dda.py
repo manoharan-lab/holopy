@@ -124,6 +124,8 @@ class DDA(ScatteringTheory):
         cmd.extend([str(r_i/scatterer.r[0]) for r_i in scatterer.r[1:]])
         cmd.extend(['-m', str(scatterer.n.real/optics.index),
                     str(scatterer.n.imag/optics.index)])
+        cmd.extend(['-orient'])
+        cmd.extend([str(angle) for angle in scatterer.rotation])
 
         return cmd
 

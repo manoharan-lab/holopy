@@ -51,9 +51,12 @@ class Ellipsoid(CenteredScatterer):
         x, y, z semi-axes of the ellipsoid
     center : 3-tuple, list or numpy array
         specifies coordinates of center of the scatterer
+    rotation : 3-tuple, list or numpy.arry
+        specifies the Euler angle (alpha, beta, gamma) in degrees 
+        defined in a-dda manual section 8.1
     """
 
-    def __init__(self, n=None, r=None, center=None):
+    def __init__(self, n=None, r=None, center=None,rotation=(0,0,0)):
         self.n = n
 
         if np.isscalar(r) or len(r) != 3:
@@ -64,9 +67,14 @@ class Ellipsoid(CenteredScatterer):
 
         self.r = r
 
+        if np.isscalar(rotation) or len(rotation) != 3:
+            raise ScattererDefinitionError("rotation specified as {0}; "
+                                           "rotation should be "
+                                           "specified as (alpha, beta, gamma)"
+                                           "".format(rotation), self)
+        self.rotation = rotation
         super(Ellipsoid, self).__init__(center)
 
-    # TODO: does not handle rotations
     @property
     def indicators(self):
         return Indicators(lambda point: ((point / self.r) ** 2).sum(-1) < 1,
