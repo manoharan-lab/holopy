@@ -42,7 +42,7 @@ from nose.plugins.skip import SkipTest
 
 from .scatteringtheory import ScatteringTheory
 from .mie_f import mieangfuncs
-from ..scatterer import Sphere, Ellipsoid, Spheres
+from ..scatterer import Sphere, Ellipsoid, Spheres, Capsule, Cylinder, Bisphere, Sphere_builtin
 from ...core.marray import VectorGridSchema
 from ...core.helpers import _ensure_array
 
@@ -83,7 +83,8 @@ class DDA(ScatteringTheory):
     This can in principle handle any scatterer, but in practice it will need
     excessive memory or computation time for particularly large scatterers.
     """
-    def __init__(self, n_cpu = 1, max_dpl_size=None, keep_raw_calculations=False):
+    def __init__(self, n_cpu = 1, max_dpl_size=None, keep_raw_calculations=False,
+            addacmd=[]):
 
         # Check that adda is present and able to run
         try:
@@ -94,6 +95,7 @@ class DDA(ScatteringTheory):
         self.n_cpu = n_cpu
         self.max_dpl_size = max_dpl_size
         self.keep_raw_calculations = keep_raw_calculations
+        self.addacmd = addacmd
         super(DDA, self).__init__()
 
     def _run_adda(self, scatterer, optics, temp_dir):
@@ -105,9 +107,18 @@ class DDA(ScatteringTheory):
         cmd.extend(['-store_scat_grid'])
         cmd.extend(['-lambda', str(optics.med_wavelen)])
         cmd.extend(['-save_geom'])
+        cmd.extend(self.addacmd)
 
         if isinstance(scatterer, Ellipsoid):
             scat_args = self._adda_ellipsoid(scatterer, optics, temp_dir)
+        elif isinstance(scatterer, Capsule):
+            scat_args = self._adda_capsule(scatterer, optics, temp_dir)
+        elif isinstance(scatterer, Cylinder):
+            scat_args = self._adda_cylinder(scatterer, optics, temp_dir)
+        elif isinstance(scatterer, Bisphere):
+            scat_args = self._adda_bisphere(scatterer, optics, temp_dir)
+        elif isinstance(scatterer, Sphere_builtin):
+            scat_args = self._adda_sphere_builtin(scatterer, optics, temp_dir)
         else:
             scat_args = self._adda_scatterer(scatterer, optics, temp_dir)
 
@@ -127,6 +138,50 @@ class DDA(ScatteringTheory):
         cmd.extend(['-orient'])
         cmd.extend([str(angle) for angle in scatterer.rotation])
 
+        return cmd
+
+    def _adda_capsule(self, scatterer, optics, temp_dir):
+        cmd = []
+        cmd.extend(['-eq_rad', str((scatterer.h+scatterer.d)/2.0)])
+        cmd.extend(['-shape', 'capsule'])
+        cmd.extend([str(scatterer.h/scatterer.d)])
+        cmd.extend(['-m', str(scatterer.n.real/optics.index),
+                    str(scatterer.n.imag/optics.index)])
+        cmd.extend(['-orient'])
+        cmd.extend([str(angle) for angle in scatterer.rotation])
+
+        return cmd
+
+    def _adda_cylinder(self, scatterer, optics, temp_dir):
+        cmd = []
+        cmd.extend(['-eq_rad', str(scatterer.h/2.0)])
+        cmd.extend(['-shape', 'cylinder'])
+        cmd.extend([str(scatterer.h/scatterer.d)])
+        cmd.extend(['-m', str(scatterer.n.real/optics.index),
+                    str(scatterer.n.imag/optics.index)])
+        cmd.extend(['-orient'])
+        cmd.extend([str(angle) for angle in scatterer.rotation])
+
+        return cmd
+
+    def _adda_bisphere(self, scatterer, optics, temp_dir):
+        cmd = []
+        cmd.extend(['-eq_rad', str((scatterer.h+scatterer.d)/2.0)])
+        cmd.extend(['-shape', 'bisphere'])
+        cmd.extend([str(scatterer.h/scatterer.d)])
+        cmd.extend(['-m', str(scatterer.n.real/optics.index),
+                    str(scatterer.n.imag/optics.index)])
+        cmd.extend(['-orient'])
+        cmd.extend([str(angle) for angle in scatterer.rotation])
+
+        return cmd
+
+    def _adda_sphere_builtin(self, scatterer, optics, temp_dir):
+        cmd = []
+        cmd.extend(['-eq_rad', str(scatterer.r)])
+        cmd.extend(['-shape', 'sphere'])
+        cmd.extend(['-m', str(scatterer.n.real/optics.index),
+                    str(scatterer.n.imag/optics.index)])
         return cmd
 
     def _adda_scatterer(self, scatterer, optics, temp_dir):

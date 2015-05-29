@@ -17,7 +17,7 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-Defines ellipsoidal scatterers.
+Defines cylinder scatterers.
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
@@ -28,27 +28,16 @@ import numpy as np
 from .scatterer import CenteredScatterer, Indicators
 from ..errors import ScattererDefinitionError
 
-def isnumber(x):
-    try:
-        x + 1
-        return True
-    except TypeError:
-        return False
-
-def all_numbers(x):
-    return reduce(lambda rest, i: isnumber(i) and rest, x, True)
-
-
-class Ellipsoid(CenteredScatterer):
+class Bisphere(CenteredScatterer):
     """
-    Scattering object representing ellipsoidal scatterers
+    Scattering object representing bisphere scatterers
 
     Parameters
     ----------
     n : complex
         Index of refraction
-    r : float or (float, float, float)
-        x, y, z semi-axes of the ellipsoid
+    h : distance between centers
+    d : diameter
     center : 3-tuple, list or numpy array
         specifies coordinates of center of the scatterer
     rotation : 3-tuple, list or numpy.array
@@ -56,16 +45,10 @@ class Ellipsoid(CenteredScatterer):
         defined in a-dda manual section 8.1
     """
 
-    def __init__(self, n=None, r=None, center=None,rotation=(0,0,0)):
+    def __init__(self, n=None, h=None, d=None, center=None,rotation=(0,0,0)):
         self.n = n
-
-        if np.isscalar(r) or len(r) != 3:
-            raise ScattererDefinitionError("r specified as {0}; "
-                                           "r should be "
-                                           "specified as (r_x, r_y, r_z)"
-                                           "".format(center), self)
-
-        self.r = r
+        self.d = d
+        self.h = h
 
         if np.isscalar(rotation) or len(rotation) != 3:
             raise ScattererDefinitionError("rotation specified as {0}; "
@@ -73,11 +56,4 @@ class Ellipsoid(CenteredScatterer):
                                            "specified as (alpha, beta, gamma)"
                                            "".format(rotation), self)
         self.rotation = rotation
-        super(Ellipsoid, self).__init__(center)
-
-    @property
-    def indicators(self):
-        return Indicators(lambda point: ((point / self.r) ** 2).sum(-1) < 1,
-                          [[-self.r[0], self.r[0]], [-self.r[1], self.r[1]],
-                            [-self.r[2], self.r[2]]])
-
+        super(Bisphere, self).__init__(center)
