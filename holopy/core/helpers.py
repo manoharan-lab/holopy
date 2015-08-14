@@ -76,7 +76,7 @@ def ensure_3d(x):
         A coordinate that has 3 elements
     """
     if len(x) not in [2, 3]:
-        raise Exception("{0} cannot be interpreted as a coordinate")
+        raise Error("{0} cannot be interpreted as a coordinate".format(x))
     if len(x) == 2:
         return np.append(x, 0)
     else:

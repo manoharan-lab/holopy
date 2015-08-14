@@ -25,9 +25,14 @@ import os
 import glob
 from warnings import warn
 import serialize
-from holopy.core.io.image_file_io import load_image, save_image
+try:
+    import h5py
+except ImportError:
+    h5py = None
 
-from holopy.core.marray import Image, arr_like
+
+from holopy.core.io.image_file_io import load_image, save_image
+from holopy.core.marray import Image, arr_like, ImageSequence
 from holopy.core.metadata import Optics
 
 
@@ -66,6 +71,13 @@ def load(inf, spacing = None, optics = None):
         # anonymous dict into an Optics
         if isinstance(optics, dict):
             optics = Optics(**optics)
+
+    if h5py is not None:
+        try:
+            loaded = h5py.File(inf)
+            return ImageSequence(loaded, spacing=spacing, optics=optics)
+        except (IOError, AttributeError):
+            pass
 
     loaded_yaml = False
     try:

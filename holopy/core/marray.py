@@ -35,6 +35,10 @@ from .holopy_object import HoloPyObject
 from .metadata import Angles, Positions
 from .helpers import _ensure_pair, _ensure_array, dict_without, ensure_3d, is_none
 import inspect
+try:
+    import h5py
+except ImportError:
+    h5py = None
 
 def zeros_like(obj, dtype=None):
     """
@@ -501,6 +505,7 @@ class ImageSchema(RegularGridSchema):
         if shape is not None:
             shape = _ensure_pair(shape)
 
+
         # legacy code.  We have allowed specifying spacing in the optics, I am
         # trying to depricate that now, but this will keep it working as people
         # expect.
@@ -518,6 +523,67 @@ class ImageSchema(RegularGridSchema):
     @property
     def size(self):
         return self.shape[0]*self.shape[1]
+
+@_describe_init_signature
+class ImageSequence(ImageSchema):
+    """A sequence of images (usually a timeseries)
+
+    Backed by pims or an hdf5 file, these images are only loaded into memory
+    on demand, so you can safely work with long series.
+
+    {attrs}
+
+    """
+    def __init__(self, h5file, spacing=None, optics=None,
+                 origin=np.zeros(3), metadata={}, **kwargs):
+        if not isinstance(h5file, h5py._hl.files.File):
+            raise Error("You did not provide a proper hdf5 file")
+        self.file = h5file
+        self.arr = h5file['images']
+        call_super_init(ImageSequence, self, consumed=['h5file'])
+
+    @property
+    def shape(self):
+        return self.arr.shape
+
+    def __getitem__(self, val):
+        return RegularGrid(self.arr[val], spacing=self.spacing,
+                               optics=self.optics)
+
+    def get_frame(self, n):
+        if self.arr.attrs.get('layout') == 'txy':
+            return Image(self.arr[n],
+                    spacing=self.spacing,
+                    optics=self.optics)
+        else:
+            # Assume the layout is 'xyt' because this is
+            # how the legacy camera controller code saved
+            # files.
+            return Image(self.arr[..., n], spacing=self.spacing,
+                     optics=self.optics)
+
+    def __iter__(self):
+        for i in range(self.arr.shape[2]):
+            yield self.get_frame(i)
+
+    def mean(self, chunksize=100):
+        i = 0
+        sum = 0
+        if self.arr.attrs.get('layout') == 'txy':
+            while i + chunksize < self.shape[0]:
+                sum += self.arr[i:i+chunksize, ...].sum(0)
+                i += chunksize
+            sum += self.arr[i:, ...].sum(0)
+            img_mean = sum/self.shape[0]
+        else:
+            while i + chunksize < self.shape[2]:
+                sum += self.arr[..., i:i+chunksize].sum(2)
+                i += chunksize
+            sum += self.arr[..., i:].sum(2)
+            img_mean = sum/self.shape[2]
+
+        return Image(img_mean, spacing=self.spacing, optics=self.optics)
+
 
 
 @_describe_init_signature

@@ -127,9 +127,13 @@ class FitResult(HoloPyObject):
         self.model = model
         self.minimizer = minimizer
         self.minimization_details = minimization_details
+        self._alpha = None
+        self._niter = None
 
     @property
     def alpha(self):
+        if self._alpha is not None:
+            return self._alpha
         return self.model.get_alpha(self.parameters)
 
     def fitted_holo(self, schema):
@@ -168,17 +172,22 @@ class FitResult(HoloPyObject):
         summary : dict
             A dict as from cls.summary containing information about a fit.
         """
-        summary = copy(summary)
+        summary = dict(summary)
         misc = {}
-        for key in cls.summary_misc[:-1]:
+        for key in cls.summary_misc:
             misc[key] = summary.pop(key, None)
+        self._alpha = summary.pop('alpha', None)
+        self._niter = misc.pop('niter', None)
         scatterer = scatterer_cls.from_parameters(summary)
         return cls(scatterer.parameters, scatterer, model=None, minimizer=None,
                    minimization_details=None, **misc)
 
     summary_misc = ['rsq', 'chisq', 'time', 'converged', 'niter']
 
+    @property
     def niter(self):
+        if self._niter is not None:
+            return self._niter
         # TODO: have this correctly pull number of iterations from
         # non-nmpfit minimizers.
         return self.minimization_details.niter

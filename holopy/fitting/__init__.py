@@ -36,5 +36,10 @@ The fitting module is used to:
 from fit import fit, rsq, chisq, FitResult
 from model import Model, Parametrization
 from parameter import Parameter, par, ComplexParameter
-from fit_series import fit_series
+try:
+    import series
+except ImportError:
+    # let holopy be imported without h5py and pandas
+    pass
+from fit_series import fit_series, series_guess, series_preprocess_data
 from minimizer import Nmpfit
