@@ -743,7 +743,7 @@ def squeeze(arr):
     Turns an NxMx1 array into an NxM array.
     """
     keep = [i for i, dim in enumerate(arr.shape) if dim != 1]
-    if not hasattr(arr,'spacing') or arr.spacing == None:
+    if not hasattr(arr,'spacing') or type(arr.spacing) == type(None):
         spacing = None
     else:
         spacing = np.take(arr.spacing, keep)

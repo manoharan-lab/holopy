@@ -61,9 +61,9 @@ class plotter:
 
         #to show non-square pixels correctly
         if  hasattr(im, 'spacing') and im.spacing is not None:
-            ratio = im.spacing[0]/im.spacing[1]
+            ratio = str(im.spacing[0]/im.spacing[1])
         else:
-            ratio = 1.0
+            ratio = '1.0'
 
         if self.plot is not None:
             self.plot.set_array(im)
