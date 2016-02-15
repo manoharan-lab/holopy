@@ -151,8 +151,11 @@ def average_images(images, spacing=None, optics=None, image_glob='*.tif'):
         Image which is an average of images
     """
 
-    if os.path.isdir(images):
-        images = glob.glob(os.path.join(images, image_glob))
+    try:
+        if os.path.isdir(images):
+            images = glob.glob(os.path.join(images, image_glob))
+    except TypeError:
+        pass
 
     if len(images) < 1:
         raise Error("No images found")
