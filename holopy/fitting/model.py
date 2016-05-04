@@ -263,6 +263,13 @@ class Model(HoloPyObject):
 
         self.constraints = ensure_listlike(constraints)
 
+    @property
+    def guess(self):
+        return [p.guess for p in self.parameters]
+
+    @property
+    def guess_dict(self):
+        return {p.name: p.guess for p in self.parameters}
 
     def get_alpha(self, pars=None):
         try:
