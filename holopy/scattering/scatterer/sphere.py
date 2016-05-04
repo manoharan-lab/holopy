@@ -52,7 +52,7 @@ class Sphere(CenteredScatterer):
         self.r = r
         super(Sphere, self).__init__(center)
 
-        if np.any((self.r < 0):
+        if np.any(self.r < 0):
             raise ScattererDefinitionError("radius is negative", self)
 
     @property
