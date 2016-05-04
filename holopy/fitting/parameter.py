@@ -81,7 +81,7 @@ class Parameter(HoloPyObject):
                                                     "initial guess or limit")
     @property
     def fixed(self):
-        if self.limit is not None:
+        if getattr(self, 'limit', None) is not None:
             try:
                 self.limit[1]
             except TypeError:
@@ -129,7 +129,7 @@ class ComplexParameter(Parameter):
         The real and imaginary parts of this parameter.  Assign floats to fix
         that portion or parameters to allow it to vary.  The parameters must be
         purely real.  You should omit name's for the parameters;
-        ComplexParameter will name them 
+        ComplexParameter will name them
     name : string
         Short descriptive name of the ComplexParameter.  Do not provide this if
         using a ParameterizedScatterer, a name will be assigned based its
