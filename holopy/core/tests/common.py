@@ -25,6 +25,8 @@ import inspect
 import yaml
 import shutil
 from numpy.testing import assert_equal, assert_almost_equal
+import pickle
+import cPickle
 
 
 from .. import load, save
@@ -44,6 +46,17 @@ def assert_read_matches_write(o):
     tempf.seek(0)
     loaded = load(tempf)
     assert_obj_close(o, loaded)
+
+def assert_pickle_roundtrip(o, cPickle_only=False):
+    # TODO: Our pickling code currently works for cPickle but fails in
+    # a memoization check in regular pickle., for now I am testing
+    # cPickle only in those cases, but it would be good to fix that
+    # and test both in all cases
+    if not cPickle_only:
+        assert_obj_close(o, pickle.loads(pickle.dumps(o)))
+    assert_obj_close(o, cPickle.loads(cPickle.dumps(o)))
+
+
 
 def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_object'):
     # we go ahead and try to compare anything using numpy's assert allclose, if
