@@ -69,7 +69,7 @@ def finish_binding(obj):
     # overwrite the classmethod with an instance method referencing obj for each
     # method that wants bound
     for name, f in fs:
-        setattr(obj, name, types.MethodType(f.undecorated, obj))
+        setattr(obj, name, types.MethodType(f.undecorated, obj, obj.__class__))
 
 def binding(f, *args, **kw):
     r = decorator(_binding, f)

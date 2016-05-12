@@ -88,26 +88,14 @@ def load(inf):
         return obj
 
 
-# Modified from code by Steven Bethard:
-# https://bytes.com/topic/python/answers/552476-why-cant-you-pickle-instancemethods
 def _pickle_method(method):
     func_name = method.im_func.__name__
     obj = method.im_self
-    cls = method.im_class
-    return _unpickle_method, (func_name, obj, cls)
+    return _unpickle_method, (func_name, obj)
 
-def _unpickle_method(func_name, obj, cls):
-    # If we get a class as obj (like with the goofy binding methods in
-    # scattering theory) we want to use it as the cls
-    if hasattr(obj, 'mro'):
-        cls = obj
-    for cls in cls.mro():
-        try:
-            func = cls.__dict__[func_name]
-        except KeyError:
-            pass
-        else:
-            return func.__get__(obj, cls)
+def _unpickle_method(func_name, obj):
+    return getattr(obj, func_name)
+
 
 
 import copy_reg

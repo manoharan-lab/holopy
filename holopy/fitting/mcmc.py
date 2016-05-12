@@ -120,7 +120,7 @@ class HologramLikelihood(ProbabilityComputer):
         self.noise_sd = noise_sd
         self.random_subset = random_subset
         self.computer = CostComputer(data, model, random_subset)
-        if random_subset is None:
+        if random_subset is not None:
             self.N = self.computer.selection.size
 
 

@@ -89,6 +89,10 @@ class HoloPyObject(Serializable):
     def __str__(self):
         return self.__repr__()
 
+    def __eq__(self, other):
+        # Note, this is possibly a slightly weak form of equality, but well behaved holopy objects are equal if their _dict's are equal
+        return self._dict == other._dict
+
 
 # ordered_dump code is heavily inspired by the source of PyYAML's represent_mapping
 def ordered_dump(dumper, tag, data):
