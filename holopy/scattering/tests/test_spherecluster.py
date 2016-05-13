@@ -27,7 +27,6 @@ from nose.tools import raises, assert_raises
 from numpy.testing import assert_equal, assert_almost_equal
 from nose.plugins.attrib import attr
 
-from ...core.helpers import OrderedDict
 from ..scatterer import Sphere, Ellipsoid
 from ..scatterer import Spheres
 from ..errors import ScattererDefinitionError, OverlapWarning
@@ -83,7 +82,7 @@ def test_Spheres_parameters():
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
     sc = Spheres(scatterers = [s1, s2])
 
-    assert_equal(sc.parameters, OrderedDict([('0:Sphere.center[0]',
+    assert_equal(sc.parameters, dict([('0:Sphere.center[0]',
     1e-6), ('0:Sphere.center[1]', -1e-6),
     ('0:Sphere.center[2]', 1.0e-05), ('0:Sphere.n', 1.59),  ('0:Sphere.r',
     5e-07), ('1:Sphere.center[0]', 0), ('1:Sphere.center[1]', 0),

@@ -26,7 +26,6 @@ from nose.plugins.skip import SkipTest
 from ...scattering.scatterer import Sphere, Spheres
 from ...scattering.theory.mie import Mie
 from ...core import Optics, ImageSchema
-from ...core.helpers import OrderedDict
 from .. import fit, Parameter, par, Model
 from ..minimizer import Nmpfit, OpenOpt
 from ..errors import ParameterSpecificationError, MinimizerConvergenceFailed
@@ -37,7 +36,7 @@ def test_minimizer():
     a = 5.3
     b = -1.8
     c = 3.4
-    gold_dict = OrderedDict((('a', a), ('b', b), ('c', c)))
+    gold_dict = dict((('a', a), ('b', b), ('c', c)))
     y = a*x**2 + b*x + c
 
     # This test does NOT handle scaling correctly -- we would need a Model
@@ -87,7 +86,7 @@ def test_basic_openopt():
     a = 5.3
     b = -1.8
     c = 3.4
-    gold_dict = OrderedDict((('a', a), ('b', b), ('c', c)))
+    gold_dict = dict((('a', a), ('b', b), ('c', c)))
     y = a*x**2 + b*x + c
 
     # This test does NOT handle scaling correctly -- we would need a Model

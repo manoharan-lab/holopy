@@ -30,7 +30,6 @@ from nose.plugins.attrib import attr
 from warnings import warn
 
 from ...core import ImageSchema, Optics
-from ...core.helpers import OrderedDict
 
 from ..scatterer import (Sphere, Scatterer, Ellipsoid,
                          Scatterers)
@@ -101,7 +100,7 @@ def test_Sphere_construct_array():
 @attr('fast')
 def test_Sphere_parameters():
     s = Sphere(n = 1.59+1e-4j, r = 5e-7, center=(1e-6, -1e-6, 10e-6))
-    assert_equal(s.parameters, OrderedDict([('center[0]',
+    assert_equal(s.parameters, dict([('center[0]',
     1e-6), ('center[1]', -1e-6), ('center[2]',
     1e-5), ('n', 1.59+1e-4j), ('r',
     5e-07)]))

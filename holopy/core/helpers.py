@@ -29,12 +29,6 @@ import numpy as np
 from copy import copy
 from types import NoneType
 
-try:
-    from collections import OrderedDict
-except ImportError: #pragma: no cover
-    from ordereddict import OrderedDict #pragma: no cover
-
-
 def _ensure_array(x):
     if np.isscalar(x):
         return np.array([x])

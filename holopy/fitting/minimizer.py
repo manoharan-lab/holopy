@@ -26,7 +26,6 @@ from __future__ import division
 
 import numpy as np
 from ..core.holopy_object import HoloPyObject
-from ..core.helpers import OrderedDict
 from .errors import ParameterSpecificationError, MinimizerConvergenceFailed
 from ..scattering.errors import ScattererDefinitionError
 from .third_party import nmpfit
@@ -53,7 +52,7 @@ class Minimizer(HoloPyObject):
     # if minimizers do any parameter rescaling, they are responsible for putting
     # the parameters back before handing them off to the model.
     def pars_from_minimizer(self, parameters, values):
-        pars = OrderedDict()
+        pars = {}
         for par, value in zip(parameters, values):
             pars[par.name] = par.unscale(value)
 
