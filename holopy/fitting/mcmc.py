@@ -26,9 +26,13 @@ class UniformPrior(Prior):
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         self.name = name
+        self._lnprob = np.log(1/(self.upper_bound - self.lower_bound))
 
     def lnprob(self, p):
-        return stats.uniform.logpdf(p, self.lower_bound, self.upper_bound)
+        # For a uniform prior, the value is the same every time, so we precompute it
+        return self._lnprob
+        # Turns out scipy.stats is noticably slower than doing it ourselves
+        #return stats.uniform.logpdf(p, self.lower_bound, self.upper_bound)
 
     @property
     def interval(self):
@@ -45,10 +49,14 @@ class GaussianPrior(Prior):
     def __init__(self, mu, sd, name=None):
         self.mu = mu
         self.sd = sd
+        self.sdsq = sd**2
         self.name=name
+        self._lnprob_normalization = -np.log(self.sd * np.sqrt(2*np.pi))
 
     def lnprob(self, p):
-        return stats.norm.logpdf(p, self.mu, self.sd)
+        return self._lnprob_normalization - (p-self.mu)**2/(2*self.sdsq)
+        # Turns out scipy.stats is noticably slower than doing it ourselves
+        #return stats.norm.logpdf(p, self.mu, self.sd)
 
     def prob(self, p):
         return stats.norm.pdf(p, self.mu, self.sd)
