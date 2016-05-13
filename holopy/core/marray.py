@@ -223,31 +223,6 @@ class Schema(HoloPyObject):
             setattr(self, key, item)
 
 
-
-def call_super_init(cls, self, consumed=[], **kwargs):
-    # this function uses a little inspect magic to call the superclass's __init__
-    # the arguments to the current __init__ modulo the arguments consumed or
-    # added in the current __init__
-
-    # get the arguments passed to the function that called this function
-    call = inspect.getargvalues(inspect.currentframe().f_back)
-    call_args = dict([(arg, call.locals[arg]) for arg in call.args])
-    # TODO: may want to grab add all the kwargs from call, but right now the
-    # only one I think we are using is **kwargs
-    call_args.update(call.locals['kwargs'])
-    # pull out any of the args that we have been informed have been used and
-    # should not be passed up the chain
-    del call_args['self']
-    call_args = dict_without(call_args, consumed)
-    # now add any new args to the call dict.  We add explicitly specified args
-    # last so they will overwrite other specifications as desired.
-    call_args.update(kwargs)
-
-    # and finally call the superclass's __init__
-    super(cls, self).__init__(**call_args)
-
-
-
 @_describe_init_signature
 class Marray(np.ndarray, Schema):
     """
@@ -269,7 +244,7 @@ class Marray(np.ndarray, Schema):
 
     def __init__(self, arr, positions=None, optics=None,
                  origin=np.zeros(3), dtype=None, **kwargs):
-        call_super_init(Marray, self, ['arr', 'dtype'])
+        super(Marray, self).__init__(positions=positions, optics=optics, origin=origin, **kwargs)
 
     def __array_finalize__(self, obj):
         # this function finishes the construction of our new object by copying
@@ -339,7 +314,7 @@ class RegularGridSchema(Schema):
     def __init__(self, shape=None, spacing=None, optics=None,
                  origin=np.zeros(3), **kwargs):
 
-        call_super_init(RegularGridSchema, self, consumed = ['spacing'])
+        super(RegularGridSchema, self).__init__(shape=shape, optics=optics, origin=origin, **kwargs)
 
         # the setter will set the positions correctly
         self.spacing = spacing
@@ -421,7 +396,7 @@ class VectorSchema(Schema):
                  components=('x', 'y', 'z'), optics=None,
                  origin=np.zeros(3), **kwargs):
         self.components = components
-        call_super_init(VectorSchema, self, ['components'])
+        super(VectorSchema, self).__init__(shape=shape, positions=positions, optics=optics, origin=origin, **kwargs)
 
     def interpret_1d(self, arr):
         return VectorMarray(arr.reshape(self.shape), **dict_without(self._dict, ['shape']))
@@ -430,7 +405,7 @@ class VectorGridSchema(RegularGridSchema, VectorSchema):
     def __init__(self, shape=None, spacing=None,
                  components=('x', 'y', 'z'), optics=None,
                  origin=np.zeros(3), **kwargs):
-        call_super_init(VectorGridSchema, self)
+        super(VectorGridSchema, self).__init__(shape=shape, spacing=spacing, components=components, optics=optics, origin=origin, **kwargs)
 
     @property
     def extent(self):
@@ -464,7 +439,7 @@ def make_vector_schema(schema, components=('x', 'y', 'z')):
 class RegularGrid(Marray, RegularGridSchema):
     def __init__(self, arr, spacing=None, optics=None,
                  origin=np.zeros(3), metadata={}, dtype=None, **kwargs):
-        call_super_init(RegularGrid, self)
+        super(RegularGrid, self).__init__(arr=arr, spacing=spacing, optics=optics, origin=origin, metadata=metadata, dtype=dtype, **kwargs)
 
     def resample(self, shape, window=None):
         """
@@ -529,7 +504,7 @@ class ImageSchema(RegularGridSchema):
                 optics = copy.copy(optics)
                 del optics.pixel_scale
 
-        call_super_init(ImageSchema, self)
+        super(ImageSchema, self).__init__(shape=shape, spacing=spacing, optics=optics, origin=origin, metadata=metadata, **kwargs)
 
     @property
     def size(self):
@@ -567,7 +542,7 @@ class VectorMarray(Marray, VectorSchema):
     def __init__(self, arr, positions=None,
                  components=('x', 'y', 'z'),
                  optics=None, origin=np.zeros(3), **kwargs):
-        call_super_init(VectorMarray, self, ['components'])
+        super(VectorMarray, self).__init__(arr=arr, positions=positions, optics=optics, origin=origin, **kwargs)
 
 class VectorGrid(RegularGrid, VectorGridSchema, VectorMarray):
     """Vector Data on a Rectangular Grid
@@ -577,7 +552,7 @@ class VectorGrid(RegularGrid, VectorGridSchema, VectorMarray):
     def __init__(self, arr, spacing=None, components=('x', 'y', 'z'),
                  optics=None, origin=np.zeros(3), dtype=None,
                  **kwargs):
-        call_super_init(VectorGrid, self)
+        super(VectorGrid, self).__init__(arr=arr, spacing=spacing, components=components, optics=optics, origin=origin, dtype=dtype, **kwargs)
 
     @property
     def x_comp(self):
@@ -611,7 +586,7 @@ class VolumeSchema(RegularGridSchema):
     """
     def __init__(self, shape=None, spacing=None, optics=None,
                  origin=np.zeros(3), **kwargs):
-        call_super_init(VolumeSchema, self)
+        super(VolumeSchema, self).__init__(shape=shape, spacing=spacing, optics=optics, origin=origin, **kwargs)
 
 
 def subimage(arr, center, shape):
