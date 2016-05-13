@@ -519,6 +519,24 @@ class ImageSchema(RegularGridSchema):
     def size(self):
         return self.shape[0]*self.shape[1]
 
+    @property
+    def spacing(self):
+        return getattr(self, '_spacing', None)
+
+    @spacing.setter
+    def spacing(self, spacing):
+        # if we change the spacing, we have to change our positions
+        # object to match
+        if getattr(self, 'spacing', None) is spacing or self.shape is None:
+            # Fast path, since there are a number of things that will
+            # set schema attributes to the same as they already are
+            return
+        else:
+            if np.isscalar(spacing):
+                spacing = np.repeat(spacing, 2)
+
+            self._spacing = spacing
+
 
 @_describe_init_signature
 class Image(RegularGrid, ImageSchema):
