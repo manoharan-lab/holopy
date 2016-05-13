@@ -24,8 +24,6 @@ The abstract base class for all scattering objects
 from __future__ import division
 from collections import defaultdict
 
-from ...core.helpers import OrderedDict
-
 from itertools import chain
 from copy import copy
 
@@ -218,10 +216,6 @@ class CenteredScatterer(Scatterer):
         # should override this, but for simple classes the variable dict is the
         # correct answer
 
-        # we return an OrderedDict to make it easer to keep parameters in the
-        # same order in cases where a list of parameters is needed and will be
-        # later passed to Scatterer.from_parameters
-
         def expand(key, par):
             if isinstance(par, (list, tuple, np.ndarray)):
                 subs = (expand('{0}[{1}]'.format(key, p[0]), p[1]) for p in enumerate(par))
@@ -229,8 +223,7 @@ class CenteredScatterer(Scatterer):
             else:
                 return [(key, par)]
 
-        return OrderedDict(sorted(chain(*[expand(*p) for p in
-                                          self._dict.iteritems()])))
+        return dict(chain(*[expand(*p) for p in self._dict.iteritems()]))
 
     @classmethod
     def from_parameters(cls, parameters):

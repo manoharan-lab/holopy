@@ -111,7 +111,7 @@ class ParameterizedObject(Parametrization):
         # find all the Parameter's in the obj
         parameters = []
         ties = {}
-        for name, par in obj.parameters.iteritems():
+        for name, par in sorted(obj.parameters.iteritems(), key=lambda x: x[0]):
             def add_par(p, name):
                 if p in parameters:
                     # if the parameter is already in the parameters list, it

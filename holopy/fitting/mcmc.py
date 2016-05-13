@@ -11,7 +11,6 @@ from holopy.core.helpers import _ensure_array
 from numpy import random
 import numpy as np
 from scipy import stats
-from collections import OrderedDict
 
 class ProbabilityComputer(HoloPyObject):
     def lnprob(self):
@@ -29,6 +28,8 @@ class UniformPrior(Prior):
         self._lnprob = np.log(1/(self.upper_bound - self.lower_bound))
 
     def lnprob(self, p):
+        if p < self.lower_bound or p > self.upper_bound:
+            return -np.inf
         # For a uniform prior, the value is the same every time, so we precompute it
         return self._lnprob
         # Turns out scipy.stats is noticably slower than doing it ourselves
@@ -156,7 +157,7 @@ class Emcee(HoloPyObject):
         self.threads = threads
 
     def _pack(self, vals):
-        pars = OrderedDict()
+        pars = {}
         for par, value in zip(self.parameters, vals):
             pars[par.name] = value
         return pars

@@ -31,7 +31,6 @@ from holopy.scattering.scatterer import Sphere, Spheres, Scatterer
 from holopy.scattering.theory import Mie, Multisphere, DDA
 from holopy.core import Optics, ImageSchema, load, save, Schema, Angles, Marray
 from holopy.core.process import normalize
-from holopy.core.helpers import OrderedDict
 from holopy.fitting import fit, Parameter, ComplexParameter, par, Parametrization, Model
 from holopy.core.tests.common import (assert_obj_close, get_example_data,
                                   assert_read_matches_write)
@@ -342,7 +341,7 @@ def test_dda_fit():
 
     res = fit(model, h)
 
-    assert_parameters_allclose(res.parameters, OrderedDict([('r',
+    assert_parameters_allclose(res.parameters, dict([('r',
     0.2003609439787491), ('x', 5.0128083665603995), ('y', 5.0125252883133617),
     ('z', 4.9775097284878775)]), rtol=1e-3)
 

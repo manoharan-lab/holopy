@@ -26,7 +26,6 @@ analysis procedures.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 """
-from helpers import OrderedDict
 import inspect
 import numpy as np
 import yaml
@@ -61,7 +60,7 @@ class HoloPyObject(Serializable):
     """
     @property
     def _dict(self):
-        dump_dict = OrderedDict()
+        dump_dict = {}
 
         for var in inspect.getargspec(self.__init__).args[1:]:
             if getattr(self, var, None) is not None:

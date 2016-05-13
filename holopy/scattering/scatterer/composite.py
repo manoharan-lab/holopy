@@ -25,8 +25,6 @@ scatterers (e.g. two trimers).
 '''
 from __future__ import division
 
-from ...core.helpers import OrderedDict
-
 from copy import copy
 
 import numpy as np
@@ -82,7 +80,7 @@ class Scatterers(Scatterer):
         for i, scatterer in enumerate(self.scatterers):
             for key, par in scatterer.parameters.iteritems():
                 d['{0}:{1}.{2}'.format(i, scatterer.__class__.__name__, key)] = par
-        return OrderedDict(sorted(d.items(), key = lambda t: t[0]))
+        return dict(sorted(d.items(), key = lambda t: t[0]))
 
     @classmethod
     def from_parameters(cls, parameters):

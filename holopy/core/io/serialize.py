@@ -33,7 +33,7 @@ import re
 import inspect
 import types
 
-from holopy.core.helpers import OrderedDict, is_none
+from holopy.core.helpers import is_none
 from holopy.core.holopy_object import SerializableMetaclass
 from holopy.core.marray import Marray
 from holopy.core import marray
@@ -168,10 +168,6 @@ def class_loader(loader, node):
         mod = mod.__getattribute__(t)
     return mod
 yaml.add_constructor(u'!class', class_loader)
-
-def OrderedDict_representer(dumper, data):
-    return dumper.represent_dict(data)
-yaml.add_representer(OrderedDict, OrderedDict_representer)
 
 def instancemethod_representer(dumper, data):
     func = data.im_func.func_name
