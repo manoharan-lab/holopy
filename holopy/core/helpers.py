@@ -156,3 +156,21 @@ def is_none(o):
     """
 
     return isinstance(o, NoneType)
+
+def updated(d, update):
+    """Return a dictionary updated with keys from update
+
+    Analgous to sorted, this is an equivalent of d.update as a
+    non-modifying free function
+
+    Parameters
+    ----------
+    d : dict
+        The dict to update
+    update : dict
+        The dict to take updates from
+
+    """
+    d = copy(d)
+    d.update(update)
+    return d
