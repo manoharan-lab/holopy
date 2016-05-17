@@ -27,7 +27,7 @@ import numpy as np
 from .scatterer import CenteredScatterer, Indicators
 from ..errors import ScattererDefinitionError
 from copy import copy
-from ...core.helpers import _ensure_array
+from ...core.helpers import _ensure_array, updated
 
 class Sphere(CenteredScatterer):
     '''
@@ -74,6 +74,16 @@ class Sphere(CenteredScatterer):
                 return len(self.n)
         else:
             return 0
+
+    def like_me(self, **overrides):
+        if 'center' in overrides:
+            return super(Sphere, self).like_me(**overrides)
+        for i, coord in enumerate(('x', 'y', 'z')):
+            if coord in overrides:
+                overrides['center[{}]'.format(i)] = overrides[coord]
+                del overrides[coord]
+
+        return self.from_parameters(updated(self.parameters, overrides))
 
 class LayeredSphere(Sphere):
     """
