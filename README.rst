@@ -35,11 +35,14 @@ examples in our `user guide <http://manoharan.seas.harvard.edu/holopy/users/inde
 
 HoloPy started as a project in the `Manoharan Lab at Harvard
 University <http://manoharan.seas.harvard.edu/>`_. If you use HoloPy,
-you may wish to cite one or more of our
-`papers <http://manoharan.seas.harvard.edu/holopy/credits.html#credits>`_. We also encourage you to sign up for our `User Mailing
-List <https://groups.google.com/d/forum/holopy-users>`_ to keep up to
-date on releases, answer questions, and benefit from other users'
+you may wish to cite one or more of our `papers
+<http://manoharan.seas.harvard.edu/holographic-microscopy>`_. We also
+encourage you to sign up for our `User Mailing List
+<https://groups.google.com/d/forum/holopy-users>`_ to keep up to date
+on releases, answer questions, and benefit from other users'
 questions.
 
 
 HoloPy is based upon work supported by the National Science Foundation
+under grant numbers CBET-0747625, DMR-0820484, DMR-1306410, and
+DMR-1420570.
