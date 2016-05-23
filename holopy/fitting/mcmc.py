@@ -8,6 +8,7 @@ from holopy.fitting.minimizer import Minimizer
 from emcee import PTSampler, EnsembleSampler
 from holopy.core.helpers import _ensure_array
 
+from time import time
 from numpy import random
 import numpy as np
 from scipy import stats
@@ -205,3 +206,101 @@ class PTemcee(Emcee):
 
     def make_sampler(self):
         return PTSampler(self.ntemps, self.nwalkers, self.ndim, self.lnlike, self.lnprior, threads=self.threads)
+
+
+def subset_tempering(model, data, noise_sd, final_len=600, nwalkers=500, min_pixels=20, max_pixels=4000, threads='all', stages=3, stage_len=30, cutoff=.5):
+    """
+    Parameters
+    ----------
+    final_len: int
+        Number of samples to use in final run
+    stages: int
+        Number subset stages to use
+    min_pixels: int
+        Number of pixels to use in the first stage
+    max_pixels: int
+        Number of pixels to use in the final stage
+    cutoff: float (0 < cutoff < 1)
+        At the end of each preliminary stage, discard samples with
+        lnprobability < np.percentile(lnprobability, 100*cutoff). IE, discard
+        he lower fraction of samples, the default argument of .5 corresponds to
+        discarding samples below the median.
+    stage_len: int
+        Number of samples to use in preliminary stages
+    """
+    if threads == 'all':
+        import multiprocessing
+        threads = multiprocessing.cpu_count()
+    if threads != None:
+        print("Using {} threads".format(threads))
+
+
+    fractions = np.logspace(np.log10(min_pixels), np.log10(max_pixels), stages+1)/data.size
+
+    stage_fractions = fractions[:-1]
+    final_fraction = fractions[-1]
+
+    def new_par(par, mu, std):
+        if hasattr(par, 'lower_bound'):
+            return BoundedGaussianPrior(mu, std, getattr(par, 'lower_bound', -np.inf), getattr(par, 'upper_bound', np.inf), name=par.name)
+        else:
+            return GaussianPrior(mu, std, name=par.name)
+
+    def sample_string(p):
+        lb, ub = "", ""
+        if getattr(p, 'lower_bound', -np.inf) != -np.inf:
+            lb = ", lb={}".format(p.lower_bound)
+        if getattr(p, 'upper_bound', np.inf) != np.inf:
+            ub = ", ub={}".format(p.upper_bound)
+        return "{p.name}: mu={p.mu:.3g}, sd={p.sd:.3g}{lb}{ub}".format(p=p, lb=lb, ub=ub)
+
+
+    p0 = None
+    for fraction in stage_fractions:
+        tstart = time()
+        emcee = Emcee(model=model, data=data, noise_sd=noise_sd, nwalkers=nwalkers, random_subset=fraction, threads=threads)
+        sampler = emcee.sample(stage_len, p0)
+
+        most_probable = most_probable_value(sampler)
+        # TODO: use some form of clustering instead?
+        good_samples = sampler.flatchain[np.where(sampler.flatlnprobability > np.percentile(sampler.flatlnprobability, 100*cutoff))]
+        std = good_samples.std(axis=0)
+        new_pars = [new_par(*p) for p in zip(model.parameters, most_probable, std)]
+        p0 = np.vstack([p.sample(size=nwalkers) for p in new_pars]).T
+        tend = time()
+        print("--------\nStage at f={} finished in {}s.\nDrawing samples for next stage from:\n{}".format(fraction, tend-tstart, '\n'.join([sample_string(p) for p in new_pars])))
+
+    tstart = time()
+    emcee = Emcee(model=model, data=data, noise_sd=noise_sd, nwalkers=nwalkers, random_subset=final_fraction, threads=threads)
+    result = emcee.sample(final_len, p0)
+    tend = time()
+    print("--------\nFinal stage at f={}, took {}s".format(final_fraction, tend-tstart))
+    return result
+
+
+def most_probable_value(sampler, names=None):
+    """
+    Get the value of each parameter at the maximum posterior probability
+    Parameters
+    ----------
+    sampler : emcee sampler
+        Your sampler after an mcmc run. Does not currently support a parallel tempering sampler
+    names : list(string)
+        Your parameter names. If you provide them it will give you dictionary,
+        if you don't it will give you an array
+    Returns
+    -------
+    values : dict(string, float) or list(float)
+        Dictionary of the maximum posterior value for each parameter
+    """
+    values = sampler.chain[np.where(sampler.lnprobability ==
+                                    sampler.lnprobability.max())]
+    if values.ndim == 2:
+        if np.any(values.min(axis=0) != values.max(axis=0)):
+            print("warning: multiple values with identical probability, output will be two dimensional")
+        else:
+            values = values[0]
+    if names is None:
+        return values
+    else:
+        return dict([(n, v) for (n, v) in zip(get_names(names), values)])
