@@ -83,7 +83,8 @@ def load(inf):
                     try:
                         obj[key] = float(obj[key])
                     except ValueError: #pragma: nocover
-                        pass #pragma: nocover
+                        pass #pragma: nocoverm
+
 
         return obj
 

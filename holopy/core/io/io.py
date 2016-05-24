@@ -24,14 +24,16 @@ functions.
 import os
 import glob
 from warnings import warn
+import numpy as np
+
 import serialize
 from holopy.core.io.image_file_io import load_image, save_image
-
 from holopy.core.marray import Image, arr_like
 from holopy.core.metadata import Optics
+from holopy.core.helpers import _ensure_array
 
 
-def load(inf, spacing = None, optics = None):
+def load(inf, spacing = None, optics = None, channel=None):
     """
     Load data or results
 
@@ -67,29 +69,34 @@ def load(inf, spacing = None, optics = None):
         if isinstance(optics, dict):
             optics = Optics(**optics)
 
-    loaded_yaml = False
+
+    # attempt to load a holopy yaml file
     try:
         loaded = serialize.load(inf)
-        loaded_yaml = True
-    except serialize.ReaderError:
+        if optics is not None and spacing is not None:
+            loaded = arr_like(loaded, spacing = spacing, optics = optics)
+            warn("Overriding spacing and optics of loaded yaml")
+        elif optics is not None:
+            loaded = arr_like(loaded, optics = optics)
+            warn("WARNING: overriding optics of loaded yaml without overriding "
+                 "spacing, this is probably incorrect.")
+        elif spacing is not None:
+            loaded = arr_like(loaded, spacing = spacing)
+            warn("WARNING: overriding spacing of loaded yaml without overriding "
+                 "optics, this is probably incorrect.")
+        return loaded
+    except (serialize.ReaderError, AttributeError):
         pass
+        # If that fails, we go on an read images
 
+    loaded_files = []
+    for inf in _ensure_array(inf):
+        if not loaded_yaml:
+            loaded = load_image(inf, spacing=spacing, optics=optics, channel=channel)
 
-    if not loaded_yaml:
-        loaded = load_image(inf, spacing=spacing, optics=optics)
-    elif optics is not None and spacing is not None:
-        loaded = arr_like(loaded, spacing = spacing, optics = optics)
-        warn("Overriding spacing and optics of loaded yaml")
-    elif optics is not None:
-        loaded = arr_like(loaded, optics = optics)
-        warn("WARNING: overriding optics of loaded yaml without overriding "
-             "spacing, this is probably incorrect.")
-    elif spacing is not None:
-        loaded = arr_like(loaded, spacing = spacing)
-        warn("WARNING: overriding spacing of loaded yaml without overriding "
-             "optics, this is probably incorrect.")
+        loaded_files.append(loaded)
 
-    return loaded
+    return Image(np.dstack(loaded_files).squeeze(), optics=optics, spacing=spacing)
 
 def save(outf, obj):
     """
