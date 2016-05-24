@@ -18,7 +18,7 @@
 """
 Allow mixed class/instance methods that operate either on a default object of a
 class when called as a classmethod or on a supplied instance when called as an
-instance method.  
+instance method.
 
 So if you have a class like this
 ---
@@ -48,11 +48,11 @@ from __future__ import division
 
 import inspect
 import types
-try:
-    from decorator import decorator
-except ImportError:
-    from .third_party.decorator import decorator # pragma: no cover
-    
+#try:
+    #from decorator import decorator
+#except ImportError:
+from .third_party.decorator import decorator # pragma: no cover
+
 
 def finish_binding(obj):
     """
@@ -76,8 +76,8 @@ def binding(f, *args, **kw):
     r._bindme = True
     return r
 
-        
+
 def _binding(f, *args, **kw):
     if isinstance(args[0], type):
         args = (args[0](),)+args[1:]
-    return f(*args, **kw)   
+    return f(*args, **kw)
