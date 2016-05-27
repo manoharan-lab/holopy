@@ -397,3 +397,5 @@ class UncertainValue(HoloPyObject):
         self.plus = plus
         self.minus = minus
         self.n_sigma = n_sigma
+=======
+>>>>>>> 966d3efea0bf076a91504a9594bf383a5e858b91
