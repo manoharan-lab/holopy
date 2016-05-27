@@ -91,8 +91,7 @@ def load(inf, spacing = None, optics = None, channel=None):
 
     loaded_files = []
     for inf in _ensure_array(inf):
-        if not loaded_yaml:
-            loaded = load_image(inf, spacing=spacing, optics=optics, channel=channel)
+        loaded = load_image(inf, spacing=spacing, optics=optics, channel=channel)
 
         loaded_files.append(loaded)
 

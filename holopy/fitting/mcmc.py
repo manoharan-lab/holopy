@@ -193,7 +193,7 @@ class Emcee(HoloPyObject):
 
         sampler.run_mcmc(p0, n_samples)
 
-        return sampler
+        return EmceeResult(sampler, self.model)
 
 
 class PTemcee(Emcee):
@@ -259,11 +259,11 @@ def subset_tempering(model, data, noise_sd, final_len=600, nwalkers=500, min_pix
     for fraction in stage_fractions:
         tstart = time()
         emcee = Emcee(model=model, data=data, noise_sd=noise_sd, nwalkers=nwalkers, random_subset=fraction, threads=threads)
-        sampler = emcee.sample(stage_len, p0)
+        result = emcee.sample(stage_len, p0)
 
-        most_probable = most_probable_value(sampler)
+        most_probable = result.most_probable_values()
         # TODO: use some form of clustering instead?
-        good_samples = sampler.flatchain[np.where(sampler.flatlnprobability > np.percentile(sampler.flatlnprobability, 100*cutoff))]
+        good_samples = result.sampler.flatchain[np.where(result.sampler.flatlnprobability > np.percentile(result.sampler.flatlnprobability, 100*cutoff))]
         std = good_samples.std(axis=0)
         new_pars = [new_par(*p) for p in zip(model.parameters, most_probable, std)]
         p0 = np.vstack([p.sample(size=nwalkers) for p in new_pars]).T
@@ -278,29 +278,122 @@ def subset_tempering(model, data, noise_sd, final_len=600, nwalkers=500, min_pix
     return result
 
 
-def most_probable_value(sampler, names=None):
+class EmceeResult(HoloPyObject):
+    def __init__(self, sampler, model):
+        self.sampler = sampler
+        self.model = model
+
+    @property
+    def _names(self):
+        return [p.name for p in self.model.parameters]
+
+    def plot_traces(self, traces=10, burn_in=0):
+        import matplotlib.pyplot as plt
+        names = self._names
+        samples = self.sampler.chain
+        plt.figure(figsize=(9, 8), linewidth=.1)
+        for var in range(len(names)):
+            plt.subplot(3, 2, var+1)
+            plt.plot(samples[:traces, burn_in:, var].T, color='k', linewidth=.3)
+            plt.title(names[var])
+
+    def data_frame(self, burn_in=0, thin='acor', include_lnprob=True):
+        """
+        Format the results into a data frame
+
+        Parameters
+        ----------
+        burn_in : int
+            Discard this many samples of burn in
+        thin: int or 'acor'
+            Thin the data by this factor if an int, or by the parameter
+            autocorrelation if thin == 'acor'
+
+        Returns
+        -------
+        df : DataFrame
+            A data frame of samples for each parameter
+        """
+        import pandas as pd
+        if thin == 'acor':
+            thin = int(max(self.sampler.acor))
+        chain = self.sampler.chain[burn_in::thin, ...]
+        names = self._names
+        npar = len(names)
+        df = pd.DataFrame({n: t for (n, t) in zip(names,
+                                                  chain.reshape(-1, npar).T)})
+        if include_lnprob:
+            df['lnprob'] = self.sampler.lnprobability[burn_in::thin].reshape(-1)
+
+        return df
+
+    def pairplots(self, filename=None, include_lnprob=False, burn_in=0, thin='acor'):
+
+        df = self.data_frame(burn_in=burn_in, thin=thin, include_lnprob=include_lnprob)
+        df = df.rename(columns={'center[0]': 'x', 'center[1]': 'y', 'center[2]': 'z' })
+        xyz = ['x', 'y', 'z']
+        xyz_enum = [(list(df.columns).index(v), v) for v in xyz]
+        import seaborn as sns
+
+        max_xyz_extent = (df.max() - df.min()).loc[xyz].max()
+
+        def limits(x, y):
+            xm = df[x].mean()
+            ym = df[y].mean()
+            # dividing by two would fill the plot exactly, but it is
+            # nicer to have a little space around the outermost point
+            e = max_xyz_extent/1.8
+            return {'xmin': xm-e, 'xmax': xm+e, 'ymin': ym-e, 'ymax': ym+e}
+
+        def plot():
+            g = sns.PairGrid(df)
+            g.map_diag(sns.kdeplot)
+            g.map_lower(sns.kdeplot, cmap="Blues_d")
+            g.map_upper(sns.regplot)
+            for i, v in xyz_enum:
+                for j, u in xyz_enum:
+                    g.axes[j][i].axis(**limits(v, u))
+            return g
+
+        if filename is not None:
+            import matplotlib
+            with matplotlib.use('agg'):
+                g = plot()
+                g.savefig(filename)
+        else:
+            plot()
+
+    def most_probable_values(self):
+        values = self.sampler.chain[np.where(self.sampler.lnprobability ==
+                               self.sampler.lnprobability.max())]
+        if values.ndim == 2:
+            if np.any(values.min(axis=0) != values.max(axis=0)):
+                print("warning: multiple values with identical probability, output will be two dimensional")
+            else:
+                values = values[0]
+
+        return values
+
+    def most_probable_values_dict(self):
+        dict([(n, v) for (n, v) in zip(self._names, self.most_probable_values())])
+
+class UncertainValue(HoloPyObject):
     """
-    Get the value of each parameter at the maximum posterior probability
+    Represent an uncertain value
+
     Parameters
     ----------
-    sampler : emcee sampler
-        Your sampler after an mcmc run. Does not currently support a parallel tempering sampler
-    names : list(string)
-        Your parameter names. If you provide them it will give you dictionary,
-        if you don't it will give you an array
-    Returns
-    -------
-    values : dict(string, float) or list(float)
-        Dictionary of the maximum posterior value for each parameter
+    value: float
+        The value
+    plus: float
+        The plus n_sigma uncertainty (or the uncertainty if it is symmetric)
+    minus: float or None
+        The minus n_sigma uncertainty, or None if the uncertainty is symmetric
+    n_sigma: int (or float)
+        The number of sigma the uncertainties represent
     """
-    values = sampler.chain[np.where(sampler.lnprobability ==
-                                    sampler.lnprobability.max())]
-    if values.ndim == 2:
-        if np.any(values.min(axis=0) != values.max(axis=0)):
-            print("warning: multiple values with identical probability, output will be two dimensional")
-        else:
-            values = values[0]
-    if names is None:
-        return values
-    else:
-        return dict([(n, v) for (n, v) in zip(get_names(names), values)])
+    def __init__(self, value, plus, minus=None, n_sigma=1):
+        self.value = value
+        self.plus = plus
+        self.minus = minus
+        self.n_sigma = n_sigma
