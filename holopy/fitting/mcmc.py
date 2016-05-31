@@ -198,6 +198,18 @@ class EmceeResult(HoloPyObject):
             plt.plot(samples[:traces, burn_in:, var].T, color='k', linewidth=.3)
             plt.title(names[var])
 
+    @property
+    def n_steps(self):
+        return self.sampler.lnprobability.shape[0]
+
+    @property
+    def approx_independent_steps(self):
+        return int(self.n_steps/max(self.sampler.acor))
+
+    @property
+    def acceptance_fraction(self):
+        return self.sampler.acceptance_fraction.mean()
+
     def data_frame(self, burn_in=0, thin='acor', include_lnprob=True):
         """
         Format the results into a data frame
@@ -282,6 +294,26 @@ class EmceeResult(HoloPyObject):
     def most_probable_values_dict(self):
         dict([(n, v) for (n, v) in zip(self._names, self.most_probable_values())])
 
+
+    def values(self):
+        lnprob = self.sampler.lnprobability
+        maxp = lnprob.max()
+        region = np.where(lnprob > maxp -0.5)
+        max_vals = self.sampler.chain[region].max(axis=0)
+        min_vals = self.sampler.chain[region].min(axis=0)
+        prob_vals = self.most_probable_values()
+        return [UncertainValue(p, x-p, p-n) for p, x, n in zip(prob_vals, max_vals, min_vals)]
+
+    def _repr_html_(self):
+        results = "{}".format(",".join(["{}: {}".format(n, v._repr_latex_()) for n, v in zip(self._names, self.values())]))
+        block = """<h4>EmceeResult</h4> {results}
+{s.sampler.chain.shape[1]} walkers
+{s.n_steps} Steps
+~ {s.approx_independent_steps} of which are independent
+Acceptance Fraction: {s.acceptance_fraction}
+        """.format(s=self, results=results)
+        return "<br>".join(block.split('\n'))
+
 class UncertainValue(HoloPyObject):
     """
     Represent an uncertain value
@@ -302,3 +334,13 @@ class UncertainValue(HoloPyObject):
         self.plus = plus
         self.minus = minus
         self.n_sigma = n_sigma
+
+    def _repr_latex_(self):
+        from IPython.display import Math
+        confidence=""
+        if self.n_sigma != 1:
+            confidence=" (\mathrm{{{}\ sigma}})".format(self.n_sigma)
+        display_precision = int(round(np.log10(self.value/(min(self.plus, self.minus)))))
+        value_fmt = "{{:.{}g}}".format(display_precision)
+        value = value_fmt.format(self.value)
+        return "${value}^{{+{s.plus:.2g}}}_{{-{s.minus:.2g}}}{confidence}$".format(s=self, confidence=confidence, value=value)
