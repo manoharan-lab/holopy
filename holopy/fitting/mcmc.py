@@ -283,6 +283,10 @@ class EmceeResult(HoloPyObject):
         self.sampler = sampler
         self.model = model
 
+        acceptance_fraction = sampler.acceptance_fraction.mean()
+        if acceptance_fraction > .5 or acceptance_fraction < .2:
+            print("Acceptance fraction is: {} which is outside the desired range of 0.2 to 0.5")
+
     @property
     def _names(self):
         return [p.name for p in self.model.parameters]
@@ -334,6 +338,7 @@ class EmceeResult(HoloPyObject):
         xyz = ['x', 'y', 'z']
         xyz_enum = [(list(df.columns).index(v), v) for v in xyz]
         import seaborn as sns
+        import matplotlib.pyplot as plt
 
         max_xyz_extent = (df.max() - df.min()).loc[xyz].max()
 
@@ -356,10 +361,13 @@ class EmceeResult(HoloPyObject):
             return g
 
         if filename is not None:
-            import matplotlib
-            with matplotlib.use('agg'):
-                g = plot()
-                g.savefig(filename)
+            isinteractive = plt.isinteractive()
+            plt.ioff()
+            g = plot()
+            g.savefig(filename)
+            plt.close(g.fig)
+            if isinteractive:
+                plt.ion()
         else:
             plot()
 
@@ -397,5 +405,3 @@ class UncertainValue(HoloPyObject):
         self.plus = plus
         self.minus = minus
         self.n_sigma = n_sigma
-=======
->>>>>>> 966d3efea0bf076a91504a9594bf383a5e858b91
