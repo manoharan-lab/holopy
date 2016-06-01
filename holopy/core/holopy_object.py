@@ -58,12 +58,21 @@ class HoloPyObject(Serializable):
     and loading from HoloPy yaml files
 
     """
+
+    @property
+    def _args(self):
+        try:
+            return self.__class__._args_cache
+        except AttributeError:
+            self.__class__._args_cache = inspect.getargspec(self.__init__).args[1:]
+            return self.__class__._args_cache
+
     @property
     def _dict(self):
         return dict(self._iteritems())
 
     def _iteritems(self):
-        for var in inspect.getargspec(self.__init__).args[1:]:
+        for var in self._args:
             if getattr(self, var, None) is not None:
                 item = getattr(self, var)
                 if isinstance(item, np.ndarray) and item.ndim == 1:
