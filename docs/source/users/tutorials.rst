@@ -12,7 +12,7 @@ You will be happiest running these examples in an IPython terminal
 that these tutorials be easy to follow for anyone with a little
 knowledge of python, holography, and scattering. If you find anything
 confusing, we consider it a bug, and would like you to `report
-<https://bugs.launchpad.net/holopy/+filebug>`_ it.
+<https://github.com/manoharan-lab/holopy/issues>`_ it.
 
 .. toctree::
    :maxdepth: 3
