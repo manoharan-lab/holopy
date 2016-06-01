@@ -6,20 +6,25 @@ Installing HoloPy
 Quick Start
 -----------
 
-If you already have scientific python installed, getting holopy set up
-should be as simple as grabbing a binary package from our `Downloads Page
-<http://www.manoharan.seas.harvard.edu/holopy/downloads.html>`_
+If you do not already have scientific python, we suggest using
+`Anaconda <https://www.continuum.io/downloads>`_. You will want python
+2.7 (HoloPy is not yet python 3 compatible).
+
+HoloPy has not had a release in years, so you will probably just want
+to download a `zip of the master
+<https://github.com/manoharan-lab/holopy/archive/master.zip>`_. We
+make a reasonable effort to keep the master in a usable state, so
+hopefully it will work for you.
 
 Unpack the archive, then, from a terminal, as root/adiminstrator, in
 the archive directory, run::
-  
+
   python setup.py install
 
 Or put the archive directory in your PYTHONPATH to import it directly
 from the archive.
 
-Once you have done that, start up python (we would suggest as
-``ipython --pylab`` or the pylab console from EPD or similar) and run::
+Once you have done that, start up python (we would suggest ipython or the jupyter notebook) and run::
 
   import holopy
 
@@ -84,8 +89,8 @@ Building
    build_env
 
 `Download
-<http://www.manoharan.seas.harvard.edu/holopy/downloads.html>`_ and
-unpack a source build, or 
+<https://github.com/manoharan-lab/holopy/archive/master.zip>`_ and
+unpack a source build, or
 check out the source from launchpad::
 
   bzr branch lp:holopy
@@ -96,7 +101,7 @@ To build HoloPy run (in the root of HoloPy)::
 
 This will generate a build directory and put all the modules
 there. You can then install HoloPy by running (as administrator)::
-  
+
   python setup.py install
 
 
@@ -127,27 +132,27 @@ package (e.g. ``/home/me/holopy``) and run:
 
    python run_nose.py
 
-or 
+or
 
 .. sourcecode:: bash
- 
+
    nosetests -a '!slow'
 
 There is some extra test data that is not distributed with HoloPy but
 can help catch some kinds of bugs. The tests will run just fine
 without it, but should you want to run a slightly more thorough test
 you can retrieve this data with a script in the ``management`` directory::
-  
+
   python get_test_golds.py
 
 Building the Docs
 ~~~~~~~~~~~~~~~~~
 
 To compile the documentation run (from the docs directory)::
-  
+
   make html
 
 (or type ``make`` to see the different kinds of formats you can
 create).  This will generate documentation in the ``docs/build``
-directory.  Building the docs requires matplotlib version 1.1 
+directory.  Building the docs requires matplotlib version 1.1
 or newer.

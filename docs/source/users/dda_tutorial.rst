@@ -19,7 +19,7 @@ at a terminal for HoloPy DDA calculations to succeed.
 
 A lot of the code associated with DDA is fairly new so be careful;
 there are probably bugs. If you find any, please `report
-<https://bugs.launchpad.net/holopy/+filebug>`_ them.
+<https://github.com/manoharan-lab/holopy/issues>`_ them.
 
 Defining the geometry of the scatterer
 ======================================
