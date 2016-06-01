@@ -105,7 +105,7 @@ class PTemcee(Emcee):
         return PTSampler(self.ntemps, self.nwalkers, self.ndim, self.lnlike, self.lnprior, threads=self.threads)
 
 
-def subset_tempering(model, data, noise_sd, final_len=600, nwalkers=500, min_pixels=20, max_pixels=4000, threads='all', stages=3, stage_len=30, cutoff=.5):
+def subset_tempering(model, data, noise_sd, final_len=600, nwalkers=500, min_pixels=10, max_pixels=1000, threads='all', stages=3, stage_len=30):
     """
     Parameters
     ----------
@@ -117,11 +117,6 @@ def subset_tempering(model, data, noise_sd, final_len=600, nwalkers=500, min_pix
         Number of pixels to use in the first stage
     max_pixels: int
         Number of pixels to use in the final stage
-    cutoff: float (0 < cutoff < 1)
-        At the end of each preliminary stage, discard samples with
-        lnprobability < np.percentile(lnprobability, 100*cutoff). IE, discard
-        he lower fraction of samples, the default argument of .5 corresponds to
-        discarding samples below the median.
     stage_len: int
         Number of samples to use in preliminary stages
     """
@@ -137,7 +132,10 @@ def subset_tempering(model, data, noise_sd, final_len=600, nwalkers=500, min_pix
     stage_fractions = fractions[:-1]
     final_fraction = fractions[-1]
 
-    def new_par(par, mu, std):
+    def new_par(par, v):
+        mu = v.value
+        # for an assymetric object, be conservative and choose the larger deviation
+        std = max(v.plus, v.minus)
         if hasattr(par, 'lower_bound'):
             return prior.BoundedGaussian(mu, std, getattr(par, 'lower_bound', -np.inf), getattr(par, 'upper_bound', np.inf), name=par.name)
         else:
@@ -157,12 +155,7 @@ def subset_tempering(model, data, noise_sd, final_len=600, nwalkers=500, min_pix
         tstart = time()
         emcee = Emcee(model=model, data=data, noise_sd=noise_sd, nwalkers=nwalkers, random_subset=fraction, threads=threads)
         result = emcee.sample(stage_len, p0)
-
-        most_probable = result.most_probable_values()
-        # TODO: use some form of clustering instead?
-        good_samples = result.sampler.flatchain[np.where(result.sampler.flatlnprobability > np.percentile(result.sampler.flatlnprobability, 100*cutoff))]
-        std = good_samples.std(axis=0)
-        new_pars = [new_par(*p) for p in zip(model.parameters, most_probable, std)]
+        new_pars = [new_par(*p) for p in zip(model.parameters, result.values())]
         p0 = np.vstack([p.sample(size=nwalkers) for p in new_pars]).T
         tend = time()
         print("--------\nStage at f={} finished in {}s.\nDrawing samples for next stage from:\n{}".format(fraction, tend-tstart, '\n'.join([sample_string(p) for p in new_pars])))

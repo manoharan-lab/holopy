@@ -1,3 +1,5 @@
+from __future__ import division
+
 from holopy.fitting.parameter import Parameter
 
 import numpy as np
