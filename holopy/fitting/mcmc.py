@@ -173,9 +173,6 @@ class EmceeResult(HoloPyObject):
         self.sampler = sampler
         self.model = model
 
-        acceptance_fraction = sampler.acceptance_fraction.mean()
-        if acceptance_fraction > .5 or acceptance_fraction < .2:
-            print("Acceptance fraction is: {} which is outside the desired range of 0.2 to 0.5")
 
     @property
     def _names(self):
