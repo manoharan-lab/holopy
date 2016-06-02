@@ -173,7 +173,6 @@ class EmceeResult(HoloPyObject):
         self.sampler = sampler
         self.model = model
 
-
     @property
     def _names(self):
         return [p.name for p in self.model.parameters]
@@ -282,7 +281,7 @@ class EmceeResult(HoloPyObject):
         return values
 
     def most_probable_values_dict(self):
-        dict([(n, v) for (n, v) in zip(self._names, self.most_probable_values())])
+        return {n: v for (n, v) in zip(self._names, self.most_probable_values())}
 
 
     def values(self):
