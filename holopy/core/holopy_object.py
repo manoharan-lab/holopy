@@ -26,7 +26,6 @@ analysis procedures.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 """
-import inspect
 import numpy as np
 import yaml
 
@@ -38,6 +37,8 @@ class SerializableMetaclass(yaml.YAMLObjectMetaclass):
         # as the yaml tag.
         cls.yaml_loader.add_constructor('!{0}'.format(cls.__name__), cls.from_yaml)
         cls.yaml_dumper.add_representer(cls, cls.to_yaml)
+        if '__init__' in kwds:
+            cls._args = kwds['__init__'].func_code.co_varnames[1:]
 
 
 class Serializable(yaml.YAMLObject):
@@ -58,14 +59,6 @@ class HoloPyObject(Serializable):
     and loading from HoloPy yaml files
 
     """
-
-    @property
-    def _args(self):
-        try:
-            return self.__class__._args_cache
-        except AttributeError:
-            self.__class__._args_cache = inspect.getargspec(self.__init__).args[1:]
-            return self.__class__._args_cache
 
     @property
     def _dict(self):
