@@ -34,7 +34,6 @@ from errors import UnspecifiedPosition
 from .holopy_object import HoloPyObject
 from .metadata import Angles, Positions
 from .helpers import _ensure_pair, _ensure_array, dict_without, ensure_3d, is_none
-import inspect
 
 def zeros_like(obj, dtype=None):
     """
@@ -138,14 +137,8 @@ def _describe_init_signature(cls):
         # documentation snippits above
         attrs[key] = val.format(name = cls.__name__)
 
-    argspec = inspect.getargspec(cls.__init__)
-    # leave off self (the first argument)
-    args = argspec.args[1:]
-    if argspec.keywords is not None:
-        args.append(argspec.keywords)
-
     attr_sig = "Parameters\n    ----------\n{0}".format(
-        '\n'.join([attrs[arg] for arg in args if arg in attrs]))
+        '\n'.join([attrs[arg] for arg in cls._args if arg in attrs]))
     cls.__doc__ = cls.__doc__.format(attrs = attr_sig)
     return cls
 
