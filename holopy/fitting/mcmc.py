@@ -4,6 +4,7 @@ from holopy.fitting.fit import CostComputer
 from holopy.fitting.model import Model
 from holopy.core.holopy_object import HoloPyObject
 import prior
+from random_subset import make_subset_data
 
 from emcee import PTSampler, EnsembleSampler
 
@@ -46,42 +47,19 @@ class HologramLikelihood(ProbabilityComputer):
 
 
 class Emcee(HoloPyObject):
-    def __init__(self, model, data, noise_sd, nwalkers=50, random_subset=None, threads=None):
-        self.parameters = model.parameters
-        self.ndim = len(self.parameters)
+    def __init__(self, model, data, nwalkers=50, random_subset=None, threads=None):
         self.model = model
-        self.likelihood = HologramLikelihood(data, model, noise_sd, random_subset)
+        self.data = make_subset_data(data, random_subset)
+        #HologramLikelihood(data, model, noise_sd, random_subset)
         self.nwalkers = nwalkers
         self.threads = threads
 
-    def _pack(self, vals):
-        pars = {}
-        for par, value in zip(self.parameters, vals):
-            pars[par.name] = value
-        return pars
-
-    def lnprior(self, vals):
-        return self.model.lnprior(self._pack(vals))
-
-    def lnlike(self, vals):
-        return self.likelihood.lnprob(self._pack(vals))
-
-    def lnposterior(self, vals):
-        lnprior = self.lnprior(vals)
-        # prior is sometimes used to forbid thing like negative radius
-        # which will fail if you attempt to compute a hologram of, so
-        # don't try to compute likelihood where the prior already
-        # forbids you to be
-        if lnprior == -np.inf:
-            return lnprior
-        else:
-            return lnprior + self.lnlike(vals)
 
     def make_guess(self):
-        return np.vstack([p.sample(size=(self.nwalkers)) for p in self.parameters]).T
+        return np.vstack([p.sample(size=(self.nwalkers)) for p in self.model.parameters]).T
 
     def make_sampler(self):
-        return EnsembleSampler(self.nwalkers, self.ndim, self.lnposterior, threads=self.threads)
+        return EnsembleSampler(self.nwalkers, len(self.model.parameters), self.model.lnposterior, threads=self.threads, args=[self.data])
 
     def sample(self, n_samples, p0=None):
         sampler = self.make_sampler()
@@ -105,7 +83,7 @@ class PTemcee(Emcee):
         return PTSampler(self.ntemps, self.nwalkers, self.ndim, self.lnlike, self.lnprior, threads=self.threads)
 
 
-def subset_tempering(model, data, noise_sd, final_len=600, nwalkers=500, min_pixels=10, max_pixels=1000, threads='all', stages=3, stage_len=30):
+def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, max_pixels=1000, threads='all', stages=3, stage_len=30):
     """
     Parameters
     ----------
@@ -153,15 +131,16 @@ def subset_tempering(model, data, noise_sd, final_len=600, nwalkers=500, min_pix
     p0 = None
     for fraction in stage_fractions:
         tstart = time()
-        emcee = Emcee(model=model, data=data, noise_sd=noise_sd, nwalkers=nwalkers, random_subset=fraction, threads=threads)
+        emcee = Emcee(model=model, data=data, nwalkers=nwalkers, random_subset=fraction, threads=threads)
         result = emcee.sample(stage_len, p0)
         new_pars = [new_par(*p) for p in zip(model.parameters, result.values())]
+        # TODO need to do something if we come back sd == 0
         p0 = np.vstack([p.sample(size=nwalkers) for p in new_pars]).T
         tend = time()
         print("--------\nStage at f={} finished in {}s.\nDrawing samples for next stage from:\n{}".format(fraction, tend-tstart, '\n'.join([sample_string(p) for p in new_pars])))
 
     tstart = time()
-    emcee = Emcee(model=model, data=data, noise_sd=noise_sd, nwalkers=nwalkers, random_subset=final_fraction, threads=threads)
+    emcee = Emcee(model=model, data=data, nwalkers=nwalkers, random_subset=final_fraction, threads=threads)
     result = emcee.sample(final_len, p0)
     tend = time()
     print("--------\nFinal stage at f={}, took {}s".format(final_fraction, tend-tstart))

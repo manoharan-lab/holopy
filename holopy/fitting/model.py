@@ -214,8 +214,15 @@ def limit_overlaps(fraction=.1):
         return s.largest_overlap() < ((np.min(s.r) * 2) * fraction)
     return constraint
 
+class BaseModel(HoloPyObject):
+    def __init__(self, scatterer):
+        if not isinstance(scatterer, Parametrization):
+            scatterer = ParameterizedObject(scatterer)
+        self.scatterer = scatterer
+        self.parameters = self.scatterer.parameters
 
-class Model(HoloPyObject):
+
+class Model(BaseModel):
     """
     Representation of a model to fit to data
 
@@ -236,15 +243,11 @@ class Model(HoloPyObject):
     """
     def __init__(self, scatterer, theory, alpha=None,
                  use_random_fraction=None, constraints=[]):
-        if not isinstance(scatterer, Parametrization):
-            scatterer = ParameterizedObject(scatterer)
-        self.scatterer = scatterer
-
+        super(Model, self).__init__(scatterer)
         if isinstance(theory, basestring):
             import holopy.scattering.theory as theory_module
             kind, func = theory.split('.')
             theory = getattr(getattr(theory_module, kind), func)
-
 
         self.theory = theory
         self.use_random_fraction = use_random_fraction
@@ -253,7 +256,6 @@ class Model(HoloPyObject):
             alpha.name = 'alpha'
         self.alpha = alpha
 
-        self.parameters = self.scatterer.parameters
         if isinstance(self.alpha, Parameter):
             self.parameters.append(self.alpha)
 
