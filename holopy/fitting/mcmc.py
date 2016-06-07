@@ -179,7 +179,7 @@ class EmceeResult(HoloPyObject):
         import matplotlib.pyplot as plt
         if traces == 'all':
             traces = slice(None)
-        plt.plot(result.sampler.lnprobability[traces, burn_in:].T, color='k', linewidth=.1)
+        plt.plot(self.sampler.lnprobability[traces, burn_in:].T, color='k', linewidth=.1)
     @property
     def n_steps(self):
         return self.sampler.lnprobability.shape[1]
@@ -212,13 +212,15 @@ class EmceeResult(HoloPyObject):
         import pandas as pd
         if thin == 'acor':
             thin = int(max(self.sampler.acor))
-        chain = self.sampler.chain[burn_in::thin, ...]
+        elif thin is None:
+            thin = 1
+        chain = self.sampler.chain[:, burn_in::thin, ...]
         names = self._names
         npar = len(names)
         df = pd.DataFrame({n: t for (n, t) in zip(names,
                                                   chain.reshape(-1, npar).T)})
         if include_lnprob:
-            df['lnprob'] = self.sampler.lnprobability[burn_in::thin].reshape(-1)
+            df['lnprob'] = self.sampler.lnprobability[:, burn_in::thin].reshape(-1)
 
         return df
 
