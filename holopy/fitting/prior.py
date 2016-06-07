@@ -1,9 +1,12 @@
 from __future__ import division
 
 from holopy.fitting.parameter import Parameter
+from holopy.fitting.errors import ParameterSpecificationError
 
 import numpy as np
 from numpy import random
+
+
 
 class Prior(Parameter):
     pass
@@ -39,6 +42,8 @@ class Gaussian(Prior):
     def __init__(self, mu, sd, name=None):
         self.mu = mu
         self.sd = sd
+        if sd <= 0:
+            raise ParameterSpecificationError("Specified sd of {} is not greater than 0".format(sd))
         self.sdsq = sd**2
         self.name=name
         self._lnprob_normalization = -np.log(self.sd * np.sqrt(2*np.pi))
@@ -78,7 +83,9 @@ class BoundedGaussian(Gaussian):
 
     def sample(self, size=None):
         val = super(BoundedGaussian, self).sample(size)
-        # TODO: do something smarter than just clipping
-        return np.clip(val, self.lower_bound, self.upper_bound)
+        out = True
+        while np.any(out):
+            out = np.where(np.logical_and(val < self.lower_bound, val > self.upper_bound))
+            val[out] = super(BoundedGaussian, self).sample(len(out[0]))
 
         return val

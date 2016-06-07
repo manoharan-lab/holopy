@@ -1,6 +1,7 @@
 from __future__ import division
 
 from holopy.fitting.fit import CostComputer
+from holopy.fitting.errors import ParameterSpecificationError
 from holopy.fitting.model import Model
 from holopy.core.holopy_object import HoloPyObject
 import prior
@@ -110,10 +111,11 @@ def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, ma
     stage_fractions = fractions[:-1]
     final_fraction = fractions[-1]
 
-    def new_par(par, v):
+    def new_par(par, v, std=None):
         mu = v.value
         # for an assymetric object, be conservative and choose the larger deviation
-        std = max(v.plus, v.minus)
+        if std is None:
+            std = max(v.plus, v.minus)
         if hasattr(par, 'lower_bound'):
             return prior.BoundedGaussian(mu, std, getattr(par, 'lower_bound', -np.inf), getattr(par, 'upper_bound', np.inf), name=par.name)
         else:
@@ -133,7 +135,11 @@ def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, ma
         tstart = time()
         emcee = Emcee(model=model, data=data, nwalkers=nwalkers, random_subset=fraction, threads=threads)
         result = emcee.sample(stage_len, p0)
-        new_pars = [new_par(*p) for p in zip(model.parameters, result.values())]
+        try:
+            new_pars = [new_par(*p) for p in zip(model.parameters, result.values())]
+        except ParameterSpecificationError:
+            print("Could not find walkers within 1 sigma of most probable result. Using std of entire ensemble for next stage")
+            new_pars = [new_par(*p) for p in zip(model.parameters, result.values(), result.sampler.flatchain.std(axis=0))]
         # TODO need to do something if we come back sd == 0
         p0 = np.vstack([p.sample(size=nwalkers) for p in new_pars]).T
         tend = time()
@@ -160,15 +166,23 @@ class EmceeResult(HoloPyObject):
         import matplotlib.pyplot as plt
         names = self._names
         samples = self.sampler.chain
-        plt.figure(figsize=(9, 8), linewidth=.1)
-        for var in range(len(names)):
-            plt.subplot(3, 2, var+1)
+        pars = len(names)
+        rows = (pars+1)//2
+        plt.figure(figsize=(9, rows*2.8), linewidth=.1)
+        for var in range(pars):
+            plt.subplot(rows, 2, var+1)
             plt.plot(samples[:traces, burn_in:, var].T, color='k', linewidth=.3)
             plt.title(names[var])
 
+
+    def plot_lnprob(self, traces='all', burn_in=0):
+        import matplotlib.pyplot as plt
+        if traces == 'all':
+            traces = slice(None)
+        plt.plot(result.sampler.lnprobability[traces, burn_in:].T, color='k', linewidth=.1)
     @property
     def n_steps(self):
-        return self.sampler.lnprobability.shape[0]
+        return self.sampler.lnprobability.shape[1]
 
     @property
     def approx_independent_steps(self):
@@ -275,7 +289,7 @@ class EmceeResult(HoloPyObject):
     def _repr_html_(self):
         results = "{}".format(",".join(["{}: {}".format(n, v._repr_latex_()) for n, v in zip(self._names, self.values())]))
         block = """<h4>EmceeResult</h4> {results}
-{s.sampler.chain.shape[1]} walkers
+{s.sampler.chain.shape[0]} walkers
 {s.n_steps} Steps
 ~ {s.approx_independent_steps} of which are independent
 Acceptance Fraction: {s.acceptance_fraction}
@@ -308,7 +322,7 @@ class UncertainValue(HoloPyObject):
         confidence=""
         if self.n_sigma != 1:
             confidence=" (\mathrm{{{}\ sigma}})".format(self.n_sigma)
-        display_precision = int(round(np.log10(self.value/(min(self.plus, self.minus)))))
+        display_precision = int(round(np.log10(self.value/(max(self.plus, self.minus)))))
         value_fmt = "{{:.{}g}}".format(display_precision)
         value = value_fmt.format(self.value)
         return "${value}^{{+{s.plus:.2g}}}_{{-{s.minus:.2g}}}{confidence}$".format(s=self, confidence=confidence, value=value)
