@@ -82,13 +82,13 @@ def center_find(image, centers=1, threshold=.5, blursize=3.):
     Notes
     -----
     When threshold is close to 1, the code will run quickly but may lack
-    accuracy. When scale is set to 0, the gradient at all pixels will
+    accuracy. When threshold is set to 0, the gradient at all pixels will
     contribute to finding the centers and the code will take a little
     bit longer.
     """
-    
-    smoothimg=ndimage.filters.gaussian_filter(image,blursize)
-    col_deriv, row_deriv = image_gradient(smoothimg)
+    if blursize>0:
+        image = ndimage.filters.gaussian_filter(image,blursize)
+    col_deriv, row_deriv = image_gradient(image)
     res = hough(col_deriv, row_deriv, centers, threshold)
     if centers==1:
         res = res[0]
