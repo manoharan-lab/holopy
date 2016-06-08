@@ -24,6 +24,7 @@ Classes for defining models of scattering for fitting
 from __future__ import division
 
 import numpy as np
+import inspect
 from os.path import commonprefix
 from .errors import ModelDefinitionError
 from ..core.holopy_object import HoloPyObject
@@ -65,7 +66,7 @@ class Parametrization(HoloPyObject):
     def make_from(self, parameters):
         # parameters is an ordered dictionary
         for_schema = {}
-        for arg in self._args:
+        for arg in inspect.getargspec(self.make_scatterer).args:
             if (arg + '.real') in parameters and (arg + '.imag') in parameters:
                 for_schema[arg] = (parameters[arg + '.real'] + 1.j *
                                    parameters[arg + '.imag'])
@@ -288,15 +289,3 @@ class Model(BaseModel):
         return self.theory(self.scatterer.guess, schema, alpha)
 
     # TODO: Allow a layer on top of theory to do things like moving sphere
-
-    @property
-    def _dict(self):
-        d = super(Model, self)._dict
-        theory = d['theory']
-        # if the theory is something like Mie.calc_holo, rather than
-        # Mie().calc_holo, we need to represent it differently
-        if isinstance(theory.im_class, type):
-            theory_class = theory.im_self.__name__
-            theory_func = theory.im_func.__name__
-            d['theory'] = '.'.join((theory_class, theory_func))
-        return d
