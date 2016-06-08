@@ -4,6 +4,7 @@ from holopy.core.holopy_object import HoloPyObject
 from holopy.core import Marray
 from holopy.core.helpers import dict_without
 from holopy.scattering.theory.scatteringtheory import scattered_field_to_hologram
+from holopy.scattering.errors import MultisphereExpansionNaN, MultisphereFieldNaN, ConvergenceFailureMultisphere
 
 import numpy as np
 import pandas as pd
@@ -52,7 +53,10 @@ class AlphaModel(NoiseModel):
         noise_sd = pars.pop('noise_sd', self.noise_sd)
 
         scatterer = self.scatterer.make_from(pars)
-        fields = self.theory.calc_field(scatterer, data)
+        try:
+            fields = self.theory.calc_field(scatterer, data)
+        except (MultisphereExpansionNaN, MultisphereFieldNaN, ConvergenceFailureMultisphere):
+            return -np.inf
         holo = scattered_field_to_hologram(alpha*fields, data.optics)
 
         return -N*np.log(noise_sd*np.sqrt(2*np.pi)) - ((holo-data)**2).sum()/(2*noise_sd**2)
