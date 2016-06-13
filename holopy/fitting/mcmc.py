@@ -280,16 +280,25 @@ class EmceeResult(HoloPyObject):
 
 
     def values(self):
-        lnprob = self.sampler.lnprobability
-        maxp = lnprob.max()
-        region = np.where(lnprob > maxp -0.5)
-        max_vals = self.sampler.chain[region].max(axis=0)
-        min_vals = self.sampler.chain[region].min(axis=0)
-        prob_vals = self.most_probable_values()
-        return [UncertainValue(p, x-p, p-n) for p, x, n in zip(prob_vals, max_vals, min_vals)]
+        d = self.data_frame(thin=None).sort_values('lnprob', ascending=False)
+        mp = d.iloc[0,:-1]
+        def find_bound(f, i):
+            b = d.iloc[0, :-1]
+            while (b == mp).any():
+                i+=1
+                b = f(b, d.iloc[i,:-1])
+            return b
+
+        i = 0
+        while d.lnprob.iloc[i] > d.lnprob.max()-.5:
+            i+=1
+
+        upper = find_bound(np.maximum, i)
+        lower = find_bound(np.minimum, i)
+        return [UncertainValue(mp[p], upper[p]-mp[p], mp[p]-lower[p]) for p in self._names]
 
     def _repr_html_(self):
-        results = "{}".format(",".join(["{}: {}".format(n, v._repr_latex_()) for n, v in zip(self._names, self.values())]))
+        results = "{}".format(", ".join(["{}:{}".format(n, v._repr_latex_()) for n, v in zip(self._names, self.values())]))
         block = """<h4>EmceeResult</h4> {results}
 {s.sampler.chain.shape[0]} walkers
 {s.n_steps} Steps
@@ -324,7 +333,7 @@ class UncertainValue(HoloPyObject):
         confidence=""
         if self.n_sigma != 1:
             confidence=" (\mathrm{{{}\ sigma}})".format(self.n_sigma)
-        display_precision = int(round(np.log10(self.value/(max(self.plus, self.minus)))))
-        value_fmt = "{{:.{}g}}".format(display_precision)
+        display_precision = int(round(np.log10(self.value/(min(self.plus, self.minus))) + .6))
+        value_fmt = "{{:.{}g}}".format(max(display_precision, 2))
         value = value_fmt.format(self.value)
         return "${value}^{{+{s.plus:.2g}}}_{{-{s.minus:.2g}}}{confidence}$".format(s=self, confidence=confidence, value=value)
