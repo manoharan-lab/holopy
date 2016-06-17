@@ -20,7 +20,10 @@ class NoiseModel(BaseModel):
         return {par.name: val for par, val in zip(self.parameters, vals)}
 
     def lnprior(self, par_vals):
-        return sum([p.lnprob(v) for p, v in zip(self.parameters, par_vals)])
+        if isinstance(par_vals, dict):
+            return sum([p.lnprob(par_vals[p.name]) for p in self.parameters])
+        else:
+            return sum([p.lnprob(v) for p, v in zip(self.parameters, par_vals)])
 
     def lnposterior(self, par_vals, data):
         lnprior = self.lnprior(par_vals)
