@@ -17,41 +17,16 @@ class ProbabilityComputer(HoloPyObject):
         raise NotImplementedError
 
 
-class BayesianModel(Model):
-    def lnprior(self, par_vals):
-        return sum([p.lnprob(par_vals[p.name]) for p in self.parameters])
-
-
-class HologramLikelihood(ProbabilityComputer):
-    def __init__(self, data, model, noise_sd, random_subset=None):
-        self.data = data
-        self.N = data.shape[0] * data.shape[1]
-        self.noise_sd = noise_sd
-        self.random_subset = random_subset
-        self.computer = CostComputer(data, model, random_subset)
-        if random_subset is not None:
-            self.N = self.computer.selection.size
-
-
-    def forward(self, par_vals):
-        return self.computer._calc(par_vals)
-
-    def lnprob(self, par_vals):
-#        I have tried resetting the random subset each time we
-#        compute an lnprob, but that appears to lead to instability in
-#        the solution, so we will just have to hope that the chance of
-#        picking a subset which is not representatative is vanishingly
-#        small. Which I think it is. -tgd 2016-05-04
-        return (-self.N*np.log(self.noise_sd*np.sqrt(2 * np.pi)) -
-                ((self.computer.flattened_difference(par_vals)**2).sum()/
-                 (2*self.noise_sd**2)))
-
-
 class Emcee(HoloPyObject):
     def __init__(self, model, data, nwalkers=50, random_subset=None, threads=None):
         self.model = model
-        self.data = make_subset_data(data, random_subset)
-        #HologramLikelihood(data, model, noise_sd, random_subset)
+        if data.ndim == 3:
+            self.n_frames = data.shape[2]
+            self.data = [make_subset_data(data[..., i], random_subset)
+                         for i in range(self.n_frames)]
+        else:
+            self.n_frames = 1
+            self.data = make_subset_data(data, random_subset)
         self.nwalkers = nwalkers
         self.threads = threads
 
@@ -60,7 +35,7 @@ class Emcee(HoloPyObject):
         return np.vstack([p.sample(size=(self.nwalkers)) for p in self.model.parameters]).T
 
     def make_sampler(self):
-        return EnsembleSampler(self.nwalkers, len(self.model.parameters), self.model.lnposterior, threads=self.threads, args=[self.data])
+        return EnsembleSampler(self.nwalkers, len(list(self.model.parameters)), self.model.lnposterior, threads=self.threads, args=[self.data])
 
     def sample(self, n_samples, p0=None):
         sampler = self.make_sampler()
@@ -105,8 +80,8 @@ def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, ma
     if threads != None:
         print("Using {} threads".format(threads))
 
-
-    fractions = np.logspace(np.log10(min_pixels), np.log10(max_pixels), stages+1)/data.size
+    n_pixels = data.shape[0]*data.shape[1]
+    fractions = np.logspace(np.log10(min_pixels), np.log10(max_pixels), stages+1)/n_pixels
 
     stage_fractions = fractions[:-1]
     final_fraction = fractions[-1]
@@ -284,17 +259,17 @@ class EmceeResult(HoloPyObject):
         mp = d.iloc[0,:-1]
         def find_bound(f, i):
             b = d.iloc[0, :-1]
-            while (b == mp).any():
-                i+=1
+            while (b == mp).any() and i < d.shape[0]:
                 b = f(b, d.iloc[i,:-1])
+                i+=1
             return b
 
         i = 0
-        while d.lnprob.iloc[i] > d.lnprob.max()-.5:
+        while d.lnprob.iloc[i] > d.lnprob.max()-.5 and i < d.shape[0]:
             i+=1
 
-        upper = find_bound(np.maximum, i)
-        lower = find_bound(np.minimum, i)
+        upper = find_bound(np.maximum, i+1)
+        lower = find_bound(np.minimum, i+1)
         return [UncertainValue(mp[p], upper[p]-mp[p], mp[p]-lower[p]) for p in self._names]
 
     def _repr_html_(self):

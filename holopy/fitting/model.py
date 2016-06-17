@@ -220,7 +220,19 @@ class BaseModel(HoloPyObject):
         if not isinstance(scatterer, Parametrization):
             scatterer = ParameterizedObject(scatterer)
         self.scatterer = scatterer
-        self.parameters = self.scatterer.parameters
+        self._parameters = self.scatterer.parameters
+
+    @property
+    def parameters(self):
+        return self._parameters
+
+    def _use_parameter(self, par, name):
+        setattr(self, name, par)
+        if isinstance(par, Parameter):
+            if par.name is None:
+                par.name = name
+            self._parameters.append(par)
+
 
 
 class Model(BaseModel):
@@ -253,12 +265,7 @@ class Model(BaseModel):
         self.theory = theory
         self.use_random_fraction = use_random_fraction
 
-        if isinstance(alpha, Parameter) and alpha.name is None:
-            alpha.name = 'alpha'
-        self.alpha = alpha
-
-        if isinstance(self.alpha, Parameter):
-            self.parameters.append(self.alpha)
+        self._use_parameter(alpha, 'alpha')
 
         if len(self.parameters) == 0:
             raise ModelDefinitionError("You must specify at least one parameter to vary in a fit")

@@ -16,13 +16,6 @@ class NoiseModel(BaseModel):
         self.theory = theory
         self._use_parameter(noise_sd, 'noise_sd')
 
-    def _use_parameter(self, par, name):
-        setattr(self, name, par)
-        if isinstance(par, Parameter):
-            if par.name is None:
-                par.name = name
-            self.parameters.append(par)
-
     def _pack(self, vals):
         return {par.name: val for par, val in zip(self.parameters, vals)}
 
@@ -40,26 +33,38 @@ class NoiseModel(BaseModel):
         else:
             return lnprior + self.lnlike(par_vals, data)
 
+    def _fields(self, pars, schema):
+        scatterer = self.scatterer.make_from(pars)
+        try:
+            return self.theory.calc_field(scatterer, schema)
+        except (MultisphereExpansionNaN, MultisphereFieldNaN, ConvergenceFailureMultisphere):
+            return -np.inf
+
+    def _lnlike(self, pars, data):
+        noise_sd = pars.pop('noise_sd', self.noise_sd)
+        holo = self._holo(pars, data)
+        N = data.size
+        return (-N*np.log(noise_sd*np.sqrt(2*np.pi)) -
+                ((holo-data)**2).sum()/(2*noise_sd**2))
+
+    def lnlike(self, par_vals, data):
+        return self._lnlike(self._pack(par_vals), data)
+
+
+
 
 class AlphaModel(NoiseModel):
     def __init__(self, scatterer, theory, noise_sd, alpha):
         super(AlphaModel, self).__init__(scatterer, theory, noise_sd)
         self._use_parameter(alpha, 'alpha')
 
-    def lnlike(self, par_vals, data):
-        N = data.size
-        pars = self._pack(par_vals)
-        alpha = pars.pop('alpha', self.alpha)
-        noise_sd = pars.pop('noise_sd', self.noise_sd)
+    def _holo(self, pars, schema, alpha=None):
+        if alpha is None:
+            alpha = self.alpha
+        alpha = pars.pop('alpha', alpha)
+        fields = self._fields(pars, schema)
+        return scattered_field_to_hologram(alpha*fields, schema.optics)
 
-        scatterer = self.scatterer.make_from(pars)
-        try:
-            fields = self.theory.calc_field(scatterer, data)
-        except (MultisphereExpansionNaN, MultisphereFieldNaN, ConvergenceFailureMultisphere):
-            return -np.inf
-        holo = scattered_field_to_hologram(alpha*fields, data.optics)
-
-        return -N*np.log(noise_sd*np.sqrt(2*np.pi)) - ((holo-data)**2).sum()/(2*noise_sd**2)
 
 class SpeckleModel(NoiseModel):
     names = 'a', 'beta', 'xi', 'eta', 'd'
