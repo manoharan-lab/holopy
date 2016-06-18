@@ -27,13 +27,17 @@ Library of code to do Mie scattering calculations.
 import numpy as np
 import mie_specfuncs
 
+from mieangfuncs import dn_1_down, lentz_dn1
+
 from numpy import sin, cos, array
 
 def scatcoeffs(m, x, nstop): # see B/H eqn 4.88
     # implement criterion used by BHMIE plus a couple more orders to
     # be safe
     nmx = int(array([nstop, np.round_(np.absolute(m*x))]).max()) + 20
-    Dnmx = mie_specfuncs.log_der_1(m*x, nmx, nstop)
+    #Dnmx = mie_specfuncs.log_der_1(m*x, nmx, nstop)
+    Dnmx = dn_1_down(m * x, nmx, nstop,
+                                 lentz_dn1(m * x, nstop, 1e-3, 1e-16))
     n = np.arange(nstop+1)
     psi, xi = mie_specfuncs.riccati_psi_xi(x, nstop)
     psishift = np.concatenate((np.zeros(1), psi))[0:nstop+1]

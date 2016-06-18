@@ -634,3 +634,118 @@
       pisout =  pis(1:n)
       return
       end
+
+
+      subroutine Dn_1_down(z, nmx, nstop, start_val, Dn_out)
+        ! Calculate logarithmic derivatives D_n(z) of the Riccati-Bessel
+        ! function \psi_n(z) by downward recursion as in BHMIE.
+        ! Calculate from n = 0 to n = nstop, using D_nmx = start_val as the
+        ! starting point for downward recursion.        
+        ! Inputs:
+        !    z: argument 
+        !    nmx: value of n from which down recursion starts
+        !    nstop: maximum returned order
+        !    start_val: value from which recursion begins
+        ! Outputs:
+        !    Dns: Dn(z) from n = 0 to n_stop
+        implicit none
+        integer, intent(in) :: nmx, nstop
+        integer :: i
+        complex (kind = 8), intent(in) :: z, start_val
+        complex (kind = 8), dimension(0:nmx) :: Dn
+        complex (kind = 8), intent(out), dimension(0:nstop) :: Dn_out
+
+        Dn(nmx) = start_val
+
+        do i = nmx, 1, -1
+           Dn(i - 1) = i / z - 1. / (Dn(i) + i / z)
+        end do
+
+        Dn_out = Dn(0:nstop)
+        return
+        end
+      
+
+        subroutine lentz_Dn1(z, n, eps1, eps2, Dn)
+          ! Calculate logarithmic derivative D_n(z) of the Riccati-Bessel
+          ! function for a single value of n using the Lentz (1976)
+          ! continued fraction method.
+          ! Implement check/workaround for ill-conditioning described
+          ! under "Algorithm Improvement" in Lentz (1976); see also
+          ! Wiscombe/NCAR Mie report.
+          !
+          ! Inputs:
+          !     z: complex argument
+          !     n: order of the logarithmic derivative
+          !     eps1: value of continued fraction numerator or denominator
+          !           triggering ill-conditioning workaround. Recommend
+          !           1e-3.
+          !     eps2: converge when additional products in continued fraction
+          !           differ by less than eps2 from 1. Recommend 1e-16.
+          ! Outputs:
+          !      Dn: value of D_n(z)
+
+          implicit none
+          complex (kind = 8), intent(in) :: z
+          integer, intent(in) :: n
+          real (kind = 8), intent(in) :: eps1, eps2
+          complex (kind = 8), intent(out) :: Dn
+          complex (kind = 8) :: a1, a2, numerator, denominator, &
+               nth_convergent, nth_product, ai, aiplus1, aiplus2, &
+               xi1, xi2
+          integer :: ctr
+          
+          a1 = a_i(1)
+          a2 = a_i(2)
+
+          ! First compute ratio j_(n-1) / j_n
+          ! Initialize with [a1][a2, a1] / [a2] in Lentz's notation
+          numerator = a2 + 1. / a1
+          denominator = a2
+          nth_product = a1 * numerator / denominator
+          nth_convergent = nth_product
+
+          ctr = 3
+
+          ! main loop
+          do while ((abs(dreal(nth_product) - 1) > eps2) .or. &
+               (abs(imag(nth_product)) > eps2))
+             ai = a_i(ctr)
+             numerator = ai + 1. / numerator
+             denominator = ai + 1. / denominator
+
+             ! ill-conditioning check
+             if ((abs(numerator / ai) < eps1) .or. &
+                  (abs(denominator / ai) < eps1)) then
+                 ! Compute xi1, xi2 as defined by Wiscombe eqn 34 or Lentz
+                 ! eqn 10, 11
+                 aiplus1 = a_i(ctr + 1)
+                 xi1 = 1. + aiplus1 * numerator
+                 xi2 = 1. + aiplus1 * denominator
+                 nth_convergent = nth_convergent * xi1 / xi2
+                 ! recompute numerator, denominator to restart iteration
+                 ! Wiscombe eqn. 35
+                 aiplus2 = a_i(ctr + 2)
+                 numerator = aiplus2 + numerator / xi1
+                 denominator = aiplus2 + denominator / xi2
+                 ctr = ctr + 2
+              end if
+
+              nth_product = numerator / denominator
+              nth_convergent = nth_convergent * nth_product
+              ctr = ctr + 1    
+
+           end do
+
+       Dn = nth_convergent - n / z
+
+        contains
+          complex (kind = 8) function a_i(i) 
+            ! Calculate a_n according to Lentz eqn. 9
+            ! or Wiscombe eqn. 25b. Note that Lentz's v = our n + 0.5
+            ! and Lentz's n is i here.
+            integer, intent(in) :: i
+            a_i = (-1)**(i + 1) * 2 * (n + i - 0.5) / z
+            end function a_i
+
+          end subroutine lentz_Dn1
