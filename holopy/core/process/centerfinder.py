@@ -42,7 +42,7 @@ import numpy as np
 from .enhance import normalize
 from scipy import ndimage
 
-def center_find(image, centers=1, threshold=.5):
+def center_find(image, centers=1, threshold=.5, blursize=3.):
     """
     Finds the coordinates of the center of a holographic pattern.
     The coordinates returned are in pixels (row number, column
@@ -51,7 +51,15 @@ def center_find(image, centers=1, threshold=.5):
     optional threshold parameter (between 0 and 1) gives a bound on
     what magnitude of gradients to include in the calculation. For
     example, threshold=.75 means ignore any gradients that are less
-    than 75% of the maximum gradient in the image.
+    than 75% of the maximum gradient in the image. The optional 
+    blursize parameter sets the size of a Gaussian filter that is
+    applied to the image. This step improves accuracy when small
+    features in the image have large gradients (e.g. dust particles
+    on the camera). Without blurring, these features may be
+    incorrectly identified as the hologram center. For best results,
+    blursize should be set to the radius of features to be ignored,
+    but smaller than the distance between hologram fringes. To skip
+    blurring, set blursize to 0. 
 
     Parameters
     ----------
@@ -62,6 +70,9 @@ def center_find(image, centers=1, threshold=.5):
     threshold : float (optional)
         fraction of the maximum gradient below which all
         other gradients will be ignored (range 0-.99)
+    blursize : float (optional)
+        radius (in pixels) of the Gaussian filter that 
+        is applied prior to Hough transform
 
     Returns
     -------
@@ -70,11 +81,13 @@ def center_find(image, centers=1, threshold=.5):
 
     Notes
     -----
-    When scale is close to 1, the code will run quickly but may lack
-    accuracy. When scale is set to 0, the gradient at all pixels will
+    When threshold is close to 1, the code will run quickly but may lack
+    accuracy. When threshold is set to 0, the gradient at all pixels will
     contribute to finding the centers and the code will take a little
     bit longer.
     """
+    if blursize>0:
+        image = ndimage.filters.gaussian_filter(image,blursize)
     col_deriv, row_deriv = image_gradient(image)
     res = hough(col_deriv, row_deriv, centers, threshold)
     if centers==1:
