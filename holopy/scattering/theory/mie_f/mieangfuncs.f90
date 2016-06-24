@@ -636,7 +636,7 @@
       end
 
 
-      subroutine Dn_1_down(z, nmx, nstop, start_val, Dn_out)
+      subroutine dn_1_down(z, nmx, nstop, start_val, Dn_out)
         ! Calculate logarithmic derivatives D_n(z) of the Riccati-Bessel
         ! function \psi_n(z) by downward recursion as in BHMIE.
         ! Calculate from n = 0 to n = nstop, using D_nmx = start_val as the
@@ -666,7 +666,7 @@
         end
       
 
-        subroutine lentz_Dn1(z, n, eps1, eps2, Dn)
+        subroutine lentz_dn1(z, n, eps1, eps2, Dn)
           ! Calculate logarithmic derivative D_n(z) of the Riccati-Bessel
           ! function for a single value of n using the Lentz (1976)
           ! continued fraction method.

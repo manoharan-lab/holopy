@@ -37,7 +37,7 @@ from ...errors import ModelInputError
 from numpy import exp, sin, cos, real, imag
 from mie_specfuncs import Qratio, log_der_13, riccati_psi_xi
 
-def scatcoeffs_multi(marray, xarray):
+def scatcoeffs_multi(marray, xarray, eps1 = 1e-3, eps2 = 1e-16):
     '''
     Calculate scattered field expansion coefficients (in the Mie formalism)
     for a particle with an arbitrary number of layers.
@@ -61,7 +61,7 @@ def scatcoeffs_multi(marray, xarray):
     nstop = miescatlib.nstop(xarray.max())
 
     # initialize H_n^a and H_n^b in the core, see eqns. 12a and 13a
-    intl = log_der_13(marray[0]*xarray[0], nstop)[0]
+    intl = log_der_13(marray[0]*xarray[0], nstop, eps1, eps2)[0]
     hans = intl
     hbns = intl
 	
@@ -70,8 +70,8 @@ def scatcoeffs_multi(marray, xarray):
         z2 = marray[lay]*xarray[lay]  # m_l x_l
 
         # calculate logarithmic derivatives D_n^1 and D_n^3
-        derz1s = log_der_13(z1, nstop)
-        derz2s = log_der_13(z2, nstop)
+        derz1s = log_der_13(z1, nstop, eps1, eps2)
+        derz2s = log_der_13(z2, nstop, eps1, eps2)
 
         # calculate G1, G2, Gtilde1, Gtilde2 according to 
         # eqns 26-29
@@ -82,7 +82,8 @@ def scatcoeffs_multi(marray, xarray):
         Gt2 = marray[lay-1]*hbns - marray[lay]*derz1s[1]
 
         # calculate ratio Q_n^l for this layer
-        Qnl = Qratio(z1, z2, nstop, dns1 = derz1s, dns2 = derz2s)
+        Qnl = Qratio(z1, z2, nstop, dns1 = derz1s, dns2 = derz2s, eps1 = eps1,
+                     eps2 = eps2)
 
         # now calculate H^a_n and H^b_n in current layer
         # see eqns 24 and 25

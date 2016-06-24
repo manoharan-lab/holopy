@@ -43,6 +43,8 @@ from numpy import array, sin, cos, zeros, arange, real, imag, exp
 
 import scipy
 from scipy.special import riccati_jn, riccati_yn
+import mieangfuncs
+from mieangfuncs import dn_1_down, lentz_dn1
 
 def riccati_psi_xi(x, nstop):
     if np.imag(x) != 0.:
@@ -77,7 +79,7 @@ def log_der_1(z, nmx, nstop):
         dn[i] = (i+1.)/z - 1.0/(dn[i+1] + (i+1.)/z)
     return dn[0:nstop+1]
 
-def log_der_13(z, nstop):
+def log_der_13(z, nstop, eps1 = 1e-3, eps2 = 1e-16):
     '''
     Calculate logarithmic derivatives of Riccati-Bessel functions psi
     and xi for complex arguments.  Riccati-Bessel conventions follow
@@ -89,13 +91,16 @@ def log_der_13(z, nstop):
     ----------
     z: complex number
     nstop: maximum order of computation
+    eps1: underflow criterion for Lentz continued fraction for Dn1
+    eps2: convergence criterion for Lentz continued fraction for Dn1
     '''
     z = np.complex128(z) # convert to double precision
 
     # Calculate Dn_1 (based on \psi(z)) using downward recursion.
     # See Mackowski eqn. 62
-    nmx = np.maximum(nstop, int(np.round_(np.absolute(z)))) + 15
-    dn1 = log_der_1(z, nmx, nstop)
+    #nmx = np.maximum(nstop, int(np.round_(np.absolute(z)))) + 25
+    #dn1 = log_der_1(z, nmx, nstop)
+    dn1 = dn_1_down(z, nstop + 1, nstop, lentz_dn1(z, nstop + 1, eps1, eps2))
 
     # Calculate Dn_3 (based on \xi) by up recurrence
     # initialize
@@ -113,7 +118,7 @@ def log_der_13(z, nstop):
     return dn1, dn3
 
 # calculate ratio of RB's defined in Yang eqn. 23 by up recursion relation
-def Qratio(z1, z2, nstop, dns1 = None, dns2 = None):
+def Qratio(z1, z2, nstop, dns1 = None, dns2 = None, eps1 = 1e-3, eps2 = 1e-16):
     '''
     Calculate ratio of Riccati-Bessel functions defined in Yang eq. 23
     by up recursion.
@@ -125,8 +130,8 @@ def Qratio(z1, z2, nstop, dns1 = None, dns2 = None):
     z2 = np.complex128(z2)
 
     if dns1 == None:
-        logdersz1 = LogDer13(z1, nstop)
-        logdersz2 = LogDer13(z2, nstop)
+        logdersz1 = LogDer13(z1, nstop, eps1, eps2)
+        logdersz2 = LogDer13(z2, nstop, eps1, eps2)
         d1z1 = logdersz1[0]
         d3z1 = logdersz1[1]
         d1z2 = logdersz2[0]
@@ -152,7 +157,7 @@ def Qratio(z1, z2, nstop, dns1 = None, dns2 = None):
 	       		     )  / ((d3z2[i] + i/z2) * (d1z1[i] + i/z1) )
     return qns
 
-def R_psi(z1, z2, nmax):
+def R_psi(z1, z2, nmax, eps1 = 1e-3, eps2 = 1e-16):
     '''
     Calculate ratio of Riccati-Bessel function \psi: \psi(z1)/\psi(z2).
 
@@ -160,9 +165,9 @@ def R_psi(z1, z2, nmax):
     '''
     output = zeros(nmax + 1, dtype = 'complex128')
     output[0] = sin(z1) / sin(z2)
-    dnz1 = log_der_1(z1, nmax + 15, nmax)
-    dnz2 = log_der_1(z2, nmax + 15, nmax)
-
+    dnz1 = dn_1_down(z1, nmax + 1, nmax, lentz_dn1(z1, nmax + 1, eps1, eps2))
+    dnz2 = dn_1_down(z2, nmax + 1, nmax, lentz_dn1(z2, nmax + 1, eps1, eps2))
+    
     # use up recursion
     for i in arange(1, nmax + 1):
         output[i] = output[i - 1] * (dnz2[i] + i / z2) / (dnz1[i] + i / z1)

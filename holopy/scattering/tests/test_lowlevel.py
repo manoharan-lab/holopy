@@ -46,7 +46,7 @@ from nose.tools import with_setup
 from nose.plugins.attrib import attr
 
 from ..theory.mie_f import mieangfuncs, miescatlib, multilayer_sphere_lib, \
-    scsmfo_min
+    scsmfo_min, mie_specfuncs
 
 from scipy.special import sph_jn, sph_yn
 
@@ -278,3 +278,50 @@ def test_mie_multisphere_singlesph():
     assert_allclose(etm_x, emie_x, rtol = 1e-6, atol = 1e-6)
     assert_allclose(etm_y, emie_y, rtol = 1e-6, atol = 1e-6)
     assert_allclose(etm_z, emie_z, rtol = 1e-6, atol = 1e-6)
+
+
+@attr('fast')
+def test_dn1_down_recursion():
+    '''
+    Test Fortran down recursion code against older pure Python code.
+    '''
+    z = 10. + 0.1j
+    nmx = 40
+    nstop = 15
+    
+    dn1_python = mie_specfuncs.log_der_1(z, nmx, nstop)
+    dn1_fortran = mieangfuncs.dn_1_down(z, nmx, nstop, 0.)
+
+    assert_allclose(dn1_fortran, dn1_python, rtol = 1e-6)
+
+
+@attr('medium')
+def test_dn1_lentz():
+    '''
+    Test down recursion beginning with Lentz continued fraction algorithm
+    against Python down recursion starting with 0.
+    '''
+    m = 1.5 + 0.1j
+    xs = np.logspace(-1,4,6) 
+    zs = m * xs
+    nstops = np.array([miescatlib.nstop(x) for x in xs])
+    # n to start down recurrence from
+    nmxs = np.array([max(nstop, np.ceil(abs(z))) for (nstop, z) in
+                     zip(nstops, zs)]) + 25 
+    #increase past Bohren & Huffman suggestion
+
+    # error bounds for lentz
+    eps1 = 1e-3
+    eps2 = 1e-16
+    
+    for z, nstop, nmx in zip(zs, nstops, nmxs):
+        python_dn = mie_specfuncs.log_der_1(z, nmx, nstop)
+        lentz_start = mieangfuncs.lentz_dn1(z, nstop, eps1, eps2)
+        fortran_dn = mieangfuncs.dn_1_down(z, nstop, nstop, lentz_start)
+
+        assert_allclose(fortran_dn, python_dn, rtol = 1e-12)
+
+        # check also Lentz ill-conditioning workaround
+        lentz_illconditioned = mieangfuncs.lentz_dn1(z, nstop, 1., eps2)
+        assert_allclose(lentz_illconditioned, lentz_start, rtol = 1e-12)
+

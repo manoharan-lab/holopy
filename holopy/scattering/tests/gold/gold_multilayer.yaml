@@ -1,9 +1,12 @@
 # Data from Yang, Applied Optics 2003, Table 3, cases 2-4. 
 # We use Q_ext, Q_sca, and Q_back only.
+# The value for Q_back for case 2 has been changed to the value obtained
+# by increasing the order n from which 0-based down recurrence for the logarithmic
+# derivative Dn1 begins. (Now computed using Lentz continued fraction method.)
 -
   - 2.20718 
   - 1.87320 
-  - 2.61685
+  - 2.62509
 -
   - 2.09947
   - 1.29372

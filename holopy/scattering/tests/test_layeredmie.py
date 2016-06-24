@@ -93,7 +93,7 @@ def test_sooty_particles():
     gold = np.array(yaml.load(file(gold_name + '.yaml')))
 
     assert_allclose(efficiencies_from_scat_units(m_ac, x_ac), gold[0],
-                    rtol = 2e-5)
+                    rtol = 1e-3)
     assert_allclose(efficiencies_from_scat_units(m_as, x_as), gold[1],
                     rtol = 2e-5)
     assert_allclose(efficiencies_from_scat_units(m_sm, x_sm), gold[2],
