@@ -27,13 +27,17 @@ Library of code to do Mie scattering calculations.
 import numpy as np
 import mie_specfuncs
 
+from mieangfuncs import dn_1_down, lentz_dn1
+
 from numpy import sin, cos, array
 
-def scatcoeffs(m, x, nstop): # see B/H eqn 4.88
+def scatcoeffs(m, x, nstop, eps1 = 1e-3, eps2 = 1e-16): # see B/H eqn 4.88
     # implement criterion used by BHMIE plus a couple more orders to
     # be safe
-    nmx = int(array([nstop, np.round_(np.absolute(m*x))]).max()) + 20
-    Dnmx = mie_specfuncs.log_der_1(m*x, nmx, nstop)
+    #nmx = int(array([nstop, np.round_(np.absolute(m*x))]).max()) + 20
+    #Dnmx = mie_specfuncs.log_der_1(m*x, nmx, nstop)
+    Dnmx = dn_1_down(m * x, nstop + 1, nstop,
+                                 lentz_dn1(m * x, nstop + 1, eps1, eps2))
     n = np.arange(nstop+1)
     psi, xi = mie_specfuncs.riccati_psi_xi(x, nstop)
     psishift = np.concatenate((np.zeros(1), psi))[0:nstop+1]
@@ -42,7 +46,7 @@ def scatcoeffs(m, x, nstop): # see B/H eqn 4.88
     bn = ( (Dnmx*m + n/x)*psi - psishift ) / ( (Dnmx*m + n/x)*xi - xishift )
     return array([an[1:nstop+1], bn[1:nstop+1]]) # output begins at n=1
 
-def internal_coeffs(m, x, n_max):
+def internal_coeffs(m, x, n_max, eps1 = 1e-3, eps2 = 1e-16):
     '''
     Calculate internal Mie coefficients c_n and d_n given
     relative index, size parameter, and maximum order of expansion.
@@ -51,9 +55,10 @@ def internal_coeffs(m, x, n_max):
     have different conventions (labeling of c_n and d_n and factors of m)
     for their internal coefficients.
     '''
-    ratio = mie_specfuncs.R_psi(x, m * x, n_max)
-    D1x, D3x = mie_specfuncs.log_der_13(x, n_max)
-    D1mx = mie_specfuncs.log_der_1(m * x, n_max + 15, n_max)
+    ratio = mie_specfuncs.R_psi(x, m * x, n_max, eps1, eps2)
+    D1x, D3x = mie_specfuncs.log_der_13(x, n_max, eps1, eps2)
+    D1mx = dn_1_down(m * x, n_max + 1, n_max, lentz_dn1(m * x, n_max + 1,
+                                                        eps1, eps2))
     cl = m * ratio * (D3x - D1x) / (D3x - m * D1mx)
     dl = m * ratio * (D3x - D1x) / (m * D3x - D1mx)
     return array([cl[1:], dl[1:]]) # start from l = 1

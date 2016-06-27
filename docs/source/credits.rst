@@ -13,7 +13,11 @@ Please see the following references:
 
 .. [Lee2007] S\. H\. Lee *et al.*, "Characterizing and tracking single colloidal particles with video holographic microscopy," *Optics Express* **15**, 18275-18282, (2007).
 
+.. [Lentz1976] W\. J\. Lentz, “Generating Bessel functions in Mie scattering calculations using continued fractions,” *Applied Optics* **15**, 668-671, (1976).
+
 .. [Mackowski1996] D\. W\. Mackowski and M\. I\. Mishchenko, "Calculation of the T matrix and the scattering matrix for ensembles of spheres," *J. Opt. Soc. Am. A.* **13**, 2266-2278, (1996).
+
+.. [Wiscombe1996] W\. J\. Wiscombe, “Mie Scattering Calculations: Advances in Technique and Fast, Vector-Speed Computer Codes,” *NCAR Technical Report*, http://diogenes.iwt.uni-bremen.de/vt/laser/codes/NCARMieReport-revised%20August%201996.pdf 
 
 .. [Yang2003] W\. Yang, "Improved recursive algorithm for light scattering by a multilayered sphere," *Applied Optics* **42**, 1710-1720, (2003).
 
