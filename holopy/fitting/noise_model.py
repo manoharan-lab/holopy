@@ -4,7 +4,7 @@ from holopy.core.holopy_object import HoloPyObject
 from holopy.core import Marray
 from holopy.core.helpers import dict_without
 from holopy.scattering.theory.scatteringtheory import scattered_field_to_hologram
-from holopy.scattering.errors import MultisphereExpansionNaN, MultisphereFieldNaN, ConvergenceFailureMultisphere
+from holopy.scattering.errors import MultisphereExpansionNaN, MultisphereFieldNaN, ConvergenceFailureMultisphere, ScattererDefinitionError
 
 import numpy as np
 import pandas as pd
@@ -40,7 +40,7 @@ class NoiseModel(BaseModel):
         scatterer = self.scatterer.make_from(pars)
         try:
             return self.theory.calc_field(scatterer, schema)
-        except (MultisphereExpansionNaN, MultisphereFieldNaN, ConvergenceFailureMultisphere):
+        except (MultisphereExpansionNaN, MultisphereFieldNaN, ConvergenceFailureMultisphere, ScattererDefinitionError):
             return -np.inf
 
     def _lnlike(self, pars, data):

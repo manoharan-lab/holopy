@@ -18,15 +18,17 @@ class ProbabilityComputer(HoloPyObject):
 
 
 class Emcee(HoloPyObject):
-    def __init__(self, model, data, nwalkers=50, random_subset=None, threads=None):
+    def __init__(self, model, data, nwalkers=50, random_subset=None, threads=None, preprocess=None):
         self.model = model
+        if preprocess is None:
+            preprocess = lambda x: x
         if data.ndim == 3:
             self.n_frames = data.shape[2]
-            self.data = [make_subset_data(data[..., i], random_subset)
+            self.data = [make_subset_data(preprocess(data[..., i]), random_subset)
                          for i in range(self.n_frames)]
         else:
             self.n_frames = 1
-            self.data = make_subset_data(data, random_subset)
+            self.data = make_subset_data(preprocess(data), random_subset)
         self.nwalkers = nwalkers
         self.threads = threads
 
@@ -59,7 +61,7 @@ class PTemcee(Emcee):
         return PTSampler(self.ntemps, self.nwalkers, self.ndim, self.lnlike, self.lnprior, threads=self.threads)
 
 
-def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, max_pixels=1000, threads='all', stages=3, stage_len=30):
+def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, max_pixels=1000, threads='all', stages=3, stage_len=30, preprocess=None):
     """
     Parameters
     ----------
@@ -80,7 +82,13 @@ def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, ma
     if threads != None:
         print("Using {} threads".format(threads))
 
-    n_pixels = data.shape[0]*data.shape[1]
+    if preprocess is None:
+        preprocess = lambda x: x
+
+    if data.ndim > 2:
+        n_pixels = preprocess(data[...,0]).size
+    else:
+        n_pixels = preprocess(data).size
     fractions = np.logspace(np.log10(min_pixels), np.log10(max_pixels), stages+1)/n_pixels
 
     stage_fractions = fractions[:-1]
@@ -108,7 +116,7 @@ def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, ma
     p0 = None
     for fraction in stage_fractions:
         tstart = time()
-        emcee = Emcee(model=model, data=data, nwalkers=nwalkers, random_subset=fraction, threads=threads)
+        emcee = Emcee(model=model, data=data, nwalkers=nwalkers, random_subset=fraction, threads=threads, preprocess=preprocess)
         result = emcee.sample(stage_len, p0)
         try:
             new_pars = [new_par(*p) for p in zip(model.parameters, result.values())]
@@ -199,11 +207,12 @@ class EmceeResult(HoloPyObject):
 
         return df
 
-    def pairplots(self, filename=None, include_lnprob=False, burn_in=0, thin='acor'):
+    def pairplots(self, filename=None, include_lnprob=False, burn_in=0, thin='acor', include_vars='all'):
 
         df = self.data_frame(burn_in=burn_in, thin=thin, include_lnprob=include_lnprob)
         df = df.rename(columns={'center[0]': 'x', 'center[1]': 'y', 'center[2]': 'z' })
-        xyz = ['x', 'y', 'z']
+        df = df.iloc[:,[list(df.columns).index(v) for v in include_vars]]
+        xyz = [x for x in 'x', 'y', 'z' if x in df.columns]
         xyz_enum = [(list(df.columns).index(v), v) for v in xyz]
         import seaborn as sns
         import matplotlib.pyplot as plt

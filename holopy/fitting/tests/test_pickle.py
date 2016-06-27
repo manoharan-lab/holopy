@@ -2,10 +2,13 @@ from holopy.core.tests.common import assert_pickle_roundtrip, get_example_data
 
 from holopy.fitting.mcmc import Emcee
 from holopy.fitting.noise_model import AlphaModel
+from holopy.fitting.timeseries import TimeIndependent, TimeSeriesAlphaModel
 from holopy.fitting import prior
 from holopy.fitting import Model
 from holopy.scattering.scatterer import Sphere
 from holopy.scattering.theory import Mie
+
+import numpy as np
 
 def test_prior():
     g = prior.Gaussian(1, 1)
@@ -27,3 +30,12 @@ def test_emcee():
     model = AlphaModel(s, Mie, alpha=prior.Gaussian(.7, .1), noise_sd=.01)
     emcee = Emcee(model, holo)
     assert_pickle_roundtrip(emcee)
+
+def test_TimeSeriesAlphaModel():
+    n = TimeIndependent(prior.Gaussian(5, .5))
+    assert_pickle_roundtrip(n)
+    st = Sphere(n=n, r=TimeIndependent(prior.BoundedGaussian(1.6,.1, 0, np.inf)), center=(prior.Gaussian(10, 1), prior.Gaussian(10, 1), prior.BoundedGaussian(1.6, .1, 0, np.inf)))
+    assert_pickle_roundtrip(st)
+    noise_sd = .1
+    mt = TimeSeriesAlphaModel(st, Mie, noise_sd, alpha=prior.Uniform(0, 1), n_frames=2)
+    assert_pickle_roundtrip(mt)
