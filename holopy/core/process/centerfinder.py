@@ -19,17 +19,17 @@
 The centerfinder module is a group of functions for locating the
 centers of holographic ring patterns. The module can find the center
 of a single-sphere holographic pattern, a dimer holographic pattern,
-or the centers of multiple (well-separated: clearly separate ring 
-patterns with separate centers) single spheres or dimers. The intended 
+or the centers of multiple (well-separated: clearly separate ring
+patterns with separate centers) single spheres or dimers. The intended
 use is for determining an initial parameter guess for hologram fitting.
 
-We thank the Grier Group at NYU for suggesting the use of the Hough 
-transform. For their independent implementation of a Hough-based 
+We thank the Grier Group at NYU for suggesting the use of the Hough
+transform. For their independent implementation of a Hough-based
 holographic feature detection algorithm, see:
 http://physics.nyu.edu/grierlab/software/circletransform.pro
 For a case study and further reading, see:
 F. C. Cheong, B. Sun, R. Dreyfus, J. Amato-Grill, K. Xiao, L. Dixon
-& D. G. Grier, Flow visualization and flow cytometry with holographic 
+& D. G. Grier, Flow visualization and flow cytometry with holographic
 video microscopy, Optics Express 17, 13071-13079 (2009).
 
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
@@ -40,7 +40,47 @@ from __future__ import division
 
 import numpy as np
 from .enhance import normalize
+from holopy.core.marray import subimage
 from scipy import ndimage
+
+def centered_subimage(image, shape, threshold=.5, blursize=3):
+    """
+    Cut out a region of an image centered around an automatically detected particle
+
+    Parameters
+    ----------
+    image : ndarray or Image
+        The source image to cut from
+    shape : int or (int, int)
+        The desired subimage shape
+    threshold : float (optional)
+        fraction of the maximum gradient below which all
+        other gradients will be ignored (range 0-.99)
+    blursize : float (optional)
+        radius (in pixels) of the Gaussian filter that
+        is applied prior to Hough transform
+
+    Returns
+    -------
+    res : ndarray
+        row(s) and column(s) of center(s)
+
+    Notes
+    -----
+    See further description in center_find docstring.
+    """
+    # TODO: add centers option? maybe do something like center the cut
+    # on the com, probably warn if any centers are out of the cut
+
+    if image.ndim < 3:
+        center = center_find(image, threshold=threshold, blursize=blursize)
+        return subimage(image, center, shape)
+    else:
+        n_frames = image.shape[2]
+        result = np.zeros(shape + (n_frames,))
+        for frame in range(n_frames):
+            center = center_find(image[...,frame], threshold=threshold, blursize=blursize)
+            result[..., frame] = subimage
 
 def center_find(image, centers=1, threshold=.5, blursize=3.):
     """
@@ -51,7 +91,7 @@ def center_find(image, centers=1, threshold=.5, blursize=3.):
     optional threshold parameter (between 0 and 1) gives a bound on
     what magnitude of gradients to include in the calculation. For
     example, threshold=.75 means ignore any gradients that are less
-    than 75% of the maximum gradient in the image. The optional 
+    than 75% of the maximum gradient in the image. The optional
     blursize parameter sets the size of a Gaussian filter that is
     applied to the image. This step improves accuracy when small
     features in the image have large gradients (e.g. dust particles
@@ -59,7 +99,7 @@ def center_find(image, centers=1, threshold=.5, blursize=3.):
     incorrectly identified as the hologram center. For best results,
     blursize should be set to the radius of features to be ignored,
     but smaller than the distance between hologram fringes. To skip
-    blurring, set blursize to 0. 
+    blurring, set blursize to 0.
 
     Parameters
     ----------
@@ -71,7 +111,7 @@ def center_find(image, centers=1, threshold=.5, blursize=3.):
         fraction of the maximum gradient below which all
         other gradients will be ignored (range 0-.99)
     blursize : float (optional)
-        radius (in pixels) of the Gaussian filter that 
+        radius (in pixels) of the Gaussian filter that
         is applied prior to Hough transform
 
     Returns
@@ -151,13 +191,13 @@ def hough(col_deriv, row_deriv, centers=1, threshold=.25):
     #parallel to the gradient and add all these lines together in the
     #array called "accumulator."  Because of the
     #concentric-circle-patterned hologram, the maximum of accumulator
-    #should be the center of the pattern.  
+    #should be the center of the pattern.
     #Rebecca W. Perry, Jerome Fung 11/20/2009
     #Edited by Rebecca Dec. 1, 2009 to include weighted average
     #Edited by Rebecca Perry June 9, 2011 to change default scale and
-    #modify weighted averaging box size for centers 
+    #modify weighted averaging box size for centers
     #close to the edges.
-    
+
     accumulator = np.zeros(col_deriv.shape, dtype = int)
     dim_x = col_deriv.shape[0]
     dim_y = col_deriv.shape[1]
@@ -165,7 +205,7 @@ def hough(col_deriv, row_deriv, centers=1, threshold=.25):
     abs_threshold = threshold * gradient_mag.max()
 
     points_to_vote = np.where(gradient_mag > abs_threshold)
-    points_to_vote = np.array([points_to_vote[0], 
+    points_to_vote = np.array([points_to_vote[0],
             points_to_vote[1]]).transpose()
 
     for coords in points_to_vote:
@@ -173,12 +213,12 @@ def hough(col_deriv, row_deriv, centers=1, threshold=.25):
         if col_deriv[coords[0], coords[1]]==0:
             slope = row_deriv[coords[0], coords[1]]/.00001
         else:
-            slope = row_deriv[coords[0], 
+            slope = row_deriv[coords[0],
                 coords[1]]/col_deriv[coords[0], coords[1]]
-        
+
         if slope > 1. or slope < -1.:
             rows = np.arange(dim_x, dtype = 'int')
-            line = np.around(coords[1] - slope * 
+            line = np.around(coords[1] - slope *
                 (rows - coords[0])).astype('int')
             cols_to_use = (line >= 0) * (line < dim_y)
             acc_cols = line[cols_to_use]
@@ -187,37 +227,37 @@ def hough(col_deriv, row_deriv, centers=1, threshold=.25):
             cols = np.arange(dim_y, dtype = 'int')
             if slope==0:
                 slope = 0.00001
-            line = np.around(coords[0] - 1./slope * 
+            line = np.around(coords[0] - 1./slope *
                 (cols - coords[1])).astype('int')
             rows_to_use = (line >= 0) * (line < dim_x)
             acc_cols = cols[rows_to_use]
             acc_rows = line[rows_to_use]
-        
+
         accumulator[acc_rows, acc_cols] += 1
 
     weightedRowNum = np.zeros(centers)
     weightedColNum = np.zeros(centers)
-    
+
     for i in np.arange(0,centers):
         #m is row number, n is column number
         [m, n] = np.unravel_index(accumulator.argmax(),
                 accumulator.shape)
-                
+
         #brightness average around brightest pixel:
         boxsize = min(10, m, n, dim_x-1-m, dim_y-1-n)
-        
+
         #boxsize changes with closeness to image edge
-        small_sq = accumulator[m-boxsize:m+boxsize+1, 
+        small_sq = accumulator[m-boxsize:m+boxsize+1,
                 n-boxsize:n+boxsize+1]
-                
+
         #the part of the accumulator to average over
-        rowNum, colNum = np.mgrid[m-boxsize:m+boxsize+1, 
+        rowNum, colNum = np.mgrid[m-boxsize:m+boxsize+1,
                 n-boxsize:n+boxsize+1]
-                
+
         #row and column of the revised center:
         weightedRowNum[i] = np.average(rowNum,None,small_sq)
         weightedColNum[i] = np.average(colNum,None,small_sq)
-        accumulator[m-boxsize:m+boxsize+1, 
+        accumulator[m-boxsize:m+boxsize+1,
                 n-boxsize:n+boxsize+1]=accumulator.min()
-        
+
     return np.array([weightedRowNum, weightedColNum]).T
