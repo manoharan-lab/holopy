@@ -16,15 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 '''
-Test low-level physics and mathematical primitives that are part of 
-scattering calculations.  
+Test low-level physics and mathematical primitives that are part of
+scattering calculations.
 
 Most of these tests will check Fortran extensions.
 
-These tests are intended to evaluate well-established low-level 
-quantities (such as scattering coefficients or matrices calculated 
-by independent codebases) or mathematical identities (such as 
-coordinate transformations).  While the tests of physically 
+These tests are intended to evaluate well-established low-level
+quantities (such as scattering coefficients or matrices calculated
+by independent codebases) or mathematical identities (such as
+coordinate transformations).  While the tests of physically
 measurable quantities (such as holograms) in test_mie.py and
 test_multisphere.py are important, it is hoped that should any
 of those fail, failures in these low-level tests will help pin
@@ -73,7 +73,7 @@ def test_spherical_vector_to_cartesian():
     test_vect = np.array([0.2, 1. + 1.j, -1.])
     fortran_conversion = mieangfuncs.radial_vect_to_cart(test_vect[0],
                                                          theta, phi)
-    fortran_conversion += mieangfuncs.fieldstocart(test_vect[1:], 
+    fortran_conversion += mieangfuncs.fieldstocart(test_vect[1:],
                                                    theta, phi)
 
     assert_allclose(fortran_conversion, dot(conversion_mat, test_vect))
@@ -86,12 +86,12 @@ def test_polarization_to_scatt_coords():
     Cartesian vector in the lab frame) to an incident field
     in scattering spherical coordinates.
 
-    For convention, see Bohren & Huffman ([Bohren1983]_) pp. 61-62. 
+    For convention, see Bohren & Huffman ([Bohren1983]_) pp. 61-62.
     '''
 
     conversion_mat = 1./sqrt(2) * np.array([[1., -1.],
                                             [-1., -1.]])
-    
+
     test_vect = np.array([-1., 3.])
     fortran_result = mieangfuncs.incfield(test_vect[0], test_vect[1], phi)
     assert_allclose(fortran_result, dot(conversion_mat, test_vect))
@@ -107,20 +107,20 @@ def test_mie_amplitude_scattering_matrices():
         near-field matrix for kr ~ 10^4 is close to far-field result
 
     While radiometric quantities (such as cross sections) implicitly test
-    the Mie scattering coefficients, they do not involve any angular 
+    the Mie scattering coefficients, they do not involve any angular
     quantities.
     '''
 
     # scattering units
     m = 1.55
     x = 2. * pi * 0.525 / 0.6328
-    
+
     asbs = miescatlib.scatcoeffs(m, x, miescatlib.nstop(x))
     amp_scat_mat = mieangfuncs.asm_mie_far(asbs, theta)
     amp_scat_mat_asym = mieangfuncs.asm_mie_fullradial(asbs, np.array([kr_asym,
                                                                        theta,
                                                                        phi]))
-    amp_scat_mat_near = mieangfuncs.asm_mie_fullradial(asbs, np.array([kr, 
+    amp_scat_mat_near = mieangfuncs.asm_mie_fullradial(asbs, np.array([kr,
                                                                       theta,
                                                                       phi]))
 
@@ -129,7 +129,7 @@ def test_mie_amplitude_scattering_matrices():
     gold_name = os.path.join(location, 'gold',
                              'gold_mie_scat_matrix')
     gold_dict = yaml.load(file(gold_name + '.yaml'))
-    gold = np.array([gold_dict['S11'], gold_dict['pol'], 
+    gold = np.array([gold_dict['S11'], gold_dict['pol'],
                      gold_dict['S33'], gold_dict['S34']])
 
 
@@ -139,7 +139,7 @@ def test_mie_amplitude_scattering_matrices():
         S2, S3, S4, S1 = np.ravel(asm)
         S11 = 0.5 * (abs(asm)**2).sum()
         S12 = 0.5 * (abs(S2)**2 - abs(S1)**2)
-        S33 = real(S1 * conj(S2)) 
+        S33 = real(S1 * conj(S2))
         S34 = imag(S2 * conj(S1))
         deg_of_pol = -S12/S11
         # normalization factors: see comment lines 40-44 on p. 479
@@ -152,13 +152,13 @@ def test_mie_amplitude_scattering_matrices():
     assert_allclose(np.ravel(amp_scat_mat)[1:3], np.zeros(2))
 
     # check far-field computation
-    assert_allclose(massage_into_bh_form(amp_scat_mat), gold, 
+    assert_allclose(massage_into_bh_form(amp_scat_mat), gold,
                     rtol = 1e-5)
- 
+
     # check asymptotic behavior of near field matrix
     asym = massage_into_bh_form(amp_scat_mat_asym)
     assert_allclose(asym, gold, rtol = 1e-4, atol = 5e-5)
- 
+
     # check that the near field is different
     try:
         assert_allclose(amp_scat_mat, amp_scat_mat_near)
@@ -192,10 +192,10 @@ def test_mie_internal_coeffs():
     jlx = sph_jn(n_stop, x)[0][1:]
     jlmx = sph_jn(n_stop, m * x)[0][1:]
     hlx = jlx + 1.j * sph_yn(n_stop, x)[0][1:]
-    
+
     assert_allclose(cl, (jlx - hlx * bl) / jlmx, rtol = 1e-6, atol = 1e-6)
     assert_allclose(dl, (jlx - hlx * al)/ (m * jlmx), rtol = 1e-6, atol = 1e-6)
-    
+
 @attr('fast')
 def test_mie_bndy_conds():
     '''
@@ -252,7 +252,7 @@ def test_mie_multisphere_singlesph():
     x = 5.
     m = 1.2+0.1j
     pol = np.array([1., 0.]) # assume x polarization
-    
+
     # points to check
     # at last two points: E_s
     kr = np.ones(4) * 6.
@@ -267,7 +267,7 @@ def test_mie_multisphere_singlesph():
 
     # calculate fields with Multisphere
     _, lmax, amn0, conv = scsmfo_min.amncalc(1, 0., 0., 0., m.real, m.imag,
-                                             x, 100, 1e-6, 1e-8, 1e-8, 1, 
+                                             x, 100, 1e-6, 1e-8, 1e-8, 1,
                                              (0., 0.))
     # increase qeps1 from usual here
     limit = lmax**2 + 2 * lmax
@@ -288,7 +288,7 @@ def test_dn1_down_recursion():
     z = 10. + 0.1j
     nmx = 40
     nstop = 15
-    
+
     dn1_python = mie_specfuncs.log_der_1(z, nmx, nstop)
     dn1_fortran = mieangfuncs.dn_1_down(z, nmx, nstop, 0.)
 
@@ -302,18 +302,18 @@ def test_dn1_lentz():
     against Python down recursion starting with 0.
     '''
     m = 1.5 + 0.1j
-    xs = np.logspace(-1,4,6) 
+    xs = np.logspace(-1,4,6)
     zs = m * xs
     nstops = np.array([miescatlib.nstop(x) for x in xs])
     # n to start down recurrence from
-    nmxs = np.array([max(nstop, np.ceil(abs(z))) for (nstop, z) in
-                     zip(nstops, zs)]) + 25 
+    nmxs = np.array([max(nstop, int(np.ceil(abs(z)))) for (nstop, z) in
+                     zip(nstops, zs)]) + 25
     #increase past Bohren & Huffman suggestion
 
     # error bounds for lentz
     eps1 = 1e-3
     eps2 = 1e-16
-    
+
     for z, nstop, nmx in zip(zs, nstops, nmxs):
         python_dn = mie_specfuncs.log_der_1(z, nmx, nstop)
         lentz_start = mieangfuncs.lentz_dn1(z, nstop, eps1, eps2)
@@ -324,4 +324,3 @@ def test_dn1_lentz():
         # check also Lentz ill-conditioning workaround
         lentz_illconditioned = mieangfuncs.lentz_dn1(z, nstop, 1., eps2)
         assert_allclose(lentz_illconditioned, lentz_start, rtol = 1e-12)
-
