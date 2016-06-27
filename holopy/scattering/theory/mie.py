@@ -58,12 +58,16 @@ class Mie(FortranTheory):
     # don't need to define __init__() because we'll use the base class
     # constructor
 
-    def __init__(self, compute_escat_radial = True, full_radial_dependence = True):
+    def __init__(self, compute_escat_radial = True,
+                 full_radial_dependence = True,
+                 eps1 = 1e-2, eps2 = 1e-16):
         #compute_escat_radial determines if radial components will be calculated
         #full_radial dependence deermines if the full spherical Hankel function
         # will be used, or if it will be approximated to be in the far field.
         self.compute_escat_radial = compute_escat_radial
         self.full_radial_dependence = full_radial_dependence
+        self.eps1 = eps1
+        self.eps2 = eps2
         # call base class constructor
         super(Mie, self).__init__()
 
@@ -154,9 +158,10 @@ class Mie(FortranTheory):
             # Could just use scatcoeffs_multi here, but jerome is in favor of
             # keeping the simpler single layer code here
             lmax = miescatlib.nstop(x_arr[0])
-            return  miescatlib.scatcoeffs(m_arr[0], x_arr[0], lmax)
+            return  miescatlib.scatcoeffs(m_arr[0], x_arr[0], lmax, self.eps1,
+                                          self.eps2)
         else:
-            return scatcoeffs_multi(m_arr, x_arr)
+            return scatcoeffs_multi(m_arr, x_arr, self.eps1, self.eps2)
 
 
     def _scat_coeffs_internal(self, s, optics):
