@@ -48,6 +48,8 @@ from nose.plugins.attrib import attr
 from ..theory.mie_f import mieangfuncs, miescatlib, multilayer_sphere_lib, \
     scsmfo_min, mie_specfuncs
 
+from holopy.scattering.theory.multisphere import _asm_far
+
 from scipy.special import sph_jn, sph_yn
 
 # basic defs
@@ -324,3 +326,27 @@ def test_dn1_lentz():
         # check also Lentz ill-conditioning workaround
         lentz_illconditioned = mieangfuncs.lentz_dn1(z, nstop, 1., eps2)
         assert_allclose(lentz_illconditioned, lentz_start, rtol = 1e-12)
+
+def test_asm():
+    centers = np.array([[ 0.,  0.,  1.], [ 0.,  0., -1.]])
+    m = np.array([ 1.5+0.1j,  1.5+0.1j])
+    size_p = np.array([ 1.,  1.])
+    niter=200
+    eps = 1e-6
+    qeps1 = 1e-5
+    qeps2 = 1e-8
+    meth = 1
+    _, lmax, amn0, converged = scsmfo_min.amncalc(
+        1, centers[:,0],  centers[:,1],
+        # The fortran code uses oppositely directed z axis (they have laser
+        # propagation as positive, we have it negative), so we multiply the
+        # z coordinate by -1 to correct for that.
+        -1.0 * centers[:,2],  m.real, m.imag,
+        size_p, niter, eps, qeps1, qeps2,  meth, (0,0))
+    limit = lmax**2 + 2*lmax
+    amn = amn0[:, 0:limit, :]
+    asm_fwd = _asm_far(0, 0, amn, lmax)
+    assert_allclose(asm_fwd, np.array([[  2.73439859e-01 -6.75495808e-01j,
+         -1.94648171e-18 -1.09606063e-18j],
+       [  1.94648171e-18 +1.09606063e-18j,
+          2.73439859e-01 -6.75495808e-01j]]))
