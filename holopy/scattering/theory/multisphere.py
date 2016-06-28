@@ -226,6 +226,7 @@ class Multisphere(FortranTheory):
 
         # calculate forward scattering
         asm_fwd = _asm_far(0., 0., amn, lmax)
+
         ainc_sph = pol * np.array([1., -1.]) # assume theta, phi = 0
         ascat_sph = np.dot(asm_fwd, ainc_sph) * np.array([1., -1.])
         # at theta, phi = 0, ascat_cart = ascat_sph
@@ -360,7 +361,6 @@ class Multisphere(FortranTheory):
         cscat = self._calc_cscat(scatterer, optics, amn, lmax)
         cabs = cext - cscat
         asym = self._calc_asym(optics, amn, lmax) / cscat
-
         return np.array([cscat, cabs, cext, asym])
 
 
@@ -369,7 +369,7 @@ def _asm_far(theta, phi, amn, lmax):
     far field amplitude scattering matrix for fixed angles
     """
     asm = np.roll(uts_scsmfo.asm(amn, lmax, theta, phi),
-                  -1).reshape((2,2)) * -0.5 # correction factor
+                  -1).reshape((2,2)) * -0.5 #correction factor
     return asm
 
 def _integrate4pi(integrand):

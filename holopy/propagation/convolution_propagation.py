@@ -57,7 +57,7 @@ def propagate(data, d, gradient_filter=False):
 
     """
     if np.isscalar(d) and d == 0:
-        # Propagationg no distance has no effect
+        # Propagating no distance has no effect
         return data
 
     # Computing the transfer function will fail for d = 0. So, if we

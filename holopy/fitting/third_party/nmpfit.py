@@ -1974,6 +1974,8 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
                 wa[j] = (wa[j]-sum)/sdiag[j]
 
         ## Permute the components of z back to components of x
+        from copy import copy
+        x = copy(x)
         numpy.put(x, ipvt, wa)
         return(r, x, sdiag)
 

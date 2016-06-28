@@ -32,6 +32,7 @@ from numpy.testing import (assert_equal, assert_array_almost_equal,
                            assert_almost_equal, assert_allclose)
 
 from nose.plugins.attrib import attr
+import scipy
 
 from ...core import Optics, ImageSchema, Schema, Angles
 from ..theory import Multisphere
@@ -192,7 +193,9 @@ def test_cross_sections():
     thry = Multisphere()
     # this ends up testing the angular dependence of scattering
     # as well as all the scattering coefficients
-    xsects = thry.calc_cross_sections(sc, opt)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', scipy.integrate.IntegrationWarning)
+        xsects = thry.calc_cross_sections(sc, opt)
 
     gold_xsects = np.array([0.03830316, 0.04877015, 0.08707331])
     # calculated directly by SCSMFO. Efficiencies normalized

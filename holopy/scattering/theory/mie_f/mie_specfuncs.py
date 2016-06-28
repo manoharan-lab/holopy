@@ -75,7 +75,7 @@ def log_der_1(z, nmx, nstop):
     '''
     dn = zeros(nmx+1, dtype = 'complex128')
     # initialize w/zeros
-    for i in arange(nmx-1, -1, -1):
+    for i in range(nmx-1, -1, -1):
         dn[i] = (i+1.)/z - 1.0/(dn[i+1] + (i+1.)/z)
     return dn[0:nstop+1]
 
@@ -167,7 +167,7 @@ def R_psi(z1, z2, nmax, eps1 = 1e-3, eps2 = 1e-16):
     output[0] = sin(z1) / sin(z2)
     dnz1 = dn_1_down(z1, nmax + 1, nmax, lentz_dn1(z1, nmax + 1, eps1, eps2))
     dnz2 = dn_1_down(z2, nmax + 1, nmax, lentz_dn1(z2, nmax + 1, eps1, eps2))
-    
+
     # use up recursion
     for i in arange(1, nmax + 1):
         output[i] = output[i - 1] * (dnz2[i] + i / z2) / (dnz1[i] + i / z1)
