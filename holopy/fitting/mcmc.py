@@ -23,10 +23,9 @@ class Emcee(HoloPyObject):
         self.model = model
         if preprocess is None:
             preprocess = lambda x: x
-        if data.ndim == 3:
-            self.n_frames = data.shape[2]
-            self.data = [make_subset_data(preprocess(data[..., i]), random_subset)
-                         for i in range(self.n_frames)]
+        if not isinstance(data, Image):
+            self.n_frames = len(data)
+            self.data = [make_subset_data(preprocess(d), random_subset) for d in data]
         else:
             self.n_frames = 1
             self.data = make_subset_data(preprocess(data), random_subset)
@@ -290,7 +289,7 @@ class EmceeResult(SamplingResult):
 
     def updated_priors(self, extra_uncertainty=None):
         if extra_uncertainty is None:
-            extra_uncertainty = np.zeros(len(self.model.parameters))
+            extra_uncertainty = np.zeros(len(list(self.model.parameters)))
         return [prior.updated(*p) for p in
                 zip(self.model.parameters, self.values(), extra_uncertainty)]
 
