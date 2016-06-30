@@ -38,6 +38,7 @@ class Uniform(Prior):
     def sample(self, size=None):
         return random.uniform(self.lower_bound, self.upper_bound, size)
 
+
 class Gaussian(Prior):
     def __init__(self, mu, sd, name=None):
         self.mu = mu
@@ -89,3 +90,24 @@ class BoundedGaussian(Gaussian):
             val[out] = super(BoundedGaussian, self).sample(len(out[0]))
 
         return val
+
+
+def updated(prior, v, extra_uncertainty=0):
+    """
+    Update a prior from a posterior
+
+    Parameters
+    ----------
+    v : UncertainValue
+        The new value, usually from an mcmc result
+    extra_uncertainty : float
+        provide a floor for uncertainty (sd) of the new parameter
+    """
+    sd = max(v.plus, v.minus, extra_uncertainty)
+    if hasattr(prior, 'lower_bound'):
+        return BoundedGaussian(v.value, sd,
+                               getattr(prior, 'lower_bound', -np.inf),
+                               getattr(prior, 'upper_bound', np.inf),
+                               name=prior.name)
+    else:
+        return Gaussian(v.value, sd, prior.name)
