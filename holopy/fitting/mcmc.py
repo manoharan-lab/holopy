@@ -137,11 +137,11 @@ class SamplingResult(HoloPyObject):
     def _names(self):
         return [p.name for p in self.model.parameters]
 
-    def _pairplots(self, df, include_vars='all'):
+    def _pairplots(self, df, filename=None, include_vars='all'):
         if include_vars == 'all':
             include_vars = self._names
-        df = df.rename(columns={'center[0]': 'x', 'center[1]': 'y', 'center[2]': 'z' })
         df = df.iloc[:,[list(df.columns).index(v) for v in include_vars]]
+        df = df.rename(columns={'center[0]': 'x', 'center[1]': 'y', 'center[2]': 'z' })
         xyz = [x for x in 'x', 'y', 'z' if x in df.columns]
         xyz_enum = [(list(df.columns).index(v), v) for v in xyz]
         import seaborn as sns
@@ -253,7 +253,7 @@ class EmceeResult(SamplingResult):
         pass
 
     def pairplots(self, filename=None, include_lnprob=False, burn_in=0, thin='acor', include_vars='all'):
-        self._pairplots(self.data_frame(burn_in=burn_in, thin=thin, include_lnprob=include_lnprob), include_vars)
+        self._pairplots(self.data_frame(burn_in=burn_in, thin=thin, include_lnprob=include_lnprob), filename=filename, include_vars=include_vars)
 
     def most_probable_values(self):
         values = self.sampler.chain[np.where(self.sampler.lnprobability ==
