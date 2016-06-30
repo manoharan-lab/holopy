@@ -3,6 +3,7 @@ from __future__ import division
 from holopy.fitting.fit import CostComputer
 from holopy.fitting.errors import ParameterSpecificationError
 from holopy.fitting.model import Model
+from holopy.core import Image
 from holopy.core.holopy_object import HoloPyObject
 import prior
 from random_subset import make_subset_data
@@ -61,7 +62,7 @@ class PTemcee(Emcee):
         return PTSampler(self.ntemps, self.nwalkers, self.ndim, self.lnlike, self.lnprior, threads=self.threads)
 
 
-def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, max_pixels=1000, threads='all', stages=3, stage_len=30, preprocess=None):
+def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, max_pixels=1000, threads='all', stages=3, stage_len=30, preprocess=None, verbose=True):
     """
     Parameters
     ----------
@@ -76,17 +77,21 @@ def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, ma
     stage_len: int
         Number of samples to use in preliminary stages
     """
+    def log(s):
+        if verbose:
+            print(s)
     if threads == 'all':
         import multiprocessing
         threads = multiprocessing.cpu_count()
     if threads != None:
-        print("Using {} threads".format(threads))
+        log("Using {} threads".format(threads))
 
     if preprocess is None:
         preprocess = lambda x: x
 
-    if data.ndim > 2:
-        n_pixels = preprocess(data[...,0]).size
+    # TODO: is there a better way of figuring out if data is a list, tuple, iterator, ...?
+    if not isinstance(data, Image):
+        n_pixels = preprocess(data[0]).size
     else:
         n_pixels = preprocess(data).size
     fractions = np.logspace(np.log10(min_pixels), np.log10(max_pixels), stages+1)/n_pixels
@@ -94,15 +99,6 @@ def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, ma
     stage_fractions = fractions[:-1]
     final_fraction = fractions[-1]
 
-    def new_par(par, v, std=None):
-        mu = v.value
-        # for an assymetric object, be conservative and choose the larger deviation
-        if std is None:
-            std = max(v.plus, v.minus)
-        if hasattr(par, 'lower_bound'):
-            return prior.BoundedGaussian(mu, std, getattr(par, 'lower_bound', -np.inf), getattr(par, 'upper_bound', np.inf), name=par.name)
-        else:
-            return prior.Gaussian(mu, std, name=par.name)
 
     def sample_string(p):
         lb, ub = "", ""
@@ -118,32 +114,77 @@ def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, ma
         tstart = time()
         emcee = Emcee(model=model, data=data, nwalkers=nwalkers, random_subset=fraction, threads=threads, preprocess=preprocess)
         result = emcee.sample(stage_len, p0)
-        try:
-            new_pars = [new_par(*p) for p in zip(model.parameters, result.values())]
-        except ParameterSpecificationError:
-            print("Could not find walkers within 1 sigma of most probable result. Using std of entire ensemble for next stage")
-            new_pars = [new_par(*p) for p in zip(model.parameters, result.values(), result.sampler.flatchain.std(axis=0))]
+        new_pars = result.updated_priors()
+
         # TODO need to do something if we come back sd == 0
         p0 = np.vstack([p.sample(size=nwalkers) for p in new_pars]).T
         tend = time()
-        print("--------\nStage at f={} finished in {}s.\nDrawing samples for next stage from:\n{}".format(fraction, tend-tstart, '\n'.join([sample_string(p) for p in new_pars])))
+        log("--------\nStage at f={} finished in {}s.\nDrawing samples for next stage from:\n{}".format(fraction, tend-tstart, '\n'.join([sample_string(p) for p in new_pars])))
 
     tstart = time()
     emcee = Emcee(model=model, data=data, nwalkers=nwalkers, random_subset=final_fraction, threads=threads)
     result = emcee.sample(final_len, p0)
     tend = time()
-    print("--------\nFinal stage at f={}, took {}s".format(final_fraction, tend-tstart))
+    log("--------\nFinal stage at f={}, took {}s".format(final_fraction, tend-tstart))
     return result
 
-
-class EmceeResult(HoloPyObject):
-    def __init__(self, sampler, model):
-        self.sampler = sampler
+class SamplingResult(HoloPyObject):
+    def __init__(self, samples, model):
+        self.samples = samples
         self.model = model
 
     @property
     def _names(self):
         return [p.name for p in self.model.parameters]
+
+    def _pairplots(self, df, filename=None, include_vars='all'):
+        if include_vars == 'all':
+            include_vars = self._names
+        df = df.iloc[:,[list(df.columns).index(v) for v in include_vars]]
+        df = df.rename(columns={'center[0]': 'x', 'center[1]': 'y', 'center[2]': 'z' })
+        xyz = [x for x in 'x', 'y', 'z' if x in df.columns]
+        xyz_enum = [(list(df.columns).index(v), v) for v in xyz]
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+
+        max_xyz_extent = (df.max() - df.min()).loc[xyz].max()
+
+        def limits(x, y):
+            xm = df[x].mean()
+            ym = df[y].mean()
+            # dividing by two would fill the plot exactly, but it is
+            # nicer to have a little space around the outermost point
+            e = max_xyz_extent/1.8
+            return {'xmin': xm-e, 'xmax': xm+e, 'ymin': ym-e, 'ymax': ym+e}
+
+        def plot():
+            g = sns.PairGrid(df)
+            g.map_diag(sns.kdeplot)
+            g.map_lower(sns.kdeplot, cmap="Blues_d")
+            g.map_upper(sns.regplot)
+            for i, v in xyz_enum:
+                for j, u in xyz_enum:
+                    g.axes[j][i].axis(**limits(v, u))
+            return g
+
+        if filename is not None:
+            isinteractive = plt.isinteractive()
+            plt.ioff()
+            g = plot()
+            g.savefig(filename)
+            plt.close(g.fig)
+            if isinteractive:
+                plt.ion()
+        else:
+            plot()
+
+    def pairplots(self, filename=None, burn_in=0, thin='acor', include_vars='all'):
+        self._pairplots(self.samples, include_vars)
+
+class EmceeResult(SamplingResult):
+    def __init__(self, sampler, model):
+        self.sampler = sampler
+        self.model = model
 
     def plot_traces(self, traces=10, burn_in=0):
         import matplotlib.pyplot as plt
@@ -163,6 +204,7 @@ class EmceeResult(HoloPyObject):
         if traces == 'all':
             traces = slice(None)
         plt.plot(self.sampler.lnprobability[traces, burn_in:].T, color='k', linewidth=.1)
+
     @property
     def n_steps(self):
         return self.sampler.lnprobability.shape[1]
@@ -207,46 +249,11 @@ class EmceeResult(HoloPyObject):
 
         return df
 
+    def save(self, filename):
+        pass
+
     def pairplots(self, filename=None, include_lnprob=False, burn_in=0, thin='acor', include_vars='all'):
-
-        df = self.data_frame(burn_in=burn_in, thin=thin, include_lnprob=include_lnprob)
-        df = df.rename(columns={'center[0]': 'x', 'center[1]': 'y', 'center[2]': 'z' })
-        df = df.iloc[:,[list(df.columns).index(v) for v in include_vars]]
-        xyz = [x for x in 'x', 'y', 'z' if x in df.columns]
-        xyz_enum = [(list(df.columns).index(v), v) for v in xyz]
-        import seaborn as sns
-        import matplotlib.pyplot as plt
-
-        max_xyz_extent = (df.max() - df.min()).loc[xyz].max()
-
-        def limits(x, y):
-            xm = df[x].mean()
-            ym = df[y].mean()
-            # dividing by two would fill the plot exactly, but it is
-            # nicer to have a little space around the outermost point
-            e = max_xyz_extent/1.8
-            return {'xmin': xm-e, 'xmax': xm+e, 'ymin': ym-e, 'ymax': ym+e}
-
-        def plot():
-            g = sns.PairGrid(df)
-            g.map_diag(sns.kdeplot)
-            g.map_lower(sns.kdeplot, cmap="Blues_d")
-            g.map_upper(sns.regplot)
-            for i, v in xyz_enum:
-                for j, u in xyz_enum:
-                    g.axes[j][i].axis(**limits(v, u))
-            return g
-
-        if filename is not None:
-            isinteractive = plt.isinteractive()
-            plt.ioff()
-            g = plot()
-            g.savefig(filename)
-            plt.close(g.fig)
-            if isinteractive:
-                plt.ion()
-        else:
-            plot()
+        self._pairplots(self.data_frame(burn_in=burn_in, thin=thin, include_lnprob=include_lnprob), filename=filename, include_vars=include_vars)
 
     def most_probable_values(self):
         values = self.sampler.chain[np.where(self.sampler.lnprobability ==
@@ -280,6 +287,16 @@ class EmceeResult(HoloPyObject):
         upper = find_bound(np.maximum, i+1)
         lower = find_bound(np.minimum, i+1)
         return [UncertainValue(mp[p], upper[p]-mp[p], mp[p]-lower[p]) for p in self._names]
+
+    def updated_priors(self, extra_uncertainty=None):
+        if extra_uncertainty is None:
+            extra_uncertainty = np.zeros(len(self.model.parameters))
+        return [prior.updated(*p) for p in
+                zip(self.model.parameters, self.values(), extra_uncertainty)]
+
+    def next_model(self, extra_uncertainty=None):
+        next_priors = self.updated_priors(extra_uncertainty)
+
 
     def _repr_html_(self):
         results = "{}".format(", ".join(["{}:{}".format(n, v._repr_latex_()) for n, v in zip(self._names, self.values())]))
@@ -321,3 +338,10 @@ class UncertainValue(HoloPyObject):
         value_fmt = "{{:.{}g}}".format(max(display_precision, 2))
         value = value_fmt.format(self.value)
         return "${value}^{{+{s.plus:.2g}}}_{{-{s.minus:.2g}}}{confidence}$".format(s=self, confidence=confidence, value=value)
+
+def timeseries(model, data, centered_subimage=False):
+    results = []
+    for frame in data:
+        res = subset_tempering(model, frame)
+        results.append[res.values()]
+        model = res.updated_priors()
