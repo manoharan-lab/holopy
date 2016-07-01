@@ -9,6 +9,9 @@ import prior
 from random_subset import make_subset_data
 
 from emcee import PTSampler, EnsembleSampler
+import h5py
+import yaml
+import pandas as pd
 
 from time import time
 import numpy as np
@@ -177,8 +180,61 @@ class SamplingResult(HoloPyObject):
         else:
             plot()
 
-    def pairplots(self, filename=None, burn_in=0, thin='acor', include_vars='all'):
-        self._pairplots(self.samples, include_vars)
+
+    def pairplots(self, filename=None, include_vars='all'):
+        self._pairplots(self.samples, filename, include_vars)
+
+    def values(self):
+        return self._values(self.samples)
+
+    def _values(self, d):
+        d = d.sort_values('lnprob', ascending=False)
+        mp = d.iloc[0,:-1]
+        def find_bound(f, i):
+            b = d.iloc[0, :-1]
+            while (b == mp).any() and i < d.shape[0]:
+                b = f(b, d.iloc[i,:-1])
+                i+=1
+            return b
+
+        i = 0
+        while d.lnprob.iloc[i] > d.lnprob.max()-.5 and i < d.shape[0]:
+            i+=1
+
+        upper = find_bound(np.maximum, i+1)
+        lower = find_bound(np.minimum, i+1)
+        return [UncertainValue(mp[p], upper[p]-mp[p], mp[p]-lower[p]) for p in self._names]
+
+    def _repr_html_(self):
+        results = "{}".format(", ".join(["{}:{}".format(n, v._repr_latex_()) for n, v in zip(self._names, self.values())]))
+        block = """<h4>{s.__class__.__name__}</h4> {results}
+{s.samples.shape[0]} Samples
+        """.format(s=self, results=results)
+        return "<br>".join(block.split('\n'))
+
+
+    def _save(self, df, filename):
+        groupname = 'samples'
+        df.to_hdf(filename, groupname)
+        f = h5py.File(filename)
+        g = f[groupname]
+        g.attrs['model'] = yaml.dump(self.model)
+        f.close()
+
+    def save(self, filename):
+        self._save(self.samples, filename)
+
+    @classmethod
+    def load(cls, filename):
+        samples = pd.read_hdf(filename, 'samples')
+
+def load_sampling(filename):
+    samples = pd.read_hdf(filename)
+    f = h5py.File(filename)
+    g = f['samples']
+    model = yaml.load(g.attrs['model'])
+    f.close()
+    return SamplingResult(samples, model)
 
 class EmceeResult(SamplingResult):
     def __init__(self, sampler, model):
@@ -233,7 +289,6 @@ class EmceeResult(SamplingResult):
         df : DataFrame
             A data frame of samples for each parameter
         """
-        import pandas as pd
         if thin == 'acor':
             thin = int(max(self.sampler.acor))
         elif thin is None:
@@ -248,8 +303,12 @@ class EmceeResult(SamplingResult):
 
         return df
 
-    def save(self, filename):
-        pass
+    def values(self):
+        d = self.data_frame(thin=None)
+        return self._values(d)
+
+    def save(self, filename, burn_in=0, thin='acor', include_lnprob=True):
+        self._save(self.data_frame(burn_in, thin, include_lnprob), filename)
 
     def pairplots(self, filename=None, include_lnprob=False, burn_in=0, thin='acor', include_vars='all'):
         self._pairplots(self.data_frame(burn_in=burn_in, thin=thin, include_lnprob=include_lnprob), filename=filename, include_vars=include_vars)
@@ -269,23 +328,6 @@ class EmceeResult(SamplingResult):
         return {n: v for (n, v) in zip(self._names, self.most_probable_values())}
 
 
-    def values(self):
-        d = self.data_frame(thin=None).sort_values('lnprob', ascending=False)
-        mp = d.iloc[0,:-1]
-        def find_bound(f, i):
-            b = d.iloc[0, :-1]
-            while (b == mp).any() and i < d.shape[0]:
-                b = f(b, d.iloc[i,:-1])
-                i+=1
-            return b
-
-        i = 0
-        while d.lnprob.iloc[i] > d.lnprob.max()-.5 and i < d.shape[0]:
-            i+=1
-
-        upper = find_bound(np.maximum, i+1)
-        lower = find_bound(np.minimum, i+1)
-        return [UncertainValue(mp[p], upper[p]-mp[p], mp[p]-lower[p]) for p in self._names]
 
     def updated_priors(self, extra_uncertainty=None):
         if extra_uncertainty is None:
@@ -299,13 +341,14 @@ class EmceeResult(SamplingResult):
 
     def _repr_html_(self):
         results = "{}".format(", ".join(["{}:{}".format(n, v._repr_latex_()) for n, v in zip(self._names, self.values())]))
-        block = """<h4>EmceeResult</h4> {results}
+        block = """<h4>{s.__class__.__name__}</h4> {results}
 {s.sampler.chain.shape[0]} walkers
 {s.n_steps} Steps
 ~ {s.approx_independent_steps} of which are independent
 Acceptance Fraction: {s.acceptance_fraction}
         """.format(s=self, results=results)
         return "<br>".join(block.split('\n'))
+
 
 class UncertainValue(HoloPyObject):
     """
