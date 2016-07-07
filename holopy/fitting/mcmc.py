@@ -49,6 +49,9 @@ class Emcee(HoloPyObject):
 
         sampler.run_mcmc(p0, n_samples)
 
+        sampler.pool.terminate()
+        sampler.pool.join()
+
         return EmceeResult(sampler, self.model)
 
 
@@ -228,6 +231,13 @@ class SamplingResult(HoloPyObject):
     def load(cls, filename):
         samples = pd.read_hdf(filename, 'samples')
 
+    def updated_priors(self, extra_uncertainty=None):
+        if extra_uncertainty is None:
+            extra_uncertainty = np.zeros(len(list(self.model.parameters)))
+        return [prior.updated(*p) for p in
+                zip(self.model.parameters, self.values(), extra_uncertainty)]
+
+
 def load_sampling(filename):
     samples = pd.read_hdf(filename)
     f = h5py.File(filename)
@@ -326,18 +336,6 @@ class EmceeResult(SamplingResult):
 
     def most_probable_values_dict(self):
         return {n: v for (n, v) in zip(self._names, self.most_probable_values())}
-
-
-
-    def updated_priors(self, extra_uncertainty=None):
-        if extra_uncertainty is None:
-            extra_uncertainty = np.zeros(len(list(self.model.parameters)))
-        return [prior.updated(*p) for p in
-                zip(self.model.parameters, self.values(), extra_uncertainty)]
-
-    def next_model(self, extra_uncertainty=None):
-        next_priors = self.updated_priors(extra_uncertainty)
-
 
     def _repr_html_(self):
         results = "{}".format(", ".join(["{}:{}".format(n, v._repr_latex_()) for n, v in zip(self._names, self.values())]))
