@@ -15,6 +15,7 @@ import pandas as pd
 
 from time import time
 import numpy as np
+from matplotlib.ticker import MaxNLocator
 
 class ProbabilityComputer(HoloPyObject):
     def lnprob(self):
@@ -134,63 +135,87 @@ def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, ma
     return result
 
 class SamplingResult(HoloPyObject):
-    def __init__(self, samples, model):
+    def __init__(self, samples, model, autocorrelation=None):
         self.samples = samples
         self.model = model
+        # None means we don't know the autocorrelation (ie it wasn't stored)
+        self._autocorrelation=autocorrelation
+
+    @property
+    def autocorrelation(self):
+        return self._autocorrelation
+
+    @property
+    def _names_internal(self):
+        return [p.name for p in self.model.parameters]
 
     @property
     def _names(self):
-        return [p.name for p in self.model.parameters]
+        lookup = {'center[0]': 'x', 'center[1]': 'y', 'center[2]': 'z'}
+        return [lookup.get(p.name, p.name) for p in self.model.parameters]
 
-    def _pairplots(self, df, filename=None, include_vars='all'):
+    def pairplots(self, filename=None, include_lnprob=False, burn_in=0, thin='acor', include_vars='all', figsize=None, max_x_ticks=None):
+        df = self.data_frame(burn_in=burn_in, thin=thin, include_lnprob=include_lnprob)
         if include_vars == 'all':
             include_vars = self._names
-        df = df.iloc[:,[list(df.columns).index(v) for v in include_vars]]
         df = df.rename(columns={'center[0]': 'x', 'center[1]': 'y', 'center[2]': 'z' })
+        df = df.iloc[:,[list(df.columns).index(v) for v in include_vars]]
         xyz = [x for x in 'x', 'y', 'z' if x in df.columns]
+        #xyz = [x for x in 'center[0]', 'center[1]', 'center[2]' if x in df.columns]
         xyz_enum = [(list(df.columns).index(v), v) for v in xyz]
+        rest_enum = [(list(df.columns).index(v), v) for v in include_vars if v not in xyz]
         import seaborn as sns
         import matplotlib.pyplot as plt
 
         max_xyz_extent = (df.max() - df.min()).loc[xyz].max()
 
-        def limits(x, y):
+
+        def limits(x, y, extent):
             xm = df[x].mean()
             ym = df[y].mean()
             # dividing by two would fill the plot exactly, but it is
             # nicer to have a little space around the outermost point
-            e = max_xyz_extent/1.8
+            e = extent/1.6
             return {'xmin': xm-e, 'xmax': xm+e, 'ymin': ym-e, 'ymax': ym+e}
 
         def plot():
             g = sns.PairGrid(df)
             g.map_diag(sns.kdeplot)
-            g.map_lower(sns.kdeplot, cmap="Blues_d")
-            g.map_upper(sns.regplot)
+            #g.map_lower(sns.kdeplot, cmap="Blues_d")
+            g.map_offdiag(sns.kdeplot, cmap="Blues_d")
+            #g.map_upper(plt.scatter, s=1)
+
             for i, v in xyz_enum:
                 for j, u in xyz_enum:
-                    g.axes[j][i].axis(**limits(v, u))
+                    g.axes[j][i].axis(**limits(v, u, max_xyz_extent))
+            for i, v in rest_enum:
+                extent = df[v].max() - df[v].min()
+                g.axes[i][i].axis(**limits(v, v, extent))
+            if figsize is not None:
+                g.fig.set_size_inches(*figsize)
+            if max_x_ticks is not None:
+                for i in range(len(include_vars)):
+                    g.axes[i][i].get_xaxis().set_major_locator(MaxNLocator(max_x_ticks))
             return g
 
         if filename is not None:
             isinteractive = plt.isinteractive()
+            sns.set_context('paper')
             plt.ioff()
             g = plot()
+
             g.savefig(filename)
             plt.close(g.fig)
             if isinteractive:
                 plt.ion()
         else:
-            plot()
+            g = plot()
 
+        return g
 
-    def pairplots(self, filename=None, include_vars='all'):
-        self._pairplots(self.samples, filename, include_vars)
 
     def values(self):
-        return self._values(self.samples)
-
-    def _values(self, d):
+        d = self.data_frame(thin=None)
         d = d.sort_values('lnprob', ascending=False)
         mp = d.iloc[0,:-1]
         def find_bound(f, i):
@@ -201,6 +226,10 @@ class SamplingResult(HoloPyObject):
             return b
 
         i = 0
+        # TODO: BUG: I think this is wrong, for moving out .5 in log
+        # space to represent 1 sigma we would need to be using
+        # normalized probabliities, but we are doing un normalized
+        # probabilities.
         while d.lnprob.iloc[i] > d.lnprob.max()-.5 and i < d.shape[0]:
             i+=1
 
@@ -208,24 +237,43 @@ class SamplingResult(HoloPyObject):
         lower = find_bound(np.minimum, i+1)
         return [UncertainValue(mp[p], upper[p]-mp[p], mp[p]-lower[p]) for p in self._names]
 
+    def confidence_interval(self, interval=.68, burn_in=0, thin=None):
+        q = self.data_frame(thin=thin, burn_in=burn_in).quantile([.5-interval/2, .5, .5+interval/2])
+        mp = q.iloc[1]
+        plus = q.iloc[2] - q.iloc[1]
+        minus = q.iloc[1] - q.iloc[0]
+        return [UncertainValue(mp[p], plus[p], minus[p]) for p in self._names]
+
+    def plot_traces(self, traces=10, thin=None, burn_in=0):
+        import matplotlib.pyplot as plt
+        samples = self.data_frame(burn_in=burn_in, thin=thin, flat=False)
+        names = self._names
+        pars = len(names)
+        rows = (pars+1)//2
+        plt.figure(figsize=(9, rows*2.8), linewidth=.1)
+        for var in range(pars):
+            plt.subplot(rows, 2, var+1)
+            plt.plot(samples.iloc[var, burn_in:, :traces], color='k', linewidth=.3)
+            plt.title(names[var])
+
     def _repr_html_(self):
-        results = "{}".format(", ".join(["{}:{}".format(n, v._repr_latex_()) for n, v in zip(self._names, self.values())]))
+        results = "{}".format(", ".join(["{}:{}".format(n, v._repr_latex_()) for n, v in zip(self._names, self.confidence_interval())]))
+        n_samples = self.samples.shape[1] * self.samples.shape[2]
         block = """<h4>{s.__class__.__name__}</h4> {results}
-{s.samples.shape[0]} Samples
-        """.format(s=self, results=results)
+{n_samples} Samples
+        """.format(s=self, results=results, n_samples=n_samples)
         return "<br>".join(block.split('\n'))
 
-
-    def _save(self, df, filename):
+    def save(self, filename, burn_in=0, thin='acor', include_lnprob=True):
+        thin = self._interpret_thin(thin)
+        df = self.data_frame(burn_in=burn_in, thin=thin, include_lnprob=include_lnprob, flat=False)
         groupname = 'samples'
         df.to_hdf(filename, groupname)
         f = h5py.File(filename)
         g = f[groupname]
         g.attrs['model'] = yaml.dump(self.model)
+        g.attrs['autocorrelation'] = self.autocorrelation/thin
         f.close()
-
-    def save(self, filename):
-        self._save(self.samples, filename)
 
     @classmethod
     def load(cls, filename):
@@ -233,10 +281,31 @@ class SamplingResult(HoloPyObject):
 
     def updated_priors(self, extra_uncertainty=None):
         if extra_uncertainty is None:
-            extra_uncertainty = np.zeros(len(list(self.model.parameters)))
+            extra_uncertainty = np.zeros(len(list(self._names)))
         return [prior.updated(*p) for p in
                 zip(self.model.parameters, self.values(), extra_uncertainty)]
 
+
+    def _interpret_thin(self, thin):
+        if thin == 'acor':
+            thin = self.autocorrelation
+        elif thin is None:
+            thin = 1
+        if thin < 1:
+            thin = 1
+
+        return thin
+
+    def data_frame(self, burn_in=0, thin='acor', include_lnprob=True, flat=True, xyz=True):
+        thin = self._interpret_thin(thin)
+        df = self.samples.iloc[:, :, burn_in::thin]
+        if flat:
+            df = df.to_frame()
+        else:
+            df = df
+        if xyz:
+            df = df.rename(columns={'center[0]': 'x', 'center[1]': 'y', 'center[2]': 'z' })
+        return df
 
 def load_sampling(filename):
     samples = pd.read_hdf(filename)
@@ -250,19 +319,6 @@ class EmceeResult(SamplingResult):
     def __init__(self, sampler, model):
         self.sampler = sampler
         self.model = model
-
-    def plot_traces(self, traces=10, burn_in=0):
-        import matplotlib.pyplot as plt
-        names = self._names
-        samples = self.sampler.chain
-        pars = len(names)
-        rows = (pars+1)//2
-        plt.figure(figsize=(9, rows*2.8), linewidth=.1)
-        for var in range(pars):
-            plt.subplot(rows, 2, var+1)
-            plt.plot(samples[:traces, burn_in:, var].T, color='k', linewidth=.3)
-            plt.title(names[var])
-
 
     def plot_lnprob(self, traces='all', burn_in=0):
         import matplotlib.pyplot as plt
@@ -282,7 +338,7 @@ class EmceeResult(SamplingResult):
     def acceptance_fraction(self):
         return self.sampler.acceptance_fraction.mean()
 
-    def data_frame(self, burn_in=0, thin='acor', include_lnprob=True):
+    def data_frame(self, burn_in=0, thin='acor', include_lnprob=True, flat=True, xyz=True):
         """
         Format the results into a data frame
 
@@ -299,29 +355,21 @@ class EmceeResult(SamplingResult):
         df : DataFrame
             A data frame of samples for each parameter
         """
-        if thin == 'acor':
-            thin = int(max(self.sampler.acor))
-        elif thin is None:
-            thin = 1
-        chain = self.sampler.chain[:, burn_in::thin, ...]
+        thin = self._interpret_thin(thin)
+        chain = self.sampler.chain[:, burn_in::thin, :]
         names = self._names
         npar = len(names)
-        df = pd.DataFrame({n: t for (n, t) in zip(names,
-                                                  chain.reshape(-1, npar).T)})
-        if include_lnprob:
-            df['lnprob'] = self.sampler.lnprobability[:, burn_in::thin].reshape(-1)
-
+        df = pd.Panel({n: t for n, t in zip(names, chain.T)})
+        df['lnprob'] = self.sampler.lnprobability[:, burn_in::thin].T
+        if flat:
+            df = df.to_frame()
+        #if xyz:
+        #    df = df.rename(columns={'center[0]': 'x', 'center[1]': 'y', 'center[2]': 'z' })
         return df
 
-    def values(self):
-        d = self.data_frame(thin=None)
-        return self._values(d)
-
-    def save(self, filename, burn_in=0, thin='acor', include_lnprob=True):
-        self._save(self.data_frame(burn_in, thin, include_lnprob), filename)
-
-    def pairplots(self, filename=None, include_lnprob=False, burn_in=0, thin='acor', include_vars='all'):
-        self._pairplots(self.data_frame(burn_in=burn_in, thin=thin, include_lnprob=include_lnprob), filename=filename, include_vars=include_vars)
+    @property
+    def autocorrelation(self):
+        return max(self.sampler.acor)
 
     def most_probable_values(self):
         values = self.sampler.chain[np.where(self.sampler.lnprobability ==
