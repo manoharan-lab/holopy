@@ -459,6 +459,9 @@ class RegularGrid(Marray, RegularGridSchema):
 
         """
         shape = _ensure_array(shape)
+        if len(shape)==1:
+            shape=np.repeat(shape,len(self.shape))
+
         new = self
         factors = np.zeros(len(shape))
         for i, s in enumerate(shape):
