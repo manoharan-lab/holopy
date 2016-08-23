@@ -1,5 +1,5 @@
-from model import BaseModel
-from parameter import Parameter
+from holopy.fitting.model import BaseModel
+from holopy.fitting.parameter import Parameter
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core import Marray
 from holopy.core.helpers import dict_without

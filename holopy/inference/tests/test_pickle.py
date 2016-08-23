@@ -1,10 +1,9 @@
 from holopy.core.tests.common import assert_pickle_roundtrip, get_example_data
 
-from holopy.fitting.mcmc import Emcee
-from holopy.fitting.noise_model import AlphaModel
-from holopy.fitting.timeseries import TimeIndependent, TimeSeriesAlphaModel
-from holopy.fitting import prior
-from holopy.fitting import Model
+from holopy.inference.mcmc import Emcee
+from holopy.inference.noise_model import AlphaModel
+from holopy.inference.timeseries import TimeIndependent, TimeSeriesAlphaModel
+from holopy.inference import prior
 from holopy.scattering.scatterer import Sphere
 from holopy.scattering.theory import Mie
 

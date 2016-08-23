@@ -1,7 +1,7 @@
 from __future__ import division
 
 from holopy.fitting.parameter import Parameter
-from holopy.fitting.noise_model import AlphaModel
+from holopy.inference.noise_model import AlphaModel
 
 from collections import defaultdict
 import itertools

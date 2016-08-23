@@ -686,6 +686,15 @@ def squeeze(arr):
     return arr_like(np.squeeze(arr), arr,
                     spacing = spacing)
 
+def make_subset_data(data, random_subset):
+    if random_subset is not None:
+        n_sel = int(np.ceil(data.size*random_subset))
+        selection = np.random.choice(data.size, n_sel, replace=False)
+        subset = data.ravel()[selection]
+        positions = data.positions.xyz()[selection]
+        return Marray(subset, positions=positions,
+                             origin=data.origin,
+                             optics=data.optics)
 
 # common code for subimage and resize
 def _checked_cut(arr, extent):

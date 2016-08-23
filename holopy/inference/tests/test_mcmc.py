@@ -4,10 +4,10 @@ from nose.tools import assert_raises, assert_equal
 from numpy.testing import assert_allclose
 import numpy as np
 
-from holopy.fitting import prior
+from holopy.inference import prior
 from holopy.scattering.scatterer import Sphere
 from holopy.core.tests.common import assert_obj_close
-from holopy.fitting.noise_model import AlphaModel
+from holopy.inference.noise_model import AlphaModel
 
 def test_uniform():
     u = prior.Uniform(0, 1)
