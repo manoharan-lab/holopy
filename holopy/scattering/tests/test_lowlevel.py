@@ -50,7 +50,7 @@ from ..theory.mie_f import mieangfuncs, miescatlib, multilayer_sphere_lib, \
 
 from holopy.scattering.theory.multisphere import _asm_far
 
-from scipy.special import sph_jn, sph_yn
+from scipy.special import spherical_jn, spherical_yn
 
 # basic defs
 kr = 10.
@@ -191,9 +191,10 @@ def test_mie_internal_coeffs():
     n_stop = miescatlib.nstop(x)
     al, bl = miescatlib.scatcoeffs(m, x, n_stop)
     cl, dl = miescatlib.internal_coeffs(m, x, n_stop)
-    jlx = sph_jn(n_stop, x)[0][1:]
-    jlmx = sph_jn(n_stop, m * x)[0][1:]
-    hlx = jlx + 1.j * sph_yn(n_stop, x)[0][1:]
+    n = np.arange(n_stop)+1
+    jlx = spherical_jn(n, x)
+    jlmx = spherical_jn(n, m*x)
+    hlx = jlx + 1.j * spherical_yn(n, x)
 
     assert_allclose(cl, (jlx - hlx * bl) / jlmx, rtol = 1e-6, atol = 1e-6)
     assert_allclose(dl, (jlx - hlx * al)/ (m * jlmx), rtol = 1e-6, atol = 1e-6)
