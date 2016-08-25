@@ -1,10 +1,27 @@
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+#
+# This file is part of HoloPy.
+#
+# HoloPy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HoloPy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
+
 from holopy.core.tests.common import assert_pickle_roundtrip, get_example_data
 
-from holopy.fitting.mcmc import Emcee
-from holopy.fitting.noise_model import AlphaModel
-from holopy.fitting.timeseries import TimeIndependent, TimeSeriesAlphaModel
-from holopy.fitting import prior
-from holopy.fitting import Model
+from holopy.inference.mcmc import Emcee
+from holopy.inference.noise_model import AlphaModel
+from holopy.inference.timeseries import TimeIndependent, TimeSeriesAlphaModel
+from holopy.inference import prior
 from holopy.scattering.scatterer import Sphere
 from holopy.scattering.theory import Mie
 
