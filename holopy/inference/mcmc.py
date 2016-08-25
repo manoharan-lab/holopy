@@ -1,12 +1,10 @@
 from __future__ import division
 
-from holopy.fitting.fit import CostComputer
 from holopy.fitting.errors import ParameterSpecificationError
 from holopy.fitting.model import Model
-from holopy.core import Image
 from holopy.core.holopy_object import HoloPyObject
 import prior
-from random_subset import make_subset_data
+from holopy.core.marray import make_subset_data, Image
 
 from emcee import PTSampler, EnsembleSampler
 import h5py
