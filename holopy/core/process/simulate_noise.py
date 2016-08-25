@@ -24,6 +24,7 @@ measurements.
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
+#TODO: either use noise_mean or delete it
 def add_noise(image, noise_mean=.1, smoothing=.01, poisson_lambda=1000):
     """Adds simulated noise to an image
 
