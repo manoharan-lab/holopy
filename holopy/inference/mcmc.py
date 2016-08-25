@@ -198,7 +198,6 @@ class SamplingResult(HoloPyObject):
 
         if filename is not None:
             isinteractive = plt.isinteractive()
-            sns.set_context('paper')
             plt.ioff()
             g = plot()
 
@@ -224,10 +223,7 @@ class SamplingResult(HoloPyObject):
             return b
 
         i = 0
-        # TODO: BUG: I think this is wrong, for moving out .5 in log
-        # space to represent 1 sigma we would need to be using
-        # normalized probabliities, but we are doing un normalized
-        # probabilities.
+      
         while d.lnprob.iloc[i] > d.lnprob.max()-.5 and i < d.shape[0]:
             i+=1
 
