@@ -33,5 +33,7 @@ from .sphere import Sphere
 from .composite import Scatterers
 from .spherecluster import Spheres
 from .janus import JanusSphere
+from .spheroid import Spheroid
 from .ellipsoid import Ellipsoid
+from .axisymmetric import Axisymmetric
 from csg import Union, Difference, Intersection
