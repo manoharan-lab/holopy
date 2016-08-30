@@ -181,11 +181,11 @@ class DDA(ScatteringTheory):
     def required_spacing(cls_self, optics, n):
         return optics.med_wavelen / cls_self._dpl(optics, n)
 
-
-    def _calc_field(self, scatterer, schema):
+    def _calc_scat_matrix(self, scatterer, schema, calc_points=None):
         temp_dir = tempfile.mkdtemp()
 
-        calc_points = schema.positions.kr_theta_phi(scatterer.location, schema.optics)
+        if not calc_points is None:
+            calc_points = schema.positions.kr_theta_phi(scatterer.location, schema.optics)
 
         angles = calc_points[:,1:] * 180/np.pi
 
@@ -204,7 +204,7 @@ class DDA(ScatteringTheory):
         result_dir = glob.glob(os.path.join(temp_dir, 'run000*'))[0]
         if self.keep_raw_calculations:
             self._last_result_dir = result_dir
-
+ 
         adda_result = np.loadtxt(os.path.join(result_dir, 'ampl_scatgrid'),
                                  skiprows=1)
         # columns in result are
@@ -218,6 +218,16 @@ class DDA(ScatteringTheory):
         # eq 3.12
         scat_matr = np.array([[s[:,1], s[:,2]], [s[:,3], s[:,0]]]).transpose()
 
+        if self.keep_raw_calculations:
+            print("Raw calculations are in: {0}".format(temp_dir))
+        else:
+            shutil.rmtree(temp_dir)
+
+        return scat_matr
+
+    def _calc_field(self, scatterer, schema):
+        calc_points = schema.positions.kr_theta_phi(scatterer.location, schema.optics)
+        scat_matr = self._calc_scat_matrix(scatterer, schema, calc_points)
         fields = np.zeros_like(calc_points, dtype = scat_matr.dtype)
 
         for i, point in enumerate(calc_points):
@@ -226,9 +236,5 @@ class DDA(ScatteringTheory):
                                                     schema.optics.polarization)
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
 
-        if self.keep_raw_calculations:
-            print("Raw calculations are in: {0}".format(temp_dir))
-        else:
-            shutil.rmtree(temp_dir)
 
         return self._finalize_fields(scatterer.z, fields, schema)
