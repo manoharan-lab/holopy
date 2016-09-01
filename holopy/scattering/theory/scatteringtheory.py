@@ -97,10 +97,10 @@ class ScatteringTheory(HoloPyObject):
 # Subclass of scattering theory, overrides functions that depend on array
 # ordering and handles the tranposes for sending values to/from fortran
 class FortranTheory(ScatteringTheory):
-    def _calc_field(self, scatterer, schema):
+    def _calc_field(self, scatterer, schema, wavevec, medium_index):
         def get_field(s):
-            positions = schema.positions.kr_theta_phi(s.center, schema.optics)
-            field = np.vstack(self._raw_fields(positions.T, s, schema.optics)).T
+            positions = schema.positions.kr_theta_phi(s.center, wavevec)
+            field = np.vstack(self._raw_fields(positions.T, s, wavevec, medium_index, polarization)).T
             phase = np.exp(-1j*np.pi*2*s.center[2] / schema.optics.med_wavelen)
             if self._scatterer_overlaps_schema(scatterer, schema):
                 inner = scatterer.contains(schema.positions.xyz())

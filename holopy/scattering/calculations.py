@@ -23,6 +23,13 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 from holopy.core.holopy_object import SerializableMetaclass
+from holopy.core import Optics, Schema
+from holopy.core.helpers import is_none
+from holopy.scattering.scatterer import Sphere, Spheres
+from holopy.scattering.theory import Mie, Multisphere
+from holopy.scattering.errors import AutoTheoryFailed
+
+import numpy as np
 
 def interpret_args(scatterer, theory='auto', optics=None, locations=None):
     if theory is 'auto':
@@ -34,9 +41,21 @@ def interpret_args(scatterer, theory='auto', optics=None, locations=None):
     if locations is None:
         return theory, optics
 
-    if not isinstance(locations, Locations):
-        locations = Locations(locations)
+    if not isinstance(locations, Schema):
+        locations = Schema(positions=locations)
     return theory, locations, optics
+
+def determine_theory(scatterer, locations=None):
+    if isinstance(scatterer, Sphere):
+        return Mie()
+    if isinstance(scatterer, Spheres):
+        return Multisphere()
+    else:
+        raise AutoTheoryFailed(scatterer, locations)
+
+def wavevec(medium_index, wavelen):
+    med_wavelen = wavelen/medium_index
+    return 2*np.pi/med_wavelen
 
 
 def calc_intensity(scatterer, medium_index, locations, wavelen, optics=None, theory='auto'):
@@ -66,10 +85,9 @@ def calc_intensity(scatterer, medium_index, locations, wavelen, optics=None, the
     inten : :class:`.Image`
         scattered intensity
     """
-    theory, locations, optics = interpret_args(scatterer, theory, locations)
+    theory, locations, optics = interpret_args(scatterer, theory, optics, locations)
 
-    field = theory._calc_field(scatterer, schema = locations)
-    normal = locations.normal
+    field = theory._calc_field(scatterer, locations, wavevec(wavelen, medium_index), medium_index)
     return (abs(field*(1-locations.normal))**2).sum(-1)
 
 
@@ -103,7 +121,7 @@ def calc_holo(scatterer, medium_index, locations, wavelen, optics=None, theory='
     holo : :class:`.Image` object
         Calculated hologram from the given distribution of spheres
     """
-    scat = calc_field(scatterer, medium_index, locations, wavelen, optics=None, theory=auto)
+    scat = calc_field(scatterer, medium_index, locations, wavelen, optics=optics, theory=theory)
     return scattered_field_to_hologram(scat*scaling, optics.polarization, locations.normal)
 
 def calc_cross_sections(scatterer, medium_index, wavelen, optics=None, theory='auto'):
@@ -134,8 +152,8 @@ def calc_cross_sections(scatterer, medium_index, wavelen, optics=None, theory='a
         Dimensional scattering, absorption, and extinction
         cross sections, and <cos theta>
     """
-    theory = interpret_args(scatterer, theory)
-    return theory._calc_cross_sections(scatterer, optics)
+    theory = interpret_args(scatterer, theory, optics)
+    return theory._calc_cross_sections(scatterer, wavevec(wavelen, medium_index), medium_index)
 
 def calc_scat_matrix(scatterer, medium_index, locations, wavelen, optics=None, theory='auto'):
     """
@@ -164,8 +182,8 @@ def calc_scat_matrix(scatterer, medium_index, locations, wavelen, optics=None, t
         Scattering matricies at specified positions
 
     """
-    theory, locations, optics = interpret_args(scatterer, theory, locations)
-    return theory._calc_scat_matrix(scatterer, locations)
+    theory, locations, optics = interpret_args(scatterer, theory, optics, locations)
+    return theory._calc_scat_matrix(scatterer, locations, wavevec(medium_index, wavelen), medium_index)
 
 def calc_field(scatterer, medium_index, locations, wavelen, optics=None, theory='auto'):
     """
@@ -199,8 +217,8 @@ def calc_field(scatterer, medium_index, locations, wavelen, optics=None, theory=
     """
     if isinstance(scatterer, Sphere) and is_none(scatterer.center):
         raise NoCenter("Center is required for hologram calculation of a sphere")
-    else
+    else:
         pass
 
-    theory, locations, optics = interpret_args(scatterer, theory, locations)
+    theory, locations, optics = interpret_args(scatterer, theory, optics, locations)
     return theory._calc_field(scatterer, schema = schema, scaling = scaling)
