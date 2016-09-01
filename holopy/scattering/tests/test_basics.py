@@ -22,12 +22,14 @@ from ..scatterer import Sphere
 from ..theory import Mie
 from ...core.tests.common import assert_obj_close
 
+from holopy.scattering.calculations import calc_intensity, calc_holo, calc_field
+
 # small tests against results from the previous version of holopy
 
 def test_positions_kr_theta_phi():
     o = Optics(wavelen=.66, index=1.33, polarization = (1, 0))
     t = ImageSchema(shape = (2,2), spacing = .1, optics = o)
-    pos = t.positions.kr_theta_phi((0,0,1), o)
+    pos = t.positions.kr_theta_phi((0,0,1), 2*np.pi*1.33/.66)
     assert_allclose(pos, np.array([[ 12.66157039,   0.        ,   0.        ],
        [ 12.72472076,   0.09966865,   1.57079633],
        [ 12.72472076,   0.09966865,   0.        ],
@@ -38,7 +40,7 @@ def test_calc_field():
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
     thry = Mie(False)
-    f = thry.calc_field(s, t)
+    f = calc_field(s, 1.33, t, .66, o, thry)
     assert_equal(t.optics, f.optics)
     assert_equal(t.spacing, f.spacing)
     assert_allclose(f, np.array([[[ -3.95866810e-01 +2.47924378e+00j,
@@ -61,7 +63,7 @@ def test_calc_holo():
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
     thry = Mie(False)
-    h = thry.calc_holo(s, t)
+    h = calc_holo(s, 1.33, t, .66, o, thry)
     assert_obj_close(h.positions, t.positions)
     assert_allclose(h, np.array([[ 6.51162661,  5.67743548],
                                  [ 5.63554802,  4.89856241]]))
@@ -71,6 +73,6 @@ def test_calc_intensity():
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
     thry = Mie(False)
-    i = thry.calc_intensity(s, t)
+    i = calc_intensity(s, 1.33, t, .66, o)
     assert_allclose(i, np.array([[ 6.30336023,  5.65995739],
                                  [ 5.61505927,  5.04233591]]))
