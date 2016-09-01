@@ -509,8 +509,8 @@ class ImageSchema(RegularGridSchema):
                               "use Image pixel_size or similar instead")
                 optics = copy.copy(optics)
                 del optics.pixel_scale
-                
-        super(ImageSchema, self).__init__(shape=shape, spacing=spacing, optics=optics, origin=origin, metadata=metadata, **kwargs)
+        
+        super(ImageSchema, self).__init__(shape=shape, spacing=spacing, optics=optics, origin=origin, normals=np.array(normals), metadata=metadata, **kwargs)
 
     @property
     def size(self):

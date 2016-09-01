@@ -45,7 +45,7 @@ class ScatteringTheory(HoloPyObject):
     VectorGrid electric field.
     """
 
-    def _calc_field(self, scatterer, schema, scaling = 1.0):
+    def _calc_field(self, scatterer, schema, ):
         """
         Calculate fields.  Implemented in derived classes only.
 
@@ -97,11 +97,11 @@ class ScatteringTheory(HoloPyObject):
 # Subclass of scattering theory, overrides functions that depend on array
 # ordering and handles the tranposes for sending values to/from fortran
 class FortranTheory(ScatteringTheory):
-    def _calc_field(self, scatterer, schema, wavevec, medium_index):
+    def _calc_field(self, scatterer, schema, wavevec, medium_index, polarization):
         def get_field(s):
             positions = schema.positions.kr_theta_phi(s.center, wavevec)
             field = np.vstack(self._raw_fields(positions.T, s, wavevec, medium_index, polarization)).T
-            phase = np.exp(-1j*np.pi*2*s.center[2] / schema.optics.med_wavelen)
+            phase = np.exp(-1j*np.pi*2*s.center[2] / 2*np.pi/ wavevec)
             if self._scatterer_overlaps_schema(scatterer, schema):
                 inner = scatterer.contains(schema.positions.xyz())
                 field[inner] = np.vstack(
@@ -167,11 +167,6 @@ class FortranTheory(ScatteringTheory):
                             if scatterer.contains((x, y, z)):
                                 fields[i, j, k] = 0
         return fields
-
-def _field_scalar_shape(e):
-    # this is a clever hack with list arithmetic to get [1, 3] or [1,
-    # 1, 3] as needed
-    return [1]*(e.ndim-1) + [3]
 
 # this is pulled out separate from the calc_holo method because occasionally you
 # want to turn prepared  e_fields into holograms directly

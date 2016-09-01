@@ -23,7 +23,8 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 from holopy.core.holopy_object import SerializableMetaclass
-from holopy.core import Optics, Schema
+from holopy.core import Optics, Schema, Image, VectorGrid
+from holopy.core.helpers import dict_without
 from holopy.core.helpers import is_none
 from holopy.scattering.scatterer import Sphere, Spheres
 from holopy.scattering.theory import Mie, Multisphere
@@ -87,8 +88,8 @@ def calc_intensity(scatterer, medium_index, locations, wavelen, optics=None, the
     """
     theory, locations, optics = interpret_args(scatterer, theory, optics, locations)
 
-    field = theory._calc_field(scatterer, locations, wavevec(wavelen, medium_index), medium_index)
-    return (abs(field*(1-locations.normal))**2).sum(-1)
+    field = theory._calc_field(scatterer, locations, wavevec(wavelen, medium_index), medium_index, optics.polarization)
+    return (abs(field*(1-locations.normals))**2).sum(-1)
 
 
 def calc_holo(scatterer, medium_index, locations, wavelen, optics=None, theory='auto', scaling=1.0):
@@ -122,7 +123,7 @@ def calc_holo(scatterer, medium_index, locations, wavelen, optics=None, theory='
         Calculated hologram from the given distribution of spheres
     """
     scat = calc_field(scatterer, medium_index, locations, wavelen, optics=optics, theory=theory)
-    return scattered_field_to_hologram(scat*scaling, optics.polarization, locations.normal)
+    return scattered_field_to_hologram(scat*scaling, optics.polarization, locations.normals)
 
 def calc_cross_sections(scatterer, medium_index, wavelen, optics=None, theory='auto'):
     """
@@ -152,7 +153,7 @@ def calc_cross_sections(scatterer, medium_index, wavelen, optics=None, theory='a
         Dimensional scattering, absorption, and extinction
         cross sections, and <cos theta>
     """
-    theory = interpret_args(scatterer, theory, optics)
+    theory, optics = interpret_args(scatterer, theory, optics)
     return theory._calc_cross_sections(scatterer, wavevec(wavelen, medium_index), medium_index)
 
 def calc_scat_matrix(scatterer, medium_index, locations, wavelen, optics=None, theory='auto'):
@@ -221,4 +222,41 @@ def calc_field(scatterer, medium_index, locations, wavelen, optics=None, theory=
         pass
 
     theory, locations, optics = interpret_args(scatterer, theory, optics, locations)
-    return theory._calc_field(scatterer, schema = schema, scaling = scaling)
+    return theory._calc_field(scatterer, locations, wavevec(medium_index, wavelen), medium_index, optics.polarization)
+
+# this is pulled out separate from the calc_holo method because occasionally you
+# want to turn prepared  e_fields into holograms directly
+def scattered_field_to_hologram(scat, ref, detector_normal = (0, 0, 1)):
+    """
+    Calculate a hologram from an E-field
+
+    Parameters
+    ----------
+    scat : :class:`.VectorGrid`
+        The scattered (object) field
+    ref : :class:`.VectorGrid` or :class:`.Optics`
+        The reference field, it can also be inferred from polarization of an
+        Optics object
+    detector_normal : (float, float, float)
+        Vector normal to the detector the hologram should be measured at
+        (defaults to z hat, a detector in the x, y plane)
+    """
+    shape = _field_scalar_shape(scat)
+    if isinstance(ref, Optics):
+        # add the z component to polarization and adjust the shape so that it is
+        # broadcast correctly
+        ref = VectorGrid(np.append(ref.polarization, 0).reshape(shape))
+    else:
+        ref = VectorGrid(np.append(ref, 0).reshape(shape))
+    detector_normal = np.array(detector_normal).reshape(shape)
+
+    holo = Image((np.abs(scat+ref)**2 * (1 - detector_normal)).sum(axis=-1),
+                 **dict_without(scat._dict, ['dtype', 'components']))
+
+    return holo
+
+def _field_scalar_shape(e):
+    # this is a clever hack with list arithmetic to get [1, 3] or [1,
+    # 1, 3] as needed
+    return [1]*(e.ndim-1) + [3]
+
