@@ -133,8 +133,7 @@ class Tmatrix(ScatteringTheory):
         s = tmat_result[:,0::2] + 1.0j*tmat_result[:,1::2]
         s = s*(-2j*np.pi/schema.optics.med_wavelen)
         # Now arrange them into a scattering matrix, noting that Mishchenko's basis
-        # vectors are different from the B/H, so we need to take that into account
-        # see p126 of Anna Wang's lab notebook:
+        # vectors are different from the B/H, so we need to take that into account:
         scat_matr = np.array([[s[:,0], s[:,1]], [-s[:,2], -s[:,3]]]).transpose()
 
         fields = np.zeros_like(calc_points, dtype = scat_matr.dtype)

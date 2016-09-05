@@ -1,0 +1,7 @@
+May 7th 2015
+
+1. check polarisation - at the moment Tmatrix works if the input polarisation vector is [1,0]. Change S.lp.f to allow other polarisations.
+2. why don't spheroid and ellipsoid work for DDA? indicators is messing up.
+3. complete the tests for tmatrix
+4. is a setup.py file necessary? probably not, but should check.
+

@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
-Compute holograms using Mishchenko's T-matrix method for axisymmetric scatterers.  Can use double or extended precision.
+Compute holograms using Mishchenko's T-matrix method for axisymmetric scatterers.  Currently uses
 
 .. moduleauthor:: Anna Wang <annawang@seas.harvard.edu>
 """
@@ -37,6 +37,8 @@ from nose.plugins.skip import SkipTest
 
 from .scatteringtheory import ScatteringTheory
 from .mie_f import mieangfuncs
+from ..scatterer import Sphere, Ellipsoid, Spheres
+from ...core.marray import VectorGridSchema
 from ...core.helpers import _ensure_array
 
 class DependencyMissing(SkipTest, Exception):
@@ -45,71 +47,55 @@ class DependencyMissing(SkipTest, Exception):
     def __str__(self):
         return "External Dependency: " + self.dep + " could not be found, terminating."
 
-class Tmatrix(ScatteringTheory):
+class TmatrixE(ScatteringTheory):
     """
-    This model requires an external scattering code:
-    http://www.giss.nasa.gov/staff/mmishchenko/t_matrix.html
+    Computes scattering using the axisymmetric T-matrix solution by Mishchenko with extended precision.
+
+    It can calculate scattering from axisymmetric scatterers. Calculations for particles which are very large and have high aspect ratios may not converge.
     
-    Relevant paper:
-    Michael I. Mishchenko, Applied Optics, Vol. 39, Issue 6, pp. 1026-1031 (2000)
+    This model requires an external scattering code:
 
-    The compiled code, S.exe computes scattering using the axisymmetric T-matrix solution by Mishchenko.
-
-    It can calculate scattering from axisymmetric scatterers. Calculations for particles which are very large and have high aspect ratios may not converge unless extended precision is used. 
+    Attributes
+    ----------
+    Notes
     -----
-    Does not handle near fields.
+    Does not handle near fields.  This introduces ~5% error at 10 microns.
     """
     def __init__(self):
-        super(Tmatrix, self).__init__()
+        super(nonspherical, self).__init__()
 
     def _run_tmat(self, scatterer, optics, temp_dir):
+        #os.system('ifort -c S.lp.f lpq.f')
+        #os.system('ifort -o S.exe S.lp.o lpq.o')
         cmd = ['./S.exe']
         subprocess.check_call(cmd, cwd=temp_dir)
+        #os.system('./S.exe')
         return
 
     def _calc_field(self, scatterer, schema, delete=True):
         temp_dir = tempfile.mkdtemp()
+        #temp_dir = '/Users/annawang/tmatrix_temp/test_tmatrix'
+        #os.mkdir(temp_dir)
+        #shutil.copy('/n/home08/annawang/code/extended_precision/S.lp.f', temp_dir)
+        #shutil.copy('/n/home08/annawang/code/extended_precision/lpq.f', temp_dir)
+        #shutil.copy('/n/home08/annawang/code/extended_precision/amplq.par.f', temp_dir)
+        shutil.copy('/n/home08/annawang/code/extended_precision/S.exe', temp_dir)
         current_directory = os.getcwd()
-        path, _ = os.path.split(os.path.abspath(__file__))
-        tmatrixlocation = os.path.join(path, 'tmatrix_doubleprecision', 'S.exe')
-        shutil.copy(tmatrixlocation, temp_dir)
         os.chdir(temp_dir)
-        calc_points = schema.positions.kr_theta_phi(scatterer.location, schema.optics)
+        calc_points = schema.positions_kr_theta_phi(scatterer.location)
 
         angles = calc_points[:,1:] * 180/np.pi
         outf = file(os.path.join(temp_dir, 'tmatrix_tmp.inp'), 'w')
- 
-        # write the info into the scattering angles file in the following order:
 
-        if isinstance(scatterer, Sphere):
-            outf.write(str(scatterer.r)+'\n')
-            outf.write(str(schema.optics.med_wavelen)+'\n')
-            outf.write(str(scatterer.n.real/schema.optics.index)+'\n')
-            outf.write(str(scatterer.n.imag/schema.optics.index)+'\n')
-            outf.write(str(scatterer.r[0]/scatterer.r[1])+'\n')
-            outf.write(str(0)+'\n')
-            outf.write(str(0)+'\n')
-            outf.write(str(angles.shape[0])+'\n')
-        elif scatterer.shape == -1:            
-            outf.write(str((scatterer.r[1]*scatterer.r[0]**2)**(1/3.))+'\n')
-            outf.write(str(schema.optics.med_wavelen)+'\n')
-            outf.write(str(scatterer.n.real/schema.optics.index)+'\n')
-            outf.write(str(scatterer.n.imag/schema.optics.index)+'\n')
-            outf.write(str(scatterer.r[0]/scatterer.r[1])+'\n')
-            outf.write(str(scatterer.rotation[1]*180/np.pi)+'\n')
-            outf.write(str(scatterer.rotation[0]*180/np.pi)+'\n')
-            outf.write(str(scatterer.shape)+'\n')
-            outf.write(str(angles.shape[0])+'\n')
-        elif scatterer.shape == -2:            
-            outf.write(str((3/2.*scatterer.r[1]*scatterer.r[0]**2)**(1/3.))+'\n')
-            outf.write(str(schema.optics.med_wavelen)+'\n')
-            outf.write(str(scatterer.n.real/schema.optics.index)+'\n')
-            outf.write(str(scatterer.n.imag/schema.optics.index)+'\n')
-            outf.write(str(scatterer.r[0]/scatterer.r[1])+'\n')
-            outf.write(str(scatterer.rotation[1]*180/np.pi)+'\n')
-            outf.write(str(scatterer.rotation[0]*180/np.pi)+'\n')
-            outf.write(str(scatterer.shape)+'\n')
-            outf.write(str(angles.shape[0])+'\n')
+        # write the info into the scattering angles file in the following order:
+        outf.write(str((scatterer.r[1]*scatterer.r[0]**2)**(1/3.))+'\n')     
+        outf.write(str(schema.optics.med_wavelen)+'\n')
+        outf.write(str(scatterer.n.real/schema.optics.index)+'\n')
+        outf.write(str(scatterer.n.imag/schema.optics.index)+'\n')
+        outf.write(str(scatterer.r[0]/scatterer.r[1])+'\n')
+        outf.write(str(scatterer.rotation[1]*180/np.pi)+'\n')
+        outf.write(str(scatterer.rotation[0]*180/np.pi)+'\n')
+        outf.write(str(angles.shape[0])+'\n')
 
         # Now write all the angles
         np.savetxt(outf, angles)
@@ -133,8 +119,7 @@ class Tmatrix(ScatteringTheory):
         s = tmat_result[:,0::2] + 1.0j*tmat_result[:,1::2]
         s = s*(-2j*np.pi/schema.optics.med_wavelen)
         # Now arrange them into a scattering matrix, noting that Mishchenko's basis
-        # vectors are different from the B/H, so we need to take that into account
-        # see p126 of Anna Wang's lab notebook:
+        # vectors are different from the B/H, so we need to take that into account:
         scat_matr = np.array([[s[:,0], s[:,1]], [-s[:,2], -s[:,3]]]).transpose()
 
         fields = np.zeros_like(calc_points, dtype = scat_matr.dtype)

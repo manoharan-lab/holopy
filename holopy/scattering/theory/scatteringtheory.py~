@@ -170,9 +170,9 @@ class ScatteringTheory(HoloPyObject):
             scatholo = scattered_field_to_hologram(scat[i], scat[i].optics)
             scatholos.append(scatholo)
 #        return scatholos
-        fieldtoholo = (scatholos[0]+scatholos[1])*0.5
-        fieldtoholo.get_metadata_from(schema)
-        return fieldtoholo
+        scatholo = (scatholos[0]+scatholos[1])*0.5
+        scatholo.get_metadata_from(schema)
+        return scatholo
 
     @classmethod
     @binding

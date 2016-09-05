@@ -225,8 +225,6 @@ class CostComputer(HoloPyObject):
         if not valid:
             return np.ones_like(self.schema) * np.inf
 
-##  if len(self.schema.optics.wavelen)>1:
-##      return 0.5*self.model.theory(s, self.schema, scaling=self.model.get_alpha(pars))+0.5*self.model.theory(s, self.schema, scaling=self.model.get_alpha(pars))
         try:
             return self.model.theory(s, self.schema, scaling=self.model.get_alpha(pars))
         except MultisphereFieldNaN:
