@@ -34,4 +34,8 @@ from .composite import Scatterers
 from .spherecluster import Spheres
 from .janus import JanusSphere
 from .ellipsoid import Ellipsoid
+from .capsule import Capsule
+from .cylinder import Cylinder
+from .bisphere import Bisphere
+from .sphere_builtin import Sphere_builtin
 from csg import Union, Difference, Intersection
