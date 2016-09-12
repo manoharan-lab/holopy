@@ -172,10 +172,6 @@ def test_sphere_nocenter():
     schema = ImageSchema(spacing=.1, shape=1, optics=Optics(wavelen = .660, polarization = [1, 0],index = 1.33))
     assert_raises(NoCenter, Mie.calc_holo, sphere, schema)
 
-def test_calc_holo_nopolarization():
-    sphere = Sphere(n = 1.59, r = .5, center = (5, 5, 5))
-    assert_warns(UserWarning, Optics, wavelen = .660, index = 1.33)
-
 def test_ellipsoid():
     test = Ellipsoid(n = 1.585, r = [.4,0.4,1.5], center = [10,10,20])
     assert_equal(test.voxelate(.4), np.array(

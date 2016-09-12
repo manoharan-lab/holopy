@@ -32,13 +32,22 @@ from holopy.scattering.errors import AutoTheoryFailed
 
 import numpy as np
 
-def interpret_args(scatterer, theory='auto', optics=None, locations=None):
+def interpret_args(scatterer, theory='auto', optics=None, locations=None, wavelen=None, medium_index=None):
     if theory is 'auto':
         theory = determine_theory(scatterer, locations)
     if isinstance(theory, SerializableMetaclass):
         theory = theory()
     if optics is None:
-        optics = Optics()
+        optics = Optics(wavelen=wavelen, index=medium_index)
+    else:
+        d = {}
+        if wavelen is not None:
+            d['wavelen'] = wavelen
+        if medium_index is not None:
+            d['index'] = medium_index
+        # TODO: warn if we are overwriting wavelen or index in optics
+        optics = optics.like_me(**d)
+    
     if locations is None:
         return theory, optics
 
@@ -53,11 +62,6 @@ def determine_theory(scatterer, locations=None):
         return Multisphere()
     else:
         raise AutoTheoryFailed(scatterer, locations)
-
-def wavevec(medium_index, wavelen):
-    med_wavelen = wavelen/medium_index
-    return 2*np.pi/med_wavelen
-
 
 def calc_intensity(scatterer, medium_index, locations, wavelen, optics=None, theory='auto'):
     """
@@ -151,8 +155,8 @@ def calc_cross_sections(scatterer, medium_index, wavelen, optics=None, theory='a
         Dimensional scattering, absorption, and extinction
         cross sections, and <cos theta>
     """
-    theory, optics = interpret_args(scatterer, theory, optics)
-    return theory._calc_cross_sections(scatterer, wavevec(wavelen, medium_index), medium_index)
+    theory, optics = interpret_args(scatterer, theory, optics, medium_index=medium_index, wavelen=wavelen)
+    return theory._calc_cross_sections(scatterer, optics)
 
 def calc_scat_matrix(scatterer, medium_index, locations, wavelen, optics=None, theory='auto'):
     """
@@ -181,9 +185,8 @@ def calc_scat_matrix(scatterer, medium_index, locations, wavelen, optics=None, t
         Scattering matricies at specified positions
 
     """
-    theory, locations, optics = interpret_args(scatterer, theory, optics, locations)
-
-    return theory._calc_scat_matrix(scatterer, locations, wavevec(medium_index, wavelen), medium_index)
+    theory, locations, optics = interpret_args(scatterer, theory, optics, locations, medium_index=medium_index, wavelen=wavelen)
+    return theory._calc_scat_matrix(scatterer, locations, optics)
 
 def calc_field(scatterer, medium_index, locations, wavelen, optics=None, theory='auto'):
     """
@@ -220,9 +223,7 @@ def calc_field(scatterer, medium_index, locations, wavelen, optics=None, theory=
     else:
         pass
 
-    theory, locations, optics = interpret_args(scatterer, theory, optics, locations)
-    # TODO: warn if we are overwriting wavelen or index in optics
-    optics = optics.like_me(wavelen=wavelen, index=medium_index)
+    theory, locations, optics = interpret_args(scatterer, theory, optics, locations, medium_index=medium_index, wavelen=wavelen)
     return theory._calc_field(scatterer, locations, optics)
 
 # this is pulled out separate from the calc_holo method because occasionally you

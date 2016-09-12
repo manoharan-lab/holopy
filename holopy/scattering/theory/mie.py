@@ -74,9 +74,9 @@ class Mie(FortranTheory):
     def _can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
 
-    def _calc_scat_matrix(self, scatterer, schema, wavevec, medium_index):
+    def _calc_scat_matrix(self, scatterer, schema, optics):
         if isinstance(scatterer, Sphere):
-            scat_coeffs = self._scat_coeffs(scatterer, wavevec, medium_index)
+            scat_coeffs = self._scat_coeffs(scatterer, optics)
 
             # TODO: actually use (rather than ignore) the phi
             scat_matrs = [mieangfuncs.asm_mie_far(scat_coeffs, theta) for
@@ -133,14 +133,14 @@ class Mie(FortranTheory):
             raise UnrealizableScatterer(self, scatterer,
                                         "Use Multisphere to calculate " +
                                         "radiometric quantities")
-        albl = self._scat_coeffs(scatterer, optics.wavevec, optics.index)
+        albl = self._scat_coeffs(scatterer, optics)
 
         cscat, cext, cback = miescatlib.cross_sections(albl[0], albl[1]) * \
             (2. * np.pi / optics.wavevec**2)
 
         cabs = cext - cscat # conservation of energy
 
-        asym = 4. * np.pi / (wavevec**2 * cscat) * \
+        asym = 4. * np.pi / (optics.wavevec**2 * cscat) * \
             miescatlib.asymmetry_parameter(albl[0], albl[1])
 
         return np.array([cscat, cabs, cext, asym])
