@@ -32,4 +32,5 @@ print(' '.join(t))
 call(t)
 
 doctest = ['sphinx-build', '-b', 'doctest', './docs/source', './docs/build']
+print(' '.join(doctest))
 call(doctest)
