@@ -4,7 +4,7 @@ python:
   - 2.7
 
 env:
-  - DEPS="numpy scipy nose pyyaml pillow emcee pandas h5py sphinx"
+  - DEPS="numpy scipy nose pyyaml pillow pandas h5py sphinx"
 
 
 install:
@@ -12,6 +12,7 @@ install:
   - conda create -n testenv --yes pip python=$TRAVIS_PYTHON_VERSION
   - source activate testenv
   - conda install --yes $DEPS
+  - pip install emcee
 # TODO Remove these once setup.py handles dependencies correctly.
   - python setup.py install
   - python setup.py build_ext --inplace
