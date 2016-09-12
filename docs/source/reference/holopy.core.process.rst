@@ -21,11 +21,3 @@ process Package
 .. automodule:: holopy.core.process.enhance
     :members:
     :show-inheritance:
-
-:mod:`filter` Module
---------------------
-
-.. automodule:: holopy.core.process.filter
-    :members:
-    :show-inheritance:
-
