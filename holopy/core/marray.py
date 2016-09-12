@@ -128,7 +128,13 @@ def _describe_init_signature(cls):
         the type will be determined as the minimum type required
         to hold the objects in the sequence.  This argument can only
         be used to 'upcast' the array.  For downcasting, use the
-        .astype(t) method."""}
+        .astype(t) method.""",
+             'normals': """
+   normals : vector or ndarray of vectors
+             Detector normals. If a single normal is given it is for all
+             locations, otherwise normals should be the same shape as the
+              data/desired data
+             """}
 
     for key, val in attrs.iteritems():
         if val[0] == '\n':
@@ -154,11 +160,12 @@ class Schema(HoloPyObject):
     {attrs}
     """
     def __init__(self, shape=None, positions=None, optics=None,
-                 origin=np.zeros(3), metadata={}, **kwargs):
+                 origin=np.zeros(3), normals=None, metadata={}, **kwargs):
         self._positions = positions
         self.optics = optics
         self.origin = origin
         self.metadata = metadata
+        self.normals = normals
         # if we are a np.ndarray subclass (if this constructor is
         # called from Marray or subclass) we will already have a shape
         # and should not try to do anything with our shape argument.
@@ -355,6 +362,9 @@ class RegularGridSchema(Schema):
             pos[..., i] = xyz[i, ...] * s
         return Positions(pos + self.origin)
 
+    def positions_theta_phi(self, center):
+        return self.positions.r_theta_phi(center)[:,1:]
+
     @positions.setter
     def positions(self, val):
         raise Error("Positions of RegularGrids are determined automatically, "
@@ -484,7 +494,7 @@ class ImageSchema(RegularGridSchema):
     {attrs}
     """
     def __init__(self, shape=None, spacing=None, optics=None,
-                 origin=np.zeros(3), metadata={}, **kwargs):
+                 origin=np.zeros(3), normals=(0, 0, 1), metadata={}, **kwargs):
         if shape is not None:
             shape = _ensure_pair(shape)
 
@@ -499,8 +509,8 @@ class ImageSchema(RegularGridSchema):
                               "use Image pixel_size or similar instead")
                 optics = copy.copy(optics)
                 del optics.pixel_scale
-
-        super(ImageSchema, self).__init__(shape=shape, spacing=spacing, optics=optics, origin=origin, metadata=metadata, **kwargs)
+        
+        super(ImageSchema, self).__init__(shape=shape, spacing=spacing, optics=optics, origin=origin, normals=np.array(normals), metadata=metadata, **kwargs)
 
     @property
     def size(self):
@@ -535,8 +545,7 @@ class Image(RegularGrid, ImageSchema):
     pass
 
 class VectorMarray(Marray, VectorSchema):
-    def __init__(self, arr, positions=None,
-                 components=('x', 'y', 'z'),
+    def __init__(self, arr, positions=None, components=('x', 'y', 'z'),
                  optics=None, origin=np.zeros(3), **kwargs):
         super(VectorMarray, self).__init__(arr=arr, positions=positions, optics=optics, origin=origin, **kwargs)
 

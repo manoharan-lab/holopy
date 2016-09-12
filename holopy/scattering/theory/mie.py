@@ -74,13 +74,13 @@ class Mie(FortranTheory):
     def _can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
 
-    def _calc_scat_matrix(self, scatterer, schema):
+    def _calc_scat_matrix(self, scatterer, schema, optics):
         if isinstance(scatterer, Sphere):
-            scat_coeffs = self._scat_coeffs(scatterer, schema.optics)
+            scat_coeffs = self._scat_coeffs(scatterer, optics)
 
             # TODO: actually use (rather than ignore) the phi
             scat_matrs = [mieangfuncs.asm_mie_far(scat_coeffs, theta) for
-                          theta, phi in schema.positions_theta_phi()]
+                          theta, phi in schema.positions_theta_phi(scatterer.center)]
             return np.array(scat_matrs)
         else:
             raise TheoryNotCompatibleError(self, scatterer)
@@ -165,7 +165,7 @@ class Mie(FortranTheory):
 
 
     def _scat_coeffs_internal(self, s, optics):
-        x_arr = optics.wavevec * _ensure_array(s.r)
+        x_arr = opitcs.wavevec * _ensure_array(s.r)
         m_arr = _ensure_array(s.n) / optics.index
 
         # Check that the scatterer is in a range we can compute for

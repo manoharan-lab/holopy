@@ -98,3 +98,11 @@ class ConvergenceFailureMultisphere(Exception):
     def __str__(self):
         return ("Multisphere calculations failed to converge, this probably means "
                 "your scatterer is unphysical, or possibly just huge")
+
+class AutoTheoryFailed(Exception):
+    def __init__(self, scatterer, locations=None):
+        self.scatterer = scatterer
+        self.locations = locations
+
+    def __str__(self):
+        return ("Could not automatically determine a theory to compute scattering from scatterer: {}. You will have to manually specify a theory (or submit a bug if you think we should be able to tell what theory you need). ")

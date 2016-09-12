@@ -66,9 +66,6 @@ class Optics(HoloPyObject):
         # source parameters
         self.wavelen = wavelen
         self.index = index
-        if polarization is None:
-            warn("Polarization not specified. You will not be able to use this optics"
-                    " for most calculations")
         self.polarization = np.array(polarization)
         self.divergence = divergence
         if divergence != 0.0:
@@ -181,9 +178,9 @@ class Positions(np.ndarray, HoloPyObject):
 
         return np.vstack((r, theta, phi)).T
 
-    def kr_theta_phi(self, origin, optics):
+    def kr_theta_phi(self, origin, wavevec):
         pos = self.r_theta_phi(origin)
-        pos[:,0] *= optics.wavevec
+        pos[:,0] *= wavevec
         return pos
 
 class Grid(PositionSpecification):

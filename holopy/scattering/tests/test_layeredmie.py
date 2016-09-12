@@ -34,6 +34,8 @@ from ..theory import Mie
 from ..theory.mie_f import multilayer_sphere_lib, miescatlib
 from ..scatterer import Sphere
 
+from holopy.scattering.calculations import calc_holo
+
 from nose.plugins.attrib import attr
 
 @attr('medium')
@@ -47,7 +49,7 @@ def test_Shell():
     t = ImageSchema(200, .071333, optics = optics)
 
     thry = Mie(False)
-    h = thry.calc_holo(s, t, scaling = 0.4826042444701572)
+    h = calc_holo(s, 1.36, t, .658, optics=optics, theory=thry, scaling = 0.4826042444701572)
 
     verify(h, 'shell')
 

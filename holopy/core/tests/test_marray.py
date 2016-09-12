@@ -126,9 +126,6 @@ def test_positions_theta_phi():
     assert_equal(ptp[-1], (np.pi, np.pi*2))
     assert_allclose(ptp[182], np.array([ 0.19234241,  4.10330469]))
 
-    holo = get_example_data('image0001.yaml')
-    assert_raises(UnspecifiedPosition, holo.positions_theta_phi)
-
 def test_positions_shape():
     schema = ImageSchema(shape = 105, spacing = 0.041)
     pos = schema.positions.r_theta_phi([0,0,0])
