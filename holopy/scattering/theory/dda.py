@@ -35,16 +35,18 @@ import glob
 import os
 import shutil
 import time
-from ..binding_method import binding, finish_binding
 import warnings
 
 from nose.plugins.skip import SkipTest
 
 from .scatteringtheory import ScatteringTheory
 from .mie_f import mieangfuncs
-from ..scatterer import Sphere, Ellipsoid, Spheres, Capsule, Cylinder, Bisphere, Sphere_builtin
+from ..scatterer import Sphere, Ellipsoid, Spheres, Capsule, Cylinder, Bisphere, Sphere_builtin, JanusSphere
+from holopy.scattering.scatterer.csg import CsgScatterer
 from ...core.marray import VectorGridSchema
 from ...core.helpers import _ensure_array
+
+scatterers_handled = Sphere, JanusSphere, Ellipsoid, Spheres, Capsule, Cylinder, Bisphere, Sphere_builtin, CsgScatterer
 
 class DependencyMissing(SkipTest, Exception):
     def __init__(self, dep):
@@ -218,8 +220,6 @@ class DDA(ScatteringTheory):
 
 
 
-    @classmethod
-    @binding
     def _dpl(cls_self, optics, n):
         # if the object has multiple domains, we need to pick the
         # largest required dipole number
@@ -233,8 +233,6 @@ class DDA(ScatteringTheory):
             dpl = max(dpl, optics.med_wavelen / cls_self.max_dpl_size)
         return dpl
 
-    @classmethod
-    @binding
     def required_spacing(cls_self, optics, n):
         return optics.med_wavelen / cls_self._dpl(optics, n)
 

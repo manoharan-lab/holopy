@@ -105,4 +105,4 @@ class AutoTheoryFailed(Exception):
         self.locations = locations
 
     def __str__(self):
-        return ("Could not automatically determine a theory to compute scattering from scatterer: {}. You will have to manually specify a theory (or submit a bug if you think we should be able to tell what theory you need). ")
+        return ("Could not automatically determine a theory to compute scattering from scatterer: {}. You will have to manually specify a theory (or submit a bug if you think we should be able to tell what theory you need). ".format(self.scatterer))
