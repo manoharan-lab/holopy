@@ -71,9 +71,9 @@ def test_DDA_sphere():
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_dda_2_cpu():
     sc = Sphere(n=1.59, r=3e-1, center=(1, -1, 30))
-    mie_holo = Mie.calc_holo(sc, schema)
+    mie_holo = calc_holo(sc, index, schema, wavelen, optics)
     dda_n2 = DDA(n_cpu=2)
-    dda_holo = dda_n2.calc_holo(sc, schema)
+    dda_holo = calc_holo(sc, index, schema, wavelen, optics, dda_n2)
 
     # TODO: figure out how to actually test that it runs on multiple cpus
 
@@ -94,11 +94,11 @@ def test_DDA_indicator():
 
     sc = Sphere(n=n, r=r, center = center)
 
-    sphere_holo = dda.calc_holo(sc, schema)
+    sphere_holo = calc_holo(sc, index, schema, wavelen, optics, dda)
 
     s = Scatterer(Sphere(r=r, center = (0, 0, 0)).contains, n, center)
 
-    gen_holo = dda.calc_holo(s, schema)
+    gen_holo = calc_holo(s, index, schema, wavelen, optics, dda)
 
     assert_allclose(sphere_holo, gen_holo, rtol=2e-3)
 
@@ -112,7 +112,7 @@ def test_voxelated_complex():
 
     schema = ImageSchema(50, .1, optics = o)
 
-    holo_dda = DDA.calc_holo(sv, schema)
+    holo_dda = calc_holo(sv, o.index, schema, o.wavelen, Optics(polarization=(1, 0)), DDA)
     verify(holo_dda, 'dda_voxelated_complex', rtol=1e-5)
 
 
@@ -123,8 +123,8 @@ def test_DDA_coated():
         center=[7.141442573813124, 7.160766866147957, 11.095409800342143],
         n=[(1.27121212428+0j), (1.49+0j)], r=[.1-0.0055, 0.1])
 
-    lmie_holo = Mie.calc_holo(cs, schema)
-    dda_holo = DDA.calc_holo(cs, schema)
+    lmie_holo = calc_holo(cs, index, schema, wavelen, schema.optics, Mie)
+    dda_holo = calc_holo(cs, index, schema, wavelen, schema.optics)
 
     assert_allclose(lmie_holo, dda_holo, rtol = 5e-4)
 
@@ -132,7 +132,7 @@ def test_DDA_coated():
 def test_Ellipsoid_dda():
     e = Ellipsoid(1.5, r = (.5, .1, .1), center = (1, -1, 10))
     schema = ImageSchema(100, .1, optics = Optics(wavelen=.66, index=1.33, polarization = (1,0)))
-    h = DDA.calc_holo(e, schema)
+    h = calc_holo(e, schema.optics.index, schema, schema.optics.wavelen, optics=schema.optics)
 
     assert_almost_equal(h.max(), 1.3152766077267062)
     assert_almost_equal(h.mean(), 0.99876620628942114)
@@ -143,5 +143,5 @@ def test_janus():
     s = JanusSphere(n = [1.34, 2.0], r = [.5, .51], rotation = (-np.pi/2, 0),
                     center = (5, 5, 5))
     assert_almost_equal(s.index_at([5,5,5]),1.34)
-    holo = DDA.calc_holo(s, schema)
+    holo = calc_holo(s, 1.33, schema, .66, optics=Optics(polarization=(1, 0)))
     verify(holo, 'janus_dda')

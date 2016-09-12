@@ -27,7 +27,7 @@ from holopy.core import Optics, Schema, Image, VectorGrid
 from holopy.core.helpers import dict_without
 from holopy.core.helpers import is_none
 from holopy.scattering.scatterer import Sphere, Spheres
-from holopy.scattering.theory import Mie, Multisphere
+from holopy.scattering.theory import Mie, Multisphere, dda
 from holopy.scattering.errors import AutoTheoryFailed
 
 import numpy as np
@@ -58,8 +58,10 @@ def interpret_args(scatterer, theory='auto', optics=None, locations=None, wavele
 def determine_theory(scatterer, locations=None):
     if isinstance(scatterer, Sphere):
         return Mie()
-    if isinstance(scatterer, Spheres):
+    elif isinstance(scatterer, Spheres):
         return Multisphere()
+    elif isinstance(scatterer, dda.scatterers_handled):
+        return dda.DDA()
     else:
         raise AutoTheoryFailed(scatterer, locations)
 
