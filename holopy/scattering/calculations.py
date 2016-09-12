@@ -86,9 +86,7 @@ def calc_intensity(scatterer, medium_index, locations, wavelen, optics=None, the
     inten : :class:`.Image`
         scattered intensity
     """
-    theory, locations, optics = interpret_args(scatterer, theory, optics, locations)
-
-    field = theory._calc_field(scatterer, locations, wavevec(wavelen, medium_index), medium_index, optics.polarization)
+    field = calc_field(scatterer, medium_index, locations, wavelen, optics, theory)
     return (abs(field*(1-locations.normals))**2).sum(-1)
 
 
@@ -184,6 +182,7 @@ def calc_scat_matrix(scatterer, medium_index, locations, wavelen, optics=None, t
 
     """
     theory, locations, optics = interpret_args(scatterer, theory, optics, locations)
+
     return theory._calc_scat_matrix(scatterer, locations, wavevec(medium_index, wavelen), medium_index)
 
 def calc_field(scatterer, medium_index, locations, wavelen, optics=None, theory='auto'):
@@ -222,7 +221,9 @@ def calc_field(scatterer, medium_index, locations, wavelen, optics=None, theory=
         pass
 
     theory, locations, optics = interpret_args(scatterer, theory, optics, locations)
-    return theory._calc_field(scatterer, locations, wavevec(medium_index, wavelen), medium_index, optics.polarization)
+    # TODO: warn if we are overwriting wavelen or index in optics
+    optics = optics.like_me(wavelen=wavelen, index=medium_index)
+    return theory._calc_field(scatterer, locations, optics)
 
 # this is pulled out separate from the calc_holo method because occasionally you
 # want to turn prepared  e_fields into holograms directly

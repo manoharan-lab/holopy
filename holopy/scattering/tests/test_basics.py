@@ -73,6 +73,6 @@ def test_calc_intensity():
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
     thry = Mie(False)
-    i = calc_intensity(s, 1.33, t, .66, o)
+    i = calc_intensity(s, 1.33, t, .66, o, thry)
     assert_allclose(i, np.array([[ 6.30336023,  5.65995739],
                                  [ 5.61505927,  5.04233591]]))

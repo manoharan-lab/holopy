@@ -350,7 +350,8 @@ def test_raw_fields():
     o = Optics(wavelen=.66, index=1.33, polarization=(0, 1))
     sp = Sphere(r=.5, n=1.6, center=(10, 10, 5))
     sch = ImageSchema(3, .1, o)
-    rf = Mie()._raw_fields(sch.positions.kr_theta_phi((10, 10, 5), sch.optics).T, sp, sch.optics)
+    wavevec = 2*np.pi/(.66/1.33)
+    rf = Mie()._raw_fields(sch.positions.kr_theta_phi((10, 10, 5), wavevec).T, sp, wavevec, 1.33, (0, 1))
     assert_allclose(rf, [[(0.0015606995428858754-0.0019143174710834162j),
   (-0.0003949071974815011-0.0024154494284017187j),
   (-0.002044525390662322-0.001302770747742109j),

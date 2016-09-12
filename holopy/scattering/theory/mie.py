@@ -85,21 +85,21 @@ class Mie(FortranTheory):
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
-    def _raw_fields(self, positions, scatterer, wavevec, medium_index, polarization):
-        scat_coeffs = self._scat_coeffs(scatterer, wavevec, medium_index)
-        return mieangfuncs.mie_fields(positions, scat_coeffs, polarization,
+    def _raw_fields(self, positions, scatterer, optics):
+        scat_coeffs = self._scat_coeffs(scatterer, optics)
+        return mieangfuncs.mie_fields(positions, scat_coeffs, optics.polarization,
                                       self.compute_escat_radial,
                                       self.full_radial_dependence)
 
-    def _raw_internal_fields(self, positions, scatterer, wavevec, medium_index, polarization):
+    def _raw_internal_fields(self, positions, scatterer, optics):
         scat_coeffs = self._scat_coeffs(scatterer, optics)
         # TODO BUG: this isn't right for layered spheres (and will
         # probably crash)
         return mieangfuncs.mie_internal_fields(positions, scatterer.n,
-                                               scat_coeffs, polarization)
+                                               scat_coeffs, optics.polarization)
 
 
-    def _calc_cross_sections(self, scatterer, wavevec, medium_index):
+    def _calc_cross_sections(self, scatterer, optics):
         """
         Calculate scattering, absorption, and extinction cross
         sections, and asymmetry parameter for spherically
@@ -133,10 +133,10 @@ class Mie(FortranTheory):
             raise UnrealizableScatterer(self, scatterer,
                                         "Use Multisphere to calculate " +
                                         "radiometric quantities")
-        albl = self._scat_coeffs(scatterer, wavevec, medium_index)
+        albl = self._scat_coeffs(scatterer, optics.wavevec, optics.index)
 
         cscat, cext, cback = miescatlib.cross_sections(albl[0], albl[1]) * \
-            (2. * np.pi / wavevec**2)
+            (2. * np.pi / optics.wavevec**2)
 
         cabs = cext - cscat # conservation of energy
 
@@ -145,9 +145,9 @@ class Mie(FortranTheory):
 
         return np.array([cscat, cabs, cext, asym])
 
-    def _scat_coeffs(self, s, wavevec, medium_index):
-        x_arr = wavevec * _ensure_array(s.r)
-        m_arr = _ensure_array(s.n) / medium_index
+    def _scat_coeffs(self, s, optics):
+        x_arr = optics.wavevec * _ensure_array(s.r)
+        m_arr = _ensure_array(s.n) / optics.index
 
         # Check that the scatterer is in a range we can compute for
         if x_arr.max() > 1e3:
@@ -164,9 +164,9 @@ class Mie(FortranTheory):
             return scatcoeffs_multi(m_arr, x_arr, self.eps1, self.eps2)
 
 
-    def _scat_coeffs_internal(self, s, wavevec, medium_index):
-        x_arr = wavevec * _ensure_array(s.r)
-        m_arr = _ensure_array(s.n) / medium_index
+    def _scat_coeffs_internal(self, s, optics):
+        x_arr = opitcs.wavevec * _ensure_array(s.r)
+        m_arr = _ensure_array(s.n) / optics.index
 
         # Check that the scatterer is in a range we can compute for
         if x_arr.max() > 1e3:
