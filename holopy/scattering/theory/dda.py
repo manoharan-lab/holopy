@@ -239,10 +239,10 @@ class DDA(ScatteringTheory):
         return optics.med_wavelen / cls_self._dpl(optics, n)
 
 
-    def _calc_field(self, scatterer, schema):
+    def _calc_field(self, scatterer, schema, optics):
         temp_dir = tempfile.mkdtemp()
 
-        calc_points = schema.positions.kr_theta_phi(scatterer.location, schema.optics)
+        calc_points = schema.positions.kr_theta_phi(scatterer.location, optics.wavevec)
 
         angles = calc_points[:,1:] * 180/np.pi
 
@@ -255,7 +255,7 @@ class DDA(ScatteringTheory):
         np.savetxt(outf, angles)
         outf.close()
 
-        self._run_adda(scatterer, schema.optics, temp_dir)
+        self._run_adda(scatterer, optics, temp_dir)
 
         # Go into the results directory, there should only be one run
         result_dir = glob.glob(os.path.join(temp_dir, 'run000*'))[0]
@@ -280,7 +280,7 @@ class DDA(ScatteringTheory):
         for i, point in enumerate(calc_points):
             kr, theta, phi = point
             escat_sph = mieangfuncs.calc_scat_field(kr, phi, scat_matr[i],
-                                                    schema.optics.polarization)
+                                                    optics.polarization)
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
 
         if self.keep_raw_calculations:

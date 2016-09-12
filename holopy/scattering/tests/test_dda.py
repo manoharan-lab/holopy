@@ -35,13 +35,14 @@ from ...core import ImageSchema, Optics
 from ..theory import Mie, DDA
 from .common import assert_allclose, verify
 
+from holopy.scattering.calculations import calc_holo
 
 import os.path
 
 # nose setup/teardown methods
 def setup_optics():
     # set up optics class for use in several test functions
-    global optics, schema
+    global optics, schema, wavelen, index
     wavelen = 658e-3
     polarization = [0., 1.0]
     divergence = 0
@@ -63,8 +64,8 @@ def test_DDA_sphere():
     sc = Sphere(n=1.59, r=3e-1, center=(0, 0, 0))
     assert_raises(ScattererDefinitionError, Sphere, n=1.59, r=3e-1, center=(0, 0))
     sc = sc.translated(1, -1, 30)
-    mie_holo = Mie.calc_holo(sc, schema)
-    dda_holo = DDA.calc_holo(sc, schema)
+    mie_holo = calc_holo(sc, index, schema, wavelen, optics=optics)
+    dda_holo = calc_holo(sc, index, schema, wavelen, optics=optics, theory=DDA)
     assert_allclose(mie_holo, dda_holo, rtol=.0015)
 
 @with_setup(setup=setup_optics, teardown=teardown_optics)
