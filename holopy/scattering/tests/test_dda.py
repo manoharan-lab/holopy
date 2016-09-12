@@ -24,7 +24,7 @@ from __future__ import division
 
 
 from nose.tools import assert_raises
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_almost_equal, assert_equal
 import numpy as np
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
@@ -130,7 +130,10 @@ def test_DDA_coated():
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_Ellipsoid_dda():
     e = Ellipsoid(1.5, r = (.5, .1, .1), center = (1, -1, 10))
-    schema = ImageSchema(100, .1, optics = Optics(wavelen=.66, index=1.33, polarization = (1,0)))
+    o =  Optics(wavelen=.66, index=1.33, polarization = (1,0))
+    schema = ImageSchema(100, .1, optics=o)
+    cmd = DDA()._adda_ellipsoid(e, o, 'temp_dir')
+    assert_equal(cmd, ['-eq_rad', '0.5', '-shape', 'ellipsoid', '0.2', '0.2', '-m', '1.12781954887', '0.0', '-orient', '0', '0', '0'])
     h = DDA.calc_holo(e, schema)
 
     assert_almost_equal(h.max(), 1.3152766077267062)
