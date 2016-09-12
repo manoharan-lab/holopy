@@ -21,7 +21,7 @@ class ProbabilityComputer(HoloPyObject):
 
 
 class Emcee(HoloPyObject):
-    def __init__(self, model, data, nwalkers=50, random_subset=None, threads=None, preprocess=None):
+    def __init__(self, model, data, nwalkers=50, random_subset=None, threads=None, preprocess=None, seed=None):
         self.model = model
         if preprocess is None:
             preprocess = lambda x: x
@@ -33,13 +33,19 @@ class Emcee(HoloPyObject):
             self.data = make_subset_data(preprocess(data), random_subset)
         self.nwalkers = nwalkers
         self.threads = threads
+        self.seed = seed
 
 
     def make_guess(self):
         return np.vstack([p.sample(size=(self.nwalkers)) for p in self.model.parameters]).T
 
     def make_sampler(self):
-        return EnsembleSampler(self.nwalkers, len(list(self.model.parameters)), self.model.lnposterior, threads=self.threads, args=[self.data])
+        ens_samp=EnsembleSampler(self.nwalkers, len(list(self.model.parameters)), self.model.lnposterior, threads=self.threads, args=[self.data])
+        if self.seed is not None:
+            seed_state=np.random.mtrand.RandomState(self.seed).get_state()
+            ens_samp.random_state=seed_state
+
+        return ens_samp
 
     def sample(self, n_samples, p0=None):
         sampler = self.make_sampler()
@@ -47,9 +53,9 @@ class Emcee(HoloPyObject):
             p0 = self.make_guess()
 
         sampler.run_mcmc(p0, n_samples)
-
-        sampler.pool.terminate()
-        sampler.pool.join()
+        if self.threads is not None:
+            sampler.pool.terminate()
+            sampler.pool.join()
 
         return EmceeResult(sampler, self.model)
 
@@ -66,7 +72,7 @@ class PTemcee(Emcee):
         return PTSampler(self.ntemps, self.nwalkers, self.ndim, self.lnlike, self.lnprior, threads=self.threads)
 
 
-def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, max_pixels=1000, threads='all', stages=3, stage_len=30, preprocess=None, verbose=True):
+def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, max_pixels=1000, threads='all', stages=3, stage_len=30, preprocess=None, verbose=True, seed=None):
     """
     Parameters
     ----------
@@ -93,6 +99,8 @@ def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, ma
     if preprocess is None:
         preprocess = lambda x: x
 
+    curr_seed=seed
+
     # TODO: is there a better way of figuring out if data is a list, tuple, iterator, ...?
     if not isinstance(data, Image):
         n_pixels = preprocess(data[0]).size
@@ -102,7 +110,6 @@ def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, ma
 
     stage_fractions = fractions[:-1]
     final_fraction = fractions[-1]
-
 
     def sample_string(p):
         lb, ub = "", ""
@@ -116,7 +123,10 @@ def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, ma
     p0 = None
     for fraction in stage_fractions:
         tstart = time()
-        emcee = Emcee(model=model, data=data, nwalkers=nwalkers, random_subset=fraction, threads=threads, preprocess=preprocess)
+        emcee = Emcee(model=model, data=data, nwalkers=nwalkers, random_subset=fraction, threads=threads, preprocess=preprocess,seed=curr_seed)
+        if curr_seed is not None:
+            curr_seed=curr_seed+1
+
         result = emcee.sample(stage_len, p0)
         new_pars = result.updated_priors()
 
@@ -126,7 +136,7 @@ def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, ma
         log("--------\nStage at f={} finished in {}s.\nDrawing samples for next stage from:\n{}".format(fraction, tend-tstart, '\n'.join([sample_string(p) for p in new_pars])))
 
     tstart = time()
-    emcee = Emcee(model=model, data=data, nwalkers=nwalkers, random_subset=final_fraction, threads=threads)
+    emcee = Emcee(model=model, data=data, nwalkers=nwalkers, random_subset=final_fraction, threads=threads,seed=curr_seed)
     result = emcee.sample(final_len, p0)
     tend = time()
     log("--------\nFinal stage at f={}, took {}s".format(final_fraction, tend-tstart))

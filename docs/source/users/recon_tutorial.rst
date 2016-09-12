@@ -25,7 +25,9 @@ Here is an example:
 .. plot:: pyplots/basic_recon.py
    :include-source:
 
-We'll examine each section of code in turn. The first block::
+We'll examine each section of code in turn. The first block:
+
+..  testcode::
 
   import numpy as np
   import holopy as hp
@@ -38,7 +40,9 @@ loads the relevant modules from HoloPy and NumPy.
 Loading Data
 ------------
 
-We use::
+We use:
+
+..  testcode::
 
   holo = get_example_data('image0001.yaml')
 
@@ -60,9 +64,21 @@ load (which is most image formats).
 Propagating
 -----------
 
-The actual propagation is accomplished with :func:`.propagate`::
+The actual propagation is accomplished with :func:`.propagate`:
 
-  rec_vol = propagate(holo, linspace(4e-6, 10e-6, 7))
+..  testcode::
+
+  rec_vol = propagate(holo, np.linspace(4e-6, 10e-6, 7))
+
+..  testcode::
+    :hide:
+    
+    print(rec_vol[0,0,0])
+
+..  testoutput::
+    :hide:
+    
+    (167.127370799-88.2156114418j)
 
 Here we have used numpy's linspace to get a set of distances to
 propagate to. You can also propagate to a single distance, or to set
@@ -93,8 +109,20 @@ imaginary part of the reconstruction::
 These phase sensitive visualizations will change contrast as you step
 through because you hit different places in the phase period. Such a
 reconstruction will work better if you use steps that are an integer
-number of wavelengths in medium::
+number of wavelengths in medium:
 
-  from numpy import arange
-  rec_vol = propagate(holo, linspace(4e-6, 10e-6, holo.optics.med_wavelen))
+..  testcode::
+
+  
+  rec_vol = propagate(holo, np.linspace(1, 15,15)*holo.optics.med_wavelen)
   hp.show(rec_vol.imag)
+
+..  testcode::
+    :hide:
+
+    print(rec_vol[0,0,0].imag)
+
+..  testoutput::
+    :hide:
+    
+    0.299395463214

@@ -29,16 +29,21 @@ plane wave scattering from a microsphere.
    :include-source:
 
 
-We'll examine each section of code in turn.  The first few lines ::
+We'll examine each section of code in turn.  The first few lines :
 
+..  testcode::
+  
+  import holopy as hp
   from holopy.scattering.scatterer import Sphere
   from holopy.core import ImageSchema, Optics
   from holopy.scattering.theory import Mie
 
 load the relevant modules from HoloPy that we'll need for doing our
-calculation.  The next line ::
+calculation.  The next line :
 
-  sphere = Sphere(n = 1.59+.0001j, r = .5, center = (4, 3, 5)) 
+..  testcode::
+
+  sphere = Sphere(n = 1.59+.0001j, r = .5, center = (4, 4, 5)) 
 
 defines a :mod:`~holopy.scattering.scatterer` object, specifically a
 :class:`.Sphere`. A :mod:`~holopy.scattering.scatterer` object
@@ -56,7 +61,9 @@ For more on the types of scatterers you can model, see
 :mod:`holopy.scattering.scatterer` or :ref:`more_scattering_ex`
 below.
 
-The next few lines define a :class:`~.Schema`::
+The next few lines define a :class:`~.Schema`:
+
+..  testcode::
 
   schema = ImageSchema(shape = 100, spacing = .1,
                        optics = Optics(wavelen = .660, index = 1.33,
@@ -93,9 +100,21 @@ If you want to model other kinds of detectors, you can specify all of
 the measurement locations using a general :class:`.Schema` object or
 one of its other subclasses.
 
-OK, now for the fun part. ::
+OK, now for the fun part. :
+
+..  testcode::
 
   holo = Mie.calc_holo(sphere, schema) 
+
+..  testcode::
+    :hide:
+    
+    print(holo[0,0])
+
+..  testoutput::
+    :hide:
+
+    1.0120388294
 
 This line calculates the hologram using a scattering
 :mod:`~holopy.scattering.theory`.  HoloPy contains a number of
@@ -114,7 +133,6 @@ or absorbed by the particle.
 
 You can visualize the hologram by running ::
 
-  import holopy as hp
   hp.show(holo)
 
 
@@ -155,9 +173,18 @@ similar manner to calculating a hologram from a single sphere
 Note that the thing we're scattering from is now an object of type
 :class:`.Spheres`, which is composed of multiple
 :class:`.Sphere` objects.  This is why we
-added the line ::
+added the line :
 
-  collection = Spheres([s1, s2])
+..  testcode::
+    :hide:
+    
+    from holopy.scattering.scatterer import Spheres
+    s1=Sphere(center=(5,5,5), n=1.59,r=.5)
+    s2=sphere
+
+..  testcode::
+
+  cluster = Spheres([s1, s2])
 
 Using the Mie theory will calculate the hologram by superposing the
 fields from multiple independent particles. This doesn't account for
@@ -166,10 +193,22 @@ If you want to include these effects, you should use the
 :class:`~holopy.scattering.theory.multisphere` theory, based on the
 SCSMFO package from Daniel Mackowski, which gives the exact solution to
 Maxwell's equation for the scattering from an arbitrary arrangement of
-non-overlapping spheres: ::
+non-overlapping spheres:
+
+..  testcode::
 
     from holopy.scattering.theory import Multisphere
     holo = Multisphere.calc_holo(cluster, schema)
+
+..  testcode::
+    :hide:
+
+    print(holo[0,0])
+
+..  testoutput::
+    :hide:
+
+    1.04899645413
 
 Adding more spheres to the cluster is as simple as defining more
 sphere objects and passing a longer list of spheres to the
@@ -189,22 +228,35 @@ list of refractive indices and radii corresponding to the layers
 
   
 Additionally, you can use Mie superposition for multiple spheres each
-with multiple layers: ::
+with multiple layers:
 
+..  testcode::
+
+  import holopy as hp
   from holopy.scattering.scatterer import Sphere, Spheres
   from holopy.scattering.theory import Mie
   from holopy.core import ImageSchema, Optics
   schema = ImageSchema(shape = 100, spacing = .1,
                        optics = Optics(wavelen = .660, index = 1.33,
                                        polarization = [1,0]))
-  cs1 = Sphere(center=(80, 80, 50), n = (1.59, 1.42), \
+  cs1 = Sphere(center=(8, 8, 15), n = (1.59, 1.42), \
                r = (0.3, 0.6))
-  cs2 = Sphere(center=(25, 20, 45), n = (1.59, 1.33, 1.59),\
+  cs2 = Sphere(center=(2.5, 2, 12), n = (1.59, 1.33, 1.59),\
                r = (0.3, 0.6, .9))
-  cs3 = Sphere(center=(20, 70, 40), n = (1.33, 1.59, 1.34),\
+  cs3 = Sphere(center=(2, 7, 14), n = (1.33, 1.59, 1.34),\
                r = (0.3, 0.6, .9))
   coatedspheres = Spheres([cs1,cs2,cs3])
   holo = Mie.calc_holo(coatedspheres, schema)
+
+..  testcode::
+    :hide:
+    
+    print(holo[0,0])
+
+..  testoutput::
+    :hide:
+    
+    1.32200295373
 
 .. note::
         The multisphere theory does not yet work with coated spheres.
@@ -214,8 +266,9 @@ Ellipsoids
 
 You can calculate a hologram of an ellipsoid by using the discrete
 dipole approximation (DDA). This requires first installing `ADDA
-<http://code.google.com/p/a-dda/>`_.  ::
+<http://code.google.com/p/a-dda/>`_.    ::
 
+  import holopy as hp
   from holopy.scattering.theory import DDA
   from holopy.scattering.scatterer import Ellipsoid
   from holopy.core import ImageSchema, Optics
@@ -227,6 +280,7 @@ dipole approximation (DDA). This requires first installing `ADDA
                                        polarization = [1,0]))
   h = DDA.calc_holo(e, schema)
 
+..  THE ABOVE CODE IS NOT CURRENTLY TESTED
 
 Non-Square Detectors and/or Pixels
 ----------------------------------
@@ -265,7 +319,9 @@ particles, and so it's most convenient to work with scattering matrices.
 
 .. plot:: pyplots/calc_scat_matr.py
    :include-source:
-  
+
+..  THE ABOVE CODE IS NOT CURRENTLY TESTED  
+
 Here we omit specifying the location (center) of the scatterer.  This is
 only valid when you're calculating a far-field quantity.
 
@@ -278,8 +334,11 @@ Some theories like
 :class:`~holopy.scattering.theory.multisphere.Multisphere` have
 adjustable parameters that relate to numerical tolerances.  In general
 our defaults will work fine, but you can adjust them by instantiating
-the theory and calling calc functions on that specific object.  ::
+the theory and calling calc functions on that specific object.  
 
+..  testcode::
+
+  import holopy as hp
   from holopy.core import ImageSchema, Optics
   from holopy.scattering.scatterer import Sphere, Spheres
   from holopy.scattering.theory import Multisphere
@@ -291,6 +350,16 @@ the theory and calling calc functions on that specific object.  ::
                     index = 1.33))
   multi = Multisphere(niter = 100)
   holo = multi.calc_holo(cluster, schema)
+
+..  testcode::
+    :hide:
+
+    print(holo[0,0])
+
+..  testoutput::
+    :hide:
+
+    1.04897654596
 
 Here we adjusted the maximum number of iterations (``niter``) used in
 converging the multisphere solution.
