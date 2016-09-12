@@ -34,6 +34,7 @@ from numpy.testing import (assert_equal, assert_array_almost_equal,
 from nose.plugins.attrib import attr
 import scipy
 
+from holopy.scattering.calculations import calc_holo
 from ...core import Optics, ImageSchema, Schema, Angles
 from ..theory import Multisphere
 from ..theory.multisphere import MultisphereExpansionNaN, ConvergenceFailureMultisphere
@@ -87,7 +88,7 @@ def test_2_sph():
                                        n=1.5811+1e-4j, r=5e-07)])
 
 
-    holo = Multisphere.calc_holo(sc, schema, scaling=.6)
+    holo = calc_holo(sc, schema.optics.index, schema, schema.optics.wavelen, schema.optics, theory=Multisphere, scaling=.6)
 
     assert_almost_equal(holo.max(), 1.4140292298443309)
     assert_almost_equal(holo.mean(), 0.9955420925817654)
