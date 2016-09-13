@@ -178,6 +178,9 @@ class Positions(np.ndarray, HoloPyObject):
 
         return np.vstack((r, theta, phi)).T
 
+    def theta_phi(self, origin):
+        return self.r_theta_phi(origin)[:, 1:]
+
     def kr_theta_phi(self, origin, wavevec):
         pos = self.r_theta_phi(origin)
         pos[:,0] *= wavevec
@@ -222,7 +225,9 @@ class Angles(PositionSpecification):
         self.phi = phi
         self.shape = len(self.theta), len(self.phi)
 
-    def positions_theta_phi(self):
+    def theta_phi(self, origin=None):
+        # ignore the center coordinate, but we accept it for compatability with
+        # other positions objects that need a center to determine angles
         pos = np.zeros((self.shape[0]*self.shape[1], 2))
         for i, theta in enumerate(self.theta):
             for j, phi in enumerate(self.phi):
