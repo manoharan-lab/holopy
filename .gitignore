@@ -7,3 +7,4 @@ holopy/propagation/tests/gold/full_data
 holopy/scattering/tests/gold/full_data
 .coverage
 .nfs*
+*~
