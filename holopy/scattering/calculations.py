@@ -28,7 +28,7 @@ from holopy.core.helpers import dict_without
 from holopy.core.helpers import is_none
 from holopy.scattering.scatterer import Sphere, Spheres
 from holopy.scattering.theory import Mie, Multisphere, dda
-from holopy.scattering.errors import AutoTheoryFailed
+from holopy.scattering.errors import AutoTheoryFailed, NoCenter
 
 import numpy as np
 
