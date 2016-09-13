@@ -39,7 +39,7 @@ from ..scatterer.scatterer import find_bounds
 
 from ..errors import ScattererDefinitionError, NoCenter, NoPolarization
 from .common import assert_allclose
-from ..theory import Mie
+from holopy.scattering.calculations import calc_holo
 
 @attr('fast')
 def test_Sphere_construction():
@@ -170,7 +170,7 @@ def test_find_bounds():
 def test_sphere_nocenter():
     sphere = Sphere(n = 1.59, r = .5)
     schema = ImageSchema(spacing=.1, shape=1, optics=Optics(wavelen = .660, polarization = [1, 0],index = 1.33))
-    assert_raises(NoCenter, Mie.calc_holo, sphere, schema)
+    assert_raises(NoCenter, calc_holo, sphere, 1.33, .66, schema)
 
 def test_ellipsoid():
     test = Ellipsoid(n = 1.585, r = [.4,0.4,1.5], center = [10,10,20])

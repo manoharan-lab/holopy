@@ -42,19 +42,21 @@ from ..errors import TheoryNotCompatibleError
 from ...core import (ImageSchema, Image, Optics, Angles, Schema, VolumeSchema,
                      subimage)
 from .common import verify, sphere, xschema, scaling_alpha, optics, yschema
-from .common import x, y, z, n, xoptics, radius
+from .common import x, y, z, n, xoptics, yoptics, radius, wavelen, index
 from ...core.tests.common import assert_allclose, assert_obj_close
 
 from numpy import array
+
+from holopy.scattering.calculations import calc_field, calc_holo, calc_intensity, calc_scat_matrix, calc_cross_sections
 
 @attr('fast')
 def test_single_sphere():
     # single sphere hologram (only tests that functions return)
     thry = Mie(False)
-    holo = thry.calc_holo(sphere, xschema, scaling=scaling_alpha)
-    field = thry.calc_field(sphere, xschema)
+    holo = calc_holo(sphere, index, xschema, wavelen, xoptics, theory=thry, scaling=scaling_alpha)
+    field = calc_field(sphere, index, xschema, wavelen, xoptics, theory=thry)
 
-    intensity = thry.calc_intensity(sphere, xschema)
+    intensity = calc_intensity(sphere, xschema.optics.index, xschema, xschema.optics.wavelen, xschema.optics, theory=thry)
 
     verify(holo, 'single_holo')
     verify(field, 'single_field')
@@ -63,14 +65,14 @@ def test_single_sphere():
     # for them
 
     # large radius (calculation not attempted because it would take forever
-    assert_raises(UnrealizableScatterer, Mie.calc_holo, Sphere(r=1, n = 1.59, center = (5,5,5)), xschema)
+    assert_raises(UnrealizableScatterer, calc_holo, Sphere(r=1, n = 1.59, center = (5,5,5)), index, xschema, wavelen, xoptics)
 
 @attr('fast')
 def test_farfield_holo():
     # Tests that a far field calculation gives a hologram that is
     # different from a full radial dependence calculation, but not too different
-    holo_full = Mie.calc_holo(sphere, xschema, scaling=scaling_alpha)
-    holo_far = Mie(False,False).calc_holo(sphere, xschema, scaling=scaling_alpha)
+    holo_full = calc_holo(sphere, index, xschema, wavelen, xoptics, scaling=scaling_alpha)
+    holo_far = calc_holo(sphere, index, xschema, wavelen, xoptics, scaling=scaling_alpha, theory=Mie(False, False))
 
 
     # the two arrays should not be equal
@@ -95,9 +97,9 @@ def test_subimaged():
     # make a dummy image so that we can pretend we are working with
     # data we want to subimage
     im = Image(np.zeros(xschema.shape), xschema.spacing, xschema.optics)
-    h = Mie.calc_holo(sphere, im)
+    h = calc_holo(sphere, index, im, wavelen, xoptics)
     sub = (60, 70), 30
-    hs = Mie.calc_holo(sphere, subimage(im, *sub))
+    hs = calc_holo(sphere, index, subimage(im, *sub), wavelen, xoptics)
 
     assert_obj_close(subimage(h, *sub), hs)
 
@@ -111,33 +113,33 @@ def test_Mie_multiple():
     thry = Mie(False)
 
     schema = yschema
-    fields = thry.calc_field(sc, schema)
+    fields = calc_field(sc, index, schema, wavelen, schema.optics, thry)
 
     verify(fields, 'mie_multiple_fields')
-    thry.calc_intensity(sc, schema)
+    calc_intensity(sc, index, schema, wavelen, schema.optics, thry)
 
-    holo = thry.calc_holo(sc, schema)
+    holo = calc_holo(sc, index, schema, wavelen, schema.optics, thry)
     verify(holo, 'mie_multiple_holo')
 
     # should throw exception when fed a ellipsoid
     el = Ellipsoid(n = 1.59, r = (1e-6, 2e-6, 3e-6), center=[8e-6,5e-6,5e-6])
     with assert_raises(TheoryNotCompatibleError) as cm:
-        thry.calc_field(el, schema)
+        calc_field(el, index, schema, wavelen, xoptics, Mie)
     assert_equal(str(cm.exception), "Mie scattering theory can't handle "
                  "scatterers of type Ellipsoid")
 
-    assert_raises(TheoryNotCompatibleError, Mie.calc_field, el, schema)
-    assert_raises(TheoryNotCompatibleError, Mie.calc_intensity,
-                  el, schema)
-    assert_raises(TheoryNotCompatibleError, Mie.calc_holo, el, schema)
+    assert_raises(TheoryNotCompatibleError, calc_field, el, index, schema, wavelen, xoptics, Mie)
+    assert_raises(TheoryNotCompatibleError, calc_intensity,
+                  el, index, schema, wavelen, xoptics, Mie)
+    assert_raises(TheoryNotCompatibleError, calc_holo, el, index, schema, wavelen, xoptics, Mie)
 
 @attr('fast')
 def test_mie_polarization():
     # test holograms for orthogonal polarizations; make sure they're
     # not the same, nor too different from one another.
     thry = Mie(False)
-    xholo = thry.calc_holo(sphere, xschema, scaling=scaling_alpha)
-    yholo = thry.calc_holo(sphere, yschema, scaling=scaling_alpha)
+    xholo = calc_holo(sphere, index, xschema, wavelen, xoptics, scaling=scaling_alpha)
+    yholo = calc_holo(sphere, index, yschema, wavelen, yoptics, scaling=scaling_alpha)
 
     # the two arrays should not be equal
     try:
@@ -172,9 +174,9 @@ def test_linearity():
 
     sc = Spheres(scatterers = [sphere1, sphere2])
 
-    holo_1 = Mie.calc_holo(sphere1, xschema, scaling=scaling_alpha)
-    holo_2 = Mie.calc_holo(sphere2, xschema, scaling=scaling_alpha)
-    holo_super = Mie.calc_holo(sc, xschema, scaling=scaling_alpha)
+    holo_1 = calc_holo(sphere1, index, xschema, wavelen, xoptics, scaling=scaling_alpha)
+    holo_2 = calc_holo(sphere2, index, xschema, wavelen, xoptics, scaling=scaling_alpha)
+    holo_super = calc_holo(sc, index, xschema, wavelen, xoptics, theory=Mie, scaling=scaling_alpha)
 
     # make sure we're not just looking at uniform arrays (could
     # happen if the size is set too small)
@@ -213,9 +215,9 @@ def test_nonlinearity():
 
     sc = Spheres(scatterers = [sphere1, sphere2])
 
-    holo_1 = Mie.calc_holo(sphere1, xschema, scaling=scaling_alpha)
-    holo_2 = Mie.calc_holo(sphere2, xschema, scaling=scaling_alpha)
-    holo_super = Mie.calc_holo(sc, xschema, scaling=scaling_alpha)
+    holo_1 = calc_holo(sphere1, index, xschema, wavelen, xoptics, scaling=scaling_alpha)
+    holo_2 = calc_holo(sphere2, index, xschema, wavelen, xoptics, scaling=scaling_alpha)
+    holo_super = calc_holo(sc, index, xschema, wavelen, xoptics, scaling=scaling_alpha, theory=Mie)
 
     # test nonlinearity by subtracting off individual holograms
     try:
@@ -233,7 +235,7 @@ def test_nonlinearity():
 
 @attr('fast')
 def test_radiometric():
-    cross_sects = Mie.calc_cross_sections(sphere, xoptics)
+    cross_sects = calc_cross_sections(sphere, index, wavelen, xoptics)
     # turn cross sections into efficiencies
     cross_sects[0:3] = cross_sects[0:3] / (np.pi * radius**2)
 
@@ -256,7 +258,7 @@ def test_farfield_matr():
                     Optics(wavelen=.66, index = 1.33, polarization = (1, 0)))
     sphere = Sphere(r = .5, n = 1.59+0.1j)
 
-    matr = Mie.calc_scat_matrix(sphere, schema)
+    matr = calc_scat_matrix(sphere, index, schema, .66, Optics(polarization=(1,0)))
     verify(matr, 'farfield_matricies', rtol = 1e-6)
 
 @attr('medium')
@@ -266,8 +268,8 @@ def test_radialEscat():
 
     sphere = Sphere(r = 1e-6, n = 1.4 + 0.01j, center = [10e-6, 10e-6,
                                                          1.2e-6])
-    h1 = thry_1.calc_holo(sphere, xschema)
-    h2 = thry_2.calc_holo(sphere, xschema)
+    h1 = calc_holo(sphere, index, xschema, wavelen, xoptics)
+    h2 = calc_holo(sphere, index, xschema, wavelen, xoptics, thry_2)
 
     try:
         assert_array_almost_equal(h1, h2, decimal=12)
@@ -280,7 +282,7 @@ def test_radialEscat():
 def test_calc_xz_plane():
     s = Sphere(n = 1.59, r = .5, center = (0, 0, 5))
     sch = VolumeSchema((50, 1, 50), .1, Optics(.66, 1.33, (1,0)))
-    e = Mie.calc_field(s, sch)
+    e = calc_field(s, index, sch, .66, xoptics)
 
 # TODO: finish internal fields
 def test_internal_fields():
@@ -291,12 +293,13 @@ def test_internal_fields():
 def test_1d():
     s = Sphere(1.59, .5, (5, 5, 0))
     sch = ImageSchema((10, 10), .1, Optics(.66, 1.33, (1, 0)))
-    holo = Mie.calc_holo(s, sch)
-    field = Mie.calc_field(s, sch)
-    flatsch = Schema(positions=sch.positions.xyz(), optics=sch.optics)
+    wavelen = .66
+    holo = calc_holo(s, index, sch, wavelen, xoptics)
+    field = calc_field(s, index, sch, wavelen, xoptics)
+    flatsch = Schema(positions=sch.positions.xyz(), optics=sch.optics, normals=(0, 0, 1))
 
-    flatholo = Mie.calc_holo(s, flatsch)
-    flatfield = Mie.calc_field(s, flatsch)
+    flatholo = calc_holo(s, index, flatsch, wavelen, xoptics)
+    flatfield = calc_field(s, index, flatsch, wavelen, xoptics)
 
     assert_equal(holo.ravel(), flatholo)
     assert_equal(flatfield, field.reshape(flatfield.shape))
@@ -305,8 +308,9 @@ def test_layered():
     l = LayeredSphere(n = (1, 2), t = (1, 1), center = (2, 2, 2))
     s = Sphere(n = (1,2), r = (1, 2), center = (2, 2, 2))
     sch = ImageSchema((10, 10), .2, Optics(.66, 1, (1, 0)))
-    hl = Mie.calc_holo(l, sch)
-    hs = Mie.calc_holo(s, sch)
+    wavelen = .66
+    hl = calc_holo(l, index, sch, wavelen, xoptics)
+    hs = calc_holo(s, index, sch, wavelen, xoptics)
     assert_equal(hl, hs)
 
 def test_calc_scat_coeffs():
@@ -351,7 +355,7 @@ def test_raw_fields():
     sp = Sphere(r=.5, n=1.6, center=(10, 10, 5))
     sch = ImageSchema(3, .1, o)
     wavevec = 2*np.pi/(.66/1.33)
-    rf = Mie()._raw_fields(sch.positions.kr_theta_phi((10, 10, 5), wavevec).T, sp, wavevec, 1.33, (0, 1))
+    rf = Mie()._raw_fields(sch.positions.kr_theta_phi((10, 10, 5), wavevec).T, sp, o)
     assert_allclose(rf, [[(0.0015606995428858754-0.0019143174710834162j),
   (-0.0003949071974815011-0.0024154494284017187j),
   (-0.002044525390662322-0.001302770747742109j),

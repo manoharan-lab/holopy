@@ -80,7 +80,7 @@ class Mie(FortranTheory):
 
             # TODO: actually use (rather than ignore) the phi
             scat_matrs = [mieangfuncs.asm_mie_far(scat_coeffs, theta) for
-                          theta, phi in schema.positions_theta_phi(scatterer.center)]
+                          theta, phi in schema.positions.theta_phi(scatterer.center)]
             return np.array(scat_matrs)
         else:
             raise TheoryNotCompatibleError(self, scatterer)
