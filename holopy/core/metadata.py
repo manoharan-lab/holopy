@@ -222,7 +222,9 @@ class Angles(PositionSpecification):
         self.phi = phi
         self.shape = len(self.theta), len(self.phi)
 
-    def positions_theta_phi(self):
+    def theta_phi(self, center=None):
+        # ignore the center coordinate, but we accept it for compatability with
+        # other positions objects that need a center to determine angles
         pos = np.zeros((self.shape[0]*self.shape[1], 2))
         for i, theta in enumerate(self.theta):
             for j, phi in enumerate(self.phi):

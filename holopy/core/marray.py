@@ -183,12 +183,6 @@ class Schema(HoloPyObject):
     def positions(self, val):
         self._positions = val
 
-    # TODO: put this somewhere sensible, make it handle phi as well
-    def positions_theta_phi(self):
-        if isinstance(self.positions, Angles):
-            return self.positions.positions_theta_phi()
-        else:
-            raise UnspecifiedPosition()
 
     # TODO: need equivalents for set_metadata or to rewrite other code so it
     # doesn't need it.
