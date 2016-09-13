@@ -47,6 +47,7 @@ C compilers, as well as f2py and cython. On Ubuntu, you will need the
 "gfortran" and "python-dev" packages installed.
 '''
 
+import setuptools
 from numpy.distutils.core import setup, Extension
 
 
@@ -55,29 +56,15 @@ from numpy.distutils.core import setup, Extension
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     config = Configuration('',parent_package,top_path)
-    config.add_subpackage('holopy')
-    config.add_subpackage('holopy.core')
-    config.add_subpackage('holopy.core.process')
-    config.add_subpackage('holopy.core.io')
-    config.add_subpackage('holopy.core.third_party')
-    config.add_subpackage('holopy.core.tests')
-    config.add_subpackage('holopy.propagation')
-    config.add_subpackage('holopy.propagation.tests')
-    config.add_subpackage('holopy.scattering')
-    config.add_subpackage('holopy.scattering.theory')
-    config.add_subpackage('holopy.scattering.theory.mie_f')
-    config.add_subpackage('holopy.scattering.scatterer')
-    config.add_subpackage('holopy.scattering.tests')
-    config.add_subpackage('holopy.scattering.third_party')
-    config.add_subpackage('holopy.fitting')
-    config.add_subpackage('holopy.fitting.tests')
-    config.add_subpackage('holopy.fitting.third_party')
-    config.add_subpackage('holopy.vis')
+
+    pkglist=setuptools.find_packages()    
+    for i in pkglist:
+        config.add_subpackage(i)    
+    
     config.add_data_files(['.',['AUTHORS']])
     config.add_data_files('holopy/propagation/tests/gold/*.yaml')
     config.add_data_files('holopy/scattering/tests/gold/*.yaml')
     config.add_data_files('holopy/core/tests/exampledata/*.yaml')
-    config.add_data_files('holopy/core/tests/exampledata/*.npy')
 
     config.get_version()
     return config
@@ -94,8 +81,9 @@ if __name__ == "__main__":
           name='HoloPy',
           version=__version__,
           description='Holography in Python',
-          requires=['numpy', 'scipy', 'PyYAML', 'pillow'],
+          requires=['numpy', 'scipy', 'PyYAML', 'pillow','pandas','h5py','emcee','matplotlib'],
           author='Manoharan Lab, Harvard University',
           author_email='vnm@seas.harvard.edu',
           url='http://manoharan.seas.harvard.edu/holopy',
+          license='GNU GPL',
           package=['HoloPy'])
