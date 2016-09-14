@@ -19,12 +19,11 @@
 
 from __future__ import division
 
-from nose.tools import assert_raises, assert_equal
-from numpy.testing import assert_allclose
 import numpy as np
+from numpy.testing import assert_equal
 from holopy.inference import prior, mcmc
 from holopy.core.process import normalize
-from holopy.core.tests.common import assert_obj_close,get_example_data
+from holopy.core.tests.common import assert_obj_close, get_example_data
 from holopy.scattering.scatterer import Sphere
 from holopy.scattering.theory import Mie
 from holopy.fitting import model
@@ -52,14 +51,14 @@ def test_Emcee_Class():
 
 def test_NoiseModel_lnprior():
     scat=Sphere(r=prior.Gaussian(1,1),n=prior.Gaussian(1,1),center=[10,10,10])
-    mod=NoiseModel(scat,None,noise_sd=.1)
+    mod=NoiseModel(scat, noise_sd=.1)
     assert_obj_close(mod.lnprior([0,0]),gold_sigma*2)
 
 def test_subset_tempering():
     np.random.seed(40)
     holo = normalize(get_example_data('image0001.yaml'))
     scat = Sphere(r=0.65e-6,n=1.58,center=[5.5e-6,5.8e-6,14e-6])
-    mod = AlphaModel(scat,Mie,noise_sd=.1,alpha=prior.Gaussian(0.7,0.1))
+    mod = AlphaModel(scat,noise_sd=.1, medium_index=holo.optics.index, wavelen=holo.optics.wavelen, optics=holo.optics, alpha=prior.Gaussian(0.7,0.1))
     inf=mcmc.subset_tempering(mod,holo,final_len=10,nwalkers=4,stages=1,stage_len=10,threads=None, verbose=False,seed=40)
     assert_obj_close(inf.most_probable_values(),gold_alpha)
     assert_equal(inf.n_steps,gold_nsteps)

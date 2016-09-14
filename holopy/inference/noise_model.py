@@ -21,17 +21,16 @@ from holopy.fitting.parameter import Parameter
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core import Marray
 from holopy.core.helpers import dict_without
-from holopy.scattering.theory.scatteringtheory import scattered_field_to_hologram
 from holopy.scattering.errors import MultisphereExpansionNaN, MultisphereFieldNaN, ConvergenceFailureMultisphere, ScattererDefinitionError
 
 import numpy as np
 import pandas as pd
 from copy import copy
+from holopy.scattering.calculations import calc_field, scattered_field_to_hologram
 
 class NoiseModel(BaseModel):
-    def __init__(self, scatterer, theory, noise_sd):
-        super(NoiseModel, self).__init__(scatterer)
-        self.theory = theory
+    def __init__(self, scatterer, noise_sd, medium_index=None, wavelen=None, optics=None, theory='auto'):
+        super(NoiseModel, self).__init__(scatterer, medium_index, wavelen, optics, theory)
         self._use_parameter(noise_sd, 'noise_sd')
 
     def _pack(self, vals):
@@ -55,9 +54,12 @@ class NoiseModel(BaseModel):
             return lnprior + self.lnlike(par_vals, data)
 
     def _fields(self, pars, schema):
+        medium_index = pars.pop('medium_index', self.medium_index)
+        wavelen = pars.pop('wavelen', self.wavelen)
+        optics = pars.pop('optics', self.optics)
         scatterer = self.scatterer.make_from(pars)
         try:
-            return self.theory.calc_field(scatterer, schema)
+            return calc_field(scatterer, medium_index, schema, wavelen, optics, theory=self.theory)
         except (MultisphereExpansionNaN, MultisphereFieldNaN, ConvergenceFailureMultisphere, ScattererDefinitionError):
             return -np.inf
 
@@ -75,8 +77,8 @@ class NoiseModel(BaseModel):
 
 
 class AlphaModel(NoiseModel):
-    def __init__(self, scatterer, theory, noise_sd, alpha):
-        super(AlphaModel, self).__init__(scatterer, theory, noise_sd)
+    def __init__(self, scatterer, medium_index, wavelen, optics, noise_sd, alpha, theory='auto'):
+        super(AlphaModel, self).__init__(scatterer, medium_index=medium_index, wavelen=wavelen, optics=optics, theory=theory, noise_sd=noise_sd)
         self._use_parameter(alpha, 'alpha')
 
     def _holo(self, pars, schema, alpha=None):
