@@ -254,14 +254,18 @@ class Model(BaseModel):
         a scaterer as an argument and return False if you wish to disallow that
         scatterer (usually because it is un-physical for some reason)
     """
-    def __init__(self, scatterer, theory, alpha=None,
+    def __init__(self, scatterer, calc_func, medium_index=None, wavelen=None, optics=None, theory='auto', alpha=None,
                  use_random_fraction=None, constraints=[]):
         super(Model, self).__init__(scatterer)
-        if isinstance(theory, basestring):
+        if isinstance(theory, basestring) and theory != 'auto':
             import holopy.scattering.theory as theory_module
             kind, func = theory.split('.')
             theory = getattr(getattr(theory_module, kind), func)
 
+        self.medium_index = medium_index
+        self.calc_func = calc_func
+        self.wavelen = wavelen
+        self.optics = optics
         self.theory = theory
         self.use_random_fraction = use_random_fraction
 

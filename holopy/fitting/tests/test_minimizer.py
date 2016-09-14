@@ -30,6 +30,7 @@ from .. import fit, Parameter, par, Model
 from ..minimizer import Nmpfit, OpenOpt
 from ..errors import ParameterSpecificationError, MinimizerConvergenceFailed
 from ...core.tests.common import assert_obj_close
+from holopy.scattering.calculations import calc_holo
 
 def test_minimizer():
     x = np.arange(-10, 10, .1)
@@ -116,7 +117,7 @@ def test_iter_limit():
     s1 = Sphere(center=(15, 15, 20), n = 1.59, r = 0.5)
     s2 = Sphere(center=(14, 14, 20), n = 1.59, r = 0.5)
     cluster = Spheres([s1, s2])
-    holo = Mie.calc_holo(cluster, schema)
+    holo = calc_holo(cluster, 1.33, schema, .66, Optics(polarization=(1,0)))
     from holopy.fitting.minimizer import Nmpfit
 
     #trying to do a fast fit:
@@ -124,7 +125,7 @@ def test_iter_limit():
     guess2 = Sphere(center = (par(guess = 14, limit = [5,25]), par(14, [5, 25]), par(20, [5, 25])), r = (par(guess = .45, limit=[.4,.6])), n = 1.59)
     par_s = Spheres([guess1,guess2])
 
-    model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1]))
+    model = Model(par_s, calc_holo, 1.33, .66, Optics(polarization=(1, 0)), alpha = par(.6, [.1, 1]))
     warnings.simplefilter
     with warnings.catch_warnings(record=True) as w:
         # Cause all warnings to always be triggered.
