@@ -209,7 +209,8 @@ class CostComputer(HoloPyObject):
             positions = schema.positions.xyz()[self.selection]
             self.schema = Schema(positions=positions,
                                  origin=schema.origin,
-                                 optics=schema.optics)
+                                 optics=schema.optics,
+                                 normals=data.normals)
         else:
             self.selection = None
             self.data = data
@@ -226,7 +227,7 @@ class CostComputer(HoloPyObject):
             return np.ones_like(self.schema) * np.inf
 
         try:
-            return self.model.theory(s, self.schema, scaling=self.model.get_alpha(pars))
+            return self.model.calc_func(s, medium_index=self.model.medium_index, locations=self.schema, wavelen=self.model.wavelen, optics=self.model.optics, scaling=self.model.get_alpha(pars), theory=self.model.theory)
         except MultisphereFieldNaN:
             return np.ones_like(self.schema) * np.inf
 

@@ -22,16 +22,13 @@ import tempfile
 import numpy as np
 import warnings
 
-from nose.tools import nottest, assert_raises
 from nose.plugins.attrib import attr
-from numpy.testing import assert_equal, assert_approx_equal, assert_allclose
-from ...scattering.scatterer import Sphere, Spheres, Scatterer
-from ...scattering.theory import Mie, Multisphere, DDA
-from ...core import Optics, ImageSchema, load, save
-from ...core.process import normalize
-from .. import fit, Parameter, ComplexParameter, par, Parametrization, Model
+from ...scattering.scatterer import Sphere
+from .. import par, Model
 from ..fit_series import fit_series
+from holopy.core import Optics
 from ...core.tests.common import (assert_obj_close, get_example_data_path)
+from holopy.scattering.calculations import calc_holo
 
 from ..errors import InvalidMinimizer
 
@@ -44,7 +41,7 @@ def test_fit_series():
 
     par_s = Sphere(center = (par(guess = 5.5e-6, limit = [0,10e-6]), par(5.8e-6, [0, 10e-6]), par(13.3e-6, [5e-6, 15e-6])),
                r = .5e-6, n = 1.58)
-    model = Model(par_s, Mie.calc_holo, alpha = gold_alpha)
+    model = Model(par_s, calc_holo, 1.33, .658e-6, Optics(polarization=(1, 0)), alpha = gold_alpha)
 
     opticsinfo = Optics(wavelen = .658e-6, polarization = [1, 0], index = 1.33)
     px_size = .1151e-6

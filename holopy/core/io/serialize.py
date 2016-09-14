@@ -193,24 +193,3 @@ def instancemethod_constructor(loader, node):
     obj = yaml.load(obj)['dummy']
     return getattr(obj, method)
 yaml.add_constructor('!method', instancemethod_constructor)
-
-def function_representer(dumper, data):
-    code = inspect.getsource(data)
-    code = code.split('\n',)
-    # first line will be function name, we don't want that
-    code = code[1].strip()
-    return dumper.represent_scalar('!function', code)
-# here I refer to function_representer.__class__ because I am not sure how else
-# to access the type of a fuction (function does not work)
-yaml.add_representer(function_representer.__class__, function_representer)
-
-# for now punt if we attempt to read in functions.
-# make_scatterer in model is allowed to be any function, so we may encounter
-# them.  This constructor allows the read to succeed, but the function will be
-# absent.
-# It is possible to read in functions from the file, but it is more than a
-# little subtle and kind of dangrous, so I want to think more about it before
-# doing it - tgd 2012-06-4
-def function_constructor(loader, node):
-    return None
-yaml.add_constructor('!function', function_constructor)

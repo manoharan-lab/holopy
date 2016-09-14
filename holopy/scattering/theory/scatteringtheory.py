@@ -168,35 +168,6 @@ class FortranTheory(ScatteringTheory):
                                 fields[i, j, k] = 0
         return fields
 
-# this is pulled out separate from the calc_holo method because occasionally you
-# want to turn prepared  e_fields into holograms directly
-def scattered_field_to_hologram(scat, ref, detector_normal = (0, 0, 1)):
-    """
-    Calculate a hologram from an E-field
-
-    Parameters
-    ----------
-    scat : :class:`.VectorGrid`
-        The scattered (object) field
-    ref : :class:`.VectorGrid` or :class:`.Optics`
-        The reference field, it can also be inferred from polarization of an
-        Optics object
-    detector_normal : (float, float, float)
-        Vector normal to the detector the hologram should be measured at
-        (defaults to z hat, a detector in the x, y plane)
-    """
-    shape = _field_scalar_shape(scat)
-    if isinstance(ref, Optics):
-        # add the z component to polarization and adjust the shape so that it is
-        # broadcast correctly
-        ref = VectorGrid(np.append(ref.polarization, 0).reshape(shape))
-    detector_normal = np.array(detector_normal).reshape(shape)
-
-    holo = Image((np.abs(scat+ref)**2 * (1 - detector_normal)).sum(axis=-1),
-                 **dict_without(scat._dict, ['dtype', 'components']))
-
-    return holo
-
 class InvalidElectricFieldComputation(Exception):
     def __init__(self, reason):
         self.reason = reason

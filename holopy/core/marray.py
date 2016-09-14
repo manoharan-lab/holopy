@@ -698,9 +698,11 @@ def make_subset_data(data, random_subset):
         selection = np.random.choice(data.size, n_sel, replace=False)
         subset = data.ravel()[selection]
         positions = data.positions.xyz()[selection]
+        #TODO subset the normals if you have different normals for each pixel
         return Marray(subset, positions=positions,
-                             origin=data.origin,
-                             optics=data.optics)
+                      origin=data.origin,
+                      optics=data.optics,
+                      normals=data.normals)
 
 # common code for subimage and resize
 def _checked_cut(arr, extent):
