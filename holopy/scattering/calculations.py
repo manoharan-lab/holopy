@@ -28,7 +28,7 @@ from holopy.core.helpers import dict_without
 from holopy.core.helpers import is_none
 from holopy.scattering.scatterer import Sphere, Spheres
 from holopy.scattering.theory import Mie, Multisphere, dda
-from holopy.scattering.errors import AutoTheoryFailed, NoCenter
+from holopy.scattering.errors import AutoTheoryFailed, NoCenter, NoPolarization
 
 import numpy as np
 
@@ -38,7 +38,11 @@ def interpret_args(scatterer, theory='auto', optics=None, locations=None, wavele
     if isinstance(theory, SerializableMetaclass):
         theory = theory()
     if optics is None:
-        optics = Optics(wavelen=wavelen, index=medium_index)
+        if isinstance(scatterer, Sphere):
+            optics = Optics(wavelen=wavelen, index=medium_index, polarization=[1,0])
+        else:
+            raise NoPolarization("Scatterer may be anisotropic. You must specify a polarization vector.")
+
     else:
         d = {}
         if wavelen is not None:
@@ -92,6 +96,7 @@ def calc_intensity(scatterer, medium_index, locations, wavelen, optics=None, the
     inten : :class:`.Image`
         scattered intensity
     """
+    theory, locations, optics = interpret_args(scatterer, theory, optics, locations, medium_index=medium_index, wavelen=wavelen)   
     field = calc_field(scatterer, medium_index, locations, wavelen, optics, theory)
     return (abs(field*(1-locations.normals))**2).sum(-1)
 
@@ -126,6 +131,7 @@ def calc_holo(scatterer, medium_index, locations, wavelen, optics=None, theory='
     holo : :class:`.Image` object
         Calculated hologram from the given distribution of spheres
     """
+    theory, locations, optics = interpret_args(scatterer, theory, optics, locations, medium_index=medium_index, wavelen=wavelen)   
     scat = calc_field(scatterer, medium_index, locations, wavelen, optics=optics, theory=theory)
     return scattered_field_to_hologram(scat*scaling, optics.polarization, locations.normals)
 
