@@ -34,7 +34,7 @@ from scipy.integrate import dblquad
 from .mie_f import mieangfuncs
 from .mie_f import scsmfo_min
 from .mie_f import uts_scsmfo
-from ..scatterer import Spheres
+from ..scatterer import Spheres,Sphere
 from ..errors import (TheoryNotCompatibleError, UnrealizableScatterer,
                       MultisphereFieldNaN,
                       ConvergenceFailureMultisphere,
@@ -121,7 +121,7 @@ class Multisphere(FortranTheory):
         super(Multisphere, self).__init__()
 
     def _can_handle(self, scatterer):
-        return isinstance(scatterer, Spheres)
+        return (isinstance(scatterer, Spheres) or isinstance(scatterer, Sphere))
 
     def _scsmfo_setup(self, scatterer, optics):
         """
@@ -140,7 +140,9 @@ class Multisphere(FortranTheory):
         amn : arrays of field expansion coefficients
 
         """
-        if not isinstance(scatterer, Spheres):
+        if isinstance(scatterer,Sphere):
+            scatterer=Spheres([scatterer])
+        elif not isinstance(scatterer, Spheres):
             raise TheoryNotCompatibleError(self, scatterer)
         # check for spheres being uniform
         for sph in scatterer.scatterers:

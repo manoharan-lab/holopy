@@ -217,3 +217,10 @@ def test_farfield():
                        Sphere(n = n, r = r, center = [0., 0., -r])])
 
     matr = calc_scat_matrix(cluster, index, schema, .66, xoptics, theory=Multisphere)
+
+def test_wrap_sphere():
+    sphere=Sphere(center=[7.1e-6, 7e-6, 10e-6],n=1.5811+1e-4j, r=5e-07)
+    sphere_w=Spheres([sphere])
+    holo=calc_holo(sphere,schema.optics.index,schema,schema.optics.wavelen,schema.optics, theory=Multisphere,scaling=.6)
+    holo_w=calc_holo(sphere_w,schema.optics.index,schema,schema.optics.wavelen,schema.optics, theory=Multisphere,scaling=.6)
+    assert_equal(holo,holo_w)
