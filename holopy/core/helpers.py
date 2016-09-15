@@ -20,14 +20,13 @@ Misc utility functions to make coding more convenient
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
-from __future__ import division
+
 
 import os
 import shutil
 import errno
 import numpy as np
 from copy import copy
-from types import NoneType
 
 def _ensure_array(x):
     if np.isscalar(x):
@@ -155,7 +154,7 @@ def is_none(o):
         Anything you want to see if is None
     """
 
-    return isinstance(o, NoneType)
+    return isinstance(o, type(None))
 
 def updated(d, update):
     """Return a dictionary updated with keys from update

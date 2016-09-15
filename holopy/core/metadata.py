@@ -21,13 +21,13 @@ Classes for defining metadata about experimental or calculated results.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 
 """
-from __future__ import division
+
 
 import numpy as np
 from warnings import warn
 import copy
 from .helpers import _ensure_pair, _ensure_array
-from holopy_object import HoloPyObject
+from .holopy_object import HoloPyObject
 
 
 class Optics(HoloPyObject):
@@ -197,7 +197,7 @@ class Grid(PositionSpecification):
     def resample_by_factors(self, factors):
         new = copy.copy(self)
         new.spacing = _ensure_array(new.spacing).astype('float')
-        new.spacing[factors.keys()] *= factors.values()
+        new.spacing[list(factors.keys())] *= list(factors.values())
         return new
 
 

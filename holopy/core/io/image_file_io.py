@@ -22,7 +22,7 @@ image file formats used for holograms.
 .. moduleauthor:: Jerome Fung <jfung@physics.harvard.edu>
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 """
-from __future__ import division
+
 
 import numpy as np
 import scipy as sp
@@ -41,7 +41,7 @@ import warnings
 from copy import copy
 import json
 from scipy.misc import fromimage, bytescale
-from holopy.core.third_party.tifffile import TIFFfile
+from tifffile import tifffile
 from holopy.core import Image
 
 def save_image(filename, im, scaling='auto', depth=8):
@@ -125,8 +125,6 @@ def load_image(filename, channel=None, spacing=None, optics=None):
     LoadError
         if there is a problem loading a file
     """
-
-
     # The most reliable way to determine what type of image file we are working
     # with is to just try opening it with various loaders.  Extensions could be
     # missing or wrong, but, ie, if np.load succeeds, it was a np file
@@ -139,10 +137,8 @@ def load_image(filename, channel=None, spacing=None, optics=None):
     try:
         arr, might_be_color, description = _read_tiff(filename)
     except (ValueError, TypeError):
-        im = PILImage.open(filename)
-        arr = fromimage(im).astype('d')
+        arr = fromimage(PILImage.open(filename)).astype('d')
         description = "{}"
-
 
     # pick out only one channel of a color image
     if channel is not None and len(arr.shape) > 2 and might_be_color:
@@ -151,7 +147,7 @@ def load_image(filename, channel=None, spacing=None, optics=None):
                 "The image doesn't have a channel number {0}".format(channel))
         else:
             arr = arr[:, :, channel]
-    elif channel > 0:
+    elif channel is not None and channel > 0:
         warnings.warn("Warning: not a color image (channel number ignored)")
 
     metadata = json.loads(description)
@@ -173,7 +169,7 @@ def _read_tiff(filename):
     (should fix this in the future so that all tiffs can be opened by
     tifffile)
     """
-    tif = TIFFfile(filename)
+    tif = tifffile(filename)
 
     might_be_color = True
     if len(tif.pages) > 1:

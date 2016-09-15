@@ -36,7 +36,7 @@ video microscopy, Optics Express 17, 13071-13079 (2009).
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 """
 
-from __future__ import division
+
 
 import numpy as np
 from .enhance import normalize

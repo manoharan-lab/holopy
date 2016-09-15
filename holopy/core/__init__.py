@@ -38,10 +38,10 @@ Main use cases are
 
 """
 
-from marray import (Marray, Image, Schema, ImageSchema, Volume,
+from .marray import (Marray, Image, Schema, ImageSchema, Volume,
                     VolumeSchema, VectorGrid, VectorGridSchema,
                     subimage)
-from metadata import Optics, Grid, Angles, UnevenGrid
-from io import load, load_image, save
-import process
-import helpers
+from .metadata import Optics, Grid, Angles, UnevenGrid
+from .io import load, load_image, save
+from . import process
+from . import helpers
