@@ -144,11 +144,6 @@ def test_yaml_output():
     assert_equal(yaml.dump(Optics), "!class 'holopy.core.metadata.Optics'\n")
     assert_equal(yaml.load(yaml.dump(Optics)), Optics)
 
-    def test(x):
-        return x*x
-
-    assert_equal(yaml.dump(test), "!function 'return x*x'\n")
-
     # this should fail on Windows64 because int and long are both
     # int32
     try:

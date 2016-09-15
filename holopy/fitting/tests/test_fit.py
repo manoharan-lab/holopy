@@ -38,6 +38,7 @@ from holopy.fitting.fit import CostComputer
 from holopy.fitting import Model, FitResult
 from ..errors import InvalidMinimizer
 from holopy.fitting.model import limit_overlaps, ParameterizedObject
+from holopy.scattering.calculations import calc_holo
 
 gold_alpha = .6497
 
@@ -63,7 +64,7 @@ def test_fit_mie_single():
         return Sphere(n=n+1e-4j, r = r, center = (x, y, z))
 
     thry = Mie(False)
-    model = Model(Parametrization(make_scatterer, parameters), thry.calc_holo,
+    model = Model(Parametrization(make_scatterer, parameters), calc_holo, holo.optics.index, holo.optics.wavelen, holo.optics, theory=thry,
                   alpha=Parameter(name='alpha', guess=.6, limit = [.1, 1]))
 
     assert_raises(InvalidMinimizer, fit, model, holo, minimizer=Sphere)
@@ -84,7 +85,7 @@ def test_fit_mie_par_scatterer():
                n = ComplexParameter(par(1.59, (1,2)), 1e-4))
 
     thry = Mie(False)
-    model = Model(s, thry.calc_holo, alpha = par(.6, [.1,1]))
+    model = Model(s, calc_holo, holo.optics.index, holo.optics.wavelen, holo.optics, theory=thry, alpha = par(.6, [.1,1]))
 
     result = fit(model, holo)
 
@@ -102,7 +103,7 @@ def test_fit_single_openopt():
                r = par(8.5e-7, (5e-7, 1e-6)),
                n = ComplexParameter(par(1.59, (1.5,1.8)), 1e-4))
 
-    model = Model(s, Mie(False).calc_holo, alpha = par(.6, [.1,1]))
+    model = Model(s, calc_holo, holo.optics.index, holo.optics.wavelen, holo.optics, theory=Mie(False), alpha = par(.6, [.1,1]))
     try:
         minimizer = OpenOpt('scipy_slsqp')
     except ImportError:
@@ -121,7 +122,7 @@ def test_fit_random_subset():
                          par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
                r = par(8.5e-7, (1e-8, 1e-5)), n = ComplexParameter(par(1.59, (1,2)),1e-4))
 
-    model = Model(s, Mie(False).calc_holo, alpha = par(.6, [.1,1]))
+    model = Model(s, calc_holo, holo.optics.index, holo.optics.wavelen, holo.optics, Mie(False), alpha = par(.6, [.1,1]))
     np.random.seed(40)
     result = fit(model, holo, random_subset=.1)
 
@@ -153,7 +154,7 @@ def test_next_model():
         center=[Parameter(guess=32.110424836601304, limit=[2, 40], name='center[0]'),
         Parameter(guess=31.56683986928105, limit=[4, 40], name='center[1]'),
         Parameter(guess=33, limit=[5, 45], name='center[2]')])),
-        theory=Mie.calc_holo, alpha=Parameter(guess=0.6, limit=[0.1, 1], name='alpha'),
+                    medium_index=1.33, calc_func=calc_holo, wavelen=.66, optics=Optics(polarization=(0, 1)), alpha=Parameter(guess=0.6, limit=[0.1, 1], name='alpha'),
         constraints=[]), minimizer = None, minimization_details = None)
 
     gold = Model(scatterer=ParameterizedObject(obj=Sphere(
@@ -162,7 +163,7 @@ def test_next_model():
         center=[Parameter(guess=32.24150087110443, limit=[2, 40], name='center[0]'),
         Parameter(guess=31.367170884695756, limit=[4, 40], name='center[1]'),
         Parameter(guess=35.1651561654966, limit=[5, 45], name='center[2]')])),
-        theory=Mie.calc_holo, alpha=Parameter(guess=0.7176299231169572, limit=[0.1, 1], name='alpha'),
+        medium_index=1.33, calc_func=calc_holo, wavelen=.66, optics=Optics(polarization=(0, 1)), alpha=Parameter(guess=0.7176299231169572, limit=[0.1, 1], name='alpha'),
         constraints=[])
 
     assert_obj_close(gold, exampleresult.next_model())
@@ -176,8 +177,8 @@ def test_n():
                                     divergence=0.0),
                       origin=[0.0, 0.0, 0.0])
 
-    model = Model(sph, Mie.calc_holo, alpha=1)
-    holo = Mie.calc_holo(model.scatterer.guess, sch)
+    model = Model(sph, calc_holo, 1.33, .66, Optics(polarization=(1, 0)), alpha=1)
+    holo = calc_holo(model.scatterer.guess, 1.33, sch, .66, Optics(polarization=(1, 0)))
     coster = CostComputer(holo, model, random_subset=.1)
     assert_allclose(coster.flattened_difference({'n' : .5}), 0)
 
@@ -351,18 +352,18 @@ def test_integer_correctness():
     schema = ImageSchema(shape = 100, spacing = .1,
                          optics = Optics(wavelen = .660, index = 1.33, polarization = (1, 0)))
     s = Sphere(center = (10.2, 9.8, 10.3), r = .5, n = 1.58)
-    holo = Mie.calc_holo(s, schema)
+    holo = calc_holo(s, 1.33, schema, .66, Optics(polarization=(1, 0)))
 
     par_s = Sphere(center = (par(guess = 10, limit = [5,15]), par(10, [5, 15]), par(10, [5, 15])),
                    r = .5, n = 1.58)
 
-    model = Model(par_s, Mie.calc_holo, alpha = par(.6, [.1, 1]))
+    model = Model(par_s, calc_holo, 1.33, .66, Optics(polarization=(1, 0)), alpha = par(.6, [.1, 1]))
     result = fit(model, holo)
     assert_allclose(result.scatterer.center, [10.2, 9.8, 10.3])
 
 def test_model_guess():
     ps = Sphere(n=par(1.59, [1.5,1.7]), r = .5, center=(5,5,5))
-    m = Model(ps, Mie)
+    m = Model(ps, calc_holo)
     assert_obj_close(m.scatterer.guess, Sphere(n=1.59, r=0.5, center=[5, 5, 5]))
 
 
@@ -374,14 +375,14 @@ def test_fit_complex_parameter():
 
     # use a Sphere with complex n
     # a fake scattering model
-    def scat_func(sph, schema, scaling = None):
+    def scat_func(sph, locations, scaling = None, **kwargs):
         # TODO: scaling kwarg required, seems like a silly kluge
         def silly_function(theta):
             return theta * sph.r + sph.n.real * theta **2  + 2. * sph.n.imag
         #import pdb
         #pdb.set_trace()
         return Marray(np.array([silly_function(theta) for theta, phi in
-                                schema.positions_theta_phi()]),
+                                schema.positions.theta_phi()]),
                       **schema._dict)
 
     # generate data
@@ -417,7 +418,7 @@ def test_constraint():
         warnings.simplefilter("ignore")
         spheres = Spheres([Sphere(r=.5, center=(0,0,0)),
                            Sphere(r=.5, center=(0,0,par(.2)))])
-        model = Model(spheres, Multisphere.calc_holo, constraints=limit_overlaps())
+        model = Model(spheres, calc_holo, constraints=limit_overlaps())
         coster = CostComputer(sch, model)
         cost = coster._calc({'1:Sphere.center[2]' : .2})
         assert_equal(cost, np.ones_like(sch)*np.inf)
@@ -425,9 +426,9 @@ def test_constraint():
 def test_layered():
     s = Sphere(n = (1,2), r = (1, 2), center = (2, 2, 2))
     sch = ImageSchema((10, 10), .2, Optics(.66, 1, (1, 0)))
-    hs = Mie.calc_holo(s, sch)
+    hs = calc_holo(s, 1, sch, .66, Optics(polarization=(1, 0)))
 
     guess = hp.scattering.scatterer.sphere.LayeredSphere((1,2), (par(1.01), par(.99)), (2, 2, 2))
-    model = Model(guess, Mie.calc_holo)
+    model = Model(guess, calc_holo, hs.optics.index, hs.optics.wavelen, hs.optics)
     res = fit(model, hs)
     assert_allclose(res.scatterer.t, (1, 1), rtol = 1e-12)

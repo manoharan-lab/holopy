@@ -216,11 +216,15 @@ def limit_overlaps(fraction=.1):
     return constraint
 
 class BaseModel(HoloPyObject):
-    def __init__(self, scatterer):
+    def __init__(self, scatterer, medium_index=None, wavelen=None, optics=None, theory='auto'):
         if not isinstance(scatterer, Parametrization):
             scatterer = ParameterizedObject(scatterer)
         self.scatterer = scatterer
         self._parameters = self.scatterer.parameters
+        self._use_parameter(medium_index, 'medium_index')
+        self._use_parameter(wavelen, 'wavelen')
+        self._use_parameter(optics, 'optics')
+        self._use_parameter(theory, 'theory')
 
     @property
     def parameters(self):
@@ -254,15 +258,11 @@ class Model(BaseModel):
         a scaterer as an argument and return False if you wish to disallow that
         scatterer (usually because it is un-physical for some reason)
     """
-    def __init__(self, scatterer, theory, alpha=None,
+    def __init__(self, scatterer, calc_func, medium_index=None, wavelen=None, optics=None, theory='auto', alpha=None,
                  use_random_fraction=None, constraints=[]):
-        super(Model, self).__init__(scatterer)
-        if isinstance(theory, basestring):
-            import holopy.scattering.theory as theory_module
-            kind, func = theory.split('.')
-            theory = getattr(getattr(theory_module, kind), func)
+        super(Model, self).__init__(scatterer, medium_index, wavelen, optics, theory)
+        self.calc_func = calc_func
 
-        self.theory = theory
         self.use_random_fraction = use_random_fraction
 
         self._use_parameter(alpha, 'alpha')

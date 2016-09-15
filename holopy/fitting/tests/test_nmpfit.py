@@ -25,9 +25,9 @@ import numpy as np
 from ...scattering.theory import Mie
 from ...scattering.scatterer import Sphere
 from ..third_party import nmpfit
-from ...core import Optics
 from ...core.process import normalize
 from ...core.tests.common import get_example_data, assert_obj_close
+from holopy.scattering.calculations import calc_holo
 
 # these are the exact values; should correspond to fit results
 # in order: real index, imag index, radius , x, y, z, alpha, fnorm, fit status
@@ -95,7 +95,7 @@ def residfunct(p, fjac = None):
 
     sphere = Sphere(n=p[0]+n_particle_imag*1j, r=p[1], center = p[2:5])
     thry = Mie(False)
-    calculated = thry.calc_holo(sphere, holo, scaling=p[5])
+    calculated = calc_holo(sphere, holo.optics.index, holo, holo.optics.wavelen, holo.optics, scaling=p[5], theory=thry)
 
     status = 0
     derivates = holo - calculated
