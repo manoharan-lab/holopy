@@ -23,7 +23,7 @@ Defines Spheres, a Scatterers scatterer consisting of Spheres
 '''
 # COVERAGE: I think all uncovered code is either unreachable or due likely to be
 # refactored away
-from __future__ import division
+
 
 import numpy as np
 import warnings

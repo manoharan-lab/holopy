@@ -25,7 +25,7 @@ scattered field.
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
-from __future__ import division
+
 import numpy as np
 from ...core.helpers import _ensure_array
 from ..errors import TheoryNotCompatibleError, UnrealizableScatterer

@@ -31,11 +31,11 @@ sphere," Applied Optics 42, 1710-1720, (1993).
 '''
 
 import numpy as np
-import miescatlib
+from . import miescatlib
 from ...errors import ModelInputError
 
 from numpy import exp, sin, cos, real, imag
-from mie_specfuncs import Qratio, log_der_13, riccati_psi_xi
+from .mie_specfuncs import Qratio, log_der_13, riccati_psi_xi
 
 def scatcoeffs_multi(marray, xarray, eps1 = 1e-3, eps2 = 1e-16):
     '''

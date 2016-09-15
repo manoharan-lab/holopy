@@ -36,15 +36,15 @@ sphere," Applied Optics 42, 1710-1720, (1993).
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 """
 
-from __future__ import division
+
 
 import numpy as np
 from numpy import array, sin, cos, zeros, arange, real, imag, exp
 
 import scipy
 from scipy.special import riccati_jn, riccati_yn
-import mieangfuncs
-from mieangfuncs import dn_1_down, lentz_dn1
+from . import mieangfuncs
+from .mieangfuncs import dn_1_down, lentz_dn1
 
 def riccati_psi_xi(x, nstop):
     if np.imag(x) != 0.:

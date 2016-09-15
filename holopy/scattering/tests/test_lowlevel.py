@@ -34,7 +34,7 @@ down the problem.
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 '''
 
-from __future__ import division
+
 
 import os
 import yaml
@@ -130,7 +130,8 @@ def test_mie_amplitude_scattering_matrices():
     location = os.path.split(os.path.abspath(__file__))[0]
     gold_name = os.path.join(location, 'gold',
                              'gold_mie_scat_matrix')
-    gold_dict = yaml.load(file(gold_name + '.yaml'))
+    gold_dict = yaml.load(open(gold_name + '.yaml'))
+    
     gold = np.array([gold_dict['S11'], gold_dict['pol'],
                      gold_dict['S33'], gold_dict['S34']])
 

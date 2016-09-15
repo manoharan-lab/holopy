@@ -28,21 +28,21 @@ All theories have a common interface defined by
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
-from __future__ import division
 
-try:
-    from mie import Mie
-    from multisphere import Multisphere
-except ImportError:
-    import warnings
-    warnings.warn("""
-Could not import scattering.  You will not be able to do scattering
-calculations, but the rest of holopy sould remain usable.
 
-This is probably due to your not having properly compiled versions holopy's
-fortran bits.  """)
+#try:
+from .mie import Mie
+from .multisphere import Multisphere
+#except ImportError:
+#    import warnings
+#    warnings.warn("""
+#Could not import scattering.  You will not be able to do scattering
+#calculations, but the rest of holopy sould remain usable.
+#
+#This is probably due to your not having properly compiled versions holopy's
+#fortran bits.  """)
 
-try:
-    from dda import DDA
-except ImportError:
-    pass
+#try:
+from .dda import DDA
+#except ImportError:
+#    pass

@@ -20,7 +20,7 @@ Test T-matrix sphere cluster calculations and python interface.
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
-from __future__ import division
+
 
 import sys
 import os
@@ -153,7 +153,7 @@ def test_invalid():
 
 def test_overlap():
     # should raise a warning
-    with warnings.catch_warnings(True) as w:
+    with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         sc = Spheres(scatterers=[Sphere(center=[3e-6, 3e-6, 10e-6],
                                            n=1.59, r=.5e-6),
@@ -165,7 +165,7 @@ def test_overlap():
     assert_raises(MultisphereExpansionNaN, calc_holo, sc, index, schema, wavelen, xoptics)
 
     # but it should succeed with a small overlap, after raising a warning
-    with warnings.catch_warnings(True) as w:
+    with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         sc = Spheres(scatterers=[Sphere(center=[3e-6, 3e-6, 10e-6],
                                            n=1.59, r=.5e-6),
