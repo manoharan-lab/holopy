@@ -22,7 +22,9 @@ from nose.plugins.skip import SkipTest
 import warnings
 
 try:
-    import matplotlib.pyplot as plt
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        import matplotlib.pyplot as plt
     plt.ioff()
 except ImportError:
     raise SkipTest()
@@ -31,5 +33,5 @@ def test_show():
     d = get_example_data('image0001.yaml')
     hp.show(d)
     with warnings.catch_warnings():
-        warnings.simplefilter('ignore', DeprecationWarning)
+        warnings.simplefilter('ignore'),  (DeprecationWarning, UserWarning)
         plt.savefig(tempfile.TemporaryFile(suffix='.pdf'))
