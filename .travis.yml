@@ -1,10 +1,10 @@
 language: python
 
 python:
-  - 2.7
+  - 3.4
 
 env:
-  - DEPS="numpy scipy nose pyyaml pillow pandas h5py sphinx matplotlib tifffile"
+  - DEPS="numpy scipy nose2 pyyaml pillow pandas h5py sphinx matplotlib tifffile"
 
 
 install:
