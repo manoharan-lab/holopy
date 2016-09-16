@@ -1,10 +1,10 @@
-from cStringIO import StringIO
+from io import StringIO
 import compiler
 import inspect
 import textwrap
 import tokenize
 
-from compiler_unparse import unparse
+from .compiler_unparse import unparse
 
 
 class Comment(object):
@@ -68,7 +68,7 @@ class CommentBlocker(object):
     def process_file(self, file):
         """ Process a file object.
         """
-        for token in tokenize.generate_tokens(file.next):
+        for token in tokenize.generate_tokens(file.__next__):
             self.process_token(*token)
         self.make_index()
 
