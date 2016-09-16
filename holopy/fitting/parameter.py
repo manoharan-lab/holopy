@@ -21,7 +21,7 @@ Classes for describing free parameters in fitting models
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <jfung@physics.harvard.edu>
 """
-from __future__ import division
+
 
 import numpy as np
 from ..core.holopy_object import HoloPyObject
