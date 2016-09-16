@@ -4,7 +4,7 @@ python:
   - 3.4
 
 env:
-  - DEPS="numpy scipy nose2 pyyaml pillow pandas h5py sphinx matplotlib tifffile"
+  - DEPS="numpy scipy pyyaml pillow pandas h5py sphinx matplotlib tifffile"
 
 
 install:
@@ -12,7 +12,7 @@ install:
   - conda create -n testenv --yes pip python=$TRAVIS_PYTHON_VERSION
   - source activate testenv
   - conda install --yes $DEPS
-  - pip install emcee
+  - pip install emcee nose2
 # TODO Remove these once setup.py handles dependencies correctly.
   - python setup.py install
   - python setup.py build_ext --inplace
