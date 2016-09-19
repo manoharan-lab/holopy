@@ -74,9 +74,9 @@ class Mie(FortranTheory):
     def _can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
 
-    def _calc_scat_matrix(self, scatterer, schema, optics):
+    def _calc_scat_matrix(self, scatterer, schema):
         if isinstance(scatterer, Sphere):
-            scat_coeffs = self._scat_coeffs(scatterer, optics)
+            scat_coeffs = self._scat_coeffs(scatterer, schema.optics)
 
             # TODO: actually use (rather than ignore) the phi
             scat_matrs = [mieangfuncs.asm_mie_far(scat_coeffs, theta) for

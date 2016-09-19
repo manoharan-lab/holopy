@@ -66,7 +66,7 @@ class Optics(HoloPyObject):
         # source parameters
         self.wavelen = wavelen
         self.index = index
-        self.polarization = np.array(polarization)
+        self._polarization = np.array(polarization)
         self.divergence = divergence
         if divergence != 0.0:
             warn("HoloPy calculations currently ignore divergence")
@@ -96,6 +96,14 @@ class Optics(HoloPyObject):
 
     def wavelen_in(self, medium_index):
         return self.wavelen/medium_index
+
+    @property
+    def polarization(self):
+        return self._polarization
+
+    @polarization.setter
+    def polarization(self, val):
+        self._polarization = np.array(val)
 
     @property
     def wavevec(self):
@@ -233,3 +241,21 @@ class Angles(PositionSpecification):
             for j, phi in enumerate(self.phi):
                 pos[i*self.shape[1]+j] = theta, phi
         return pos
+
+def interpret_args(index=None, wavelen=None, polarization=None, optics=None, schema=None):    
+    from .marray import Schema
+    if not isinstance(schema, Schema):
+        schema = Schema(positions=schema)
+    if optics is not None:
+        schema.optics=optics   
+    elif not isinstance(schema.optics, Optics):
+        schema.optics=Optics()
+
+    if index is not None:
+        schema.optics.index = index
+    if wavelen is not None:
+        schema.optics.wavelen = wavelen
+    if polarization is not None:
+        schema.optics.polarization = polarization
+    return schema
+

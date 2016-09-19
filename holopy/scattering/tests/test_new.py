@@ -32,22 +32,22 @@ scatterer = Sphere(n = 1.6, r=.5, center=(5, 5, 5))
 medium_index = 1.33
 locations = ImageSchema(shape=(20, 20), spacing=.1)
 wavelen = 0.66
-optics = Optics(polarization=(0, 1))
+polarization=(0, 1)
 
 def test_calc_holo():
-    holo = calc_holo(scatterer, medium_index, locations, wavelen, optics=optics)
+    holo = calc_holo(locations, scatterer, medium_index, wavelen, polarization)
 
 def test_calc_field():
-    field = calc_field(scatterer, medium_index, locations, wavelen, optics=optics)
+    field = calc_field(locations, scatterer, medium_index, wavelen, polarization)
 
 def test_calc_cross_section():
-    cross = calc_cross_sections(scatterer, medium_index, wavelen)
+    cross = calc_cross_sections(scatterer, medium_index, wavelen, polarization)
 
 def test_calc_intensity():
-    intensity = calc_intensity(scatterer, medium_index, locations, wavelen, optics=optics)
+    intensity = calc_intensity(locations, scatterer, medium_index, wavelen, polarization)
 
 def test_calc_scat_matrix():
-    matr = calc_scat_matrix(scatterer, medium_index, locations, wavelen)
+    matr = calc_scat_matrix(locations, scatterer, medium_index, wavelen, polarization)
 
 def test_determine_theory():
     assert_obj_close(determine_theory(Sphere()), Mie())

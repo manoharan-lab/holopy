@@ -37,7 +37,7 @@ from ..scatterer import (Sphere, Scatterer, Ellipsoid,
 from ..scatterer.ellipsoid import isnumber
 from ..scatterer.scatterer import find_bounds
 
-from ..errors import ScattererDefinitionError, NoCenter, NoPolarization
+from ..errors import ScattererDefinitionError, NoCenter
 from .common import assert_allclose
 from holopy.scattering.calculations import calc_holo
 
@@ -170,7 +170,7 @@ def test_find_bounds():
 def test_sphere_nocenter():
     sphere = Sphere(n = 1.59, r = .5)
     schema = ImageSchema(spacing=.1, shape=1, optics=Optics(wavelen = .660, polarization = [1, 0],index = 1.33))
-    assert_raises(NoCenter, calc_holo, sphere, 1.33, .66, schema)
+    assert_raises(NoCenter, calc_holo, schema, sphere, 1.33, .66)
 
 def test_ellipsoid():
     test = Ellipsoid(n = 1.585, r = [.4,0.4,1.5], center = [10,10,20])

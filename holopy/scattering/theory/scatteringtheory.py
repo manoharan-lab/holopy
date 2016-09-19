@@ -32,7 +32,7 @@ from ...core import Optics
 from ...core.holopy_object import HoloPyObject
 from ..binding_method import binding, finish_binding
 from ..scatterer import Sphere, Scatterers
-from ..errors import NoCenter, NoPolarization, TheoryNotCompatibleError
+from ..errors import NoCenter, TheoryNotCompatibleError
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -97,8 +97,12 @@ class ScatteringTheory(HoloPyObject):
 # Subclass of scattering theory, overrides functions that depend on array
 # ordering and handles the tranposes for sending values to/from fortran
 class FortranTheory(ScatteringTheory):
-    def _calc_field(self, scatterer, schema, optics):
+    def _calc_field(self, scatterer, schema):
+        optics=schema.optics
         def get_field(s):
+            if isinstance(scatterer,Sphere) and is_none(scatterer.center):
+                raise NoCenter("Center is required for hologram calculation of a sphere")
+
             positions = schema.positions.kr_theta_phi(s.center, optics.wavevec)
             field = np.vstack(self._raw_fields(positions.T, s, optics)).T
             phase = np.exp(-1j*np.pi*2*s.center[2] / optics.med_wavelen)
