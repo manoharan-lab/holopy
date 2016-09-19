@@ -66,7 +66,10 @@ class Optics(HoloPyObject):
         # source parameters
         self.wavelen = wavelen
         self.index = index
-        self._polarization = np.array(polarization)
+        if polarization is not None:
+            self._polarization = np.array(polarization)
+        else:
+            self._polarization = None
         self.divergence = divergence
         if divergence != 0.0:
             warn("HoloPy calculations currently ignore divergence")

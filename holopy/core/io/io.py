@@ -63,6 +63,12 @@ def load(inf, spacing = None, wavelen=None, index=None, polarization=None, optic
     """
     if isinstance(optics, (basestring, file)):
         optics = serialize.load(optics)
+        # In the past We allowed optics yamls to be written without an !Optics
+        # tag, so for that backwards compatability, we attempt to turn an
+        # anonymous dict into an Optics
+        if isinstance(optics, dict):
+            optics = Optics(**optics)
+
 
     # attempt to load a holopy yaml file
     try:

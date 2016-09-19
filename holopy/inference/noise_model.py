@@ -59,7 +59,7 @@ class NoiseModel(BaseModel):
         optics = pars.pop('optics', self.optics)
         scatterer = self.scatterer.make_from(pars)
         try:
-            return calc_field(scatterer, medium_index, schema, wavelen, optics, theory=self.theory)
+            return calc_field(schema, scatterer, medium_index, wavelen, optics=optics, theory=self.theory)
         except (MultisphereExpansionNaN, MultisphereFieldNaN, ConvergenceFailureMultisphere, ScattererDefinitionError):
             return -np.inf
 
