@@ -314,8 +314,10 @@ class SamplingResult(HoloPyObject):
                 thin = 1
         elif thin is None:
             thin = 1
-        elif thin < 1:
+        if thin < 1:
             thin = 1
+        else:
+            thin = int(np.ceil(thin))
 
         return thin
 

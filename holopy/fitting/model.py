@@ -66,7 +66,7 @@ class Parametrization(HoloPyObject):
     def make_from(self, parameters):
         # parameters is an ordered dictionary
         for_schema = {}
-        for arg in inspect.getargspec(self.make_scatterer).args:
+        for arg in inspect.signature(self.make_scatterer).parameters:
             if (arg + '.real') in parameters and (arg + '.imag') in parameters:
                 for_schema[arg] = (parameters[arg + '.real'] + 1.j *
                                    parameters[arg + '.imag'])
