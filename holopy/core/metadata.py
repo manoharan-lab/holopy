@@ -242,7 +242,7 @@ class Angles(PositionSpecification):
                 pos[i*self.shape[1]+j] = theta, phi
         return pos
 
-def interpret_args(index=None, wavelen=None, polarization=None, optics=None, schema=None):    
+def interpret_args(schema=None, index=None, wavelen=None, polarization=None, optics=None):    
     from .marray import Schema
     if not isinstance(schema, Schema):
         schema = Schema(positions=schema)

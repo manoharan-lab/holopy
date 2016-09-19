@@ -84,7 +84,7 @@ class MissingParameter(Exception):
     def __init__(self, calc_name, parameter_name):
         self.parameter_name = parameter_name
     def __str__(self):
-        message= ("Scattering calculation requires specification of " + self.parameter_name + ".")
+        message= ("Calculation requires specification of " + self.parameter_name + ".")
 
 
 class MultisphereFieldNaN(UnrealizableScatterer):

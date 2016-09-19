@@ -28,13 +28,14 @@ import numpy as np
 from ..core.math import fft, ifft
 from ..core.helpers import _ensure_pair, _ensure_array
 from ..core import Volume, Image, Grid, UnevenGrid, VolumeSchema, Marray
-from ..core.marray import VectorGrid
-from holopy.core.marray import dict_without, resize
+from ..core.marray import VectorGrid, dict_without, resize
+from ..core.metadata import interpret_args
+from ..scattering.errors import MissingParameter
 
 # May eventually want to have this function take a propagation model
 # so that we can do things other than convolution
 
-def propagate(data, d, gradient_filter=False):
+def propagate(data, d, index=None, wavelen=None, gradient_filter=False):
     """
     Propagates a hologram along the optical axis
 
@@ -59,6 +60,10 @@ def propagate(data, d, gradient_filter=False):
     if np.isscalar(d) and d == 0:
         # Propagating no distance has no effect
         return data
+
+    data = interpret_args(data, index, wavelen)
+    if data.index is None or data.wavelen is None:
+        raise MissingParameter("refractive index and wavelength")
 
     # Computing the transfer function will fail for d = 0. So, if we
     # are asked to compute a reconstruction for a set of distances

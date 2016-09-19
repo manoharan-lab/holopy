@@ -123,7 +123,7 @@ def calc_holo(schema, scatterer, medium_index=None, wavelen=None, polarization=N
     holo : :class:`.Image` object
         Calculated hologram from the given distribution of spheres
     """
-    schema = check_schema(interpret_args(medium_index, wavelen, polarization, optics, schema))
+    schema = check_schema(interpret_args(schema, medium_index, wavelen, polarization, optics))
     theory = interpret_theory(scatterer,theory)
     scat = theory._calc_field(scatterer, schema)
     return scattered_field_to_hologram(scat*scaling, schema.optics.polarization, schema.normals)
@@ -156,7 +156,7 @@ def calc_cross_sections(scatterer, medium_index=None, wavelen=None, polarization
         Dimensional scattering, absorption, and extinction
         cross sections, and <cos theta>
     """
-    schema = check_schema(interpret_args(medium_index, wavelen, polarization, optics))
+    schema = check_schema(interpret_args(index=medium_index, wavelen=wavelen, polarization=polarization, optics=optics))
     theory = interpret_theory(scatterer,theory)
     return theory._calc_cross_sections(scatterer, schema.optics)
 
@@ -187,7 +187,7 @@ def calc_scat_matrix(schema, scatterer, medium_index=None, wavelen=None, polariz
         Scattering matricies at specified positions
 
     """
-    schema = check_schema(interpret_args(medium_index, wavelen, polarization, optics,schema))
+    schema = check_schema(interpret_args(schema, medium_index, wavelen, polarization, optics))
     theory = interpret_theory(scatterer,theory)
     return theory._calc_scat_matrix(scatterer, schema)
 
@@ -221,7 +221,7 @@ def calc_field(schema, scatterer, medium_index=None, wavelen=None, polarization=
     e_field : :class:`.Vector` object
         Calculated hologram from the given distribution of spheres
     """
-    schema = check_schema(interpret_args(medium_index, wavelen, polarization, optics,schema))
+    schema = check_schema(interpret_args(schema, medium_index, wavelen, polarization, optics))
     theory = interpret_theory(scatterer,theory)
     return theory._calc_field(scatterer, schema)
 

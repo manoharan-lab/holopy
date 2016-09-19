@@ -29,11 +29,11 @@ import numpy as np
 import serialize
 from holopy.core.io.image_file_io import load_image, save_image
 from holopy.core.marray import Image, arr_like
-from holopy.core.metadata import Optics
+from holopy.core.metadata import Optics, interpret_args
 from holopy.core.helpers import _ensure_array
 
 
-def load(inf, spacing = None, optics = None, channel=None):
+def load(inf, spacing = None, wavelen=None, index=None, polarization=None, optics = None, channel=None):
     """
     Load data or results
 
@@ -63,31 +63,16 @@ def load(inf, spacing = None, optics = None, channel=None):
     """
     if isinstance(optics, (basestring, file)):
         optics = serialize.load(optics)
-        # In the past We allowed optics yamls to be written without an !Optics
-        # tag, so for that backwards compatability, we attempt to turn an
-        # anonymous dict into an Optics
-        if isinstance(optics, dict):
-            optics = Optics(**optics)
-
 
     # attempt to load a holopy yaml file
     try:
         loaded = serialize.load(inf)
-        if optics is not None and spacing is not None:
-            loaded = arr_like(loaded, spacing = spacing, optics = optics)
-            warn("Overriding spacing and optics of loaded yaml")
-        elif optics is not None:
-            loaded = arr_like(loaded, optics = optics)
-            warn("WARNING: overriding optics of loaded yaml without overriding "
-                 "spacing, this is probably incorrect.")
-        elif spacing is not None:
-            loaded = arr_like(loaded, spacing = spacing)
-            warn("WARNING: overriding spacing of loaded yaml without overriding "
-                 "optics, this is probably incorrect.")
+        #if loading a hologram from a yaml file and trying to overwrite variables, you
+        #should have to do so explicitly after the fact. Extra arguments when reloading are ignored.
         return loaded
     except (serialize.ReaderError, AttributeError):
         pass
-        # If that fails, we go on an read images
+        # If that fails, we go on and read images
 
     loaded_files = []
     for inf in _ensure_array(inf):
@@ -95,7 +80,9 @@ def load(inf, spacing = None, optics = None, channel=None):
 
         loaded_files.append(loaded)
 
-    return Image(np.dstack(loaded_files).squeeze(), optics=optics, spacing=spacing)
+    image = Image(np.dstack(loaded_files).squeeze(), spacing=spacing)
+    image = interpret_args(image, index, wavelen, polarization, optics)
+    return image
 
 def save(outf, obj):
     """

@@ -183,6 +183,29 @@ class Schema(HoloPyObject):
     def positions(self, val):
         self._positions = val
 
+    @property
+    def index(self):
+        return self.optics.index
+
+    @index.setter
+    def index(self, val):
+        self.optics.index = val
+
+    @property
+    def wavelen(self):
+        return self.optics.wavelen
+    
+    @wavelen.setter
+    def polarization(self, val):
+        self.optics.wavelen = val
+
+    @property
+    def polarization(self):
+        return self. optics.polarization
+
+    @polarization.setter
+    def polarization(self, val):
+        self.optics.polarization = val
 
     # TODO: need equivalents for set_metadata or to rewrite other code so it
     # doesn't need it.

@@ -39,21 +39,6 @@ def test_hologram_io():
 
     assert_read_matches_write(holo)
 
-@attr('fast')
-def test_load_optics():
-    optics_yaml = """wavelen: 785e-9
-polarization: [1.0, 0]
-divergence: 0
-pixel_size: [6.8e-6, 6.8e-6]
-pixel_scale: [3.3e-7, 3.3e-7]"""
-    t = tempfile.TemporaryFile()
-    t.write(optics_yaml)
-    t.seek(0)
-
-    o = Optics(**load(t))
-
-    assert_obj_close(o, Optics(wavelen=7.85e-07, polarization=[1.0, 0.0], divergence=0, pixel_size=[6.8e-06, 6.8e-06], pixel_scale=[3.3e-07, 3.3e-07]))
-
 def test_marray_io():
     d = Marray(np.random.random((10, 10)))
     assert_read_matches_write(d)
@@ -64,7 +49,9 @@ def test_image_io():
 
     filename = os.path.join(t, 'image0001.tif')
     save(filename, holo)
-    l = load(filename)
+    l = load(filename,optics=holo.optics)
+    print(l.optics)
+    print(holo.optics)
     assert_obj_close(l, holo)
 
     # check that it defaults to saving as tif
