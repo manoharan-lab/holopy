@@ -262,3 +262,4 @@ def _field_scalar_shape(e):
     # 1, 3] as needed
     return [1]*(e.ndim-1) + [3]
 
+
