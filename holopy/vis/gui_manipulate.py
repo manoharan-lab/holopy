@@ -330,7 +330,7 @@ class SingleHolo(QtGui.QWidget):
         radiushigh = 3.0*inmedwave
         #get current radius
         radius = self.lcd4.value()
-        print radius
+        print(radius)
         #reposition slider to maintain starting value
 
         self.sld4.setSliderPosition((radius-radiuslow)/(radiushigh-radiuslow)*100)

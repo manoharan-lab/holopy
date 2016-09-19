@@ -22,7 +22,7 @@ Show sphere clusters using mayavi
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 """
 
-from __future__ import division
+
 
 from numpy import arange
 import numpy as np

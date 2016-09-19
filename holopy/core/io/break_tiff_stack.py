@@ -21,7 +21,7 @@ Load a multilayer TIFF, extract a given frame, return ndarray
 
 Jerome Fung <fung@physics.harvard.edu>
 '''
-from __future__ import division
+
 
 import numpy as np
 from ..third_party.tifffile import TIFFfile

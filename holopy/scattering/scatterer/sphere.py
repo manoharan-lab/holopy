@@ -52,8 +52,15 @@ class Sphere(CenteredScatterer):
         self.r = r
         super(Sphere, self).__init__(center)
 
-        if np.any(self.r < 0):
-            raise ScattererDefinitionError("radius is negative", self)
+        try:
+            if np.any(np.array(self.r) < 0):
+                raise ScattererDefinitionError("radius is negative", self)
+        except TypeError:
+            # Simplest solution to deal with spheres with a parameter or prior
+            # as arguments, just don't check them. It might be worth doing some
+            # testing of the guess, but for now I am not doing that to avoid
+            # introducing a dependency on something in fit
+            pass
 
     @property
     def indicators(self):

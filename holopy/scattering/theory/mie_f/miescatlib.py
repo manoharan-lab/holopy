@@ -25,9 +25,9 @@ Library of code to do Mie scattering calculations.
 '''
 
 import numpy as np
-import mie_specfuncs
+from . import mie_specfuncs
 
-from mieangfuncs import dn_1_down, lentz_dn1
+from .mieangfuncs import dn_1_down, lentz_dn1
 
 from numpy import sin, cos, array
 

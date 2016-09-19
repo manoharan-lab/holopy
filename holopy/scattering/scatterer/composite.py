@@ -23,7 +23,7 @@ scatterers (e.g. two trimers).
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
-from __future__ import division
+
 
 from copy import copy
 
@@ -78,16 +78,16 @@ class Scatterers(Scatterer):
     def parameters(self):
         d = {}
         for i, scatterer in enumerate(self.scatterers):
-            for key, par in scatterer.parameters.iteritems():
+            for key, par in scatterer.parameters.items():
                 d['{0}:{1}.{2}'.format(i, scatterer.__class__.__name__, key)] = par
-        return dict(sorted(d.items(), key = lambda t: t[0]))
+        return dict(sorted(list(d.items()), key = lambda t: t[0]))
 
     @classmethod
     def from_parameters(cls, parameters):
-        n_scatterers = len(set([p.split(':')[0] for p in parameters.keys()]))
+        n_scatterers = len(set([p.split(':')[0] for p in list(parameters.keys())]))
         collected = [{} for i in range(n_scatterers)]
         types = [None] * n_scatterers
-        for key, val in parameters.iteritems():
+        for key, val in parameters.items():
             n, spec = key.split(':', 1)
             n = int(n)
             scat_type, par = spec.split('.', 1)

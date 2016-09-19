@@ -38,6 +38,6 @@ The HoloPy scattering module is used to:
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 
 '''
-from __future__ import division
-import theory
-import scatterer
+
+from . import theory
+from . import scatterer

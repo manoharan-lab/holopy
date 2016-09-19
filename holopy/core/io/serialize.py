@@ -25,7 +25,7 @@ analysis procedures.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 """
-from __future__ import division
+
 import numpy as np
 import yaml
 from yaml.reader import ReaderError
@@ -39,33 +39,37 @@ from holopy.core.marray import Marray
 from holopy.core import marray
 
 def save(outf, obj):
-    if isinstance(outf, basestring):
-        outf = file(outf, 'wb')
+    if isinstance(outf, str):
+        outf = open(outf, 'wb')
 
-    yaml.dump(obj, outf)
+    outf.write(yaml.dump(obj).encode())
     if isinstance(obj, Marray):
         # yaml saves of large arrays are very slow, so we have numpy save the array
         # parts of Marray objects.  This will mean the file isn't stricktly
         # a valid yaml (or even a valid text file really), but we can still read
         # it, and with the right programs (like linux more) you can still see
         # the text yaml information, and it keeps everything in one file
-        outf.write('array: !NpyBinary\n')
+        outf.write('array: !NpyBinary\n'.encode())
         np.save(outf, obj)
 
 
 def load(inf):
-    if isinstance(inf, basestring):
-        inf = file(inf, mode = 'rU')
+    if isinstance(inf, str):
+        with open(inf, mode='rb') as inf:
+            return _load(inf)
+    else:
+        return _load(inf)
 
+def _load(inf):
     line = inf.readline()
-    cls = line.strip('{} !\n')
+    cls = line.strip(b'{} !\n').decode('utf-8')
     lines = []
     if hasattr(marray, cls) and issubclass(getattr(marray, cls), Marray):
-        while not re.search('!NpyBinary', line):
+        while not re.search(b'!NpyBinary', line):
             lines.append(line)
             line = inf.readline()
         arr = np.load(inf)
-        head = ''.join(lines[1:])
+        head = b''.join(lines[1:])
         kwargs = yaml.load(head)
         if kwargs is None:
             kwargs = {} #pragma: nocover
@@ -79,7 +83,7 @@ def load(inf):
             # sometimes yaml doesn't convert strings to floats properly, so we
             # have to check for that.
             for key in obj:
-                if isinstance(obj[key], basestring):
+                if isinstance(obj[key], str):
                     try:
                         obj[key] = float(obj[key])
                     except ValueError: #pragma: nocover
@@ -89,8 +93,8 @@ def load(inf):
 
 
 def _pickle_method(method):
-    func_name = method.im_func.__name__
-    obj = method.im_self
+    func_name = method.__func__.__name__
+    obj = method.__self__
     return _unpickle_method, (func_name, obj)
 
 def _unpickle_method(func_name, obj):
@@ -98,9 +102,9 @@ def _unpickle_method(func_name, obj):
 
 
 
-import copy_reg
+import copyreg
 import types
-copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
+copyreg.pickle(types.MethodType, _pickle_method, _unpickle_method)
 
 ###################################################################
 # Custom Yaml Representers
@@ -111,9 +115,9 @@ def ignore_aliases(data):
         # numpy arrays no longer want to be compared to None, so instead check for a none by looking for if it is an instance of NoneType
         if is_none(data) or data is ():
             return True
-        if isinstance(data, (str, unicode, bool, int, float)):
+        if isinstance(data, (str, bool, int, float)):
             return True
-    except TypeError, e:
+    except TypeError as e:
         pass
 yaml.representer.SafeRepresenter.ignore_aliases = \
     staticmethod(ignore_aliases)
@@ -167,11 +171,11 @@ def class_loader(loader, node):
     for t in tok[1:]:
         mod = mod.__getattribute__(t)
     return mod
-yaml.add_constructor(u'!class', class_loader)
+yaml.add_constructor('!class', class_loader)
 
 def instancemethod_representer(dumper, data):
-    func = data.im_func.func_name
-    obj = data.im_self
+    func = data.__func__.__name__
+    obj = data.__self__
     if isinstance(obj, SerializableMetaclass):
         obj = obj()
     rep = yaml.dump(obj)

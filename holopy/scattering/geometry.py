@@ -24,7 +24,7 @@ which may break code that depends on it.
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 
 """
-from __future__ import division
+
 
 import numpy as np
 from numpy import sqrt

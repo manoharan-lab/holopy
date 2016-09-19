@@ -21,7 +21,7 @@ Defines capsule scatterers.
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
-from __future__ import division
+
 
 import numpy as np
 

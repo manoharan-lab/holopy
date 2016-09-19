@@ -21,7 +21,7 @@ Error classes used in holopy
 
 .. moduleauthor :: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
-from __future__ import division
+
 
 
 class LoadError(Exception):

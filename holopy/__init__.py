@@ -31,12 +31,12 @@ images and calculations.
 """
 
 
-import core
+from . import core
 from .core import load, save
-import scattering
-import fitting
-from propagation import propagate
-from vis import show
+from . import scattering
+from . import fitting
+from .propagation import propagate
+from .vis import show
 
 __version__ = '2.0.0'
 __version_info__ = tuple([ int(num) for num in __version__.split('.')])

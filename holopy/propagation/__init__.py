@@ -33,6 +33,6 @@ holopy.propagate depends on holopy.core
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 
 """
-from __future__ import division
 
-from convolution_propagation import propagate
+
+from .convolution_propagation import propagate

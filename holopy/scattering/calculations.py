@@ -33,7 +33,7 @@ from holopy.scattering.errors import AutoTheoryFailed, NoCenter
 import numpy as np
 
 def interpret_args(scatterer, theory='auto', optics=None, locations=None, wavelen=None, medium_index=None):
-    if isinstance(theory, basestring) and theory == 'auto':
+    if isinstance(theory, str) and theory == 'auto':
         theory = determine_theory(scatterer, locations)
     if isinstance(theory, SerializableMetaclass):
         theory = theory()

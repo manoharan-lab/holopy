@@ -25,7 +25,7 @@ dependence of spherical Hankel functions for the scattered field.
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
-from __future__ import division
+
 
 import numpy as np
 from numpy import arctan2, sin, cos
@@ -283,7 +283,7 @@ class Multisphere(FortranTheory):
         qscat = (qscat_0 + qscat_pi2 + cos(2. * gamma) * (qscat_0 - qscat_pi2)
                  + sin(2. * gamma) * (2. * qscat_pi4 - qscat_0 -qscat_pi2)) / 2.
 
-        print qscat_0, qscat_pi2, qscat_pi4, qscat
+        print(qscat_0, qscat_pi2, qscat_pi4, qscat)
         return qscat * 4. * np.pi / optics.wavevec**2
 
     def _calc_cscat_quad(self, scatterer, optics, amn = None, lmax = None):

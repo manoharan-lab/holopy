@@ -28,6 +28,6 @@ this you may see a small lag on your first plot.
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
-from __future__ import division
 
-from show import show
+
+from .show import show

@@ -21,7 +21,7 @@ Test fortran-based multilayered Mie calculations and python interface.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
-from __future__ import division
+
 
 import numpy as np
 from numpy import sqrt
@@ -92,7 +92,8 @@ def test_sooty_particles():
     location = os.path.split(os.path.abspath(__file__))[0]
     gold_name = os.path.join(location, 'gold',
                              'gold_multilayer')
-    gold = np.array(yaml.load(file(gold_name + '.yaml')))
+    gold = np.array(yaml.load(open(gold_name + '.yaml')))
+    
 
     assert_allclose(efficiencies_from_scat_units(m_ac, x_ac), gold[0],
                     rtol = 1e-3)

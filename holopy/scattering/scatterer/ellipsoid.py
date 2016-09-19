@@ -21,12 +21,13 @@ Defines ellipsoidal scatterers.
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
-from __future__ import division
+
 
 import numpy as np
 
 from .scatterer import CenteredScatterer, Indicators
 from ..errors import ScattererDefinitionError
+from functools import reduce
 
 def isnumber(x):
     try:

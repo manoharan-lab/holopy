@@ -25,8 +25,9 @@ import os
 import glob
 from warnings import warn
 import numpy as np
+from io import IOBase
 
-import serialize
+from holopy.core.io import serialize
 from holopy.core.io.image_file_io import load_image, save_image
 from holopy.core.marray import Image, arr_like
 from holopy.core.metadata import Optics
@@ -61,7 +62,7 @@ def load(inf, spacing = None, optics = None, channel=None):
     obj : The object loaded, :class:`holopy.core.marray.Image`, or as loaded from yaml
 
     """
-    if isinstance(optics, (basestring, file)):
+    if isinstance(optics, (str, IOBase)):
         optics = serialize.load(optics)
         # In the past We allowed optics yamls to be written without an !Optics
         # tag, so for that backwards compatability, we attempt to turn an
@@ -69,33 +70,28 @@ def load(inf, spacing = None, optics = None, channel=None):
         if isinstance(optics, dict):
             optics = Optics(**optics)
 
-
-    # attempt to load a holopy yaml file
+    loaded_yaml = False
     try:
-        loaded = serialize.load(inf)
-        if optics is not None and spacing is not None:
-            loaded = arr_like(loaded, spacing = spacing, optics = optics)
-            warn("Overriding spacing and optics of loaded yaml")
-        elif optics is not None:
-            loaded = arr_like(loaded, optics = optics)
-            warn("WARNING: overriding optics of loaded yaml without overriding "
-                 "spacing, this is probably incorrect.")
-        elif spacing is not None:
-            loaded = arr_like(loaded, spacing = spacing)
-            warn("WARNING: overriding spacing of loaded yaml without overriding "
-                 "optics, this is probably incorrect.")
-        return loaded
-    except (serialize.ReaderError, AttributeError):
-        pass
-        # If that fails, we go on an read images
+         loaded = serialize.load(inf)
+         loaded_yaml = True
+    except (serialize.ReaderError, UnicodeDecodeError):
+         pass
+    if not loaded_yaml:
+        loaded = load_image(inf, spacing=spacing, optics=optics)
 
-    loaded_files = []
-    for inf in _ensure_array(inf):
-        loaded = load_image(inf, spacing=spacing, optics=optics, channel=channel)
+    elif optics is not None and spacing is not None:
+        loaded = arr_like(loaded, spacing = spacing, optics = optics)
+        warn("Overriding spacing and optics of loaded yaml")
+    elif optics is not None:
+        loaded = arr_like(loaded, optics = optics)
+        warn("WARNING: overriding optics of loaded yaml without overriding "
+             "spacing, this is probably incorrect.")
+    elif spacing is not None:
+        loaded = arr_like(loaded, spacing = spacing)
+        warn("WARNING: overriding spacing of loaded yaml without overriding "
+             "optics, this is probably incorrect.")
 
-        loaded_files.append(loaded)
-
-    return Image(np.dstack(loaded_files).squeeze(), optics=optics, spacing=spacing)
+    return loaded
 
 def save(outf, obj):
     """
@@ -119,7 +115,7 @@ def save(outf, obj):
     binary array is very slow for large arrays.  HoloPy can read these 'yaml'
     files, but any other yaml implementation will get confused.
     """
-    if isinstance(outf, basestring):
+    if isinstance(outf, str):
         filename, ext = os.path.splitext(outf)
         if ext in ['.tif', '.TIF', '.tiff', '.TIFF']:
             save_image(outf, obj)

@@ -38,14 +38,13 @@ class SerializableMetaclass(yaml.YAMLObjectMetaclass):
         cls.yaml_loader.add_constructor('!{0}'.format(cls.__name__), cls.from_yaml)
         cls.yaml_dumper.add_representer(cls, cls.to_yaml)
         if '__init__' in kwds:
-            cls._args = kwds['__init__'].func_code.co_varnames[1:]
+            cls._args = kwds['__init__'].__code__.co_varnames[1:]
 
 
-class Serializable(yaml.YAMLObject):
+class Serializable(yaml.YAMLObject, metaclass=SerializableMetaclass):
     """
     Base class for any object that wants a nice clean yaml output
     """
-    __metaclass__ = SerializableMetaclass
 
     @classmethod
     def to_yaml(cls, dumper, data):

@@ -22,7 +22,7 @@ image file formats used for holograms.
 .. moduleauthor:: Jerome Fung <jfung@physics.harvard.edu>
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 """
-from __future__ import division
+
 
 import numpy as np
 import scipy as sp
@@ -41,7 +41,6 @@ import warnings
 from copy import copy
 import json
 from scipy.misc import fromimage, bytescale
-from holopy.core.third_party.tifffile import TIFFfile
 from holopy.core import Image
 
 def save_image(filename, im, scaling='auto', depth=8):
@@ -125,8 +124,6 @@ def load_image(filename, channel=None, spacing=None, optics=None):
     LoadError
         if there is a problem loading a file
     """
-
-
     # The most reliable way to determine what type of image file we are working
     # with is to just try opening it with various loaders.  Extensions could be
     # missing or wrong, but, ie, if np.load succeeds, it was a np file
@@ -135,119 +132,19 @@ def load_image(filename, channel=None, spacing=None, optics=None):
     except IOError:
         pass
 
-    might_be_color = True
-    try:
-        arr, might_be_color, description = _read_tiff(filename)
-    except (ValueError, TypeError):
-        im = PILImage.open(filename)
-        arr = fromimage(im).astype('d')
-        description = "{}"
-
+    arr = fromimage(PILImage.open(filename)).astype('d')
+    description = '{}'
 
     # pick out only one channel of a color image
-    if channel is not None and len(arr.shape) > 2 and might_be_color:
+    if channel is not None and len(arr.shape) > 2:
         if channel >= arr.shape[2]:
             raise LoadError(filename,
                 "The image doesn't have a channel number {0}".format(channel))
         else:
             arr = arr[:, :, channel]
-    elif channel > 0:
+    elif channel is not None and channel > 0:
         warnings.warn("Warning: not a color image (channel number ignored)")
 
     metadata = json.loads(description)
 
     return Image(arr, spacing=spacing, optics=optics, metadata=metadata)
-
-def _read_tiff(filename):
-    """
-    Reads a TIFF and returns the image as a NumPy array (double
-    precision).
-
-    Uses tifffile.py (by Christoph Gohlke) to detect size and depth of
-    image.
-
-    Notes
-    -----
-    TOFIX: The library doesn't convert our Photon Focus 12-bit tiffs
-    correctly, so we call a special decoder for all 12-bit tiffs
-    (should fix this in the future so that all tiffs can be opened by
-    tifffile)
-    """
-    tif = TIFFfile(filename)
-
-    might_be_color = True
-    if len(tif.pages) > 1:
-        try:
-            arr = tif.asarray().transpose()
-            might_be_color = False
-        except Exception:
-            print('failed to read multipage tiff, attempting to read a single page')
-
-    # assuming a one-page tiff here...
-    depth = tif[0].tags.bits_per_sample.value
-    width = tif[0].tags.image_width.value
-    height = tif[0].tags.image_length.value
-    # I think the "samples per pixel" corresponds to the number of
-    # channels; check on a 24-bit tiff to make sure
-    channels = tif[0].tags.samples_per_pixel.value
-
-    if depth == 8:
-        tif.close()
-        # use PIL to open it
-        # TOFIX: see if tifffile will open 8-bit tiffs from our
-        # cameras correctly
-        im = PILImage.open(filename)
-        arr = fromimage(im).astype('d')
-    elif depth == 12:
-        tif.close()
-        if width == height:
-            arr = _read_tiff_12bit(filename, height)
-    else:
-        # use the tifffile representation
-        arr = tif.asarray().astype('d')
-        tif.close()
-
-    try:
-        # 270 is the image description tag
-        description = PILImage.open(filename).tag[270]
-    except KeyError:
-        description = "{}"
-
-    return arr, might_be_color, description
-
-def _read_tiff_12bit(filename, size):
-    """
-    Reads a 12 bit greyscale TIFF file and returns image as a NumPy array.
-
-    Parameters
-    ----------
-    filename : String
-        valid path to the file.
-    size : Integer
-        number of pixels along one dimension (assumed square)
-
-        """
-    f = open(filename, 'rb')
-    data = f.read()
-
-    # dictionary of known offsets that work
-    offsetdict = {256:194, 512:234, 1024:378}
-
-    if size in offsetdict:
-        im = PILImage.fromstring("F", (size, size), data[offsetdict[size]:],
-                              "bit", 12, 0, 0, 0, 1)
-    else:
-        offset = 378 # it's got to be smaller for anything < 1024x1024
-        done = False
-
-        while not done:
-            try:
-                im = PILImage.fromstring("F", (size, size),
-                                      data[offset:], "bit", 12, 0, 0, 0, 1)
-            except ValueError:
-                offset = offset - 1
-            else:
-                done = True
-
-    imarray = fromimage(im).astype('d')
-    return imarray

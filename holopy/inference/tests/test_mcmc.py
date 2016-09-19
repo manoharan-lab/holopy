@@ -17,8 +17,8 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from __future__ import division
 
+import warnings
 import numpy as np
 from numpy.testing import assert_equal
 from holopy.inference import prior, mcmc
@@ -59,7 +59,9 @@ def test_subset_tempering():
     holo = normalize(get_example_data('image0001.yaml'))
     scat = Sphere(r=0.65e-6,n=1.58,center=[5.5e-6,5.8e-6,14e-6])
     mod = AlphaModel(scat,noise_sd=.1, medium_index=holo.optics.index, wavelen=holo.optics.wavelen, optics=holo.optics, alpha=prior.Gaussian(0.7,0.1))
-    inf=mcmc.subset_tempering(mod,holo,final_len=10,nwalkers=4,stages=1,stage_len=10,threads=None, verbose=False,seed=40)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        inf=mcmc.subset_tempering(mod,holo,final_len=10,nwalkers=4,stages=1,stage_len=10,threads=None, verbose=False,seed=40)
     assert_obj_close(inf.most_probable_values(),gold_alpha)
     assert_equal(inf.n_steps,gold_nsteps)
     assert_obj_close(inf.acceptance_fraction,gold_frac)
