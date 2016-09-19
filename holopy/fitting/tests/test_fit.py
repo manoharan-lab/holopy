@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import division
+
 
 import tempfile
 import warnings
@@ -182,115 +182,7 @@ def test_n():
     coster = CostComputer(holo, model, random_subset=.1)
     assert_allclose(coster.flattened_difference({'n' : .5}), 0)
 
-@nottest
-@attr('slow')
-def test_fit_superposition():
-    """
-    Fit Mie superposition to a calculated hologram from two spheres
-    """
-    # Make a test hologram
-    optics = Optics(wavelen=6.58e-07, index=1.33, polarization=[0.0, 1.0],
-                    divergence=0, spacing=None, train=None, mag=None,
-                    pixel_scale=[2*2.302e-07, 2*2.302e-07])
 
-    s1 = Sphere(n=1.5891+1e-4j, r = .65e-6,
-                center=(1.56e-05, 1.44e-05, 15e-6))
-    s2 = Sphere(n=1.5891+1e-4j, r = .65e-6,
-                center=(3.42e-05, 3.17e-05, 10e-6))
-    sc = Spheres([s1, s2])
-    alpha = .629
-
-    theory = Mie(optics, 100)
-    holo = theory.calc_holo(sc, alpha)
-
-    # Now construct the model, and fit
-    parameters = [Parameter(name = 'x0', guess = 1.6e-5, limit = [0, 1e-4]),
-                  Parameter('y0', 1.4e-5, [0, 1e-4]),
-                  Parameter('z0', 15.5e-6, [0, 1e-4]),
-                  Parameter('r0', .65e-6, [0.6e-6, 0.7e-6]),
-                  Parameter('nr', 1.5891, [1, 2]),
-                  Parameter('x1', 3.5e-5, [0, 1e-4]),
-                  Parameter('y1', 3.2e-5, [0, 1e-4]),
-                  Parameter('z1', 10.5e-6, [0, 1e-4]),
-                  Parameter('r1', .65e-6, [0.6e-6, 0.7e-6])]
-
-    def make_scatterer(x0, x1, y0, y1, z0, z1, r0, r1, nr):
-        s = Spheres([
-                Sphere(center = (x0, y0, z0), r=r0, n = nr+1e-4j),
-                Sphere(center = (x1, y1, z1), r=r1, n = nr+1e-4j)])
-        return s
-
-    model = Model(parameters, Mie, make_scatterer=make_scatterer, alpha =
-                  Parameter('alpha', .63, [.5, 0.8]))
-    result = fit(model, holo)
-
-    assert_obj_close(result.scatterer, sc)
-    assert_approx_equal(result.alpha, alpha, significant=4)
-    assert_equal(result.model, model)
-    assert_read_matches_write(result)
-
-@nottest
-# TODO: disabled because it is old, slow, not functioning. Consider updating and
-# reenabling as an integration test
-@attr('slow')
-def test_fit_multisphere_noisydimer_slow():
-    optics = Optics(wavelen=658e-9, polarization = [0., 1.0],
-                       divergence = 0., pixel_scale = [0.345e-6, 0.345e-6],
-                       index = 1.334)
-
-    holo = normalize(get_example_data('image0002.yaml'))
-
-    # Now construct the model, and fit
-    parameters = [Parameter(name = 'x0', guess = 1.64155e-5,
-                            limit = [0, 1e-4]),
-                  Parameter(1.7247e-5, [0, 1e-4], 'y0'),
-                  Parameter(20.582e-6, [0, 1e-4], 'z0'),
-                  Parameter(.6856e-6, [1e-8, 1e-4], 'r0'),
-                  Parameter(1.6026, [1, 2], 'nr0'),
-                  Parameter(1.758e-5, [0, 1e-4], 'x1'),
-                  Parameter(1.753e-5, [0, 1e-4], 'y1'),
-                  Parameter(21.2698e-6, [1e-8, 1e-4], 'z1'),
-                  Parameter(.695e-6, [1e-8, 1e-4], 'r1'),
-                  Parameter(1.6026, [1, 2], 'nr1')]
-
-    def make_scatterer(x0, x1, y0, y1, z0, z1, r0, r1, nr0, nr1):
-        s = Spheres([
-                Sphere(center = (x0, y0, z0), r=r0, n = nr0+1e-5j),
-                Sphere(center = (x1, y1, z1), r=r1, n = nr1+1e-5j)])
-        return s
-
-    # initial guess
-    #s1 = Sphere(n=1.6026+1e-5j, r = .6856e-6,
-    #            center=(1.64155e-05, 1.7247e-05, 20.582e-6))
-    #s2 = Sphere(n=1.6026+1e-5j, r = .695e-6,
-    #            center=(1.758e-05, 1.753e-05, 21.2698e-6))
-    #sc = Spheres([s1, s2])
-    #alpha = 0.99
-
-    #lb1 = Sphere(1+1e-5j, 1e-8, 0, 0, 0)
-    #ub1 = Sphere(2+1e-5j, 1e-5, 1e-4, 1e-4, 1e-4)
-    #step1 = Sphere(1e-4+1e-4j, 1e-8, 0, 0, 0)
-    #lb = Spheres([lb1, lb1]), .1
-    #ub = Spheres([ub1, ub1]), 1
-    #step = Spheres([step1, step1]), 0
-
-    model = Model(parameters, Multisphere, make_scatterer=make_scatterer, alpha
-    = Parameter(.99, [.1, 1.0], 'alpha'))
-    result = fit(model, holo)
-    print result.scatterer
-
-    gold = np.array([1.642e-5, 1.725e-5, 2.058e-5, 1e-5, 1.603, 6.857e-7,
-                     1.758e-5, 1.753e-5, 2.127e-5, 1e-5, 1.603,
-                     6.964e-7])
-    gold_alpha = 1.0
-
-    assert_parameters_allclose(result.scatterer, gold, rtol=1e-2)
-    # TODO: This test fails, alpha comes back as .9899..., where did
-    # the gold come from?
-    assert_approx_equal(result.alpha, gold_alpha, significant=2)
-
-
-@nottest
 @attr('fast')
 def test_serialization():
     par_s = Sphere(center = (par(.567e-5, [0, 1e-5]), par(.576e-6, [0, 1e-5]),
@@ -300,11 +192,11 @@ def test_serialization():
 
     alpha = par(.6, [.1, 1], 'alpha')
 
-    schema = ImageSchema(shape = 100, spacing = .1151e-6, optics = Optics(.66e-6, 1.33))
+    schema = ImageSchema(shape = 100, spacing = .1151e-6, optics = Optics(.66e-6, 1.33, polarization=(1,0)))
 
-    model = Model(par_s, Mie.calc_holo, alpha=alpha)
+    model = Model(par_s, calc_func=calc_holo, medium_index=schema.optics.index, wavelen=schema.optics.wavelen, optics=schema.optics, alpha=alpha)
 
-    holo = Mie.calc_holo(model.scatterer.guess, schema, model.alpha.guess)
+    holo = calc_holo(model.scatterer.guess, medium_index=schema.optics.index, locations=schema, wavelen=schema.optics.wavelen, optics=schema.optics, scaling=model.alpha.guess)
 
     result = fit(model, holo)
 
@@ -316,35 +208,6 @@ def test_serialization():
     loaded = load(temp)
 
     assert_obj_close(result, loaded, context = 'serialized_result')
-
-# TODO: disabled because it has gotten out of date and is slow, figure out
-# something that will finish faster.
-@nottest
-@attr('slow')
-def test_dda_fit():
-    s = Sphere(n = 1.59, r = .2, center = (5, 5, 5))
-    o = Optics(wavelen = .66, index=1.33, pixel_scale=.1)
-
-    schema = ImageSchema(optics = o, shape = 100)
-
-    h = Mie.calc_holo(s, schema)
-
-    def make_scatterer(r, x, y, z):
-        local_s = Sphere(r = r, center = (x, y, z))
-        return Scatterer(local_s.indicators, n = s.n)
-
-    parameters = [par(.18, [.1, .3], name='r', step=.1), par(5, [4, 6], 'x'),
-                  par(5, [4,6], 'y'), par(5.2, [4, 6], 'z')]
-
-    p = Parametrization(make_scatterer, parameters)
-
-    model = Model(p, DDA.calc_holo)
-
-    res = fit(model, h)
-
-    assert_parameters_allclose(res.parameters, dict([('r',
-    0.2003609439787491), ('x', 5.0128083665603995), ('y', 5.0125252883133617),
-    ('z', 4.9775097284878775)]), rtol=1e-3)
 
 
 def test_integer_correctness():
@@ -380,8 +243,6 @@ def test_fit_complex_parameter():
         # TODO: all variables required, seems like a silly kluge
         def silly_function(theta):
             return theta * sph.r + sph.n.real * theta **2  + 2. * sph.n.imag
-        #import pdb
-        #pdb.set_trace()
         return Marray(np.array([silly_function(theta) for theta, phi in
                                 schema.positions.theta_phi()]),
                       **schema._dict)

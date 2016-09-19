@@ -45,8 +45,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'HoloPy'
-copyright = u'2011-2013, Manoharan Lab, Harvard University'
+project = 'HoloPy'
+copyright = '2011-2013, Manoharan Lab, Harvard University'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -187,8 +187,8 @@ htmlhelp_basename = 'holopydoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'holopy.tex', u'holopy Documentation',
-   u'Manoharan Lab, Harvard University', 'manual'),
+  ('index', 'holopy.tex', 'holopy Documentation',
+   'Manoharan Lab, Harvard University', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

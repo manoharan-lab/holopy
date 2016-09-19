@@ -24,7 +24,7 @@ or detrending
 .. moduleauthor:: Tom G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 """
-from __future__ import division
+
 
 from ..errors import BadImage
 
@@ -107,6 +107,6 @@ def zero_filter(image):
             padded_im = np.ones((image.shape[0]+2, image.shape[1]+2)) * im_avg
             padded_im[1:-1, 1:-1] = image
             output[row, col] = np.sum(padded_im[row:row+3, col:col+3]) / 8.
-        print 'Pixel with value 0 reset to nearest neighbor average'
+        print('Pixel with value 0 reset to nearest neighbor average')
 
     return output

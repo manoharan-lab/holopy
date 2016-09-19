@@ -22,7 +22,7 @@ of third party minimizers.
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
-from __future__ import division
+
 
 import numpy as np
 from ..core.holopy_object import HoloPyObject
@@ -122,7 +122,7 @@ class Nmpfit(Minimizer):
                                                     "parameters")
             # Check for other allowed parinfo keys here: see nmpfit docs
             allowed_keys = ['step', 'mpside', 'mpmaxstep']
-            for key, value in par.kwargs.iteritems():
+            for key, value in par.kwargs.items():
                 if key in allowed_keys:
                     if key == 'mpside':
                         d[key] = value

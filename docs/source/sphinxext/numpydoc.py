@@ -1,6 +1,7 @@
 import os, re, pydoc
-from docscrape_sphinx import SphinxDocString, SphinxClassDoc, SphinxFunctionDoc
+from .docscrape_sphinx import SphinxDocString, SphinxClassDoc, SphinxFunctionDoc
 import inspect
+import collections
 
 def mangle_docstrings(app, what, name, obj, options, lines,
                       reference_offset=[0]):
@@ -26,7 +27,7 @@ def mangle_docstrings(app, what, name, obj, options, lines,
             try:
                 references.append(int(l[len('.. ['):l.index(']')]))
             except ValueError:
-                print "WARNING: invalid reference in %s docstring" % name
+                print("WARNING: invalid reference in %s docstring" % name)
 
     # Start renaming from the biggest number, otherwise we may
     # overwrite references.
@@ -48,7 +49,7 @@ def get_doc_object(obj, what=None):
             what = 'class'
         elif inspect.ismodule(obj):
             what = 'module'
-        elif callable(obj):
+        elif isinstance(obj, collections.Callable):
             what = 'function'
         else:
             what = 'object'
@@ -65,7 +66,7 @@ def mangle_signature(app, what, name, obj, options, sig, retann):
         'initializes x; see ' in pydoc.getdoc(obj.__init__)):
         return '', ''
 
-    if not (callable(obj) or hasattr(obj, '__argspec_is_invalid_')): return
+    if not (isinstance(obj, collections.Callable) or hasattr(obj, '__argspec_is_invalid_')): return
     if not hasattr(obj, '__doc__'): return
 
     doc = SphinxDocString(pydoc.getdoc(obj))
@@ -81,7 +82,7 @@ def initialize(app):
 
     fn = app.config.numpydoc_phantom_import_file
     if (fn and os.path.isfile(fn)):
-        print "[numpydoc] Phantom importing modules from", fn, "..."
+        print("[numpydoc] Phantom importing modules from", fn, "...")
         import_phantom_module(fn)
 
 def setup(app):
@@ -129,7 +130,7 @@ def autosummary_directive(dirname, arguments, options, content, lineno,
 
     docnames = []
     doctitles = {}
-    for name in titles.keys():
+    for name in list(titles.keys()):
         docname = 'generated/' + name
         doctitles[docname] = ""
         doctitles[docname + '.xhtml'] = ""
@@ -258,7 +259,7 @@ def _import_by_name(name):
         name_parts = name.split('.')
         last_j = 0
         modname = None
-        for j in reversed(range(1, len(name_parts)+1)):
+        for j in reversed(list(range(1, len(name_parts)+1))):
             last_j = j
             modname = '.'.join(name_parts[:j])
             try:
@@ -275,7 +276,7 @@ def _import_by_name(name):
             return obj
         else:
             return sys.modules[modname]
-    except (ValueError, ImportError, AttributeError, KeyError), e:
+    except (ValueError, ImportError, AttributeError, KeyError) as e:
         raise ImportError(e)
 
 #------------------------------------------------------------------------------
@@ -315,7 +316,7 @@ def monkeypatch_sphinx_ext_autodoc():
     if sphinx.ext.autodoc.format_signature is our_format_signature:
         return
 
-    print "[numpydoc] Monkeypatching sphinx.ext.autodoc ..."
+    print("[numpydoc] Monkeypatching sphinx.ext.autodoc ...")
     _original_format_signature = sphinx.ext.autodoc.format_signature
     sphinx.ext.autodoc.format_signature = our_format_signature
 
@@ -431,7 +432,7 @@ def import_phantom_module(xml_file):
                 doc = "%s%s\n\n%s" % (funcname, argspec, doc)
             obj = lambda: 0
             obj.__argspec_is_invalid_ = True
-            obj.func_name = funcname
+            obj.__name__ = funcname
             obj.__name__ = name
             obj.__doc__ = doc
             if inspect.isclass(object_cache[parent]):

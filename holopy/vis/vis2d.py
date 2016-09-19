@@ -21,7 +21,7 @@ New custom display functions for holograms and reconstructions.
 
 .. moduleauthor:: Tom Dimduk <tdimiduk@physics.harvard.edu>
 """
-from __future__ import division
+
 
 import numpy as np
 from ..core.marray import squeeze
@@ -111,9 +111,9 @@ class plotter:
         if event.ydata is not None and event.xdata is not None:
             x, y = np.array((event.ydata, event.xdata))
             if getattr(self.im, 'spacing', None) is not None:
-                print("{0}, {1}".format(self.pixel(x, y), self.location(x, y)))
+                print(("{0}, {1}".format(self.pixel(x, y), self.location(x, y))))
             else:
-                print(self.pixel(x, y))
+                print((self.pixel(x, y)))
             import sys; sys.stdout.flush()
 
 

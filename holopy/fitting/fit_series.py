@@ -22,7 +22,7 @@ Routine for fitting a time series of holograms to an exact solution
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 
 """
-from __future__ import division
+
 
 import warnings
 
@@ -69,7 +69,7 @@ def update_all(model, fitted_result):
 
 def _get_first(x):
     if isinstance(x, types.GeneratorType):
-        return x.next()
+        return next(x)
     if isinstance(x, list):
         return x[0]
     else:
@@ -125,7 +125,7 @@ def fit_series(model, data, data_optics=None, data_spacing=None,
 
     allresults = []
 
-    if isinstance(bg, basestring):
+    if isinstance(bg, str):
         bg = load(bg, spacing=data_spacing, optics=data_optis)
 
     #to allow running without saving output
@@ -190,7 +190,7 @@ def series_guess(model, data, data_optics=None, data_spacing=None,
     guess : marray (like data[0])
         The initial guess that would be used for fitting data[0] in fit_series
     """
-    if isinstance(bg, basestring):
+    if isinstance(bg, str):
         bg = load(bg, spacing=data_spacing, optics=data_optics)
         if not isinstance(frame, Image):
             frame = load(frame, spacing=data_spacing, optics=data_optics)
@@ -288,7 +288,7 @@ def series_preprocess_data(model, data, data_optics=None, data_spacing=None,
     guess : marray (like data[0])
         The initial guess that would be used for fitting data[0] in fit_series
     """
-    if isinstance(bg, basestring):
+    if isinstance(bg, str):
         bg = load(bg, spacing=data_spacing, optics=data_optics)
     frame = _get_first(data)
     if not isinstance(frame, Image):

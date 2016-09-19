@@ -24,10 +24,10 @@ as Clusters.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimidusk@physics.harvard.edu>
 '''
-from __future__ import division
+
 
 from .scatterer import Scatterer, Indicators
-import scatterer
+from . import scatterer
 
 from .sphere import Sphere
 from .composite import Scatterers
@@ -38,4 +38,4 @@ from .capsule import Capsule
 from .cylinder import Cylinder
 from .bisphere import Bisphere
 from .sphere_builtin import Sphere_builtin
-from csg import Union, Difference, Intersection
+from .csg import Union, Difference, Intersection

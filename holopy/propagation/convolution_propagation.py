@@ -22,7 +22,7 @@ Code to propagate objects/waves using scattering models.
 .. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 """
-from __future__ import division
+
 
 import numpy as np
 from ..core.math import fft, ifft

@@ -26,13 +26,10 @@ calc_intensity and calc_holo, based on subclass's calc_field
 
 import numpy as np
 from warnings import warn
-from ...core.marray import Image, VectorGrid, VectorSchema, dict_without, make_vector_schema
-from holopy.core.helpers import is_none
-from ...core import Optics
-from ...core.holopy_object import HoloPyObject
-from ..binding_method import binding, finish_binding
-from ..scatterer import Sphere, Scatterers
-from ..errors import NoCenter, TheoryNotCompatibleError
+from ...core.marray import make_vector_schema
+from holopy.core.holopy_object import HoloPyObject
+from ..scatterer import Scatterers, Sphere
+from ..errors import TheoryNotCompatibleError, NoCenter
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -100,7 +97,7 @@ class FortranTheory(ScatteringTheory):
     def _calc_field(self, scatterer, schema):
         optics=schema.optics
         def get_field(s):
-            if isinstance(scatterer,Sphere) and is_none(scatterer.center):
+            if isinstance(scatterer,Sphere) and scatterer.center is None:
                 raise NoCenter("Center is required for hologram calculation of a sphere")
 
             positions = schema.positions.kr_theta_phi(s.center, optics.wavevec)

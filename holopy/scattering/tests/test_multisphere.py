@@ -20,7 +20,7 @@ Test T-matrix sphere cluster calculations and python interface.
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
-from __future__ import division
+
 
 import sys
 import os
@@ -152,7 +152,7 @@ def test_invalid():
 
 def test_overlap():
     # should raise a warning
-    with warnings.catch_warnings(True) as w:
+    with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         sc = Spheres(scatterers=[Sphere(center=[3e-6, 3e-6, 10e-6],
                                            n=1.59, r=.5e-6),
@@ -164,7 +164,7 @@ def test_overlap():
     assert_raises(MultisphereExpansionNaN, calc_holo, schema, sc, index, wavelen, xpolarization)
 
     # but it should succeed with a small overlap, after raising a warning
-    with warnings.catch_warnings(True) as w:
+    with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         sc = Spheres(scatterers=[Sphere(center=[3e-6, 3e-6, 10e-6],
                                            n=1.59, r=.5e-6),
@@ -220,6 +220,6 @@ def test_farfield():
 def test_wrap_sphere():
     sphere=Sphere(center=[7.1e-6, 7e-6, 10e-6],n=1.5811+1e-4j, r=5e-07)
     sphere_w=Spheres([sphere])
-    holo=calc_holo(schema, sphere, theory=Multisphere,scaling=.6)
-    holo_w=calc_holo(schema, sphere_w, theory=Multisphere,scaling=.6)
+    holo=calc_holo(schema, sphere, theory=Multisphere, scaling=.6)
+    holo_w=calc_holo(schema, sphere_w, theory=Multisphere, scaling=.6)
     assert_equal(holo,holo_w)

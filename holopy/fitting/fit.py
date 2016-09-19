@@ -23,7 +23,7 @@ Routines for fitting a hologram to an exact solution
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 
 """
-from __future__ import division
+
 
 import warnings
 import time

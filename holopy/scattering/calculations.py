@@ -43,7 +43,6 @@ def check_schema(schema):
         raise MissingParameter("polarization")
     return schema
 
-
 def interpret_theory(scatterer,theory='auto'):
     if isinstance(theory, basestring) and theory == 'auto':
         theory = determine_theory(scatterer)

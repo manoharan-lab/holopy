@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
 # Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 #
@@ -20,17 +20,17 @@ from subprocess import call
 import sys
 import multiprocessing
 
-t = ['nosetests', '-a', '!slow']
+t = ['nose2']
 
 if len(sys.argv) > 1 and sys.argv[1] == 'coverage':
-    t.extend(['--with-coverage', '--cover-package=holopy'])
+    t.extend(['-C', '--coverage', 'holopy'])
 else:
-    t.extend(['--processes={0}'.format(multiprocessing.cpu_count())] +
+    t.extend(['--plugin=nose2.plugins.mp', '-N', '{}'.format(multiprocessing.cpu_count())] +
              sys.argv[2:])
 
-print(' '.join(t))
+print((' '.join(t)))
 call(t)
 
 doctest = ['sphinx-build', '-b', 'doctest', './docs/source', './docs/build']
-print(' '.join(doctest))
+print((' '.join(doctest)))
 call(doctest)

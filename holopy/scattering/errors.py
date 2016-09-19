@@ -21,10 +21,9 @@ other exceptions in other parts of HoloPy to keep things modular.
 
 .. moduleauthor :: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 """
-from __future__ import division
+
 
 import warnings
-import exceptions
 
 class InvalidScatterer(Exception):
     def __init__(self, scatterer, message):
@@ -32,7 +31,7 @@ class InvalidScatterer(Exception):
         super(InvalidScatterer, self).__init__(message)
 
 
-class OverlapWarning(exceptions. UserWarning):
+class OverlapWarning(UserWarning):
     def __init__(self, scatterer, overlaps):
         self.scatterer = scatterer
         self.overlaps = overlaps

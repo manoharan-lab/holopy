@@ -1,16 +1,18 @@
-from __future__ import division
+
 
 from holopy.fitting.errors import ParameterSpecificationError
 from holopy.fitting.model import Model
 from holopy.core.holopy_object import HoloPyObject
-import prior
+from . import prior
 from holopy.core.marray import make_subset_data, Image
 
 from emcee import PTSampler, EnsembleSampler
+import emcee
 import h5py
 import yaml
 import pandas as pd
 
+import warnings
 from time import time
 import numpy as np
 from matplotlib.ticker import MaxNLocator
@@ -40,7 +42,11 @@ class Emcee(HoloPyObject):
         return np.vstack([p.sample(size=(self.nwalkers)) for p in self.model.parameters]).T
 
     def make_sampler(self):
-        ens_samp=EnsembleSampler(self.nwalkers, len(list(self.model.parameters)), self.model.lnposterior, threads=self.threads, args=[self.data])
+        if self.threads is None:
+            threads = 1
+        else:
+            threads = self.threads
+        ens_samp=EnsembleSampler(self.nwalkers, len(list(self.model.parameters)), self.model.lnposterior, threads=threads, args=[self.data])
         if self.seed is not None:
             seed_state=np.random.mtrand.RandomState(self.seed).get_state()
             ens_samp.random_state=seed_state
@@ -53,7 +59,7 @@ class Emcee(HoloPyObject):
             p0 = self.make_guess()
 
         sampler.run_mcmc(p0, n_samples)
-        if self.threads is not None:
+        if sampler.pool is not None:
             sampler.pool.terminate()
             sampler.pool.join()
 
@@ -168,7 +174,7 @@ class SamplingResult(HoloPyObject):
             include_vars = self._names
         df = df.rename(columns={'center[0]': 'x', 'center[1]': 'y', 'center[2]': 'z' })
         df = df.iloc[:,[list(df.columns).index(v) for v in include_vars]]
-        xyz = [x for x in 'x', 'y', 'z' if x in df.columns]
+        xyz = [x for x in ('x', 'y', 'z') if x in df.columns]
         #xyz = [x for x in 'center[0]', 'center[1]', 'center[2]' if x in df.columns]
         xyz_enum = [(list(df.columns).index(v), v) for v in xyz]
         rest_enum = [(list(df.columns).index(v), v) for v in include_vars if v not in xyz]
@@ -287,16 +293,31 @@ class SamplingResult(HoloPyObject):
         if extra_uncertainty is None:
             extra_uncertainty = np.zeros(len(list(self._names)))
         return [prior.updated(*p) for p in
-                zip(self.model.parameters, self.values(), extra_uncertainty)]
+                zip(self.model.parameters, list(self.values()), extra_uncertainty)]
 
 
     def _interpret_thin(self, thin):
         if thin == 'acor':
-            thin = self.autocorrelation
+            try:
+                thin = self.autocorrelation
+            except emcee.autocorr.AutocorrError:
+                # we seem to need to change the warning filter here, we have
+                # warnings as errors set elsewhere in the tests but somehow we
+                # can't set it back in a test specifically, I think because the
+                # warning -> error inside an except clause causes more
+                # problems. So for now just manually set the warnings filter
+                # here. would probably be good to do something better here
+                # eventually -tgd 2016-09-16
+                with warnings.catch_warnings():
+                    warnings.simplefilter("always")
+                    warnings.warn("Chain is too short for autocorrelation thinning, using whole chain")
+                thin = 1
         elif thin is None:
             thin = 1
         if thin < 1:
             thin = 1
+        else:
+            thin = int(np.ceil(thin))
 
         return thin
 
@@ -390,7 +411,7 @@ class EmceeResult(SamplingResult):
         return {n: v for (n, v) in zip(self._names, self.most_probable_values())}
 
     def _repr_html_(self):
-        results = "{}".format(", ".join(["{}:{}".format(n, v._repr_latex_()) for n, v in zip(self._names, self.values())]))
+        results = "{}".format(", ".join(["{}:{}".format(n, v._repr_latex_()) for n, v in zip(self._names, list(self.values()))]))
         block = """<h4>{s.__class__.__name__}</h4> {results}
 {s.sampler.chain.shape[0]} walkers
 {s.n_steps} Steps
@@ -435,5 +456,5 @@ def timeseries(model, data, centered_subimage=False):
     results = []
     for frame in data:
         res = subset_tempering(model, frame)
-        results.append[res.values()]
+        results.append[list(res.values())]
         model = res.updated_priors()

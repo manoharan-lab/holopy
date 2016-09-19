@@ -26,7 +26,7 @@ ADDA (http://code.google.com/p/a-dda/) to do DDA calculations.
 #(values are too small), so we should probably nondimensionalize before talking
 #to adda.
 
-from __future__ import division
+
 
 import numpy as np
 import subprocess
@@ -199,7 +199,7 @@ class DDA(ScatteringTheory):
         n_domains = len(ns)
         if n_domains > 1:
             out = np.hstack((idx, vox[...,np.newaxis]))
-            outf.write("Nmat={0}\n".format(n_domains))
+            outf.write("Nmat={0}\n".format(n_domains).encode('utf-8'))
         else:
             out = idx
         np.savetxt(outf, out[np.nonzero(vox)], fmt='%d')
@@ -242,11 +242,12 @@ class DDA(ScatteringTheory):
         optics=schema.optics
         angles = calc_points[:,1:] * 180/np.pi
 
-        outf = file(os.path.join(temp_dir, 'scat_params.dat'), 'w')
+        outf = open(os.path.join(temp_dir, 'scat_params.dat'), 'wb')
+        
 
         # write the header on the scattering angles file
         header = ["global_type=pairs", "N={0}".format(len(angles)), "pairs="]
-        outf.write('\n'.join(header)+'\n')
+        outf.write(('\n'.join(header)+'\n').encode('utf-8'))
         # Now write all the angles
         np.savetxt(outf, angles)
         outf.close()
@@ -272,7 +273,7 @@ class DDA(ScatteringTheory):
         scat_matr = np.array([[s[:,1], s[:,2]], [s[:,3], s[:,0]]]).transpose()
 
         if self.keep_raw_calculations:
-            print("Raw calculations are in: {0}".format(temp_dir))
+            print(("Raw calculations are in: {0}".format(temp_dir)))
         else:
             shutil.rmtree(temp_dir)
 

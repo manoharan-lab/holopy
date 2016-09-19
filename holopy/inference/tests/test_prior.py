@@ -17,7 +17,7 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from __future__ import division
+
 
 from nose.tools import assert_raises, assert_equal
 import numpy as np

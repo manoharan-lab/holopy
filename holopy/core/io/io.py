@@ -25,8 +25,9 @@ import os
 import glob
 from warnings import warn
 import numpy as np
+from io import IOBase
 
-import serialize
+from holopy.core.io import serialize
 from holopy.core.io.image_file_io import load_image, save_image
 from holopy.core.marray import Image, arr_like
 from holopy.core.metadata import Optics, interpret_args
@@ -61,28 +62,26 @@ def load(inf, spacing = None, wavelen=None, index=None, polarization=None, optic
     obj : The object loaded, :class:`holopy.core.marray.Image`, or as loaded from yaml
 
     """
-    if isinstance(optics, (basestring, file)):
+    if isinstance(optics, (str, IOBase)):
         optics = serialize.load(optics)
 
+    loaded_yaml = False
     # attempt to load a holopy yaml file
     try:
         loaded = serialize.load(inf)
         if spacing is not None or wavelen is not None or index is not None or polarization is not None or optics is not None:
             warn("WARNING: If you are trying to overwrite hologram parameters, you must do so explicitly. Extra arguments are being ignored.") 
-        return loaded
-    except (serialize.ReaderError, AttributeError):
+        loaded_yaml = True
+    except (serialize.ReaderError, UnicodeDecodeError):
         pass
         # If that fails, we go on and read images
 
-    loaded_files = []
-    for inf in _ensure_array(inf):
+    if not loaded_yaml:
         loaded = load_image(inf, spacing=spacing, optics=optics, channel=channel)
+        loaded = interpret_args(image, index, wavelen, polarization)
 
-        loaded_files.append(loaded)
+    return loaded
 
-    image = Image(np.dstack(loaded_files).squeeze(), spacing=spacing)
-    image = interpret_args(image, index, wavelen, polarization, optics)
-    return image
 
 def save(outf, obj):
     """
@@ -106,7 +105,7 @@ def save(outf, obj):
     binary array is very slow for large arrays.  HoloPy can read these 'yaml'
     files, but any other yaml implementation will get confused.
     """
-    if isinstance(outf, basestring):
+    if isinstance(outf, str):
         filename, ext = os.path.splitext(outf)
         if ext in ['.tif', '.TIF', '.tiff', '.TIFF']:
             save_image(outf, obj)

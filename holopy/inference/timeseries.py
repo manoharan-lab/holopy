@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import division
+
 
 from holopy.fitting.parameter import Parameter
 from holopy.inference.noise_model import AlphaModel
@@ -96,7 +96,7 @@ class TimeSeriesAlphaModel(AlphaModel):
             else:
                 const_pars[par.name] = par
         models = {}
-        for frame in frames.keys():
+        for frame in list(frames.keys()):
             d = dict(const_pars, **frames[frame])
             alpha = d.pop('alpha', self.alpha)
             s = model.scatterer.make_from(d)

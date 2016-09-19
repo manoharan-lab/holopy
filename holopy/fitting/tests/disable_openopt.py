@@ -115,8 +115,8 @@ def residual(x):
     derivates = holo - calculated
     resid = derivates.ravel()
     # print sum of squares and param values for debugging
-    print "sum of squares: ", np.dot(resid, resid)
-    print "params: ", x
+    print("sum of squares: ", np.dot(resid, resid))
+    print("params: ", x)
 
     # use np.dot(resid, resid) with solvers in NLP or GLP classes.
     # use return resid with solvers in NLLSP
