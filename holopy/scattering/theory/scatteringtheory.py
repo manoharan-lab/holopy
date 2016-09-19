@@ -45,7 +45,7 @@ class ScatteringTheory(HoloPyObject):
     VectorGrid electric field.
     """
 
-    def _calc_field(self, scatterer, schema, ):
+    def _calc_field(self, scatterer, schema):
         """
         Calculate fields.  Implemented in derived classes only.
 
