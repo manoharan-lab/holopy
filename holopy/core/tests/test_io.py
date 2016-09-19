@@ -70,42 +70,6 @@ def test_image_io():
     loaded = load(filename)
     assert_obj_close(loaded, holo)
 
-<<<<<<< HEAD
-=======
-    f = get_example_data_path('image0001.yaml')
-    spacing = .1
-    optics = Optics(.66, 1.33, (1,0))
-    with warnings.catch_warnings(record =True) as w:
-        warnings.simplefilter('always')
-        h = load(f, spacing = spacing, optics = optics)
-        assert_obj_close(h.optics, optics)
-        assert_equal(h.spacing, spacing)
-        assert_equal(len(w), 1)
-        assert "Overriding spacing and optics of loaded yaml" in str(w[-1].message)
-
-
-    with warnings.catch_warnings(record =True) as w:
-        warnings.simplefilter('always')
-        h = load(f, optics = optics)
-        assert_obj_close(h.optics, optics)
-        assert_equal(h.spacing, holo.spacing)
-        assert_equal(len(w), 1)
-        assert ("WARNING: overriding optics of loaded yaml without "
-                "overriding spacing, this is probably incorrect." in
-                str(w[-1].message))
-
-
-    with warnings.catch_warnings(record =True) as w:
-        warnings.simplefilter('always')
-        h = load(f, spacing = spacing)
-        assert_obj_close(h.optics, holo.optics)
-        assert_equal(h.spacing, spacing)
-        assert_equal(len(w), 1)
-        assert ("WARNING: overriding spacing of loaded yaml without "
-                "overriding optics, this is probably incorrect." in
-                str(w[-1].message))
-
->>>>>>> 3fd3c735d0fec24fa1761fe0ff6aca4e0e32479e
     shutil.rmtree(t)
 
 def test_non_tiff():
