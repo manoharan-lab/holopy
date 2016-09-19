@@ -63,18 +63,12 @@ def load(inf, spacing = None, wavelen=None, index=None, polarization=None, optic
     """
     if isinstance(optics, (basestring, file)):
         optics = serialize.load(optics)
-        # In the past We allowed optics yamls to be written without an !Optics
-        # tag, so for that backwards compatability, we attempt to turn an
-        # anonymous dict into an Optics
-        if isinstance(optics, dict):
-            optics = Optics(**optics)
-
 
     # attempt to load a holopy yaml file
     try:
         loaded = serialize.load(inf)
-        #if loading a hologram from a yaml file and trying to overwrite variables, you
-        #should have to do so explicitly after the fact. Extra arguments when reloading are ignored.
+        if spacing is not None or wavelen is not None or index is not None or polarization is not None or optics is not None:
+            warn("WARNING: If you are trying to overwrite hologram parameters, you must do so explicitly. Extra arguments are being ignored.") 
         return loaded
     except (serialize.ReaderError, AttributeError):
         pass
