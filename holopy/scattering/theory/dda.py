@@ -236,12 +236,10 @@ class DDA(ScatteringTheory):
     def required_spacing(cls_self, optics, n):
         return optics.med_wavelen / cls_self._dpl(optics, n)
 
-    def _calc_scat_matrix(self, scatterer, schema, optics, calc_points=None):
+    def _calc_scat_matrix(self, scatterer, schema, calc_points=None):
         temp_dir = tempfile.mkdtemp()
-
-        if not calc_points is None:
-            calc_points = schema.positions.kr_theta_phi(scatterer.location, optics.wavevec)
-
+        
+        optics=schema.optics
         angles = calc_points[:,1:] * 180/np.pi
 
         outf = open(os.path.join(temp_dir, 'scat_params.dat'), 'wb')
@@ -281,9 +279,10 @@ class DDA(ScatteringTheory):
 
         return scat_matr
 
-    def _calc_field(self, scatterer, schema, optics):
+    def _calc_field(self, scatterer, schema):
+        optics.schema.optics
         calc_points = schema.positions.kr_theta_phi(scatterer.location, optics.wavevec)
-        scat_matr = self._calc_scat_matrix(scatterer, schema, optics, calc_points)
+        scat_matr = self._calc_scat_matrix(scatterer, schema, calc_points)
         fields = np.zeros_like(calc_points, dtype = scat_matr.dtype)
 
         for i, point in enumerate(calc_points):

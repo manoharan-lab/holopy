@@ -183,6 +183,29 @@ class Schema(HoloPyObject):
     def positions(self, val):
         self._positions = val
 
+    @property
+    def index(self):
+        return self.optics.index
+
+    @index.setter
+    def index(self, val):
+        self.optics.index = val
+
+    @property
+    def wavelen(self):
+        return self.optics.wavelen
+    
+    @wavelen.setter
+    def polarization(self, val):
+        self.optics.wavelen = val
+
+    @property
+    def polarization(self):
+        return self. optics.polarization
+
+    @polarization.setter
+    def polarization(self, val):
+        self.optics.polarization = val
 
     # TODO: need equivalents for set_metadata or to rewrite other code so it
     # doesn't need it.
@@ -302,6 +325,11 @@ class Marray(np.ndarray, Schema):
         self.__dict__ = state[-1]  # Set the info attribute
         # Call the parent's __setstate__ with the other tuple elements.
         super(Marray, self).__setstate__(state[0:-1])
+
+    def like_me(self, filter_none=True, **kwargs):
+        if filter_none:
+            kwargs={key: val for key, val in kwargs.items() if val is not None}
+        return self.__class__(self, **dict(self._dict, **kwargs))
 
 
 class RegularGridSchema(Schema):

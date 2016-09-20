@@ -23,39 +23,35 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 from holopy.core.holopy_object import SerializableMetaclass
-from holopy.core import Optics, Schema, Image, VectorGrid
+from holopy.core import Optics, Schema, Image, VectorGrid, interpret_args
 from holopy.core.helpers import dict_without
 from holopy.core.helpers import is_none
 from holopy.scattering.scatterer import Sphere, Spheres
 from holopy.scattering.theory import Mie, Multisphere, dda
-from holopy.scattering.errors import AutoTheoryFailed, NoCenter
+from holopy.scattering.errors import AutoTheoryFailed, MissingParameter
 
 import numpy as np
 
-def interpret_args(scatterer, theory='auto', optics=None, locations=None, wavelen=None, medium_index=None):
+def check_schema(schema):
+    if schema.optics.wavelen is None:
+        raise MissingParameter("wavelength")
+    if schema.optics.index is None:
+        raise MissingParameter("medium refractive index")
+    if schema.optics.polarization is None:
+        raise MissingParameter("polarization")
+    elif sum(schema.optics.polarization) is None:
+        raise MissingParameter("polarization")
+    return schema
+
+def interpret_theory(scatterer,theory='auto'):
     if isinstance(theory, str) and theory == 'auto':
-        theory = determine_theory(scatterer, locations)
+        theory = determine_theory(scatterer)
     if isinstance(theory, SerializableMetaclass):
         theory = theory()
-    if optics is None:
-        optics = Optics(wavelen=wavelen, index=medium_index)
-    else:
-        d = {}
-        if wavelen is not None:
-            d['wavelen'] = wavelen
-        if medium_index is not None:
-            d['index'] = medium_index
-        # TODO: warn if we are overwriting wavelen or index in optics
-        optics = optics.like_me(**d)
-    
-    if locations is None:
-        return theory, optics
+    return theory
 
-    if not isinstance(locations, Schema):
-        locations = Schema(positions=locations)
-    return theory, locations, optics
 
-def determine_theory(scatterer, locations=None):
+def determine_theory(scatterer):
     if isinstance(scatterer, Sphere):
         return Mie()
     elif isinstance(scatterer, Spheres):
@@ -63,9 +59,9 @@ def determine_theory(scatterer, locations=None):
     elif isinstance(scatterer, dda.scatterers_handled):
         return dda.DDA()
     else:
-        raise AutoTheoryFailed(scatterer, locations)
+        raise AutoTheoryFailed(scatterer)
 
-def calc_intensity(scatterer, medium_index, locations, wavelen, optics=None, theory='auto'):
+def calc_intensity(schema, scatterer, medium_index=None, wavelen=None, polarization=None, theory='auto', optics=None):
     """
     Calculate intensity at a location or set of locations
 
@@ -92,11 +88,11 @@ def calc_intensity(scatterer, medium_index, locations, wavelen, optics=None, the
     inten : :class:`.Image`
         scattered intensity
     """
-    field = calc_field(scatterer, medium_index, locations, wavelen, optics, theory)
-    return (abs(field*(1-locations.normals))**2).sum(-1)
+    field = calc_field(schema, scatterer, medium_index, wavelen, polarization, theory, optics)
+    return (abs(field*(1-schema.normals))**2).sum(-1)
 
 
-def calc_holo(scatterer, medium_index, locations, wavelen, optics=None, theory='auto', scaling=1.0):
+def calc_holo(schema, scatterer, medium_index=None, wavelen=None, polarization=None, theory='auto', optics=None, scaling=1.0):
     """
     Calculate hologram formed by interference between scattered
     fields and a reference wave
@@ -126,10 +122,12 @@ def calc_holo(scatterer, medium_index, locations, wavelen, optics=None, theory='
     holo : :class:`.Image` object
         Calculated hologram from the given distribution of spheres
     """
-    scat = calc_field(scatterer, medium_index, locations, wavelen, optics=optics, theory=theory)
-    return scattered_field_to_hologram(scat*scaling, optics.polarization, locations.normals)
+    schema = check_schema(interpret_args(schema, medium_index, wavelen, polarization, optics))
+    theory = interpret_theory(scatterer,theory)
+    scat = theory._calc_field(scatterer, schema)
+    return scattered_field_to_hologram(scat*scaling, schema.optics.polarization, schema.normals)
 
-def calc_cross_sections(scatterer, medium_index, wavelen, optics=None, theory='auto'):
+def calc_cross_sections(scatterer, medium_index=None, wavelen=None, polarization=None, theory='auto', optics=None):
     """
     Calculate scattering, absorption, and extinction
     cross sections, and asymmetry parameter <cos \theta>.
@@ -157,10 +155,11 @@ def calc_cross_sections(scatterer, medium_index, wavelen, optics=None, theory='a
         Dimensional scattering, absorption, and extinction
         cross sections, and <cos theta>
     """
-    theory, optics = interpret_args(scatterer, theory, optics, medium_index=medium_index, wavelen=wavelen)
-    return theory._calc_cross_sections(scatterer, optics)
+    schema = check_schema(interpret_args(index=medium_index, wavelen=wavelen, polarization=polarization, optics=optics))
+    theory = interpret_theory(scatterer,theory)
+    return theory._calc_cross_sections(scatterer, schema.optics)
 
-def calc_scat_matrix(scatterer, medium_index, locations, wavelen, optics=None, theory='auto'):
+def calc_scat_matrix(schema, scatterer, medium_index=None, wavelen=None, polarization=None, theory='auto', optics=None):
     """
     Compute farfield scattering matricies for scatterer
 
@@ -187,10 +186,11 @@ def calc_scat_matrix(scatterer, medium_index, locations, wavelen, optics=None, t
         Scattering matricies at specified positions
 
     """
-    theory, locations, optics = interpret_args(scatterer, theory, optics, locations, medium_index=medium_index, wavelen=wavelen)
-    return theory._calc_scat_matrix(scatterer, locations, optics)
+    schema = check_schema(interpret_args(schema, medium_index, wavelen, polarization, optics))
+    theory = interpret_theory(scatterer,theory)
+    return theory._calc_scat_matrix(scatterer, schema)
 
-def calc_field(scatterer, medium_index, locations, wavelen, optics=None, theory='auto'):
+def calc_field(schema, scatterer, medium_index=None, wavelen=None, polarization=None, theory='auto', optics=None):
     """
     Calculate hologram formed by interference between scattered
     fields and a reference wave
@@ -220,13 +220,9 @@ def calc_field(scatterer, medium_index, locations, wavelen, optics=None, theory=
     e_field : :class:`.Vector` object
         Calculated hologram from the given distribution of spheres
     """
-    if isinstance(scatterer, Sphere) and is_none(scatterer.center):
-        raise NoCenter("Center is required for hologram calculation of a sphere")
-    else:
-        pass
-
-    theory, locations, optics = interpret_args(scatterer, theory, optics, locations, medium_index=medium_index, wavelen=wavelen)
-    return theory._calc_field(scatterer, locations, optics)
+    schema = check_schema(interpret_args(schema, medium_index, wavelen, polarization, optics))
+    theory = interpret_theory(scatterer,theory)
+    return theory._calc_field(scatterer, schema)
 
 # this is pulled out separate from the calc_holo method because occasionally you
 # want to turn prepared  e_fields into holograms directly
@@ -246,6 +242,7 @@ def scattered_field_to_hologram(scat, ref, detector_normal = (0, 0, 1)):
         (defaults to z hat, a detector in the x, y plane)
     """
     shape = _field_scalar_shape(scat)
+        
     if isinstance(ref, Optics):
         # add the z component to polarization and adjust the shape so that it is
         # broadcast correctly
@@ -263,4 +260,5 @@ def _field_scalar_shape(e):
     # this is a clever hack with list arithmetic to get [1, 3] or [1,
     # 1, 3] as needed
     return [1]*(e.ndim-1) + [3]
+
 

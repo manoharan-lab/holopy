@@ -95,7 +95,7 @@ def residfunct(p, fjac = None):
 
     sphere = Sphere(n=p[0]+n_particle_imag*1j, r=p[1], center = p[2:5])
     thry = Mie(False)
-    calculated = calc_holo(sphere, holo.optics.index, holo, holo.optics.wavelen, holo.optics, scaling=p[5], theory=thry)
+    calculated = calc_holo(holo, sphere, scaling=p[5], theory=thry)
 
     status = 0
     derivates = holo - calculated

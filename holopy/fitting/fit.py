@@ -227,7 +227,7 @@ class CostComputer(HoloPyObject):
             return np.ones_like(self.schema) * np.inf
 
         try:
-            return self.model.calc_func(s, medium_index=self.model.medium_index, locations=self.schema, wavelen=self.model.wavelen, optics=self.model.optics, scaling=self.model.get_alpha(pars), theory=self.model.theory)
+            return self.model.calc_func(schema=self.schema, scatterer=s, medium_index=self.model.medium_index, wavelen=self.model.wavelen, optics=self.model.optics, scaling=self.model.get_alpha(pars), theory=self.model.theory)
         except MultisphereFieldNaN:
             return np.ones_like(self.schema) * np.inf
 

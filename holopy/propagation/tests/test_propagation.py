@@ -26,8 +26,7 @@ from ...core.tests.common import assert_obj_close, verify, get_example_data
 from holopy.scattering.calculations import calc_field
 
 def test_propagate_e_field():
-    e = calc_field(Sphere(1.59, .5, (5, 5, 5)), 1.33, 
-                              ImageSchema(100, .1, Optics(wavelen=.66, index=1.33, polarization=(1,0))), .66, Optics(polarization=(1, 0)), theory=Mie(False))
+    e = calc_field(ImageSchema(100,.1, Optics(wavelen=.66, index=1.33, polarization=(1,0))), Sphere(1.59, .5, (5, 5, 5)), theory=Mie(False))
     prop_e = propagate(e, 10)
     verify(prop_e, 'propagate_e_field')
 

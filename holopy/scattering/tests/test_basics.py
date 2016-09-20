@@ -40,7 +40,7 @@ def test_calc_field():
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
     thry = Mie(False)
-    f = calc_field(s, 1.33, t, .66, o, thry)
+    f = calc_field(t, s, 1.33, .66, theory=thry)
     assert_equal(t.optics, f.optics)
     assert_equal(t.spacing, f.spacing)
     assert_allclose(f, np.array([[[ -3.95866810e-01 +2.47924378e+00j,
@@ -63,7 +63,7 @@ def test_calc_holo():
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
     thry = Mie(False)
-    h = calc_holo(s, 1.33, t, .66, o, thry)
+    h = calc_holo(t, s, 1.33, .66, optics=o, theory=thry)
     assert_obj_close(h.positions, t.positions)
     assert_allclose(h, np.array([[ 6.51162661,  5.67743548],
                                  [ 5.63554802,  4.89856241]]))
@@ -73,6 +73,6 @@ def test_calc_intensity():
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
     thry = Mie(False)
-    i = calc_intensity(s, 1.33, t, .66, o, thry)
+    i = calc_intensity(t, s, 1.33, .66, optics=o, theory=thry)
     assert_allclose(i, np.array([[ 6.30336023,  5.65995739],
                                  [ 5.61505927,  5.04233591]]))

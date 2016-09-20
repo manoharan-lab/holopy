@@ -44,7 +44,7 @@ def test_csg_dda():
     st = s.translated(.03, 0, 0)
     pacman = Difference(s, st)
     sch = ImageSchema(10, .1, Optics(.66, 1.33, (0, 1)))
-    h = calc_holo(pacman, 1.33, sch, .66, Optics(polarization=(0, 1)))
+    h = calc_holo(sch,pacman, 1.33, .66, optics=Optics(polarization=(0, 1)))
     verify(h, 'dda_csg')
 
     hr = calc_holo(pacman.rotated(np.pi/2, 0, 0), 1.33, sch, .66, Optics(polarization=(0, 1)))

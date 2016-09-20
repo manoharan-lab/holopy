@@ -79,8 +79,12 @@ class ModelInputError(Exception):
 class NoCenter(Exception):
     pass
 
-class NoPolarization(Exception):
-    pass
+class MissingParameter(Exception):
+    def __init__(self, calc_name, parameter_name):
+        self.parameter_name = parameter_name
+    def __str__(self):
+        message= ("Calculation requires specification of " + self.parameter_name + ".")
+
 
 class MultisphereFieldNaN(UnrealizableScatterer):
     def __str__(self):
@@ -99,9 +103,8 @@ class ConvergenceFailureMultisphere(Exception):
                 "your scatterer is unphysical, or possibly just huge")
 
 class AutoTheoryFailed(Exception):
-    def __init__(self, scatterer, locations=None):
+    def __init__(self, scatterer):
         self.scatterer = scatterer
-        self.locations = locations
 
     def __str__(self):
         return ("Could not automatically determine a theory to compute scattering from scatterer: {}. You will have to manually specify a theory (or submit a bug if you think we should be able to tell what theory you need). ".format(self.scatterer))

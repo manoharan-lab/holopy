@@ -28,8 +28,8 @@ import numpy as np
 from warnings import warn
 from ...core.marray import make_vector_schema
 from holopy.core.holopy_object import HoloPyObject
-from ..scatterer import Scatterers
-from ..errors import TheoryNotCompatibleError
+from ..scatterer import Scatterers, Sphere
+from ..errors import TheoryNotCompatibleError, NoCenter
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -42,7 +42,7 @@ class ScatteringTheory(HoloPyObject):
     VectorGrid electric field.
     """
 
-    def _calc_field(self, scatterer, schema, ):
+    def _calc_field(self, scatterer, schema):
         """
         Calculate fields.  Implemented in derived classes only.
 
@@ -94,8 +94,12 @@ class ScatteringTheory(HoloPyObject):
 # Subclass of scattering theory, overrides functions that depend on array
 # ordering and handles the tranposes for sending values to/from fortran
 class FortranTheory(ScatteringTheory):
-    def _calc_field(self, scatterer, schema, optics):
+    def _calc_field(self, scatterer, schema):
+        optics=schema.optics
         def get_field(s):
+            if isinstance(scatterer,Sphere) and scatterer.center is None:
+                raise NoCenter("Center is required for hologram calculation of a sphere")
+
             positions = schema.positions.kr_theta_phi(s.center, optics.wavevec)
             field = np.vstack(self._raw_fields(positions.T, s, optics)).T
             phase = np.exp(-1j*np.pi*2*s.center[2] / optics.med_wavelen)

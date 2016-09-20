@@ -178,7 +178,7 @@ def test_n():
                       origin=[0.0, 0.0, 0.0])
 
     model = Model(sph, calc_holo, 1.33, .66, Optics(polarization=(1, 0)), alpha=1)
-    holo = calc_holo(model.scatterer.guess, 1.33, sch, .66, Optics(polarization=(1, 0)))
+    holo = calc_holo(sch, model.scatterer.guess, 1.33, .66, (1, 0))
     coster = CostComputer(holo, model, random_subset=.1)
     assert_allclose(coster.flattened_difference({'n' : .5}), 0)
 
@@ -196,7 +196,7 @@ def test_serialization():
 
     model = Model(par_s, calc_func=calc_holo, medium_index=schema.optics.index, wavelen=schema.optics.wavelen, optics=schema.optics, alpha=alpha)
 
-    holo = calc_holo(model.scatterer.guess, medium_index=schema.optics.index, locations=schema, wavelen=schema.optics.wavelen, optics=schema.optics, scaling=model.alpha.guess)
+    holo = calc_holo(schema, model.scatterer.guess, medium_index=schema.optics.index, wavelen=schema.optics.wavelen, optics=schema.optics, scaling=model.alpha.guess)
 
     result = fit(model, holo)
 
@@ -215,7 +215,7 @@ def test_integer_correctness():
     schema = ImageSchema(shape = 100, spacing = .1,
                          optics = Optics(wavelen = .660, index = 1.33, polarization = (1, 0)))
     s = Sphere(center = (10.2, 9.8, 10.3), r = .5, n = 1.58)
-    holo = calc_holo(s, 1.33, schema, .66, Optics(polarization=(1, 0)))
+    holo = calc_holo(schema, s, 1.33, .66, optics=Optics(polarization=(1, 0)))
 
     par_s = Sphere(center = (par(guess = 10, limit = [5,15]), par(10, [5, 15]), par(10, [5, 15])),
                    r = .5, n = 1.58)
@@ -238,8 +238,9 @@ def test_fit_complex_parameter():
 
     # use a Sphere with complex n
     # a fake scattering model
-    def scat_func(sph, locations, scaling = None, **kwargs):
-        # TODO: scaling kwarg required, seems like a silly kluge
+    def scat_func(schema, scatterer, medium_index=None, wavelen=None, optics=None, scaling=None, theory=None):
+        sph=scatterer
+        # TODO: all variables required, seems like a silly kluge
         def silly_function(theta):
             return theta * sph.r + sph.n.real * theta **2  + 2. * sph.n.imag
         return Marray(np.array([silly_function(theta) for theta, phi in
@@ -247,9 +248,9 @@ def test_fit_complex_parameter():
                       **schema._dict)
 
     # generate data
-    schema = Schema(positions = Angles(np.linspace(0., np.pi/2., 6)))
+    ref_schema = Schema(positions = Angles(np.linspace(0., np.pi/2., 6)))
     ref_sph = Sphere(r = 1.5, n = 0.4 + 0.8j)
-    data = scat_func(ref_sph, schema)
+    data = scat_func(ref_schema, ref_sph)
 
     # varying both real and imaginary parts
     par_s = Sphere(r = par(1.49),
@@ -287,7 +288,7 @@ def test_constraint():
 def test_layered():
     s = Sphere(n = (1,2), r = (1, 2), center = (2, 2, 2))
     sch = ImageSchema((10, 10), .2, Optics(.66, 1, (1, 0)))
-    hs = calc_holo(s, 1, sch, .66, Optics(polarization=(1, 0)))
+    hs = calc_holo(sch, s, 1, .66, (1, 0))
 
     guess = hp.scattering.scatterer.sphere.LayeredSphere((1,2), (par(1.01), par(.99)), (2, 2, 2))
     model = Model(guess, calc_holo, hs.optics.index, hs.optics.wavelen, hs.optics)

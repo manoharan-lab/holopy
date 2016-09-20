@@ -40,7 +40,7 @@ from ..theory import Multisphere
 from ..theory.multisphere import MultisphereExpansionNaN, ConvergenceFailureMultisphere
 from ..scatterer import Sphere, Spheres
 from ..errors import UnrealizableScatterer, TheoryNotCompatibleError
-from .common import assert_allclose, verify, xschema, yschema, xoptics, yoptics, index, wavelen
+from .common import assert_allclose, verify, xschema, yschema, xoptics, yoptics, index, wavelen, xpolarization, ypolarization
 from .common import scaling_alpha, sphere
 
 from holopy.scattering.calculations import calc_scat_matrix, calc_cross_sections, calc_holo
@@ -66,8 +66,8 @@ def test_polarization():
 
     sc = Spheres([sphere])
 
-    xholo = calc_holo(sc, index, xschema, wavelen, xoptics, scaling=scaling_alpha)
-    yholo = calc_holo(sc, index, yschema, wavelen, yoptics, scaling=scaling_alpha)
+    xholo = calc_holo(xschema, sc, index, wavelen, xpolarization, scaling=scaling_alpha)
+    yholo = calc_holo(yschema, sc, index, wavelen, ypolarization, scaling=scaling_alpha)
 
     # the two arrays should not be equal
     try:
@@ -90,7 +90,7 @@ def test_2_sph():
                                        n=1.5811+1e-4j, r=5e-07)])
 
 
-    holo = calc_holo(sc, schema.optics.index, schema, schema.optics.wavelen, schema.optics, theory=Multisphere, scaling=.6)
+    holo = calc_holo(schema, sc, theory=Multisphere, scaling=.6)
 
     assert_almost_equal(holo.max(), 1.4140292298443309)
     assert_almost_equal(holo.mean(), 0.9955420925817654)
@@ -106,8 +106,8 @@ def test_radial_holos():
     thry_nonrad = Multisphere()
     thry_rad = Multisphere(compute_escat_radial = True)
 
-    holo_nonrad = calc_holo(sc, index, schema, wavelen, xoptics, theory=thry_nonrad)
-    holo_rad = calc_holo(sc, index, schema, wavelen, xoptics, theory=thry_rad)
+    holo_nonrad = calc_holo(schema, sc, index, wavelen, xoptics.polarization, theory=thry_nonrad)
+    holo_rad = calc_holo(schema, sc, index, wavelen, xoptics.polarization, theory=thry_rad)
 
     # the two arrays should not be equal
     try:
@@ -126,30 +126,29 @@ def test_invalid():
                                        n=1.5811+1e-4j, r=5e-07)])
 
 
-    assert_raises(UnrealizableScatterer, calc_holo, sc, index, schema, wavelen, xoptics)
+    assert_raises(UnrealizableScatterer, calc_holo, schema, sc, index, wavelen, xpolarization)
 
     sc = Spheres(scatterers=[Sphere(center=[7.1, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-01),
                                 Sphere(center=[6e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07)])
 
-    assert_raises(UnrealizableScatterer, calc_holo, sc, index, schema, wavelen, xoptics)
+    assert_raises(UnrealizableScatterer, calc_holo, schema, sc, index, wavelen, xpolarization)
 
     sc.scatterers[0].r = -1
 
-    assert_raises(UnrealizableScatterer, calc_holo, sc, index, schema, wavelen, xoptics)
+    assert_raises(UnrealizableScatterer, calc_holo, schema, sc, index, wavelen, xpolarization)
 
     cs = Sphere(center = (0, 0, 0))
 
-    assert_raises(TheoryNotCompatibleError, calc_holo, cs, index, schema, wavelen, xoptics, Multisphere)
+    assert_raises(TheoryNotCompatibleError, calc_holo, schema, cs, index, wavelen, xpolarization, Multisphere)
 
     # try a coated sphere
     sc2 = Spheres([Sphere(center = [0., 0., 0.],
                           n = [1.+0.1j, 1.2],
-                          r = [4e-7, 5e-7])])
-    assert_raises(TheoryNotCompatibleError, calc_cross_sections, index,
-                  sc2, wavelen, xoptics, Multisphere)
-
+                          r = [4e-7, 5e-7])])   
+    assert_raises(TheoryNotCompatibleError, calc_cross_sections, scatterer=sc2, medium_index=index, wavelen=wavelen, polarization=xoptics.polarization, theory=Multisphere)
+    
 
 def test_overlap():
     # should raise a warning
@@ -162,7 +161,7 @@ def test_overlap():
         assert len(w) > 0
 
     # should fail to converge
-    assert_raises(MultisphereExpansionNaN, calc_holo, sc, index, schema, wavelen, xoptics)
+    assert_raises(MultisphereExpansionNaN, calc_holo, schema, sc, index, wavelen, xpolarization)
 
     # but it should succeed with a small overlap, after raising a warning
     with warnings.catch_warnings(record=True) as w:
@@ -172,7 +171,7 @@ def test_overlap():
                                     Sphere(center=[3.9e-6, 3.e-6, 10e-6],
                                            n=1.59, r=.5e-6)])
         assert len(w) > 0
-    holo = calc_holo(sc, index, schema, wavelen, xoptics)
+    holo = calc_holo(schema, sc, index, wavelen, xpolarization)
 
     verify(holo, '2_sphere_allow_overlap')
 
@@ -185,7 +184,7 @@ def test_niter():
                                           n=1.5811+1e-4j, r=5e-07)])
     multi = Multisphere(niter = 2)
 
-    assert_raises(ConvergenceFailureMultisphere, calc_holo, sc, index, schema, wavelen, xoptics, multi)
+    assert_raises(ConvergenceFailureMultisphere, calc_holo, schema, sc, index, wavelen, xpolarization, multi)
 
 def test_cross_sections():
     opt = Optics(wavelen = 1., index = 1., polarization = [1., 0])
@@ -198,7 +197,7 @@ def test_cross_sections():
     # as well as all the scattering coefficients
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', scipy.integrate.IntegrationWarning)
-        xsects = calc_cross_sections(sc, 1, 1, opt)
+        xsects = calc_cross_sections(sc, 1, 1, optics=opt)
 
     gold_xsects = np.array([0.03830316, 0.04877015, 0.08707331])
     # calculated directly by SCSMFO. Efficiencies normalized
@@ -216,11 +215,11 @@ def test_farfield():
     cluster = Spheres([Sphere(n = n, r = r, center = [0., 0., r]),
                        Sphere(n = n, r = r, center = [0., 0., -r])])
 
-    matr = calc_scat_matrix(cluster, index, schema, .66, xoptics, theory=Multisphere)
+    matr = calc_scat_matrix(schema, cluster, index, .66, optics=xoptics, theory=Multisphere)
 
 def test_wrap_sphere():
     sphere=Sphere(center=[7.1e-6, 7e-6, 10e-6],n=1.5811+1e-4j, r=5e-07)
     sphere_w=Spheres([sphere])
-    holo=calc_holo(sphere,schema.optics.index,schema,schema.optics.wavelen,schema.optics, theory=Multisphere,scaling=.6)
-    holo_w=calc_holo(sphere_w,schema.optics.index,schema,schema.optics.wavelen,schema.optics, theory=Multisphere,scaling=.6)
+    holo=calc_holo(schema, sphere, theory=Multisphere, scaling=.6)
+    holo_w=calc_holo(schema, sphere_w, theory=Multisphere, scaling=.6)
     assert_equal(holo,holo_w)

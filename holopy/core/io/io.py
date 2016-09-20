@@ -26,15 +26,19 @@ import glob
 from warnings import warn
 import numpy as np
 from io import IOBase
+from scipy.misc import fromimage, bytescale
+from PIL import Image as pilimage
 
 from holopy.core.io import serialize
-from holopy.core.io.image_file_io import load_image, save_image
+from holopy.core.io.image_file_io import save_image
 from holopy.core.marray import Image, arr_like
-from holopy.core.metadata import Optics
+from holopy.core.metadata import Optics, interpret_args
 from holopy.core.helpers import _ensure_array
 
 
-def load(inf, spacing = None, optics = None, channel=None):
+
+
+def load(inf):
     """
     Load data or results
 
@@ -62,36 +66,68 @@ def load(inf, spacing = None, optics = None, channel=None):
     obj : The object loaded, :class:`holopy.core.marray.Image`, or as loaded from yaml
 
     """
-    if isinstance(optics, (str, IOBase)):
-        optics = serialize.load(optics)
-        # In the past We allowed optics yamls to be written without an !Optics
-        # tag, so for that backwards compatability, we attempt to turn an
-        # anonymous dict into an Optics
-        if isinstance(optics, dict):
-            optics = Optics(**optics)
-
     loaded_yaml = False
+    # attempt to load a holopy yaml file
     try:
-         loaded = serialize.load(inf)
-         loaded_yaml = True
+        loaded = serialize.load(inf)
+        loaded_yaml = True
     except (serialize.ReaderError, UnicodeDecodeError):
-         pass
-    if not loaded_yaml:
-        loaded = load_image(inf, spacing=spacing, optics=optics)
+        pass
+        # If that fails, we go on and read images
 
-    elif optics is not None and spacing is not None:
-        loaded = arr_like(loaded, spacing = spacing, optics = optics)
-        warn("Overriding spacing and optics of loaded yaml")
-    elif optics is not None:
-        loaded = arr_like(loaded, optics = optics)
-        warn("WARNING: overriding optics of loaded yaml without overriding "
-             "spacing, this is probably incorrect.")
-    elif spacing is not None:
-        loaded = arr_like(loaded, spacing = spacing)
-        warn("WARNING: overriding spacing of loaded yaml without overriding "
-             "optics, this is probably incorrect.")
+    if not loaded_yaml:
+        pass
+        #TODO load a tif with metadata
+        #TODO confirm tif has metadata
+        #TODO if not, raise exception referring user to load_image function.
 
     return loaded
+
+def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, optics=None, channel=None):
+    """
+    Load data or results
+
+    Parameters
+    ----------
+    inf : single or list of basestring or files
+        File to load.  If the file is a yaml file, all other arguments are
+        ignored.  If inf is a list of image files or filenames they are all
+        loaded as a a timeseries hologram
+    optics : :class:`holopy.optics.Optics` object or string (optional)
+        Optical train parameters.  If string, specifies the filename
+        of an optics yaml
+    bg : string (optional)
+        name of background file
+    bg_type : string (optional)
+        set to 'subtract' or 'divide' to specify how background is removed
+    channel : int (optional)
+        number of channel to load for a color image (in general 0=red,
+        1=green, 2=blue)
+    time_scale : float or list (optional)
+        time between frames or, if list, time at each frame
+
+    Returns
+    -------
+    obj : The object loaded, :class:`holopy.core.marray.Image`, or as loaded from yaml
+
+    """
+    arr=fromimage(pilimage.open(inf)).astype('d')
+
+    # pick out only one channel of a color image
+    if channel is not None and len(arr.shape) > 2:
+        if channel >= arr.shape[2]:
+            raise LoadError(filename,
+                "The image doesn't have a channel number {0}".format(channel))
+        else:
+            arr = arr[:, :, channel]
+    elif channel is not None and channel > 0:
+        warnings.warn("Warning: not a color image (channel number ignored)")
+
+  
+    loaded = Image(arr, spacing=spacing, optics=optics)
+    loaded = interpret_args(loaded, index, wavelen, polarization)    
+    return loaded    
+    
 
 def save(outf, obj):
     """

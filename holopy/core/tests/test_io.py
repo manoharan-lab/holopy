@@ -20,7 +20,7 @@ from holopy.core.tests.common import (assert_obj_close,
                                       assert_read_matches_write,
                                       get_example_data,
                                       get_example_data_path)
-from holopy.core import Optics, Marray, load, save
+from holopy.core import Optics, Marray, load, save, load_image
 from holopy.core.process import normalize
 import tempfile
 import os
@@ -29,7 +29,7 @@ import warnings
 from nose.plugins.attrib import attr
 from numpy.testing import assert_raises, assert_equal
 import numpy as np
-from holopy.core.io import save_image, load_image
+from holopy.core.io import save_image
 from holopy.core.holopy_object import Serializable
 import yaml
 
@@ -38,21 +38,6 @@ def test_hologram_io():
     holo = normalize(get_example_data('image0001.yaml'))
 
     assert_read_matches_write(holo)
-
-@attr('fast')
-def test_load_optics():
-    optics_yaml = b"""wavelen: 785e-9
-polarization: [1.0, 0]
-divergence: 0
-pixel_size: [6.8e-6, 6.8e-6]
-pixel_scale: [3.3e-7, 3.3e-7]"""
-    t = tempfile.TemporaryFile()
-    t.write(optics_yaml)
-    t.seek(0)
-
-    o = Optics(**load(t))
-
-    assert_obj_close(o, Optics(wavelen=7.85e-07, polarization=[1.0, 0.0], divergence=0, pixel_size=[6.8e-06, 6.8e-06], pixel_scale=[3.3e-07, 3.3e-07]))
 
 def test_marray_io():
     d = Marray(np.random.random((10, 10)))
@@ -64,19 +49,19 @@ def test_image_io():
 
     filename = os.path.join(t, 'image0001.tif')
     save(filename, holo)
-    l = load(filename)
+    l = load_image(filename)
     assert_obj_close(l, holo)
 
     # check that it defaults to saving as tif
     filename = os.path.join(t, 'image0002')
     save_image(filename, holo)
-    l = load(filename+'.tif')
+    l = load_image(filename+'.tif')
     assert_obj_close(l, holo)
 
     # check saving 16 bit
     filename = os.path.join(t, 'image0003')
     save_image(filename, holo, scaling=None, depth=16)
-    l = load(filename+'.tif')
+    l = load_image(filename+'.tif')
     assert_obj_close(l, holo)
 
     # test that yaml save works corretly with a string instead of a file
@@ -84,39 +69,6 @@ def test_image_io():
     save(filename, holo)
     loaded = load(filename)
     assert_obj_close(loaded, holo)
-
-    f = get_example_data_path('image0001.yaml')
-    spacing = .1
-    optics = Optics(.66, 1.33, (1,0))
-    with warnings.catch_warnings(record =True) as w:
-        warnings.simplefilter('always')
-        h = load(f, spacing = spacing, optics = optics)
-        assert_obj_close(h.optics, optics)
-        assert_equal(h.spacing, spacing)
-        assert_equal(len(w), 1)
-        assert "Overriding spacing and optics of loaded yaml" in str(w[-1].message)
-
-
-    with warnings.catch_warnings(record =True) as w:
-        warnings.simplefilter('always')
-        h = load(f, optics = optics)
-        assert_obj_close(h.optics, optics)
-        assert_equal(h.spacing, holo.spacing)
-        assert_equal(len(w), 1)
-        assert ("WARNING: overriding optics of loaded yaml without "
-                "overriding spacing, this is probably incorrect." in
-                str(w[-1].message))
-
-
-    with warnings.catch_warnings(record =True) as w:
-        warnings.simplefilter('always')
-        h = load(f, spacing = spacing)
-        assert_obj_close(h.optics, holo.optics)
-        assert_equal(h.spacing, spacing)
-        assert_equal(len(w), 1)
-        assert ("WARNING: overriding spacing of loaded yaml without "
-                "overriding optics, this is probably incorrect." in
-                str(w[-1].message))
 
     shutil.rmtree(t)
 
@@ -127,8 +79,8 @@ def test_non_tiff():
     root = os.path.split(os.path.split(holopy.__file__)[0])[0]
     doc_images = os.path.join(root, 'docs', 'source', 'images')
 
-    load(os.path.join(doc_images, 'image_5Particle_Hologram.jpg'))
-    load(os.path.join(doc_images, 'ReconVolume_mlab_5Particle_Hologram.png'))
+    load_image(os.path.join(doc_images, 'image_5Particle_Hologram.jpg'))
+    load_image(os.path.join(doc_images, 'ReconVolume_mlab_5Particle_Hologram.png'))
 
 
 # test a number of little prettying up of yaml output that we do for

@@ -64,16 +64,16 @@ def test_DDA_sphere():
     sc = Sphere(n=1.59, r=3e-1, center=(0, 0, 0))
     assert_raises(ScattererDefinitionError, Sphere, n=1.59, r=3e-1, center=(0, 0))
     sc = sc.translated(1, -1, 30)
-    mie_holo = calc_holo(sc, index, schema, wavelen, optics=optics)
-    dda_holo = calc_holo(sc, index, schema, wavelen, optics=optics, theory=DDA)
+    mie_holo = calc_holo(schema, sc, index, wavelen, optics=optics)
+    dda_holo = calc_holo(schema, sc, index, wavelen, optics=optics, theory=DDA)
     assert_allclose(mie_holo, dda_holo, rtol=.0015)
 
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_dda_2_cpu():
     sc = Sphere(n=1.59, r=3e-1, center=(1, -1, 30))
-    mie_holo = calc_holo(sc, index, schema, wavelen, optics)
+    mie_holo = calc_holo(schema, sc, index, wavelen, optics=optics)
     dda_n2 = DDA(n_cpu=2)
-    dda_holo = calc_holo(sc, index, schema, wavelen, optics, dda_n2)
+    dda_holo = calc_holo(schema, sc, index, wavelen, optics=optics, theory=dda_n2)
 
     # TODO: figure out how to actually test that it runs on multiple cpus
 
@@ -94,11 +94,11 @@ def test_DDA_indicator():
 
     sc = Sphere(n=n, r=r, center = center)
 
-    sphere_holo = calc_holo(sc, index, schema, wavelen, optics, dda)
+    sphere_holo = calc_holo(schema, sc, index, wavelen, optics=optics, theory=dda)
 
     s = Scatterer(Sphere(r=r, center = (0, 0, 0)).contains, n, center)
 
-    gen_holo = calc_holo(s, index, schema, wavelen, optics, dda)
+    gen_holo = calc_holo(schema, s, index, wavelen, optics=optics, theory=dda)
 
     assert_allclose(sphere_holo, gen_holo, rtol=2e-3)
 
@@ -112,7 +112,7 @@ def test_voxelated_complex():
 
     schema = ImageSchema(50, .1, optics = o)
 
-    holo_dda = calc_holo(sv, o.index, schema, o.wavelen, Optics(polarization=(1, 0)), DDA)
+    holo_dda = calc_holo(schema, sv, o.index, o.wavelen, optics=Optics(polarization=(1, 0)), theory=DDA)
     verify(holo_dda, 'dda_voxelated_complex', rtol=1e-5)
 
 
@@ -123,8 +123,8 @@ def test_DDA_coated():
         center=[7.141442573813124, 7.160766866147957, 11.095409800342143],
         n=[(1.27121212428+0j), (1.49+0j)], r=[.1-0.0055, 0.1])
 
-    lmie_holo = calc_holo(cs, index, schema, wavelen, schema.optics, Mie)
-    dda_holo = calc_holo(cs, index, schema, wavelen, schema.optics)
+    lmie_holo = calc_holo(schema, cs, index, wavelen, optics=schema.optics, theory=Mie)
+    dda_holo = calc_holo(schema, cs, index, wavelen, optics=schema.optics)
 
     assert_allclose(lmie_holo, dda_holo, rtol = 5e-4)
 
@@ -132,7 +132,7 @@ def test_DDA_coated():
 def test_Ellipsoid_dda():
     e = Ellipsoid(1.5, r = (.5, .1, .1), center = (1, -1, 10))
     schema = ImageSchema(100, .1, optics = Optics(wavelen=.66, index=1.33, polarization = (1,0)))
-    h = calc_holo(e, schema.optics.index, schema, schema.optics.wavelen, optics=schema.optics)
+    h = calc_holo(schema, e)
 
     assert_almost_equal(h.max(), 1.3152766077267062)
     assert_almost_equal(h.mean(), 0.99876620628942114)
@@ -143,5 +143,5 @@ def test_janus():
     s = JanusSphere(n = [1.34, 2.0], r = [.5, .51], rotation = (-np.pi/2, 0),
                     center = (5, 5, 5))
     assert_almost_equal(s.index_at([5,5,5]),1.34)
-    holo = calc_holo(s, 1.33, schema, .66, optics=Optics(polarization=(1, 0)))
+    holo = calc_holo(schema, s, 1.33, .66, optics=Optics(polarization=(1, 0)))
     verify(holo, 'janus_dda')

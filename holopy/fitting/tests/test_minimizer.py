@@ -117,7 +117,7 @@ def test_iter_limit():
     s1 = Sphere(center=(15, 15, 20), n = 1.59, r = 0.5)
     s2 = Sphere(center=(14, 14, 20), n = 1.59, r = 0.5)
     cluster = Spheres([s1, s2])
-    holo = calc_holo(cluster, 1.33, schema, .66, Optics(polarization=(1,0)))
+    holo = calc_holo(schema, cluster, 1.33, .66, polarization=(1,0))
     from holopy.fitting.minimizer import Nmpfit
 
     #trying to do a fast fit:
