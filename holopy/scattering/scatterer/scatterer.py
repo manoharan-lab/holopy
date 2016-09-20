@@ -135,12 +135,6 @@ class Scatterer(HoloPyObject):
     def z(self):
         return self.location[2]
 
-    def like_me(self, **overrides):
-        pars = dict(self._dict)
-        pars.update(overrides)
-
-        return self.__class__(**pars)
-
     @property
     def bounds(self):
         return [(c+b[0], c+b[1]) for c, b in zip(self.location,

@@ -34,7 +34,7 @@ from holopy.core.metadata import Optics, interpret_args
 from holopy.core.helpers import _ensure_array
 
 
-def load(inf, spacing = None, wavelen=None, index=None, polarization=None, optics = None, channel=None):
+def load(inf, channel=None, spacing=None):
     """
     Load data or results
 
@@ -62,26 +62,52 @@ def load(inf, spacing = None, wavelen=None, index=None, polarization=None, optic
     obj : The object loaded, :class:`holopy.core.marray.Image`, or as loaded from yaml
 
     """
-    if isinstance(optics, (str, IOBase)):
-        optics = serialize.load(optics)
-
     loaded_yaml = False
     # attempt to load a holopy yaml file
     try:
         loaded = serialize.load(inf)
-        if spacing is not None or wavelen is not None or index is not None or polarization is not None or optics is not None:
-            warn("WARNING: If you are trying to overwrite hologram parameters, you must do so explicitly. Extra arguments are being ignored.") 
         loaded_yaml = True
     except (serialize.ReaderError, UnicodeDecodeError):
         pass
         # If that fails, we go on and read images
 
     if not loaded_yaml:
-        loaded = load_image(inf, spacing=spacing, optics=optics, channel=channel)
-        loaded = interpret_args(image, index, wavelen, polarization)
+        loaded = load_image(inf, channel=channel, spacing=spacing)
 
     return loaded
 
+def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, optics=None, channel=None):
+    """
+    Load data or results
+
+    Parameters
+    ----------
+    inf : single or list of basestring or files
+        File to load.  If the file is a yaml file, all other arguments are
+        ignored.  If inf is a list of image files or filenames they are all
+        loaded as a a timeseries hologram
+    optics : :class:`holopy.optics.Optics` object or string (optional)
+        Optical train parameters.  If string, specifies the filename
+        of an optics yaml
+    bg : string (optional)
+        name of background file
+    bg_type : string (optional)
+        set to 'subtract' or 'divide' to specify how background is removed
+    channel : int (optional)
+        number of channel to load for a color image (in general 0=red,
+        1=green, 2=blue)
+    time_scale : float or list (optional)
+        time between frames or, if list, time at each frame
+
+    Returns
+    -------
+    obj : The object loaded, :class:`holopy.core.marray.Image`, or as loaded from yaml
+
+    """
+    loaded = load_image(inf, spacing=spacing, optics=optics, channel=channel)
+    loaded = interpret_args(loaded, index, wavelen, polarization)    
+    return loaded    
+    
 
 def save(outf, obj):
     """

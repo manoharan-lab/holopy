@@ -66,10 +66,7 @@ class Optics(HoloPyObject):
         # source parameters
         self.wavelen = wavelen
         self.index = index
-        if polarization is not None:
-            self._polarization = np.array(polarization)
-        else:
-            self._polarization = None
+        self.polarization = polarization
         self.divergence = divergence
         if divergence != 0.0:
             warn("HoloPy calculations currently ignore divergence")
@@ -106,7 +103,10 @@ class Optics(HoloPyObject):
 
     @polarization.setter
     def polarization(self, val):
-        self._polarization = np.array(val)
+        if val is None:
+            self._polarization = None
+        else:
+            self._polarization = np.array(val)
 
     @property
     def wavevec(self):
@@ -248,17 +248,16 @@ class Angles(PositionSpecification):
 def interpret_args(schema=None, index=None, wavelen=None, polarization=None, optics=None):    
     from .marray import Schema
     if not isinstance(schema, Schema):
+        #If schema is not a Schema object, then we assume it is a list of positions.
+        #Here, schema can refer either to a set of positions or a Schema object with this positions value.
         schema = Schema(positions=schema)
-    if optics is not None:
-        schema.optics=optics   
-    elif not isinstance(schema.optics, Optics):
-        schema.optics=Optics()
 
-    if index is not None:
-        schema.optics.index = index
-    if wavelen is not None:
-        schema.optics.wavelen = wavelen
-    if polarization is not None:
-        schema.optics.polarization = polarization
-    return schema
+    if optics is None:
+        if isinstance(schema.optics, Optics):
+            optics = schema.optics
+        else:
+            optics = Optics()
+
+    optics = optics.like_me(wavelen=wavelen, index=index, polarization=polarization)
+    return schema.like_me(optics=optics)
 
