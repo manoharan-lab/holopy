@@ -326,6 +326,11 @@ class Marray(np.ndarray, Schema):
         # Call the parent's __setstate__ with the other tuple elements.
         super(Marray, self).__setstate__(state[0:-1])
 
+    def like_me(self, filter_none=True, **kwargs):
+        if filter_none:
+            kwargs={key: val for key, val in kwargs.items() if val is not None}
+        return self.__class__(self, **dict(self._dict, **kwargs))
+
 
 class RegularGridSchema(Schema):
     def __init__(self, shape=None, spacing=None, optics=None,

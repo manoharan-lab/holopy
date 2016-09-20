@@ -44,7 +44,7 @@ def check_schema(schema):
     return schema
 
 def interpret_theory(scatterer,theory='auto'):
-    if isinstance(theory, basestring) and theory == 'auto':
+    if isinstance(theory, str) and theory == 'auto':
         theory = determine_theory(scatterer)
     if isinstance(theory, SerializableMetaclass):
         theory = theory()

@@ -126,7 +126,7 @@ def fit_series(model, data, data_optics=None, data_spacing=None,
     allresults = []
 
     if isinstance(bg, str):
-        bg = load(bg, spacing=data_spacing, optics=data_optis)
+        bg = load(bg, spacing=data_spacing, optics=data_optics)
 
     #to allow running without saving output
     if outfilenames is None:

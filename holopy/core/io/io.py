@@ -76,7 +76,7 @@ def load(inf, channel=None, spacing=None):
 
     return loaded
 
-def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, optics=None, channel=None):
+def loadimage(inf, spacing=None, wavelen=None, index=None, polarization=None, optics=None, channel=None):
     """
     Load data or results
 

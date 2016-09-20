@@ -196,7 +196,7 @@ def test_serialization():
 
     model = Model(par_s, calc_func=calc_holo, medium_index=schema.optics.index, wavelen=schema.optics.wavelen, optics=schema.optics, alpha=alpha)
 
-    holo = calc_holo(model.scatterer.guess, medium_index=schema.optics.index, locations=schema, wavelen=schema.optics.wavelen, optics=schema.optics, scaling=model.alpha.guess)
+    holo = calc_holo(schema, model.scatterer.guess, medium_index=schema.optics.index, wavelen=schema.optics.wavelen, optics=schema.optics, scaling=model.alpha.guess)
 
     result = fit(model, holo)
 

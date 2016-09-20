@@ -257,7 +257,6 @@ def interpret_args(schema=None, index=None, wavelen=None, polarization=None, opt
             optics = schema.optics
         else:
             optics = Optics()
-
     optics = optics.like_me(wavelen=wavelen, index=index, polarization=polarization)
     return schema.like_me(optics=optics)
 

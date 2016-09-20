@@ -94,7 +94,7 @@ class HoloPyObject(Serializable):
 
     def like_me(self, filter_none=True, **kwargs):
         if filter_none:
-            {key: val for key, val in kwargs.items() if val is not None}
+            kwargs={key: val for key, val in kwargs.items() if val is not None}
         return self.__class__(**dict(self._dict, **kwargs))
 
 
