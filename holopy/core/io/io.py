@@ -26,15 +26,19 @@ import glob
 from warnings import warn
 import numpy as np
 from io import IOBase
+from scipy.misc import fromimage, bytescale
+from PIL import Image as pilimage
 
 from holopy.core.io import serialize
-from holopy.core.io.image_file_io import load_image, save_image
+from holopy.core.io.image_file_io import save_image
 from holopy.core.marray import Image, arr_like
 from holopy.core.metadata import Optics, interpret_args
 from holopy.core.helpers import _ensure_array
 
 
-def load(inf, channel=None, spacing=None):
+
+
+def load(inf):
     """
     Load data or results
 
@@ -72,11 +76,14 @@ def load(inf, channel=None, spacing=None):
         # If that fails, we go on and read images
 
     if not loaded_yaml:
-        loaded = load_image(inf, channel=channel, spacing=spacing)
+        pass
+        #TODO load a tif with metadata
+        #TODO confirm tif has metadata
+        #TODO if not, raise exception referring user to load_image function.
 
     return loaded
 
-def loadimage(inf, spacing=None, wavelen=None, index=None, polarization=None, optics=None, channel=None):
+def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, optics=None, channel=None):
     """
     Load data or results
 
@@ -104,7 +111,20 @@ def loadimage(inf, spacing=None, wavelen=None, index=None, polarization=None, op
     obj : The object loaded, :class:`holopy.core.marray.Image`, or as loaded from yaml
 
     """
-    loaded = load_image(inf, spacing=spacing, optics=optics, channel=channel)
+    arr=fromimage(pilimage.open(inf)).astype('d')
+
+    # pick out only one channel of a color image
+    if channel is not None and len(arr.shape) > 2:
+        if channel >= arr.shape[2]:
+            raise LoadError(filename,
+                "The image doesn't have a channel number {0}".format(channel))
+        else:
+            arr = arr[:, :, channel]
+    elif channel is not None and channel > 0:
+        warnings.warn("Warning: not a color image (channel number ignored)")
+
+  
+    loaded = Image(arr, spacing=spacing, optics=optics)
     loaded = interpret_args(loaded, index, wavelen, polarization)    
     return loaded    
     
