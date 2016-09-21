@@ -280,7 +280,7 @@ class DDA(ScatteringTheory):
         return scat_matr
 
     def _calc_field(self, scatterer, schema):
-        optics.schema.optics
+        optics = schema.optics
         calc_points = schema.positions.kr_theta_phi(scatterer.location, optics.wavevec)
         scat_matr = self._calc_scat_matrix(scatterer, schema, calc_points)
         fields = np.zeros_like(calc_points, dtype = scat_matr.dtype)
