@@ -1,4 +1,4 @@
-.. _loading:
+.. _load_tutorial:
 
 Loading Data
 ============
@@ -15,86 +15,160 @@ loading and viewing one of them
 .. plot:: pyplots/show_example_holo.py
    :include-source:
 
-But you probably want to look at your data not ours. If you have an
-``image.tif`` in your current directory, you can do::
+.. testcode::
+    :hide:
 
-  import holopy as hp
-  holo = hp.load('image.tif')
-  hp.show(holo)
+    import holopy as hp
+    from holopy.core.io import get_example_data_path
+    imagepath = get_example_data_path('image01.jpg')
+
+The first few lines just specify where to look for an image. 
+The most important line actually loads the image so that you can work with it: 
+
+..  testcode::
+    
+    raw_holo = hp.load_image(imagepath, spacing = 0.0851)
 
 HoloPy can import many different image formats, including TIFF files,
-numpy data format files, and any image format that can be handled by
-the `Python Imaging Library
-<http://www.pythonware.com/products/pil/>`_. 
+numpy data format files, and any image format that can be handled by `Pillow
+<http://pillow.readthedocs.io/en/3.3.x/handbook/image-file-formats.html>`_.
+ 
+The spacing argument tells holopy about the scale of your image. Here, we had 
+previously measured that each pixel is a square with side length 0.0851 microns.
+You can also load an image without specifying a spacing value if you just want
+to look at it, but most holopy calculations will fail on an image without spacing. 
 
-If you are able to take an image with the same optical setup but
-without the object of interest, removing that background can usually
-improve the image a lot.  Suppose the background image is saved as
-``bg.tif``. Then you can divide it out by::
+The last line simply displays the loaded image on your screen. 
 
-  bg = hp.load('bg.tif')
-  holo = holo / bg
 
-where the original image has been replaced with one with the
-background removed. This usually does a fairly good job of correcting
-for nonuniform illumination, dust elsewhere in the optics, and things
-of that sort.
+Correcting Noisy Images
+___________________________________
+
+The raw hologram has some non-uniform illumination and an artifact in the 
+upper right hand corner from dust somewhere in the optics. These types of  
+things can be removed if you are able to take a background image with the same optical setup but
+without the object of interest. Dividing the raw hologram by the background can usually
+improve the image a lot.
+
+..  testcode::
+
+    bgpath = get_example_data_path('bg01.jpg')
+    bg = hp.load_image(bgpath, spacing = 0.0851)
+    holo = raw_holo / bg
+    hp.show(holo)
+
+..  plot:: pyplots/show_bg_holo.py
+
+If you are worried about stray light in your optical train, you should 
+also subtract a dark-field image of your sample, recorded with no laser illumination.
+
+..  testcode::
+
+    dfpath = get_example_data_path('df01.jpg')
+    df = hp.load_image(dfpath, spacing = 0.0851)
+    holo = (raw_holo - df) / (bg - df)
+    hp.show(holo)
+
+..  testcode::
+    :hide:
+    
+    print(holo[0,0])
+
+..  testoutput::
+    :hide:
+    
+    0.81746031746
 
 .. note ::
    
   If you know numpy, our :class:`.Image` is a `numpy
   <http://docs.scipy.org/doc/numpy/reference/arrays.html>`_ array
   subclass, so you can use all the math numpy provides.  For
-  example::
+  example:
+    
+  ..    testcode::
+    
+        import scipy.ndimage
+        import scipy.fftpack
+        filtered_image = scipy.ndimage.uniform_filter(holo, [10,10])
+        ffted_image = scipy.fftpack.fft2(holo)
 
-    import scipy.ndimage
-    import scipy.fftpack
-    filtered_image = scipy.ndimage.uniform_filter(holo, [10,10])
-    ffted_image = scipy.fftpack.fft2(holo)
+  ..    testcode::
+        :hide:
+
+        print(filtered_image[0,0])
+        print(ffted_image[0,0])
+
+  
+..  testoutput::
+    :hide:
+        
+    0.98738243396
+    (263205.886185+0j)
 
 .. _metadata:
 
 Telling HoloPy about your Experimental Setup
 --------------------------------------------
 
-Simply loading a TIFF won't help you analyze your data, since the
-image file generally won't tell you where the camera is with respect
-to the light source or how the images were recorded. This additional
-information is referred to as :dfn:`metadata`, which must be
-included when you do actual calculations on your data.
+Recorded holograms are a product of the specific experimental setup that produced them.
+The image only makes sense when considered with information about the experimental 
+conditions in mind. When you load an image, you have the option to specify some of this
+information in the form of :dfn:`metadata` that is associated with the image. In fact, we 
+already saw an example of this when we specified image spacing above. The sample in our
+image was immersed in water, which has a refractive index of 1.33. It was illuminated by
+a red laser with wavelength of 660 nm and polarization in the x-direction. We can write:
 
-In order to be able to do calculations with your data, you will need
-to specify this metadata when you load your image::
+..  testcode::
 
-   import holopy as hp
-   optics = hp.core.Optics(wavelen=.660, index=1.33, 
-                           polarization=[1.0, 0.0])
-   holo = hp.load('image.tif', spacing = .1,  optics = optics)
+    holo.index = 1.33
+    holo.wavelen = 0.660
+    holo.polarization = (1.0, 0.0)
 
-Above, we have created an instance of the :class:`.Optics` metadata
-class for incident light at 660 nm (.66 micron) (in vacuum)
-propagating in a medium with refractive index 1.33, and with a
-polarization in the x-direction. The pixel spacing of the image is 100
-nm (.1 micron).  You can simulate the effect of adding an objective
-lens in the optical path simply by reducing the specified spacing by
-the magnification factor of the objective::
-  
-  magnification = 40
-  holo = hp.load('image.tif', spacing = 4.0/magnification,  
-                 optics = optics)
-  
+Alternatively, we can specify some or all of these parameters immediately when loading the image:
+
+..  testcode::
+
+    raw_holo = hp.load_image(imagepath, index = 1.33, wavelen = 0.660, spacing = 0.0851)
 
 .. note::
+    Spacing and wavelength must both be written in the same units - microns in the example
+    above. Holopy has no built-in length scale and requires only that you be consistent. 
+    For example, we could have specified both parameters in terms of nanometers instead.
 
-    HoloPy uses the given wavelength and medium refractive
-    index to calculate the wavelength in the medium, which
-    is available as: ::
+..  testcode::
+    :hide:
+    
+    print(raw_holo.index-holo.wavelen)
 
-        optics.med_wavelen
-        0.49624060150375937
+..  testoutput::
+    :hide:
+    
+    0.67
 
-You may have noticed that the very first example loaded a ``.yaml``
-file instead of a tiff image. HoloPy's native data format is ``.yaml``
-files which can store all of our metadata. So in that example, we
-provide the metadata in the file. For more information about loading
-and saving HoloPy ``.yaml`` files see :ref:`yaml_ref`.
+Saving and Reloading Holograms
+------------------------------
+
+Once you have background-divided a hologram and associated it with metadata, you might
+want to save it so that you can skip those steps next time you are working with the 
+same image::
+    
+    hp.save('outfilename', holo)
+
+This will save your processed image to a compact HDF5 file. In fact, you can use :func:`.save` 
+on any holopy object. To reload a hologram with metadata you would write::
+
+    holo = hp.load('outfilename')
+
+If you would like to save your hologram to an image format for easy visualization, use::
+
+    hp.save_image('outfilename', holo)
+
+Additional options allow you to control how image intensity is scaled. Images saved as .tif (and other?)
+formats will still contain metadata, which will be retrieved if you reload with :func:`.load`, but not :func:`.image_load`
+
+..  note::
+
+    Although holopy stores metadata even when writing to image files, it is still recommended that 
+    holograms be saved to HDF5 using :func:`.save`. Floating point intensity values are rounded to
+    8-bit integers when using :func:`.save_image`, resulting in information loss.
