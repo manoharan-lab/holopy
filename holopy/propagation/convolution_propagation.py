@@ -62,6 +62,7 @@ def propagate(data, d, index=None, wavelen=None, gradient_filter=False):
         return data
 
     data = interpret_args(data, index, wavelen)
+
     if data.positions is None:
         raise MissingParameter("image spacing")
     if data.index is None or data.wavelen is None:
