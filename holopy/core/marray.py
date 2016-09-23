@@ -196,7 +196,7 @@ class Schema(HoloPyObject):
         return self.optics.wavelen
     
     @wavelen.setter
-    def polarization(self, val):
+    def wavelen(self, val):
         self.optics.wavelen = val
 
     @property
