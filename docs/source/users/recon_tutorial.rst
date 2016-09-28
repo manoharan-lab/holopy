@@ -10,16 +10,6 @@ field stored in the hologram to some different plane.  HoloPy
 generalizes this concept and allows you to numerically propagate any
 hologram (or electric field) to another position in space.
 
-Reconstructions generally consist of the following steps
-
-1. :ref:`Load <loading>` or :ref:`calculate <calc_tutorial>` a
-   Hologram :class:`.Image`.
-
-2. :ref:`Propagate <propagating>` the image to the desired distance or
-   set of distances.
-
-3. :ref:`Visualize <visualize_recon>` the reconstruction. 
-
 Here is an example:
 
 .. plot:: pyplots/basic_recon.py
@@ -29,46 +19,33 @@ We'll examine each section of code in turn. The first block:
 
 ..  testcode::
 
-  import numpy as np
-  import holopy as hp
-  from holopy.propagation import propagate
-  from holopy.core.tests.common import get_example_data
-  from holopy.core import load
+    import numpy as np
+    import holopy as hp
+    from holopy import propagate
+    from holopy.core.io import get_example_data_path
 
-loads the relevant modules from HoloPy and NumPy. 
-
-Loading Data
-------------
-
-We use:
+loads the relevant modules from HoloPy and NumPy. The second block:
 
 ..  testcode::
+    
+    imagepath = get_example_data_path('image01.jpg')
+    raw_holo = hp.load_image(imagepath, spacing = 0.0851, wavelen = 0.66, index = 1.33)
+    bgpath = get_example_data_path('bg01.jpg')
+    bg = hp.load_image(bgpath)
+    holo = raw_holo / bg
 
-  holo = get_example_data('image0001.yaml')
+reads in a hologram and divides it by a corresponding background image.
+If this is unfamiliar to you, please review the :ref:`load_tutorial` tutorial.
 
-to load one of the example images shipped with HoloPy. It already
-contains all needed metadata. For working with your data you will
-instead want to use::
-  
-  holo = load('your_image.tif', spacing = 1e-7, 
-              optics = Optics(wavelen = 660e-9, index = 1.33, 
-                              polarization = (1,0)))
-
-The spacing and wavelength can be specified in whatever units you
-prefer, as long as you are consistent (see :ref:`units`). Holopy load
-any image formats `PIL <http://www.pythonware.com/products/pil/>`_ can
-load (which is most image formats).
-
-.. _propagating:
-
-Propagating
------------
-
+Next, we use numpy's linspace to define a set of distances to 
+propagate to at 2-micron intervals. You can also propagate to a single distance,
+or to a set of distances obtained in some other fashion. 
 The actual propagation is accomplished with :func:`.propagate`:
 
 ..  testcode::
 
-  rec_vol = propagate(holo, np.linspace(4e-6, 10e-6, 7))
+    zstack = np.linspace(1, 15, 8)
+    rec_vol = propagate(holo, zstack)
 
 ..  testcode::
     :hide:
@@ -77,17 +54,17 @@ The actual propagation is accomplished with :func:`.propagate`:
 
 ..  testoutput::
     :hide:
-    
-    (167.127370799-88.2156114418j)
 
-Here we have used numpy's linspace to get a set of distances to
-propagate to. You can also propagate to a single distance, or to set
-of distances obtained in some other fashion.
+    (0.834984178898-0.0856125790499j)
 
-.. _visualize_recon:
+Here, HoloPy has projected the image through space using the metadata that we 
+specified when loading the image. If we forgot to load optical metadata with the image,
+we can explicitly indicate the parameters for propagation to obtain an identical object:
 
-Visualizing Reconstructions
----------------------------
+..  testcode::
+
+    rec_vol = propagate(holo, zstack, wavelen = 0.660, index = 1.33)
+
 
 You can then visualize the reconstruction with :func:`.show`::
   
@@ -98,7 +75,7 @@ You can step through volume slices with the left and right arrow keys
 peculiarity of Matplotlib. If this happens, close your plot window and
 show it again. Sorry.). 
 
-Reconstructions are actually comprised of complex numbers. hp.show
+Reconstructions are actually comprised of complex numbers. :func:`.show`
 defaults to showing you the amplitude of the image. You can get
 different, and sometimes better, contrast by viewing the phase angle or
 imaginary part of the reconstruction::
@@ -112,9 +89,9 @@ reconstruction will work better if you use steps that are an integer
 number of wavelengths in medium:
 
 ..  testcode::
-
-  
-  rec_vol = propagate(holo, np.linspace(1, 15,15)*holo.optics.med_wavelen)
+    
+  med_wavelen = holo.wavelen / holo.index
+  rec_vol = propagate(holo, zstack*med_wavelen)
   hp.show(rec_vol.imag)
 
 ..  testcode::
@@ -125,4 +102,4 @@ number of wavelengths in medium:
 ..  testoutput::
     :hide:
     
-    0.299395463214
+    -0.00284432855731

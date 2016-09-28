@@ -40,9 +40,36 @@ to look at it, but most holopy calculations will fail on an image without spacin
 
 The last line simply displays the loaded image on your screen. 
 
+.. note ::
+   
+  If you know numpy, our :class:`.Image` is a `numpy
+  <http://docs.scipy.org/doc/numpy/reference/arrays.html>`_ array
+  subclass, so you can use all the math numpy provides.  For
+  example:
+    
+  ..    testcode::
+    
+        import scipy.ndimage
+        import scipy.fftpack
+        filtered_image = scipy.ndimage.uniform_filter(raw_holo, [10,10])
+        ffted_image = scipy.fftpack.fft2(raw_holo)
+
+  ..    testcode::
+        :hide:
+
+        print(filtered_image[0,0])
+        print(ffted_image[0,0])
+
+  
+..  testoutput::
+    :hide:
+        
+    99.04
+    (36600582+0j)
+
 
 Correcting Noisy Images
-___________________________________
+-----------------------
 
 The raw hologram has some non-uniform illumination and an artifact in the 
 upper right hand corner from dust somewhere in the optics. These types of  
@@ -79,32 +106,6 @@ also subtract a dark-field image of your sample, recorded with no laser illumina
     
     0.81746031746
 
-.. note ::
-   
-  If you know numpy, our :class:`.Image` is a `numpy
-  <http://docs.scipy.org/doc/numpy/reference/arrays.html>`_ array
-  subclass, so you can use all the math numpy provides.  For
-  example:
-    
-  ..    testcode::
-    
-        import scipy.ndimage
-        import scipy.fftpack
-        filtered_image = scipy.ndimage.uniform_filter(holo, [10,10])
-        ffted_image = scipy.fftpack.fft2(holo)
-
-  ..    testcode::
-        :hide:
-
-        print(filtered_image[0,0])
-        print(ffted_image[0,0])
-
-  
-..  testoutput::
-    :hide:
-        
-    0.98738243396
-    (263205.886185+0j)
 
 .. _metadata:
 
@@ -172,3 +173,24 @@ formats will still contain metadata, which will be retrieved if you reload with 
     Although holopy stores metadata even when writing to image files, it is still recommended that 
     holograms be saved to HDF5 using :func:`.save`. Floating point intensity values are rounded to
     8-bit integers when using :func:`.save_image`, resulting in information loss.
+
+
+Non-Square Pixels
+-----------------
+
+The holograms above make use of several default assumptions.  When you
+load an image like ::
+
+  raw_holo = hp.load_image(imagepath, spacing = 0.0851)
+
+you are making HoloPy assume a square array of evenly spaced grid
+points. If your pixels are not square, you can provide pixel spacing values in each direction: 
+
+..  testcode::
+
+  raw_holo = hp.load_image(imagepath, spacing = (0.0851, 0.0426))
+
+Most displays will default to displaying square pixels, but if your
+hologram has an associated spacing (holo.spacing), and you use
+holopy.show(holo) to display the image, your hologram will display
+with pixels of the correct aspect ratio.
