@@ -159,7 +159,7 @@ def calc_cross_sections(scatterer, medium_index=None, wavelen=None, polarization
     theory = interpret_theory(scatterer,theory)
     return theory._calc_cross_sections(scatterer, schema.optics)
 
-def calc_scat_matrix(schema, scatterer, medium_index=None, wavelen=None, polarization=None, theory='auto', optics=None):
+def calc_scat_matrix(schema, scatterer, medium_index=None, wavelen=None, theory='auto', optics=None):
     """
     Compute farfield scattering matricies for scatterer
 
@@ -186,7 +186,12 @@ def calc_scat_matrix(schema, scatterer, medium_index=None, wavelen=None, polariz
         Scattering matricies at specified positions
 
     """
-    schema = check_schema(interpret_args(schema, medium_index, wavelen, polarization, optics))
+    schema = interpret_args(schema, medium_index, wavelen, optics=optics)
+    if schema.optics.wavelen is None:
+        raise MissingParameter("wavelength")
+    if schema.optics.index is None:
+        raise MissingParameter("medium refractive index")
+
     theory = interpret_theory(scatterer,theory)
     return theory._calc_scat_matrix(scatterer, schema)
 
@@ -226,7 +231,7 @@ def calc_field(schema, scatterer, medium_index=None, wavelen=None, polarization=
 
 # this is pulled out separate from the calc_holo method because occasionally you
 # want to turn prepared  e_fields into holograms directly
-def scattered_field_to_hologram(scat, ref, detector_normal = (0, 0, 1)):
+def scattered_field_to_hologram(scat, ref, detector_normal = None):
     """
     Calculate a hologram from an E-field
 
@@ -241,8 +246,10 @@ def scattered_field_to_hologram(scat, ref, detector_normal = (0, 0, 1)):
         Vector normal to the detector the hologram should be measured at
         (defaults to z hat, a detector in the x, y plane)
     """
+    if detector_normal is None:
+        detector_normal = (0, 0, 1)
+
     shape = _field_scalar_shape(scat)
-        
     if isinstance(ref, Optics):
         # add the z component to polarization and adjust the shape so that it is
         # broadcast correctly

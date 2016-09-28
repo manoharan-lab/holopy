@@ -258,7 +258,7 @@ def test_farfield_matr():
                     Optics(wavelen=.66, index = 1.33, polarization = (1, 0)))
     sphere = Sphere(r = .5, n = 1.59+0.1j)
 
-    matr = calc_scat_matrix(schema, sphere, index, .66, polarization=(1,0))
+    matr = calc_scat_matrix(schema, sphere, index, .66)
     verify(matr, 'farfield_matricies', rtol = 1e-6)
 
 @attr('medium')
