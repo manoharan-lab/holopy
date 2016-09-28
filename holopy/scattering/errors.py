@@ -80,10 +80,10 @@ class NoCenter(Exception):
     pass
 
 class MissingParameter(Exception):
-    def __init__(self, calc_name, parameter_name):
+    def __init__(self, parameter_name):
         self.parameter_name = parameter_name
     def __str__(self):
-        message= ("Calculation requires specification of " + self.parameter_name + ".")
+        return ("Calculation requires specification of " + self.parameter_name + ".")
 
 
 class MultisphereFieldNaN(UnrealizableScatterer):

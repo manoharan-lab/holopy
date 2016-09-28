@@ -32,7 +32,7 @@ import numpy as np
 import scipy.signal
 from .errors import UnspecifiedPosition
 from .holopy_object import HoloPyObject
-from .metadata import Angles, Positions
+from .metadata import Angles, Positions, Optics
 from .helpers import _ensure_pair, _ensure_array, dict_without, ensure_3d, is_none
 
 def zeros_like(obj, dtype=None):
@@ -160,12 +160,21 @@ class Schema(HoloPyObject):
     {attrs}
     """
     def __init__(self, shape=None, positions=None, optics=None,
-                 origin=np.zeros(3), normals=None, metadata={}, **kwargs):
+                 origin=np.zeros(3), normals=None, index=None, wavelen=None, polarization=None, metadata={}, **kwargs):
         self._positions = positions
         self.optics = optics
         self.origin = origin
         self.metadata = metadata
         self.normals = normals
+
+        if optics is None and (wavelen is not None or polarization is not None or index is not None):
+            self.optics = Optics()
+        if index is not None:
+            self.index = index
+        if wavelen is not None:
+            self.wavelen = wavelen
+        if polarization is not None:
+            self.polarization = polarization
         # if we are a np.ndarray subclass (if this constructor is
         # called from Marray or subclass) we will already have a shape
         # and should not try to do anything with our shape argument.
@@ -201,7 +210,7 @@ class Schema(HoloPyObject):
 
     @property
     def polarization(self):
-        return self. optics.polarization
+        return self.optics.polarization
 
     @polarization.setter
     def polarization(self, val):

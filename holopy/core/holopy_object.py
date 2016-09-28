@@ -65,11 +65,14 @@ class HoloPyObject(Serializable):
 
     def _iteritems(self):
         for var in self._args:
-            if getattr(self, var, None) is not None:
-                item = getattr(self, var)
-                if isinstance(item, np.ndarray) and item.ndim == 1:
-                    item = list(item)
-                yield var, item
+            if (var is not 'wavelen' and var is not 'index' and var is not 'polarization') or (self.__class__.__name__ is 'Optics'):
+            #This filters out the dummy variables in schemas since they are redundant to the schema's optics object
+            #However, optics objects have arguments with the same names that we want to keep
+                if getattr(self, var, None) is not None:
+                    item = getattr(self, var)
+                    if isinstance(item, np.ndarray) and item.ndim == 1:
+                        item = list(item)
+                    yield var, item
 
     @classmethod
     def to_yaml(cls, dumper, data):

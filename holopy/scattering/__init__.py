@@ -39,5 +39,5 @@ The HoloPy scattering module is used to:
 
 '''
 
-from . import theory
-from . import scatterer
+from . import scatterer, theory
+from .calculations import calc_holo, calc_field, calc_intensity, calc_cross_sections, calc_scat_matrix
