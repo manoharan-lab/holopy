@@ -26,8 +26,7 @@ We'll examine each section of code in turn.  The first few lines :
   
     import holopy as hp
     from holopy.core import ImageSchema
-    from holopy.scattering.scatterer import Sphere
-    from holopy.scattering.calculations import calc_holo
+    from holopy.scattering import calc_holo, Sphere
 
 load the relevant modules from HoloPy that we'll need for doing our
 calculation.  The next block:
@@ -165,7 +164,7 @@ first define the spheres individually, and then combine them into a
 
 ..  testcode::
 
-    from holopy.scattering.scatterer import Spheres
+    from holopy.scattering import Spheres
     s1 = Sphere(center=(5, 5, 5), n = 1.59, r = .5)
     s2 = Sphere(center=(4, 4, 5), n = 1.59, r = .5)
     collection = Spheres([s1, s2])
@@ -214,7 +213,7 @@ calling the `calc_holo` function:
 
 ..  testcode::
     
-    from holopy.scattering.theory import Mie
+    from holopy.scattering import Mie
     holo = calc_holo(schema, collection, theory=Mie)
 
 Holopy can also access a discrete dipole approximation (DDA) theory to model arbitrary

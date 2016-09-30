@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from holopy.core import Angles
-from holopy.scattering.scatterer import Sphere
-from holopy.scattering import calc_scat_matrix
+from holopy.scattering import calc_scat_matrix, Sphere
 
 wavelen = 0.66
 index = 1.33

@@ -1,7 +1,6 @@
 import holopy as hp
 from holopy.core import ImageSchema
-from holopy.scattering.scatterer import Sphere
-from holopy.scattering import calc_holo
+from holopy.scattering import calc_holo, Sphere
 
 wavelen = 0.66
 polarization = (1, 0)
