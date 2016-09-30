@@ -28,6 +28,7 @@ analysis procedures.
 """
 import numpy as np
 import yaml
+from.helpers import dict_without
 
 # Metaclass black magic to eliminate need for adding yaml_tag lines to classes
 class SerializableMetaclass(yaml.YAMLObjectMetaclass):
@@ -61,18 +62,19 @@ class HoloPyObject(Serializable):
 
     @property
     def _dict(self):
-        return dict(self._iteritems())
+        dictlist = dict(self._iteritems())
+        if self.__class__.__name__ is not 'Optics':
+            dictlist = dict_without(dictlist, ('wavelen', 'index', 'polarization'))
+        return dictlist
 
     def _iteritems(self):
         for var in self._args:
-            if (var is not 'wavelen' and var is not 'index' and var is not 'polarization') or (self.__class__.__name__ is 'Optics'):
-            #This filters out the dummy variables in schemas since they are redundant to the schema's optics object
-            #However, optics objects have arguments with the same names that we want to keep
-                if getattr(self, var, None) is not None:
-                    item = getattr(self, var)
-                    if isinstance(item, np.ndarray) and item.ndim == 1:
-                        item = list(item)
-                    yield var, item
+
+            if getattr(self, var, None) is not None:
+                item = getattr(self, var)
+                if isinstance(item, np.ndarray) and item.ndim == 1:
+                    item = list(item)
+                yield var, item
 
     @classmethod
     def to_yaml(cls, dumper, data):

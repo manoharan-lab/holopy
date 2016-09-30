@@ -24,10 +24,8 @@ calc_intensity and calc_holo, based on subclass's calc_field
 
 from holopy.core.holopy_object import SerializableMetaclass
 from holopy.core import Optics, Schema, Image, VectorGrid, interpret_args
-from holopy.core.helpers import dict_without
-from holopy.core.helpers import is_none
-from holopy.scattering.scatterer import Sphere, Spheres
-from holopy.scattering.theory import Mie, Multisphere, dda
+from holopy.core.helpers import dict_without, is_none
+from holopy.scattering import Mie, Multisphere, dda, Sphere, Spheres
 from holopy.scattering.errors import AutoTheoryFailed, MissingParameter
 
 import numpy as np
@@ -37,9 +35,7 @@ def check_schema(schema):
         raise MissingParameter("wavelength")
     if schema.optics.index is None:
         raise MissingParameter("medium refractive index")
-    if schema.optics.polarization is None:
-        raise MissingParameter("polarization")
-    elif sum(schema.optics.polarization) is None:
+    if is_none(schema.optics.polarization):
         raise MissingParameter("polarization")
     return schema
 

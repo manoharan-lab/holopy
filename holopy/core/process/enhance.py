@@ -28,12 +28,8 @@ or detrending
 
 from ..errors import BadImage
 
-
 import scipy
 import numpy as np
-
-subtract = 0
-divide = 1
 
 def normalize(image):
     """
@@ -95,7 +91,7 @@ def zero_filter(image):
         delta_cols = zero_pix[1] - np.roll(zero_pix[1], 1)
         if ((1 in delta_rows[np.where(delta_cols == 0)]) or
             (1 in delta_cols[np.where(delta_rows == 0)])):
-            raise UnusableImage('Image has adjacent dead pixels, cannot remove dead pixels')
+            raise BadImage('Image has adjacent dead pixels, cannot remove dead pixels')
 
     for row, col in zip(zero_pix[0], zero_pix[1]):
         # in the bulk
