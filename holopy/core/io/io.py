@@ -23,20 +23,19 @@ functions.
 """
 import os
 import glob
+import yaml
 from warnings import warn
 import numpy as np
 from io import IOBase
 from scipy.misc import fromimage, bytescale
 from PIL import Image as pilimage
+from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 
 from holopy.core.io import serialize
-from holopy.core.io.image_file_io import save_image
 from holopy.core.marray import Image, arr_like
 from holopy.core.metadata import Optics, interpret_args
 from holopy.core.helpers import _ensure_array
-
-
-
+from holopy.core.errors import NoMetadata
 
 def load(inf):
     """
@@ -69,19 +68,21 @@ def load(inf):
     loaded_yaml = False
     # attempt to load a holopy yaml file
     try:
+        #TODO also want to load hdf5 here
         loaded = serialize.load(inf)
         loaded_yaml = True
+        return loaded
     except (serialize.ReaderError, UnicodeDecodeError):
-        pass
-        # If that fails, we go on and read images
 
-    if not loaded_yaml:
-        pass
-        #TODO load a tif with metadata
-        #TODO confirm tif has metadata
-        #TODO if not, raise exception referring user to load_image function.
-
-    return loaded
+        if os.path.splitext(filename)[1] is '.tif':
+            im = load_image(inf)
+            metadat = yaml.load(pilimage.open(inf).tag[270][0])
+            if metadat['spacing'] is None:
+                raise NoMetadata
+            else:
+                return im.like_me(**dict(metadat))
+        else:
+            raise NoMetadata
 
 def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, optics=None, channel=None):
     """
@@ -151,12 +152,76 @@ def save(outf, obj):
     binary array is very slow for large arrays.  HoloPy can read these 'yaml'
     files, but any other yaml implementation will get confused.
     """
+    #TODO: Default to saving hdf5, with option to save yaml
+    #TODO: can't save images with this function
     if isinstance(outf, str):
         filename, ext = os.path.splitext(outf)
         if ext in ['.tif', '.TIF', '.tiff', '.TIFF']:
             save_image(outf, obj)
             return
     serialize.save(outf, obj)
+
+def save_image(filename, im, scaling='auto', depth=8):
+    """Save an ndarray or image as a tiff.
+
+    Parameters
+    ----------
+    im : ndarray or :class:`holopy.image.Image`
+        image to save.
+    filename : basestring
+        filename in which to save image. If im is an image the
+        function should default to the image's name field if no
+        filename is specified
+    scaling : 'auto', None, or (None|Int, None|Int)
+        How the image should be scaled for saving. Ignored for float
+        output. It defaults to auto, use the full range of the output
+        format. Other options are None, meaning no scaling, or a pair
+        of integers specifying the values which should be set to the
+        maximum and minimum values of the image format.
+    depth : 8, 16 or 'float'
+        What type of image to save. Options other than 8bit may not be supported
+        for many image types. You probably don't want to save 8bit images without
+        some kind of scaling.
+
+    """
+    # if we don't have an extension, default to tif
+    if os.path.splitext(filename)[1] is '':
+        filename += '.tif'
+
+    if scaling is not None:
+        if scaling is 'auto':
+            min = im.min()
+            max = im.max()
+        elif len(scaling) == 2:
+            min, max = scaling
+        else:
+            raise Error("Invalid image scaling")
+        if min is not None:
+            im = im - min
+        if max is not None:
+            im = im / (max-min)
+
+    if depth is not 'float':
+        if depth is 8:
+            depth = 8
+            typestr = 'uint8'
+        elif depth is 16 or depth is 32:
+            depth = depth-1
+            typestr = 'int' + str(depth)
+        else:
+            raise Error("Unknown image depth")
+            
+        if im.max() <= 1:
+            im = im * ((2**depth)-1) + .499999
+            im = im.astype(typestr)
+    if os.path.splitext(filename)[1] is '.tif':
+        metadat = yaml.dump(im._dict)
+        tiffinfo = ifd2()
+        tiffinfo[270] = metadat #This edits the 'imagedescription' field of the tiff metadata
+        pilimage.fromarray(im).save(filename, tiffinfo=tiffinfo)   
+    else:
+        pilimage.fromarray(im).save(filename)
+    
 
 def get_example_data_path(name):
     path = os.path.abspath(__file__)

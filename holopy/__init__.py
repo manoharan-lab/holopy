@@ -32,7 +32,7 @@ images and calculations.
 
 
 from . import core, scattering, fitting, inference
-from .core import load, save, load_image
+from .core import load, save, load_image, save_image
 from .propagation import propagate
 from .vis import show
 

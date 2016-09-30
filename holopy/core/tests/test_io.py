@@ -20,7 +20,7 @@ from holopy.core.tests.common import (assert_obj_close,
                                       assert_read_matches_write,
                                       get_example_data,
                                       get_example_data_path)
-from holopy.core import Optics, Marray, load, save, load_image
+from holopy.core import Optics, Marray, load, save, load_image, save_image
 from holopy.core.process import normalize
 import tempfile
 import os
@@ -29,7 +29,6 @@ import warnings
 from nose.plugins.attrib import attr
 from numpy.testing import assert_raises, assert_equal
 import numpy as np
-from holopy.core.io import save_image
 from holopy.core.holopy_object import Serializable
 import yaml
 
@@ -48,13 +47,13 @@ def test_image_io():
     t = tempfile.mkdtemp()
 
     filename = os.path.join(t, 'image0001.tif')
-    save(filename, holo)
+    save_image(filename, holo, scaling=None)
     l = load_image(filename)
     assert_obj_close(l, holo)
 
     # check that it defaults to saving as tif
     filename = os.path.join(t, 'image0002')
-    save_image(filename, holo)
+    save_image(filename, holo, scaling=None)
     l = load_image(filename+'.tif')
     assert_obj_close(l, holo)
 
