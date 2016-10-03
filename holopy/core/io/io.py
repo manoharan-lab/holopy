@@ -37,6 +37,8 @@ from holopy.core.metadata import Optics, interpret_args
 from holopy.core.helpers import _ensure_array
 from holopy.core.errors import NoMetadata
 
+tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
+
 def load(inf):
     """
     Load data or results
@@ -73,8 +75,7 @@ def load(inf):
         loaded_yaml = True
         return loaded
     except (serialize.ReaderError, UnicodeDecodeError):
-
-        if os.path.splitext(filename)[1] is '.tif':
+        if os.path.splitext(inf)[1] in tiflist:
             im = load_image(inf)
             metadat = yaml.load(pilimage.open(inf).tag[270][0])
             if metadat['spacing'] is None:
@@ -156,7 +157,7 @@ def save(outf, obj):
     #TODO: can't save images with this function
     if isinstance(outf, str):
         filename, ext = os.path.splitext(outf)
-        if ext in ['.tif', '.TIF', '.tiff', '.TIFF']:
+        if ext in tiflist:
             save_image(outf, obj)
             return
     serialize.save(outf, obj)
@@ -214,7 +215,7 @@ def save_image(filename, im, scaling='auto', depth=8):
         if im.max() <= 1:
             im = im * ((2**depth)-1) + .499999
             im = im.astype(typestr)
-    if os.path.splitext(filename)[1] is '.tif':
+    if os.path.splitext(filename)[1] in tiflist:
         metadat = yaml.dump(im._dict)
         tiffinfo = ifd2()
         tiffinfo[270] = metadat #This edits the 'imagedescription' field of the tiff metadata

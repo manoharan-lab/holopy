@@ -57,6 +57,30 @@ def test_image_io():
     l = load_image(filename+'.tif')
     assert_obj_close(l, holo)
 
+    #check saving metadata
+    filename = os.path.join(t, 'image0001.tif')
+    save_image(filename, holo, scaling=None)
+    l = load(filename)
+    assert_obj_close(l, holo)
+
+    #check saving/loading non-tif
+    filename = os.path.join(t, 'image0001.bmp')
+    save_image(filename, holo, scaling=None)
+    l=load_image(filename)
+    assert_obj_close(l, holo)    
+
+    #check specify scaling
+    filename = os.path.join(t, 'image0001.tif')
+    save_image(filename, holo, scaling=(0,255))
+    l=load_image(filename)
+    assert_obj_close(l, holo)
+
+    #check auto scaling
+    filename = os.path.join(t, 'image0001.tif')
+    save_image(filename, holo, depth='float')
+    l=load_image(filename)
+    assert_obj_close(l, (holo-holo.min())/(holo.max()-holo.min()))    
+
     # check saving 16 bit
     filename = os.path.join(t, 'image0003')
     save_image(filename, holo, scaling=None, depth=16)
@@ -70,17 +94,6 @@ def test_image_io():
     assert_obj_close(loaded, holo)
 
     shutil.rmtree(t)
-
-def test_non_tiff():
-    # test loading a few other image formats.  We have some in the docs
-    # director, so just use them
-    import holopy
-    root = os.path.split(os.path.split(holopy.__file__)[0])[0]
-    doc_images = os.path.join(root, 'docs', 'source', 'images')
-
-    load_image(os.path.join(doc_images, 'image_5Particle_Hologram.jpg'))
-    load_image(os.path.join(doc_images, 'ReconVolume_mlab_5Particle_Hologram.png'))
-
 
 # test a number of little prettying up of yaml output that we do for
 # numpy types
