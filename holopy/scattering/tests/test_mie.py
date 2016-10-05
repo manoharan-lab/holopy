@@ -258,7 +258,7 @@ def test_farfield_matr():
                     Optics(wavelen=.66, index = 1.33, polarization = (1, 0)))
     sphere = Sphere(r = .5, n = 1.59+0.1j)
 
-    matr = calc_scat_matrix(schema, sphere, index, .66, polarization=(1,0))
+    matr = calc_scat_matrix(schema, sphere, index, .66)
     verify(matr, 'farfield_matricies', rtol = 1e-6)
 
 @attr('medium')
@@ -312,6 +312,13 @@ def test_layered():
     hl = calc_holo(sch, l, index, wavelen, optics=xoptics)
     hs = calc_holo(sch, s, index, wavelen, optics=xoptics)
     assert_equal(hl, hs)
+
+def test_large_sphere():
+    large_sphere_gold=[[0.96371831,1.04338683],[1.04240049,0.99605225]]
+    s=Sphere(n=1.5, r=5, center=(10,10,10))
+    sch=ImageSchema(10,.2,Optics(.66,1,(1,0)))
+    hl=calc_holo(sch, s)
+    assert_obj_close(np.array(hl[0:2,0:2]),large_sphere_gold)
 
 def test_calc_scat_coeffs():
     o = Optics(wavelen=.66, index=1.33, polarization=(0, 1))

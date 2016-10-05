@@ -249,8 +249,10 @@ def interpret_args(schema=None, index=None, wavelen=None, polarization=None, opt
     from .marray import Schema
     if not isinstance(schema, Schema):
         #If schema is not a Schema object, then we assume it is a list of positions.
-        #Here, schema can refer either to a set of positions or a Schema object with this positions value.
-        schema = Schema(positions=schema)
+        if not isinstance(schema, Positions) and not isinstance(schema, PositionSpecification):
+            #Add a positions wrapper if it doesn't have one.
+            schema = Positions(schema)
+        schema = Schema(positions=schema, optics=Optics())
 
     if optics is None:
         if isinstance(schema.optics, Optics):

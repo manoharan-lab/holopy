@@ -65,6 +65,7 @@ class HoloPyObject(Serializable):
 
     def _iteritems(self):
         for var in self._args:
+
             if getattr(self, var, None) is not None:
                 item = getattr(self, var)
                 if isinstance(item, np.ndarray) and item.ndim == 1:

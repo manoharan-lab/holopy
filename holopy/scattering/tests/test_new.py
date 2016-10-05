@@ -47,7 +47,7 @@ def test_calc_intensity():
     intensity = calc_intensity(locations, scatterer, medium_index, wavelen, polarization)
 
 def test_calc_scat_matrix():
-    matr = calc_scat_matrix(locations, scatterer, medium_index, wavelen, polarization)
+    matr = calc_scat_matrix(locations, scatterer, medium_index, wavelen)
 
 def test_determine_theory():
     assert_obj_close(determine_theory(Sphere()), Mie())

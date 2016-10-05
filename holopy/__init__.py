@@ -31,10 +31,8 @@ images and calculations.
 """
 
 
-from . import core
-from .core import load, save
-from . import scattering
-from . import fitting
+from . import core, scattering, fitting, inference
+from .core import load, save, load_image, save_image
 from .propagation import propagate
 from .vis import show
 
