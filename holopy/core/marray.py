@@ -185,6 +185,10 @@ class Schema(HoloPyObject):
         super(Schema, self).__init__(**kwargs)
 
     @property
+    def _dict(self):
+        return dict_without(dict(self._iteritems()), ('wavelen', 'index', 'polarization'))
+
+    @property
     def positions(self):
         return self._positions
 
@@ -247,7 +251,6 @@ class Schema(HoloPyObject):
 
         for key, item in newdict.items():
             setattr(self, key, item)
-
 
 @_describe_init_signature
 class Marray(np.ndarray, Schema):

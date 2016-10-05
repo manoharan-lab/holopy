@@ -28,7 +28,6 @@ analysis procedures.
 """
 import numpy as np
 import yaml
-from.helpers import dict_without
 
 # Metaclass black magic to eliminate need for adding yaml_tag lines to classes
 class SerializableMetaclass(yaml.YAMLObjectMetaclass):
@@ -62,10 +61,7 @@ class HoloPyObject(Serializable):
 
     @property
     def _dict(self):
-        dictlist = dict(self._iteritems())
-        if self.__class__.__name__ is not 'Optics':
-            dictlist = dict_without(dictlist, ('wavelen', 'index', 'polarization'))
-        return dictlist
+        return dict(self._iteritems())
 
     def _iteritems(self):
         for var in self._args:
