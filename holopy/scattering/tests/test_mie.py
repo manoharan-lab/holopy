@@ -313,6 +313,13 @@ def test_layered():
     hs = calc_holo(sch, s, index, wavelen, optics=xoptics)
     assert_equal(hl, hs)
 
+def test_large_sphere():
+    large_sphere_gold=[[0.96371831,1.04338683],[1.04240049,0.99605225]]
+    s=Sphere(n=1.5, r=5, center=(10,10,10))
+    sch=ImageSchema(10,.2,Optics(.66,1,(1,0)))
+    hl=calc_holo(sch, s)
+    assert_obj_close(np.array(hl[0:2,0:2]),large_sphere_gold)
+
 def test_calc_scat_coeffs():
     o = Optics(wavelen=.66, index=1.33, polarization=(0, 1))
     sp = Sphere(r=.5, n=1.6, center=(10, 10, 5))
