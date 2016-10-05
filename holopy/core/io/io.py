@@ -77,11 +77,11 @@ def load(inf):
     except (serialize.ReaderError, UnicodeDecodeError):
         if os.path.splitext(inf)[1] in tiflist:
             im = load_image(inf)
-            metadat = yaml.load(pilimage.open(inf).tag[270][0])
-            if metadat['spacing'] is None:
+            meta = yaml.load(pilimage.open(inf).tag[270][0])
+            if meta['spacing'] is None:
                 raise NoMetadata
             else:
-                return im.like_me(**dict(metadat))
+                return im.like_me(**dict(meta))
         else:
             raise NoMetadata
 
