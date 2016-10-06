@@ -30,6 +30,7 @@ from io import IOBase
 from scipy.misc import fromimage, bytescale
 from PIL import Image as pilimage
 from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
+import xarray as xr
 
 from holopy.core.io import serialize
 from holopy.core.marray import Image, arr_like
@@ -125,11 +126,11 @@ def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, o
     elif channel is not None and channel > 0:
         warnings.warn("Warning: not a color image (channel number ignored)")
 
-  
-    loaded = Image(arr, spacing=spacing, optics=optics)
-    loaded = interpret_args(loaded, index, wavelen, polarization)    
-    return loaded    
-    
+    if optics is None:
+        optics = Optics()
+    optics = optics.like_me(wavelen=wavelen, index=index, polarization=polarization)
+
+    return xr.DataArray(arr[...,np.newaxis], dims=['x', 'y', 'z'], coords={'x': np.arange(arr.shape[0])*spacing, 'y': np.arange(arr.shape[1])*spacing, 'z': np.array(0)}, name=inf, attrs={'optics': optics})
 
 def save(outf, obj):
     """

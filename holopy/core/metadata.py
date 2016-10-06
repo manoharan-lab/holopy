@@ -24,6 +24,7 @@ Classes for defining metadata about experimental or calculated results.
 
 
 import numpy as np
+import xarray as xr
 from warnings import warn
 import copy
 from .helpers import _ensure_pair, _ensure_array
@@ -245,20 +246,49 @@ class Angles(PositionSpecification):
                 pos[i*self.shape[1]+j] = theta, phi
         return pos
 
-def interpret_args(schema=None, index=None, wavelen=None, polarization=None, optics=None):    
-    from .marray import Schema
-    if not isinstance(schema, Schema):
-        #If schema is not a Schema object, then we assume it is a list of positions.
-        if not isinstance(schema, Positions) and not isinstance(schema, PositionSpecification):
-            #Add a positions wrapper if it doesn't have one.
-            schema = Positions(schema)
-        schema = Schema(positions=schema, optics=Optics())
 
+
+def interpret_args(schema=None, index=None, wavelen=None, polarization=None, optics=None):
     if optics is None:
-        if isinstance(schema.optics, Optics):
+        if hasattr(schema, 'optics'):
             optics = schema.optics
         else:
             optics = Optics()
     optics = optics.like_me(wavelen=wavelen, index=index, polarization=polarization)
-    return schema.like_me(optics=optics)
+    res = copy.copy(schema)
+    res.attrs['optics'] = optics
+    return res
 
+def to_spherical(a, origin, wavevec=None):
+    xo, yo, zo = origin
+    x, y, z = a.x - xo, a.y - yo, zo - a.z
+    r = np.sqrt(x**2 + y**2 + z**2)
+    theta = np.arctan2(np.sqrt(x**2 + y**2), z)
+    phi = np.arctan2(y, x)
+    phi = phi + 2*np.pi * (phi < 0)
+    if wavevec is not None:
+        rname = 'kr'
+        kr = r*wavevec
+    else:
+        rname = 'r'
+        kr = r
+    return xr.DataArray(a, coords={rname: kr, 'theta': theta, 'phi': phi})
+
+def flat(a):
+    return a.stack(flat=['x', 'y', 'z'])
+
+def from_flat(a):
+    return a.unstack('flat')
+
+def r_theta_phi_flat(a, origin):
+    f = flat(to_spherical(a, origin))
+    return f
+    return np.vstack((f.r, f.theta, f.phi)).T
+
+def kr_theta_phi_flat(a, origin, wavevec=None):
+    if wavevec is None:
+        wavevec = a.optics.wavevec
+    return flat(to_spherical(a, origin, wavevec))
+    pos = r_theta_phi_flat(a, origin)
+    pos['r'] *= wavevec
+    return pos

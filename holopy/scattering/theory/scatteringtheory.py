@@ -25,11 +25,13 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 import numpy as np
+import xarray as xr
 from warnings import warn
 from ...core.marray import make_vector_schema
 from holopy.core.holopy_object import HoloPyObject
 from ..scatterer import Scatterers, Sphere
 from ..errors import TheoryNotCompatibleError, NoCenter
+from ...core.metadata import kr_theta_phi_flat, from_flat
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -99,17 +101,18 @@ class FortranTheory(ScatteringTheory):
         def get_field(s):
             if isinstance(scatterer,Sphere) and scatterer.center is None:
                 raise NoCenter("Center is required for hologram calculation of a sphere")
-
-            positions = schema.positions.kr_theta_phi(s.center, optics.wavevec)
-            field = np.vstack(self._raw_fields(positions.T, s, optics)).T
+            positions = kr_theta_phi_flat(schema, s.center)
+            field = np.vstack(self._raw_fields(np.vstack((positions.kr, positions.theta, positions.phi)), s, optics)).T
             phase = np.exp(-1j*np.pi*2*s.center[2] / optics.med_wavelen)
-            if self._scatterer_overlaps_schema(scatterer, schema):
-                inner = scatterer.contains(schema.positions.xyz())
-                field[inner] = np.vstack(
-                    self._raw_internal_fields(positions[inner].T, s,
-                                              optics)).T
+            # TODO: fix and re-enable internal fields
+            #if self._scatterer_overlaps_schema(scatterer, schema):
+            #    inner = scatterer.contains(schema.positions.xyz())
+            #    field[inner] = np.vstack(
+            #        self._raw_internal_fields(positions[inner].T, s,
+            #                                  optics)).T
             field *= phase
-            return make_vector_schema(schema).interpret_1d(field)
+            field = xr.DataArray(field, dims=['flat', 'field_component'], coords={'flat': positions.flat, 'field_component': ['x', 'y', 'z']})
+            return from_flat(field)
 
 
         # See if we can handle the scatterer in one step
@@ -135,7 +138,7 @@ class FortranTheory(ScatteringTheory):
             unit_vector = center_to_center - abs(center_to_center).sum()
             return schema.contains(scatterer.center - unit_vector)
         else:
-            return scatterer.contains(schema.positions.xyz()).any()
+            return scatterer.contains(schema.coords).any()
 
     def _set_internal_fields(self, fields, scatterer):
         center_to_center = scatterer.center - fields.center
