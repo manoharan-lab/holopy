@@ -30,6 +30,7 @@ import copy
 from .helpers import _ensure_pair, _ensure_array
 from .holopy_object import HoloPyObject
 
+field_component = 'field_component'
 
 class Optics(HoloPyObject):
     """
@@ -101,6 +102,10 @@ class Optics(HoloPyObject):
     @property
     def polarization(self):
         return self._polarization
+
+    @property
+    def polarization_field(self):
+        return to_field_components(self.polarization)
 
     @polarization.setter
     def polarization(self, val):
@@ -259,6 +264,13 @@ def interpret_args(schema=None, index=None, wavelen=None, polarization=None, opt
     res.attrs['optics'] = optics
     return res
 
+def to_field_components(c):
+    c = np.array(c)
+    if c.shape == (2,):
+        c = np.append(c, 0)
+
+    return xr.DataArray(c, coords={field_component: ['x', 'y', 'z']})
+
 def to_spherical(a, origin, wavevec=None):
     xo, yo, zo = origin
     x, y, z = a.x - xo, a.y - yo, zo - a.z
@@ -272,10 +284,10 @@ def to_spherical(a, origin, wavevec=None):
     else:
         rname = 'r'
         kr = r
-    return xr.DataArray(a, coords={rname: kr, 'theta': theta, 'phi': phi})
+    return xr.DataArray(a, coords={rname: kr, 'theta': theta, 'phi': phi, 'x': a.x, 'y':a.y})
 
 def flat(a):
-    return a.stack(flat=['x', 'y', 'z'])
+    return a.stack(flat=['x', 'y'])
 
 def from_flat(a):
     return a.unstack('flat')
@@ -292,3 +304,13 @@ def kr_theta_phi_flat(a, origin, wavevec=None):
     pos = r_theta_phi_flat(a, origin)
     pos['r'] *= wavevec
     return pos
+
+def make_coords(shape, spacing, z=0):
+    if np.isscalar(shape):
+        shape = np.repeat(shape, 2)
+    if np.isscalar(spacing):
+        spacing = np.repeat(spacing, 2)
+    return {'x': np.arange(shape[0])*spacing[0], 'y': np.arange(shape[1])*spacing[1], 'z': 0}
+
+def make_attrs(optics, normals):
+    return {'optics': optics, 'normals': to_field_components(normals)}

@@ -34,7 +34,7 @@ import xarray as xr
 
 from holopy.core.io import serialize
 from holopy.core.marray import Image, arr_like
-from holopy.core.metadata import Optics, interpret_args
+from holopy.core.metadata import Optics, interpret_args, make_coords, make_attrs
 from holopy.core.helpers import _ensure_array
 from holopy.core.errors import NoMetadata
 
@@ -86,7 +86,7 @@ def load(inf):
         else:
             raise NoMetadata
 
-def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, optics=None, channel=None):
+def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, optics=None, normals=(0, 0, 1), channel=None):
     """
     Load data or results
 
@@ -129,8 +129,7 @@ def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, o
     if optics is None:
         optics = Optics()
     optics = optics.like_me(wavelen=wavelen, index=index, polarization=polarization)
-
-    return xr.DataArray(arr[...,np.newaxis], dims=['x', 'y', 'z'], coords={'x': np.arange(arr.shape[0])*spacing, 'y': np.arange(arr.shape[1])*spacing, 'z': np.array(0)}, name=inf, attrs={'optics': optics})
+    return xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing), name=inf, attrs=make_attrs(optics, normals))
 
 def save(outf, obj):
     """

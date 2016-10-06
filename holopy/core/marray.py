@@ -29,10 +29,11 @@ specified.
 import warnings
 import copy
 import numpy as np
+import xarray as xr
 import scipy.signal
 from .errors import UnspecifiedPosition
 from .holopy_object import HoloPyObject
-from .metadata import Angles, Positions, Optics
+from .metadata import Angles, Positions, Optics, make_coords, make_attrs
 from .helpers import _ensure_pair, _ensure_array, dict_without, ensure_3d, is_none
 
 def zeros_like(obj, dtype=None):
@@ -656,15 +657,8 @@ def subimage(arr, center, shape):
         shape = np.repeat(shape, arr.ndim)
     assert len(shape) == arr.ndim
 
-    extent = [slice(int(np.round(c-s/2)), int(np.round(c+s/2))) for c, s in zip(center, shape)] + [Ellipsis]
-    output = _checked_cut(arr, extent)
-
-    if isinstance(output, RegularGridSchema):
-        if not is_none(output.spacing):
-            output.center = arr.origin + ensure_3d(center) * ensure_3d(arr.spacing)
-        else:
-            output.origin = None
-    return output
+    extent = {x: slice(int(np.round(c-s/2)), int(np.round(c+s/2))) for x, c, s in zip(('x', 'y'), center, shape)}
+    return arr[extent]
 
 def resize(arr, center=None, extent=None, spacing=None):
     """
@@ -755,3 +749,12 @@ def _checked_cut(arr, extent):
 ImageSchema._corresponding_marray = Image
 VolumeSchema._corresponding_marray = Volume
 VectorGridSchema._corresponding_marray = VectorGrid
+
+def ImageSchema(shape, spacing, optics, normals=(0, 0, 1)):
+    if np.isscalar(shape):
+        shape = np.repeat(shape, 2)
+    if np.isscalar(spacing):
+        spacing = np.repeat(spacing, 2)
+
+    d = np.zeros(shape)
+    return xr.DataArray(d, dims=['x', 'y'], coords=make_coords(shape, spacing), attrs=make_attrs(optics, normals))

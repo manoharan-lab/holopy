@@ -24,6 +24,7 @@ calc_intensity and calc_holo, based on subclass's calc_field
 
 from holopy.core.holopy_object import SerializableMetaclass
 from holopy.core import Optics, Schema, Image, VectorGrid, interpret_args
+from holopy.core.metadata import field_component
 from holopy.core.helpers import dict_without, is_none
 from holopy.scattering import Mie, Multisphere, Sphere, Spheres
 from holopy.scattering.theory import dda
@@ -122,7 +123,7 @@ def calc_holo(schema, scatterer, medium_index=None, wavelen=None, polarization=N
     schema = check_schema(interpret_args(schema, medium_index, wavelen, polarization, optics))
     theory = interpret_theory(scatterer,theory)
     scat = theory._calc_field(scatterer, schema)
-    return scattered_field_to_hologram(scat*scaling, schema.optics.polarization, schema.normals)
+    return scattered_field_to_hologram(scat*scaling, schema.optics.polarization_field, schema.normals)
 
 def calc_cross_sections(scatterer, medium_index=None, wavelen=None, polarization=None, theory='auto', optics=None):
     """
@@ -246,17 +247,7 @@ def scattered_field_to_hologram(scat, ref, detector_normal = None):
     if detector_normal is None:
         detector_normal = (0, 0, 1)
 
-    shape = _field_scalar_shape(scat)
-    if isinstance(ref, Optics):
-        # add the z component to polarization and adjust the shape so that it is
-        # broadcast correctly
-        ref = VectorGrid(np.append(ref.polarization, 0).reshape(shape))
-    else:
-        ref = VectorGrid(np.append(ref, 0).reshape(shape))
-    detector_normal = np.array(detector_normal).reshape(shape)
-
-    holo = Image((np.abs(scat+ref)**2 * (1 - detector_normal)).sum(axis=-1),
-                 **dict_without(scat._dict, ['dtype', 'components']))
+    holo = (np.abs(scat+ref)**2 * (1 - detector_normal)).sum(dim=field_component)
 
     return holo
 
