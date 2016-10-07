@@ -82,13 +82,13 @@ def propagate(data, d, index=None, wavelen=None, gradient_filter=False):
 
     G = trans_func(data, d, squeeze=False, gradient_filter=gradient_filter)
 
-    ft = arr_like(fft(data))
+    ft = fft(data)
 
     ft = np.repeat(ft[:, :, np.newaxis,...], G.shape[2], axis=2)
 
     ft = apply_trans_func(ft, G)
 
-    res = arr_like(ifft(ft, overwrite=True))
+    res = ifft(ft, overwrite=True)
 
     # This will not work correctly if you have 0 in the distances more
     # than once. But why would you do that?

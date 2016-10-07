@@ -52,6 +52,7 @@ def fft(a, overwrite=False, shift=True):
     fta : ndarray
        The fourier transform of `a`
     """
+    from ..marray import Marray, arr_like
     if a.ndim is 1:
         if shift:
             res = fftpack.fftshift(fftpack.fft(a, overwrite_x=overwrite))
@@ -64,6 +65,8 @@ def fft(a, overwrite=False, shift=True):
                                     axes=[0,1])
         else:
             res = fftpack.fft2(a, axes=[0, 1], overwrite_x=overwrite)
+    if isinstance(a, Marray):
+        res = arr_like(res, a)
     return res
 
 
@@ -94,6 +97,7 @@ def ifft(a, overwrite=False, shift=True):
     ifta : ndarray
        The inverse fourier transform of `a`
     """
+    from ..marray import Marray, arr_like
     if a.ndim is 1:
         if shift:
             res = fftpack.ifft(fftpack.fftshift(a, overwrite_x=overwrite))
@@ -105,5 +109,7 @@ def ifft(a, overwrite=False, shift=True):
                                  overwrite_x=overwrite)
         else:
             res = fftpack.ifft2(a, overwrite_x=overwrite)
+    if isinstance(a, Marray):
+        res = arr_like(res, a)
     return res
 
