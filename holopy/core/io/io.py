@@ -192,7 +192,7 @@ def save_image(filename, im, scaling='auto', depth=8):
         else:
             raise Error("Invalid image scaling")
         if min is not None:
-            im = im -min
+            im = im - min
         if max is not None:
             im = im / (max-min)
 
