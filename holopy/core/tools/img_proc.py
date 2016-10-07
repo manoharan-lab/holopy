@@ -1,0 +1,236 @@
+# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+#
+# This file is part of HoloPy.
+#
+# HoloPy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HoloPy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
+"""
+Image enhancement through background subtraction, contrast adjustment,
+or detrending
+
+.. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
+.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
+.. moduleauthor:: Tom G. Dimiduk <tdimiduk@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+"""
+
+
+from ..errors import BadImage
+from .math import simulate_noise
+from .helpers import is_none, ensure_3d
+from scipy.signal import detrend
+#from ..marray import Image, Volume, RegularGridSchema
+import numpy as np
+
+def normalize(image):
+    """
+    Normalize an image (NumPy array) by dividing by the pixel average.
+    This gives the image a mean value of 1.
+
+    Parameters
+    ----------
+    image : ndarray
+       The array to normalize
+
+    Returns
+    -------
+    normalized_image : ndarray
+       The normalized image
+    """
+    return image * 1.0 / image.sum() * image.size
+
+def detrend(image):
+    '''
+    Remove linear trends from an image.
+
+    Performs a 2 axis linear detrend using scipy.signal.detrend
+
+    Parameters
+    ----------
+    image : ndarray
+       Image to process
+
+    Returns
+    -------
+    image : ndarray
+       Image with linear trends removed
+    '''
+    return detrend(detrend(image, 0), 1)
+
+def zero_filter(image):
+    '''
+    Search for and interpolate pixels equal to 0.
+    This is to avoid NaN's when a hologram is divided by a BG with 0's.
+
+    Parameters
+    ----------
+    image : ndarray
+       Image to process
+
+    Returns
+    -------
+    image : ndimage
+       Image where pixels = 0 are instead given values equal to average of
+       neighbors.  dtype is the same as the input image
+    '''
+    zero_pix = np.where(image == 0)
+    output = image.copy()
+
+    # check to see if adjacent pixels are 0, if more than 1 dead pixel
+    if len(zero_pix[0]) > 1:
+        delta_rows = zero_pix[0] - np.roll(zero_pix[0], 1)
+        delta_cols = zero_pix[1] - np.roll(zero_pix[1], 1)
+        if ((1 in delta_rows[np.where(delta_cols == 0)]) or
+            (1 in delta_cols[np.where(delta_rows == 0)])):
+            raise BadImage('Image has adjacent dead pixels, cannot remove dead pixels')
+
+    for row, col in zip(zero_pix[0], zero_pix[1]):
+        # in the bulk
+        if ((row > 0) and (row < (image.shape[0]-1)) and
+            (col > 0) and (col < image.shape[1]-1)):
+            output[row, col] = np.sum(image[row-1:row+2, col-1:col+2]) / 8.
+        else: # deal with edges by padding
+            im_avg = image.sum()/(image.size - len(zero_pix[0]))
+            padded_im = np.ones((image.shape[0]+2, image.shape[1]+2)) * im_avg
+            padded_im[1:-1, 1:-1] = image
+            output[row, col] = np.sum(padded_im[row:row+3, col:col+3]) / 8.
+        print('Pixel with value 0 reset to nearest neighbor average')
+
+    return output
+
+def add_noise(image, noise_mean=.1, smoothing=.01, poisson_lambda=1000):
+    """Add simulated noise to images. Intended for use with exact
+    calculated images to make them look more like noisy 'real'
+    measurements.
+
+    Real image noise usually has correlation, so we smooth the raw
+    random variable. The noise_mean can be controlled independently of
+    the poisson_lambda that controls the shape of the distribution. In
+    general, you can stick with our default of a large poisson_lambda
+    (ie for imaging conditions not near the shot noise limit).
+
+    Defaults are set to give noise vaguely similar to what we tend to
+    see in our holographic imaging.
+
+    Parameters
+    ----------
+    image : ndarray or Image
+        The image to add noise to.
+    intensity : float
+        How large the noise mean should be relative to the image mean
+    smoothing : float
+        Fraction of the image size to smooth by. Should in general be << 1
+    poisson_lambda : float
+        Used to compute the shape of the noise distribution. You can generally
+        leave this at its default value unless you are simulating shot noise
+        limited imaging.
+
+    Returns
+    -------
+    noisy_image : ndarray
+       A copy of the input image with noise added.
+
+    """
+    return image + simulate_noise(image.shape, noise_mean, smoothing,
+                                  poisson_lambda) * image.mean()
+
+def subimage(arr, center, shape):
+    from ..marray import RegularGridSchema
+    """
+    Pick out a region of an image or other array
+
+    Parameters
+    ----------
+    arr : numpy.ndarray
+        The array to subimage
+    center : tuple of ints or floats
+        The desired center of the region, should have the same number of
+        elements as the arr has dimensions. Floats will be rounded
+    shape : int or tuple of ints
+        Desired shape of the region.  If a single int is given the region will
+        be that dimension in along every axis.  Shape should be even
+
+    Returns
+    -------
+    sub : numpy.ndarray or :class:`.RegularGrid` marray object
+        Subset of shape shape centered at center. For marrays, marray.origin
+        will be set such that the upper left corner of the output has
+        coordinates relative to the input.
+    """
+    center = (np.round(center)).astype(int)
+
+    if np.isscalar(shape):
+        shape = np.repeat(shape, arr.ndim)
+    assert len(shape) == arr.ndim
+
+    extent = [slice(int(np.round(c-s/2)), int(np.round(c+s/2))) for c, s in zip(center, shape)] + [Ellipsis]
+    output = _checked_cut(arr, extent)
+
+    if isinstance(output, RegularGridSchema):
+        if not is_none(output.spacing):
+            output.center = arr.origin + ensure_3d(center) * ensure_3d(arr.spacing)
+        else:
+            output.origin = None
+    return output
+
+def resize(arr, center=None, extent=None, spacing=None):
+    """
+    Resize and resample an marray
+
+    Parameters
+    ----------
+    arr : :class:`.Marray`
+        Marray to resize
+    center : array(float) optional
+        Desired center of the new marray. Default is the old center
+    extent : array(float) optional
+        Desired extent of the new marray. Default is the old extent
+    spacing : array(float) optional
+        Desired spacing of the new marray. Default is the old spacing
+
+    Returns
+    -------
+    arr : :class:`.Marray`
+        Desired cut of arr. Will be a view into the old array unless spacing
+        is changed
+    """
+    if center is None:
+        center = arr.center
+    if extent is None:
+        extent = arr.extent
+    center = np.array(center)
+    extent = np.array(extent)
+    # we need to cut spacing and origin down to two dimensions if working with
+    # an Image
+    cut_center = (center - arr.origin[:arr.ndim])/arr.spacing[:arr.ndim]
+    shape = extent / arr.spacing[:arr.ndim]
+
+    extent = [slice(int(np.round(c -s/2)), int(np.round(c+s/2)))
+              for c, s in zip(cut_center, shape)]
+
+    arr = _checked_cut(arr, extent)
+    arr.center = center
+    if spacing is not None and np.any(spacing != arr.spacing):
+        shape = (arr.extent / spacing).astype('int')
+        arr = arr.resample(shape)
+
+    return arr
+
+# common code for subimage and resize
+def _checked_cut(arr, extent):
+    for i, axis in enumerate(extent):
+        if axis is not Ellipsis and (axis.start < 0 or axis.stop > arr.shape[i]):
+            raise IndexError
+
+    return arr[extent].copy()

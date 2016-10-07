@@ -33,7 +33,7 @@ import scipy.signal
 from .errors import UnspecifiedPosition
 from .holopy_object import HoloPyObject
 from .metadata import Angles, Positions, Optics
-from .helpers import _ensure_pair, _ensure_array, dict_without, ensure_3d, is_none
+from .tools.helpers import _ensure_pair, _ensure_array, dict_without, ensure_3d, is_none
 
 def zeros_like(obj, dtype=None):
     """
@@ -627,89 +627,6 @@ class VolumeSchema(RegularGridSchema):
                  origin=np.zeros(3), **kwargs):
         super(VolumeSchema, self).__init__(shape=shape, spacing=spacing, optics=optics, origin=origin, **kwargs)
 
-
-def subimage(arr, center, shape):
-    """
-    Pick out a region of an image or other array
-
-    Parameters
-    ----------
-    arr : numpy.ndarray
-        The array to subimage
-    center : tuple of ints or floats
-        The desired center of the region, should have the same number of
-        elements as the arr has dimensions. Floats will be rounded
-    shape : int or tuple of ints
-        Desired shape of the region.  If a single int is given the region will
-        be that dimension in along every axis.  Shape should be even
-
-    Returns
-    -------
-    sub : numpy.ndarray or :class:`.RegularGrid` marray object
-        Subset of shape shape centered at center. For marrays, marray.origin
-        will be set such that the upper left corner of the output has
-        coordinates relative to the input.
-    """
-    center = (np.round(center)).astype(int)
-
-    if np.isscalar(shape):
-        shape = np.repeat(shape, arr.ndim)
-    assert len(shape) == arr.ndim
-
-    extent = [slice(int(np.round(c-s/2)), int(np.round(c+s/2))) for c, s in zip(center, shape)] + [Ellipsis]
-    output = _checked_cut(arr, extent)
-
-    if isinstance(output, RegularGridSchema):
-        if not is_none(output.spacing):
-            output.center = arr.origin + ensure_3d(center) * ensure_3d(arr.spacing)
-        else:
-            output.origin = None
-    return output
-
-def resize(arr, center=None, extent=None, spacing=None):
-    """
-    Resize and resample an marray
-
-    Parameters
-    ----------
-    arr : :class:`.Marray`
-        Marray to resize
-    center : array(float) optional
-        Desired center of the new marray. Default is the old center
-    extent : array(float) optional
-        Desired extent of the new marray. Default is the old extent
-    spacing : array(float) optional
-        Desired spacing of the new marray. Default is the old spacing
-
-    Returns
-    -------
-    arr : :class:`.Marray`
-        Desired cut of arr. Will be a view into the old array unless spacing
-        is changed
-    """
-    if center is None:
-        center = arr.center
-    if extent is None:
-        extent = arr.extent
-    center = np.array(center)
-    extent = np.array(extent)
-    # we need to cut spacing and origin down to two dimensions if working with
-    # an Image
-    cut_center = (center - arr.origin[:arr.ndim])/arr.spacing[:arr.ndim]
-    shape = extent / arr.spacing[:arr.ndim]
-
-    extent = [slice(int(np.round(c -s/2)), int(np.round(c+s/2)))
-              for c, s in zip(cut_center, shape)]
-
-    arr = _checked_cut(arr, extent)
-    arr.center = center
-    if spacing is not None and np.any(spacing != arr.spacing):
-        shape = (arr.extent / spacing).astype('int')
-        arr = arr.resample(shape)
-
-    return arr
-
-
 _describe_init_signature
 class Volume(RegularGrid, VolumeSchema):
     """
@@ -718,19 +635,6 @@ class Volume(RegularGrid, VolumeSchema):
     {attrs}
     """
     pass
-
-
-def squeeze(arr):
-    """
-    Turns an NxMx1 array into an NxM array.
-    """
-    keep = [i for i, dim in enumerate(arr.shape) if dim != 1]
-    if not hasattr(arr,'spacing') or type(arr.spacing) == type(None):
-        spacing = None
-    else:
-        spacing = np.take(arr.spacing, keep)
-    return arr_like(np.squeeze(arr), arr,
-                    spacing = spacing)
 
 def make_subset_data(data, random_subset):
     if random_subset is not None:
@@ -743,14 +647,6 @@ def make_subset_data(data, random_subset):
                       origin=data.origin,
                       optics=data.optics,
                       normals=data.normals)
-
-# common code for subimage and resize
-def _checked_cut(arr, extent):
-    for i, axis in enumerate(extent):
-        if axis is not Ellipsis and (axis.start < 0 or axis.stop > arr.shape[i]):
-            raise IndexError
-
-    return arr[extent].copy()
 
 ImageSchema._corresponding_marray = Image
 VolumeSchema._corresponding_marray = Volume

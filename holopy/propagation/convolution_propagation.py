@@ -25,10 +25,10 @@ Code to propagate objects/waves using scattering models.
 
 
 import numpy as np
-from ..core.math import fft, ifft
-from ..core.helpers import _ensure_pair, _ensure_array
+from ..core.tools.fourier import fft, ifft
+from ..core.tools.helpers import _ensure_pair, _ensure_array
 from ..core import Volume, Image, Grid, UnevenGrid, VolumeSchema, Marray
-from ..core.marray import VectorGrid, dict_without, resize
+from ..core.marray import VectorGrid, dict_without, arr_like
 from ..core.metadata import interpret_args
 from ..scattering.errors import MissingParameter
 
@@ -82,13 +82,13 @@ def propagate(data, d, index=None, wavelen=None, gradient_filter=False):
 
     G = trans_func(data, d, squeeze=False, gradient_filter=gradient_filter)
 
-    ft = fft(data)
+    ft = arr_like(fft(data))
 
     ft = np.repeat(ft[:, :, np.newaxis,...], G.shape[2], axis=2)
 
     ft = apply_trans_func(ft, G)
 
-    res = ifft(ft, overwrite=True)
+    res = arr_like(ifft(ft, overwrite=True))
 
     # This will not work correctly if you have 0 in the distances more
     # than once. But why would you do that?

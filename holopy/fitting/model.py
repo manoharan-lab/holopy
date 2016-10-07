@@ -29,7 +29,7 @@ from os.path import commonprefix
 from .errors import ModelDefinitionError
 from ..core.holopy_object import HoloPyObject
 from .parameter import Parameter, ComplexParameter
-from holopy.core.helpers import ensure_listlike
+from holopy.core.tools.helpers import ensure_listlike
 
 
 class Parametrization(HoloPyObject):

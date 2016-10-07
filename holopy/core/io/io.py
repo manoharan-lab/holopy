@@ -34,7 +34,7 @@ from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 from holopy.core.io import serialize
 from holopy.core.marray import Image, arr_like
 from holopy.core.metadata import Optics, interpret_args
-from holopy.core.helpers import _ensure_array
+from holopy.core.tools.helpers import _ensure_array
 from holopy.core.errors import NoMetadata
 
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
@@ -98,15 +98,9 @@ def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, o
     optics : :class:`holopy.optics.Optics` object or string (optional)
         Optical train parameters.  If string, specifies the filename
         of an optics yaml
-    bg : string (optional)
-        name of background file
-    bg_type : string (optional)
-        set to 'subtract' or 'divide' to specify how background is removed
     channel : int (optional)
         number of channel to load for a color image (in general 0=red,
         1=green, 2=blue)
-    time_scale : float or list (optional)
-        time between frames or, if list, time at each frame
 
     Returns
     -------
@@ -198,7 +192,7 @@ def save_image(filename, im, scaling='auto', depth=8):
         else:
             raise Error("Invalid image scaling")
         if min is not None:
-            im = im - min
+            im = im -min
         if max is not None:
             im = im / (max-min)
 
@@ -233,7 +227,7 @@ def get_example_data_path(name):
 def get_example_data(name):
     return load(get_example_data_path(name))
 
-def average_images(images, spacing=None, optics=None, image_glob='*.tif'):
+def load_average(filepath, refimg=None, wavelen=None, index=None, polarization=None, optics=None, image_glob='*.tif'):
     """
     Average a set of images (usually as a background)
 
@@ -256,16 +250,17 @@ def average_images(images, spacing=None, optics=None, image_glob='*.tif'):
     """
 
     try:
-        if os.path.isdir(images):
-            images = glob.glob(os.path.join(images, image_glob))
+        if os.path.isdir(filepath):
+            filepath = glob.glob(os.path.join(filepath, image_glob))
     except TypeError:
         pass
 
     if len(images) < 1:
         raise Error("No images found")
 
-    accumulator = load(images[0], spacing, optics)
-    for image in images[1:]:
-        accumulator += load(image, spacing, optics)
+    refimg = interpret_args(refimg, spacing, wavelen, index, polarization, optics)
+    accumulator = load_image(filepath[0], refimg.spacing, optics=refimg.optics)
+    for image in filepath[1:]:
+        accumulator += load_image(image)
 
-    return accumulator/len(images)
+    return accumulator/len(filepath)

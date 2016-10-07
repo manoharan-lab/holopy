@@ -173,3 +173,18 @@ def updated(d, update):
     d = copy(d)
     d.update(update)
     return d
+
+
+def squeeze(arr):
+    from ..marray import arr_like
+    """
+    Turns an NxMx1 array into an NxM array.
+    """
+    keep = [i for i, dim in enumerate(arr.shape) if dim != 1]
+    if not hasattr(arr,'spacing') or type(arr.spacing) == type(None):
+        spacing = None
+    else:
+        spacing = np.take(arr.spacing, keep)
+    return arr_like(np.squeeze(arr), arr,
+                    spacing = spacing)
+

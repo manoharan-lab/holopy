@@ -24,7 +24,7 @@ New custom display functions for holograms and reconstructions.
 
 
 import numpy as np
-from ..core.marray import squeeze
+from ..core.tools.helpers import squeeze
 
 class plotter:
     def __init__(self, im, i=0, j=0, axis_names = ('x', 'y')):
