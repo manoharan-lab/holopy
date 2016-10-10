@@ -31,7 +31,7 @@ from ...core.marray import make_vector_schema
 from holopy.core.holopy_object import HoloPyObject
 from ..scatterer import Scatterers, Sphere
 from ..errors import TheoryNotCompatibleError, NoCenter
-from ...core.metadata import kr_theta_phi_flat, from_flat
+from ...core.metadata import kr_theta_phi_flat, from_flat, vector
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -111,7 +111,7 @@ class FortranTheory(ScatteringTheory):
             #        self._raw_internal_fields(positions[inner].T, s,
             #                                  optics)).T
             field *= phase
-            field = xr.DataArray(field, dims=['flat', 'field_component'], coords={'flat': positions.flat, 'field_component': ['x', 'y', 'z']})
+            field = xr.DataArray(field, dims=['flat', vector], coords={'flat': positions.flat, vector: ['x', 'y', 'z']}, attrs=dict(optics=schema.optics))
             return from_flat(field)
 
 

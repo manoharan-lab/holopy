@@ -25,12 +25,13 @@ Classes for defining metadata about experimental or calculated results.
 
 import numpy as np
 import xarray as xr
+from xarray.ufuncs import sqrt, arctan2
 from warnings import warn
 import copy
 from .helpers import _ensure_pair, _ensure_array
 from .holopy_object import HoloPyObject
 
-field_component = 'field_component'
+vector = 'vector'
 
 class Optics(HoloPyObject):
     """
@@ -105,7 +106,7 @@ class Optics(HoloPyObject):
 
     @property
     def polarization_field(self):
-        return to_field_components(self.polarization)
+        return to_vector(self.polarization)
 
     @polarization.setter
     def polarization(self, val):
@@ -255,7 +256,7 @@ class Angles(PositionSpecification):
 
 def interpret_args(schema=None, index=None, wavelen=None, polarization=None, optics=None):
     if optics is None:
-        if hasattr(schema, 'optics'):
+        if hasattr(schema, 'optics') and schema.optics is not None:
             optics = schema.optics
         else:
             optics = Optics()
@@ -264,27 +265,30 @@ def interpret_args(schema=None, index=None, wavelen=None, polarization=None, opt
     res.attrs['optics'] = optics
     return res
 
-def to_field_components(c):
+def to_vector(c):
     c = np.array(c)
     if c.shape == (2,):
         c = np.append(c, 0)
 
-    return xr.DataArray(c, coords={field_component: ['x', 'y', 'z']})
+    return xr.DataArray(c, coords={vector: ['x', 'y', 'z']})
 
-def to_spherical(a, origin, wavevec=None):
+def to_spherical(a, origin, wavevec=None, include_r=True):
     xo, yo, zo = origin
     x, y, z = a.x - xo, a.y - yo, zo - a.z
-    r = np.sqrt(x**2 + y**2 + z**2)
-    theta = np.arctan2(np.sqrt(x**2 + y**2), z)
-    phi = np.arctan2(y, x)
+    theta = arctan2(np.sqrt(x**2 + y**2), z)
+    phi = arctan2(y, x)
     phi = phi + 2*np.pi * (phi < 0)
-    if wavevec is not None:
-        rname = 'kr'
-        kr = r*wavevec
+    if include_r:
+        r = sqrt(x**2 + y**2 + z**2)
+        if wavevec is not None:
+            rname = 'kr'
+            kr = r*wavevec
+        else:
+            rname = 'r'
+            kr = r
+        return xr.DataArray(a, coords={rname: kr, 'theta': theta, 'phi': phi, 'x': a.x, 'y':a.y})
     else:
-        rname = 'r'
-        kr = r
-    return xr.DataArray(a, coords={rname: kr, 'theta': theta, 'phi': phi, 'x': a.x, 'y':a.y})
+        return xr.DataArray(a, coords={'theta': theta, 'phi': phi, 'x': a.x, 'y': a.y})
 
 def flat(a):
     return a.stack(flat=['x', 'y'])
@@ -305,6 +309,9 @@ def kr_theta_phi_flat(a, origin, wavevec=None):
     pos['r'] *= wavevec
     return pos
 
+def theta_phi_flat(a, origin):
+    return flat(to_spherical(a, origin))
+
 def make_coords(shape, spacing, z=0):
     if np.isscalar(shape):
         shape = np.repeat(shape, 2)
@@ -313,4 +320,4 @@ def make_coords(shape, spacing, z=0):
     return {'x': np.arange(shape[0])*spacing[0], 'y': np.arange(shape[1])*spacing[1], 'z': 0}
 
 def make_attrs(optics, normals):
-    return {'optics': optics, 'normals': to_field_components(normals)}
+    return {'optics': optics, 'normals': to_vector(normals)}

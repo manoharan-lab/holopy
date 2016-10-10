@@ -24,7 +24,7 @@ calc_intensity and calc_holo, based on subclass's calc_field
 
 from holopy.core.holopy_object import SerializableMetaclass
 from holopy.core import Optics, Schema, Image, VectorGrid, interpret_args
-from holopy.core.metadata import field_component
+from holopy.core.metadata import vector
 from holopy.core.helpers import dict_without, is_none
 from holopy.scattering import Mie, Multisphere, Sphere, Spheres
 from holopy.scattering.theory import dda
@@ -247,7 +247,7 @@ def scattered_field_to_hologram(scat, ref, detector_normal = None):
     if detector_normal is None:
         detector_normal = (0, 0, 1)
 
-    holo = (np.abs(scat+ref)**2 * (1 - detector_normal)).sum(dim=field_component)
+    holo = (np.abs(scat+ref)**2 * (1 - detector_normal)).sum(dim=vector)
 
     return holo
 

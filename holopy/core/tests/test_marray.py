@@ -26,6 +26,7 @@ from .. import Optics
 from .common import assert_obj_close, get_example_data
 from ..errors import UnspecifiedPosition
 from .. import Angles
+from ..metadata import r_theta_phi_flat
 
 def test_VectorGrid():
     schema = ImageSchema(shape = (100,100), spacing = .1)
@@ -52,11 +53,13 @@ def test_zeros_like():
 
 def test_positions_in_spherical():
     schema = ImageSchema(shape = (2,2), spacing = 1)
-    spherical = schema.positions.r_theta_phi((0,0,1))
-    assert_allclose(spherical, np.array([[ 1. , 0. , 0.],
+    s = r_theta_phi_flat(schema, (0,0,1))
+    spherical = np.vstack((s.r, s.theta, s.phi)).T
+    gold = np.array([[ 1. , 0. , 0.],
        [ 1.41421356,  0.78539816,  1.57079633],
        [ 1.41421356,  0.78539816,  0.        ],
-       [ 1.73205081,  0.95531662,  0.78539816]]))
+       [ 1.73205081,  0.95531662,  0.78539816]])
+    assert_allclose(spherical, gold)
 
 def test_from1d():
     schema = ImageSchema(shape = (2,2), spacing = 1)
@@ -128,7 +131,7 @@ def test_positions_theta_phi():
 
 def test_positions_shape():
     schema = ImageSchema(shape = 105, spacing = 0.041)
-    pos = schema.positions.r_theta_phi([0,0,0])
+    pos = r_theta_phi_flat(schema, [0,0,0])
     assert_equal(pos.shape[0], schema.shape[0]**2)
 
 def test_squeeze():

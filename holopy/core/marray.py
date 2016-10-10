@@ -750,7 +750,7 @@ ImageSchema._corresponding_marray = Image
 VolumeSchema._corresponding_marray = Volume
 VectorGridSchema._corresponding_marray = VectorGrid
 
-def ImageSchema(shape, spacing, optics, normals=(0, 0, 1)):
+def ImageSchema(shape, spacing, optics=None, normals=(0, 0, 1)):
     if np.isscalar(shape):
         shape = np.repeat(shape, 2)
     if np.isscalar(spacing):

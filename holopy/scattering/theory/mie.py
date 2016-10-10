@@ -27,12 +27,14 @@ scattered field.
 '''
 
 import numpy as np
+import xarray as xr
 from ...core.helpers import _ensure_array
 from ..errors import TheoryNotCompatibleError, UnrealizableScatterer
 from ..scatterer import Sphere, Scatterers
 from .scatteringtheory import FortranTheory
 from holopy.scattering.theory.mie_f import mieangfuncs, miescatlib
 from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
+from holopy.core.metadata import theta_phi_flat, from_flat
 import copy
 
 
@@ -69,7 +71,7 @@ class Mie(FortranTheory):
         self.eps1 = eps1
         self.eps2 = eps2
         # call base class constructor
-        super(Mie, self).__init__()
+        super().__init__()
 
     def _can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
@@ -78,10 +80,13 @@ class Mie(FortranTheory):
         if isinstance(scatterer, Sphere):
             scat_coeffs = self._scat_coeffs(scatterer, schema.optics)
 
-            # TODO: actually use (rather than ignore) the phi
+            pos = theta_phi_flat(schema, scatterer.center)
+            # In the mie solution teh amplitude scattering matrix is independent of phi
             scat_matrs = [mieangfuncs.asm_mie_far(scat_coeffs, theta) for
-                          theta, phi in schema.positions.theta_phi(scatterer.center)]
-            return np.array(scat_matrs)
+                          theta in pos.theta]
+            # TODO: confirm that these are correct labels for the scattering matrix components
+            sm = xr.DataArray(scat_matrs, dims=['flat', 'Epar', 'Eperp'], coords={'flat': pos.flat, 'Epar': ['S2', 'S3'], 'Eperp': ['S4', 'S1']}, attrs=dict(optics=schema.optics))
+            return from_flat(sm)
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
