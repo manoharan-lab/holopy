@@ -51,7 +51,7 @@ class Cylinder(CenteredScatterer):
         self.h = h
 
         if np.isscalar(rotation) or len(rotation) != 3:
-            raise InvalidScatterer("rotation specified as {0}; "
+            raise InvalidScatterer(self,"rotation specified as {0}; "
                                            "rotation should be "
                                            "specified as (alpha, beta, gamma)"
                                            "".format(rotation))
