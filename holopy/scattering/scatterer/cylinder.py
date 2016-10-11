@@ -26,7 +26,7 @@ Defines cylinder scatterers.
 import numpy as np
 
 from .scatterer import CenteredScatterer, Indicators
-from ..errors import ScattererDefinitionError
+from ..errors import InvalidScatterer
 
 class Cylinder(CenteredScatterer):
     """
@@ -51,9 +51,9 @@ class Cylinder(CenteredScatterer):
         self.h = h
 
         if np.isscalar(rotation) or len(rotation) != 3:
-            raise ScattererDefinitionError("rotation specified as {0}; "
+            raise InvalidScatterer("rotation specified as {0}; "
                                            "rotation should be "
                                            "specified as (alpha, beta, gamma)"
-                                           "".format(rotation), self)
+                                           "".format(rotation))
         self.rotation = rotation
         super(Cylinder, self).__init__(center)

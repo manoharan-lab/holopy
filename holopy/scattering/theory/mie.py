@@ -28,7 +28,7 @@ scattered field.
 
 import numpy as np
 from ...core.tools import _ensure_array
-from ..errors import TheoryNotCompatibleError, UnrealizableScatterer
+from ..errors import TheoryNotCompatibleError, InvalidScatterer
 from ..scatterer import Sphere, Scatterers
 from .scatteringtheory import FortranTheory
 from holopy.scattering.theory.mie_f import mieangfuncs, miescatlib
@@ -130,7 +130,7 @@ class Mie(FortranTheory):
         where I_0 is the incident intensity.  See van de Hulst, p. 14.
         """
         if isinstance(scatterer, Scatterers):
-            raise UnrealizableScatterer(self, scatterer,
+            raise InvalidScatterer(scatterer,
                                         "Use Multisphere to calculate " +
                                         "radiometric quantities")
         albl = self._scat_coeffs(scatterer, optics)
@@ -151,7 +151,7 @@ class Mie(FortranTheory):
 
         # Check that the scatterer is in a range we can compute for
         if x_arr.max() > 1e3:
-            raise UnrealizableScatterer(self, s, "radius too large, field "+
+            raise InvalidScatterer(s, "radius too large, field "+
                                         "calculation would take forever")
 
         if len(x_arr) == 1 and len(m_arr) == 1:
@@ -170,7 +170,7 @@ class Mie(FortranTheory):
 
         # Check that the scatterer is in a range we can compute for
         if x_arr.max() > 1e3:
-            raise UnrealizableScatterer(self, s, "radius too large, field "+
+            raise InvalidScatterer(s, "radius too large, field "+
                                         "calculation would take forever")
 
         if len(x_arr) == 1 and len(m_arr) == 1:

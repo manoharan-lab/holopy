@@ -35,10 +35,8 @@ from .mie_f import mieangfuncs
 from .mie_f import scsmfo_min
 from .mie_f import uts_scsmfo
 from ..scatterer import Spheres,Sphere
-from ..errors import (TheoryNotCompatibleError, UnrealizableScatterer,
-                      MultisphereFieldNaN,
-                      ConvergenceFailureMultisphere,
-                      MultisphereExpansionNaN)
+from ..errors import (TheoryNotCompatibleError, InvalidScatterer,
+                      MultisphereFailure)
 from .scatteringtheory import FortranTheory
 
 class Multisphere(FortranTheory):
@@ -155,7 +153,7 @@ class Multisphere(FortranTheory):
         # expansion will work
         for s in scatterer.scatterers:
             if s.r * optics.wavevec > 1e3:
-                raise UnrealizableScatterer(self, s, "radius too large, field "+
+                raise InvalidScatterer(s, "radius too large, field "+
                                             "calculation would take forever")
 
         # switch to centroid weighted coordinate system tmatrix code expects
@@ -165,7 +163,7 @@ class Multisphere(FortranTheory):
         m = scatterer.n / optics.index
 
         if (centers > 1e4).any():
-            raise UnrealizableScatterer(self, scatterer, "Particle separation "
+            raise InvalidScatterer(scatterer, "Particle separation "
                                         "too large, calculation would take forever")
 
         _, lmax, amn0, converged = scsmfo_min.amncalc(
@@ -180,7 +178,7 @@ class Multisphere(FortranTheory):
         # converged == 1 if the SCSMFO iterative solver converged
         # f2py converts F77 LOGICAL to int
         if not converged:
-            raise ConvergenceFailureMultisphere()
+            raise MultisphereFailure()
 
         # chop off unused parts of amn0, the fortran code currently has a hard
         # coded number of parameters so it will return too many coefficients.
@@ -190,7 +188,7 @@ class Multisphere(FortranTheory):
         amn = amn0[:, 0:limit, :]
 
         if np.isnan(amn).any():
-            raise MultisphereExpansionNaN()
+            raise MultisphereFailure()
 
         return amn, lmax
 
@@ -200,7 +198,7 @@ class Multisphere(FortranTheory):
                                             optics.polarization,
                                             self.compute_escat_radial)
         if np.isnan(fields[0][0]):
-            raise MultisphereFieldNaN(self, scatterer, '')
+            raise MultisphereFailure()
 
         return fields
 

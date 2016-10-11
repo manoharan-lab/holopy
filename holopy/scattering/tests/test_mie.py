@@ -35,8 +35,7 @@ from ..scatterer import Sphere, Spheres, Ellipsoid
 from holopy.scattering.scatterer.sphere import LayeredSphere
 from ..theory import Mie
 
-from ..theory.mie import UnrealizableScatterer
-from ..errors import TheoryNotCompatibleError
+from ..errors import TheoryNotCompatibleError, InvalidScatterer
 from ...core import ImageSchema, Image, Optics, Angles, Schema, VolumeSchema
 from ...core.tools import subimage
                     
@@ -65,7 +64,7 @@ def test_single_sphere():
     # for them
 
     # large radius (calculation not attempted because it would take forever
-    assert_raises(UnrealizableScatterer, calc_holo, xschema, Sphere(r=1, n = 1.59, center = (5,5,5)), index, wavelen, optics=xoptics)
+    assert_raises(InvalidScatterer, calc_holo, xschema, Sphere(r=1, n = 1.59, center = (5,5,5)), index, wavelen, optics=xoptics)
 
 @attr('fast')
 def test_farfield_holo():

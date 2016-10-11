@@ -29,7 +29,7 @@ from warnings import warn
 from ...core.marray import make_vector_schema
 from holopy.core.holopy_object import HoloPyObject
 from ..scatterer import Scatterers, Sphere
-from ..errors import TheoryNotCompatibleError, NoCenter
+from ..errors import TheoryNotCompatibleError, MissingParameter
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -98,7 +98,7 @@ class FortranTheory(ScatteringTheory):
         optics=schema.optics
         def get_field(s):
             if isinstance(scatterer,Sphere) and scatterer.center is None:
-                raise NoCenter("Center is required for hologram calculation of a sphere")
+                raise MissingParameter("center location")
 
             positions = schema.positions.kr_theta_phi(s.center, optics.wavevec)
             field = np.vstack(self._raw_fields(positions.T, s, optics)).T

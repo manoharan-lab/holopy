@@ -36,7 +36,7 @@ from ..scatterer import (Sphere, Scatterer, Ellipsoid,
 from ..scatterer.ellipsoid import isnumber
 from ..scatterer.scatterer import find_bounds
 
-from ..errors import ScattererDefinitionError, NoCenter
+from ..errors import InvalidScatterer, MissingParameter
 from .common import assert_allclose
 from holopy.scattering.calculations import calc_holo
 
@@ -48,7 +48,7 @@ def test_Sphere_construction():
     s = Sphere(n = 1.59+0.0001j, r = 5e-7)
     s = Sphere()
 
-    with assert_raises(ScattererDefinitionError):
+    with assert_raises(InvalidScatterer):
         Sphere(n=1.59, r = -2, center = (1, 1, 1))
 
     # now test multilayer spheres
@@ -90,9 +90,9 @@ def test_Sphere_construct_array():
     s = Sphere(n = 1.59+0.0001j, r = 5e-7, center = center)
     assert_equal(s.center, center)
 
-    with assert_raises(ScattererDefinitionError) as cm:
+    with assert_raises(InvalidScatterer) as cm:
         Sphere(center = 1)
-    assert_equal(str(cm.exception), "Error defining scatterer object of type "
+    assert_equal(str(cm.exception), "Invalid scatterer of type "
                  "Sphere.\ncenter specified as 1, center should be specified "
                  "as (x, y, z)")
 
@@ -169,7 +169,7 @@ def test_find_bounds():
 def test_sphere_nocenter():
     sphere = Sphere(n = 1.59, r = .5)
     schema = ImageSchema(spacing=.1, shape=1, optics=Optics(wavelen = .660, polarization = [1, 0],index = 1.33))
-    assert_raises(NoCenter, calc_holo, schema, sphere, 1.33, .66)
+    assert_raises(MissingParameter, calc_holo, schema, sphere, 1.33, .66)
 
 def test_ellipsoid():
     test = Ellipsoid(n = 1.585, r = [.4,0.4,1.5], center = [10,10,20])

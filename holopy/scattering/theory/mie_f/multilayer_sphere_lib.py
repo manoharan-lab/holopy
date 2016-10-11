@@ -32,7 +32,7 @@ sphere," Applied Optics 42, 1710-1720, (1993).
 
 import numpy as np
 from . import miescatlib
-from ...errors import ModelInputError
+from ...errors import InvalidScatterer
 
 from numpy import exp, sin, cos, real, imag
 from .mie_specfuncs import Qratio, log_der_13, riccati_psi_xi
@@ -52,7 +52,8 @@ def scatcoeffs_multi(marray, xarray, eps1 = 1e-3, eps2 = 1e-16):
 
     # sanity check: marray and xarray must be same size
     if marray.size != xarray.size:
-        raise ModelInputError('Arrays of layer indices and size parameters must be the same length!')
+        from ...scatterer.sphere import Sphere
+        raise InvalidScatterer(Sphere(),'Arrays of layer indices and size parameters must be the same length!')
 
     # need number of layers L
     nlayers = marray.size

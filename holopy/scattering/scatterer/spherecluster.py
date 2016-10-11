@@ -30,7 +30,7 @@ import warnings
 
 from .sphere import Sphere
 from .composite import Scatterers
-from ..errors import OverlapWarning, ScattererDefinitionError
+from ..errors import OverlapWarning, InvalidScatterer
 from ...core.tools.math import cartesian_distance, rotate_points
 
 # default to always warning the user about overlaps.  This can be overriden by
@@ -54,10 +54,10 @@ class Spheres(Scatterers):
         # make sure all components are spheres
         for s in scatterers:
             if not isinstance(s, Sphere):
-                raise ScattererDefinitionError(
+                raise InvalidScatterer(self,
                     "Spheres expects all component " +
                     "scatterers to be Spheres.\n" +
-                    repr(s) + " is not a Sphere", self)
+                    repr(s) + " is not a Sphere")
         self.scatterers = scatterers
 
         if self.overlaps:
@@ -91,10 +91,10 @@ class Spheres(Scatterers):
 
     def add(self, scatterer):
         if not isinstance(scatterer, Sphere):
-            raise ScattererDefinitionError(
+            raise InvalidScatterer(self,
                 "Spheres expects all component " +
                 "scatterers to be Spheres.\n" +
-                repr(scatterer) + " is not a Sphere", self)
+                repr(scatterer) + " is not a Sphere")
         self.scatterers.append(scatterer)
 
     @property

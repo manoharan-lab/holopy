@@ -23,7 +23,6 @@ from ..marray import (ImageSchema, VectorGrid, make_vector_schema,
                       Schema)
 from .. import Optics
 from .common import assert_obj_close, get_example_data
-from ..errors import UnspecifiedPosition
 from .. import Angles
 
 def test_VectorGrid():
