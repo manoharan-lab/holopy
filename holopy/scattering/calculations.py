@@ -87,7 +87,7 @@ def calc_intensity(schema, scatterer, medium_index=None, wavelen=None, polarizat
         scattered intensity
     """
     field = calc_field(schema, scatterer, medium_index, wavelen, polarization, theory, optics)
-    return (abs(field*(1-schema.normals))**2).sum(-1)
+    return (abs(field*(1-schema.normals))**2).sum(dim=vector)
 
 
 def calc_holo(schema, scatterer, medium_index=None, wavelen=None, polarization=None, theory='auto', optics=None, scaling=1.0):

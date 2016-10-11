@@ -29,13 +29,15 @@ import numpy as np
 import warnings
 from nose.tools import assert_raises, with_setup, nottest
 from numpy.testing import (assert_equal, assert_array_almost_equal,
-                           assert_almost_equal, assert_allclose)
+                           assert_almost_equal, assert_allclose,
+                           assert_array_equal)
 
 from nose.plugins.attrib import attr
 import scipy
 
 from holopy.scattering.calculations import calc_holo
 from ...core import Optics, ImageSchema, Schema, Angles
+from ...core.metadata import angles_list
 from ..theory import Multisphere
 from ..theory.multisphere import MultisphereExpansionNaN, ConvergenceFailureMultisphere
 from ..scatterer import Sphere, Spheres
@@ -205,10 +207,9 @@ def test_cross_sections():
     assert_allclose(xsects[:3], gold_xsects, rtol = 1e-3)
 
 def test_farfield():
-    schema = Schema(positions = Angles(np.linspace(0, np.pi/2),
-                                       phi = np.zeros(50)),
-                    optics = Optics(wavelen=.66, index = 1.33,
-                                    polarization = (1, 0)))
+    schema = angles_list(np.linspace(0, np.pi/2), phi = np.zeros(50),
+                        optics = Optics(wavelen=.66, index = 1.33,
+                                        polarization = (1, 0)))
     n = 1.59+0.01j
     r = 0.5
 
@@ -222,4 +223,4 @@ def test_wrap_sphere():
     sphere_w=Spheres([sphere])
     holo=calc_holo(schema, sphere, theory=Multisphere, scaling=.6)
     holo_w=calc_holo(schema, sphere_w, theory=Multisphere, scaling=.6)
-    assert_equal(holo,holo_w)
+    assert_array_equal(holo,holo_w)

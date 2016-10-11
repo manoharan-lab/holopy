@@ -172,6 +172,11 @@ class FortranTheory(ScatteringTheory):
                                 fields[i, j, k] = 0
         return fields
 
+    def _calc_scat_matrix(self, scatterer, schema):
+        pos = theta_phi_flat(scema, scatterer.center)
+        scat_matrs = self._raw_scat_matrs(scatterer, pos)
+        return from_flat(xr.DataArray(scat_matrs, dims=['flat', 'Epar', 'Eperp'], coords={'flat': pos.flat, 'Epar': ['S2', 'S3'], 'Eperp': ['S4', 'S1']}, attrs=dict(optics=schema.optics)))
+
 class InvalidElectricFieldComputation(Exception):
     def __init__(self, reason):
         self.reason = reason

@@ -237,8 +237,10 @@ class Multisphere(FortranTheory):
 
     def _calc_scat_matrix(self, scatterer, schema):
         amn, lmax = self._scsmfo_setup(scatterer, schema.optics)
+        pos = theta_phi_flat(schema, scatterer.center)
         scat_matrs = [_asm_far(theta, phi, amn, lmax) for
-                      theta, phi in schema.positions.theta_phi()]
+                      theta, phi in (pos.theta, pos.phi)]
+        return from_flat(xr.DataArray(scat_matrs))
         return np.array(scat_matrs)
 
     def _calc_cscat(self, scatterer, optics, amn = None, lmax = None):

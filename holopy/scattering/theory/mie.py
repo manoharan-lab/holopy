@@ -76,17 +76,13 @@ class Mie(FortranTheory):
     def _can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
 
-    def _calc_scat_matrix(self, scatterer, schema):
+    def _raw_scat_matrs(self, scatterer, pos):
         if isinstance(scatterer, Sphere):
             scat_coeffs = self._scat_coeffs(scatterer, schema.optics)
 
-            pos = theta_phi_flat(schema, scatterer.center)
-            # In the mie solution teh amplitude scattering matrix is independent of phi
-            scat_matrs = [mieangfuncs.asm_mie_far(scat_coeffs, theta) for
+            # In the mie solution the amplitude scattering matrix is independent of phi
+            return [mieangfuncs.asm_mie_far(scat_coeffs, theta) for
                           theta in pos.theta]
-            # TODO: confirm that these are correct labels for the scattering matrix components
-            sm = xr.DataArray(scat_matrs, dims=['flat', 'Epar', 'Eperp'], coords={'flat': pos.flat, 'Epar': ['S2', 'S3'], 'Eperp': ['S4', 'S1']}, attrs=dict(optics=schema.optics))
-            return from_flat(sm)
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 

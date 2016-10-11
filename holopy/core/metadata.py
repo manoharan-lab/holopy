@@ -255,6 +255,8 @@ class Angles(PositionSpecification):
 
 
 def interpret_args(schema=None, index=None, wavelen=None, polarization=None, optics=None):
+    if schema is None:
+        schema = xr.DataArray(None)
     if optics is None:
         if hasattr(schema, 'optics') and schema.optics is not None:
             optics = schema.optics
@@ -321,3 +323,6 @@ def make_coords(shape, spacing, z=0):
 
 def make_attrs(optics, normals):
     return {'optics': optics, 'normals': to_vector(normals)}
+
+def angles_list(theta, phi, optics):
+    return xr.DataArray(np.vstack((theta, phi)), dims=('angle', 'point'), coords={'angle': ['theta', 'phi']})
