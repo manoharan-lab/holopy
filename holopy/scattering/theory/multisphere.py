@@ -235,13 +235,11 @@ class Multisphere(FortranTheory):
         cext = 4. * np.pi / optics.wavevec**2 * np.dot(pol, ascat_sph).real
         return cext
 
-    def _calc_scat_matrix(self, scatterer, schema):
-        amn, lmax = self._scsmfo_setup(scatterer, schema.optics)
-        pos = theta_phi_flat(schema, scatterer.center)
+    def _raw_scat_matrs(self, scatterer, pos):
+        amn, lmax = self._scsmfo_setup(scatterer, pos.optics)
         scat_matrs = [_asm_far(theta, phi, amn, lmax) for
                       theta, phi in (pos.theta, pos.phi)]
-        return from_flat(xr.DataArray(scat_matrs))
-        return np.array(scat_matrs)
+        return scat_matrs
 
     def _calc_cscat(self, scatterer, optics, amn = None, lmax = None):
         '''

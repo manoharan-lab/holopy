@@ -312,6 +312,8 @@ def kr_theta_phi_flat(a, origin, wavevec=None):
     return pos
 
 def theta_phi_flat(a, origin):
+    if hasattr(a, 'theta') and hasattr(a, 'phi'):
+        return flat(a)
     return flat(to_spherical(a, origin))
 
 def make_coords(shape, spacing, z=0):

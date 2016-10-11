@@ -31,7 +31,7 @@ from ...core.marray import make_vector_schema
 from holopy.core.holopy_object import HoloPyObject
 from ..scatterer import Scatterers, Sphere
 from ..errors import TheoryNotCompatibleError, NoCenter
-from ...core.metadata import kr_theta_phi_flat, from_flat, vector
+from ...core.metadata import kr_theta_phi_flat, from_flat, vector, theta_phi_flat
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -173,7 +173,7 @@ class FortranTheory(ScatteringTheory):
         return fields
 
     def _calc_scat_matrix(self, scatterer, schema):
-        pos = theta_phi_flat(scema, scatterer.center)
+        pos = theta_phi_flat(schema, scatterer.center)
         scat_matrs = self._raw_scat_matrs(scatterer, pos)
         return from_flat(xr.DataArray(scat_matrs, dims=['flat', 'Epar', 'Eperp'], coords={'flat': pos.flat, 'Epar': ['S2', 'S3'], 'Eperp': ['S4', 'S1']}, attrs=dict(optics=schema.optics)))
 

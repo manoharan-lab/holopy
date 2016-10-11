@@ -78,7 +78,7 @@ class Mie(FortranTheory):
 
     def _raw_scat_matrs(self, scatterer, pos):
         if isinstance(scatterer, Sphere):
-            scat_coeffs = self._scat_coeffs(scatterer, schema.optics)
+            scat_coeffs = self._scat_coeffs(scatterer, pos.optics)
 
             # In the mie solution the amplitude scattering matrix is independent of phi
             return [mieangfuncs.asm_mie_far(scat_coeffs, theta) for
