@@ -20,12 +20,12 @@ from subprocess import call
 import sys
 import multiprocessing
 
-t = ['nose2']
+t = ['nosetests', '-a', '!slow']
 
 if len(sys.argv) > 1 and sys.argv[1] == 'coverage':
-    t.extend(['-C', '--coverage', 'holopy'])
+    t.extend(['--with-coverage', '--cover-package=holopy'])
 else:
-    t.extend(['--plugin=nose2.plugins.mp', '-N', '{}'.format(multiprocessing.cpu_count())] +
+    t.extend(['--processes={0}'.format(multiprocessing.cpu_count())] +
              sys.argv[2:])
 
 print((' '.join(t)))
