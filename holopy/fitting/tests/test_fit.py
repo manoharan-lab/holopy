@@ -30,7 +30,7 @@ from holopy.fitting.minimizer import OpenOpt
 from holopy.scattering.scatterer import Sphere, Spheres, Scatterer
 from holopy.scattering.theory import Mie, Multisphere, DDA
 from holopy.core import Optics, ImageSchema, load, save, Schema, Angles, Marray
-from holopy.core.process import normalize
+from holopy.core.tools import normalize
 from holopy.fitting import fit, Parameter, ComplexParameter, par, Parametrization, Model
 from holopy.core.tests.common import (assert_obj_close, get_example_data,
                                   assert_read_matches_write)

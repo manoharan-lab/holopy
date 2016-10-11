@@ -33,7 +33,7 @@ import re
 import inspect
 import types
 
-from holopy.core.helpers import is_none
+from holopy.core.tools import is_none
 from holopy.core.holopy_object import SerializableMetaclass
 from holopy.core.marray import Marray
 from holopy.core import marray

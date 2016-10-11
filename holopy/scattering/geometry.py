@@ -28,7 +28,7 @@ which may break code that depends on it.
 
 import numpy as np
 from numpy import sqrt
-from holopy.core.math import cartesian_distance
+from holopy.core.tools.math import cartesian_distance
 from .scatterer import Sphere, Spheres
 
 def distances(cluster, gaponly=False):

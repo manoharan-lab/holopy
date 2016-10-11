@@ -31,7 +31,7 @@ import warnings
 from .sphere import Sphere
 from .composite import Scatterers
 from ..errors import OverlapWarning, ScattererDefinitionError
-from ...core.math import cartesian_distance, rotate_points
+from ...core.tools.math import cartesian_distance, rotate_points
 
 # default to always warning the user about overlaps.  This can be overriden by
 # calling this function again with a different action.

@@ -39,8 +39,9 @@ from ..theory import Mie
 
 from ..theory.mie import UnrealizableScatterer
 from ..errors import TheoryNotCompatibleError
-from ...core import (ImageSchema, Image, Optics, Angles, Schema, VolumeSchema,
-                     subimage)
+from ...core import ImageSchema, Image, Optics, Angles, Schema, VolumeSchema
+from ...core.tools import subimage
+                    
 from .common import verify, sphere, xschema, scaling_alpha, optics, yschema, xpolarization, ypolarization
 from .common import x, y, z, n, xoptics, yoptics, radius, wavelen, index
 from ...core.tests.common import assert_allclose, assert_obj_close

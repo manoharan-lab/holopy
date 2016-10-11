@@ -25,10 +25,9 @@ Code to propagate objects/waves using scattering models.
 
 
 import numpy as np
-from ..core.math import fft, ifft
-from ..core.helpers import _ensure_pair, _ensure_array
+from ..core.tools import fft, ifft, _ensure_pair, _ensure_array
 from ..core import Volume, Image, Grid, UnevenGrid, VolumeSchema, Marray
-from ..core.marray import VectorGrid, dict_without, resize
+from ..core.marray import VectorGrid, dict_without, arr_like
 from ..core.metadata import interpret_args
 from ..scattering.errors import MissingParameter
 

@@ -25,7 +25,7 @@ import numpy as np
 from ...scattering.theory import Mie
 from ...scattering.scatterer import Sphere
 from ..third_party import nmpfit
-from ...core.process import normalize
+from ...core.tools import normalize
 from ...core.tests.common import get_example_data, assert_obj_close
 from holopy.scattering.calculations import calc_holo
 
