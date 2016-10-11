@@ -23,14 +23,12 @@ Test fortran-based Mie calculations and python interface.
 '''
 
 import os
-from nose.tools import with_setup, assert_raises, nottest
 import yaml
 import warnings
 
 import numpy as np
-from numpy.testing import assert_equal
 from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
-                           assert_raises)
+                           assert_raises, assert_equal)
 from nose.plugins.attrib import attr
 
 from ..scatterer import Sphere, Spheres, Ellipsoid

@@ -17,7 +17,7 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from nose.tools import assert_raises, assert_equal
+from numpy.testing import assert_raises, assert_equal
 
 from ..parameter import Parameter, par, ComplexParameter
 from ..errors import GuessOutOfBoundsError

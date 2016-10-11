@@ -17,7 +17,6 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from nose.tools import nottest
 from numpy.testing import assert_equal, assert_allclose, assert_raises
 from ..marray import (ImageSchema, VectorGrid, make_vector_schema,
                       Image, zeros_like, Volume,

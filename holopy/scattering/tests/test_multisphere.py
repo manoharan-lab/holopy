@@ -27,9 +27,8 @@ import os
 import numpy as np
 
 import warnings
-from nose.tools import assert_raises, with_setup, nottest
 from numpy.testing import (assert_equal, assert_array_almost_equal,
-                           assert_almost_equal, assert_allclose)
+                           assert_almost_equal, assert_allclose, assert_raises)
 
 from nose.plugins.attrib import attr
 import scipy

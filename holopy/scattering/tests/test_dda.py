@@ -22,9 +22,7 @@ Tests adda based DDA calculations
 '''
 
 
-
-from nose.tools import assert_raises
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_almost_equal, assert_raises
 import numpy as np
 from nose.tools import with_setup
 from nose.plugins.attrib import attr

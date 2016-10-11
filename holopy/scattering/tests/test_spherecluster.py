@@ -23,7 +23,6 @@ Test construction and manipulation of Scatterer objects.
 '''
 
 import numpy as np
-from nose.tools import raises, assert_raises
 from numpy.testing import assert_equal, assert_almost_equal
 from nose.plugins.attrib import attr
 

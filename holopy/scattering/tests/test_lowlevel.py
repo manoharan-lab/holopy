@@ -38,11 +38,9 @@ down the problem.
 
 import os
 import yaml
-from nose.tools import assert_raises
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_raises
 import numpy as np
 from numpy import sqrt, dot, pi, conj, real, imag, exp
-from nose.tools import with_setup
 from nose.plugins.attrib import attr
 
 from ..theory.mie_f import mieangfuncs, miescatlib, multilayer_sphere_lib, \
