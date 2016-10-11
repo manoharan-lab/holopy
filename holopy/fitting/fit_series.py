@@ -29,9 +29,8 @@ import warnings
 import os
 import types
 import numpy as np
-from holopy.core.tools import normalize, subimage
+from holopy.core.tools import normalize, subimage, mkdir_p
 from holopy.core import Image
-from holopy.core.tools.helpers import mkdir_p
 from holopy.core.io import load, save
 from holopy.fitting import fit
 

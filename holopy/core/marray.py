@@ -33,7 +33,7 @@ import scipy.signal
 from .errors import UnspecifiedPosition
 from .holopy_object import HoloPyObject
 from .metadata import Angles, Positions, Optics
-from .tools.helpers import _ensure_pair, _ensure_array, dict_without, ensure_3d, is_none
+from .tools import _ensure_pair, _ensure_array, dict_without, ensure_3d, is_none
 
 def zeros_like(obj, dtype=None):
     """

@@ -34,7 +34,7 @@ from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 from holopy.core.io import serialize
 from holopy.core.marray import Image, arr_like
 from holopy.core.metadata import Optics, interpret_args
-from holopy.core.tools.helpers import _ensure_array
+from holopy.core.tools import _ensure_array
 from holopy.core.errors import NoMetadata
 
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']

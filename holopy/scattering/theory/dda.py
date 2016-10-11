@@ -44,7 +44,7 @@ from .mie_f import mieangfuncs
 from ..scatterer import Sphere, Ellipsoid, Spheres, Capsule, Cylinder, Bisphere, Sphere_builtin, JanusSphere
 from holopy.scattering.scatterer.csg import CsgScatterer
 from ...core.marray import VectorGridSchema
-from ...core.tools.helpers import _ensure_array
+from ...core.tools import _ensure_array
 
 scatterers_handled = Sphere, JanusSphere, Ellipsoid, Spheres, Capsule, Cylinder, Bisphere, Sphere_builtin, CsgScatterer
 

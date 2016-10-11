@@ -19,7 +19,7 @@
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_raises
 from ..tools import center_find, subimage, resize, fft, ifft, math
-from ..tools.helpers import _ensure_array, coord_grid, ensure_listlike, mkdir_p, ensure_3d, squeeze
+from ..tools import _ensure_array, coord_grid, ensure_listlike, mkdir_p, ensure_3d, squeeze
 from .. import Image, Volume, Optics
 from .common import get_example_data
 from scipy import fftpack

@@ -30,7 +30,7 @@ from copy import copy
 import numpy as np
 
 from ...core.holopy_object  import HoloPyObject
-from ...core.tools.helpers import _ensure_array
+from ...core.tools import _ensure_array
 from ..errors import ScattererDefinitionError
 from functools import reduce
 

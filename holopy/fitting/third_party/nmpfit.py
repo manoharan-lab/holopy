@@ -656,7 +656,7 @@ import types
 #     **********
 
 from holopy.core.holopy_object import Serializable
-from holopy.core.tools.helpers import is_none
+from holopy.core.tools import is_none
 
 class mpfit(Serializable):
     def __init__(self, fcn, xall=None, functkw={}, parinfo=None,
