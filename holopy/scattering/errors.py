@@ -40,7 +40,6 @@ class OverlapWarning(UserWarning):
                                                               self.overlaps)
 warnings.simplefilter('always', OverlapWarning)
 
-
 class ScattererDefinitionError(Exception):
     def __init__(self, message, scatterer):
         self.scatterer = scatterer
@@ -101,6 +100,12 @@ class ConvergenceFailureMultisphere(Exception):
     def __str__(self):
         return ("Multisphere calculations failed to converge, this probably means "
                 "your scatterer is unphysical, or possibly just huge")
+
+class DependencyMissing(Exception):
+    def __init__(self, dep):
+        self.dep = dep
+    def __str__(self):
+        return "External Dependency: " + self.dep + " could not be found, terminating."
 
 class AutoTheoryFailed(Exception):
     def __init__(self, scatterer):
