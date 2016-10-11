@@ -30,7 +30,7 @@ import time
 
 from ..core.holopy_object import HoloPyObject
 from .errors import MinimizerConvergenceFailed, InvalidMinimizer
-from holopy.scattering.errors import MultisphereFieldNaN
+from holopy.scattering.errors import MultisphereFailure
 from .minimizer import Minimizer, Nmpfit
 import numpy as np
 from ..core.marray import Schema
@@ -228,7 +228,7 @@ class CostComputer(HoloPyObject):
 
         try:
             return self.model.calc_func(schema=self.schema, scatterer=s, medium_index=self.model.medium_index, wavelen=self.model.wavelen, optics=self.model.optics, scaling=self.model.get_alpha(pars), theory=self.model.theory)
-        except MultisphereFieldNaN:
+        except MultisphereFailure:
             return np.ones_like(self.schema) * np.inf
 
     def flattened_difference(self, pars):

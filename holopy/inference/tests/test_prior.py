@@ -19,7 +19,7 @@
 
 
 
-from nose.tools import assert_raises, assert_equal
+from numpy.testing import assert_raises, assert_equal
 import numpy as np
 
 from holopy.inference import prior, mcmc

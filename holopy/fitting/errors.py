@@ -19,9 +19,6 @@
 class ParameterSpecificationError(Exception):
     pass
 
-class ModelDefinitionError(Exception):
-    pass
-
 class GuessOutOfBoundsError(ParameterSpecificationError):
     def __init__(self, parameter):
         self.par = parameter

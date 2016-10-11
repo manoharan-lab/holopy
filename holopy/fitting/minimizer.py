@@ -27,7 +27,7 @@ of third party minimizers.
 import numpy as np
 from ..core.holopy_object import HoloPyObject
 from .errors import ParameterSpecificationError, MinimizerConvergenceFailed
-from ..scattering.errors import ScattererDefinitionError
+from ..scattering.errors import InvalidScatterer
 from .third_party import nmpfit
 
 
@@ -188,7 +188,7 @@ class OpenOpt(Minimizer):
             try:
                 resid = cost_func(self.pars_from_minimizer(parameters, p))
                 return np.dot(resid, resid)
-            except ScattererDefinitionError:
+            except InvalidScatterer:
                 return np.inf
         problem = self.problem_type(resid_wrapper, guess, lb=lb, ub=ub, iprint = self.quiet,
                                     plot = self.plot)

@@ -26,7 +26,7 @@ Classes for defining models of scattering for fitting
 import numpy as np
 import inspect
 from os.path import commonprefix
-from .errors import ModelDefinitionError
+from .errors import ParameterSpecificationError
 from ..core.holopy_object import HoloPyObject
 from .parameter import Parameter, ComplexParameter
 from holopy.core.tools import ensure_listlike
@@ -268,7 +268,7 @@ class Model(BaseModel):
         self._use_parameter(alpha, 'alpha')
 
         if len(self.parameters) == 0:
-            raise ModelDefinitionError("You must specify at least one parameter to vary in a fit")
+            raise ParameterSpecificationError("You must specify at least one parameter to vary in a fit")
 
         self.constraints = ensure_listlike(constraints)
 

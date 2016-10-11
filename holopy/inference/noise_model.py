@@ -21,7 +21,7 @@ from holopy.fitting.parameter import Parameter
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core import Marray
 from holopy.core.tools import dict_without
-from holopy.scattering.errors import MultisphereExpansionNaN, MultisphereFieldNaN, ConvergenceFailureMultisphere, ScattererDefinitionError
+from holopy.scattering.errors import MultisphereFailure, InvalidScatterer
 
 import numpy as np
 import pandas as pd
@@ -60,7 +60,7 @@ class NoiseModel(BaseModel):
         scatterer = self.scatterer.make_from(pars)
         try:
             return calc_field(schema, scatterer, medium_index, wavelen, optics=optics, theory=self.theory)
-        except (MultisphereExpansionNaN, MultisphereFieldNaN, ConvergenceFailureMultisphere, ScattererDefinitionError):
+        except (MultisphereFailure, InvalidScatterer):
             return -np.inf
 
     def _lnlike(self, pars, data):

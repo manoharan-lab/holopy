@@ -30,7 +30,6 @@ import warnings
 import copy
 import numpy as np
 import scipy.signal
-from .errors import UnspecifiedPosition
 from .holopy_object import HoloPyObject
 from .metadata import Angles, Positions, Optics
 from .tools import _ensure_pair, _ensure_array, dict_without, ensure_3d, is_none

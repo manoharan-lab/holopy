@@ -22,13 +22,11 @@ Tests adda based DDA calculations
 '''
 
 
-
-from nose.tools import assert_raises
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_almost_equal, assert_raises
 import numpy as np
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
-from ...scattering.errors import ScattererDefinitionError
+from ...scattering.errors import InvalidScatterer
 from ..scatterer import Sphere, Ellipsoid, Scatterer, JanusSphere
 
 from ...core import ImageSchema, Optics
@@ -62,7 +60,7 @@ def teardown_optics():
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_sphere():
     sc = Sphere(n=1.59, r=3e-1, center=(0, 0, 0))
-    assert_raises(ScattererDefinitionError, Sphere, n=1.59, r=3e-1, center=(0, 0))
+    assert_raises(InvalidScatterer, Sphere, n=1.59, r=3e-1, center=(0, 0))
     sc = sc.translated(1, -1, 30)
     mie_holo = calc_holo(schema, sc, index, wavelen, optics=optics)
     dda_holo = calc_holo(schema, sc, index, wavelen, optics=optics, theory=DDA)

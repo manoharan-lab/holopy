@@ -22,7 +22,7 @@ import warnings
 import numpy as np
 import holopy as hp
 
-from nose.tools import nottest, assert_raises
+from numpy.testing import assert_raises
 from nose.plugins.skip import SkipTest
 from nose.plugins.attrib import attr
 from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, assert_array_equal

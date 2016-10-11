@@ -255,8 +255,8 @@ def load_average(filepath, refimg=None, wavelen=None, index=None, polarization=N
     except TypeError:
         pass
 
-    if len(images) < 1:
-        raise Error("No images found")
+    if len(filepath) < 1:
+        raise LoadError(filepath, "No images found")
 
     refimg = interpret_args(refimg, spacing, wavelen, index, polarization, optics)
     accumulator = load_image(filepath[0], refimg.spacing, optics=refimg.optics)

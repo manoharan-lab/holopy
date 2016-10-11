@@ -31,7 +31,7 @@ import numpy as np
 
 from ...core.holopy_object  import HoloPyObject
 from ...core.tools import _ensure_array
-from ..errors import ScattererDefinitionError
+from ..errors import InvalidScatterer
 from functools import reduce
 
 
@@ -174,8 +174,8 @@ class Scatterer(HoloPyObject):
 class CenteredScatterer(Scatterer):
     def __init__(self, center = None):
         if center is not None and (np.isscalar(center) or len(center) != 3):
-            raise ScattererDefinitionError("center specified as {0}, center "
-                "should be specified as (x, y, z)".format(center), self)
+            raise InvalidScatterer(self,"center specified as {0}, center "
+                "should be specified as (x, y, z)".format(center))
         self.location = center
 
     @property
@@ -279,8 +279,8 @@ class CenteredScatterer(Scatterer):
 class SingleScatterer(Scatterer):
     def __init__(self, center = None):
         if center is not None and (np.isscalar(center) or len(center) != 3):
-            raise ScattererDefinitionError("center specified as {0}, center "
-                "should be specified as (x, y, z)".format(center), self)
+            raise InvalidScatterer(self,"center specified as {0}, center "
+                "should be specified as (x, y, z)".format(center))
         self.center = center
 
     def translated(self, x, y, z):
