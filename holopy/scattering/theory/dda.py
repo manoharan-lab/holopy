@@ -98,7 +98,11 @@ class DDA(ScatteringTheory):
         self.max_dpl_size = max_dpl_size
         self.keep_raw_calculations = keep_raw_calculations
         self.addacmd = addacmd
-        super(DDA, self).__init__()
+        super().__init__()
+
+    def _can_handle(self, scatterer):
+        # TODO: replace this with actually determining if dda we can handle it (though this isn't too far off, since dda can handle almost anything)
+        return True
 
     def _run_adda(self, scatterer, optics, temp_dir):
         if self.n_cpu == 1:
@@ -279,17 +283,53 @@ class DDA(ScatteringTheory):
 
         return scat_matr
 
-    def _calc_field(self, scatterer, schema):
-        optics = schema.optics
-        calc_points = schema.positions.kr_theta_phi(scatterer.location, optics.wavevec)
-        scat_matr = self._calc_scat_matrix(scatterer, schema, calc_points)
-        fields = np.zeros_like(calc_points, dtype = scat_matr.dtype)
+    def _raw_scat_matrs(self, scatterer, pos, optics):
+        angles = pos[:, 1:] * 180/np.pi
+        temp_dir = tempfile.mkdtemp()
 
-        for i, point in enumerate(calc_points):
+        outf = open(os.path.join(temp_dir, 'scat_params.dat'), 'wb')
+
+        # write the header on the scattering angles file
+        header = ["global_type=pairs", "N={0}".format(len(angles)), "pairs="]
+        outf.write(('\n'.join(header)+'\n').encode('utf-8'))
+        # Now write all the angles
+        np.savetxt(outf, angles)
+        outf.close()
+
+        self._run_adda(scatterer, optics, temp_dir)
+
+        # Go into the results directory, there should only be one run
+        result_dir = glob.glob(os.path.join(temp_dir, 'run000*'))[0]
+        if self.keep_raw_calculations:
+            self._last_result_dir = result_dir
+ 
+        adda_result = np.loadtxt(os.path.join(result_dir, 'ampl_scatgrid'),
+                                 skiprows=1)
+        # columns in result are
+        # theta phi s1.r s1.i s2.r s2.i s3.r s3.i s4.r s4.i
+
+        # Combine the real and imaginary components from the file into complex
+        # numbers
+        s = adda_result[:,2::2] + 1.0j*adda_result[:,3::2]
+
+        # Now arrange them into a scattering matrix, see Bohren and Huffman p63
+        # eq 3.12
+        scat_matr = np.array([[s[:,1], s[:,2]], [s[:,3], s[:,0]]]).transpose()
+
+        if self.keep_raw_calculations:
+            print(("Raw calculations are in: {0}".format(temp_dir)))
+        else:
+            shutil.rmtree(temp_dir)
+
+        return scat_matr
+
+    def _raw_fields(self, pos, scatterer, optics):
+        scat_matr = self._raw_scat_matrs(scatterer, pos, optics)
+        fields = np.zeros_like(pos, dtype = scat_matr.dtype)
+
+        for i, point in enumerate(pos):
             kr, theta, phi = point
             escat_sph = mieangfuncs.calc_scat_field(kr, phi, scat_matr[i],
                                                     optics.polarization)
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
-
-
-        return self._finalize_fields(scatterer.z, fields, schema)
+        return fields

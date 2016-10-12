@@ -191,7 +191,7 @@ def calc_scat_matrix(schema, scatterer, medium_index=None, wavelen=None, theory=
         raise MissingParameter("medium refractive index")
 
     theory = interpret_theory(scatterer,theory)
-    return theory._calc_scat_matrix(scatterer, schema)
+    return theory.calc_scat_matrix(scatterer, schema)
 
 def calc_field(schema, scatterer, medium_index=None, wavelen=None, polarization=None, theory='auto', optics=None):
     """

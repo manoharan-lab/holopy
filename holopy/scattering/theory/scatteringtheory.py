@@ -43,7 +43,6 @@ class ScatteringTheory(HoloPyObject):
     implementing a _calc_field(self, scatterer, schema) function that returns a
     VectorGrid electric field.
     """
-
     def _calc_field(self, scatterer, schema):
         """
         Calculate fields.  Implemented in derived classes only.
@@ -58,45 +57,6 @@ class ScatteringTheory(HoloPyObject):
         e_field : :mod:`.VectorGrid`
             scattered electric field
         """
-        raise NotImplemented
-
-    def calc_scat_matrix(cls_self, scatterer, schema):
-        """
-        Compute scattering matricies for scatterer
-
-        Parameters
-        ----------
-        scatterer : :mod:`holopy.scattering.scatterer` object
-            (possibly composite) scatterer for which to compute scattering
-
-        Returns
-        -------
-        scat_matr : :mod:`.Marray`
-            Scattering matricies at specified positions
-
-        Notes
-        -----
-        calc_* functions can be called on either a theory class or a theory
-        object.  If called on a theory class, they use a default theory object
-        which is correct for the vast majority of situations.  You only need to
-        instantiate a theory object if it has adjustable parameters and you want
-        to use non-default values.
-        """
-
-        return cls_self._calc_scat_matrix(scatterer, schema)
-
-    def _finalize_fields(self, z, fields, schema):
-        # expects fields as an Nx3 ndarray
-        phase = np.exp(-1j*np.pi*2*z / schema.optics.med_wavelen)
-        schema = make_vector_schema(schema)
-        result = schema.interpret_1d(fields)
-        return result * phase
-
-
-# Subclass of scattering theory, overrides functions that depend on array
-# ordering and handles the tranposes for sending values to/from fortran
-class FortranTheory(ScatteringTheory):
-    def _calc_field(self, scatterer, schema):
         optics=schema.optics
         def get_field(s):
             if isinstance(scatterer,Sphere) and scatterer.center is None:
@@ -128,10 +88,65 @@ class FortranTheory(ScatteringTheory):
             raise TheoryNotCompatibleError(self, scatterer)
 
         return field
-        # TODO: fix internal field and re-enable this
-#        return self._set_internal_fields(field, scatterer)
+
+#        pos = kr_theta_phi_flat(schema, scatterer.center)
+#        fields = self._raw_fields(np.vstack((pos.kr, pos.theta, pos.phi)).T, scatterer, schema.optics)
+#        d = {k: v for k, v in pos.coords.items()}
+#        d[vector] = ['x', 'y', 'z']
+#        dims = ['vector']
+#        if hasattr(pos, 'flat'):
+#            dims = ['flat'] + dims
+#        else:
+#            dims = ['point'] + dims
+#        phase = xr.ufuncs.exp(-1j*np.pi*2*schema.z / schema.optics.med_wavelen)
+#        return from_flat(xr.DataArray(fields*phase, dims=dims, coords=d))
+
+    def calc_scat_matrix(self, scatterer, schema):
+        """
+        Compute scattering matricies for scatterer
+
+        Parameters
+        ----------
+        scatterer : :mod:`holopy.scattering.scatterer` object
+            (possibly composite) scatterer for which to compute scattering
+
+        Returns
+        -------
+        scat_matr : :mod:`.Marray`
+            Scattering matricies at specified positions
+
+        Notes
+        -----
+        calc_* functions can be called on either a theory class or a theory
+        object.  If called on a theory class, they use a default theory object
+        which is correct for the vast majority of situations.  You only need to
+        instantiate a theory object if it has adjustable parameters and you want
+        to use non-default values.
+        """
+        pos = theta_phi_flat(schema, scatterer.center)
+        scat_matrs = self._raw_scat_matrs(scatterer, pos)
+        #x = xr.DataArray(scat_matrs, dims=['flat', 'Epar', 'Eperp'], coords={'flat': pos.flat, 'Epar': ['S2', 'S3'], 'Eperp': ['S4', 'S1']}, attrs=dict(optics=schema.optics))
+        d = {k: v for k, v in pos.coords.items()}
+        d['Epar'] = ['S2', 'S3']
+        d['Eperp'] = ['S4', 'S1']
+        dims = ['Epar', 'Eperp']
+        if hasattr(pos, 'flat'):
+            dims = ['flat'] + dims
+        else:
+            dims = ['point'] + dims
+        return from_flat(xr.DataArray(scat_matrs, dims=dims, coords=d, attrs=dict(optics=schema.optics)))
+
+    def _finalize_fields(self, z, fields, schema):
+        # expects fields as an Nx3 ndarray
+        phase = np.exp(-1j*np.pi*2*z / schema.optics.med_wavelen)
+        schema = make_vector_schema(schema)
+        result = schema.interpret_1d(fields)
+        return result * phase
 
 
+# Subclass of scattering theory, overrides functions that depend on array
+# ordering and handles the tranposes for sending values to/from fortran
+class FortranTheory(ScatteringTheory):
     def _scatterer_overlaps_schema(self, scatterer, schema):
         if hasattr(schema, 'center'):
             center_to_center = scatterer.center - schema.center
@@ -171,11 +186,6 @@ class FortranTheory(ScatteringTheory):
                             if scatterer.contains((x, y, z)):
                                 fields[i, j, k] = 0
         return fields
-
-    def _calc_scat_matrix(self, scatterer, schema):
-        pos = theta_phi_flat(schema, scatterer.center)
-        scat_matrs = self._raw_scat_matrs(scatterer, pos)
-        return from_flat(xr.DataArray(scat_matrs, dims=['flat', 'Epar', 'Eperp'], coords={'flat': pos.flat, 'Epar': ['S2', 'S3'], 'Eperp': ['S4', 'S1']}, attrs=dict(optics=schema.optics)))
 
 class InvalidElectricFieldComputation(Exception):
     def __init__(self, reason):

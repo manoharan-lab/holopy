@@ -238,7 +238,7 @@ class Multisphere(FortranTheory):
     def _raw_scat_matrs(self, scatterer, pos):
         amn, lmax = self._scsmfo_setup(scatterer, pos.optics)
         scat_matrs = [_asm_far(theta, phi, amn, lmax) for
-                      theta, phi in (pos.theta, pos.phi)]
+                      theta, phi in zip(pos.theta, pos.phi)]
         return scat_matrs
 
     def _calc_cscat(self, scatterer, optics, amn = None, lmax = None):

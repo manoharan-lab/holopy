@@ -44,6 +44,7 @@ from ..scatterer import Sphere, Spheres
 from ..errors import UnrealizableScatterer, TheoryNotCompatibleError
 from .common import assert_allclose, verify, xschema, yschema, xoptics, yoptics, index, wavelen, xpolarization, ypolarization
 from .common import scaling_alpha, sphere
+from holopy.core.tests.common import assert_obj_close
 
 from holopy.scattering.calculations import calc_scat_matrix, calc_cross_sections, calc_holo
 
@@ -80,8 +81,8 @@ def test_polarization():
         raise AssertionError("Holograms computed for both x- and y-polarized light are too similar.")
 
     # but their max and min values should be close
-    assert_almost_equal(xholo.max(), yholo.max())
-    assert_almost_equal(xholo.min(), yholo.min())
+    assert_obj_close(xholo.max(), yholo.max())
+    assert_obj_close(xholo.min(), yholo.min())
     return xholo, yholo
 
 
@@ -94,9 +95,9 @@ def test_2_sph():
 
     holo = calc_holo(schema, sc, theory=Multisphere, scaling=.6)
 
-    assert_almost_equal(holo.max(), 1.4140292298443309)
-    assert_almost_equal(holo.mean(), 0.9955420925817654)
-    assert_almost_equal(holo.std(), 0.09558537595025796)
+    assert_obj_close(holo.max(), 1.4140292298443309)
+    assert_obj_close(holo.mean(), 0.9955420925817654)
+    assert_obj_close(holo.std(), 0.09558537595025796)
 
 
 def test_radial_holos():

@@ -48,7 +48,7 @@ from ...core.tests.common import assert_allclose, assert_obj_close
 from numpy import array
 
 from holopy.scattering.calculations import calc_field, calc_holo, calc_intensity, calc_scat_matrix, calc_cross_sections
-
+from holopy.core.metadata import kr_theta_phi_flat, flat, angles_list
 
 @attr('fast')
 def test_single_sphere():
@@ -87,17 +87,17 @@ def test_farfield_holo():
 
 
     # but their max and min values should be close
-    assert_almost_equal(holo_full.max(), holo_far.max(), 1,
-                        "Near and Far field holograms too different")
-    assert_almost_equal(holo_full.min(), holo_far.min(), 1,
-                        "Near and Far field holograms too different")
+    assert_obj_close(holo_full.max(), holo_far.max(), .1,
+                        context="Near and Far field holograms too different")
+    assert_obj_close(holo_full.min(), holo_far.min(), .1,
+                        context="Near and Far field holograms too different")
 
 
 @attr('fast')
 def test_subimaged():
     # make a dummy image so that we can pretend we are working with
     # data we want to subimage
-    im = Image(np.zeros(xschema.shape), xschema.spacing, xschema.optics)
+    im = xschema
     h = calc_holo(im, sphere, index, wavelen, xoptics.polarization)
     sub = (60, 70), 30
     hs = calc_holo(subimage(im, *sub), sphere, index, wavelen, xoptics.polarization)
@@ -151,8 +151,8 @@ def test_mie_polarization():
                              "light are too similar.")
 
     # but their max and min values should be close
-    assert_almost_equal(xholo.max(), yholo.max())
-    assert_almost_equal(xholo.min(), yholo.min())
+    assert_obj_close(xholo.max(), yholo.max())
+    assert_obj_close(xholo.min(), yholo.min())
     return xholo, yholo
 
 @attr('fast')
@@ -254,7 +254,7 @@ def test_radiometric():
 
 @attr('fast')
 def test_farfield_matr():
-    schema = Schema(positions = Angles(np.linspace(0, np.pi/2)), optics =
+    schema = angles_list(np.linspace(0, np.pi/2), np.linspace(0, 1), optics =
                     Optics(wavelen=.66, index = 1.33, polarization = (1, 0)))
     sphere = Sphere(r = .5, n = 1.59+0.1j)
 
@@ -279,10 +279,11 @@ def test_radialEscat():
         raise AssertionError("Holograms w/ and w/o full radial fields" +
                              " are exactly equal")
 
-def test_calc_xz_plane():
-    s = Sphere(n = 1.59, r = .5, center = (0, 0, 5))
-    sch = VolumeSchema((50, 1, 50), .1, Optics(.66, 1.33, (1,0)))
-    e = calc_field(sch, s, index, .66, optics=xoptics)
+# TODO: I think this test isn't as relevant with the new xarray way of doing things. Confirm that and either delete or rewrite this test
+#def test_calc_xz_plane():
+#    s = Sphere(n = 1.59, r = .5, center = (0, 0, 5))
+#    sch = VolumeSchema((50, 1, 50), .1, Optics(.66, 1.33, (1,0)))
+#    e = calc_field(sch, s, index, .66, optics=xoptics)
 
 # TODO: finish internal fields
 def test_internal_fields():
@@ -290,19 +291,20 @@ def test_internal_fields():
     sch = ImageSchema((100, 100), .1, Optics(.66, 1.33, (1, 0)))
     # TODO: actually test correctness
 
-def test_1d():
-    s = Sphere(1.59, .5, (5, 5, 0))
-    sch = ImageSchema((10, 10), .1, Optics(.66, 1.33, (1, 0)))
-    wavelen = .66
-    holo = calc_holo(sch, s, index, wavelen, optics=xoptics)
-    field = calc_field(sch, s, index, wavelen, optics=xoptics)
-    flatsch = Schema(positions=sch.positions.xyz(), optics=sch.optics, normals=(0, 0, 1))
+# TODO: I think this test isn't as relevant with the new xarray way of doing things. Confirm that and either delete or rewrite this test
+#def test_1d():
+#    s = Sphere(1.59, .5, (5, 5, 0))
+#    sch = ImageSchema((10, 10), .1, Optics(.66, 1.33, (1, 0)))
+#    wavelen = .66
+#    holo = calc_holo(sch, s, index, wavelen, optics=xoptics)
+#    field = calc_field(sch, s, index, wavelen, optics=xoptics)
+#    flatsch = flat(sch)
 
-    flatholo = calc_holo(flatsch, s, index, wavelen, optics=xoptics)
-    flatfield = calc_field(flatsch, s, index, wavelen, optics=xoptics)
+#    flatholo = calc_holo(flatsch, s, index, wavelen, optics=xoptics)
+#    flatfield = calc_field(flatsch, s, index, wavelen, optics=xoptics)
 
-    assert_equal(holo.ravel(), flatholo)
-    assert_equal(flatfield, field.reshape(flatfield.shape))
+#    assert_equal(holo.ravel(), flatholo)
+#    assert_equal(flatfield, field.reshape(flatfield.shape))
 
 def test_layered():
     l = LayeredSphere(n = (1, 2), t = (1, 1), center = (2, 2, 2))
@@ -311,7 +313,7 @@ def test_layered():
     wavelen = .66
     hl = calc_holo(sch, l, index, wavelen, optics=xoptics)
     hs = calc_holo(sch, s, index, wavelen, optics=xoptics)
-    assert_equal(hl, hs)
+    assert_obj_close(hl, hs, rtol=0)
 
 def test_large_sphere():
     large_sphere_gold=[[0.96371831,1.04338683],[1.04240049,0.99605225]]
@@ -362,7 +364,8 @@ def test_raw_fields():
     sp = Sphere(r=.5, n=1.6, center=(10, 10, 5))
     sch = ImageSchema(3, .1, o)
     wavevec = 2*np.pi/(.66/1.33)
-    rf = Mie()._raw_fields(sch.positions.kr_theta_phi((10, 10, 5), wavevec).T, sp, o)
+    pos = kr_theta_phi_flat(sch, (10, 10, 5))
+    rf = Mie()._raw_fields(np.vstack((pos.kr, pos.theta, pos.phi)), sp, o)
     assert_allclose(rf, [[(0.0015606995428858754-0.0019143174710834162j),
   (-0.0003949071974815011-0.0024154494284017187j),
   (-0.002044525390662322-0.001302770747742109j),

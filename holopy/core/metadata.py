@@ -296,7 +296,9 @@ def flat(a):
     return a.stack(flat=['x', 'y'])
 
 def from_flat(a):
-    return a.unstack('flat')
+    if hasattr(a, 'flat'):
+        return a.unstack('flat')
+    return a
 
 def r_theta_phi_flat(a, origin):
     f = flat(to_spherical(a, origin))
@@ -313,7 +315,7 @@ def kr_theta_phi_flat(a, origin, wavevec=None):
 
 def theta_phi_flat(a, origin):
     if hasattr(a, 'theta') and hasattr(a, 'phi'):
-        return flat(a)
+        return a
     return flat(to_spherical(a, origin))
 
 def make_coords(shape, spacing, z=0):
@@ -326,5 +328,7 @@ def make_coords(shape, spacing, z=0):
 def make_attrs(optics, normals):
     return {'optics': optics, 'normals': to_vector(normals)}
 
-def angles_list(theta, phi, optics):
-    return xr.DataArray(np.vstack((theta, phi)), dims=('angle', 'point'), coords={'angle': ['theta', 'phi']})
+def angles_list(theta, phi, optics=None):
+    # This is a hack that gets the data into a format that we can use
+    # elsewhere, but feels like an abuse of xarray, it would be nice to replace this with something more ideomatic
+    return xr.DataArray(np.zeros(len(theta)), dims=['point'], attrs={'theta': theta, 'phi': phi, 'optics': optics})
