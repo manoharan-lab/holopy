@@ -324,6 +324,7 @@ class DDA(ScatteringTheory):
         return scat_matr
 
     def _raw_fields(self, pos, scatterer, optics):
+        pos = pos.T
         scat_matr = self._raw_scat_matrs(scatterer, pos, optics)
         fields = np.zeros_like(pos, dtype = scat_matr.dtype)
 
@@ -332,4 +333,4 @@ class DDA(ScatteringTheory):
             escat_sph = mieangfuncs.calc_scat_field(kr, phi, scat_matr[i],
                                                     optics.polarization)
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
-        return fields
+        return fields.T

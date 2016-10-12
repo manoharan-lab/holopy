@@ -33,7 +33,7 @@ from ..scatterer import Sphere, Ellipsoid, Scatterer, JanusSphere
 
 from ...core import ImageSchema, Optics
 from ..theory import Mie, DDA
-from .common import assert_allclose, verify
+from .common import assert_allclose, verify, assert_obj_close
 
 from holopy.scattering.calculations import calc_holo
 
@@ -134,9 +134,9 @@ def test_Ellipsoid_dda():
     schema = ImageSchema(100, .1, optics = Optics(wavelen=.66, index=1.33, polarization = (1,0)))
     h = calc_holo(schema, e)
 
-    assert_almost_equal(h.max(), 1.3152766077267062)
-    assert_almost_equal(h.mean(), 0.99876620628942114)
-    assert_almost_equal(h.std(), 0.06453155384119547)
+    assert_obj_close(h.max(), 1.3152766077267062)
+    assert_obj_close(h.mean(), 0.99876620628942114)
+    assert_obj_close(h.std(), 0.06453155384119547)
 
 def test_janus():
     schema = ImageSchema(60, .1, Optics(.66, 1.33, (1, 0)))
