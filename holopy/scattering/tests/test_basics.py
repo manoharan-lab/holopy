@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 import numpy as np
+import xarray as xr
 from numpy.testing import assert_allclose, assert_equal
 from ...core import Optics, ImageSchema, Grid
 from ..scatterer import Sphere
@@ -44,9 +45,7 @@ def test_calc_field():
     thry = Mie(False)
     f = calc_field(t, s, 1.33, .66, theory=thry)
     assert_equal(t.optics, f.optics)
-    assert_obj_close(t.x, f.x, rtol=0)
-    assert_obj_close(t.y, f.y, rtol=0)
-    assert_allclose(f, np.array([[[ -3.95866810e-01 +2.47924378e+00j,
+    gold = xr.DataArray(np.array([[[ -3.95866810e-01 +2.47924378e+00j,
                                      0.00000000e+00 +0.00000000e+00j,
                                      0.00000000e+00 -0.00000000e+00j],
                                   [ -4.91260953e-01 +2.32779296e+00j,
@@ -58,8 +57,8 @@ def test_calc_field():
                                      4.89755627e-02 -2.31844748e-01j],
                                   [ -5.71886751e-01 +2.17145168e+00j,
                                      1.72579090e-03 -8.72241140e-03j,
-                                     5.70160960e-02 -2.16272927e-01j]]]),
-                    atol=1e-8)
+                                     5.70160960e-02 -2.16272927e-01j]]]), dims=['x', 'y', 'vector'], coords={'x':t.x, 'y': t.y, 'vector': ['x', 'y', 'z']})
+    assert abs((f - gold).max()) < 5e-9
 
 def test_calc_holo():
     o = Optics(wavelen=.66, index=1.33, polarization = (1, 0))
@@ -67,8 +66,6 @@ def test_calc_holo():
     t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
     thry = Mie(False)
     h = calc_holo(t, s, 1.33, .66, optics=o, theory=thry)
-    assert_obj_close(t.x, h.x, rtol=0)
-    assert_obj_close(t.y, h.y, rtol=0)
     assert_allclose(h, np.array([[ 6.51162661,  5.67743548],
                                  [ 5.63554802,  4.89856241]]))
 
