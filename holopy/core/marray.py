@@ -758,3 +758,9 @@ def ImageSchema(shape, spacing, optics=None, normals=(0, 0, 1)):
 
     d = np.zeros(shape)
     return xr.DataArray(d, dims=['x', 'y'], coords=make_coords(shape, spacing), attrs=make_attrs(optics, normals))
+
+def Image(arr, spacing, optics=None, normals=(0, 0, 1)):
+    if np.isscalar(spacing):
+        spacing = np.repeat(spacing, 2)
+
+    return xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing), attrs=make_attrs(optics, normals))
