@@ -23,24 +23,22 @@ Test fortran-based Mie calculations and python interface.
 '''
 
 import os
-from nose.tools import with_setup, assert_raises, nottest
 import yaml
 import warnings
 
 import numpy as np
-from numpy.testing import assert_equal
 from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
-                           assert_raises)
+                           assert_raises, assert_equal)
 from nose.plugins.attrib import attr
 
 from ..scatterer import Sphere, Spheres, Ellipsoid
 from holopy.scattering.scatterer.sphere import LayeredSphere
 from ..theory import Mie
 
-from ..theory.mie import UnrealizableScatterer
-from ..errors import TheoryNotCompatibleError
-from ...core import (ImageSchema, Image, Optics, Angles, Schema, VolumeSchema,
-                     subimage)
+from ..errors import TheoryNotCompatibleError, InvalidScatterer
+from ...core import ImageSchema, Image, Optics, Angles, Schema, VolumeSchema
+from ...core.tools import subimage
+                    
 from .common import verify, sphere, xschema, scaling_alpha, optics, yschema, xpolarization, ypolarization
 from .common import x, y, z, n, xoptics, yoptics, radius, wavelen, index
 from ...core.tests.common import assert_allclose, assert_obj_close
@@ -66,7 +64,7 @@ def test_single_sphere():
     # for them
 
     # large radius (calculation not attempted because it would take forever
-    assert_raises(UnrealizableScatterer, calc_holo, xschema, Sphere(r=1, n = 1.59, center = (5,5,5)), index, wavelen, optics=xoptics)
+    assert_raises(InvalidScatterer, calc_holo, xschema, Sphere(r=1, n = 1.59, center = (5,5,5)), index, wavelen, optics=xoptics)
 
 @attr('fast')
 def test_farfield_holo():

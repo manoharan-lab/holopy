@@ -27,10 +27,9 @@ import os
 import numpy as np
 
 import warnings
-from nose.tools import assert_raises, with_setup, nottest
 from numpy.testing import (assert_equal, assert_array_almost_equal,
                            assert_almost_equal, assert_allclose,
-                           assert_array_equal)
+                           assert_array_equal, assert_raises)
 
 from nose.plugins.attrib import attr
 import scipy
@@ -39,9 +38,8 @@ from holopy.scattering.calculations import calc_holo
 from ...core import Optics, ImageSchema, Schema, Angles
 from ...core.metadata import angles_list
 from ..theory import Multisphere
-from ..theory.multisphere import MultisphereExpansionNaN, ConvergenceFailureMultisphere
 from ..scatterer import Sphere, Spheres
-from ..errors import UnrealizableScatterer, TheoryNotCompatibleError
+from ..errors import InvalidScatterer, TheoryNotCompatibleError, MultisphereFailure
 from .common import assert_allclose, verify, xschema, yschema, xoptics, yoptics, index, wavelen, xpolarization, ypolarization
 from .common import scaling_alpha, sphere
 from holopy.core.tests.common import assert_obj_close
@@ -129,18 +127,18 @@ def test_invalid():
                                        n=1.5811+1e-4j, r=5e-07)])
 
 
-    assert_raises(UnrealizableScatterer, calc_holo, schema, sc, index, wavelen, xpolarization)
+    assert_raises(InvalidScatterer, calc_holo, schema, sc, index, wavelen, xpolarization)
 
     sc = Spheres(scatterers=[Sphere(center=[7.1, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-01),
                                 Sphere(center=[6e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07)])
 
-    assert_raises(UnrealizableScatterer, calc_holo, schema, sc, index, wavelen, xpolarization)
+    assert_raises(InvalidScatterer, calc_holo, schema, sc, index, wavelen, xpolarization)
 
     sc.scatterers[0].r = -1
 
-    assert_raises(UnrealizableScatterer, calc_holo, schema, sc, index, wavelen, xpolarization)
+    assert_raises(InvalidScatterer, calc_holo, schema, sc, index, wavelen, xpolarization)
 
     cs = Sphere(center = (0, 0, 0))
 
@@ -164,7 +162,7 @@ def test_overlap():
         assert len(w) > 0
 
     # should fail to converge
-    assert_raises(MultisphereExpansionNaN, calc_holo, schema, sc, index, wavelen, xpolarization)
+    assert_raises(MultisphereFailure, calc_holo, schema, sc, index, wavelen, xpolarization)
 
     # but it should succeed with a small overlap, after raising a warning
     with warnings.catch_warnings(record=True) as w:
@@ -187,7 +185,7 @@ def test_niter():
                                           n=1.5811+1e-4j, r=5e-07)])
     multi = Multisphere(niter = 2)
 
-    assert_raises(ConvergenceFailureMultisphere, calc_holo, schema, sc, index, wavelen, xpolarization, multi)
+    assert_raises(MultisphereFailure, calc_holo, schema, sc, index, wavelen, xpolarization, multi)
 
 def test_cross_sections():
     opt = Optics(wavelen = 1., index = 1., polarization = [1., 0])

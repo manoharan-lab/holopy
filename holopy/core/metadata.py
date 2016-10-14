@@ -28,7 +28,7 @@ import xarray as xr
 from xarray.ufuncs import sqrt, arctan2
 from warnings import warn
 import copy
-from .helpers import _ensure_pair, _ensure_array
+from .tools import _ensure_pair, _ensure_array
 from .holopy_object import HoloPyObject
 
 vector = 'vector'

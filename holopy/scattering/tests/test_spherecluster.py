@@ -23,13 +23,13 @@ Test construction and manipulation of Scatterer objects.
 '''
 
 import numpy as np
-from nose.tools import raises, assert_raises
 from numpy.testing import assert_equal, assert_almost_equal
 from nose.plugins.attrib import attr
+from nose.tools import raises
 
 from ..scatterer import Sphere, Ellipsoid
 from ..scatterer import Spheres
-from ..errors import ScattererDefinitionError, OverlapWarning
+from ..errors import InvalidScatterer, OverlapWarning
 
 import warnings
 
@@ -57,7 +57,7 @@ def test_Spheres_construction():
 
 
 @attr('fast')
-@raises(ScattererDefinitionError)
+@raises(InvalidScatterer)
 def test_Spheres_construction_typechecking():
     # heterogeneous composite should raise exception, since a
     # sphere cluster must contain only Spheres

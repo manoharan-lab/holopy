@@ -23,11 +23,7 @@ Defines Sphere, a scattering primitive
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
-import numpy as np
-from .scatterer import CenteredScatterer, Indicators
-from ..errors import ScattererDefinitionError
-from copy import copy
-from ...core.helpers import _ensure_array
+from .scatterer import CenteredScatterer
 
 class Sphere_builtin(CenteredScatterer):
     '''

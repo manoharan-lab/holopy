@@ -39,9 +39,8 @@ video microscopy, Optics Express 17, 13071-13079 (2009).
 
 
 import numpy as np
-from .enhance import normalize
-from holopy.core.marray import subimage
-from scipy import ndimage
+from .img_proc import normalize, subimage
+from scipy.ndimage import sobel, filters
 
 def centered_subimage(image, shape, threshold=.5, blursize=3):
     """
@@ -127,7 +126,7 @@ def center_find(image, centers=1, threshold=.5, blursize=3.):
     bit longer.
     """
     if blursize>0:
-        image = ndimage.filters.gaussian_filter(image,blursize)
+        image = filters.gaussian_filter(image,blursize)
     col_deriv, row_deriv = image_gradient(image)
     res = hough(col_deriv, row_deriv, centers, threshold)
     if centers==1:
@@ -154,8 +153,8 @@ def image_gradient(image):
         y-components of intensity gradient
     """
     image = normalize(image)
-    grad_col = ndimage.sobel(image, axis=0)
-    grad_row = -ndimage.sobel(image, axis=1)
+    grad_col = sobel(image, axis=0)
+    grad_row = -sobel(image, axis=1)
     return grad_col.astype(float), grad_row.astype(float)
 
 

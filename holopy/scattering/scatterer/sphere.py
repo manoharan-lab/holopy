@@ -25,9 +25,9 @@ Defines Sphere, a scattering primitive
 
 import numpy as np
 from .scatterer import CenteredScatterer, Indicators
-from ..errors import ScattererDefinitionError
+from ..errors import InvalidScatterer
 from copy import copy
-from ...core.helpers import _ensure_array, updated
+from ...core.tools import _ensure_array, updated
 
 class Sphere(CenteredScatterer):
     '''
@@ -54,7 +54,7 @@ class Sphere(CenteredScatterer):
 
         try:
             if np.any(np.array(self.r) < 0):
-                raise ScattererDefinitionError("radius is negative", self)
+                raise InvalidScatterer(self,"radius is negative")
         except TypeError:
             # Simplest solution to deal with spheres with a parameter or prior
             # as arguments, just don't check them. It might be worth doing some

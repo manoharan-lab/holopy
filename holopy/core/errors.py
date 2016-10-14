@@ -32,9 +32,6 @@ class LoadError(Exception):
 class BadImage(Exception):
     pass
 
-class UnspecifiedPosition(Exception):
-        pass
-
 class NoMetadata(Exception):
     def __str__(self):
         return "File without metadata detected. To load raw images, use hp.load_image()"

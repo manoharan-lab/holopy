@@ -21,7 +21,7 @@ from holopy.core.tests.common import (assert_obj_close,
                                       get_example_data,
                                       get_example_data_path)
 from holopy.core import Optics, Marray, load, save, load_image, save_image
-from holopy.core.process import normalize
+from holopy.core.tools import normalize
 import tempfile
 import os
 import shutil

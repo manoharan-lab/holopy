@@ -22,7 +22,7 @@ import warnings
 import numpy as np
 import holopy as hp
 
-from nose.tools import nottest, assert_raises
+from numpy.testing import assert_raises
 from nose.plugins.skip import SkipTest
 from nose.plugins.attrib import attr
 from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, assert_array_equal
@@ -30,7 +30,7 @@ from holopy.fitting.minimizer import OpenOpt
 from holopy.scattering.scatterer import Sphere, Spheres, Scatterer
 from holopy.scattering.theory import Mie, Multisphere, DDA
 from holopy.core import Optics, ImageSchema, load, save, Schema, Angles, Marray
-from holopy.core.process import normalize
+from holopy.core.tools import normalize
 from holopy.fitting import fit, Parameter, ComplexParameter, par, Parametrization, Model
 from holopy.core.tests.common import (assert_obj_close, get_example_data,
                                   assert_read_matches_write)

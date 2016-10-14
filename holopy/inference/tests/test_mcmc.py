@@ -22,7 +22,7 @@ import warnings
 import numpy as np
 from numpy.testing import assert_equal
 from holopy.inference import prior, mcmc
-from holopy.core.process import normalize
+from holopy.core.tools import normalize
 from holopy.core.tests.common import assert_obj_close, get_example_data
 from holopy.scattering.scatterer import Sphere
 from holopy.scattering.theory import Mie

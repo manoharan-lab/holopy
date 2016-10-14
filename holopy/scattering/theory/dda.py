@@ -37,22 +37,15 @@ import shutil
 import time
 import warnings
 
-from nose.plugins.skip import SkipTest
-
 from .scatteringtheory import ScatteringTheory
 from .mie_f import mieangfuncs
 from ..scatterer import Sphere, Ellipsoid, Spheres, Capsule, Cylinder, Bisphere, Sphere_builtin, JanusSphere
 from holopy.scattering.scatterer.csg import CsgScatterer
 from ...core.marray import VectorGridSchema
-from ...core.helpers import _ensure_array
+from ...core.tools import _ensure_array
+from ..errors import DependencyMissing
 
 scatterers_handled = Sphere, JanusSphere, Ellipsoid, Spheres, Capsule, Cylinder, Bisphere, Sphere_builtin, CsgScatterer
-
-class DependencyMissing(SkipTest, Exception):
-    def __init__(self, dep):
-        self.dep = dep
-    def __str__(self):
-        return "External Dependency: " + self.dep + " could not be found, terminating."
 
 class DDA(ScatteringTheory):
     """

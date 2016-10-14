@@ -30,7 +30,7 @@ from warnings import warn
 from ...core.marray import make_vector_schema
 from holopy.core.holopy_object import HoloPyObject
 from ..scatterer import Scatterers, Sphere
-from ..errors import TheoryNotCompatibleError, NoCenter
+from ..errors import TheoryNotCompatibleError, MissingParameter
 from ...core.metadata import kr_theta_phi_flat, from_flat, vector, theta_phi_flat
 
 class ScatteringTheory(HoloPyObject):
@@ -147,6 +147,41 @@ class ScatteringTheory(HoloPyObject):
 # Subclass of scattering theory, overrides functions that depend on array
 # ordering and handles the tranposes for sending values to/from fortran
 class FortranTheory(ScatteringTheory):
+    def _calc_field(self, scatterer, schema):
+        optics=schema.optics
+        def get_field(s):
+            if isinstance(scatterer,Sphere) and scatterer.center is None:
+                raise MissingParameter("center location")
+
+            positions = schema.positions.kr_theta_phi(s.center, optics.wavevec)
+            field = np.vstack(self._raw_fields(positions.T, s, optics)).T
+            phase = np.exp(-1j*np.pi*2*s.center[2] / optics.med_wavelen)
+            if self._scatterer_overlaps_schema(scatterer, schema):
+                inner = scatterer.contains(schema.positions.xyz())
+                field[inner] = np.vstack(
+                    self._raw_internal_fields(positions[inner].T, s,
+                                              optics)).T
+            field *= phase
+            return make_vector_schema(schema).interpret_1d(field)
+
+
+        # See if we can handle the scatterer in one step
+        if self._can_handle(scatterer):
+            field = get_field(scatterer)
+        elif isinstance(scatterer, Scatterers):
+        # if it is a composite, try superposition
+            scatterers = scatterer.get_component_list()
+            field = get_field(scatterers[0])
+            for s in scatterers[1:]:
+                field += get_field(s)
+        else:
+            raise TheoryNotCompatibleError(self, scatterer)
+
+        return field
+        # TODO: fix internal field and re-enable this
+#        return self._set_internal_fields(field, scatterer)
+
+
     def _scatterer_overlaps_schema(self, scatterer, schema):
         if hasattr(schema, 'center'):
             center_to_center = scatterer.center - schema.center

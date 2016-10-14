@@ -15,20 +15,19 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
+'''
+Routines for image processing.  Useful for pre-processing raw
+holograms prior to extracting final data or post-processing
+reconstructions.
 
-import numpy as np
-from numpy.testing import assert_allclose
-from ..process.centerfinder import center_find
-from .common import get_example_data
+.. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
+.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
+.. moduleauthor:: Tom G. Dimiduk <tdimiduk@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+'''
 
-gold_location = np.array([ 48.5729142,  50.23217416])
 
-def test_FoundLocation():
-    #load a hologram
-    holo = get_example_data('image0001.yaml')
-    
-    #find the center of it
-    location = center_find(holo, threshold=.25)
-	
-    #check to make sure it matches the gold
-    assert_allclose(location, gold_location)
+from .img_proc import normalize, detrend, zero_filter, subimage, resize, add_noise, fft, ifft
+from .centerfinder import center_find, centered_subimage
+from .utilities import _ensure_array, ensure_listlike, _ensure_pair, ensure_3d, mkdir_p
+from .utilities import coord_grid, dict_without, is_none, updated, squeeze
