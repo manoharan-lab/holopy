@@ -31,6 +31,9 @@ import numpy as np
 from numpy import arctan2, sin, cos
 from warnings import warn
 from scipy.integrate import dblquad
+
+from holopy.core.tools.optics import wavevec
+
 from .mie_f import mieangfuncs
 from .mie_f import scsmfo_min
 from .mie_f import uts_scsmfo
@@ -38,6 +41,7 @@ from ..scatterer import Spheres,Sphere
 from ..errors import (TheoryNotCompatibleError, InvalidScatterer,
                       MultisphereFailure)
 from .scatteringtheory import FortranTheory
+
 
 class Multisphere(FortranTheory):
     """
@@ -121,7 +125,7 @@ class Multisphere(FortranTheory):
     def _can_handle(self, scatterer):
         return (isinstance(scatterer, Spheres) or isinstance(scatterer, Sphere))
 
-    def _scsmfo_setup(self, scatterer, optics):
+    def _scsmfo_setup(self, scatterer, illum_wavevec, med_index):
         """
         Given multiple spheres, calculate amn coefficients for scattered
         field expansion in VSH using SCSMFO.
@@ -152,15 +156,15 @@ class Multisphere(FortranTheory):
         # check that the parameters are in a range where the multisphere
         # expansion will work
         for s in scatterer.scatterers:
-            if s.r * optics.wavevec > 1e3:
+            if s.r * illum_wavevec > 1e3:
                 raise InvalidScatterer(s, "radius too large, field "+
                                             "calculation would take forever")
 
         # switch to centroid weighted coordinate system tmatrix code expects
         # and nondimensionalize
-        centers = (scatterer.centers - scatterer.centers.mean(0)) * optics.wavevec
+        centers = (scatterer.centers - scatterer.centers.mean(0)) * illum_wavevec
 
-        m = scatterer.n / optics.index
+        m = scatterer.n / med_index
 
         if (centers > 1e4).any():
             raise InvalidScatterer(scatterer, "Particle separation "
@@ -192,17 +196,17 @@ class Multisphere(FortranTheory):
 
         return amn, lmax
 
-    def _raw_fields(self, positions, scatterer, optics):
-        amn, lmax = self._scsmfo_setup(scatterer, optics)
+    def _raw_fields(self, positions, scatterer, illum_wavevec, med_index, illum_polarization):
+        amn, lmax = self._scsmfo_setup(scatterer, illum_wavevec, med_index)
         fields = mieangfuncs.tmatrix_fields(positions, amn, lmax, 0,
-                                            optics.polarization,
+                                            illum_polarization,
                                             self.compute_escat_radial)
         if np.isnan(fields[0][0]):
             raise MultisphereFailure()
 
         return fields
 
-    def _raw_internal_fields(self, positions, scatterer, optics):
+    def _raw_internal_fields(self, positions, scatterer, illum_wavevec, med_index, illum_polarization):
         warn("Fields inside your Sphere(s) set to 0 because {0} Theory "
              " does not yet support calculating internal fields".format(
                  self.__class__.__name__))

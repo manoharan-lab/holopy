@@ -325,8 +325,8 @@ def make_coords(shape, spacing, z=0):
         spacing = np.repeat(spacing, 2)
     return {'x': np.arange(shape[0])*spacing[0], 'y': np.arange(shape[1])*spacing[1], 'z': 0}
 
-def make_attrs(optics, normals):
-    return {'optics': optics, 'normals': to_vector(normals)}
+def make_attrs(illum_wavelen, med_index, illum_polarization, normals):
+    return {'med_index': med_index, 'illum_wavelen': illum_wavelen, 'illum_polarization': to_vector(illum_polarization), 'normals': to_vector(normals)}
 
 def angles_list(theta, phi, optics=None):
     # This is a hack that gets the data into a format that we can use

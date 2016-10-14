@@ -87,7 +87,7 @@ def load(inf):
         else:
             raise NoMetadata
 
-def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, optics=None, normals=(0, 0, 1), channel=None):
+def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, normals=(0, 0, 1), channel=None):
     """
     Load data or results
 
@@ -121,10 +121,7 @@ def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, o
     elif channel is not None and channel > 0:
         warnings.warn("Warning: not a color image (channel number ignored)")
 
-    if optics is None:
-        optics = Optics()
-    optics = optics.like_me(wavelen=wavelen, index=index, polarization=polarization)
-    return xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing), name=inf, attrs=make_attrs(optics, normals))
+    return xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing), name=inf, attrs=make_attrs(wavelen, index, polarization, normals))
 
 def save(outf, obj):
     """
