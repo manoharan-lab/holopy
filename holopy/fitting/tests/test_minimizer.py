@@ -81,6 +81,8 @@ def test_minimizer():
     assert_obj_close(gold_dict, result2, context = 'minimized_parameters_with_parinfo')
 
 def test_iter_limit():
+    gold_fit_dict={'0:Sphere.r': 0.52480509800531849, '1:Sphere.center[1]': 14.003687569304704, 'alpha': 0.93045027963762217, '0:Sphere.center[2]': 19.93177549652841, '1:Sphere.r': 0.56292664494653732, '0:Sphere.center[1]': 15.000340621607815, '1:Sphere.center[0]': 14.020984607646726, '0:Sphere.center[0]': 15.000222185576494, '1:Sphere.center[2]': 20.115613202192328}
+
     #calculate a hologram with known particle positions to do a fit against
     schema = ImageSchema(shape = 100, spacing = .1,
                          optics = Optics(wavelen = .660, index = 1.33, polarization = (1,0)))
@@ -96,12 +98,6 @@ def test_iter_limit():
     par_s = Spheres([guess1,guess2])
 
     model = Model(par_s, calc_holo, 1.33, .66, Optics(polarization=(1, 0)), alpha = par(.6, [.1, 1]))
-    warnings.simplefilter
-    with warnings.catch_warnings(record=True) as w:
-        # Cause all warnings to always be triggered.
-        warnings.simplefilter("always")
-        result = fit(model, holo, minimizer = Nmpfit(maxiter=2), random_subset=.1)
-
-        assert len(w) == 1
-        assert issubclass(w[-1].category, UserWarning)
-        assert "Convergence Failed" in str(w[-1].message)
+    warnings.simplefilter("always")
+    result = fit(model, holo, minimizer = Nmpfit(maxiter=2))
+    assert_obj_close(gold_fit_dict,result.parameters)
