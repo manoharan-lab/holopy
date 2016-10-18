@@ -238,4 +238,5 @@ class CostComputer(HoloPyObject):
         return rsq(self._calc(pars), self.data)
 
     def chisq(self, pars):
+        print(self._calc(pars))
         return chisq(self._calc(pars), self.data)
