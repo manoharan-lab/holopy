@@ -100,6 +100,35 @@ x0 = np.array([n_particle_real, radius, x, y, z, scaling_alpha])*scale
 lb = [1.0, 1e-8, 0., 0., 0., 1e-1]*scale
 ub = [2.0, 1e-5, 1e-5, 1e-5, 1e-4, 1.0]*scale
 
+
+def test_basic_openopt():
+    x = np.arange(-10, 10, .1)
+    a = 5.3
+    b = -1.8
+    c = 3.4
+    gold_dict = dict((('a', a), ('b', b), ('c', c)))
+    y = a*x**2 + b*x + c
+
+    # This test does NOT handle scaling correctly -- we would need a Model
+    # which knows the parameters to properly handle the scaling/unscaling
+    def cost_func(pars):
+        a = pars['a']
+        b = pars['b']
+        c = pars['c']
+        return a*x**2 + b*x + c - y
+
+    # test basic usage
+    parameters = [Parameter(name='a', guess = 5),
+                 Parameter(name='b', guess = -2),
+                 Parameter(name='c', guess = 3)]
+    try:
+        minimizer = OpenOpt()
+    except ImportError:
+        raise SkipTest
+    result, details = minimizer.minimize(parameters, cost_func)
+    assert_obj_close(gold_dict, result, context = 'basic_minimized_parameters', rtol=1e-4)
+
+
 # define the residual function
 def residual(x):
 
