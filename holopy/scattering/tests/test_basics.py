@@ -18,7 +18,7 @@
 import numpy as np
 import xarray as xr
 from numpy.testing import assert_allclose, assert_equal
-from ...core import Optics, ImageSchema, Grid
+from ...core import ImageSchema
 from ..scatterer import Sphere
 from ..theory import Mie
 from ...core.tests.common import assert_obj_close
@@ -29,8 +29,7 @@ from holopy.core.metadata import kr_theta_phi_flat
 # small tests against results from the previous version of holopy
 
 def test_positions_kr_theta_phi():
-    o = Optics(wavelen=.66, index=1.33, polarization = (1, 0))
-    t = ImageSchema(shape = (2,2), spacing = .1, optics = o)
+    t = ImageSchema(shape = (2,2), spacing = .1, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1, 0))
     p = kr_theta_phi_flat(t, (0,0,1))
     pos = np.vstack((p.kr, p.theta, p.phi)).T
     assert_allclose(pos, np.array([[ 12.66157039,   0.        ,   0.        ],
@@ -39,12 +38,11 @@ def test_positions_kr_theta_phi():
        [ 12.78755927,   0.1404897 ,   0.78539816]]))
 
 def test_calc_field():
-    o = Optics(wavelen=.66, index=1.33, polarization = (1,0))
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
-    t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
+    t = ImageSchema(shape = (2,2), spacing = .1, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1, 0))
     thry = Mie(False)
     f = calc_field(t, s, 1.33, .66, theory=thry)
-    assert_equal(t.optics, f.optics)
+    assert_obj_close(t.attrs, f.attrs)
     gold = xr.DataArray(np.array([[[ -3.95866810e-01 +2.47924378e+00j,
                                      0.00000000e+00 +0.00000000e+00j,
                                      0.00000000e+00 -0.00000000e+00j],
@@ -61,19 +59,17 @@ def test_calc_field():
     assert abs((f - gold).max()) < 5e-9
 
 def test_calc_holo():
-    o = Optics(wavelen=.66, index=1.33, polarization = (1, 0))
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
-    t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
+    t = ImageSchema(shape = (2,2), spacing = .1, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1, 0))
     thry = Mie(False)
-    h = calc_holo(t, s, 1.33, .66, optics=o, theory=thry)
+    h = calc_holo(t, s, 1.33, .66, theory=thry)
     assert_allclose(h, np.array([[ 6.51162661,  5.67743548],
                                  [ 5.63554802,  4.89856241]]))
 
 def test_calc_intensity():
-    o = Optics(wavelen=.66, index=1.33, polarization = (1,0))
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
-    t = ImageSchema(shape  = (2,2), spacing = .1, optics = o)
+    t = ImageSchema(shape = (2,2), spacing = .1, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1, 0))
     thry = Mie(False)
-    i = calc_intensity(t, s, 1.33, .66, optics=o, theory=thry)
+    i = calc_intensity(t, s, theory=thry)
     assert_allclose(i, np.array([[ 6.30336023,  5.65995739],
                                  [ 5.61505927,  5.04233591]]))

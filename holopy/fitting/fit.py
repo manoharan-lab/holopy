@@ -33,7 +33,6 @@ from .errors import MinimizerConvergenceFailed, InvalidMinimizer
 from holopy.scattering.errors import MultisphereFailure
 from .minimizer import Minimizer, Nmpfit
 import numpy as np
-from ..core.marray import Schema
 
 from copy import copy, deepcopy
 

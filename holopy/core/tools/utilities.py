@@ -188,3 +188,32 @@ def squeeze(arr):
     return arr_like(np.squeeze(arr), arr,
                     spacing = spacing)
 
+
+def arr_like(arr, template=None, **override):
+    """
+    Make a new Marray with metadata like an old one
+
+    Parameters
+    ----------
+    arr : numpy.ndarray
+        Array data to add metadata to
+    template : :class:`.Schema` (optional)
+        Marray to copy metadata from. If not given, will be copied from arr
+        (probably used in this case for overrides)
+    **override : kwargs
+        Optional additional keyword args. They will be used to override
+        specific metadata
+
+    Returns
+    -------
+    res : :class:`.Marray`
+        Marray like template containing data from arr
+    """
+    if template is None:
+        template = arr
+
+    if not hasattr(template, '_dict'):
+        return arr
+    meta = template._dict
+    meta.update(override)
+    return template.__class__(arr, **meta)

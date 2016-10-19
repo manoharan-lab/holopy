@@ -35,12 +35,11 @@ from nose.plugins.attrib import attr
 import scipy
 
 from holopy.scattering.calculations import calc_holo
-from ...core import Optics, ImageSchema, Schema, Angles
-from ...core.metadata import angles_list
+from ...core.metadata import angles_list, ImageSchema
 from ..theory import Multisphere
 from ..scatterer import Sphere, Spheres
 from ..errors import InvalidScatterer, TheoryNotCompatibleError, MultisphereFailure
-from .common import assert_allclose, verify, xschema, yschema, xoptics, yoptics, index, wavelen, xpolarization, ypolarization
+from .common import assert_allclose, verify, xschema, yschema, index, wavelen, xpolarization, ypolarization, polarization
 from .common import scaling_alpha, sphere
 from holopy.core.tests.common import assert_obj_close
 
@@ -107,8 +106,8 @@ def test_radial_holos():
     thry_nonrad = Multisphere()
     thry_rad = Multisphere(compute_escat_radial = True)
 
-    holo_nonrad = calc_holo(schema, sc, index, wavelen, xoptics.polarization, theory=thry_nonrad)
-    holo_rad = calc_holo(schema, sc, index, wavelen, xoptics.polarization, theory=thry_rad)
+    holo_nonrad = calc_holo(schema, sc, index, wavelen, xpolarization, theory=thry_nonrad)
+    holo_rad = calc_holo(schema, sc, index, wavelen, xpolarization, theory=thry_rad)
 
     # the two arrays should not be equal
     try:
@@ -147,8 +146,8 @@ def test_invalid():
     # try a coated sphere
     sc2 = Spheres([Sphere(center = [0., 0., 0.],
                           n = [1.+0.1j, 1.2],
-                          r = [4e-7, 5e-7])])   
-    assert_raises(TheoryNotCompatibleError, calc_cross_sections, scatterer=sc2, medium_index=index, wavelen=wavelen, polarization=xoptics.polarization, theory=Multisphere)
+                          r = [4e-7, 5e-7])])
+    assert_raises(TheoryNotCompatibleError, calc_cross_sections, scatterer=sc2, medium_index=index, illum_wavelen=wavelen, illum_polarization=polarization, theory=Multisphere)
     
 
 def test_overlap():
@@ -188,7 +187,9 @@ def test_niter():
     assert_raises(MultisphereFailure, calc_holo, schema, sc, index, wavelen, xpolarization, multi)
 
 def test_cross_sections():
-    opt = Optics(wavelen = 1., index = 1., polarization = [1., 0])
+    wavelen = 1.
+    index = 1.
+    polarization = [1., 0]
     a = 1./(2 * np.pi) # size parameter 1
     n = 1.5 + 0.1j
     sc = Spheres([Sphere(n = n, r = a, center = [0., 0., a]),
@@ -198,7 +199,7 @@ def test_cross_sections():
     # as well as all the scattering coefficients
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', scipy.integrate.IntegrationWarning)
-        xsects = calc_cross_sections(sc, 1, 1, optics=opt)
+        xsects = calc_cross_sections(sc, illum_wavelen=wavelen, medium_index=index, illum_polarization=polarization)
 
     gold_xsects = np.array([0.03830316, 0.04877015, 0.08707331])
     # calculated directly by SCSMFO. Efficiencies normalized
@@ -207,15 +208,14 @@ def test_cross_sections():
 
 def test_farfield():
     schema = angles_list(np.linspace(0, np.pi/2), phi = np.zeros(50),
-                        optics = Optics(wavelen=.66, index = 1.33,
-                                        polarization = (1, 0)))
+                         illum_wavelen=.66, medium_index=1.33, illum_polarization=(1, 0))
     n = 1.59+0.01j
     r = 0.5
 
     cluster = Spheres([Sphere(n = n, r = r, center = [0., 0., r]),
                        Sphere(n = n, r = r, center = [0., 0., -r])])
 
-    matr = calc_scat_matrix(schema, cluster, index, .66, optics=xoptics, theory=Multisphere)
+    matr = calc_scat_matrix(schema, cluster, illum_wavelen=.66, medium_index=index, theory=Multisphere)
 
 def test_wrap_sphere():
     sphere=Sphere(center=[7.1e-6, 7e-6, 10e-6],n=1.5811+1e-4j, r=5e-07)

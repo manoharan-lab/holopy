@@ -29,113 +29,9 @@ from xarray.ufuncs import sqrt, arctan2
 from warnings import warn
 import copy
 from .tools import _ensure_pair, _ensure_array
-from .holopy_object import HoloPyObject
+
 
 vector = 'vector'
-
-class Optics(HoloPyObject):
-    """
-    Contains details about the source, detector, and optical train used
-    to generate a hologram.
-
-    Attributes
-    ----------
-    wavelen : float (optional)
-        Wavelength of imaging light in vacuo.
-    index : float (optional)
-        Refractive index of medium
-    polarization : tuple or array (optional)
-        Electric field amplitudes in x and y directions.
-    divergence : float (optional)
-        Divergence of the incident beam (currently unused)
-    pixel_size : tuple (optional)  (deprecated)
-        Physical size of the camera's pixels.
-    mag : float (optional)
-        Magnification of optical train. Ignored if pixel_scale
-        is specified.
-    pixel_scale : tuple (optional) (deprecated)
-        Size of pixel in the imaging plane. This is equal to the
-        physical size of the pixel divided by the magnification.
-
-    Notes
-    -----
-    You don't have to specify all of these parameters, but to get fits and
-    reconstructions to work you should specify at least,
-    `wavelen` in vacuo and `index`.
-    """
-
-    def __init__(self, wavelen=None, index=None, polarization=None,
-                 divergence=0., pixel_size=None, mag=None, pixel_scale = None):
-        # source parameters
-        self.wavelen = wavelen
-        self.index = index
-        self.polarization = polarization
-        self.divergence = divergence
-        if divergence != 0.0:
-            warn("HoloPy calculations currently ignore divergence")
-
-        # optical train parameters
-        self.mag = mag          # magnification
-
-        # detector parameters (deprecated: detector information should
-        # be in the Marray object since it isn't really associated
-        # withthe optical train)
-        self.pixel_size = _ensure_pair(pixel_size)
-        if pixel_scale is None:
-            if mag is not None:
-                # calculate from specified magnification
-                self.pixel_scale = self.pixel_size/mag
-            else:
-                self.pixel_scale = None
-        else:
-            self.pixel_scale = _ensure_pair(pixel_scale)
-
-    @property
-    def med_wavelen(self):
-        """
-        Calculates the wavelength in the medium.
-        """
-        return self.wavelen/self.index
-
-    def wavelen_in(self, medium_index):
-        return self.wavelen/medium_index
-
-    @property
-    def polarization(self):
-        return self._polarization
-
-    @property
-    def polarization_field(self):
-        return to_vector(self.polarization)
-
-    @polarization.setter
-    def polarization(self, val):
-        if val is None:
-            self._polarization = None
-        else:
-            self._polarization = np.array(val)
-
-    @property
-    def wavevec(self):
-        """
-        The wavevector k, 2pi/(wavelength in medium)
-        """
-        return 2*np.pi/self.med_wavelen
-
-    def wavevec_in(self, medium_index):
-        return 2*np.pi/self.wavelen_in(medium_index)
-
-    def resample(self, factor):
-        """
-        Update an optics instance for a resampling.  This has the effect of
-        changing the pixel_scale.
-
-        Returns a new instance
-        """
-        factor = np.array(factor)
-        new = copy.copy(self)
-        new.pixel_scale = self.pixel_scale * factor
-        return new
 
 class WavelengthNotSpecified(Exception):
     def __init__(self):
@@ -149,125 +45,12 @@ class MediumIndexNotSpecified(Exception):
     def __str__(self):
         return ("Medium index not specified in Optics instance.")
 
-class PositionSpecification(HoloPyObject):
-    """
-    Abstract base class for representations of positions.  You should use its
-    subclasses
-    """
-    pass
-
-class Positions(np.ndarray, HoloPyObject):
-    """
-    Positions of pixels of an Marray
-
-    Parameters
-    ----------
-    arr : ndarray (shape ...,3)
-        Pixel positions, in Cartesian xyz coordinates
-    """
-    def __new__(cls, arr):
-        return np.asarray(arr).view(cls)
-
-    def __array_wrap(self, out_arr, context=None):
-        return np.ndarray.__array_wrap__(self, out_arr, context)
-
-    def xyz(self):
-        return Positions(self.reshape(-1, 3))
-
-    def r_theta_phi(self, origin):
-        xg, yg, zg = self.xyz().T
-        x, y, z = origin
-
-        x = xg - x
-        y = yg - y
-        # sign is reversed for z because of our choice of image
-        # centric rather than particle centric coordinate system
-        z = z - zg
-
-        r = np.sqrt(x**2 + y**2 + z**2)
-        theta = np.arctan2(np.sqrt(x**2 + y**2), z)
-        phi = np.arctan2(y, x)
-        # get phi between 0 and 2pi
-        phi = phi + 2*np.pi * (phi < 0)
-        # if z is an array, phi will be the wrong shape. Checking its
-        # last dimension will determine this so we can correct it
-        if phi.shape[-1] != r.shape[-1]:
-            phi = phi.repeat(r.shape[-1], -1)
-
-        return np.vstack((r, theta, phi)).T
-
-    def theta_phi(self, origin):
-        return self.r_theta_phi(origin)[:, 1:]
-
-    def kr_theta_phi(self, origin, wavevec):
-        pos = self.r_theta_phi(origin)
-        pos[:,0] *= wavevec
-        return pos
-
-class Grid(PositionSpecification):
-    """
-    Rectangular grid of measurements
-    """
-    def __init__(self, spacing):
-        self.spacing = spacing
-
-
-    def resample_by_factors(self, factors):
-        new = copy.copy(self)
-        new.spacing = _ensure_array(new.spacing).astype('float')
-        new.spacing[list(factors.keys())] *= list(factors.values())
-        return new
-
-
-class UnevenGrid(Grid):
-    pass
-
-class Angles(PositionSpecification):
-    """Specify far field positions as a grid of angles
-
-    The list of thetas and phis are used to construct a grid of
-    positions angles should be specified in radians.
-
-    Parameters
-    ----------
-    theta : list or ndarray
-        coordinates for the polar angle
-    phi : list or ndarray
-        coordinates for the azimuthal angle
-
-    Notes
-
-    """
-    def __init__(self, theta, phi = [0], units = 'radians'):
-        self.theta = theta
-        self.phi = phi
-        self.shape = len(self.theta), len(self.phi)
-
-    def theta_phi(self, origin=None):
-        # ignore the center coordinate, but we accept it for compatability with
-        # other positions objects that need a center to determine angles
-        pos = np.zeros((self.shape[0]*self.shape[1], 2))
-        for i, theta in enumerate(self.theta):
-            for j, phi in enumerate(self.phi):
-                pos[i*self.shape[1]+j] = theta, phi
-        return pos
-
-
-
-def interpret_args(schema=None, index=None, wavelen=None, polarization=None, optics=None):
-    if schema is None:
-        schema = xr.DataArray(None)
-    if optics is None:
-        if hasattr(schema, 'optics') and schema.optics is not None:
-            optics = schema.optics
-        else:
-            optics = Optics()
-    optics = optics.like_me(wavelen=wavelen, index=index, polarization=polarization)
-    res = copy.copy(schema)
-    res.attrs['optics'] = optics
-    return res
 
 def to_vector(c):
+    if c is None:
+        return c
+    if hasattr(c, 'vector'):
+        return c
     c = np.array(c)
     if c.shape == (2,):
         c = np.append(c, 0)
@@ -307,7 +90,7 @@ def r_theta_phi_flat(a, origin):
 
 def kr_theta_phi_flat(a, origin, wavevec=None):
     if wavevec is None:
-        wavevec = a.optics.wavevec
+        wavevec = get_wavevec(a)
     return flat(to_spherical(a, origin, wavevec))
     pos = r_theta_phi_flat(a, origin)
     pos['r'] *= wavevec
@@ -325,10 +108,49 @@ def make_coords(shape, spacing, z=0):
         spacing = np.repeat(spacing, 2)
     return {'x': np.arange(shape[0])*spacing[0], 'y': np.arange(shape[1])*spacing[1], 'z': 0}
 
-def make_attrs(illum_wavelen, med_index, illum_polarization, normals):
-    return {'med_index': med_index, 'illum_wavelen': illum_wavelen, 'illum_polarization': to_vector(illum_polarization), 'normals': to_vector(normals)}
+def make_attrs(medium_index, illum_wavelen, illum_polarization, normals):
+    return {'medium_index': medium_index, 'illum_wavelen': illum_wavelen, 'illum_polarization': to_vector(illum_polarization), 'normals': to_vector(normals)}
 
-def angles_list(theta, phi, optics=None):
+def angles_list(theta, phi, medium_index, illum_wavelen, illum_polarization, normals=(0, 0, 1)):
     # This is a hack that gets the data into a format that we can use
     # elsewhere, but feels like an abuse of xarray, it would be nice to replace this with something more ideomatic
-    return xr.DataArray(np.zeros(len(theta)), dims=['point'], attrs={'theta': theta, 'phi': phi, 'optics': optics})
+    d = make_attrs(medium_index, illum_wavelen, illum_polarization, normals)
+    d['theta'] = theta
+    d['phi'] = phi
+    return xr.DataArray(np.zeros(len(theta)), dims=['point'], attrs=d)
+
+def ImageSchema(shape, spacing, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=(0, 0, 1)):
+    if np.isscalar(shape):
+        shape = np.repeat(shape, 2)
+
+    d = np.zeros(shape)
+    return Image(d, spacing, medium_index, illum_wavelen, illum_polarization, normals)
+
+def Image(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=(0, 0, 1)):
+    if np.isscalar(spacing):
+        spacing = np.repeat(spacing, 2)
+
+    return xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing), attrs=make_attrs(medium_index, illum_wavelen, illum_polarization, normals))
+
+def get_med_wavelen(a):
+    return a.illum_wavelen/a.medium_index
+
+def get_wavevec(a):
+    return 2*np.pi/get_med_wavelen(a)
+
+def optical_parameters(schema=None, **kwargs):
+    d = {}
+    for par, val in kwargs.items():
+        if val is None:
+            d[par] = getattr(schema, par)
+        else:
+            d[par] = val
+    r = {}
+    if 'illum_wavelen' in d and 'medium_index' in d:
+        r['illum_wavevec'] = 2*np.pi/(d['illum_wavelen']/d['medium_index'])
+    if 'medium_index' in d:
+        r['medium_index'] = d['medium_index']
+    if 'illum_polarization' in d:
+        r['illum_polarization'] = to_vector(d['illum_polarization'])
+
+    return r

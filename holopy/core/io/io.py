@@ -33,10 +33,9 @@ from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 import xarray as xr
 
 from holopy.core.io import serialize
-from holopy.core.marray import Image, arr_like
 
-from holopy.core.metadata import Optics, interpret_args, make_coords, make_attrs
-from holopy.core.helpers import _ensure_array
+from holopy.core.metadata import make_coords, make_attrs, Image
+from holopy.core.tools import _ensure_array, arr_like
 from holopy.core.errors import NoMetadata
 
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
@@ -51,9 +50,6 @@ def load(inf):
         File to load.  If the file is a yaml file, all other arguments are
         ignored.  If inf is a list of image files or filenames they are all
         loaded as a a timeseries hologram
-    optics : :class:`holopy.optics.Optics` object or string (optional)
-        Optical train parameters.  If string, specifies the filename
-        of an optics yaml
     bg : string (optional)
         name of background file
     bg_type : string (optional)
@@ -97,9 +93,6 @@ def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, n
         File to load.  If the file is a yaml file, all other arguments are
         ignored.  If inf is a list of image files or filenames they are all
         loaded as a a timeseries hologram
-    optics : :class:`holopy.optics.Optics` object or string (optional)
-        Optical train parameters.  If string, specifies the filename
-        of an optics yaml
     channel : int (optional)
         number of channel to load for a color image (in general 0=red,
         1=green, 2=blue)
@@ -121,7 +114,7 @@ def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, n
     elif channel is not None and channel > 0:
         warnings.warn("Warning: not a color image (channel number ignored)")
 
-    return xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing), name=inf, attrs=make_attrs(wavelen, index, polarization, normals))
+    return xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing), name=inf, attrs=make_attrs(index, wavelen, polarization, normals))
 
 def save(outf, obj):
     """
@@ -225,7 +218,7 @@ def get_example_data_path(name):
 def get_example_data(name):
     return load(get_example_data_path(name))
 
-def load_average(filepath, refimg=None, wavelen=None, index=None, polarization=None, optics=None, image_glob='*.tif'):
+def load_average(filepath, refimg=None, wavelen=None, index=None, polarization=None, image_glob='*.tif'):
     """
     Average a set of images (usually as a background)
 
@@ -236,8 +229,6 @@ def load_average(filepath, refimg=None, wavelen=None, index=None, polarization=N
         it will average all images matching image_glob.
     spacing : float
         Spacing between pixels in the images
-    optics : :class:`.Optics` object
-        Optics for the images
     image_glob : string
         Glob used to select images (if images is a directory)
 
@@ -256,8 +247,7 @@ def load_average(filepath, refimg=None, wavelen=None, index=None, polarization=N
     if len(filepath) < 1:
         raise LoadError(filepath, "No images found")
 
-    refimg = interpret_args(refimg, spacing, wavelen, index, polarization, optics)
-    accumulator = load_image(filepath[0], refimg.spacing, optics=refimg.optics)
+    accumulator = load_image(filepath[0], refimg.spacing, wavelen, index, polarization)
     for image in filepath[1:]:
         accumulator += load_image(image)
 

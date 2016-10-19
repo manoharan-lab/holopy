@@ -24,7 +24,7 @@ import holopy as hp
 from holopy.scattering.scatterer import Sphere, Difference
 from holopy.scattering.scatterer.csg import CsgScatterer
 from holopy.scattering.theory import DDA
-from holopy.core import ImageSchema, Optics
+from holopy.core import ImageSchema
 from holopy.core.tests.common import verify
 
 from holopy.scattering.calculations import calc_holo
@@ -43,10 +43,10 @@ def test_csg_dda():
     s = Sphere(n = 1.6, r=.1, center=(5, 5, 5))
     st = s.translated(.03, 0, 0)
     pacman = Difference(s, st)
-    sch = ImageSchema(10, .1, Optics(.66, 1.33, (0, 1)))
-    h = calc_holo(sch, pacman, 1.33, .66, polarization=(0, 1))
+    sch = ImageSchema(10, .1, illum_wavelen=.66, medium_index=1.33, illum_polarization=(0, 1))
+    h = calc_holo(sch, pacman)
     verify(h, 'dda_csg')
 
-    hr = calc_holo(sch, pacman.rotated(np.pi/2, 0, 0), 1.33, .66, polarization=(0, 1))
+    hr = calc_holo(sch, pacman.rotated(np.pi/2, 0, 0))
     rotated_pac = pacman.rotated(np.pi/2, 0, 0)
     verify(h/hr, 'dda_csg_rotated_div')

@@ -27,11 +27,10 @@ calc_intensity and calc_holo, based on subclass's calc_field
 import numpy as np
 import xarray as xr
 from warnings import warn
-from ...core.marray import make_vector_schema
 from holopy.core.holopy_object import HoloPyObject
 from ..scatterer import Scatterers, Sphere
 from ..errors import TheoryNotCompatibleError, MissingParameter
-from ...core.metadata import kr_theta_phi_flat, from_flat, vector, theta_phi_flat
+from ...core.metadata import kr_theta_phi_flat, from_flat, vector, theta_phi_flat, optical_parameters
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -43,7 +42,7 @@ class ScatteringTheory(HoloPyObject):
     implementing a _calc_field(self, scatterer, schema) function that returns a
     VectorGrid electric field.
     """
-    def _calc_field(self, scatterer, schema):
+    def _calc_field(self, scatterer, schema, illum_wavevec, medium_index, illum_polarization):
         """
         Calculate fields.  Implemented in derived classes only.
 
@@ -57,13 +56,12 @@ class ScatteringTheory(HoloPyObject):
         e_field : :mod:`.VectorGrid`
             scattered electric field
         """
-        optics=schema.optics
         def get_field(s):
             if isinstance(scatterer,Sphere) and scatterer.center is None:
-                raise NoCenter("Center is required for hologram calculation of a sphere")
-            positions = kr_theta_phi_flat(schema, s.center)
-            field = np.vstack(self._raw_fields(np.vstack((positions.kr, positions.theta, positions.phi)), s, optics)).T
-            phase = np.exp(-1j*np.pi*2*s.center[2] / optics.med_wavelen)
+                raise MissingParameter("center")
+            positions = kr_theta_phi_flat(schema, s.center, wavevec=illum_wavevec)
+            field = np.vstack(self._raw_fields(np.vstack((positions.kr, positions.theta, positions.phi)), s, illum_wavevec=illum_wavevec, medium_index=medium_index, illum_polarization=illum_polarization)).T
+            phase = np.exp(-1j*illum_wavevec*s.center[2])
             # TODO: fix and re-enable internal fields
             #if self._scatterer_overlaps_schema(scatterer, schema):
             #    inner = scatterer.contains(schema.positions.xyz())
@@ -71,7 +69,7 @@ class ScatteringTheory(HoloPyObject):
             #        self._raw_internal_fields(positions[inner].T, s,
             #                                  optics)).T
             field *= phase
-            field = xr.DataArray(field, dims=['flat', vector], coords={'flat': positions.flat, vector: ['x', 'y', 'z']}, attrs=dict(optics=schema.optics))
+            field = xr.DataArray(field, dims=['flat', vector], coords={'flat': positions.flat, vector: ['x', 'y', 'z']}, attrs=schema.attrs)
             return from_flat(field)
 
 
@@ -89,19 +87,7 @@ class ScatteringTheory(HoloPyObject):
 
         return field
 
-#        pos = kr_theta_phi_flat(schema, scatterer.center)
-#        fields = self._raw_fields(np.vstack((pos.kr, pos.theta, pos.phi)).T, scatterer, schema.optics)
-#        d = {k: v for k, v in pos.coords.items()}
-#        d[vector] = ['x', 'y', 'z']
-#        dims = ['vector']
-#        if hasattr(pos, 'flat'):
-#            dims = ['flat'] + dims
-#        else:
-#            dims = ['point'] + dims
-#        phase = xr.ufuncs.exp(-1j*np.pi*2*schema.z / schema.optics.med_wavelen)
-#        return from_flat(xr.DataArray(fields*phase, dims=dims, coords=d))
-
-    def calc_scat_matrix(self, scatterer, schema):
+    def calc_scat_matrix(self, scatterer, schema, illum_wavevec, medium_index):
         """
         Compute scattering matricies for scatterer
 
@@ -124,7 +110,7 @@ class ScatteringTheory(HoloPyObject):
         to use non-default values.
         """
         pos = theta_phi_flat(schema, scatterer.center)
-        scat_matrs = self._raw_scat_matrs(scatterer, pos)
+        scat_matrs = self._raw_scat_matrs(scatterer, pos, illum_wavevec, medium_index)
         #x = xr.DataArray(scat_matrs, dims=['flat', 'Epar', 'Eperp'], coords={'flat': pos.flat, 'Epar': ['S2', 'S3'], 'Eperp': ['S4', 'S1']}, attrs=dict(optics=schema.optics))
         d = {k: v for k, v in pos.coords.items()}
         d['Epar'] = ['S2', 'S3']
@@ -134,54 +120,12 @@ class ScatteringTheory(HoloPyObject):
             dims = ['flat'] + dims
         else:
             dims = ['point'] + dims
-        return from_flat(xr.DataArray(scat_matrs, dims=dims, coords=d, attrs=dict(optics=schema.optics)))
-
-    def _finalize_fields(self, z, fields, schema):
-        # expects fields as an Nx3 ndarray
-        phase = np.exp(-1j*np.pi*2*z / schema.optics.med_wavelen)
-        schema = make_vector_schema(schema)
-        result = schema.interpret_1d(fields)
-        return result * phase
+        return from_flat(xr.DataArray(scat_matrs, dims=dims, coords=d, attrs=schema.attrs))
 
 
 # Subclass of scattering theory, overrides functions that depend on array
 # ordering and handles the tranposes for sending values to/from fortran
 class FortranTheory(ScatteringTheory):
-    def _calc_field(self, scatterer, schema):
-        optics=schema.optics
-        def get_field(s):
-            if isinstance(scatterer,Sphere) and scatterer.center is None:
-                raise MissingParameter("center location")
-
-            positions = schema.positions.kr_theta_phi(s.center, optics.wavevec)
-            field = np.vstack(self._raw_fields(positions.T, s, optics)).T
-            phase = np.exp(-1j*np.pi*2*s.center[2] / optics.med_wavelen)
-            if self._scatterer_overlaps_schema(scatterer, schema):
-                inner = scatterer.contains(schema.positions.xyz())
-                field[inner] = np.vstack(
-                    self._raw_internal_fields(positions[inner].T, s,
-                                              optics)).T
-            field *= phase
-            return make_vector_schema(schema).interpret_1d(field)
-
-
-        # See if we can handle the scatterer in one step
-        if self._can_handle(scatterer):
-            field = get_field(scatterer)
-        elif isinstance(scatterer, Scatterers):
-        # if it is a composite, try superposition
-            scatterers = scatterer.get_component_list()
-            field = get_field(scatterers[0])
-            for s in scatterers[1:]:
-                field += get_field(s)
-        else:
-            raise TheoryNotCompatibleError(self, scatterer)
-
-        return field
-        # TODO: fix internal field and re-enable this
-#        return self._set_internal_fields(field, scatterer)
-
-
     def _scatterer_overlaps_schema(self, scatterer, schema):
         if hasattr(schema, 'center'):
             center_to_center = scatterer.center - schema.center

@@ -17,7 +17,6 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from ...core import Optics
 from ...core import ImageSchema
 from ...scattering.scatterer import Sphere
 
@@ -31,19 +30,12 @@ pixel_scale = [.1151e-6, .1151e-6]
 index = 1.33
 imshape = 128
 
-yoptics = Optics(wavelen=wavelen, index=index,
-                 polarization=ypolarization,
-                 divergence=divergence)
+xschema = ImageSchema(shape = 128, spacing=pixel_scale, illum_wavelen=wavelen, medium_index=index, illum_polarization=xpolarization)
+yschema = ImageSchema(shape = 128, spacing=pixel_scale, illum_wavelen=wavelen, medium_index=index, illum_polarization=ypolarization)
 
-xoptics = Optics(wavelen=wavelen, index=index,
-                 polarization=xpolarization,
-                 divergence=divergence)
 
-xschema = ImageSchema(shape = 128, spacing = pixel_scale, optics = xoptics)
-yschema = ImageSchema(shape = 128, spacing = pixel_scale, optics = yoptics)
-
-optics=yoptics
 schema=yschema
+polarization=ypolarization
 
 scaling_alpha = .6
 radius = .85e-6
