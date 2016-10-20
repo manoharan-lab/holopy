@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -32,19 +32,6 @@ from .tools import _ensure_pair, _ensure_array
 
 
 vector = 'vector'
-
-class WavelengthNotSpecified(Exception):
-    def __init__(self):
-        pass
-    def __str__(self):
-        return ("Wavelength not specified in Optics instance.")
-
-class MediumIndexNotSpecified(Exception):
-    def __init__(self):
-        pass
-    def __str__(self):
-        return ("Medium index not specified in Optics instance.")
-
 
 def to_vector(c):
     if c is None:
