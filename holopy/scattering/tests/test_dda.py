@@ -22,18 +22,19 @@ Tests adda based DDA calculations
 '''
 
 
-from numpy.testing import assert_almost_equal, assert_raises
+from numpy.testing import assert_almost_equal
 import numpy as np
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
-from ...scattering.errors import InvalidScatterer
-from ..scatterer import Sphere, Ellipsoid, Scatterer, JanusSphere
+from nose.plugins.skip import SkipTest
+from ...scattering.errors import DependencyMissing
+from ..scatterer import Sphere, Ellipsoid, Scatterer, JanusSphere, Difference
 
 from ...core import ImageSchema, Optics
-from ..theory import Mie, DDA
+from ..theory import DDA
 from .common import assert_allclose, verify
 
-from holopy.scattering.calculations import calc_holo
+from holopy.scattering.calculations import calc_holo as calc_holo_external
 
 import os.path
 
@@ -56,11 +57,16 @@ def teardown_optics():
     global optics, schema
     del optics, schema
 
+def calc_holo(schema, scatterer, index=None, wavelen=None,**kwargs):
+    try:
+        return calc_holo_external(schema, scatterer, index, wavelen, **kwargs)
+    except DependencyMissing:
+        raise SkipTest()
+
 @attr('medium')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_sphere():
     sc = Sphere(n=1.59, r=3e-1, center=(0, 0, 0))
-    assert_raises(InvalidScatterer, Sphere, n=1.59, r=3e-1, center=(0, 0))
     sc = sc.translated(1, -1, 30)
     mie_holo = calc_holo(schema, sc, index, wavelen, optics=optics)
     dda_holo = calc_holo(schema, sc, index, wavelen, optics=optics, theory=DDA)
@@ -70,7 +76,10 @@ def test_DDA_sphere():
 def test_dda_2_cpu():
     sc = Sphere(n=1.59, r=3e-1, center=(1, -1, 30))
     mie_holo = calc_holo(schema, sc, index, wavelen, optics=optics)
-    dda_n2 = DDA(n_cpu=2)
+    try:
+        dda_n2 = DDA(n_cpu=2)
+    except DependencyMissing:
+        raise SkipTest()
     dda_holo = calc_holo(schema, sc, index, wavelen, optics=optics, theory=dda_n2)
 
     # TODO: figure out how to actually test that it runs on multiple cpus
@@ -88,15 +97,13 @@ def test_DDA_indicator():
     center = (1, 1, 30)
     r = .3
 
-    dda = DDA()
-
     sc = Sphere(n=n, r=r, center = center)
 
-    sphere_holo = calc_holo(schema, sc, index, wavelen, optics=optics, theory=dda)
+    sphere_holo = calc_holo(schema, sc, index, wavelen, optics=optics, theory=DDA)
 
     s = Scatterer(Sphere(r=r, center = (0, 0, 0)).contains, n, center)
 
-    gen_holo = calc_holo(schema, s, index, wavelen, optics=optics, theory=dda)
+    gen_holo = calc_holo(schema, s, index, wavelen, optics=optics, theory=DDA)
 
     assert_allclose(sphere_holo, gen_holo, rtol=2e-3)
 
@@ -121,8 +128,8 @@ def test_DDA_coated():
         center=[7.141442573813124, 7.160766866147957, 11.095409800342143],
         n=[(1.27121212428+0j), (1.49+0j)], r=[.1-0.0055, 0.1])
 
-    lmie_holo = calc_holo(schema, cs, index, wavelen, optics=schema.optics, theory=Mie)
-    dda_holo = calc_holo(schema, cs, index, wavelen, optics=schema.optics)
+    lmie_holo = calc_holo(schema, cs, index, wavelen, optics=schema.optics)
+    dda_holo = calc_holo(schema, cs, index, wavelen, optics=schema.optics, theory=DDA)
 
     assert_allclose(lmie_holo, dda_holo, rtol = 5e-4)
 
@@ -143,3 +150,15 @@ def test_janus():
     assert_almost_equal(s.index_at([5,5,5]),1.34)
     holo = calc_holo(schema, s, 1.33, .66, optics=Optics(polarization=(1, 0)))
     verify(holo, 'janus_dda')
+
+def test_csg_dda():
+    s = Sphere(n = 1.6, r=.1, center=(5, 5, 5))
+    st = s.translated(.03, 0, 0)
+    pacman = Difference(s, st)
+    sch = ImageSchema(10, .1, Optics(.66, 1.33, (0, 1)))
+    h = calc_holo(sch, pacman, 1.33, .66, polarization=(0, 1))
+    verify(h, 'dda_csg')
+
+    hr = calc_holo(sch, pacman.rotated(np.pi/2, 0, 0), 1.33, .66, polarization=(0, 1))
+    rotated_pac = pacman.rotated(np.pi/2, 0, 0)
+    verify(h/hr, 'dda_csg_rotated_div')

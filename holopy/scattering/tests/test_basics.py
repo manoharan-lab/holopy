@@ -18,7 +18,7 @@
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 from ...core import Optics, ImageSchema, Grid
-from ..scatterer import Sphere
+from ..scatterer import Sphere, Difference
 from ..theory import Mie
 from ...core.tests.common import assert_obj_close
 
@@ -76,3 +76,10 @@ def test_calc_intensity():
     i = calc_intensity(t, s, 1.33, .66, optics=o, theory=thry)
     assert_allclose(i, np.array([[ 6.30336023,  5.65995739],
                                  [ 5.61505927,  5.04233591]]))
+
+def test_csg_construction():
+    s = Sphere(n = 1.6, r=.5, center=(0, 0, 0))
+    st = s.translated(.4, 0, 0)
+    pacman = Difference(s, st)
+    assert_allclose(pacman.bounds, [(-.5, .5), (-.5, .5), (-.5, .5)])
+
