@@ -124,7 +124,7 @@ def verify(result, name, rtol=1e-7, atol=1e-8):
     gold_name = os.path.join(location, 'gold', 'gold_'+name)
     gold_yaml = yaml.load(open(gold_name+'.yaml'))
 
-    full = os.path.join(gold_dir, 'full_data', 'gold_full_{0}.yaml'.format(name))
+    full = os.path.join(gold_dir, 'full_data', 'gold_full_{0}'.format(name))
     if os.path.exists(full):
         assert_obj_close(result, load(full), rtol)
 
@@ -134,7 +134,7 @@ def verify(result, name, rtol=1e-7, atol=1e-8):
     else:
         for key, val in gold_yaml.items():
             assert_obj_close(getattr(result, key)(), val, rtol, atol)
-            
+
 
 # TODO: update me
 def make_golds(result, name, moveto=None):

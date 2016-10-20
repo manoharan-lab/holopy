@@ -40,31 +40,34 @@ from holopy.core.errors import NoMetadata
 
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
 
+def default_extension(inf, defext='.h5'):
+    file, ext = os.path.splitext(inf)
+    print(file, ext)
+    print(type(ext))
+    if not ext:
+        return file + defext
+    else:
+        return inf
+
 def load(inf):
     """
     Load data or results
 
     Parameters
     ----------
-    inf : single or list of basestring or files
-        File to load.  If the file is a yaml file, all other arguments are
-        ignored.  If inf is a list of image files or filenames they are all
-        loaded as a a timeseries hologram
-    bg : string (optional)
-        name of background file
-    bg_type : string (optional)
-        set to 'subtract' or 'divide' to specify how background is removed
-    channel : int (optional)
-        number of channel to load for a color image (in general 0=red,
-        1=green, 2=blue)
-    time_scale : float or list (optional)
-        time between frames or, if list, time at each frame
+    inf : string
+        String specifying an hdf5 file containing holopy data
 
     Returns
     -------
-    obj : The object loaded, :class:`holopy.core.marray.Image`, or as loaded from yaml
+    obj : xarray.DataArray
+        The array object contained in the file
 
     """
+
+    xr.open_dataset(default_extension(inf), engine='h5netcdf')
+    return xr.data
+
     loaded_yaml = False
     # attempt to load a holopy yaml file
     try:
@@ -138,14 +141,17 @@ def save(outf, obj):
     binary array is very slow for large arrays.  HoloPy can read these 'yaml'
     files, but any other yaml implementation will get confused.
     """
-    #TODO: Default to saving hdf5, with option to save yaml
-    #TODO: can't save images with this function
     if isinstance(outf, str):
         filename, ext = os.path.splitext(outf)
         if ext in tiflist:
             save_image(outf, obj)
             return
-    serialize.save(outf, obj)
+
+    if hasattr(obj, 'to_dataset'):
+        ds = obj.to_dataset(name='data')
+        ds.to_netcdf(default_extension(outf), engine='h5netcdf')
+    else:
+        serialize.save(outf, obj)
 
 def save_image(filename, im, scaling='auto', depth=8):
     """Save an ndarray or image as a tiff.
