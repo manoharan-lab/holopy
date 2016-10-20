@@ -22,12 +22,10 @@ import warnings
 import numpy as np
 
 from numpy.testing import assert_equal, assert_raises, assert_allclose
-from nose.plugins.skip import SkipTest
 from ...scattering.scatterer import Sphere, Spheres
-from ...scattering.theory.mie import Mie
 from ...core import Optics, ImageSchema
 from .. import fit, Parameter, par, Model
-from ..minimizer import Nmpfit, OpenOpt
+from ..minimizer import Nmpfit
 from ..errors import ParameterSpecificationError, MinimizerConvergenceFailed
 from ...core.tests.common import assert_obj_close
 from holopy.scattering.calculations import calc_holo
@@ -82,34 +80,9 @@ def test_minimizer():
     assert_equal(parinfo[2]['limited'], [True, True])
     assert_obj_close(gold_dict, result2, context = 'minimized_parameters_with_parinfo')
 
-def test_basic_openopt():
-    x = np.arange(-10, 10, .1)
-    a = 5.3
-    b = -1.8
-    c = 3.4
-    gold_dict = dict((('a', a), ('b', b), ('c', c)))
-    y = a*x**2 + b*x + c
-
-    # This test does NOT handle scaling correctly -- we would need a Model
-    # which knows the parameters to properly handle the scaling/unscaling
-    def cost_func(pars):
-        a = pars['a']
-        b = pars['b']
-        c = pars['c']
-        return a*x**2 + b*x + c - y
-
-    # test basic usage
-    parameters = [Parameter(name='a', guess = 5),
-                 Parameter(name='b', guess = -2),
-                 Parameter(name='c', guess = 3)]
-    try:
-        minimizer = OpenOpt()
-    except ImportError:
-        raise SkipTest
-    result, details = minimizer.minimize(parameters, cost_func)
-    assert_obj_close(gold_dict, result, context = 'basic_minimized_parameters', rtol=1e-4)
-
 def test_iter_limit():
+    gold_fit_dict={'0:Sphere.r': 0.52480509800531849, '1:Sphere.center[1]': 14.003687569304704, 'alpha': 0.93045027963762217, '0:Sphere.center[2]': 19.93177549652841, '1:Sphere.r': 0.56292664494653732, '0:Sphere.center[1]': 15.000340621607815, '1:Sphere.center[0]': 14.020984607646726, '0:Sphere.center[0]': 15.000222185576494, '1:Sphere.center[2]': 20.115613202192328}
+
     #calculate a hologram with known particle positions to do a fit against
     schema = ImageSchema(shape = 100, spacing = .1,
                          optics = Optics(wavelen = .660, index = 1.33, polarization = (1,0)))
@@ -118,7 +91,6 @@ def test_iter_limit():
     s2 = Sphere(center=(14, 14, 20), n = 1.59, r = 0.5)
     cluster = Spheres([s1, s2])
     holo = calc_holo(schema, cluster, 1.33, .66, polarization=(1,0))
-    from holopy.fitting.minimizer import Nmpfit
 
     #trying to do a fast fit:
     guess1 = Sphere(center = (par(guess = 15, limit = [5,25]), par(15, [5, 25]), par(20, [5, 25])), r = (par(guess = .45, limit=[.4,.6])), n = 1.59)
@@ -126,12 +98,6 @@ def test_iter_limit():
     par_s = Spheres([guess1,guess2])
 
     model = Model(par_s, calc_holo, 1.33, .66, Optics(polarization=(1, 0)), alpha = par(.6, [.1, 1]))
-    warnings.simplefilter
-    with warnings.catch_warnings(record=True) as w:
-        # Cause all warnings to always be triggered.
-        warnings.simplefilter("always")
-        result = fit(model, holo, minimizer = Nmpfit(maxiter=2), random_subset=.1)
-
-        assert len(w) == 1
-        assert issubclass(w[-1].category, UserWarning)
-        assert "Convergence Failed" in str(w[-1].message)
+    warnings.simplefilter("always")
+    result = fit(model, holo, minimizer = Nmpfit(maxiter=2))
+    assert_obj_close(gold_fit_dict,result.parameters)
