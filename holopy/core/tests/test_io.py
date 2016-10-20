@@ -20,8 +20,9 @@ from holopy.core.tests.common import (assert_obj_close,
                                       assert_read_matches_write,
                                       get_example_data,
                                       get_example_data_path)
-from holopy.core import Optics, Marray, load, save, load_image, save_image
+from holopy.core import load, save, load_image, save_image
 from holopy.core.tools import normalize
+from holopy.core.metadata import Image
 import tempfile
 import os
 import shutil
@@ -39,7 +40,7 @@ def test_hologram_io():
     assert_read_matches_write(holo)
 
 def test_marray_io():
-    d = Marray(np.random.random((10, 10)))
+    d = Image(np.random.random((10, 10)))
     assert_read_matches_write(d)
 
 def test_image_io():
@@ -104,9 +105,6 @@ def test_yaml_output():
 
     assert_equal(yaml.dump(np.dtype('float')),"!dtype 'float64'\n")
     assert_equal(yaml.load(yaml.dump(np.dtype('float'))), np.dtype('float64'))
-
-    assert_equal(yaml.dump(Optics), "!class 'holopy.core.metadata.Optics'\n")
-    assert_equal(yaml.load(yaml.dump(Optics)), Optics)
 
     # this should fail on Windows64 because int and long are both
     # int32

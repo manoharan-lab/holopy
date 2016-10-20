@@ -35,23 +35,12 @@ import types
 
 from holopy.core.tools import is_none
 from holopy.core.holopy_object import SerializableMetaclass
-from holopy.core.marray import Marray
-from holopy.core import marray
 
 def save(outf, obj):
     if isinstance(outf, str):
         outf = open(outf, 'wb')
 
     outf.write(yaml.dump(obj).encode())
-    if isinstance(obj, Marray):
-        # yaml saves of large arrays are very slow, so we have numpy save the array
-        # parts of Marray objects.  This will mean the file isn't stricktly
-        # a valid yaml (or even a valid text file really), but we can still read
-        # it, and with the right programs (like linux more) you can still see
-        # the text yaml information, and it keeps everything in one file
-        outf.write('array: !NpyBinary\n'.encode())
-        np.save(outf, obj)
-
 
 def load(inf):
     if isinstance(inf, str):
@@ -64,32 +53,18 @@ def _load(inf):
     line = inf.readline()
     cls = line.strip(b'{} !\n').decode('utf-8')
     lines = []
-    if hasattr(marray, cls) and issubclass(getattr(marray, cls), Marray):
-        while not re.search(b'!NpyBinary', line):
-            lines.append(line)
-            line = inf.readline()
-        arr = np.load(inf)
-        head = b''.join(lines[1:])
-        kwargs = yaml.load(head)
-        if kwargs is None:
-            kwargs = {} #pragma: nocover
-        return getattr(marray, cls)(arr, **kwargs)
+    obj = yaml.load(inf)
+    if isinstance(obj, dict):
+        # sometimes yaml doesn't convert strings to floats properly, so we
+        # have to check for that.
+        for key in obj:
+            if isinstance(obj[key], str):
+                try:
+                    obj[key] = float(obj[key])
+                except ValueError: #pragma: nocover
+                    pass #pragma: nocover
 
-
-    else:
-        inf.seek(0)
-        obj = yaml.load(inf)
-        if isinstance(obj, dict):
-            # sometimes yaml doesn't convert strings to floats properly, so we
-            # have to check for that.
-            for key in obj:
-                if isinstance(obj[key], str):
-                    try:
-                        obj[key] = float(obj[key])
-                    except ValueError: #pragma: nocover
-                        pass #pragma: nocover
-
-        return obj
+    return obj
 
 
 def _pickle_method(method):

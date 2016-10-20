@@ -26,9 +26,6 @@ Code to propagate objects/waves using scattering models.
 
 import numpy as np
 from ..core.tools import fft, ifft, _ensure_pair, _ensure_array
-from ..core import Volume, Image, Grid, UnevenGrid, VolumeSchema, Marray
-from ..core.marray import VectorGrid, dict_without, arr_like
-from ..core.metadata import interpret_args
 from ..scattering.errors import MissingParameter
 
 # May eventually want to have this function take a propagation model
@@ -60,10 +57,14 @@ def propagate(data, d, index=None, wavelen=None, gradient_filter=False):
         # Propagating no distance has no effect
         return data
 
-    data = interpret_args(data, index, wavelen)
-
     if data.positions is None:
         raise MissingParameter("image spacing")
+    if wavelen is None:
+        wavelen = data.illum_wavelen
+    if index is None:
+        index = data.med_index
+    med_mavelen = wavelen/index
+
     if data.index is None or data.wavelen is None:
         raise MissingParameter("refractive index and wavelength")
 
@@ -79,7 +80,7 @@ def propagate(data, d, index=None, wavelen=None, gradient_filter=False):
             d_old = d
             d = np.delete(d, np.nonzero(d == 0))
 
-    G = trans_func(data, d, squeeze=False, gradient_filter=gradient_filter)
+    G = trans_func(data, d, med_wavelen, squeeze=False, gradient_filter=gradient_filter)
 
     ft = fft(data)
 
@@ -136,7 +137,7 @@ def apply_trans_func(ft, G):
     return ft
 
 
-def trans_func(schema, d, cfsp=0, squeeze=True,
+def trans_func(schema, d, med_wavelen, cfsp=0, squeeze=True,
                gradient_filter=0):
     """
     Calculates the optical transfer function to use in reconstruction
@@ -184,8 +185,6 @@ def trans_func(schema, d, cfsp=0, squeeze=True,
     """
     d = np.array([d])
 
-    wavelen = schema.optics.med_wavelen
-
     d = d.reshape([1, 1, d.size])
 
     if(cfsp > 0):
@@ -206,17 +205,17 @@ def trans_func(schema, d, cfsp=0, squeeze=True,
     m, n = np.ogrid[[slice(-dim/(2*ext), dim/(2*ext), dim*1j) for
                      (dim, ext) in zip(schema.shape[:2], schema.extent[:2])]]
 
-    root = 1.+0j-(wavelen*n)**2 - (wavelen*m)**2
+    root = 1.+0j-(med_wavelen*n)**2 - (med_wavelen*m)**2
 
     root *= (root >= 0)
 
     # add the z axis to this array so it broadcasts correctly
     root = root[..., np.newaxis]
 
-    g = np.exp(-1j*2*np.pi*d/wavelen*np.sqrt(root))
+    g = np.exp(-1j*2*np.pi*d/med_wavelen*np.sqrt(root))
 
     if gradient_filter:
-        g -= np.exp(-1j*2*np.pi*(d+gradient_filter)/wavelen*np.sqrt(root))
+        g -= np.exp(-1j*2*np.pi*(d+gradient_filter)/med_wavelen*np.sqrt(root))
 
     # set the transfer function to zero where the sqrt is imaginary
     # (this is equivalent to making sure that the largest spatial
