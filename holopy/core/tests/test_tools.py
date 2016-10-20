@@ -32,7 +32,7 @@ import shutil
 gold_location = np.array([ 48.5729142,  50.23217416])
 
 def test_FoundLocation():
-    holo = get_example_data('image0001.yaml')
+    holo = get_example_data('image0001')
     location = center_find(holo, threshold=.25)
     assert_allclose(location, gold_location)
 

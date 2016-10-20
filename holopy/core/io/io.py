@@ -65,8 +65,8 @@ def load(inf):
 
     """
 
-    xr.open_dataset(default_extension(inf), engine='h5netcdf')
-    return xr.data
+    ds = xr.open_dataset(default_extension(inf), engine='h5netcdf')
+    return ds.data
 
     loaded_yaml = False
     # attempt to load a holopy yaml file
@@ -207,10 +207,17 @@ def save_image(filename, im, scaling='auto', depth=8):
             im = im * ((2**depth)-1) + .499999
             im = im.astype(typestr)
     if os.path.splitext(filename)[1] in tiflist:
-        metadat = yaml.dump(im._dict)
+        d = {}
+        d['attrs'] = im.attrs
+        xspacing = np.diff(im.x)
+        yspacing = np.diff(im.y)
+        if not np.allclose(xspacing[0], xspacing) and np.allclose(yspacing[0], yspacing):
+            raise NotImplementedError("Saving images with non uniform spacing")
+        d['spacing'] = (xspacing[0], yspacing[0])
+        metadat = yaml.dump(d)
         tiffinfo = ifd2()
         tiffinfo[270] = metadat #This edits the 'imagedescription' field of the tiff metadata
-        pilimage.fromarray(im).save(filename, tiffinfo=tiffinfo)   
+        pilimage.fromarray(im.values).save(filename, tiffinfo=tiffinfo)   
     else:
         pilimage.fromarray(im).save(filename)
     

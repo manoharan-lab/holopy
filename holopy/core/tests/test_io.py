@@ -35,7 +35,7 @@ import yaml
 
 @attr('fast')
 def test_hologram_io():
-    holo = normalize(get_example_data('image0001.yaml'))
+    holo = normalize(get_example_data('image0001'))
 
     assert_read_matches_write(holo)
 
@@ -44,7 +44,7 @@ def test_marray_io():
     assert_read_matches_write(d)
 
 def test_image_io():
-    holo = get_example_data('image0001.yaml')
+    holo = get_example_data('image0001')
     t = tempfile.mkdtemp()
 
     filename = os.path.join(t, 'image0001.tif')
@@ -89,7 +89,7 @@ def test_image_io():
     assert_obj_close(l, holo)
 
     # test that yaml save works corretly with a string instead of a file
-    filename = os.path.join(t, 'image0001.yaml')
+    filename = os.path.join(t, 'image0001')
     save(filename, holo)
     loaded = load(filename)
     assert_obj_close(loaded, holo)
