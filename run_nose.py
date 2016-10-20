@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
