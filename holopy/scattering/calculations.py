@@ -30,6 +30,7 @@ from holopy.scattering.theory import dda
 from holopy.scattering.errors import AutoTheoryFailed, MissingParameter
 
 import numpy as np
+from warnings import warn
 from xarray.ufuncs import square
 
 def check_schema(schema):
@@ -53,7 +54,11 @@ def determine_theory(scatterer):
     if isinstance(scatterer, Sphere):
         return Mie()
     elif isinstance(scatterer, Spheres):
-        return Multisphere()
+        if all([np.isscalar(scat.r) for i,scat in enumerate(scatterer.scatterers)]):
+            return Multisphere()
+        else:
+            warn("HoloPy's multisphere theory can't handle coated spheres. Using Mie theory.")
+            return Mie()
     elif isinstance(scatterer, dda.scatterers_handled):
         return dda.DDA()
     else:
@@ -83,7 +88,7 @@ def calc_intensity(schema, scatterer, medium_index=None, illum_wavelen=None, ill
     inten : :class:`.Image`
         scattered intensity
     """
-    field = calc_field(schema, scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization)
+    field = calc_field(schema, scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory)
     return (abs(field*(1-schema.normals))**2).sum(dim=vector)
 
 

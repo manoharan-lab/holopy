@@ -24,7 +24,6 @@ other exceptions in other parts of HoloPy to keep things modular.
 
 
 import warnings
-from nose.plugins.skip import SkipTest
 
 class InvalidScatterer(Exception):
     def __init__(self, scatterer, message):
@@ -65,7 +64,7 @@ class MultisphereFailure(Exception):
         return ("Multisphere calculations failed to converge, or returned NaN. this probably means "
                 "your scatterer is unphysical.")
 
-class DependencyMissing(SkipTest, Exception):
+class DependencyMissing(Exception):
     def __init__(self, dep):
         self.dep = dep
     def __str__(self):
