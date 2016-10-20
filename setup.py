@@ -62,10 +62,9 @@ def configuration(parent_package='',top_path=None):
         config.add_subpackage(i)    
     
     config.add_data_files(['.',['AUTHORS']])
-    config.add_data_files('holopy/propagation/tests/gold/full_data/*.h5')
-    config.add_data_files('holopy/scattering/tests/gold/full_data/*.h5')
-    config.add_data_files('holopy/core/tests/exampledata/*.h5')
-    config.add_data_files('holopy/core/tests/exampledata/*.jpg')
+    config.add_data_files('holopy/propagation/tests/gold/*.yaml')
+    config.add_data_files('holopy/scattering/tests/gold/*.yaml')
+    config.add_data_files('holopy/core/tests/exampledata/*.yaml')
 
     config.get_version()
     return config
@@ -82,7 +81,7 @@ if __name__ == "__main__":
           name='HoloPy',
           version=__version__,
           description='Holography in Python',
-          requires=['numpy', 'scipy', 'PyYAML', 'pillow','pandas','h5py','emcee','matplotlib','xarray','h5netcdf'],
+          requires=['numpy', 'scipy', 'PyYAML', 'pillow','pandas','h5py','emcee','matplotlib', 'nose'],
           author='Manoharan Lab, Harvard University',
           author_email='vnm@seas.harvard.edu',
           url='http://manoharan.seas.harvard.edu/holopy',
