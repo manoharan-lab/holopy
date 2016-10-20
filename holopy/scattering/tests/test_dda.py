@@ -30,7 +30,7 @@ from nose.plugins.skip import SkipTest
 
 from ...scattering.errors import DependencyMissing
 from ..scatterer import Sphere, Ellipsoid, Scatterer, JanusSphere, Difference
-from .. import DDA, calc_holo as calc_holo_external
+from .. import Mie, DDA, calc_holo as calc_holo_external
 from ...core import ImageSchema
 from .common import assert_allclose, verify, assert_obj_close
 
@@ -149,8 +149,8 @@ def test_csg_dda():
     s = Sphere(n = 1.6, r=.1, center=(5, 5, 5))
     st = s.translated(.03, 0, 0)
     pacman = Difference(s, st)
-    sch = ImageSchema(10, .1, illum_wavelen=.66, med_index=1.33, illum_polarization=(0, 1)))
-    h = calc_holo(sch, pacman, 1.33, .66, polarization=(0, 1))
+    sch = ImageSchema(10, .1, illum_wavelen=.66, medium_index=1.33, illum_polarization=(0, 1))
+    h = calc_holo(sch, pacman, 1.33, .66, illum_polarization=(0, 1))
     verify(h, 'dda_csg')
 
     hr = calc_holo(sch, pacman.rotated(np.pi/2, 0, 0))
