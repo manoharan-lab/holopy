@@ -23,20 +23,21 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 from holopy.core.holopy_object import SerializableMetaclass
-from holopy.core import Optics, Schema, Image, VectorGrid, interpret_args
+from holopy.core.metadata import vector, Image, optical_parameters
 from holopy.core.tools import dict_without, is_none
 from holopy.scattering import Mie, Multisphere, Sphere, Spheres
 from holopy.scattering.theory import dda
 from holopy.scattering.errors import AutoTheoryFailed, MissingParameter
 
 import numpy as np
+from xarray.ufuncs import square
 
 def check_schema(schema):
-    if schema.optics.wavelen is None:
+    if schema.illum_wavelen is None:
         raise MissingParameter("wavelength")
-    if schema.optics.index is None:
+    if schema.med_index is None:
         raise MissingParameter("medium refractive index")
-    if is_none(schema.optics.polarization):
+    if is_none(schema.illum_polarization):
         raise MissingParameter("polarization")
     return schema
 
@@ -58,7 +59,7 @@ def determine_theory(scatterer):
     else:
         raise AutoTheoryFailed(scatterer)
 
-def calc_intensity(schema, scatterer, medium_index=None, wavelen=None, polarization=None, theory='auto', optics=None):
+def calc_intensity(schema, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
     """
     Calculate intensity at a location or set of locations
 
@@ -70,12 +71,9 @@ def calc_intensity(schema, scatterer, medium_index=None, wavelen=None, polarizat
         Refractive index of the medium in which the scatter is imbedded
     locations : np.ndarray or :class:`.locations` object
         The locations to compute intensity at
-    wavelen : float or ndarray(float)
-        Wavelength of illumination light. If wavelen is an array result
+    illum_wavelen : float or ndarray(float)
+        Wavelength of illumination light. If illum_wavelen is an array result
         will add a dimension and have all wavelengths
-    optics : :class:`.Optics` object (optional)
-        Object describing the optical train of illumination before the object
-        and after the object until detection
     theory : :class:`.theory` object (optional)
         Scattering theory object to use for the calculation. This is optional
         if there is a clear choice of theory for your scatterer. If there is not
@@ -85,11 +83,11 @@ def calc_intensity(schema, scatterer, medium_index=None, wavelen=None, polarizat
     inten : :class:`.Image`
         scattered intensity
     """
-    field = calc_field(schema, scatterer, medium_index, wavelen, polarization, theory, optics)
-    return (abs(field*(1-schema.normals))**2).sum(-1)
+    field = calc_field(schema, scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization)
+    return (abs(field*(1-schema.normals))**2).sum(dim=vector)
 
 
-def calc_holo(schema, scatterer, medium_index=None, wavelen=None, polarization=None, theory='auto', optics=None, scaling=1.0):
+def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', scaling=1.0):
     """
     Calculate hologram formed by interference between scattered
     fields and a reference wave
@@ -102,12 +100,9 @@ def calc_holo(schema, scatterer, medium_index=None, wavelen=None, polarization=N
         Refractive index of the medium in which the scatter is imbedded
     locations : np.ndarray or :class:`.locations` object
         The locations to compute hologram at
-    wavelen : float or ndarray(float)
-        Wavelength of illumination light. If wavelen is an array result
+    illum_wavelen : float or ndarray(float)
+        Wavelength of illumination light. If illum_wavelen is an array result
         will add a dimension and have all wavelengths
-    optics : :class:`.Optics` object (optional)
-        Object describing the optical train of illumination before the object
-        and after the object until detection
     theory : :class:`.theory` object (optional)
         Scattering theory object to use for the calculation. This is optional
         if there is a clear choice of theory for your scatterer. If there is not
@@ -119,12 +114,12 @@ def calc_holo(schema, scatterer, medium_index=None, wavelen=None, polarization=N
     holo : :class:`.Image` object
         Calculated hologram from the given distribution of spheres
     """
-    schema = check_schema(interpret_args(schema, medium_index, wavelen, polarization, optics))
     theory = interpret_theory(scatterer,theory)
-    scat = theory._calc_field(scatterer, schema)
-    return scattered_field_to_hologram(scat*scaling, schema.optics.polarization, schema.normals)
+    par = optical_parameters(schema, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization)
+    scat = theory._calc_field(scatterer, schema, **par)
+    return scattered_field_to_hologram(scat*scaling, par['illum_polarization'], schema.normals)
 
-def calc_cross_sections(scatterer, medium_index=None, wavelen=None, polarization=None, theory='auto', optics=None):
+def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
     """
     Calculate scattering, absorption, and extinction
     cross sections, and asymmetry parameter <cos \theta>.
@@ -135,12 +130,9 @@ def calc_cross_sections(scatterer, medium_index=None, wavelen=None, polarization
         (possibly composite) scatterer for which to compute scattering
     medium_index : float or complex
         Refractive index of the medium in which the scatter is imbedded
-    wavelen : float or ndarray(float)
-        Wavelength of illumination light. If wavelen is an array result
+    illum_wavelen : float or ndarray(float)
+        Wavelength of illumination light. If illum_wavelen is an array result
         will add a dimension and have all wavelengths
-    optics : :class:`.Optics` object (optional)
-        Object describing the optical train of illumination before the object
-        and after the object until detection
     theory : :class:`.theory` object (optional)
         Scattering theory object to use for the calculation. This is optional
         if there is a clear choice of theory for your scatterer. If there is not
@@ -152,11 +144,10 @@ def calc_cross_sections(scatterer, medium_index=None, wavelen=None, polarization
         Dimensional scattering, absorption, and extinction
         cross sections, and <cos theta>
     """
-    schema = check_schema(interpret_args(index=medium_index, wavelen=wavelen, polarization=polarization, optics=optics))
     theory = interpret_theory(scatterer,theory)
-    return theory._calc_cross_sections(scatterer, schema.optics)
+    return theory._calc_cross_sections(scatterer, **optical_parameters(medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization))
 
-def calc_scat_matrix(schema, scatterer, medium_index=None, wavelen=None, theory='auto', optics=None):
+def calc_scat_matrix(schema, scatterer, medium_index=None, illum_wavelen=None, theory='auto'):
     """
     Compute farfield scattering matricies for scatterer
 
@@ -166,12 +157,9 @@ def calc_scat_matrix(schema, scatterer, medium_index=None, wavelen=None, theory=
         (possibly composite) scatterer for which to compute scattering
     medium_index : float or complex
         Refractive index of the medium in which the scatter is imbedded
-    wavelen : float or ndarray(float)
-        Wavelength of illumination light. If wavelen is an array result
+    illum_wavelen : float or ndarray(float)
+        Wavelength of illumination light. If illum_wavelen is an array result
         will add a dimension and have all wavelengths
-    optics : :class:`.Optics` object (optional)
-        Object describing the optical train of illumination before the object
-        and after the object until detection
     theory : :class:`.theory` object (optional)
         Scattering theory object to use for the calculation. This is optional
         if there is a clear choice of theory for your scatterer. If there is not
@@ -183,16 +171,11 @@ def calc_scat_matrix(schema, scatterer, medium_index=None, wavelen=None, theory=
         Scattering matricies at specified positions
 
     """
-    schema = interpret_args(schema, medium_index, wavelen, optics=optics)
-    if schema.optics.wavelen is None:
-        raise MissingParameter("wavelength")
-    if schema.optics.index is None:
-        raise MissingParameter("medium refractive index")
 
     theory = interpret_theory(scatterer,theory)
-    return theory._calc_scat_matrix(scatterer, schema)
+    return theory.calc_scat_matrix(scatterer, schema, **optical_parameters(schema, medium_index=medium_index, illum_wavelen=illum_wavelen))
 
-def calc_field(schema, scatterer, medium_index=None, wavelen=None, polarization=None, theory='auto', optics=None):
+def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
     """
     Calculate hologram formed by interference between scattered
     fields and a reference wave
@@ -205,12 +188,9 @@ def calc_field(schema, scatterer, medium_index=None, wavelen=None, polarization=
         Refractive index of the medium in which the scatter is imbedded
     locations : np.ndarray or :class:`.locations` object
         The locations to compute hologram at
-    wavelen : float or ndarray(float)
-        Wavelength of illumination light. If wavelen is an array result
+    illum_wavelen : float or ndarray(float)
+        Wavelength of illumination light. If illum_wavelen is an array result
         will add a dimension and have all wavelengths
-    optics : :class:`.Optics` object (optional)
-        Object describing the optical train of illumination before the object
-        and after the object until detection
     theory : :class:`.theory` object (optional)
         Scattering theory object to use for the calculation. This is optional
         if there is a clear choice of theory for your scatterer. If there is not
@@ -222,9 +202,8 @@ def calc_field(schema, scatterer, medium_index=None, wavelen=None, polarization=
     e_field : :class:`.Vector` object
         Calculated hologram from the given distribution of spheres
     """
-    schema = check_schema(interpret_args(schema, medium_index, wavelen, polarization, optics))
     theory = interpret_theory(scatterer,theory)
-    return theory._calc_field(scatterer, schema)
+    return theory._calc_field(scatterer, schema, **optical_parameters(schema, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization))
 
 # this is pulled out separate from the calc_holo method because occasionally you
 # want to turn prepared  e_fields into holograms directly
@@ -236,9 +215,8 @@ def scattered_field_to_hologram(scat, ref, detector_normal = None):
     ----------
     scat : :class:`.VectorGrid`
         The scattered (object) field
-    ref : :class:`.VectorGrid` or :class:`.Optics`
-        The reference field, it can also be inferred from polarization of an
-        Optics object
+    ref : xarray[vector]]
+        The reference field
     detector_normal : (float, float, float)
         Vector normal to the detector the hologram should be measured at
         (defaults to z hat, a detector in the x, y plane)
@@ -246,17 +224,7 @@ def scattered_field_to_hologram(scat, ref, detector_normal = None):
     if detector_normal is None:
         detector_normal = (0, 0, 1)
 
-    shape = _field_scalar_shape(scat)
-    if isinstance(ref, Optics):
-        # add the z component to polarization and adjust the shape so that it is
-        # broadcast correctly
-        ref = VectorGrid(np.append(ref.polarization, 0).reshape(shape))
-    else:
-        ref = VectorGrid(np.append(ref, 0).reshape(shape))
-    detector_normal = np.array(detector_normal).reshape(shape)
-
-    holo = Image((np.abs(scat+ref)**2 * (1 - detector_normal)).sum(axis=-1),
-                 **dict_without(scat._dict, ['dtype', 'components']))
+    holo = (np.abs(scat+ref)**2 * (1 - detector_normal)).sum(dim=vector)
 
     return holo
 

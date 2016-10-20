@@ -38,8 +38,6 @@ Main use cases are
 
 """
 
-from .marray import (Marray, Image, Schema, ImageSchema, Volume,
-                    VolumeSchema, VectorGrid, VectorGridSchema)
-from .metadata import Optics, Grid, Angles, UnevenGrid, interpret_args
+from .metadata import Image, ImageSchema
 from .io import load, load_image, save, save_image
 from . import tools

@@ -70,6 +70,8 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
 
     if isinstance(actual, dict) and isinstance(desired, dict):
         for key, val in actual.items():
+            if key is '_id':
+                continue
             assert_obj_close(actual[key], desired[key], context = '{0}[{1}]'.format(context, key),
                              rtol = rtol, atol = atol)
     elif hasattr(actual, '_dict') and hasattr(desired, '_dict'):
@@ -82,7 +84,7 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
                              rtol = rtol, atol = atol)
     elif isinstance(actual, types.MethodType):
         assert_method_equal(actual, desired, context)
-    elif hasattr(actual, '__dict__'):
+    elif hasattr(actual, '__dict__') and hasattr(desired, '__dict__'):
         assert_obj_close(actual.__dict__, desired.__dict__, rtol = rtol,
                          atol = atol, context = context + '.__dict__')
     else:
@@ -122,7 +124,7 @@ def verify(result, name, rtol=1e-7, atol=1e-8):
     gold_name = os.path.join(location, 'gold', 'gold_'+name)
     gold_yaml = yaml.load(open(gold_name+'.yaml'))
 
-    full = os.path.join(gold_dir, 'full_data', 'gold_full_{0}.yaml'.format(name))
+    full = os.path.join(gold_dir, 'full_data', 'gold_full_{0}'.format(name))
     if os.path.exists(full):
         assert_obj_close(result, load(full), rtol)
 
@@ -131,7 +133,8 @@ def verify(result, name, rtol=1e-7, atol=1e-8):
         assert_obj_close(result, gold_yaml, rtol, atol)
     else:
         for key, val in gold_yaml.items():
-            assert_almost_equal(getattr(result, key)(), val, decimal=int(-np.log10(rtol)))
+            assert_obj_close(getattr(result, key)(), val, rtol, atol)
+
 
 # TODO: update me
 def make_golds(result, name, moveto=None):

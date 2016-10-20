@@ -31,7 +31,6 @@ from .math import simulate_noise
 from .utilities import is_none, ensure_3d
 from scipy.signal import detrend
 from scipy import fftpack
-#from ..marray import Image, Volume, RegularGridSchema
 import numpy as np
 
 def normalize(image):
@@ -147,7 +146,6 @@ def add_noise(image, noise_mean=.1, smoothing=.01, poisson_lambda=1000):
                                   poisson_lambda) * image.mean()
 
 def subimage(arr, center, shape):
-    from ..marray import RegularGridSchema
     """
     Pick out a region of an image or other array
 
@@ -175,67 +173,12 @@ def subimage(arr, center, shape):
         shape = np.repeat(shape, arr.ndim)
     assert len(shape) == arr.ndim
 
-    extent = [slice(int(np.round(c-s/2)), int(np.round(c+s/2))) for c, s in zip(center, shape)] + [Ellipsis]
-    output = _checked_cut(arr, extent)
+    def intr(n):
+        return intr(np.round(n))
 
-    if isinstance(output, RegularGridSchema):
-        if not is_none(output.spacing):
-            output.center = arr.origin + ensure_3d(center) * ensure_3d(arr.spacing)
-        else:
-            output.origin = None
-    return output
+    extent = [slice(int(np.round(c-s/2)), int(np.round(c+s/2))) for c, s in zip(center, shape)]
 
-def resize(arr, center=None, extent=None, spacing=None):
-    """
-    Resize and resample an marray
-
-    Parameters
-    ----------
-    arr : :class:`.Marray`
-        Marray to resize
-    center : array(float) optional
-        Desired center of the new marray. Default is the old center
-    extent : array(float) optional
-        Desired extent of the new marray. Default is the old extent
-    spacing : array(float) optional
-        Desired spacing of the new marray. Default is the old spacing
-
-    Returns
-    -------
-    arr : :class:`.Marray`
-        Desired cut of arr. Will be a view into the old array unless spacing
-        is changed
-    """
-    if center is None:
-        center = arr.center
-    if extent is None:
-        extent = arr.extent
-    center = np.array(center)
-    extent = np.array(extent)
-    # we need to cut spacing and origin down to two dimensions if working with
-    # an Image
-    cut_center = (center - arr.origin[:arr.ndim])/arr.spacing[:arr.ndim]
-    shape = extent / arr.spacing[:arr.ndim]
-
-    extent = [slice(int(np.round(c -s/2)), int(np.round(c+s/2)))
-              for c, s in zip(cut_center, shape)]
-
-    arr = _checked_cut(arr, extent)
-    arr.center = center
-    if spacing is not None and np.any(spacing != arr.spacing):
-        shape = (arr.extent / spacing).astype('int')
-        arr = arr.resample(shape)
-
-    return arr
-
-# common code for subimage and resize
-def _checked_cut(arr, extent):
-    for i, axis in enumerate(extent):
-        if axis is not Ellipsis and (axis.start < 0 or axis.stop > arr.shape[i]):
-            raise IndexError
-
-    return arr[extent].copy()
-
+    return arr.isel(x=extent[0], y=extent[1])
 
 def fft(a, overwrite=False, shift=True):
     """
@@ -264,7 +207,6 @@ def fft(a, overwrite=False, shift=True):
     fta : ndarray
        The fourier transform of `a`
     """
-    from ..marray import Marray, arr_like
     if a.ndim is 1:
         if shift:
             res = fftpack.fftshift(fftpack.fft(a, overwrite_x=overwrite))
@@ -277,8 +219,6 @@ def fft(a, overwrite=False, shift=True):
                                     axes=[0,1])
         else:
             res = fftpack.fft2(a, axes=[0, 1], overwrite_x=overwrite)
-    if isinstance(a, Marray):
-        res = arr_like(res, a)
     return res
 
 
@@ -309,7 +249,6 @@ def ifft(a, overwrite=False, shift=True):
     ifta : ndarray
        The inverse fourier transform of `a`
     """
-    from ..marray import Marray, arr_like
     if a.ndim is 1:
         if shift:
             res = fftpack.ifft(fftpack.fftshift(a, overwrite_x=overwrite))
@@ -321,7 +260,5 @@ def ifft(a, overwrite=False, shift=True):
                                  overwrite_x=overwrite)
         else:
             res = fftpack.ifft2(a, overwrite_x=overwrite)
-    if isinstance(a, Marray):
-        res = arr_like(res, a)
     return res
 

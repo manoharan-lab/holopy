@@ -28,7 +28,7 @@ from numpy import sqrt
 from numpy.testing import assert_allclose
 import yaml
 import os
-from ...core import Optics, ImageSchema
+from ...core import ImageSchema
 from .common import verify
 from ..theory import Mie
 from ..theory.mie_f import multilayer_sphere_lib, miescatlib
@@ -44,12 +44,10 @@ def test_Shell():
               n=[(1.27121212428+0j), (1.49+0j)], r=[0.960957713253-0.0055,
                                                     0.960957713253])
 
-    optics = Optics(wavelen=0.658, index=1.36, polarization=[1.0, 0.0])
-
-    t = ImageSchema(200, .071333, optics = optics)
+    t = ImageSchema(200, .071333, illum_wavelen=.658, medium_index=1.36, illum_polarization=(1, 0))
 
     thry = Mie(False)
-    h = calc_holo(t,s, 1.36, .658, optics=optics, theory=thry, scaling = 0.4826042444701572)
+    h = calc_holo(t,s, 1.36, .658, theory=thry, scaling = 0.4826042444701572)
 
     verify(h, 'shell')
 

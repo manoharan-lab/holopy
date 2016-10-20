@@ -28,7 +28,7 @@ from nose.plugins.attrib import attr
 
 from warnings import warn
 
-from ...core import ImageSchema, Optics
+from ...core import ImageSchema
 
 from ..scatterer import (Sphere, Scatterer, Ellipsoid,
                          Scatterers)
@@ -168,7 +168,7 @@ def test_find_bounds():
 
 def test_sphere_nocenter():
     sphere = Sphere(n = 1.59, r = .5)
-    schema = ImageSchema(spacing=.1, shape=1, optics=Optics(wavelen = .660, polarization = [1, 0],index = 1.33))
+    schema = ImageSchema(spacing=.1, shape=1, illum_wavelen = .660, illum_polarization = [1, 0], medium_index = 1.33)
     assert_raises(MissingParameter, calc_holo, schema, sphere, 1.33, .66)
 
 def test_ellipsoid():

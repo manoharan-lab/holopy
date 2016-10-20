@@ -24,7 +24,6 @@ New custom display functions for holograms and reconstructions.
 
 
 import numpy as np
-from ..core.tools import squeeze
 
 class plotter:
     def __init__(self, im, i=0, j=0, axis_names = ('x', 'y')):
@@ -174,10 +173,6 @@ def show2d(im, i=0, t=0, phase = False):
         axis_names = ['y', 'z']
     if im.shape[1] == 1:
         axis_names = ['x', 'z']
-
-    im = squeeze(im)
-
-
 
     if np.iscomplexobj(im):
         if phase:

@@ -40,7 +40,7 @@ class Scatterer(HoloPyObject):
     Base class for scatterers
 
     """
-    def __init__(self, indicators, n, location):
+    def __init__(self, indicators, n, center):
         """
         Parameters
         ----------
@@ -49,6 +49,8 @@ class Scatterer(HoloPyObject):
             inside a specific domain) and false outside.
         n : complex
             Index of refraction of the scatterer or each domain.
+        center : (float, float, float)
+            The center of mass of the scatterer. 
         bounding_box : ((float, float), (float, float), (float, float))
             Optional. Box containing the scatterer. If a bounding box is not given, the
             constructor will attempt to determine one.
@@ -57,7 +59,7 @@ class Scatterer(HoloPyObject):
             indicators = Indicators(indicators)
         self.indicators = indicators
         self.n = _ensure_array(n)
-        self.location = np.array(location)
+        self.center = np.array(center)
 
     def translated(self, x, y, z):
         """
@@ -74,7 +76,7 @@ class Scatterer(HoloPyObject):
             A copy of this scatterer translated to a new location
         """
         new = copy(self)
-        new.location = self.location + np.array((x, y, z))
+        new.center = self.center + np.array((x, y, z))
         return new
 
     def contains(self, points):
@@ -111,7 +113,7 @@ class Scatterer(HoloPyObject):
             points = points.reshape((1, 3))
         domains = np.zeros(points.shape[:-1], dtype='int')
         # Indicators earlier in the list have priority
-        for i, ind in reversed(list(enumerate(self.indicators(points-self.location)))):
+        for i, ind in reversed(list(enumerate(self.indicators(points-self.center)))):
             domains[np.nonzero(ind)] = i+1
         return domains
 
@@ -127,17 +129,17 @@ class Scatterer(HoloPyObject):
 
     @property
     def x(self):
-        return self.location[0]
+        return self.center[0]
     @property
     def y(self):
-        return self.location[1]
+        return self.center[1]
     @property
     def z(self):
-        return self.location[2]
+        return self.center[2]
 
     @property
     def bounds(self):
-        return [(c+b[0], c+b[1]) for c, b in zip(self.location,
+        return [(c+b[0], c+b[1]) for c, b in zip(self.center,
                                                  self.indicators.bound)]
 
     def _voxel_coords(self, spacing):
@@ -176,15 +178,7 @@ class CenteredScatterer(Scatterer):
         if center is not None and (np.isscalar(center) or len(center) != 3):
             raise InvalidScatterer(self,"center specified as {0}, center "
                 "should be specified as (x, y, z)".format(center))
-        self.location = center
-
-    @property
-    def center(self):
-        return self.location
-
-    @center.setter
-    def center(self, val):
-        self.location = val
+        self.center = center
 
     # eliminate parameters and from_parameters?  This is kind of fitting
     # specific information.  Or should it be in serializable?  In many ways this
