@@ -28,7 +28,7 @@ import xarray as xr
 from xarray.ufuncs import sqrt, arctan2
 from warnings import warn
 import copy
-from .tools import _ensure_pair, _ensure_array
+from .tools import _ensure_pair, _ensure_array, is_none
 
 
 vector = 'vector'
@@ -96,6 +96,8 @@ def make_coords(shape, spacing, z=0):
     return {'x': np.arange(shape[0])*spacing[0], 'y': np.arange(shape[1])*spacing[1], 'z': 0}
 
 def make_attrs(medium_index, illum_wavelen, illum_polarization, normals):
+    if is_none(normals):
+        normals = (0, 0, 1)
     return {'medium_index': medium_index, 'illum_wavelen': illum_wavelen, 'illum_polarization': to_vector(illum_polarization), 'normals': to_vector(normals)}
 
 def angles_list(theta, phi, medium_index, illum_wavelen, illum_polarization, normals=(0, 0, 1)):
@@ -141,3 +143,10 @@ def optical_parameters(schema=None, **kwargs):
         r['illum_polarization'] = to_vector(d['illum_polarization'])
 
     return r
+
+def get_spacing(im):
+    xspacing = np.diff(im.x)
+    yspacing = np.diff(im.y)
+    if not np.allclose(xspacing[0], xspacing) and np.allclose(yspacing[0], yspacing):
+        raise ValueError("array has nonuniform spacing, can't determine a single spacing")
+    return np.array((xspacing[0], yspacing[0]))
