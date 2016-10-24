@@ -139,8 +139,13 @@ def verify(result, name, rtol=1e-7, atol=1e-8):
 
     full = os.path.join(gold_dir, 'full_data', 'gold_full_{0}'.format(name))
     if os.path.exists(full):
-        assert_obj_close(result, load(full), rtol)
-
+        try:
+            assert_obj_close(result, load(full), rtol)
+        except OSError:
+            # This will happen if you don't have git lfs installed and we
+            # attempt to open the placeholder file. In that case we just test
+            # the summary data, same as if the full data isn't present.
+            pass
 
     if isinstance(result, dict):
         assert_obj_close(result, gold_yaml, rtol, atol)
