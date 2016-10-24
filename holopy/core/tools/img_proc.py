@@ -32,6 +32,7 @@ from .utilities import is_none, ensure_3d
 from scipy.signal import detrend
 from scipy import fftpack
 import numpy as np
+import xarray as xr
 
 def normalize(image):
     """
@@ -180,6 +181,30 @@ def subimage(arr, center, shape):
 
     return arr.isel(x=extent[0], y=extent[1])
 
+def get_values(a):
+    return getattr(a, 'values', a)
+
+def ft_coord(c):
+    spacing = np.diff(c)
+    if not np.allclose(spacing[0], spacing):
+        raise ValueError("array has nonuniform spacing, can't determine coordinates for fft")
+    spacing = spacing[0]
+    dim = len(c)
+    ext = spacing * dim
+    return np.linspace(-get_values(dim/(2*ext)), get_values(dim/(2*ext)), dim)
+
+def ft_coords(cs):
+    d = {k: v.values for k, v in cs.items()}
+    d['m'] = ft_coord(d.pop('x'))
+    d['n'] = ft_coord(d.pop('y'))
+    return d
+
+def ift_coords(cs):
+    d = {k: v.values for k, v in cs.items()}
+    d['x'] = ft_coord(d.pop('m'))
+    d['y'] = ft_coord(d.pop('n'))
+    return d
+
 def fft(a, overwrite=False, shift=True):
     """
     More convenient Fast Fourier Transform
@@ -219,6 +244,9 @@ def fft(a, overwrite=False, shift=True):
                                     axes=[0,1])
         else:
             res = fftpack.fft2(a, axes=[0, 1], overwrite_x=overwrite)
+
+    if hasattr(a, 'coords') and hasattr(a, 'attrs'):
+        res = xr.DataArray(res, dims=['m', 'n'], coords=ft_coords(a.coords), attrs=a.attrs)
     return res
 
 
@@ -260,5 +288,9 @@ def ifft(a, overwrite=False, shift=True):
                                  overwrite_x=overwrite)
         else:
             res = fftpack.ifft2(a, overwrite_x=overwrite)
+
+    if hasattr(a, 'coords') and hasattr(a, 'attrs'):
+        res = xr.DataArray(res, dims=['x', 'y'], coords=ift_coords(a.coords), attrs=a.attrs)
+
     return res
 
