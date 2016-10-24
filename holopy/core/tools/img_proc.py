@@ -184,14 +184,23 @@ def subimage(arr, center, shape):
 def get_values(a):
     return getattr(a, 'values', a)
 
-def ft_coord(c):
+def get_spacing(c):
     spacing = np.diff(c)
     if not np.allclose(spacing[0], spacing):
         raise ValueError("array has nonuniform spacing, can't determine coordinates for fft")
-    spacing = spacing[0]
+    return spacing[0]
+
+def ft_coord(c):
+    spacing = get_spacing(c)
     dim = len(c)
     ext = spacing * dim
     return np.linspace(-get_values(dim/(2*ext)), get_values(dim/(2*ext)), dim)
+
+def ift_coord(c):
+    spacing = get_spacing(c)
+    dim = len(c)
+    ext = spacing * dim
+    return np.linspace(0, get_values(dim/ext), dim)
 
 def ft_coords(cs):
     d = {k: v.values for k, v in cs.items()}
@@ -201,8 +210,8 @@ def ft_coords(cs):
 
 def ift_coords(cs):
     d = {k: v.values for k, v in cs.items()}
-    d['x'] = ft_coord(d.pop('m'))
-    d['y'] = ft_coord(d.pop('n'))
+    d['x'] = ift_coord(d.pop('m'))
+    d['y'] = ift_coord(d.pop('n'))
     return d
 
 def fft(a, overwrite=False, shift=True):
@@ -247,6 +256,7 @@ def fft(a, overwrite=False, shift=True):
 
     if hasattr(a, 'coords') and hasattr(a, 'attrs'):
         res = xr.DataArray(res, dims=['m', 'n'], coords=ft_coords(a.coords), attrs=a.attrs)
+        res.name = a.name
     return res
 
 
@@ -291,6 +301,6 @@ def ifft(a, overwrite=False, shift=True):
 
     if hasattr(a, 'coords') and hasattr(a, 'attrs'):
         res = xr.DataArray(res, dims=['x', 'y'], coords=ift_coords(a.coords), attrs=a.attrs)
-
+        res.name = a.name
     return res
 
