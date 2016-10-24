@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -27,6 +27,7 @@ import shutil
 import errno
 import numpy as np
 from copy import copy
+import itertools
 
 def _ensure_array(x):
     if np.isscalar(x):
@@ -156,7 +157,7 @@ def is_none(o):
 
     return isinstance(o, type(None))
 
-def updated(d, update):
+def updated(d, update={}, filter_none=True, **kwargs):
     """Return a dictionary updated with keys from update
 
     Analgous to sorted, this is an equivalent of d.update as a
@@ -171,7 +172,10 @@ def updated(d, update):
 
     """
     d = copy(d)
-    d.update(update)
+    for key, val in itertools.chain(update.items(), kwargs.items()):
+        if val is not None:
+            d[key] = val
+
     return d
 
 

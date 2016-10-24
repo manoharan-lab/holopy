@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -28,6 +28,7 @@ dependence of spherical Hankel functions for the scattered field.
 
 
 import numpy as np
+import os
 from numpy import arctan2, sin, cos
 from warnings import warn
 from scipy.integrate import dblquad
@@ -110,13 +111,14 @@ class Multisphere(FortranTheory):
     """
 
     def __init__(self, niter=200, eps=1e-6, meth=1, qeps1=1e-5, qeps2=1e-8,
-                 compute_escat_radial = False):
+                 compute_escat_radial = False, suppress_fortran_output = True):
         self.niter = niter
         self.eps = eps
         self.meth = meth
         self.qeps1 = qeps1
         self.qeps2 = qeps2
         self.compute_escat_radial = compute_escat_radial
+        self.suppress_fortran_output=suppress_fortran_output
 
         # call base class constructor
         super(Multisphere, self).__init__()
@@ -166,6 +168,11 @@ class Multisphere(FortranTheory):
         if (centers > 1e4).any():
             raise InvalidScatterer(scatterer, "Particle separation "
                                         "too large, calculation would take forever")
+        if self.suppress_fortran_output:
+            #store default (current) stdout
+            default = os.dup(1)
+            #copy devnull into stdout
+            os.dup2(os.open(os.devnull,os.O_WRONLY),1)
 
         _, lmax, amn0, converged = scsmfo_min.amncalc(
             1, centers[:,0],  centers[:,1],
@@ -175,6 +182,10 @@ class Multisphere(FortranTheory):
             -1.0 * centers[:,2],  m.real, m.imag,
             scatterer.r * illum_wavevec, self.niter, self.eps,
             self.qeps1, self.qeps2,  self.meth, (0,0))
+
+        if self.suppress_fortran_output:
+            #restore stdout to default
+            os.dup2(default,1)
 
         # converged == 1 if the SCSMFO iterative solver converged
         # f2py converts F77 LOGICAL to int
