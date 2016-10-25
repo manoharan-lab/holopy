@@ -67,14 +67,15 @@ def load(inf):
         The array object contained in the file
 
     """
-
-    ds = xr.open_dataset(default_extension(inf), engine='h5netcdf')
-    return ds.data
+    try:
+        ds = xr.open_dataset(default_extension(inf), engine='h5netcdf')
+        return ds.data
+    except OSError:
+        pass
 
     loaded_yaml = False
-    # attempt to load a holopy yaml file
+    # attempt to load a yaml file
     try:
-        #TODO also want to load hdf5 here
         loaded = serialize.load(inf)
         loaded_yaml = True
         return loaded

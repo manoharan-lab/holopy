@@ -126,7 +126,7 @@ class Multisphere(FortranTheory):
     def _can_handle(self, scatterer):
         return (isinstance(scatterer, Spheres) or isinstance(scatterer, Sphere))
 
-    def _scsmfo_setup(self, scatterer, illum_wavevec, medium_index):
+    def _scsmfo_setup(self, scatterer, medium_wavevec, medium_index):
         """
         Given multiple spheres, calculate amn coefficients for scattered
         field expansion in VSH using SCSMFO.
@@ -155,13 +155,13 @@ class Multisphere(FortranTheory):
         # check that the parameters are in a range where the multisphere
         # expansion will work
         for s in scatterer.scatterers:
-            if s.r * illum_wavevec > 1e3:
+            if s.r * medium_wavevec > 1e3:
                 raise InvalidScatterer(s, "radius too large, field "+
                                             "calculation would take forever")
 
         # switch to centroid weighted coordinate system tmatrix code expects
         # and nondimensionalize
-        centers = (scatterer.centers - scatterer.centers.mean(0)) * illum_wavevec
+        centers = (scatterer.centers - scatterer.centers.mean(0)) * medium_wavevec
 
         m = scatterer.n / medium_index
 
@@ -180,7 +180,7 @@ class Multisphere(FortranTheory):
             # propagation as positive, we have it negative), so we multiply the
             # z coordinate by -1 to correct for that.
             -1.0 * centers[:,2],  m.real, m.imag,
-            scatterer.r * illum_wavevec, self.niter, self.eps,
+            scatterer.r * medium_wavevec, self.niter, self.eps,
             self.qeps1, self.qeps2,  self.meth, (0,0))
 
         if self.suppress_fortran_output:
@@ -204,8 +204,8 @@ class Multisphere(FortranTheory):
 
         return amn, lmax
 
-    def _raw_fields(self, positions, scatterer, illum_wavevec, medium_index, illum_polarization):
-        amn, lmax = self._scsmfo_setup(scatterer, illum_wavevec=illum_wavevec, medium_index=medium_index)
+    def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index, illum_polarization):
+        amn, lmax = self._scsmfo_setup(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index)
         fields = mieangfuncs.tmatrix_fields(positions, amn, lmax, 0,
                                             illum_polarization.values[:2],
                                             self.compute_escat_radial)
@@ -214,14 +214,14 @@ class Multisphere(FortranTheory):
 
         return fields
 
-    def _raw_internal_fields(self, positions, scatterer, illum_wavevec, medium_index, illum_polarization):
+    def _raw_internal_fields(self, positions, scatterer, medium_wavevec, medium_index, illum_polarization):
         warn("Fields inside your Sphere(s) set to 0 because {0} Theory "
              " does not yet support calculating internal fields".format(
                  self.__class__.__name__))
         return [np.zeros(positions[1].shape, dtype='complex') for i in
                 range(3)]
 
-    def _calc_cext(self, scatterer, illum_wavevec, medium_index, illum_polarization, amn = None, lmax = None):
+    def _calc_cext(self, scatterer, medium_wavevec, medium_index, illum_polarization, amn = None, lmax = None):
         """
         Calculate extinction cross section via optical theorem for
         cluster-centered field expansion.
@@ -234,7 +234,7 @@ class Multisphere(FortranTheory):
 
         # calculate amn coefficients if need be
         if amn is None:
-            amn, lmax = self._scsmfo_setup(scatterer, illum_wavevec=illum_wavevec, medium_index=medium_index)
+            amn, lmax = self._scsmfo_setup(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index)
 
         # calculate forward scattering
         asm_fwd = _asm_far(0., 0., amn, lmax)
@@ -242,16 +242,16 @@ class Multisphere(FortranTheory):
         ainc_sph = pol * np.array([1., -1.]) # assume theta, phi = 0
         ascat_sph = np.dot(asm_fwd, ainc_sph) * np.array([1., -1.])
         # at theta, phi = 0, ascat_cart = ascat_sph
-        cext = 4. * np.pi / illum_wavevec**2 * np.dot(pol, ascat_sph).real
+        cext = 4. * np.pi / medium_wavevec**2 * np.dot(pol, ascat_sph).real
         return cext
 
-    def _raw_scat_matrs(self, scatterer, pos, illum_wavevec, medium_index):
-        amn, lmax = self._scsmfo_setup(scatterer, illum_wavevec=illum_wavevec, medium_index=medium_index)
+    def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
+        amn, lmax = self._scsmfo_setup(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index)
         scat_matrs = [_asm_far(theta, phi, amn, lmax) for
                       theta, phi in zip(pos.theta, pos.phi)]
         return scat_matrs
 
-    def _calc_cscat(self, scatterer, illum_wavevec, medium_index, illum_polarization, amn = None, lmax = None):
+    def _calc_cscat(self, scatterer, medium_wavevec, medium_index, illum_polarization, amn = None, lmax = None):
         '''
         Calculate scattering cross section from cluster-centered field
         expansion, by analytically summing expansion coefficients.
@@ -281,7 +281,7 @@ class Multisphere(FortranTheory):
 
         # calculate amn coefficients if need be
         if amn is None:
-            amn, lmax = self._scsmfo_setup(scatterer, illum_wavevec=illum_wavevec, medium_index=medium_index)
+            amn, lmax = self._scsmfo_setup(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index)
 
         # See lines 331-360 of scsmfo1b.for
         qscat_0 = (np.abs(amn[:,:,0] + amn[:,:,1])**2).sum()
@@ -293,9 +293,9 @@ class Multisphere(FortranTheory):
                  + sin(2. * gamma) * (2. * qscat_pi4 - qscat_0 -qscat_pi2)) / 2.
 
         print(qscat_0, qscat_pi2, qscat_pi4, qscat)
-        return qscat * 4. * np.pi / illum_wavevec**2
+        return qscat * 4. * np.pi / medium_wavevec**2
 
-    def _calc_cscat_quad(self, scatterer, illum_wavevec, medium_index, illum_polarization, amn = None, lmax = None):
+    def _calc_cscat_quad(self, scatterer, medium_wavevec, medium_index, illum_polarization, amn = None, lmax = None):
         """
         Calculate scattering cross section by quadrature over solid angle.
         """
@@ -304,7 +304,7 @@ class Multisphere(FortranTheory):
 
         # calculate amn coefficients if need be
         if amn is None:
-            amn, lmax = self._scsmfo_setup(scatterer, illum_wavevec=illum_wavevec, medium_index=medium_index)
+            amn, lmax = self._scsmfo_setup(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index)
 
         # define integrand: A^2 sin theta (vector scattering amplitude A)
         def ampsq(theta, phi):
@@ -316,10 +316,10 @@ class Multisphere(FortranTheory):
 
         integral = _integrate4pi(ampsq)
 
-        cscat = integral / illum_wavevec**2
+        cscat = integral / medium_wavevec**2
         return cscat
 
-    def _calc_asym(self, illum_wavevec, illum_polarization, amn, lmax):
+    def _calc_asym(self, medium_wavevec, illum_polarization, amn, lmax):
         """
         Calculate asymmetry parameter <cos theta> by quadrature over
         solid angle.
@@ -336,10 +336,10 @@ class Multisphere(FortranTheory):
 
         integral = _integrate4pi(costhetawt)
 
-        asym = integral / illum_wavevec**2 # need to divide by cscat
+        asym = integral / medium_wavevec**2 # need to divide by cscat
         return asym
 
-    def _calc_cross_sections(self, scatterer, illum_wavevec, medium_index, illum_polarization):
+    def _calc_cross_sections(self, scatterer, medium_wavevec, medium_index, illum_polarization):
         """
         Calculate scattering, absorption, and extinction cross
         sections, and asymmetry parameter for sphere clusters
@@ -364,11 +364,11 @@ class Multisphere(FortranTheory):
         """
         pol = normalize_polarization(illum_polarization)
         # calculate amn coefficients
-        amn, lmax = self._scsmfo_setup(scatterer, illum_wavevec=illum_wavevec, medium_index=medium_index)  
-        cext = self._calc_cext(scatterer, illum_wavevec=illum_wavevec, medium_index=medium_index, illum_polarization=illum_polarization, amn=amn, lmax=lmax)
-        cscat = self._calc_cscat(scatterer, illum_wavevec=illum_wavevec, medium_index=medium_index, illum_polarization=illum_polarization, amn=amn, lmax=lmax)
+        amn, lmax = self._scsmfo_setup(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index)
+        cext = self._calc_cext(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index, illum_polarization=illum_polarization, amn=amn, lmax=lmax)
+        cscat = self._calc_cscat(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index, illum_polarization=illum_polarization, amn=amn, lmax=lmax)
         cabs = cext - cscat
-        asym = self._calc_asym(illum_wavevec=illum_wavevec, illum_polarization=illum_polarization, amn=amn, lmax=lmax) / cscat
+        asym = self._calc_asym(medium_wavevec=medium_wavevec, illum_polarization=illum_polarization, amn=amn, lmax=lmax) / cscat
         return np.array([cscat, cabs, cext, asym])
 
 

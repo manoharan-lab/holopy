@@ -137,3 +137,8 @@ def test_mkdir_p():
     mkdir_p(os.path.join(tempdir, 'a', 'b'))
     mkdir_p(os.path.join(tempdir, 'a', 'b'))
     shutil.rmtree(tempdir)
+
+
+def test_fft():
+    holo = get_example_data('image0001')
+    assert_obj_close(holo, ifft(fft(holo)))

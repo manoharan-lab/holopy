@@ -18,7 +18,7 @@
 
 
 import numpy as np
-from ...core import ImageSchema, VolumeSchema, Optics
+from ...core import ImageSchema
 from ...scattering.theory import Mie
 from ...scattering.scatterer import Sphere
 from .. import propagate
@@ -26,12 +26,12 @@ from ...core.tests.common import assert_obj_close, verify, get_example_data
 from holopy.scattering.calculations import calc_field
 
 def test_propagate_e_field():
-    e = calc_field(ImageSchema(100,.1, Optics(wavelen=.66, index=1.33, polarization=(1,0))), Sphere(1.59, .5, (5, 5, 5)), theory=Mie(False))
+    e = calc_field(ImageSchema(100,.1, illum_wavelen=.66, medium_index=1.33, illum_polarization=(1,0)), Sphere(1.59, .5, (5, 5, 5)), theory=Mie(False))
     prop_e = propagate(e, 10)
     verify(prop_e, 'propagate_e_field')
 
 def test_reconstruction():
-    im = get_example_data('image0003.yaml')
+    im = get_example_data('image0003')
     rec = propagate(im, 4e-6)
     verify(rec, 'recon_single')
 
@@ -39,7 +39,7 @@ def test_reconstruction():
     verify(rec, 'recon_multiple')
 
 def test_propagate_0_distance():
-    im = get_example_data('image0003.yaml')
+    im = get_example_data('image0003')
     rec = propagate(im, 0)
     # propagating no distance should leave the image unchanged
     assert_obj_close(im, rec)

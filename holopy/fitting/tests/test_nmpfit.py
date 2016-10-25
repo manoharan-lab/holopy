@@ -86,7 +86,7 @@ parinfo = [{'parname':'n_particle_real',
            'limits': [0.0, 1.0],
            'value': scaling_alpha}]
 
-holo = normalize(get_example_data('image0001.yaml'))
+holo = normalize(get_example_data('image0001'))
 
 
 # define the residual function

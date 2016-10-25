@@ -342,7 +342,7 @@ def test_raw_fields():
     pol = to_vector((0, 1))
     sch = ImageSchema(3, .1)
     d = optical_parameters(illum_wavelen=wavelen, medium_index=index, illum_polarization=pol)
-    pos = kr_theta_phi_flat(sch, (10, 10, 5), wavevec=d['illum_wavevec'])
+    pos = kr_theta_phi_flat(sch, (10, 10, 5), wavevec=d['medium_wavevec'])
     rf = Mie()._raw_fields(np.vstack((pos.kr, pos.theta, pos.phi)), sp, **d)
     assert_allclose(rf, [[(0.0015606995428858754-0.0019143174710834162j),
   (-0.0003949071974815011-0.0024154494284017187j),
