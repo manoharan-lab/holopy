@@ -28,7 +28,7 @@ or detrending
 
 from ..errors import BadImage
 from .math import simulate_noise
-from .utilities import is_none, ensure_3d
+from .utilities import is_none, ensure_3d, copy_metadata
 from scipy.signal import detrend
 from scipy import fftpack
 import numpy as np
@@ -49,7 +49,7 @@ def normalize(image):
     normalized_image : ndarray
        The normalized image
     """
-    return image * 1.0 / image.sum() * image.size
+    return copy_metadata(image, image * 1.0 / image.sum() * image.size)
 
 def detrend(image):
     '''
@@ -67,7 +67,7 @@ def detrend(image):
     image : ndarray
        Image with linear trends removed
     '''
-    return detrend(detrend(image, 0), 1)
+    return copy_metadata(image, detrend(detrend(image, 0), 1))
 
 def zero_filter(image):
     '''
@@ -108,7 +108,7 @@ def zero_filter(image):
             output[row, col] = np.sum(padded_im[row:row+3, col:col+3]) / 8.
         print('Pixel with value 0 reset to nearest neighbor average')
 
-    return output
+    return copy_metadata(image, output)
 
 def add_noise(image, noise_mean=.1, smoothing=.01, poisson_lambda=1000):
     """Add simulated noise to images. Intended for use with exact
@@ -143,8 +143,8 @@ def add_noise(image, noise_mean=.1, smoothing=.01, poisson_lambda=1000):
        A copy of the input image with noise added.
 
     """
-    return image + simulate_noise(image.shape, noise_mean, smoothing,
-                                  poisson_lambda) * image.mean()
+    return copy_metadata(image, image + simulate_noise(image.shape, noise_mean, smoothing,
+                                  poisson_lambda) * image.mean())
 
 def subimage(arr, center, shape):
     """
@@ -179,7 +179,7 @@ def subimage(arr, center, shape):
 
     extent = [slice(int(np.round(c-s/2)), int(np.round(c+s/2))) for c, s in zip(center, shape)]
 
-    return arr.isel(x=extent[0], y=extent[1])
+    return copy_metadata(arr, arr.isel(x=extent[0], y=extent[1]))
 
 def get_values(a):
     return getattr(a, 'values', a)
@@ -218,7 +218,7 @@ def fft(a, overwrite=False, shift=True):
     """
     More convenient Fast Fourier Transform
 
-    An easier to use fft function, it will pick the correct fft to do
+    An easier to use fft function, it will pick the correct fft to dom
     based on the shape of the Marray, and do the fftshift for you.  This
     is intended for working with images, and thus for dimensions
     greater than 2 does slicewise transforms of each "image" in a

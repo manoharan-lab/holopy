@@ -97,7 +97,7 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, gradient_filter=Fa
     res.attrs = ft.attrs
     return res
 
-def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
+def trans_func(schema, d, med_wavelen, gradient_filter=0):
     """
     Calculates the optical transfer function to use in reconstruction
 
@@ -117,13 +117,6 @@ def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
     d : float or list of floats
        reconstruction distance.  If list or array, this function will
        return an array of transfer functions, one for each distance
-    cfsp : integer (optional)
-       cascaded free-space propagation factor.  If this is an integer
-       > 0, the transfer function G will be calculated at d/csf and
-       the value returned will be G**csf.
-    squeeze : Bool (optional)
-       Remove length 1 dimensions (so that if only one distance is
-       specified trans_func will be a 2d array)
     gradient_filter : float (optional)
        Subtract a second transfer function a distance gradient_filter
        from each z
@@ -145,24 +138,6 @@ def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
     if not hasattr(d, 'z'):
         d = xr.DataArray(d, coords={'z': d})
 
-    if(cfsp > 0):
-        cfsp = int(abs(cfsp)) # should be nonnegative integer
-        d = d/cfsp
-
-    # The transfer function is only defined on a finite domain of
-    # spatial frequencies; outside this domain the transfer function
-    # is zero (see Kreis, Optical Engineering 41(8):1829, page 1836).
-    # It is important to set it to zero outside the domain, otherwise
-    # the reconstruction is not correct.  Here I save memory by making
-    # the size of the array only as large as the domain corresponding
-    # to the transfer function at the smallest z-distance
-
-    # for this we need to use the magnitude of d, size of the image
-    # should be a positive number
-
-    #m, n = [np.linspace(-dim/(2*ext), dim/(2*ext), dim) for
-    #                 (dim, ext) in zip(schema.shape[:2], (extentx, extenty))]
-
     m, n = ft_coord(schema.x), ft_coord(schema.y)
     m = xr.DataArray(m, coords={'m': m})
     n = xr.DataArray(n, coords={'n': n})
@@ -182,8 +157,5 @@ def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
     # that is equal to 1 where the condition is true and 0 where it is
     # false.  Multiplying by this boolean matrix masks the array.
     g = g*(root>=0)
-
-    if cfsp > 0:
-        g = g**cfsp
 
     return g
