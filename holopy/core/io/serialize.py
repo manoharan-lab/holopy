@@ -45,27 +45,9 @@ def save(outf, obj):
 def load(inf):
     if isinstance(inf, str):
         with open(inf, mode='rb') as inf:
-            return _load(inf)
+            return yaml.load(inf)
     else:
-        return _load(inf)
-
-def _load(inf):
-    line = inf.readline()
-    cls = line.strip(b'{} !\n').decode('utf-8')
-    lines = []
-    obj = yaml.load(inf)
-    if isinstance(obj, dict):
-        # sometimes yaml doesn't convert strings to floats properly, so we
-        # have to check for that.
-        for key in obj:
-            if isinstance(obj[key], str):
-                try:
-                    obj[key] = float(obj[key])
-                except ValueError: #pragma: nocover
-                    pass #pragma: nocover
-
-    return obj
-
+        return yaml.load(inf)
 
 def _pickle_method(method):
     func_name = method.__func__.__name__
