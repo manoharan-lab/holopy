@@ -255,10 +255,22 @@ def fft(a, overwrite=False, shift=True):
             res = fftpack.fft2(a, axes=[0, 1], overwrite_x=overwrite)
 
     if hasattr(a, 'coords') and hasattr(a, 'attrs'):
-        res = xr.DataArray(res, dims=['m', 'n'], coords=ft_coords(a.coords), attrs=a.attrs)
+        res = xr.DataArray(res, **transform_metadata(a, False))
         res.name = a.name
     return res
 
+def transform_metadata(a, inverse):
+    if not inverse:
+        coords = ft_coords(a.coords)
+        dims = ['m', 'n']
+    else:
+        coords = ift_coords(a.coords)
+        dims = ['x', 'y']
+    if 'z' in coords and coords['z'].shape is not ():
+        dims = dims + ['z']
+    if 'vector' in coords:
+        dims = ['vector'] + dims
+    return {'dims': dims, 'coords': coords, 'attrs': a.attrs}
 
 def ifft(a, overwrite=False, shift=True):
     """
@@ -300,7 +312,7 @@ def ifft(a, overwrite=False, shift=True):
             res = fftpack.ifft2(a, overwrite_x=overwrite)
 
     if hasattr(a, 'coords') and hasattr(a, 'attrs'):
-        res = xr.DataArray(res, dims=['x', 'y'], coords=ift_coords(a.coords), attrs=a.attrs)
+        res = xr.DataArray(res, **transform_metadata(a, True))
         res.name = a.name
     return res
 

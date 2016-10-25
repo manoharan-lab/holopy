@@ -82,13 +82,11 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, gradient_filter=Fa
             d_old = d
             d = np.delete(d, np.nonzero(d == 0))
 
-    G = trans_func(data, d, med_wavelen, squeeze=False, gradient_filter=gradient_filter)
+    G = trans_func(data, d, med_wavelen, gradient_filter=gradient_filter)
 
     ft = fft(data)
 
-    ft = apply_trans_func(ft, G)
-
-    res = ifft(ft, overwrite=True)
+    res = ifft(ft * G, overwrite=True)
 
     # This will not work correctly if you have 0 in the distances more
     # than once. But why would you do that?
@@ -96,33 +94,10 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, gradient_filter=Fa
         d = d_old
         res = np.insert(res, np.nonzero(d==0)[0][0], data, axis=2)
 
-    res = np.squeeze(res)
-
+    res.attrs = ft.attrs
     return res
 
-def apply_trans_func(ft, G):
-    mm, nn = [int(dim/2) for dim in G.shape[:2]]
-    m, n = ft.shape[:2]
-
-    if ft.ndim == 4:
-        # vector field input, so we need to add a dimension to G so it
-        # broadcasts correctly
-        G = G[...,np.newaxis]
-    ft[(m//2-mm):(m//2+mm),(n//2-nn):(n//2+nn)] *= G[:(mm*2),:(nn*2)]
-
-    # Transfer function may not cover the whole image, any values
-    # outside it need to be set to zero to make the reconstruction
-    # correct
-    ft[0:n//2-nn,...] = 0
-    ft[n//2+nn:n,...] = 0
-    ft[:,0:m//2-mm,...] = 0
-    ft[:,m//2+mm:m,...] = 0
-
-    return ft
-
-
-def trans_func(schema, d, med_wavelen, cfsp=0, squeeze=True,
-               gradient_filter=0):
+def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
     """
     Calculates the optical transfer function to use in reconstruction
 
@@ -211,8 +186,4 @@ def trans_func(schema, d, med_wavelen, cfsp=0, squeeze=True,
     if cfsp > 0:
         g = g**cfsp
 
-    assert False
-    if squeeze:
-        return np.squeeze(g)
-    else:
-        return g
+    return g
