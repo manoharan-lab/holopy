@@ -221,3 +221,9 @@ def arr_like(arr, template=None, **override):
     meta = template._dict
     meta.update(override)
     return template.__class__(arr, **meta)
+
+def copy_metadata(old, new):
+    new.attrs = old.attrs
+    new.name = old.name
+    new.coords = old.coords
+    return new

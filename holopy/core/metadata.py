@@ -144,7 +144,7 @@ def optical_parameters(schema=None, **kwargs):
             d[par] = val
     r = {}
     if 'illum_wavelen' in d and 'medium_index' in d:
-        r['illum_wavevec'] = 2*np.pi/(d['illum_wavelen']/d['medium_index'])
+        r['medium_wavevec'] = 2*np.pi/(d['illum_wavelen']/d['medium_index'])
     if 'medium_index' in d:
         r['medium_index'] = d['medium_index']
     if 'illum_polarization' in d:
