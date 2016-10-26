@@ -30,7 +30,7 @@ except ImportError:
     raise SkipTest()
 
 def test_show():
-    d = get_example_data('image0001.yaml')
+    d = get_example_data('image0001')
     hp.show(d)
     with warnings.catch_warnings():
         warnings.simplefilter('ignore'),  (DeprecationWarning, UserWarning)

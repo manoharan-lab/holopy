@@ -44,9 +44,9 @@ class Diffusive(TimeEvolution):
         self.diffusion_constant = diffusion_constant
 
 class TimeSeriesAlphaModel(AlphaModel):
-    def __init__(self, scatterer, noise_sd, alpha, n_frames, medium_index=None, wavelen=None, optics=None, theory='auto'):
+    def __init__(self, scatterer, noise_sd, alpha, n_frames, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
         self.n_frames = n_frames
-        super(TimeSeriesAlphaModel, self).__init__(scatterer, medium_index=medium_index, wavelen=wavelen, optics=optics, noise_sd=noise_sd, alpha=alpha, theory=theory)
+        super().__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, noise_sd=noise_sd, alpha=alpha, theory=theory)
         self.time_independent_pars = []
         self.time_dependent_pars = []
         for par in self._parameters:

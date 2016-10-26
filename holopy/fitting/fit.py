@@ -30,7 +30,7 @@ import time
 
 from ..core.holopy_object import HoloPyObject
 from holopy.core.metadata import flat
-from holopy.core.tools import get_values
+from holopy.core.tools import get_values, make_subset_data
 from .errors import MinimizerConvergenceFailed, InvalidMinimizer
 from holopy.scattering.errors import MultisphereFailure
 from .minimizer import Minimizer, Nmpfit
@@ -204,9 +204,7 @@ class CostComputer(HoloPyObject):
             warnings.warn("Setting random fraction from model is depricated, use the random fraction option in fit")
 
         if random_subset is not None:
-            n_sel = int(np.ceil(data.size*random_subset))
-            self.selection = np.random.choice(data.size, n_sel, replace=False)
-            self.data = flat(data)[self.selection]
+            self.data, self.selection = make_subset_data(data, random_subset, True)
             self.schema = self.data
         else:
             self.selection = None
