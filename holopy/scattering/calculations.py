@@ -23,8 +23,8 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 from holopy.core.holopy_object import SerializableMetaclass
-from holopy.core.metadata import vector, Image, optical_parameters
-from holopy.core.tools import dict_without, is_none
+from holopy.core.metadata import vector, Image, optical_parameters, to_vector
+from holopy.core.tools import dict_without, is_none, copy_metadata
 from holopy.scattering import Mie, Multisphere, Sphere, Spheres
 from holopy.scattering.theory import dda
 from holopy.scattering.errors import AutoTheoryFailed, MissingParameter
@@ -122,7 +122,8 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None, illum_po
     theory = interpret_theory(scatterer,theory)
     par = optical_parameters(schema, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization)
     scat = theory._calc_field(scatterer, schema, **par)
-    return scattered_field_to_hologram(scat*scaling, par['illum_polarization'], schema.normals)
+    holo = scattered_field_to_hologram(scat*scaling, par['illum_polarization'], schema.normals)
+    return copy_metadata(schema, holo)
 
 def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
     """
@@ -227,7 +228,9 @@ def scattered_field_to_hologram(scat, ref, detector_normal = None):
         (defaults to z hat, a detector in the x, y plane)
     """
     if detector_normal is None:
-        detector_normal = (0, 0, 1)
+        detector_normal = to_vector((0, 0, 1))
+    else:
+        detector_normal = to_vector(detector_normal)
 
     holo = (np.abs(scat+ref)**2 * (1 - detector_normal)).sum(dim=vector)
 
@@ -237,5 +240,3 @@ def _field_scalar_shape(e):
     # this is a clever hack with list arithmetic to get [1, 3] or [1,
     # 1, 3] as needed
     return [1]*(e.ndim-1) + [3]
-
-

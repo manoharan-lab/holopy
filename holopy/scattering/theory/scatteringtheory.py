@@ -70,6 +70,8 @@ class ScatteringTheory(HoloPyObject):
             #                                  optics)).T
             field *= phase
             field = xr.DataArray(field, dims=['flat', vector], coords={'flat': positions.flat, vector: ['x', 'y', 'z']}, attrs=schema.attrs)
+            if hasattr(schema, 'flat'):
+                return field
             return from_flat(field)
 
 

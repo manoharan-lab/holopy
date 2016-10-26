@@ -28,7 +28,7 @@ or detrending
 
 from ..errors import BadImage
 from .math import simulate_noise
-from .utilities import is_none, ensure_3d, copy_metadata
+from .utilities import is_none, ensure_3d, copy_metadata, get_values
 from scipy.signal import detrend
 from scipy import fftpack
 import numpy as np
@@ -180,9 +180,6 @@ def subimage(arr, center, shape):
     extent = [slice(int(np.round(c-s/2)), int(np.round(c+s/2))) for c, s in zip(center, shape)]
 
     return copy_metadata(arr, arr.isel(x=extent[0], y=extent[1]))
-
-def get_values(a):
-    return getattr(a, 'values', a)
 
 def get_spacing(c):
     spacing = np.diff(c)

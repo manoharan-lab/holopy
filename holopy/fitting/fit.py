@@ -29,6 +29,8 @@ import warnings
 import time
 
 from ..core.holopy_object import HoloPyObject
+from holopy.core.metadata import flat
+from holopy.core.tools import get_values
 from .errors import MinimizerConvergenceFailed, InvalidMinimizer
 from holopy.scattering.errors import MultisphereFailure
 from .minimizer import Minimizer, Nmpfit
@@ -204,17 +206,12 @@ class CostComputer(HoloPyObject):
         if random_subset is not None:
             n_sel = int(np.ceil(data.size*random_subset))
             self.selection = np.random.choice(data.size, n_sel, replace=False)
-            self.data = data.ravel()[self.selection]
-            positions = schema.positions.xyz()[self.selection]
-            self.schema = Schema(positions=positions,
-                                 origin=schema.origin,
-                                 optics=schema.optics,
-                                 normals=data.normals)
+            self.data = flat(data)[self.selection]
+            self.schema = self.data
         else:
             self.selection = None
             self.data = data
             self.schema = schema
-
 
     def _calc(self, pars):
         s = self.model.scatterer.make_from(pars)
@@ -226,12 +223,12 @@ class CostComputer(HoloPyObject):
             return np.ones_like(self.schema) * np.inf
 
         try:
-            return self.model.calc_func(schema=self.schema, scatterer=s, medium_index=self.model.medium_index, wavelen=self.model.wavelen, optics=self.model.optics, scaling=self.model.get_alpha(pars), theory=self.model.theory)
+            return self.model.calc_func(schema=self.schema, scatterer=s, medium_index=self.model.medium_index, illum_wavelen=self.model.illum_wavelen, illum_polarization=self.model.illum_polarization, scaling=self.model.get_alpha(pars), theory=self.model.theory)
         except MultisphereFailure:
             return np.ones_like(self.schema) * np.inf
 
     def flattened_difference(self, pars):
-        return (self._calc(pars) -  self.data).ravel()
+        return get_values(flat(self._calc(pars) -  self.data))
 
     def rsq(self, pars):
         return rsq(self._calc(pars), self.data)
