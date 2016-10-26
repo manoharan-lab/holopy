@@ -34,7 +34,7 @@ from ..scattering.errors import MissingParameter
 # May eventually want to have this function take a propagation model
 # so that we can do things other than convolution
 
-def propagate(data, d, medium_index=None, illum_wavelen=None, gradient_filter=False):
+def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_filter=False):
     """
     Propagates a hologram along the optical axis
 
@@ -45,6 +45,11 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, gradient_filter=Fa
     d : float or list of floats
        Distance to propagate, in meters, or desired schema.  A list tells to
        propagate to several distances and return the volume
+    cfsp : integer (optional)
+       cascaded free-space propagation factor.  If this is an integer
+       > 0, the transfer function G will be calculated at d/csf and
+       the value returned will be G**csf. This helps avoid artifacts related to
+       the limited window of the transfer function
     gradient_filter : float
        For each distance, compute a second propagation a distance
        gradient_filter away and subtract.  This enhances contrast of
@@ -82,7 +87,7 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, gradient_filter=Fa
             d_old = d
             d = np.delete(d, np.nonzero(d == 0))
 
-    G = trans_func(data, d, med_wavelen, gradient_filter=gradient_filter)
+    G = trans_func(data, d, med_wavelen, cfsp=cfsp, gradient_filter=gradient_filter)
 
     ft = fft(data)
 
@@ -97,7 +102,7 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, gradient_filter=Fa
     res.attrs = ft.attrs
     return res
 
-def trans_func(schema, d, med_wavelen, gradient_filter=0):
+def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
     """
     Calculates the optical transfer function to use in reconstruction
 
@@ -117,6 +122,10 @@ def trans_func(schema, d, med_wavelen, gradient_filter=0):
     d : float or list of floats
        reconstruction distance.  If list or array, this function will
        return an array of transfer functions, one for each distance
+    cfsp : integer (optional)
+       cascaded free-space propagation factor.  If this is an integer
+       > 0, the transfer function G will be calculated at d/csf and
+       the value returned will be G**csf. 
     gradient_filter : float (optional)
        Subtract a second transfer function a distance gradient_filter
        from each z
@@ -138,6 +147,10 @@ def trans_func(schema, d, med_wavelen, gradient_filter=0):
     if not hasattr(d, 'z'):
         d = xr.DataArray(d, coords={'z': d})
 
+    if(cfsp > 0):
+        cfsp = int(abs(cfsp)) # should be nonnegative integer
+        d = d/cfsp
+
     m, n = ft_coord(schema.x), ft_coord(schema.y)
     m = xr.DataArray(m, coords={'m': m})
     n = xr.DataArray(n, coords={'n': n})
@@ -157,5 +170,10 @@ def trans_func(schema, d, med_wavelen, gradient_filter=0):
     # that is equal to 1 where the condition is true and 0 where it is
     # false.  Multiplying by this boolean matrix masks the array.
     g = g*(root>=0)
+
+
+ 
+    if cfsp > 0:
+        g = g**cfsp
 
     return g
