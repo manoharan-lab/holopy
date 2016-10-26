@@ -1,0 +1,38 @@
+On Fri, Oct 21, 2016 at 3:37 PM Daniel Mackowski <mackodw@auburn.edu> wrote:
+
+    Dear Solomon,
+
+     
+
+    You have my permission to distribute the code.   And thanks for the compliments!
+
+     
+
+    Good luck,
+
+     
+
+    Dan
+
+     
+
+    From: Solomon Barkley [mailto:barkley@physics.harvard.edu]
+    Sent: Friday, October 21, 2016 2:34 PM
+    To: Daniel Mackowski
+    Subject: Permission to distribute MSTM Fortran-90 code
+
+     
+
+    Dear Professor Mackowski,
+
+    I am a graduate student in Vinothan Manoharan's research group at Harvard University. We distribute a python package (available at https://github.com/manoharan-lab/holopy) that makes use of your older SCSMFO fortran-77 code to analyze holographic microscopy images. A former group member, Jerome Fung, modified your code to more easily interface with python. We would like to transition to using your newer fortran-90 code.
+
+    If you grant us permission, we will adapt your code for our specific purposes and distribute it under the terms of the GPL v3 license (https://www.gnu.org/licenses/gpl.html). We will clearly indicate that it is your work, and make clear what modifications we have made. Please let me know if you have any questions or concerns about our usage.
+
+    I'd  also like to take this opportunity to re-express our gratitude for making your code available and allowing us to use your code thus far. It has been an invaluable resource for our research.
+
+    I look forward to hearing from you regarding use of the fortran-90 code.
+
+    Thank you,
+
+    Solomon Barkley

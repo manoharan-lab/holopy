@@ -248,11 +248,11 @@ def fft(a, overwrite=False, shift=True):
             res = fftpack.fft(a, overwrite_x=overwrite)
     else:
         if shift:
-            res = fftpack.fftshift(fftpack.fft2(a, axes=[0, 1],
+            res = fftpack.fftshift(fftpack.fft2(a, axes=[a.dims.index('x'), a.dims.index('y')],
                                                  overwrite_x=overwrite),
-                                    axes=[0,1])
+                                    axes=[a.dims.index('x'), a.dims.index('y')])
         else:
-            res = fftpack.fft2(a, axes=[0, 1], overwrite_x=overwrite)
+            res = fftpack.fft2(a, axes=[a.dims.index('x'), a.dims.index('y')], overwrite_x=overwrite)
 
     if hasattr(a, 'coords') and hasattr(a, 'attrs'):
         res = xr.DataArray(res, **transform_metadata(a, False))
@@ -306,7 +306,7 @@ def ifft(a, overwrite=False, shift=True):
             res = fftpack.ifft(a, overwrite_x=overwrite)
     else:
         if shift:
-            res = fftpack.ifft2(fftpack.fftshift(a, axes=[0,1]), axes=[0, 1],
+            res = fftpack.ifft2(fftpack.fftshift(a, axes=[a.dims.index('m'), a.dims.index('n')]), axes=[a.dims.index('m'), a.dims.index('n')],
                                  overwrite_x=overwrite)
         else:
             res = fftpack.ifft2(a, overwrite_x=overwrite)
