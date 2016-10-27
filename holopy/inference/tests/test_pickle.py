@@ -47,12 +47,3 @@ def test_emcee():
     model = AlphaModel(s, alpha = prior.Gaussian(.7, .1), noise_sd=.01)
     emcee = Emcee(model, holo)
     assert_pickle_roundtrip(emcee)
-
-def test_TimeSeriesAlphaModel():
-    n = TimeIndependent(prior.Gaussian(5, .5))
-    assert_pickle_roundtrip(n)
-    st = Sphere(n=n, r=TimeIndependent(prior.BoundedGaussian(1.6,.1, 0, np.inf)), center=(prior.Gaussian(10, 1), prior.Gaussian(10, 1), prior.BoundedGaussian(1.6, .1, 0, np.inf)))
-    assert_pickle_roundtrip(st)
-    noise_sd = .1
-    mt = TimeSeriesAlphaModel(st, noise_sd, alpha=prior.Uniform(0, 1), n_frames=2)
-    assert_pickle_roundtrip(mt)
