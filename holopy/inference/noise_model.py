@@ -24,11 +24,11 @@ from holopy.scattering.errors import MultisphereFailure, InvalidScatterer
 import numpy as np
 import pandas as pd
 from copy import copy
-from holopy.scattering.calculations import calc_field, scattered_field_to_hologram
+from holopy.scattering.calculations import calc_field, calc_holo
 
 class NoiseModel(BaseModel):
     def __init__(self, scatterer, noise_sd, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
-        super(NoiseModel, self).__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory)
+        super().__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory)
         self._use_parameter(noise_sd, 'noise_sd')
 
     def _pack(self, vals):
@@ -51,13 +51,21 @@ class NoiseModel(BaseModel):
         else:
             return lnprior + self.lnlike(par_vals, data)
 
-    def _fields(self, pars, schema):
-        medium_index = pars.pop('medium_index', self.medium_index)
-        wavelen = pars.pop('wavelen', self.wavelen)
-        optics = pars.pop('optics', self.optics)
+    
+
+    def _optics_scatterer(self, pars, schema):
+        optics = self.get_pars(['medium_index', 'illum_wavelen', 'illum_polarization'], pars, schema)
         scatterer = self.scatterer.make_from(pars)
+        return optics, scatterer
+
+
+
+    def _fields(self, pars, schema):
+        def get_par(name):
+            return pars.pop(name, self.par(name, schema))
+        optics, scatterer = self._optics_scatterer(pars, schema)
         try:
-            return calc_field(schema, scatterer, medium_index, wavelen, optics=optics, theory=self.theory)
+            return calc_field(schema, scatterer, **optics, theory=self.theory)
         except (MultisphereFailure, InvalidScatterer):
             return -np.inf
 
@@ -80,8 +88,14 @@ class AlphaModel(NoiseModel):
         self._use_parameter(alpha, 'alpha')
 
     def _holo(self, pars, schema, alpha=None):
-        if alpha is None:
-            alpha = self.alpha
-        alpha = pars.pop('alpha', alpha)
-        fields = self._fields(pars, schema)
-        return scattered_field_to_hologram(alpha*fields, schema.optics)
+        if alpha is not None:
+            alpha = alpha
+        else:
+            alpha = self.get_par('alpha', pars)
+
+        optics, scatterer = self._optics_scatterer(pars, schema)
+
+        try:
+            return calc_holo(schema, scatterer, **optics, theory=self.theory)
+        except (MultisphereFailure, InvalidScatterer):
+            return -np.inf

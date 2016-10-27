@@ -115,7 +115,7 @@ def load_image(inf, spacing=None, illum_wavelen=None, medium_index=None, illum_p
     """
     pi = pilimage.open(inf)
     attrs = {}
-    if hasattr(pi, 'ifd'):
+    if hasattr(pi, 'ifd') and 270 in pi.ifd:
         d = yaml.load(pi.ifd[270][0])
         if 'attrs' in d:
             attrs = d['attrs']

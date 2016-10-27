@@ -424,12 +424,16 @@ class EmceeResult(SamplingResult):
 
     def _repr_html_(self):
         results = "{}".format(", ".join(["{}:{}".format(n, v._repr_latex_()) for n, v in zip(self._names, list(self.values()))]))
+        try:
+            indep_steps = self.approx_independent_steps
+            indep_steps_str = "\n~ {} of which are independent".format(indep_steps)
+        except emcee.autocorr.AutocorrError:
+            indep_steps_str = ""
         block = """<h4>{s.__class__.__name__}</h4> {results}
 {s.sampler.chain.shape[0]} walkers
-{s.n_steps} Steps
-~ {s.approx_independent_steps} of which are independent
+{s.n_steps} Steps{indep_steps}
 Acceptance Fraction: {s.acceptance_fraction}
-        """.format(s=self, results=results)
+        """.format(s=self, results=results, indep_steps=indep_steps_str)
         return "<br>".join(block.split('\n'))
 
 

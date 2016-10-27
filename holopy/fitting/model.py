@@ -230,6 +230,26 @@ class BaseModel(HoloPyObject):
     def parameters(self):
         return self._parameters
 
+    def par(self, name, schema=None):
+        if hasattr(self, name) and getattr(self, name) is not None:
+            return getattr(self, name)
+        if schema is not None and hasattr(schema, name):
+            return getattr(schema, name)
+
+        if schema is not None:
+            schematxt = " or Schema"
+
+        raise ValueError("Cannot find value for {} in Model{}".format(name, schema))
+
+    def get_par(self, name, pars, schema=None):
+        return pars.pop(name, self.par(name, schema))
+
+    def get_pars(self, names, pars, schema=None):
+        r = {}
+        for name in names:
+            r[name] = self.get_par(name, pars, schema)
+        return r
+
     def _use_parameter(self, par, name):
         setattr(self, name, par)
         if isinstance(par, Parameter):

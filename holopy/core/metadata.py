@@ -90,7 +90,7 @@ def make_coords(shape, spacing, z=0):
         spacing = np.repeat(spacing, 2)
     return {'x': np.arange(shape[0])*spacing[0], 'y': np.arange(shape[1])*spacing[1], 'z': 0}
 
-def make_attrs(medium_index, illum_wavelen, illum_polarization, normals):
+def make_attrs(medium_index, illum_wavelen, illum_polarization, normals=None):
     if is_none(normals):
         normals = (0, 0, 1)
     return {'medium_index': medium_index, 'illum_wavelen': illum_wavelen, 'illum_polarization': to_vector(illum_polarization), 'normals': to_vector(normals)}
