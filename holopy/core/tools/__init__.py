@@ -30,4 +30,5 @@ reconstructions.
 from .img_proc import normalize, detrend, zero_filter, subimage, add_noise, fft, ifft
 from .centerfinder import center_find, centered_subimage
 from .utilities import _ensure_array, ensure_listlike, _ensure_pair, ensure_3d, mkdir_p
-from .utilities import coord_grid, dict_without, is_none, updated, arr_like
+from .utilities import coord_grid, dict_without, is_none, updated, arr_like, get_values
+from .utilities import copy_metadata, flat, from_flat, make_subset_data

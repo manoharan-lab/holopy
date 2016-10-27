@@ -20,8 +20,8 @@ from holopy.fitting.errors import ParameterSpecificationError
 from holopy.fitting.model import Model
 from holopy.core.holopy_object import HoloPyObject
 from . import prior
-from holopy.core.marray import make_subset_data, Image
-
+from holopy.core.metadata import Image
+from holopy.core.tools import make_subset_data
 from emcee import PTSampler, EnsembleSampler
 import emcee
 import h5py
@@ -43,12 +43,11 @@ class Emcee(HoloPyObject):
         self.model = model
         if preprocess is None:
             preprocess = lambda x: x
-        if not isinstance(data, Image):
-            self.n_frames = len(data)
-            self.data = [make_subset_data(preprocess(d), random_subset) for d in data]
+        if hasattr(data, 'frame'):
+            self.n_frames = len(data.frame)
         else:
             self.n_frames = 1
-            self.data = make_subset_data(preprocess(data), random_subset)
+        self.data = make_subset_data(preprocess(data), random_subset)
         self.nwalkers = nwalkers
         self.threads = threads
         self.seed = seed
@@ -124,10 +123,7 @@ def subset_tempering(model, data, final_len=600, nwalkers=500, min_pixels=10, ma
     curr_seed=seed
 
     # TODO: is there a better way of figuring out if data is a list, tuple, iterator, ...?
-    if not isinstance(data, Image):
-        n_pixels = preprocess(data[0]).size
-    else:
-        n_pixels = preprocess(data).size
+    n_pixels = data.x.size * data.y.size
     fractions = np.logspace(np.log10(min_pixels), np.log10(max_pixels), stages+1)/n_pixels
 
     stage_fractions = fractions[:-1]
@@ -428,12 +424,16 @@ class EmceeResult(SamplingResult):
 
     def _repr_html_(self):
         results = "{}".format(", ".join(["{}:{}".format(n, v._repr_latex_()) for n, v in zip(self._names, list(self.values()))]))
+        try:
+            indep_steps = self.approx_independent_steps
+            indep_steps_str = "\n~ {} of which are independent".format(indep_steps)
+        except emcee.autocorr.AutocorrError:
+            indep_steps_str = ""
         block = """<h4>{s.__class__.__name__}</h4> {results}
 {s.sampler.chain.shape[0]} walkers
-{s.n_steps} Steps
-~ {s.approx_independent_steps} of which are independent
+{s.n_steps} Steps{indep_steps}
 Acceptance Fraction: {s.acceptance_fraction}
-        """.format(s=self, results=results)
+        """.format(s=self, results=results, indep_steps=indep_steps_str)
         return "<br>".join(block.split('\n'))
 
 

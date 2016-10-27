@@ -147,6 +147,8 @@ class Mie(FortranTheory):
         return np.array([cscat, cabs, cext, asym])
 
     def _scat_coeffs(self, s, medium_wavevec, medium_index):
+        if (_ensure_array(s.r) == 0).any():
+            raise InvalidScatterer(s, "Radius is zero")
         x_arr = medium_wavevec * _ensure_array(s.r)
         m_arr = _ensure_array(s.n) / medium_index
 

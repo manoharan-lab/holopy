@@ -52,7 +52,7 @@ def default_extension(inf, defext='.h5'):
     else:
         return inf
 
-def load(inf):
+def load(inf, lazy=False):
     """
     Load data or results
 
@@ -68,16 +68,20 @@ def load(inf):
 
     """
     try:
-        ds = xr.open_dataset(default_extension(inf), engine='h5netcdf')
-        return ds.data
-    except OSError:
+        with xr.open_dataset(default_extension(inf), engine='h5netcdf') as ds:
+            # Xarray defaults to lazy loading of datasets, but I my reading of
+            # things is that we will probably generally prefer eager loading
+            # since our data is generally fairly small but we do lots of
+            # calculations.
+            if not lazy:
+                ds = ds.load()
+            return ds.data
+    except (OSError, ValueError):
         pass
 
-    loaded_yaml = False
     # attempt to load a yaml file
     try:
         loaded = serialize.load(inf)
-        loaded_yaml = True
         return loaded
     except (serialize.ReaderError, UnicodeDecodeError):
         if os.path.splitext(inf)[1] in tiflist:
@@ -111,7 +115,7 @@ def load_image(inf, spacing=None, illum_wavelen=None, medium_index=None, illum_p
     """
     pi = pilimage.open(inf)
     attrs = {}
-    if hasattr(pi, 'ifd'):
+    if hasattr(pi, 'ifd') and 270 in pi.ifd:
         d = yaml.load(pi.ifd[270][0])
         if 'attrs' in d:
             attrs = d['attrs']

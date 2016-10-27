@@ -26,6 +26,7 @@ import os
 import shutil
 import errno
 import numpy as np
+import xarray as xr
 from copy import copy
 import itertools
 
@@ -222,8 +223,45 @@ def arr_like(arr, template=None, **override):
     meta.update(override)
     return template.__class__(arr, **meta)
 
-def copy_metadata(old, new):
-    new.attrs = old.attrs
-    new.name = old.name
-    new.coords = old.coords
+def copy_metadata(old, new, do_coords=True):
+    def find_and_rename(oldkey, oldval):
+        for newkey, newval in new.coords.items():
+            if np.array_equal(oldval.values, newval.values):
+                return new.rename({newkey: oldkey})
+            raise ValueError("Coordinate {} does not appear to have a coresponding coordinate in {}".format(oldkey, new))
+
+    if hasattr(old, 'attrs') and hasattr(old, 'name') and hasattr(old, 'coords'):
+        new.attrs = old.attrs
+        new.name = old.name
+        if hasattr(old, 'z') and not hasattr(new, 'z'):
+            new.coords['z'] = old.coords['z']
+        if do_coords:
+            for key, val in old.coords.items():
+                if key not in new.coords:
+                    new = find_and_rename(key, val)
     return new
+
+def get_values(a):
+    return getattr(a, 'values', a)
+
+def flat(a):
+    if hasattr(a, 'flat'):
+        return a
+    return a.stack(flat=a.dims)
+
+def from_flat(a):
+    if hasattr(a, 'flat'):
+        return a.unstack('flat')
+    return a
+
+def make_subset_data(data, random_subset, return_selection=False):
+    if random_subset is None:
+        return data
+    n_sel = int(np.ceil(data.size*random_subset))
+    selection = np.random.choice(data.size, n_sel, replace=False)
+    subset = flat(data)[selection]
+    subset = copy_metadata(data, subset, do_coords=False)
+    if return_selection:
+        return subset, selection
+    else:
+        return subset

@@ -28,7 +28,7 @@ import xarray as xr
 from xarray.ufuncs import sqrt, arctan2
 from warnings import warn
 import copy
-from .tools import _ensure_pair, _ensure_array, is_none
+from .tools import _ensure_pair, _ensure_array, is_none, flat, from_flat
 
 
 vector = 'vector'
@@ -46,6 +46,8 @@ def to_vector(c):
 
 def to_spherical(a, origin, wavevec=None, include_r=True):
     xo, yo, zo = origin
+    if hasattr(a, 'flat'):
+        a = from_flat(a)
     x, y, z = a.x - xo, a.y - yo, zo - a.z
     theta = arctan2(np.sqrt(x**2 + y**2), z)
     phi = arctan2(y, x)
@@ -62,13 +64,6 @@ def to_spherical(a, origin, wavevec=None, include_r=True):
     else:
         return xr.DataArray(a, coords={'theta': theta, 'phi': phi, 'x': a.x, 'y': a.y})
 
-def flat(a):
-    return a.stack(flat=['x', 'y'])
-
-def from_flat(a):
-    if hasattr(a, 'flat'):
-        return a.unstack('flat')
-    return a
 
 def r_theta_phi_flat(a, origin):
     f = flat(to_spherical(a, origin))
@@ -83,7 +78,7 @@ def kr_theta_phi_flat(a, origin, wavevec=None):
     pos['r'] *= wavevec
     return pos
 
-def theta_phi_flat(a, origin):
+def theta_phi_flat(a, origin=None):
     if hasattr(a, 'theta') and hasattr(a, 'phi'):
         return a
     return flat(to_spherical(a, origin))
@@ -95,7 +90,7 @@ def make_coords(shape, spacing, z=0):
         spacing = np.repeat(spacing, 2)
     return {'x': np.arange(shape[0])*spacing[0], 'y': np.arange(shape[1])*spacing[1], 'z': 0}
 
-def make_attrs(medium_index, illum_wavelen, illum_polarization, normals):
+def make_attrs(medium_index, illum_wavelen, illum_polarization, normals=None):
     if is_none(normals):
         normals = (0, 0, 1)
     return {'medium_index': medium_index, 'illum_wavelen': illum_wavelen, 'illum_polarization': to_vector(illum_polarization), 'normals': to_vector(normals)}

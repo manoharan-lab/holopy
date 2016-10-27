@@ -19,18 +19,16 @@
 from holopy.fitting.model import BaseModel
 from holopy.fitting.parameter import Parameter
 from holopy.core.holopy_object import HoloPyObject
-from holopy.core import Marray
-from holopy.core.tools import dict_without
 from holopy.scattering.errors import MultisphereFailure, InvalidScatterer
 
 import numpy as np
 import pandas as pd
 from copy import copy
-from holopy.scattering.calculations import calc_field, scattered_field_to_hologram
+from holopy.scattering.calculations import calc_field, calc_holo
 
 class NoiseModel(BaseModel):
-    def __init__(self, scatterer, noise_sd, medium_index=None, wavelen=None, optics=None, theory='auto'):
-        super(NoiseModel, self).__init__(scatterer, medium_index, wavelen, optics, theory)
+    def __init__(self, scatterer, noise_sd, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
+        super().__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory)
         self._use_parameter(noise_sd, 'noise_sd')
 
     def _pack(self, vals):
@@ -53,13 +51,21 @@ class NoiseModel(BaseModel):
         else:
             return lnprior + self.lnlike(par_vals, data)
 
-    def _fields(self, pars, schema):
-        medium_index = pars.pop('medium_index', self.medium_index)
-        wavelen = pars.pop('wavelen', self.wavelen)
-        optics = pars.pop('optics', self.optics)
+    
+
+    def _optics_scatterer(self, pars, schema):
+        optics = self.get_pars(['medium_index', 'illum_wavelen', 'illum_polarization'], pars, schema)
         scatterer = self.scatterer.make_from(pars)
+        return optics, scatterer
+
+
+
+    def _fields(self, pars, schema):
+        def get_par(name):
+            return pars.pop(name, self.par(name, schema))
+        optics, scatterer = self._optics_scatterer(pars, schema)
         try:
-            return calc_field(schema, scatterer, medium_index, wavelen, optics=optics, theory=self.theory)
+            return calc_field(schema, scatterer, **optics, theory=self.theory)
         except (MultisphereFailure, InvalidScatterer):
             return -np.inf
 
@@ -77,55 +83,19 @@ class NoiseModel(BaseModel):
 
 
 class AlphaModel(NoiseModel):
-    def __init__(self, scatterer, medium_index, wavelen, optics, noise_sd, alpha, theory='auto'):
-        super(AlphaModel, self).__init__(scatterer, medium_index=medium_index, wavelen=wavelen, optics=optics, theory=theory, noise_sd=noise_sd)
+    def __init__(self, scatterer, noise_sd, alpha, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
+        super().__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory, noise_sd=noise_sd)
         self._use_parameter(alpha, 'alpha')
 
     def _holo(self, pars, schema, alpha=None):
-        if alpha is None:
-            alpha = self.alpha
-        alpha = pars.pop('alpha', alpha)
-        fields = self._fields(pars, schema)
-        return scattered_field_to_hologram(alpha*fields, schema.optics)
+        if alpha is not None:
+            alpha = alpha
+        else:
+            alpha = self.get_par('alpha', pars)
 
+        optics, scatterer = self._optics_scatterer(pars, schema)
 
-class SpeckleModel(NoiseModel):
-    names = 'a', 'beta', 'xi', 'eta', 'd'
-    def __init__(self, scatterer, theory, noise_sd, order, a, beta, xi, eta, d):
-        super(SpeckleModel, self).__init__(scatterer, theory, noise_sd)
-        self.order = order
-        # TODO: switch to storing these as an array rather than going back and forth through dictionaries
-        for i in range(order):
-            for name, par in zip(self.names, (a, beta, xi, eta, d)):
-                self._use_parameter(copy(par), "{}_{}".format(name, i))
-
-
-    def lnlike(self, par_vals, data):
-        N = data.size
-        raw_pars = self._pack(par_vals)
-        # TODO: switch to storing these as an array rather than going back and forth through dictionaries
-        def get_pars(i):
-            names = [(name, "{}_{}".format(name, i)) for name in self.names]
-            return {col: raw_pars.pop(name, getattr(self, name)) for col, name in names}
-        pars = pd.DataFrame([get_pars(i) for i in range(self.order)])
-        # TODO: this will only work for subsetted data (need to reshape for other data I think)
-        a = pars.a.reshape(1, -1)
-        beta = pars.beta.reshape(1, -1)
-        xi = pars.xi.reshape(1, -1)
-        eta = pars.eta.reshape(1, -1)
-        d = pars.d.reshape(1, -1)
-
-        noise_sd = raw_pars.pop('noise_sd', self.noise_sd)
-        x, y, z = data.positions.xyz().T
-        x = x[:,np.newaxis]
-        y = y[:,np.newaxis]
-        z = z[:,np.newaxis]
-
-        # For now, assume a single polarization along x or y. This is generally what we do, and will save computation time.
-        pol = np.nonzero(data.optics.polarization)[0][0]
-        scatterer = self.scatterer.make_from(raw_pars)
-        fields = self.theory.calc_field(scatterer, data)
-        A = (a * np.exp(-2*np.pi * 1j / (data.optics.med_wavelen * (d-z)) * (x*xi + y*eta))).sum(-1)
-        holo = Marray(np.abs(1+fields[...,pol] + A)**2, **dict_without(fields._dict, ['dtype', 'components']))
-
-        return -N*np.log(noise_sd*np.sqrt(2*np.pi)) - ((holo-data)**2).sum()/(2*noise_sd**2)
+        try:
+            return calc_holo(schema, scatterer, **optics, theory=self.theory)
+        except (MultisphereFailure, InvalidScatterer):
+            return -np.inf

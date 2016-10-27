@@ -28,6 +28,7 @@ from ..third_party import nmpfit
 from ...core.tools import normalize
 from ...core.tests.common import get_example_data, assert_obj_close
 from holopy.scattering.calculations import calc_holo
+from holopy.core.tools import get_values, flat
 
 # these are the exact values; should correspond to fit results
 # in order: real index, imag index, radius , x, y, z, alpha, fnorm, fit status
@@ -100,7 +101,7 @@ def residfunct(p, fjac = None):
     status = 0
     derivates = holo - calculated
 
-    return([status, derivates.ravel()])
+    return([status, get_values(flat(derivates))])
 
 def test_nmpfit():
     fitresult = nmpfit.mpfit(residfunct, parinfo = parinfo, ftol = ftol,
