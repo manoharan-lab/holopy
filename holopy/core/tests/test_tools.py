@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -32,7 +32,7 @@ import shutil
 gold_location = np.array([ 48.5729142,  50.23217416])
 
 def test_FoundLocation():
-    holo = get_example_data('image0001.yaml')
+    holo = get_example_data('image0001')
     location = center_find(holo, threshold=.25)
     assert_allclose(location, gold_location)
 
@@ -137,3 +137,8 @@ def test_mkdir_p():
     mkdir_p(os.path.join(tempdir, 'a', 'b'))
     mkdir_p(os.path.join(tempdir, 'a', 'b'))
     shutil.rmtree(tempdir)
+
+
+def test_fft():
+    holo = get_example_data('image0001')
+    assert_obj_close(holo, ifft(fft(holo)))

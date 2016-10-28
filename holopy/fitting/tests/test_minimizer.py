@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -23,7 +23,7 @@ import numpy as np
 
 from numpy.testing import assert_equal, assert_raises, assert_allclose
 from ...scattering.scatterer import Sphere, Spheres
-from ...core import Optics, ImageSchema
+from ...core import ImageSchema
 from .. import fit, Parameter, par, Model
 from ..minimizer import Nmpfit
 from ..errors import ParameterSpecificationError, MinimizerConvergenceFailed
@@ -84,20 +84,20 @@ def test_iter_limit():
     gold_fit_dict={'0:Sphere.r': 0.52480509800531849, '1:Sphere.center[1]': 14.003687569304704, 'alpha': 0.93045027963762217, '0:Sphere.center[2]': 19.93177549652841, '1:Sphere.r': 0.56292664494653732, '0:Sphere.center[1]': 15.000340621607815, '1:Sphere.center[0]': 14.020984607646726, '0:Sphere.center[0]': 15.000222185576494, '1:Sphere.center[2]': 20.115613202192328}
 
     #calculate a hologram with known particle positions to do a fit against
-    schema = ImageSchema(shape = 100, spacing = .1,
-                         optics = Optics(wavelen = .660, index = 1.33, polarization = (1,0)))
+    schema = ImageSchema(shape = 100, spacing = .1, illum_wavelen = .660,
+                         medium_index = 1.33, illum_polarization = (1,0))
 
     s1 = Sphere(center=(15, 15, 20), n = 1.59, r = 0.5)
     s2 = Sphere(center=(14, 14, 20), n = 1.59, r = 0.5)
     cluster = Spheres([s1, s2])
-    holo = calc_holo(schema, cluster, 1.33, .66, polarization=(1,0))
+    holo = calc_holo(schema, cluster, 1.33, .66, illum_polarization=(1,0))
 
     #trying to do a fast fit:
     guess1 = Sphere(center = (par(guess = 15, limit = [5,25]), par(15, [5, 25]), par(20, [5, 25])), r = (par(guess = .45, limit=[.4,.6])), n = 1.59)
     guess2 = Sphere(center = (par(guess = 14, limit = [5,25]), par(14, [5, 25]), par(20, [5, 25])), r = (par(guess = .45, limit=[.4,.6])), n = 1.59)
     par_s = Spheres([guess1,guess2])
 
-    model = Model(par_s, calc_holo, 1.33, .66, Optics(polarization=(1, 0)), alpha = par(.6, [.1, 1]))
+    model = Model(par_s, calc_holo, 1.33, .66, illum_polarization=(1, 0), alpha = par(.6, [.1, 1]))
     warnings.simplefilter("always")
     result = fit(model, holo, minimizer = Nmpfit(maxiter=2))
     assert_obj_close(gold_fit_dict,result.parameters)

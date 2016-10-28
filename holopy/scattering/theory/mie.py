@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -76,9 +76,9 @@ class Mie(FortranTheory):
     def _can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
 
-    def _raw_scat_matrs(self, scatterer, pos, illum_wavevec, medium_index):
+    def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
         if isinstance(scatterer, Sphere):
-            scat_coeffs = self._scat_coeffs(scatterer, illum_wavevec, medium_index)
+            scat_coeffs = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
 
             # In the mie solution the amplitude scattering matrix is independent of phi
             return [mieangfuncs.asm_mie_far(scat_coeffs, theta) for
@@ -86,21 +86,21 @@ class Mie(FortranTheory):
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
-    def _raw_fields(self, positions, scatterer, illum_wavevec, medium_index, illum_polarization):
-        scat_coeffs = self._scat_coeffs(scatterer, illum_wavevec, medium_index)
+    def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index, illum_polarization):
+        scat_coeffs = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
         return mieangfuncs.mie_fields(positions, scat_coeffs, illum_polarization.values[:2],
                                       self.compute_escat_radial,
                                       self.full_radial_dependence)
 
-    def _raw_internal_fields(self, positions, scatterer, illum_wavevec, medium_index, illum_polarization):
-        scat_coeffs = self._scat_coeffs(scatterer, illum_wavevec, medium_index)
+    def _raw_internal_fields(self, positions, scatterer, medium_wavevec, medium_index, illum_polarization):
+        scat_coeffs = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
         # TODO BUG: this isn't right for layered spheres (and will
         # probably crash)
         return mieangfuncs.mie_internal_fields(positions, scatterer.n,
                                                scat_coeffs, illum_polarization)
 
 
-    def _calc_cross_sections(self, scatterer, illum_wavevec, medium_index, illum_polarization):
+    def _calc_cross_sections(self, scatterer, medium_wavevec, medium_index, illum_polarization):
         """
         Calculate scattering, absorption, and extinction cross
         sections, and asymmetry parameter for spherically
@@ -134,20 +134,22 @@ class Mie(FortranTheory):
             raise InvalidScatterer(scatterer,
                                         "Use Multisphere to calculate " +
                                         "radiometric quantities")
-        albl = self._scat_coeffs(scatterer, illum_wavevec, medium_index)
+        albl = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
 
         cscat, cext, cback = miescatlib.cross_sections(albl[0], albl[1]) * \
-            (2. * np.pi / illum_wavevec**2)
+            (2. * np.pi / medium_wavevec**2)
 
         cabs = cext - cscat # conservation of energy
 
-        asym = 4. * np.pi / (illum_wavevec**2 * cscat) * \
+        asym = 4. * np.pi / (medium_wavevec**2 * cscat) * \
             miescatlib.asymmetry_parameter(albl[0], albl[1])
 
         return np.array([cscat, cabs, cext, asym])
 
-    def _scat_coeffs(self, s, illum_wavevec, medium_index):
-        x_arr = illum_wavevec * _ensure_array(s.r)
+    def _scat_coeffs(self, s, medium_wavevec, medium_index):
+        if (_ensure_array(s.r) == 0).any():
+            raise InvalidScatterer(s, "Radius is zero")
+        x_arr = medium_wavevec * _ensure_array(s.r)
         m_arr = _ensure_array(s.n) / medium_index
 
         # Check that the scatterer is in a range we can compute for
@@ -165,8 +167,8 @@ class Mie(FortranTheory):
             return scatcoeffs_multi(m_arr, x_arr, self.eps1, self.eps2)
 
 
-    def _scat_coeffs_internal(self, s, illum_wavevec, medium_index):
-        x_arr = illum_wavevec * _ensure_array(s.r)
+    def _scat_coeffs_internal(self, s, medium_wavevec, medium_index):
+        x_arr = medium_wavevec * _ensure_array(s.r)
         m_arr = _ensure_array(s.n) / medium_index
 
         # Check that the scatterer is in a range we can compute for

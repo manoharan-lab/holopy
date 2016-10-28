@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -26,7 +26,7 @@ import yaml
 import shutil
 from numpy.testing import assert_equal, assert_almost_equal
 import pickle
-import pickle
+from collections import OrderedDict
 
 
 from .. import load, save
@@ -41,10 +41,15 @@ from numpy.testing import assert_allclose
 
 def assert_read_matches_write(o):
     tempf = tempfile.NamedTemporaryFile()
-    save(tempf, o)
+    save(tempf.name, o)
     tempf.flush()
     tempf.seek(0)
-    loaded = load(tempf)
+    loaded = load(tempf.name)
+    # For now our code for writing xarrays to hdf5 ends up with them picking up
+    # a name attribute that their predecessor may not have, so correct for that
+    # if it is true.
+    if hasattr(loaded, 'name') and o.name is None:
+        loaded.name = None
     assert_obj_close(o, loaded)
 
 def assert_pickle_roundtrip(o, cPickle_only=False):
@@ -68,20 +73,28 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
     except (NotImplementedError, TypeError):
         pass
 
+    # if None, let some things that are functially equivalent to None pass
+    nonelike = [None, OrderedDict()]
+    if actual is None or desired is None:
+        if actual in nonelike and desired in nonelike:
+            return
+
     if isinstance(actual, dict) and isinstance(desired, dict):
         for key, val in actual.items():
-            if key is '_id':
+            if key in ['_id', '_encoding']:
+                # these are implementation specific dict keys that we
+                # shouldn't expect to be identical, so ignore them
                 continue
-            assert_obj_close(actual[key], desired[key], context = '{0}[{1}]'.format(context, key),
-                             rtol = rtol, atol = atol)
+            assert_obj_close(actual[key], desired[key], rtol=rtol, atol=atol,
+                             context='{0}[{1}]'.format(context, key))
     elif hasattr(actual, '_dict') and hasattr(desired, '_dict'):
         assert_obj_close(actual._dict, desired._dict, rtol=rtol, atol=atol,
                          context = "{0}._dict".format(context))
     elif isinstance(actual, (list, tuple)):
         assert_equal(len(actual), len(desired), err_msg=context)
         for i, item in enumerate(actual):
-            assert_obj_close(actual[i], desired[i], context = '{0}[{1}]'.format(context, i),
-                             rtol = rtol, atol = atol)
+            assert_obj_close(actual[i], desired[i], rtol=rtol, atol=atol,
+                             context = '{0}[{1}]'.format(context, i))
     elif isinstance(actual, types.MethodType):
         assert_method_equal(actual, desired, context)
     elif hasattr(actual, '__dict__') and hasattr(desired, '__dict__'):
@@ -126,8 +139,13 @@ def verify(result, name, rtol=1e-7, atol=1e-8):
 
     full = os.path.join(gold_dir, 'full_data', 'gold_full_{0}'.format(name))
     if os.path.exists(full):
-        assert_obj_close(result, load(full), rtol)
-
+        try:
+            assert_obj_close(result, load(full), rtol)
+        except OSError:
+            # This will happen if you don't have git lfs installed and we
+            # attempt to open the placeholder file. In that case we just test
+            # the summary data, same as if the full data isn't present.
+            pass
 
     if isinstance(result, dict):
         assert_obj_close(result, gold_yaml, rtol, atol)

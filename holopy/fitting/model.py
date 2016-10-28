@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -216,19 +216,39 @@ def limit_overlaps(fraction=.1):
     return constraint
 
 class BaseModel(HoloPyObject):
-    def __init__(self, scatterer, medium_index=None, wavelen=None, optics=None, theory='auto'):
+    def __init__(self, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
         if not isinstance(scatterer, Parametrization):
             scatterer = ParameterizedObject(scatterer)
         self.scatterer = scatterer
         self._parameters = self.scatterer.parameters
         self._use_parameter(medium_index, 'medium_index')
-        self._use_parameter(wavelen, 'wavelen')
-        self._use_parameter(optics, 'optics')
+        self._use_parameter(illum_wavelen, 'illum_wavelen')
+        self._use_parameter(illum_polarization, 'illum_polarization')
         self._use_parameter(theory, 'theory')
 
     @property
     def parameters(self):
         return self._parameters
+
+    def par(self, name, schema=None):
+        if hasattr(self, name) and getattr(self, name) is not None:
+            return getattr(self, name)
+        if schema is not None and hasattr(schema, name):
+            return getattr(schema, name)
+
+        if schema is not None:
+            schematxt = " or Schema"
+
+        raise ValueError("Cannot find value for {} in Model{}".format(name, schema))
+
+    def get_par(self, name, pars, schema=None):
+        return pars.pop(name, self.par(name, schema))
+
+    def get_pars(self, names, pars, schema=None):
+        r = {}
+        for name in names:
+            r[name] = self.get_par(name, pars, schema)
+        return r
 
     def _use_parameter(self, par, name):
         setattr(self, name, par)
@@ -258,9 +278,9 @@ class Model(BaseModel):
         a scaterer as an argument and return False if you wish to disallow that
         scatterer (usually because it is un-physical for some reason)
     """
-    def __init__(self, scatterer, calc_func, medium_index=None, wavelen=None, optics=None, theory='auto', alpha=None,
+    def __init__(self, scatterer, calc_func, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', alpha=None,
                  use_random_fraction=None, constraints=[]):
-        super(Model, self).__init__(scatterer, medium_index, wavelen, optics, theory)
+        super(Model, self).__init__(scatterer, medium_index, illum_wavelen, illum_polarization, theory)
         self.calc_func = calc_func
 
         self.use_random_fraction = use_random_fraction

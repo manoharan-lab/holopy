@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -34,22 +34,25 @@ import xarray as xr
 
 from holopy.core.io import serialize
 
-from holopy.core.metadata import make_coords, make_attrs, Image
-from holopy.core.tools import _ensure_array, arr_like
+from holopy.core.metadata import make_coords, make_attrs, Image, get_spacing
+from holopy.core.tools import _ensure_array, arr_like, updated, is_none
 from holopy.core.errors import NoMetadata
 
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
 
 def default_extension(inf, defext='.h5'):
-    file, ext = os.path.splitext(inf)
-    print(file, ext)
-    print(type(ext))
+    try:
+        file, ext = os.path.splitext(inf)
+    except AttributeError:
+        # this will happen if inf is already a file, which means we don't
+        # need to do anything here
+        return inf
     if not ext:
         return file + defext
     else:
         return inf
 
-def load(inf):
+def load(inf, lazy=False):
     """
     Load data or results
 
@@ -64,16 +67,21 @@ def load(inf):
         The array object contained in the file
 
     """
-
-    xr.open_dataset(default_extension(inf), engine='h5netcdf')
-    return xr.data
-
-    loaded_yaml = False
-    # attempt to load a holopy yaml file
     try:
-        #TODO also want to load hdf5 here
+        with xr.open_dataset(default_extension(inf), engine='h5netcdf') as ds:
+            # Xarray defaults to lazy loading of datasets, but I my reading of
+            # things is that we will probably generally prefer eager loading
+            # since our data is generally fairly small but we do lots of
+            # calculations.
+            if not lazy:
+                ds = ds.load()
+            return ds.data
+    except (OSError, ValueError):
+        pass
+
+    # attempt to load a yaml file
+    try:
         loaded = serialize.load(inf)
-        loaded_yaml = True
         return loaded
     except (serialize.ReaderError, UnicodeDecodeError):
         if os.path.splitext(inf)[1] in tiflist:
@@ -86,7 +94,7 @@ def load(inf):
         else:
             raise NoMetadata
 
-def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, normals=(0, 0, 1), channel=None):
+def load_image(inf, spacing=None, illum_wavelen=None, medium_index=None, illum_polarization=None, normals=None, channel=None, name=None):
     """
     Load data or results
 
@@ -105,7 +113,15 @@ def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, n
     obj : The object loaded, :class:`holopy.core.marray.Image`, or as loaded from yaml
 
     """
-    arr=fromimage(pilimage.open(inf)).astype('d')
+    pi = pilimage.open(inf)
+    attrs = {}
+    if hasattr(pi, 'ifd') and 270 in pi.ifd:
+        d = yaml.load(pi.ifd[270][0])
+        if 'attrs' in d:
+            attrs = d['attrs']
+        if 'spacing' in d and spacing is None:
+            spacing = d['spacing']
+    arr=fromimage(pi).astype('d')
 
     # pick out only one channel of a color image
     if channel is not None and len(arr.shape) > 2:
@@ -117,7 +133,13 @@ def load_image(inf, spacing=None, wavelen=None, index=None, polarization=None, n
     elif channel is not None and channel > 0:
         warnings.warn("Warning: not a color image (channel number ignored)")
 
-    return xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing), name=inf, attrs=make_attrs(index, wavelen, polarization, normals))
+    attrs = updated(attrs, medium_index=medium_index,
+                    illum_wavelen=illum_wavelen,
+                    illum_polarization=illum_polarization, normals=normals)
+
+    if name is None:
+        name = inf
+    return xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing), name=name, attrs=make_attrs(**attrs))
 
 def save(outf, obj):
     """
@@ -148,7 +170,12 @@ def save(outf, obj):
             return
 
     if hasattr(obj, 'to_dataset'):
-        ds = obj.to_dataset(name='data')
+        for v in obj.attrs.values():
+            if v is None:
+                raise NotImplementedError("Saving xarray with missing metadata is not supported. If you want to save just the array data, you can use np.save")
+        if obj.name is None:
+            obj.name = 'data'
+        ds = obj.to_dataset()
         ds.to_netcdf(default_extension(outf), engine='h5netcdf')
     else:
         serialize.save(outf, obj)
@@ -176,6 +203,10 @@ def save_image(filename, im, scaling='auto', depth=8):
         some kind of scaling.
 
     """
+    d = {}
+    d['attrs'] = im.attrs
+    d['spacing'] = get_spacing(im)
+
     # if we don't have an extension, default to tif
     if os.path.splitext(filename)[1] is '':
         filename += '.tif'
@@ -202,18 +233,17 @@ def save_image(filename, im, scaling='auto', depth=8):
             typestr = 'int' + str(depth)
         else:
             raise Error("Unknown image depth")
-            
+
         if im.max() <= 1:
             im = im * ((2**depth)-1) + .499999
             im = im.astype(typestr)
     if os.path.splitext(filename)[1] in tiflist:
-        metadat = yaml.dump(im._dict)
+        metadat = yaml.dump(d)
         tiffinfo = ifd2()
         tiffinfo[270] = metadat #This edits the 'imagedescription' field of the tiff metadata
-        pilimage.fromarray(im).save(filename, tiffinfo=tiffinfo)   
+        pilimage.fromarray(im.values).save(filename, tiffinfo=tiffinfo)
     else:
-        pilimage.fromarray(im).save(filename)
-    
+        pilimage.fromarray(im.values).save(filename)
 
 def get_example_data_path(name):
     path = os.path.abspath(__file__)
