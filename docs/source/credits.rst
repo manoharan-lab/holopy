@@ -51,15 +51,6 @@ SBESJY.FOR_, which computes spherical Bessel functions.
 .. _SBESJY.FOR: http://www.fresco.org.uk/programs/barnett/index.htm
 
 
-We include a copy Michele Simionato's decorator.py_ (v 3.3.3) which
-simplifies writing correct function decorators.  If you have that
-module installed it will be used preferentially.
-
-  decorator.py is Copyright (c) 2005-2012, Michele Simionato
-  All rights reserved.
-
-.. _decorator.py: http://pypi.python.org/pypi/decorator/3.3.3
-
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
 met:
