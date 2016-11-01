@@ -24,7 +24,7 @@ calc_intensity and calc_holo, based on subclass's calc_field
 
 from holopy.core.holopy_object import SerializableMetaclass
 from holopy.core.metadata import vector, Image, optical_parameters, to_vector
-from holopy.core.tools import dict_without, is_none, copy_metadata
+from holopy.core.tools import is_none, copy_metadata
 from holopy.scattering import Mie, Multisphere, Sphere, Spheres
 from holopy.scattering.theory import dda
 from holopy.scattering.errors import AutoTheoryFailed, MissingParameter

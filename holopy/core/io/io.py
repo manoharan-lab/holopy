@@ -34,8 +34,8 @@ import xarray as xr
 
 from holopy.core.io import serialize
 
-from holopy.core.metadata import make_coords, make_attrs, Image, get_spacing
-from holopy.core.tools import _ensure_array, arr_like, updated, is_none
+from holopy.core.metadata import make_attrs, make_coords, Image, get_spacing
+from holopy.core.tools import _ensure_array, updated, is_none
 from holopy.core.errors import NoMetadata
 
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
