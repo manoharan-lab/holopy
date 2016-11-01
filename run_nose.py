@@ -29,8 +29,12 @@ else:
              sys.argv[2:])
 
 print((' '.join(t)))
-call(t)
+returncode = call(t)
+if returncode is not 0:
+    sys.exit(returncode)
 
 doctest = ['sphinx-build', '-b', 'doctest', './docs/source', './docs/build']
 print((' '.join(doctest)))
-call(doctest)
+returncode = call(doctest)
+if returncode is not 0:
+    sys.exit(returncode)

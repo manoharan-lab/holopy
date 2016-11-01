@@ -329,7 +329,7 @@ class Model(BaseModel):
 
         valid = True
         for constraint in self.constraints:
-            valid = valid and constraint(s)
+            valid = valid and constraint(scatterer)
         if not valid:
             return np.ones_like(schema) * np.inf
 
