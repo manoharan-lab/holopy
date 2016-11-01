@@ -34,7 +34,6 @@ from holopy.core.tools import normalize, copy_metadata
 from holopy.fitting import fit, Parameter, ComplexParameter, par, Parametrization, Model
 from holopy.core.tests.common import (assert_obj_close, get_example_data,
                                   assert_read_matches_write)
-from holopy.fitting.fit import CostComputer
 from holopy.fitting import Model, FitResult
 from ..errors import InvalidMinimizer
 from holopy.fitting.model import limit_overlaps, ParameterizedObject
@@ -157,8 +156,7 @@ def test_n():
 
     model = Model(sph, calc_holo, 1.33, .66, illum_polarization=(1, 0), alpha=1)
     holo = calc_holo(sch, model.scatterer.guess, 1.33, .66, (1, 0))
-    coster = CostComputer(holo, model, random_subset=.1)
-    assert_allclose(coster.flattened_difference({'n' : .5}), 0)
+    assert_allclose(model.residual({'n' : .5}, holo), 0)
 
 
 @attr('fast')
@@ -255,8 +253,7 @@ def test_constraint():
         spheres = Spheres([Sphere(r=.5, center=(0,0,0)),
                            Sphere(r=.5, center=(0,0,par(.2)))])
         model = Model(spheres, calc_holo, constraints=limit_overlaps())
-        coster = CostComputer(sch, model)
-        cost = coster._calc({'1:Sphere.center[2]' : .2})
+        cost = model._calc({'1:Sphere.center[2]' : .2}, sch)
         assert_equal(cost, np.ones_like(sch)*np.inf)
 
 def test_layered():
