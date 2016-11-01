@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -19,7 +19,7 @@
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_raises
 from ..tools import center_find, subimage, fft, ifft, math
-from ..tools import _ensure_array, coord_grid, ensure_listlike, mkdir_p, ensure_3d
+from ..tools import _ensure_array, ensure_listlike, mkdir_p
 from ..metadata import Image, ImageSchema
 from .common import get_example_data, assert_obj_close
 from scipy import fftpack
@@ -32,7 +32,7 @@ import shutil
 gold_location = np.array([ 48.5729142,  50.23217416])
 
 def test_FoundLocation():
-    holo = get_example_data('image0001.yaml')
+    holo = get_example_data('image0001')
     location = center_find(holo, threshold=.25)
     assert_allclose(location, gold_location)
 
@@ -110,30 +110,18 @@ def test_ensure_array():
     assert_equal(_ensure_array([1.0]), np.array([1.0]))
     assert_equal(_ensure_array(np.array([1.0])), np.array([1.0]))
 
-@attr('fast')
-def test_coord_grid():
-    assert_equal(coord_grid(([0, 5], [0, 5], [0, 5])).shape, (5, 5, 5, 3))
-    assert_equal(coord_grid((5, 5, 5)).shape, (5, 5, 5, 3))
-    assert_equal(coord_grid(([0, 1], [0, 1], [0, 1]), .2).shape, (5, 5, 5, 3))
-    assert_equal(coord_grid(([0, 1], [0, 1], [0, 1]), .5),
-                 np.array([[[[ 0. ,  0. ,  0. ],
-                             [ 0. ,  0. ,  0.5]],
-                            [[ 0. ,  0.5,  0. ],
-                             [ 0. ,  0.5,  0.5]]],
-                           [[[ 0.5,  0. ,  0. ],
-                             [ 0.5,  0. ,  0.5]],
-                            [[ 0.5,  0.5,  0. ],
-                             [ 0.5,  0.5,  0.5]]]]))
 
 #test helpers
 def test_ensure_listlike():
     assert ensure_listlike(None) == []
-
-def test_ensure3d():
-    assert_raises(Exception, ensure_3d, [1])
 
 def test_mkdir_p():
     tempdir = tempfile.mkdtemp()
     mkdir_p(os.path.join(tempdir, 'a', 'b'))
     mkdir_p(os.path.join(tempdir, 'a', 'b'))
     shutil.rmtree(tempdir)
+
+
+def test_fft():
+    holo = get_example_data('image0001')
+    assert_obj_close(holo, ifft(fft(holo)))

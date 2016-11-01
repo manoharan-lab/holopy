@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -52,12 +52,8 @@ class Minimizer(HoloPyObject):
     # if minimizers do any parameter rescaling, they are responsible for putting
     # the parameters back before handing them off to the model.
     def pars_from_minimizer(self, parameters, values):
-        pars = {}
-        for par, value in zip(parameters, values):
-            pars[par.name] = par.unscale(value)
-
-        return pars
-
+        assert len(parameters) == len(values)
+        return {par.name: par.unscale(value) for par, value in zip(parameters, values)}
 
 class Nmpfit(Minimizer):
     """

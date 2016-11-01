@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -28,10 +28,11 @@ or detrending
 
 from ..errors import BadImage
 from .math import simulate_noise
-from .utilities import is_none, ensure_3d
-from scipy.signal import detrend
+from .utilities import is_none, copy_metadata, get_values
+from scipy.signal import detrend as dt
 from scipy import fftpack
 import numpy as np
+import xarray as xr
 
 def normalize(image):
     """
@@ -48,7 +49,7 @@ def normalize(image):
     normalized_image : ndarray
        The normalized image
     """
-    return image * 1.0 / image.sum() * image.size
+    return copy_metadata(image, image * 1.0 / image.sum() * image.size)
 
 def detrend(image):
     '''
@@ -66,7 +67,7 @@ def detrend(image):
     image : ndarray
        Image with linear trends removed
     '''
-    return detrend(detrend(image, 0), 1)
+    return copy_metadata(image, dt(dt(image, image.dims.index('x')), image.dims.index('y')))
 
 def zero_filter(image):
     '''
@@ -107,7 +108,7 @@ def zero_filter(image):
             output[row, col] = np.sum(padded_im[row:row+3, col:col+3]) / 8.
         print('Pixel with value 0 reset to nearest neighbor average')
 
-    return output
+    return copy_metadata(image, output)
 
 def add_noise(image, noise_mean=.1, smoothing=.01, poisson_lambda=1000):
     """Add simulated noise to images. Intended for use with exact
@@ -142,8 +143,8 @@ def add_noise(image, noise_mean=.1, smoothing=.01, poisson_lambda=1000):
        A copy of the input image with noise added.
 
     """
-    return image + simulate_noise(image.shape, noise_mean, smoothing,
-                                  poisson_lambda) * image.mean()
+    return copy_metadata(image, image + simulate_noise(image.shape, noise_mean, smoothing,
+                                  poisson_lambda) * image.mean())
 
 def subimage(arr, center, shape):
     """
@@ -178,13 +179,43 @@ def subimage(arr, center, shape):
 
     extent = [slice(int(np.round(c-s/2)), int(np.round(c+s/2))) for c, s in zip(center, shape)]
 
-    return arr.isel(x=extent[0], y=extent[1])
+    return copy_metadata(arr, arr.isel(x=extent[0], y=extent[1]))
+
+def get_spacing(c):
+    spacing = np.diff(c)
+    if not np.allclose(spacing[0], spacing):
+        raise ValueError("array has nonuniform spacing, can't determine coordinates for fft")
+    return spacing[0]
+
+def ft_coord(c):
+    spacing = get_spacing(c)
+    dim = len(c)
+    ext = spacing * dim
+    return np.linspace(-get_values(dim/(2*ext)), get_values(dim/(2*ext)), dim)
+
+def ift_coord(c):
+    spacing = get_spacing(c)
+    dim = len(c)
+    ext = spacing * dim
+    return np.linspace(0, get_values(dim/ext), dim)
+
+def ft_coords(cs):
+    d = {k: v.values for k, v in cs.items()}
+    d['m'] = ft_coord(d.pop('x'))
+    d['n'] = ft_coord(d.pop('y'))
+    return d
+
+def ift_coords(cs):
+    d = {k: v.values for k, v in cs.items()}
+    d['x'] = ift_coord(d.pop('m'))
+    d['y'] = ift_coord(d.pop('n'))
+    return d
 
 def fft(a, overwrite=False, shift=True):
     """
     More convenient Fast Fourier Transform
 
-    An easier to use fft function, it will pick the correct fft to do
+    An easier to use fft function, it will pick the correct fft to dom
     based on the shape of the Marray, and do the fftshift for you.  This
     is intended for working with images, and thus for dimensions
     greater than 2 does slicewise transforms of each "image" in a
@@ -214,13 +245,29 @@ def fft(a, overwrite=False, shift=True):
             res = fftpack.fft(a, overwrite_x=overwrite)
     else:
         if shift:
-            res = fftpack.fftshift(fftpack.fft2(a, axes=[0, 1],
+            res = fftpack.fftshift(fftpack.fft2(a, axes=[a.dims.index('x'), a.dims.index('y')],
                                                  overwrite_x=overwrite),
-                                    axes=[0,1])
+                                    axes=[a.dims.index('x'), a.dims.index('y')])
         else:
-            res = fftpack.fft2(a, axes=[0, 1], overwrite_x=overwrite)
+            res = fftpack.fft2(a, axes=[a.dims.index('x'), a.dims.index('y')], overwrite_x=overwrite)
+
+    if hasattr(a, 'coords') and hasattr(a, 'attrs'):
+        res = xr.DataArray(res, **transform_metadata(a, False))
+        res.name = a.name
     return res
 
+def transform_metadata(a, inverse):
+    if not inverse:
+        coords = ft_coords(a.coords)
+        dims = ['m', 'n']
+    else:
+        coords = ift_coords(a.coords)
+        dims = ['x', 'y']
+    if 'z' in coords and coords['z'].shape is not ():
+        dims = dims + ['z']
+    if 'vector' in coords:
+        dims = ['vector'] + dims
+    return {'dims': dims, 'coords': coords, 'attrs': a.attrs}
 
 def ifft(a, overwrite=False, shift=True):
     """
@@ -256,9 +303,13 @@ def ifft(a, overwrite=False, shift=True):
             res = fftpack.ifft(a, overwrite_x=overwrite)
     else:
         if shift:
-            res = fftpack.ifft2(fftpack.fftshift(a, axes=[0,1]), axes=[0, 1],
+            res = fftpack.ifft2(fftpack.fftshift(a, axes=[a.dims.index('m'), a.dims.index('n')]), axes=[a.dims.index('m'), a.dims.index('n')],
                                  overwrite_x=overwrite)
         else:
             res = fftpack.ifft2(a, overwrite_x=overwrite)
+
+    if hasattr(a, 'coords') and hasattr(a, 'attrs'):
+        res = xr.DataArray(res, **transform_metadata(a, True))
+        res.name = a.name
     return res
 

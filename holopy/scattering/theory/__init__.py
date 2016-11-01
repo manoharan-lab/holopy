@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -30,19 +30,6 @@ All theories have a common interface defined by
 '''
 
 
-#try:
 from .mie import Mie
 from .multisphere import Multisphere
-#except ImportError:
-#    import warnings
-#    warnings.warn("""
-#Could not import scattering.  You will not be able to do scattering
-#calculations, but the rest of holopy sould remain usable.
-#
-#This is probably due to your not having properly compiled versions holopy's
-#fortran bits.  """)
-
-#try:
 from .dda import DDA
-#except ImportError:
-#    pass

@@ -1,5 +1,5 @@
 # Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -23,8 +23,8 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 from holopy.core.holopy_object import SerializableMetaclass
-from holopy.core.metadata import vector, Image, optical_parameters
-from holopy.core.tools import dict_without, is_none
+from holopy.core.metadata import vector, Image, optical_parameters, to_vector
+from holopy.core.tools import dict_without, is_none, copy_metadata, from_flat
 from holopy.scattering import Mie, Multisphere, Sphere, Spheres
 from holopy.scattering.theory import dda
 from holopy.scattering.errors import AutoTheoryFailed, MissingParameter
@@ -49,6 +49,10 @@ def interpret_theory(scatterer,theory='auto'):
         theory = theory()
     return theory
 
+def finalize(schema, result):
+    if not hasattr(schema, 'flat'):
+        result = from_flat(result)
+    return copy_metadata(schema, result, do_coords=False)
 
 def determine_theory(scatterer):
     if isinstance(scatterer, Sphere):
@@ -89,7 +93,7 @@ def calc_intensity(schema, scatterer, medium_index=None, illum_wavelen=None, ill
         scattered intensity
     """
     field = calc_field(schema, scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory)
-    return (abs(field*(1-schema.normals))**2).sum(dim=vector)
+    return finalize(schema, (abs(field*(1-schema.normals))**2).sum(dim=vector))
 
 
 def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', scaling=1.0):
@@ -122,7 +126,8 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None, illum_po
     theory = interpret_theory(scatterer,theory)
     par = optical_parameters(schema, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization)
     scat = theory._calc_field(scatterer, schema, **par)
-    return scattered_field_to_hologram(scat*scaling, par['illum_polarization'], schema.normals)
+    holo = scattered_field_to_hologram(scat*scaling, par['illum_polarization'], schema.normals)
+    return finalize(schema, holo)
 
 def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
     """
@@ -178,7 +183,7 @@ def calc_scat_matrix(schema, scatterer, medium_index=None, illum_wavelen=None, t
     """
 
     theory = interpret_theory(scatterer,theory)
-    return theory.calc_scat_matrix(scatterer, schema, **optical_parameters(schema, medium_index=medium_index, illum_wavelen=illum_wavelen))
+    return finalize(schema, theory.calc_scat_matrix(scatterer, schema, **optical_parameters(schema, medium_index=medium_index, illum_wavelen=illum_wavelen)))
 
 def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
     """
@@ -208,7 +213,7 @@ def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None, illum_p
         Calculated hologram from the given distribution of spheres
     """
     theory = interpret_theory(scatterer,theory)
-    return theory._calc_field(scatterer, schema, **optical_parameters(schema, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization))
+    return finalize(schema, theory._calc_field(scatterer, schema, **optical_parameters(schema, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization)))
 
 # this is pulled out separate from the calc_holo method because occasionally you
 # want to turn prepared  e_fields into holograms directly
@@ -227,7 +232,9 @@ def scattered_field_to_hologram(scat, ref, detector_normal = None):
         (defaults to z hat, a detector in the x, y plane)
     """
     if detector_normal is None:
-        detector_normal = (0, 0, 1)
+        detector_normal = to_vector((0, 0, 1))
+    else:
+        detector_normal = to_vector(detector_normal)
 
     holo = (np.abs(scat+ref)**2 * (1 - detector_normal)).sum(dim=vector)
 
@@ -237,5 +244,3 @@ def _field_scalar_shape(e):
     # this is a clever hack with list arithmetic to get [1, 3] or [1,
     # 1, 3] as needed
     return [1]*(e.ndim-1) + [3]
-
-

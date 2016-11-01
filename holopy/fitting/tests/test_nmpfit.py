@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -28,6 +28,7 @@ from ..third_party import nmpfit
 from ...core.tools import normalize
 from ...core.tests.common import get_example_data, assert_obj_close
 from holopy.scattering.calculations import calc_holo
+from holopy.core.tools import get_values, flat
 
 # these are the exact values; should correspond to fit results
 # in order: real index, imag index, radius , x, y, z, alpha, fnorm, fit status
@@ -86,7 +87,7 @@ parinfo = [{'parname':'n_particle_real',
            'limits': [0.0, 1.0],
            'value': scaling_alpha}]
 
-holo = normalize(get_example_data('image0001.yaml'))
+holo = normalize(get_example_data('image0001'))
 
 
 # define the residual function
@@ -100,7 +101,7 @@ def residfunct(p, fjac = None):
     status = 0
     derivates = holo - calculated
 
-    return([status, derivates.ravel()])
+    return([status, get_values(flat(derivates))])
 
 def test_nmpfit():
     fitresult = nmpfit.mpfit(residfunct, parinfo = parinfo, ftol = ftol,

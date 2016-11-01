@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -30,7 +30,7 @@ from warnings import warn
 from holopy.core.holopy_object import HoloPyObject
 from ..scatterer import Scatterers, Sphere
 from ..errors import TheoryNotCompatibleError, MissingParameter
-from ...core.metadata import kr_theta_phi_flat, from_flat, vector, theta_phi_flat, optical_parameters
+from ...core.metadata import kr_theta_phi_flat, vector, theta_phi_flat, optical_parameters
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -42,7 +42,7 @@ class ScatteringTheory(HoloPyObject):
     implementing a _calc_field(self, scatterer, schema) function that returns a
     VectorGrid electric field.
     """
-    def _calc_field(self, scatterer, schema, illum_wavevec, medium_index, illum_polarization):
+    def _calc_field(self, scatterer, schema, medium_wavevec, medium_index, illum_polarization):
         """
         Calculate fields.  Implemented in derived classes only.
 
@@ -59,9 +59,9 @@ class ScatteringTheory(HoloPyObject):
         def get_field(s):
             if isinstance(scatterer,Sphere) and scatterer.center is None:
                 raise MissingParameter("center")
-            positions = kr_theta_phi_flat(schema, s.center, wavevec=illum_wavevec)
-            field = np.vstack(self._raw_fields(np.vstack((positions.kr, positions.theta, positions.phi)), s, illum_wavevec=illum_wavevec, medium_index=medium_index, illum_polarization=illum_polarization)).T
-            phase = np.exp(-1j*illum_wavevec*s.center[2])
+            positions = kr_theta_phi_flat(schema, s.center, wavevec=medium_wavevec)
+            field = np.vstack(self._raw_fields(np.vstack((positions.kr, positions.theta, positions.phi)), s, medium_wavevec=medium_wavevec, medium_index=medium_index, illum_polarization=illum_polarization)).T
+            phase = np.exp(-1j*medium_wavevec*s.center[2])
             # TODO: fix and re-enable internal fields
             #if self._scatterer_overlaps_schema(scatterer, schema):
             #    inner = scatterer.contains(schema.positions.xyz())
@@ -70,7 +70,9 @@ class ScatteringTheory(HoloPyObject):
             #                                  optics)).T
             field *= phase
             field = xr.DataArray(field, dims=['flat', vector], coords={'flat': positions.flat, vector: ['x', 'y', 'z']}, attrs=schema.attrs)
-            return from_flat(field)
+            if hasattr(schema, 'flat'):
+                return field
+            return field
 
 
         # See if we can handle the scatterer in one step
@@ -87,7 +89,7 @@ class ScatteringTheory(HoloPyObject):
 
         return field
 
-    def calc_scat_matrix(self, scatterer, schema, illum_wavevec, medium_index):
+    def calc_scat_matrix(self, scatterer, schema, medium_wavevec, medium_index):
         """
         Compute scattering matricies for scatterer
 
@@ -110,7 +112,7 @@ class ScatteringTheory(HoloPyObject):
         to use non-default values.
         """
         pos = theta_phi_flat(schema, scatterer.center)
-        scat_matrs = self._raw_scat_matrs(scatterer, pos, illum_wavevec, medium_index)
+        scat_matrs = self._raw_scat_matrs(scatterer, pos, medium_wavevec, medium_index)
         #x = xr.DataArray(scat_matrs, dims=['flat', 'Epar', 'Eperp'], coords={'flat': pos.flat, 'Epar': ['S2', 'S3'], 'Eperp': ['S4', 'S1']}, attrs=dict(optics=schema.optics))
         d = {k: v for k, v in pos.coords.items()}
         d['Epar'] = ['S2', 'S3']
@@ -120,7 +122,7 @@ class ScatteringTheory(HoloPyObject):
             dims = ['flat'] + dims
         else:
             dims = ['point'] + dims
-        return from_flat(xr.DataArray(scat_matrs, dims=dims, coords=d, attrs=schema.attrs))
+        return xr.DataArray(scat_matrs, dims=dims, coords=d, attrs=schema.attrs)
 
 
 # Subclass of scattering theory, overrides functions that depend on array
