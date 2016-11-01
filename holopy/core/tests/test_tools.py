@@ -19,7 +19,7 @@
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_raises
 from ..tools import center_find, subimage, fft, ifft, math
-from ..tools import _ensure_array, coord_grid, ensure_listlike, mkdir_p, ensure_3d
+from ..tools import _ensure_array, ensure_listlike, mkdir_p
 from ..metadata import Image, ImageSchema
 from .common import get_example_data, assert_obj_close
 from scipy import fftpack
@@ -110,27 +110,10 @@ def test_ensure_array():
     assert_equal(_ensure_array([1.0]), np.array([1.0]))
     assert_equal(_ensure_array(np.array([1.0])), np.array([1.0]))
 
-@attr('fast')
-def test_coord_grid():
-    assert_equal(coord_grid(([0, 5], [0, 5], [0, 5])).shape, (5, 5, 5, 3))
-    assert_equal(coord_grid((5, 5, 5)).shape, (5, 5, 5, 3))
-    assert_equal(coord_grid(([0, 1], [0, 1], [0, 1]), .2).shape, (5, 5, 5, 3))
-    assert_equal(coord_grid(([0, 1], [0, 1], [0, 1]), .5),
-                 np.array([[[[ 0. ,  0. ,  0. ],
-                             [ 0. ,  0. ,  0.5]],
-                            [[ 0. ,  0.5,  0. ],
-                             [ 0. ,  0.5,  0.5]]],
-                           [[[ 0.5,  0. ,  0. ],
-                             [ 0.5,  0. ,  0.5]],
-                            [[ 0.5,  0.5,  0. ],
-                             [ 0.5,  0.5,  0.5]]]]))
 
 #test helpers
 def test_ensure_listlike():
     assert ensure_listlike(None) == []
-
-def test_ensure3d():
-    assert_raises(Exception, ensure_3d, [1])
 
 def test_mkdir_p():
     tempdir = tempfile.mkdtemp()

@@ -28,8 +28,8 @@ or detrending
 
 from ..errors import BadImage
 from .math import simulate_noise
-from .utilities import is_none, ensure_3d, copy_metadata, get_values
-from scipy.signal import detrend
+from .utilities import is_none, copy_metadata, get_values
+from scipy.signal import detrend as dt
 from scipy import fftpack
 import numpy as np
 import xarray as xr
@@ -67,7 +67,7 @@ def detrend(image):
     image : ndarray
        Image with linear trends removed
     '''
-    return copy_metadata(image, detrend(detrend(image, 0), 1))
+    return copy_metadata(image, dt(dt(image, image.dims.index('x')), image.dims.index('y')))
 
 def zero_filter(image):
     '''
