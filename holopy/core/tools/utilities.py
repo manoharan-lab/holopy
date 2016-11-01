@@ -235,6 +235,8 @@ def copy_metadata(old, new, do_coords=True):
         new.name = old.name
         if hasattr(old, 'z') and not hasattr(new, 'z'):
             new.coords['z'] = old.coords['z']
+        if hasattr(old, 'flat') and hasattr(new, 'flat'):
+            new['flat'] = old['flat']
         if do_coords:
             for key, val in old.coords.items():
                 if key not in new.coords:
@@ -244,10 +246,20 @@ def copy_metadata(old, new, do_coords=True):
 def get_values(a):
     return getattr(a, 'values', a)
 
-def flat(a):
+def flat(a, keep_xy=True):
     if hasattr(a, 'flat'):
+        # TODO handle case where we have flat but not xyz
         return a
-    return a.stack(flat=a.dims)
+    if hasattr(a, 'x') and hasattr(a, 'y') and keep_xy:
+        a['x_orig'] = a.x
+        a['y_orig'] = a.y
+        # TODO: remove *_orig coords from a or avoid adding them
+        f = a.stack(flat=a.dims)
+        del a['x_orig']
+        del a['y_orig']
+        return f.rename({'x_orig': 'x', 'y_orig': 'y'})
+    else:
+        return a.stack(flat=a.dims)
 
 def from_flat(a):
     if hasattr(a, 'flat'):
