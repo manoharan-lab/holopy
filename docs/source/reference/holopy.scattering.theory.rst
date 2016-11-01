@@ -1,36 +1,53 @@
-theory Package
-==============
+holopy.scattering.theory package
+================================
 
-:mod:`theory` Package
----------------------
+Subpackages
+-----------
 
-.. automodule:: holopy.scattering.theory
-    :members:
-    :show-inheritance:
+.. toctree::
 
-.. autoclass:: holopy.scattering.theory.scatteringtheory.ScatteringTheory
-	       :members:
-	
-:mod:`mie` Module
------------------
+    holopy.scattering.theory.mie_f
 
-.. automodule:: holopy.scattering.theory.mie
-    :members:
-    :inherited-members:
-    :show-inheritance:
+Submodules
+----------
 
-:mod:`multisphere` Module
--------------------------
-
-.. automodule:: holopy.scattering.theory.multisphere
-    :members:
-    :inherited-members:
-    :show-inheritance:
-
-:mod:`dda` Module
------------------
+holopy.scattering.theory.dda module
+-----------------------------------
 
 .. automodule:: holopy.scattering.theory.dda
     :members:
-    :inherited-members:
+    :undoc-members:
+    :show-inheritance:
+
+holopy.scattering.theory.mie module
+-----------------------------------
+
+.. automodule:: holopy.scattering.theory.mie
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+holopy.scattering.theory.multisphere module
+-------------------------------------------
+
+.. automodule:: holopy.scattering.theory.multisphere
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+holopy.scattering.theory.scatteringtheory module
+------------------------------------------------
+
+.. automodule:: holopy.scattering.theory.scatteringtheory
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: holopy.scattering.theory
+    :members:
+    :undoc-members:
     :show-inheritance:
