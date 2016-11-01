@@ -51,15 +51,6 @@ class NoiseModel(BaseModel):
         else:
             return lnprior + self.lnlike(par_vals, data)
 
-    
-
-    def _optics_scatterer(self, pars, schema):
-        optics = self.get_pars(['medium_index', 'illum_wavelen', 'illum_polarization'], pars, schema)
-        scatterer = self.scatterer.make_from(pars)
-        return optics, scatterer
-
-
-
     def _fields(self, pars, schema):
         def get_par(name):
             return pars.pop(name, self.par(name, schema))

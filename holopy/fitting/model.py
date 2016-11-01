@@ -23,14 +23,14 @@ Classes for defining models of scattering for fitting
 """
 
 
+from copy import copy
 import numpy as np
 import inspect
 from os.path import commonprefix
 from .errors import ParameterSpecificationError
 from ..core.holopy_object import HoloPyObject
 from .parameter import Parameter, ComplexParameter
-from holopy.core.tools import ensure_listlike
-
+from holopy.core.tools import ensure_listlike, get_values
 
 class Parametrization(HoloPyObject):
     """
@@ -230,19 +230,21 @@ class BaseModel(HoloPyObject):
     def parameters(self):
         return self._parameters
 
-    def par(self, name, schema=None):
+    def par(self, name, schema=None, default=None):
         if hasattr(self, name) and getattr(self, name) is not None:
             return getattr(self, name)
         if schema is not None and hasattr(schema, name):
             return getattr(schema, name)
+        if default is not None:
+            return default
 
         if schema is not None:
             schematxt = " or Schema"
 
         raise ValueError("Cannot find value for {} in Model{}".format(name, schema))
 
-    def get_par(self, name, pars, schema=None):
-        return pars.pop(name, self.par(name, schema))
+    def get_par(self, name, pars, schema=None, default=None):
+        return pars.pop(name, self.par(name, schema, default=default))
 
     def get_pars(self, names, pars, schema=None):
         r = {}
@@ -256,6 +258,11 @@ class BaseModel(HoloPyObject):
             if par.name is None:
                 par.name = name
             self._parameters.append(par)
+
+    def _optics_scatterer(self, pars, schema):
+        optics = self.get_pars(['medium_index', 'illum_wavelen', 'illum_polarization'], pars, schema)
+        scatterer = self.scatterer.make_from(pars)
+        return optics, scatterer
 
 
 
@@ -280,7 +287,7 @@ class Model(BaseModel):
     """
     def __init__(self, scatterer, calc_func, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', alpha=None,
                  use_random_fraction=None, constraints=[]):
-        super(Model, self).__init__(scatterer, medium_index, illum_wavelen, illum_polarization, theory)
+        super().__init__(scatterer, medium_index, illum_wavelen, illum_polarization, theory)
         self.calc_func = calc_func
 
         self.use_random_fraction = use_random_fraction
@@ -314,5 +321,24 @@ class Model(BaseModel):
         else:
             alpha = self.alpha
         return self.theory(self.scatterer.guess, schema, alpha)
+
+    def _calc(self, pars, schema):
+        pars = copy(pars)
+        alpha = self.get_par(pars=pars, name='alpha', default=1.0)
+        optics, scatterer = self._optics_scatterer(pars, schema)
+
+        valid = True
+        for constraint in self.constraints:
+            valid = valid and constraint(s)
+        if not valid:
+            return np.ones_like(schema) * np.inf
+
+        try:
+            return self.calc_func(schema=schema, scatterer=scatterer, **optics, scaling=alpha, theory=self.theory)
+        except:
+            return np.ones_like(schema) * np.inf
+
+    def residual(self, pars, data):
+        return get_values(self._calc(pars, data)) - get_values(data)
 
     # TODO: Allow a layer on top of theory to do things like moving sphere

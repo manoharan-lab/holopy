@@ -46,8 +46,6 @@ def to_vector(c):
 
 def to_spherical(a, origin, wavevec=None, include_r=True):
     xo, yo, zo = origin
-    if hasattr(a, 'flat'):
-        a = from_flat(a)
     x, y, z = a.x - xo, a.y - yo, zo - a.z
     theta = arctan2(np.sqrt(x**2 + y**2), z)
     phi = arctan2(y, x)

@@ -30,7 +30,7 @@ from warnings import warn
 from holopy.core.holopy_object import HoloPyObject
 from ..scatterer import Scatterers, Sphere
 from ..errors import TheoryNotCompatibleError, MissingParameter
-from ...core.metadata import kr_theta_phi_flat, from_flat, vector, theta_phi_flat, optical_parameters
+from ...core.metadata import kr_theta_phi_flat, vector, theta_phi_flat, optical_parameters
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -72,7 +72,7 @@ class ScatteringTheory(HoloPyObject):
             field = xr.DataArray(field, dims=['flat', vector], coords={'flat': positions.flat, vector: ['x', 'y', 'z']}, attrs=schema.attrs)
             if hasattr(schema, 'flat'):
                 return field
-            return from_flat(field)
+            return field
 
 
         # See if we can handle the scatterer in one step
@@ -122,7 +122,7 @@ class ScatteringTheory(HoloPyObject):
             dims = ['flat'] + dims
         else:
             dims = ['point'] + dims
-        return from_flat(xr.DataArray(scat_matrs, dims=dims, coords=d, attrs=schema.attrs))
+        return xr.DataArray(scat_matrs, dims=dims, coords=d, attrs=schema.attrs)
 
 
 # Subclass of scattering theory, overrides functions that depend on array
