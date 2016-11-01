@@ -33,3 +33,4 @@ from .math import cartesian_distance, rotate_points, rotation_matrix,simulate_no
 from .utilities import _ensure_array, ensure_listlike, _ensure_pair, mkdir_p
 from .utilities import dict_without, is_none, updated,  get_values
 from .utilities import copy_metadata, flat, from_flat, make_subset_data
+from .math import chisq, rsq

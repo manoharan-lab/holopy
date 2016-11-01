@@ -34,7 +34,7 @@ from ..scatterer import Sphere, Scatterers
 from .scatteringtheory import FortranTheory
 from holopy.scattering.theory.mie_f import mieangfuncs, miescatlib
 from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
-from holopy.core.metadata import theta_phi_flat, from_flat
+from holopy.core.metadata import theta_phi_flat
 import copy
 
 

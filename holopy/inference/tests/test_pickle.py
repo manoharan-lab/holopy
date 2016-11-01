@@ -20,7 +20,6 @@ from holopy.core.tests.common import assert_pickle_roundtrip, get_example_data
 
 from holopy.inference.mcmc import Emcee
 from holopy.inference.noise_model import AlphaModel
-from holopy.inference.timeseries import TimeIndependent, TimeSeriesAlphaModel
 from holopy.inference import prior
 from holopy.scattering.scatterer import Sphere
 from holopy.scattering.theory import Mie

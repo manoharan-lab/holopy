@@ -127,3 +127,9 @@ def simulate_noise(shape, mean=.1, smoothing=.01, poisson_lambda=1000):
     raw_poisson = np.random.poisson(poisson_lambda, shape)
     smoothed = gaussian_filter(raw_poisson, np.array(shape)*smoothing)
     return smoothed/smoothed.mean() * mean
+
+def chisq(fit, data):
+    return float((((fit-data))**2).sum() / fit.size)
+
+def rsq(fit, data):
+    return float(1 - ((data - fit)**2).sum()/((data - data.mean())**2).sum())
