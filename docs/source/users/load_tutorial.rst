@@ -59,7 +59,7 @@ improve the image a lot.
 ..  plot:: pyplots/show_bg_holo.py
 
 If you are worried about stray light in your optical train, you should 
-also subtract a dark-field image of your sample, recorded with no laser illumination.
+also capture a dark-field image of your sample, recorded with no laser illumination.
 
 ..  testcode::
 
@@ -137,7 +137,7 @@ If you would like to save your hologram to an image format for easy visualizatio
 
     hp.save_image('outfilename', holo)
 
-Additional options allow you to control how image intensity is scaled. Images saved as .tif (and other?)
+Additional options allow you to control how image intensity is scaled. Images saved as .tif 
 formats will still contain metadata, which will be retrieved if you reload with :func:`.load`, but not :func:`.image_load`
 
 ..  note::

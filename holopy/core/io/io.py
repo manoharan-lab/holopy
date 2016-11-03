@@ -32,8 +32,8 @@ import xarray as xr
 from copy import deepcopy
 
 from holopy.core.io import serialize
-from holopy.core.metadata import make_coords, Image, ImageSchema, get_spacing, update_metadata
-from holopy.core.tools import is_none
+from holopy.core.metadata import make_coords, Image, ImageSchema, get_spacing, update_metadata,to_vector
+from holopy.core.tools import is_none, _ensure_array, dict_without
 from holopy.core.errors import NoMetadata, BadImage
 
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
@@ -83,12 +83,20 @@ def load(inf, lazy=False):
         return loaded
     except (serialize.ReaderError, UnicodeDecodeError):
         if os.path.splitext(inf)[1] in tiflist:
-            im = load_image(inf)
-            meta = yaml.load(pilimage.open(inf).tag[270][0])
-            if meta['spacing'] is None:
+            try:
+                meta = yaml.load(pilimage.open(inf).tag[270][0])
+                if meta['spacing'] is None:
+                    raise NoMetadata
+                else:
+                    im = load_image(inf,meta['spacing'],name = meta['name'])
+                    for attr in dict_without(meta,['spacing','index','name']):
+                        if meta['index'][attr]:
+                            im.attrs[attr]=to_vector(meta[attr])
+                        else:
+                            im.attrs[attr]=meta[attr]
+                    return im
+            except KeyError:
                 raise NoMetadata
-            else:
-                return im.like_me(**dict(meta))
         else:
             raise NoMetadata
 
@@ -112,13 +120,6 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
 
     """
     pi = pilimage.open(inf)
-    attrs = {}
-    if hasattr(pi, 'ifd') and 270 in pi.ifd:
-        d = yaml.load(pi.ifd[270][0])
-        if 'attrs' in d:
-            attrs = d['attrs']
-        if 'spacing' in d and spacing is None:
-            spacing = d['spacing']
     arr=fromimage(pi).astype('d')
 
     # pick out only one channel of a color image
@@ -136,7 +137,7 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
 
     if name is None:
         name = inf
-    out = xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing), name=name, attrs=attrs)
+    out = xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing), name=name)
 
     return update_metadata(out, medium_index=medium_index,
                     illum_wavelen=illum_wavelen,
@@ -204,13 +205,23 @@ def save_image(filename, im, scaling='auto', depth=8):
         some kind of scaling.
 
     """
-    d = {}
-    d['attrs'] = im.attrs
-    d['spacing'] = get_spacing(im)
 
     # if we don't have an extension, default to tif
     if os.path.splitext(filename)[1] is '':
         filename += '.tif'
+    
+    metadat=False
+    if os.path.splitext(filename)[1] in tiflist:
+        metadat = {'index':{},'spacing':get_spacing(im),'name':im.name}
+        for attr in im.attrs:
+            if isinstance(im.attrs[attr], xr.DataArray):
+                metadat['index'][attr]=True
+                metadat[attr]=_ensure_array(im.attrs[attr])
+            else:
+                metadat['index'][attr]=False
+                metadat[attr]=im.attrs[attr]
+        tiffinfo = ifd2()
+        tiffinfo[270] = yaml.dump(metadat) #This edits the 'imagedescription' field of the tiff metadata
 
     if scaling is not None:
         if scaling is 'auto':
@@ -238,10 +249,8 @@ def save_image(filename, im, scaling='auto', depth=8):
         if im.max() <= 1:
             im = im * ((2**depth)-1) + .499999
             im = im.astype(typestr)
-    if os.path.splitext(filename)[1] in tiflist:
-        metadat = yaml.dump(d)
-        tiffinfo = ifd2()
-        tiffinfo[270] = metadat #This edits the 'imagedescription' field of the tiff metadata
+
+    if metadat:
         pilimage.fromarray(im.values).save(filename, tiffinfo=tiffinfo)
     else:
         pilimage.fromarray(im.values).save(filename)
