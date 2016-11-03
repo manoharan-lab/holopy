@@ -25,18 +25,16 @@ import os
 import glob
 import yaml
 from warnings import warn
-import numpy as np
-from io import IOBase
-from scipy.misc import fromimage, bytescale
+from scipy.misc import fromimage
 from PIL import Image as pilimage
 from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 import xarray as xr
+from copy import deepcopy
 
 from holopy.core.io import serialize
-
-from holopy.core.metadata import make_attrs, make_coords, Image, get_spacing
-from holopy.core.tools import _ensure_array, updated, is_none
-from holopy.core.errors import NoMetadata
+from holopy.core.metadata import make_coords, Image, ImageSchema, get_spacing, update_metadata
+from holopy.core.tools import is_none
+from holopy.core.errors import NoMetadata, BadImage
 
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
 
@@ -94,7 +92,7 @@ def load(inf, lazy=False):
         else:
             raise NoMetadata
 
-def load_image(inf, spacing=None, illum_wavelen=None, medium_index=None, illum_polarization=None, normals=None, channel=None, name=None):
+def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, channel=None, name=None):
     """
     Load data or results
 
@@ -131,15 +129,18 @@ def load_image(inf, spacing=None, illum_wavelen=None, medium_index=None, illum_p
         else:
             arr = arr[:, :, channel]
     elif channel is not None and channel > 0:
-        warnings.warn("Warning: not a color image (channel number ignored)")
+        warn("Warning: not a color image (channel number ignored)")
 
-    attrs = updated(attrs, medium_index=medium_index,
-                    illum_wavelen=illum_wavelen,
-                    illum_polarization=illum_polarization, normals=normals)
+    if is_none(spacing):
+        spacing=1
 
     if name is None:
         name = inf
-    return xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing), name=name, attrs=make_attrs(**attrs))
+    out = xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing), name=name, attrs=attrs)
+
+    return update_metadata(out, medium_index=medium_index,
+                    illum_wavelen=illum_wavelen,
+                    illum_polarization=illum_polarization, normals=normals)
 
 def save(outf, obj):
     """
@@ -254,7 +255,7 @@ def get_example_data_path(name):
 def get_example_data(name):
     return load(get_example_data_path(name))
 
-def load_average(filepath, refimg=None, wavelen=None, index=None, polarization=None, image_glob='*.tif'):
+def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, image_glob='*.tif'):
     """
     Average a set of images (usually as a background)
 
@@ -283,8 +284,29 @@ def load_average(filepath, refimg=None, wavelen=None, index=None, polarization=N
     if len(filepath) < 1:
         raise LoadError(filepath, "No images found")
 
-    accumulator = load_image(filepath[0], refimg.spacing, wavelen, index, polarization)
+    if hasattr(refimg,'spacing') and is_none(spacing):
+        spacing = refimg.spacing
+    
+    accumulator = load_image(filepath[0],spacing)
     for image in filepath[1:]:
-        accumulator += load_image(image)
+        accumulator += load_image(image, spacing)
+    accumulator /= len(filepath)
 
-    return accumulator/len(filepath)
+    if not is_none(refimg):
+        accumulator = update_metadata(accumulator, refimg.medium_index, refimg.illum_wavelen, refimg.illum_polarization, refimg.normals)    
+    return update_metadata(accumulator, medium_index, illum_wavelen, illum_polarization, normals)
+
+def bg_correct(raw, bg, df=None):
+
+    if is_none(df):
+        df = ImageSchema(raw.shape,get_spacing(raw))
+
+    if not (raw.shape == bg.shape == df.shape and list(get_spacing(raw)) == list(get_spacing(bg)) == list(get_spacing(df))):
+        raise BadImage("raw and background images must have the same shape and spacing")
+
+    raw = deepcopy(raw)
+    bg = deepcopy(bg)
+    raw -= df
+    bg -= df
+    raw /= bg
+    return raw
