@@ -29,11 +29,10 @@ from scipy.misc import fromimage
 from PIL import Image as pilimage
 from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 import xarray as xr
-from copy import deepcopy
 
 from holopy.core.io import serialize
-from holopy.core.metadata import make_coords, Image, ImageSchema, get_spacing, update_metadata,to_vector
-from holopy.core.tools import is_none, _ensure_array, dict_without
+from holopy.core.metadata import make_coords, Image, ImageSchema, get_spacing, update_metadata, to_vector
+from holopy.core.tools import is_none, _ensure_array, dict_without, zero_filter
 from holopy.core.errors import NoMetadata, BadImage
 
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
@@ -216,7 +215,7 @@ def save_image(filename, im, scaling='auto', depth=8):
         for attr in im.attrs:
             if isinstance(im.attrs[attr], xr.DataArray):
                 metadat['index'][attr]=True
-                metadat[attr]=_ensure_array(im.attrs[attr])
+                metadat[attr]=list(_ensure_array(im.attrs[attr]))
             else:
                 metadat['index'][attr]=False
                 metadat[attr]=im.attrs[attr]
@@ -313,9 +312,5 @@ def bg_correct(raw, bg, df=None):
     if not (raw.shape == bg.shape == df.shape and list(get_spacing(raw)) == list(get_spacing(bg)) == list(get_spacing(df))):
         raise BadImage("raw and background images must have the same shape and spacing")
 
-    raw = deepcopy(raw)
-    bg = deepcopy(bg)
-    raw -= df
-    bg -= df
-    raw /= bg
-    return raw
+    holo = (raw - df) / zero_filter(bg - df)
+    return copy_metadata(raw, holo)

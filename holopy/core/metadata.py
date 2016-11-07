@@ -27,7 +27,7 @@ import numpy as np
 import xarray as xr
 from xarray.ufuncs import sqrt, arctan2
 from warnings import warn
-import copy
+from copy import copy
 from .tools import _ensure_pair, _ensure_array, is_none, flat, from_flat, updated
 
 
@@ -89,16 +89,17 @@ def make_coords(shape, spacing, z=0):
 
 def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None):
     attrlist = {'medium_index': medium_index, 'illum_wavelen': illum_wavelen, 'illum_polarization': to_vector(illum_polarization), 'normals': to_vector(normals)}
-    a.attrs = updated(a.attrs, attrlist)
+    b = copy(a)    
+    b.attrs = updated(b.attrs, attrlist)
 
     for attr in attrlist:
-        if not hasattr(a, attr):
-            a.attrs[attr]=None
+        if not hasattr(b, attr):
+            b.attrs[attr]=None
 
-    if is_none(a.normals):
-        a.attrs['normals']=to_vector((0,0,1))
+    if is_none(b.normals):
+        b.attrs['normals']=to_vector((0,0,1))
 
-    return a
+    return b
 
 def angles_list(theta, phi, medium_index, illum_wavelen, illum_polarization, normals=(0, 0, 1)):
     # This is a hack that gets the data into a format that we can use
