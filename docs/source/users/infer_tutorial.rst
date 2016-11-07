@@ -1,0 +1,1 @@
+.. _infer_tutorial

@@ -24,6 +24,7 @@ New custom display functions for holograms and reconstructions.
 
 
 import numpy as np
+from holopy.core.metadata import get_spacing
 
 class plotter:
     def __init__(self, im, i=0, j=0, axis_names = ('x', 'y')):
@@ -59,10 +60,8 @@ class plotter:
         self._title()
 
         #to show non-square pixels correctly
-        if  hasattr(im, 'spacing') and im.spacing is not None:
-            ratio = str(im.spacing[0]/im.spacing[1])
-        else:
-            ratio = '1.0'
+        spacing=get_spacing(im)
+        ratio=spacing[0]/spacing[1]
 
         if self.plot is not None:
             self.plot.set_array(im)

@@ -27,8 +27,8 @@ import numpy as np
 import xarray as xr
 from xarray.ufuncs import sqrt, arctan2
 from warnings import warn
-import copy
-from .tools import _ensure_pair, _ensure_array, is_none, flat, from_flat
+from copy import copy
+from .tools import _ensure_pair, _ensure_array, is_none, flat, from_flat, updated
 
 
 vector = 'vector'
@@ -62,7 +62,6 @@ def to_spherical(a, origin, wavevec=None, include_r=True):
     else:
         return xr.DataArray(a, coords={'theta': theta, 'phi': phi, 'x': a.x, 'y': a.y})
 
-
 def r_theta_phi_flat(a, origin):
     f = flat(to_spherical(a, origin))
     return f
@@ -88,15 +87,23 @@ def make_coords(shape, spacing, z=0):
         spacing = np.repeat(spacing, 2)
     return {'x': np.arange(shape[0])*spacing[0], 'y': np.arange(shape[1])*spacing[1], 'z': 0}
 
-def make_attrs(medium_index, illum_wavelen, illum_polarization, normals=None):
-    if is_none(normals):
-        normals = (0, 0, 1)
-    return {'medium_index': medium_index, 'illum_wavelen': illum_wavelen, 'illum_polarization': to_vector(illum_polarization), 'normals': to_vector(normals)}
+def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None):
+    attrlist = {'medium_index': medium_index, 'illum_wavelen': illum_wavelen, 'illum_polarization': to_vector(illum_polarization), 'normals': to_vector(normals)}
+    b = copy(a)    
+    b.attrs = updated(b.attrs, attrlist)
+
+    for attr in attrlist:
+        if not hasattr(b, attr):
+            b.attrs[attr]=None
+
+    if is_none(b.normals):
+        b.attrs['normals']=to_vector((0,0,1))
+
+    return b
 
 def angles_list(theta, phi, medium_index, illum_wavelen, illum_polarization, normals=(0, 0, 1)):
     # This is a hack that gets the data into a format that we can use
     # elsewhere, but feels like an abuse of xarray, it would be nice to replace this with something more ideomatic
-    d = make_attrs(medium_index, illum_wavelen, illum_polarization, normals)
 
     theta = _ensure_array(theta)
     phi = _ensure_array(phi)
@@ -105,9 +112,8 @@ def angles_list(theta, phi, medium_index, illum_wavelen, illum_polarization, nor
     elif len(phi) == 1:
         phi = np.repeat(phi,len(theta))
 
-    d['theta'] = theta
-    d['phi'] = phi
-    return xr.DataArray(np.zeros(len(theta)), dims=['point'], attrs=d)
+    out = xr.DataArray(np.zeros(len(theta)), dims=['point'], attrs={'theta':theta, 'phi':phi})
+    return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
 
 def ImageSchema(shape, spacing, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=(0, 0, 1)):
     if np.isscalar(shape):
@@ -120,7 +126,8 @@ def Image(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polari
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
 
-    return xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing), attrs=make_attrs(medium_index, illum_wavelen, illum_polarization, normals))
+    out = xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing))
+    return update_metadata(out, medium_index, illum_wavelen, illum_polarization,normals)    
 
 def get_med_wavelen(a):
     return a.illum_wavelen/a.medium_index

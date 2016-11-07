@@ -1,7 +1,8 @@
 .. _load_tutorial:
 
+************
 Loading Data
-============
+************
 
 HoloPy can work with any kind of image data, but we use it for digital
 holograms, so our tutorials will focus mostly on hologram data.
@@ -29,44 +30,15 @@ The most important line actually loads the image so that you can work with it:
     
     raw_holo = hp.load_image(imagepath, spacing = 0.0851)
 
-HoloPy can import many different image formats, including TIFF files,
-numpy data format files, and any image format that can be handled by `Pillow
+HoloPy can import any image format that can be handled by `Pillow
 <http://pillow.readthedocs.io/en/3.3.x/handbook/image-file-formats.html>`_.
  
 The spacing argument tells holopy about the scale of your image. Here, we had 
 previously measured that each pixel is a square with side length 0.0851 microns.
 You can also load an image without specifying a spacing value if you just want
-to look at it, but most holopy calculations will fail on an image without spacing. 
+to look at it, but most holopy calculations will give erroneous results on such an image. 
 
 The last line simply displays the loaded image on your screen. 
-
-.. note ::
-   
-  If you know numpy, our :class:`.Image` is a `numpy
-  <http://docs.scipy.org/doc/numpy/reference/arrays.html>`_ array
-  subclass, so you can use all the math numpy provides.  For
-  example:
-    
-  ..    testcode::
-    
-        import scipy.ndimage
-        import scipy.fftpack
-        filtered_image = scipy.ndimage.uniform_filter(raw_holo, [10,10])
-        ffted_image = scipy.fftpack.fft2(raw_holo)
-
-  ..    testcode::
-        :hide:
-
-        print(filtered_image[0,0])
-        print(ffted_image[0,0])
-
-  
-..  testoutput::
-    :hide:
-        
-    99.04
-    (36600582+0j)
-
 
 Correcting Noisy Images
 -----------------------
@@ -81,25 +53,25 @@ improve the image a lot.
 
     bgpath = get_example_data_path('bg01.jpg')
     bg = hp.load_image(bgpath, spacing = 0.0851)
-    holo = raw_holo / bg
+    holo = hp.core.bg_correct(raw_holo, bg)
     hp.show(holo)
 
 ..  plot:: pyplots/show_bg_holo.py
 
 If you are worried about stray light in your optical train, you should 
-also subtract a dark-field image of your sample, recorded with no laser illumination.
+also capture a dark-field image of your sample, recorded with no laser illumination.
 
 ..  testcode::
 
     dfpath = get_example_data_path('df01.jpg')
     df = hp.load_image(dfpath, spacing = 0.0851)
-    holo = (raw_holo - df) / (bg - df)
+    holo = hp.core.bg_correct(raw_holo, bg, df)
     hp.show(holo)
 
 ..  testcode::
     :hide:
     
-    print(holo[0,0])
+    print(holo.values[0,0])
 
 ..  testoutput::
     :hide:
@@ -116,21 +88,19 @@ Recorded holograms are a product of the specific experimental setup that produce
 The image only makes sense when considered with information about the experimental 
 conditions in mind. When you load an image, you have the option to specify some of this
 information in the form of :dfn:`metadata` that is associated with the image. In fact, we 
-already saw an example of this when we specified image spacing above. The sample in our
+already saw an example of this when we specified image spacing earlier. The sample in our
 image was immersed in water, which has a refractive index of 1.33. It was illuminated by
 a red laser with wavelength of 660 nm and polarization in the x-direction. We can write:
 
 ..  testcode::
 
-    holo.index = 1.33
-    holo.wavelen = 0.660
-    holo.polarization = (1.0, 0.0)
+    holo=hp.core.update_metadata(holo, medium_index = 1.33, illum_wavelen = 0.660, illum_polarization = (1,0))
 
 Alternatively, we can specify some or all of these parameters immediately when loading the image:
 
 ..  testcode::
 
-    raw_holo = hp.load_image(imagepath, index = 1.33, wavelen = 0.660, spacing = 0.0851)
+    raw_holo = hp.load_image(imagepath, medium_index = 1.33, illum_wavelen = 0.660, spacing = 0.0851)
 
 .. note::
     Spacing and wavelength must both be written in the same units - microns in the example
@@ -140,11 +110,13 @@ Alternatively, we can specify some or all of these parameters immediately when l
 ..  testcode::
     :hide:
     
-    print(raw_holo.index-holo.wavelen)
+    print(holo.medium_index-holo.illum_wavelen)
+    print(raw_holo.medium_index-raw_holo.illum_wavelen)
 
 ..  testoutput::
     :hide:
     
+    0.67
     0.67
 
 Saving and Reloading Holograms
@@ -165,7 +137,7 @@ If you would like to save your hologram to an image format for easy visualizatio
 
     hp.save_image('outfilename', holo)
 
-Additional options allow you to control how image intensity is scaled. Images saved as .tif (and other?)
+Additional options allow you to control how image intensity is scaled. Images saved as .tif 
 formats will still contain metadata, which will be retrieved if you reload with :func:`.load`, but not :func:`.image_load`
 
 ..  note::

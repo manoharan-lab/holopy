@@ -134,7 +134,8 @@ def copy_metadata(old, new, do_coords=True):
             raise ValueError("Coordinate {} does not appear to have a coresponding coordinate in {}".format(oldkey, new))
 
     if hasattr(old, 'attrs') and hasattr(old, 'name') and hasattr(old, 'coords'):
-        if not hasattr(new,'attrs'):
+        if not hasattr(new,'coords'):
+            #new is a numpy array, not xarray
             new=xr.DataArray(new, dims=['x', 'y'])
         new.attrs = old.attrs
         new.name = old.name

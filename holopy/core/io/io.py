@@ -25,18 +25,15 @@ import os
 import glob
 import yaml
 from warnings import warn
-import numpy as np
-from io import IOBase
-from scipy.misc import fromimage, bytescale
+from scipy.misc import fromimage
 from PIL import Image as pilimage
 from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 import xarray as xr
 
 from holopy.core.io import serialize
-
-from holopy.core.metadata import make_attrs, make_coords, Image, get_spacing
-from holopy.core.tools import _ensure_array, updated, is_none
-from holopy.core.errors import NoMetadata
+from holopy.core.metadata import make_coords, Image, ImageSchema, get_spacing, update_metadata, to_vector
+from holopy.core.tools import is_none, _ensure_array, dict_without, zero_filter
+from holopy.core.errors import NoMetadata, BadImage
 
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
 
@@ -85,16 +82,24 @@ def load(inf, lazy=False):
         return loaded
     except (serialize.ReaderError, UnicodeDecodeError):
         if os.path.splitext(inf)[1] in tiflist:
-            im = load_image(inf)
-            meta = yaml.load(pilimage.open(inf).tag[270][0])
-            if meta['spacing'] is None:
+            try:
+                meta = yaml.load(pilimage.open(inf).tag[270][0])
+                if meta['spacing'] is None:
+                    raise NoMetadata
+                else:
+                    im = load_image(inf,meta['spacing'],name = meta['name'])
+                    for attr in dict_without(meta,['spacing','index','name']):
+                        if meta['index'][attr]:
+                            im.attrs[attr]=to_vector(meta[attr])
+                        else:
+                            im.attrs[attr]=meta[attr]
+                    return im
+            except KeyError:
                 raise NoMetadata
-            else:
-                return im.like_me(**dict(meta))
         else:
             raise NoMetadata
 
-def load_image(inf, spacing=None, illum_wavelen=None, medium_index=None, illum_polarization=None, normals=None, channel=None, name=None):
+def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, channel=None, name=None):
     """
     Load data or results
 
@@ -114,13 +119,6 @@ def load_image(inf, spacing=None, illum_wavelen=None, medium_index=None, illum_p
 
     """
     pi = pilimage.open(inf)
-    attrs = {}
-    if hasattr(pi, 'ifd') and 270 in pi.ifd:
-        d = yaml.load(pi.ifd[270][0])
-        if 'attrs' in d:
-            attrs = d['attrs']
-        if 'spacing' in d and spacing is None:
-            spacing = d['spacing']
     arr=fromimage(pi).astype('d')
 
     # pick out only one channel of a color image
@@ -131,15 +129,18 @@ def load_image(inf, spacing=None, illum_wavelen=None, medium_index=None, illum_p
         else:
             arr = arr[:, :, channel]
     elif channel is not None and channel > 0:
-        warnings.warn("Warning: not a color image (channel number ignored)")
+        warn("Warning: not a color image (channel number ignored)")
 
-    attrs = updated(attrs, medium_index=medium_index,
-                    illum_wavelen=illum_wavelen,
-                    illum_polarization=illum_polarization, normals=normals)
+    if is_none(spacing):
+        spacing=1
 
     if name is None:
         name = inf
-    return xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing), name=name, attrs=make_attrs(**attrs))
+    out = xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing), name=name)
+
+    return update_metadata(out, medium_index=medium_index,
+                    illum_wavelen=illum_wavelen,
+                    illum_polarization=illum_polarization, normals=normals)
 
 def save(outf, obj):
     """
@@ -203,13 +204,23 @@ def save_image(filename, im, scaling='auto', depth=8):
         some kind of scaling.
 
     """
-    d = {}
-    d['attrs'] = im.attrs
-    d['spacing'] = get_spacing(im)
 
     # if we don't have an extension, default to tif
     if os.path.splitext(filename)[1] is '':
         filename += '.tif'
+    
+    metadat=False
+    if os.path.splitext(filename)[1] in tiflist:
+        metadat = {'index':{},'spacing':get_spacing(im),'name':im.name}
+        for attr in im.attrs:
+            if isinstance(im.attrs[attr], xr.DataArray):
+                metadat['index'][attr]=True
+                metadat[attr]=list(_ensure_array(im.attrs[attr]))
+            else:
+                metadat['index'][attr]=False
+                metadat[attr]=im.attrs[attr]
+        tiffinfo = ifd2()
+        tiffinfo[270] = yaml.dump(metadat) #This edits the 'imagedescription' field of the tiff metadata
 
     if scaling is not None:
         if scaling is 'auto':
@@ -237,10 +248,8 @@ def save_image(filename, im, scaling='auto', depth=8):
         if im.max() <= 1:
             im = im * ((2**depth)-1) + .499999
             im = im.astype(typestr)
-    if os.path.splitext(filename)[1] in tiflist:
-        metadat = yaml.dump(d)
-        tiffinfo = ifd2()
-        tiffinfo[270] = metadat #This edits the 'imagedescription' field of the tiff metadata
+
+    if metadat:
         pilimage.fromarray(im.values).save(filename, tiffinfo=tiffinfo)
     else:
         pilimage.fromarray(im.values).save(filename)
@@ -254,7 +263,7 @@ def get_example_data_path(name):
 def get_example_data(name):
     return load(get_example_data_path(name))
 
-def load_average(filepath, refimg=None, wavelen=None, index=None, polarization=None, image_glob='*.tif'):
+def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, image_glob='*.tif'):
     """
     Average a set of images (usually as a background)
 
@@ -283,8 +292,25 @@ def load_average(filepath, refimg=None, wavelen=None, index=None, polarization=N
     if len(filepath) < 1:
         raise LoadError(filepath, "No images found")
 
-    accumulator = load_image(filepath[0], refimg.spacing, wavelen, index, polarization)
+    if hasattr(refimg,'spacing') and is_none(spacing):
+        spacing = refimg.spacing
+    
+    accumulator = load_image(filepath[0],spacing)
     for image in filepath[1:]:
-        accumulator += load_image(image)
+        accumulator += load_image(image, spacing)
+    accumulator /= len(filepath)
 
-    return accumulator/len(filepath)
+    if not is_none(refimg):
+        accumulator = update_metadata(accumulator, refimg.medium_index, refimg.illum_wavelen, refimg.illum_polarization, refimg.normals)    
+    return update_metadata(accumulator, medium_index, illum_wavelen, illum_polarization, normals)
+
+def bg_correct(raw, bg, df=None):
+
+    if is_none(df):
+        df = ImageSchema(raw.shape,get_spacing(raw))
+
+    if not (raw.shape == bg.shape == df.shape and list(get_spacing(raw)) == list(get_spacing(bg)) == list(get_spacing(df))):
+        raise BadImage("raw and background images must have the same shape and spacing")
+
+    holo = (raw - df) / zero_filter(bg - df)
+    return copy_metadata(raw, holo)
