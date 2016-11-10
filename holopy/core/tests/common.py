@@ -36,21 +36,6 @@ from ..utils import _ensure_array
 import warnings
 warnings.simplefilter("error")
 
-def angles_list(theta, phi, medium_index, illum_wavelen, illum_polarization, normals=(0, 0, 1)):
-    # This is a hack that gets the data into a format that we can use
-    # elsewhere, but feels like an abuse of xarray, it would be nice to replace this with something more ideomatic
-
-    theta = _ensure_array(theta)
-    phi = _ensure_array(phi)
-    if len(theta) == 1:
-        theta = np.repeat(theta,len(phi))
-    elif len(phi) == 1:
-        phi = np.repeat(phi,len(theta))
-
-    out = xr.DataArray(np.zeros(len(theta)), dims=['point'], attrs={'theta':theta, 'phi':phi})
-    return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
-
-
 def assert_read_matches_write(o):
     tempf = tempfile.NamedTemporaryFile(suffix='.h5')
     save(tempf.name, o)
