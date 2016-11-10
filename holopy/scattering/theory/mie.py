@@ -28,7 +28,7 @@ scattered field.
 
 import numpy as np
 import xarray as xr
-from ...core.tools import _ensure_array
+from ...core.utils import _ensure_array
 from ..errors import TheoryNotCompatibleError, InvalidScatterer
 from ..scatterer import Sphere, Scatterers
 from .scatteringtheory import FortranTheory

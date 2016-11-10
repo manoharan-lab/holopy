@@ -25,7 +25,7 @@ Defines a janus sphere as a scattering primitive
 import numpy as np
 from .scatterer import CenteredScatterer, Indicators
 from .sphere import Sphere
-from ...core.tools.math import rotation_matrix
+from ...core.math import rotation_matrix
 
 class JanusSphere(CenteredScatterer):
     def __init__(self, n = None, r = None, rotation = (0, 0), center = None):

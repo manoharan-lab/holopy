@@ -30,7 +30,8 @@ from os.path import commonprefix
 from .errors import ParameterSpecificationError
 from ..core.holopy_object import HoloPyObject
 from .parameter import Parameter, ComplexParameter
-from holopy.core.tools import ensure_listlike, get_values
+from holopy.core.utils import ensure_listlike
+from holopy.core.metadata import get_values
 
 class Parametrization(HoloPyObject):
     """
@@ -334,7 +335,7 @@ class Model(BaseModel):
             return np.ones_like(schema) * np.inf
 
         try:
-            return self.calc_func(schema=schema, scatterer=scatterer, **optics, scaling=alpha, theory=self.theory)
+            return self.calc_func(schema=schema, scatterer=scatterer, scaling=alpha, theory=self.theory, **optics)
         except:
             return np.ones_like(schema) * np.inf
 

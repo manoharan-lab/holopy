@@ -22,7 +22,7 @@ from holopy.core.tests.common import (assert_obj_close,
                                       get_example_data_path,
                                       assert_allclose)
 from holopy.core import load, save, load_image, save_image
-from holopy.core.tools import normalize
+from holopy.core.process import normalize
 from holopy.core.metadata import Image, get_spacing
 import tempfile
 import os
@@ -37,7 +37,6 @@ import yaml
 @attr('fast')
 def test_hologram_io():
     holo = normalize(get_example_data('image0001'))
-
     assert_read_matches_write(holo)
 
 def test_marray_io():
@@ -46,6 +45,7 @@ def test_marray_io():
 
 def test_image_io():
     holo = get_example_data('image0001')
+
     t = tempfile.mkdtemp()
 
     filename = os.path.join(t, 'image0001.tif')
@@ -91,7 +91,6 @@ def test_image_io():
     save(filename, holo)
     loaded = load(filename)
     assert_obj_close(loaded, holo)
-
     shutil.rmtree(t)
 
 # test a number of little prettying up of yaml output that we do for

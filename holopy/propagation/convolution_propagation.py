@@ -27,8 +27,9 @@ Code to propagate objects/waves using scattering models.
 import numpy as np
 import xarray as xr
 from xarray.ufuncs import sqrt
-from ..core.tools import fft, ifft, _ensure_pair, _ensure_array
-from ..core.tools.img_proc import ft_coord
+from ..core.process import fft, ifft
+from ..core.utils import _ensure_pair, _ensure_array
+from ..core.process.fourier import ft_coord
 from ..scattering.errors import MissingParameter
 
 # May eventually want to have this function take a propagation model

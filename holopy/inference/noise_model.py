@@ -56,7 +56,7 @@ class NoiseModel(BaseModel):
             return pars.pop(name, self.par(name, schema))
         optics, scatterer = self._optics_scatterer(pars, schema)
         try:
-            return calc_field(schema, scatterer, **optics, theory=self.theory)
+            return calc_field(schema, scatterer, theory=self.theory, **optics)
         except (MultisphereFailure, InvalidScatterer):
             return -np.inf
 
@@ -87,6 +87,6 @@ class AlphaModel(NoiseModel):
         optics, scatterer = self._optics_scatterer(pars, schema)
 
         try:
-            return calc_holo(schema, scatterer, **optics, theory=self.theory)
+            return calc_holo(schema, scatterer, theory=self.theory, **optics)
         except (MultisphereFailure, InvalidScatterer):
             return -np.inf

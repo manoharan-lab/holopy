@@ -24,7 +24,6 @@ Test fortran-based Mie calculations and python interface.
 
 import os
 import yaml
-import warnings
 
 import numpy as np
 from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
@@ -37,16 +36,13 @@ from ..theory import Mie
 
 from ..errors import TheoryNotCompatibleError, InvalidScatterer
 from ...core import ImageSchema, Image
-from ...core.metadata import optical_parameters, to_vector
-from ...core.tools import subimage
+from ...core.process import subimage
 from .common import verify, sphere, xschema, scaling_alpha, yschema, xpolarization, ypolarization, polarization
 from .common import x, y, z, n, radius, wavelen, index
-from ...core.tests.common import assert_allclose, assert_obj_close
-
-from numpy import array
+from ...core.tests.common import assert_allclose, assert_obj_close, angles_list
 
 from holopy.scattering.calculations import calc_field, calc_holo, calc_intensity, calc_scat_matrix, calc_cross_sections
-from holopy.core.metadata import kr_theta_phi_flat, flat, angles_list
+from holopy.core.metadata import kr_theta_phi_flat, flat, to_vector
 
 @attr('fast')
 def test_single_sphere():
@@ -246,7 +242,7 @@ def test_radiometric():
     location = os.path.split(os.path.abspath(__file__))[0]
     gold_name = os.path.join(location, 'gold',
                              'gold_mie_radiometric')
-    gold = yaml.load(open(gold_name + '.yaml'))
+    gold=yaml.load(open(gold_name + '.yaml'))
     for key, val in gold.items():
         assert_almost_equal(gold[key], val, decimal = 5)
 
@@ -341,9 +337,9 @@ def test_raw_fields():
     index = 1.33
     pol = to_vector((0, 1))
     sch = ImageSchema(3, .1)
-    d = optical_parameters(illum_wavelen=wavelen, medium_index=index, illum_polarization=pol)
-    pos = kr_theta_phi_flat(sch, (10, 10, 5), wavevec=d['medium_wavevec'])
-    rf = Mie()._raw_fields(np.vstack((pos.kr, pos.theta, pos.phi)), sp, **d)
+    wavevec=2*np.pi/(wavelen/index)
+    pos = kr_theta_phi_flat(sch, (10, 10, 5), wavevec=wavevec)
+    rf = Mie()._raw_fields(np.vstack((pos.kr, pos.theta, pos.phi)), sp, medium_wavevec=wavevec, medium_index=index, illum_polarization=pol)
     assert_allclose(rf, [[(0.0015606995428858754-0.0019143174710834162j),
   (-0.0003949071974815011-0.0024154494284017187j),
   (-0.002044525390662322-0.001302770747742109j),

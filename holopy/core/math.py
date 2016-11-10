@@ -15,15 +15,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-"""
-Misc utility functions to make coding more convenient
 
-.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-"""
-
-from numpy import sin, cos
 import numpy as np
-from scipy.ndimage import gaussian_filter
+from numpy import sin, cos
 
 def rotate_points(points, theta, phi, psi):
     points = np.array(points)
@@ -95,41 +89,10 @@ def cartesian_distance(p1, p2):
     p2 = np.array(p2)
     return np.sqrt(np.sum((p1-p2)**2))
 
-
-
-def simulate_noise(shape, mean=.1, smoothing=.01, poisson_lambda=1000):
-    """Create an array of correlated noise. The noise_mean can be controlled independently of
-    the poisson_lambda that controls the shape of the distribution. In
-    general, you can stick with our default of a large poisson_lambda
-    (ie for imaging conditions not near the shot noise limit).
-
-    Defaults are set to give noise vaguely similar to what we tend to
-    see in our holographic imaging.
-
-    Parameters
-    ----------
-    shape : int or array_like of ints
-            shape of noise array
-    smoothing : float
-        Fraction of the image size to smooth by. Should in general be << 1
-    poisson_lambda : float
-        Used to compute the shape of the noise distribution. You can generally
-        leave this at its default value unless you are simulating shot noise
-        limited imaging.
-
-    Returns
-    -------
-    noisy_image : ndarray
-       A copy of the input image with noise added.
-
-    """
-
-    raw_poisson = np.random.poisson(poisson_lambda, shape)
-    smoothed = gaussian_filter(raw_poisson, np.array(shape)*smoothing)
-    return smoothed/smoothed.mean() * mean
-
 def chisq(fit, data):
     return float((((fit-data))**2).sum() / fit.size)
 
 def rsq(fit, data):
     return float(1 - ((data - fit)**2).sum()/((data - data.mean())**2).sum())
+
+

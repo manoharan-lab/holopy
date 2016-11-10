@@ -22,13 +22,11 @@ Test fitting a hologram using nmpfit without any wrapping
 
 import numpy as np
 
-from ...scattering.theory import Mie
-from ...scattering.scatterer import Sphere
+from ...scattering import Mie, Sphere, calc_holo
 from ..third_party import nmpfit
-from ...core.tools import normalize
+from ...core.process import normalize
 from ...core.tests.common import get_example_data, assert_obj_close
-from holopy.scattering.calculations import calc_holo
-from holopy.core.tools import get_values, flat
+from holopy.core.metadata import get_values, flat
 
 # these are the exact values; should correspond to fit results
 # in order: real index, imag index, radius , x, y, z, alpha, fnorm, fit status

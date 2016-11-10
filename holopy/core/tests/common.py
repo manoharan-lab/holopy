@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import numpy as np
 import tempfile
 import os
@@ -24,23 +23,36 @@ import types
 import inspect
 import yaml
 import shutil
-from numpy.testing import assert_equal, assert_almost_equal
+from numpy.testing import assert_equal, assert_almost_equal, assert_allclose
 import pickle
 from collections import OrderedDict
+import xarray as xr
 
-
-from .. import load, save
+from .. import load, save, update_metadata
 from ..io import get_example_data, get_example_data_path
+from ..utils import _ensure_array
 
 # tests should fail if they give warnings
 import warnings
 warnings.simplefilter("error")
 
+def angles_list(theta, phi, medium_index, illum_wavelen, illum_polarization, normals=(0, 0, 1)):
+    # This is a hack that gets the data into a format that we can use
+    # elsewhere, but feels like an abuse of xarray, it would be nice to replace this with something more ideomatic
 
-from numpy.testing import assert_allclose
+    theta = _ensure_array(theta)
+    phi = _ensure_array(phi)
+    if len(theta) == 1:
+        theta = np.repeat(theta,len(phi))
+    elif len(phi) == 1:
+        phi = np.repeat(phi,len(theta))
+
+    out = xr.DataArray(np.zeros(len(theta)), dims=['point'], attrs={'theta':theta, 'phi':phi})
+    return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
+
 
 def assert_read_matches_write(o):
-    tempf = tempfile.NamedTemporaryFile()
+    tempf = tempfile.NamedTemporaryFile(suffix='.h5')
     save(tempf.name, o)
     tempf.flush()
     tempf.seek(0)
@@ -81,7 +93,7 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
 
     if isinstance(actual, dict) and isinstance(desired, dict):
         for key, val in actual.items():
-            if key in ['_id', '_encoding']:
+            if key in ['_id', '_encoding', '_coords']:
                 # these are implementation specific dict keys that we
                 # shouldn't expect to be identical, so ignore them
                 continue

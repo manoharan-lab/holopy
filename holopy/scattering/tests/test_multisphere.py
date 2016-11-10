@@ -35,13 +35,13 @@ from nose.plugins.attrib import attr
 import scipy
 
 from holopy.scattering.calculations import calc_holo
-from ...core.metadata import angles_list, ImageSchema
+from ...core import ImageSchema
 from ..theory import Multisphere
 from ..scatterer import Sphere, Spheres
 from ..errors import InvalidScatterer, TheoryNotCompatibleError, MultisphereFailure
 from .common import assert_allclose, verify, xschema, yschema, index, wavelen, xpolarization, ypolarization, polarization
 from .common import scaling_alpha, sphere
-from holopy.core.tests.common import assert_obj_close
+from holopy.core.tests.common import assert_obj_close, angles_list
 
 from holopy.scattering.calculations import calc_scat_matrix, calc_cross_sections, calc_holo
 

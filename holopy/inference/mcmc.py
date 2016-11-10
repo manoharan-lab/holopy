@@ -21,7 +21,7 @@ from holopy.fitting.model import Model
 from holopy.core.holopy_object import HoloPyObject
 from . import prior
 from holopy.core.metadata import Image
-from holopy.core.tools import make_subset_data
+from holopy.fitting.fit import make_subset_data
 from emcee import PTSampler, EnsembleSampler
 import emcee
 import h5py
