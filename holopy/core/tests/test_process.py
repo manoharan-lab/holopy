@@ -17,16 +17,12 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, assert_raises
-from ..tools import center_find, subimage, fft, ifft, math
-from ..tools import _ensure_array, ensure_listlike, mkdir_p
+from numpy.testing import assert_allclose
+from ..process import center_find, subimage, fft, ifft
 from ..metadata import Image, ImageSchema
 from .common import get_example_data, assert_obj_close
 from scipy import fftpack
 from nose.plugins.attrib import attr
-import tempfile
-import os
-import shutil
 
 #Test centerfinder
 gold_location = np.array([ 48.5729142,  50.23217416])
@@ -93,34 +89,6 @@ def test_ifft_1d_no_shift():
        -0.04443262+0.01863101j,  0.02483062-0.09611888j])
 
     assert_allclose(ifft(a, shift=False), fftpack.ifft(a))
-
-#Test math
-def test_rotate_single_point():
-    points = np.array([1.,1.,1.])
-    assert_allclose(math.rotate_points(points, np.pi, np.pi, np.pi),
-                    np.array([-1.,  1., -1.]), 1e-5)
-    
-def test_rotation_matrix_degrees():
-    assert_allclose(math.rotation_matrix(180., 180., 180., radians = False), 
-                    math.rotation_matrix(np.pi, np.pi, np.pi))
-
-@attr('fast')
-def test_ensure_array():
-    assert_equal(_ensure_array(1.0), np.array([1.0]))
-    assert_equal(_ensure_array([1.0]), np.array([1.0]))
-    assert_equal(_ensure_array(np.array([1.0])), np.array([1.0]))
-
-
-#test helpers
-def test_ensure_listlike():
-    assert ensure_listlike(None) == []
-
-def test_mkdir_p():
-    tempdir = tempfile.mkdtemp()
-    mkdir_p(os.path.join(tempdir, 'a', 'b'))
-    mkdir_p(os.path.join(tempdir, 'a', 'b'))
-    shutil.rmtree(tempdir)
-
 
 def test_fft():
     holo = get_example_data('image0001')

@@ -22,12 +22,12 @@ calc_intensity and calc_holo, based on subclass's calc_field
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
-from holopy.core.holopy_object import SerializableMetaclass
-from holopy.core.metadata import vector, Image, optical_parameters, to_vector
-from holopy.core.tools import dict_without, is_none, copy_metadata, from_flat
-from holopy.scattering import Mie, Multisphere, Sphere, Spheres
-from holopy.scattering.theory import dda
-from holopy.scattering.errors import AutoTheoryFailed, MissingParameter
+from ..core.holopy_object import SerializableMetaclass
+from ..core.metadata import vector, update_metadata, to_vector, copy_metadata, from_flat
+from ..core.utils import dict_without, is_none
+from . import Mie, Multisphere, Sphere, Spheres
+from .theory import dda
+from .errors import AutoTheoryFailed, MissingParameter
 
 import numpy as np
 from warnings import warn
@@ -78,8 +78,6 @@ def calc_intensity(schema, scatterer, medium_index=None, illum_wavelen=None, ill
         (possibly composite) scatterer for which to compute scattering
     medium_index : float or complex
         Refractive index of the medium in which the scatter is imbedded
-    locations : np.ndarray or :class:`.locations` object
-        The locations to compute intensity at
     illum_wavelen : float or ndarray(float)
         Wavelength of illumination light. If illum_wavelen is an array result
         will add a dimension and have all wavelengths
@@ -107,8 +105,6 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None, illum_po
         (possibly composite) scatterer for which to compute scattering
      medium_index : float or complex
         Refractive index of the medium in which the scatter is imbedded
-    locations : np.ndarray or :class:`.locations` object
-        The locations to compute hologram at
     illum_wavelen : float or ndarray(float)
         Wavelength of illumination light. If illum_wavelen is an array result
         will add a dimension and have all wavelengths
@@ -124,10 +120,10 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None, illum_po
         Calculated hologram from the given distribution of spheres
     """
     theory = interpret_theory(scatterer,theory)
-    par = optical_parameters(schema, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization)
-    scat = theory._calc_field(scatterer, schema, **par)
-    holo = scattered_field_to_hologram(scat*scaling, par['illum_polarization'], schema.normals)
-    return finalize(schema, holo)
+    uschema = update_metadata(schema, medium_index, illum_wavelen, illum_polarization)
+    scat = theory._calc_field(scatterer, uschema)
+    holo = scattered_field_to_hologram(scat*scaling, uschema.illum_polarization, uschema.normals)
+    return finalize(uschema, holo)
 
 def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
     """
@@ -155,7 +151,7 @@ def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None, illum_
         cross sections, and <cos theta>
     """
     theory = interpret_theory(scatterer,theory)
-    return theory._calc_cross_sections(scatterer, **optical_parameters(medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization))
+    return theory._calc_cross_sections(scatterer, medium_wavevec=2*np.pi/(illum_wavelen/medium_index), medium_index=medium_index, illum_polarization=to_vector(illum_polarization))
 
 def calc_scat_matrix(schema, scatterer, medium_index=None, illum_wavelen=None, theory='auto'):
     """
@@ -181,9 +177,9 @@ def calc_scat_matrix(schema, scatterer, medium_index=None, illum_wavelen=None, t
         Scattering matricies at specified positions
 
     """
-
     theory = interpret_theory(scatterer,theory)
-    return finalize(schema, theory.calc_scat_matrix(scatterer, schema, **optical_parameters(schema, medium_index=medium_index, illum_wavelen=illum_wavelen)))
+    uschema=update_metadata(schema, medium_index=medium_index, illum_wavelen=illum_wavelen)
+    return finalize(uschema, theory._calc_scat_matrix(scatterer, uschema))
 
 def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
     """
@@ -194,10 +190,8 @@ def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None, illum_p
     ----------
     scatterer : :class:`.scatterer` object
         (possibly composite) scatterer for which to compute scattering
-     medium_index : float or complex
+    medium_index : float or complex
         Refractive index of the medium in which the scatter is imbedded
-    locations : np.ndarray or :class:`.locations` object
-        The locations to compute hologram at
     illum_wavelen : float or ndarray(float)
         Wavelength of illumination light. If illum_wavelen is an array result
         will add a dimension and have all wavelengths
@@ -205,7 +199,6 @@ def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None, illum_p
         Scattering theory object to use for the calculation. This is optional
         if there is a clear choice of theory for your scatterer. If there is not
         a clear choice, calc_intensity will error out and ask you to specify a theory
-    scaling : scaling value (alpha) for intensity of reference wave
 
     Returns
     -------
@@ -213,7 +206,8 @@ def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None, illum_p
         Calculated hologram from the given distribution of spheres
     """
     theory = interpret_theory(scatterer,theory)
-    return finalize(schema, theory._calc_field(scatterer, schema, **optical_parameters(schema, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization)))
+    uschema = update_metadata(schema, medium_index=medium_index, illum_wavelen=illum_wavelen,illum_polarization=illum_polarization)
+    return finalize(uschema, theory._calc_field(scatterer, uschema))
 
 # this is pulled out separate from the calc_holo method because occasionally you
 # want to turn prepared  e_fields into holograms directly

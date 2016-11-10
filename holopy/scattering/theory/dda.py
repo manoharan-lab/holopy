@@ -41,7 +41,7 @@ from .scatteringtheory import ScatteringTheory
 from .mie_f import mieangfuncs
 from ..scatterer import Sphere, Ellipsoid, Spheres, Capsule, Cylinder, Bisphere, Sphere_builtin, JanusSphere
 from holopy.scattering.scatterer.csg import CsgScatterer
-from ...core.tools import _ensure_array
+from ...core.utils import _ensure_array
 from ..errors import DependencyMissing
 
 scatterers_handled = Sphere, JanusSphere, Ellipsoid, Spheres, Capsule, Cylinder, Bisphere, Sphere_builtin, CsgScatterer

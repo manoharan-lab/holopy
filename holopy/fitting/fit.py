@@ -32,12 +32,23 @@ from copy import copy, deepcopy
 import numpy as np
 
 from ..core.holopy_object import HoloPyObject
-from holopy.core.metadata import flat
-from holopy.core.tools import get_values, make_subset_data, chisq, rsq
+from holopy.core.metadata import flat, get_values, copy_metadata
+from holopy.core.math import chisq, rsq
 from .errors import MinimizerConvergenceFailed, InvalidMinimizer
 from holopy.scattering.errors import MultisphereFailure
 from .minimizer import Minimizer, Nmpfit
 
+def make_subset_data(data, random_subset, return_selection=False):
+    if random_subset is None:
+        return data
+    n_sel = int(np.ceil(data.size*random_subset))
+    selection = np.random.choice(data.size, n_sel, replace=False)
+    subset = flat(data)[selection]
+    subset = copy_metadata(data, subset, do_coords=False)
+    if return_selection:
+        return subset, selection
+    else:
+        return subset
 
 def fit(model, data, minimizer=Nmpfit, random_subset=None):
     """

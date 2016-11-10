@@ -27,7 +27,7 @@ import numpy as np
 from .scatterer import CenteredScatterer, Indicators
 from ..errors import InvalidScatterer
 from copy import copy
-from ...core.tools import _ensure_array, updated
+from ...core.utils import _ensure_array, updated
 
 class Sphere(CenteredScatterer):
     '''

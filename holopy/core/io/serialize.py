@@ -29,12 +29,11 @@ analysis procedures.
 import numpy as np
 import yaml
 from yaml.reader import ReaderError
-import re
 import inspect
 import types
 
-from holopy.core.tools import is_none
-from holopy.core.holopy_object import SerializableMetaclass
+from ..utils import is_none
+from ..holopy_object import SerializableMetaclass
 
 def save(outf, obj):
     if isinstance(outf, str):

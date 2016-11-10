@@ -30,7 +30,10 @@ from warnings import warn
 from holopy.core.holopy_object import HoloPyObject
 from ..scatterer import Scatterers, Sphere
 from ..errors import TheoryNotCompatibleError, MissingParameter
-from ...core.metadata import kr_theta_phi_flat, vector, theta_phi_flat, optical_parameters
+from ...core.metadata import kr_theta_phi_flat, vector, theta_phi_flat
+
+def wavevec(a):
+        return 2*np.pi/(a.illum_wavelen/a.medium_index)    
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -42,7 +45,8 @@ class ScatteringTheory(HoloPyObject):
     implementing a _calc_field(self, scatterer, schema) function that returns a
     VectorGrid electric field.
     """
-    def _calc_field(self, scatterer, schema, medium_wavevec, medium_index, illum_polarization):
+    
+    def _calc_field(self, scatterer, schema):
         """
         Calculate fields.  Implemented in derived classes only.
 
@@ -59,9 +63,9 @@ class ScatteringTheory(HoloPyObject):
         def get_field(s):
             if isinstance(scatterer,Sphere) and scatterer.center is None:
                 raise MissingParameter("center")
-            positions = kr_theta_phi_flat(schema, s.center, wavevec=medium_wavevec)
-            field = np.vstack(self._raw_fields(np.vstack((positions.kr, positions.theta, positions.phi)), s, medium_wavevec=medium_wavevec, medium_index=medium_index, illum_polarization=illum_polarization)).T
-            phase = np.exp(-1j*medium_wavevec*s.center[2])
+            positions = kr_theta_phi_flat(schema, s.center, wavevec=wavevec(schema))
+            field = np.vstack(self._raw_fields(np.vstack((positions.kr, positions.theta, positions.phi)), s, medium_wavevec=wavevec(schema), medium_index=schema.medium_index, illum_polarization=schema.illum_polarization)).T
+            phase = np.exp(-1j*wavevec(schema)*s.center[2])
             # TODO: fix and re-enable internal fields
             #if self._scatterer_overlaps_schema(scatterer, schema):
             #    inner = scatterer.contains(schema.positions.xyz())
@@ -70,8 +74,6 @@ class ScatteringTheory(HoloPyObject):
             #                                  optics)).T
             field *= phase
             field = xr.DataArray(field, dims=['flat', vector], coords={'flat': positions.flat, vector: ['x', 'y', 'z']}, attrs=schema.attrs)
-            if hasattr(schema, 'flat'):
-                return field
             return field
 
 
@@ -89,7 +91,7 @@ class ScatteringTheory(HoloPyObject):
 
         return field
 
-    def calc_scat_matrix(self, scatterer, schema, medium_wavevec, medium_index):
+    def _calc_scat_matrix(self, scatterer, schema):
         """
         Compute scattering matricies for scatterer
 
@@ -112,8 +114,7 @@ class ScatteringTheory(HoloPyObject):
         to use non-default values.
         """
         pos = theta_phi_flat(schema, scatterer.center)
-        scat_matrs = self._raw_scat_matrs(scatterer, pos, medium_wavevec, medium_index)
-        #x = xr.DataArray(scat_matrs, dims=['flat', 'Epar', 'Eperp'], coords={'flat': pos.flat, 'Epar': ['S2', 'S3'], 'Eperp': ['S4', 'S1']}, attrs=dict(optics=schema.optics))
+        scat_matrs = self._raw_scat_matrs(scatterer, pos, medium_wavevec=wavevec(schema), medium_index=schema.medium_index)
         d = {k: v for k, v in pos.coords.items()}
         d['Epar'] = ['S2', 'S3']
         d['Eperp'] = ['S4', 'S1']

@@ -30,11 +30,13 @@ from PIL import Image as pilimage
 from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 import xarray as xr
 
-from holopy.core.io import serialize
-from holopy.core.metadata import make_coords, Image, ImageSchema, get_spacing, update_metadata, to_vector
-from holopy.core.tools import is_none, _ensure_array, dict_without, zero_filter
+from . import serialize
+from ..metadata import Image, ImageSchema, get_spacing, update_metadata, to_vector, make_coords
+from ..utils import is_none, _ensure_array, dict_without
+from ..process import zero_filter
 from holopy.core.errors import NoMetadata, BadImage
 
+attr_coords = '_attr_coords'
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
 
 def default_extension(inf, defext='.h5'):
@@ -48,6 +50,43 @@ def default_extension(inf, defext='.h5'):
         return file + defext
     else:
         return inf
+
+def get_example_data_path(name):
+    path = os.path.abspath(__file__)
+    path = os.path.join(os.path.split(os.path.split(path)[0])[0],
+                        'tests', 'exampledata')
+    return os.path.join(path, name)
+
+def get_example_data(name):
+    return load(get_example_data_path(name))
+
+def pack_attrs(a, do_spacing=False):
+    new_attrs = {'name':a.name, attr_coords:{}}
+
+    if do_spacing:
+        new_attrs['spacing']=list(get_spacing(a))
+        
+    for attr, val in a.attrs.items():
+        if isinstance(val, xr.DataArray):
+            new_attrs[attr_coords][attr]={}
+            for dim in val.dims:
+                new_attrs[attr_coords][attr][dim]=val[dim].values
+            new_attrs[attr]=list(_ensure_array(val))
+        else:
+            new_attrs[attr_coords][attr]=False
+            new_attrs[attr]=val
+    new_attrs[attr_coords]=yaml.dump(new_attrs[attr_coords])
+    return new_attrs
+
+def unpack_attrs(a):
+    new_attrs={}
+    attr_ref=yaml.load(a[attr_coords])
+    for attr in dict_without(a,['spacing','name',attr_coords]):
+        if attr_ref[attr]:
+            new_attrs[attr] = xr.DataArray(a[attr], coords=attr_ref[attr])
+        else:
+            new_attrs[attr] = a[attr]
+    return new_attrs
 
 def load(inf, lazy=False):
     """
@@ -72,7 +111,18 @@ def load(inf, lazy=False):
             # calculations.
             if not lazy:
                 ds = ds.load()
-            return ds.data
+
+            #loaded dataset potential contains multiple DataArrays. We need
+            #to find out their names and loop through them to unpack metadata
+            data_vars = list(ds.data_vars.keys())
+            for var in data_vars:
+                ds[var].attrs = unpack_attrs(ds[var].attrs)
+
+            #return either a single DataArray or a DataSet containing multiple DataArrays.
+            if len(data_vars)==1:
+                return ds[data_vars[0]]
+            else:
+                return ds
     except (OSError, ValueError):
         pass
 
@@ -81,23 +131,22 @@ def load(inf, lazy=False):
         loaded = serialize.load(inf)
         return loaded
     except (serialize.ReaderError, UnicodeDecodeError):
-        if os.path.splitext(inf)[1] in tiflist:
-            try:
-                meta = yaml.load(pilimage.open(inf).tag[270][0])
-                if meta['spacing'] is None:
-                    raise NoMetadata
-                else:
-                    im = load_image(inf,meta['spacing'],name = meta['name'])
-                    for attr in dict_without(meta,['spacing','index','name']):
-                        if meta['index'][attr]:
-                            im.attrs[attr]=to_vector(meta[attr])
-                        else:
-                            im.attrs[attr]=meta[attr]
-                    return im
-            except KeyError:
+        pass
+
+
+    if os.path.splitext(inf)[1] in tiflist:
+        try:
+            meta = yaml.load(pilimage.open(inf).tag[270][0])
+            if meta['spacing'] is None:
                 raise NoMetadata
-        else:
+            else:
+                im = load_image(inf, meta['spacing'], name = meta['name'])
+                im.attrs = unpack_attrs(meta)
+                return im
+        except KeyError:
             raise NoMetadata
+    else:
+        raise NoMetadata
 
 def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, channel=None, name=None):
     """
@@ -118,8 +167,8 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
     obj : The object loaded, :class:`holopy.core.marray.Image`, or as loaded from yaml
 
     """
-    pi = pilimage.open(inf)
-    arr=fromimage(pi).astype('d')
+    with pilimage.open(inf) as pi:
+        arr=fromimage(pi).astype('d')
 
     # pick out only one channel of a color image
     if channel is not None and len(arr.shape) > 2:
@@ -171,13 +220,13 @@ def save(outf, obj):
             return
 
     if hasattr(obj, 'to_dataset'):
-        for v in obj.attrs.values():
-            if v is None:
-                raise NotImplementedError("Saving xarray with missing metadata is not supported. If you want to save just the array data, you can use np.save")
+        obj=obj.copy()
         if obj.name is None:
-            obj.name = 'data'
+            obj.name=os.path.splitext(os.path.split(outf)[-1])[0]
+        obj.attrs = pack_attrs(obj)
         ds = obj.to_dataset()
         ds.to_netcdf(default_extension(outf), engine='h5netcdf')
+
     else:
         serialize.save(outf, obj)
 
@@ -211,17 +260,11 @@ def save_image(filename, im, scaling='auto', depth=8):
     
     metadat=False
     if os.path.splitext(filename)[1] in tiflist:
-        metadat = {'index':{},'spacing':get_spacing(im),'name':im.name}
-        for attr in im.attrs:
-            if isinstance(im.attrs[attr], xr.DataArray):
-                metadat['index'][attr]=True
-                metadat[attr]=list(_ensure_array(im.attrs[attr]))
-            else:
-                metadat['index'][attr]=False
-                metadat[attr]=im.attrs[attr]
+        metadat = pack_attrs(im, do_spacing = True)
         tiffinfo = ifd2()
         tiffinfo[270] = yaml.dump(metadat) #This edits the 'imagedescription' field of the tiff metadata
 
+    im=im.copy()
     if scaling is not None:
         if scaling is 'auto':
             min = im.min()
@@ -253,15 +296,6 @@ def save_image(filename, im, scaling='auto', depth=8):
         pilimage.fromarray(im.values).save(filename, tiffinfo=tiffinfo)
     else:
         pilimage.fromarray(im.values).save(filename)
-
-def get_example_data_path(name):
-    path = os.path.abspath(__file__)
-    path = os.path.join(os.path.split(os.path.split(path)[0])[0],
-                        'tests', 'exampledata')
-    return os.path.join(path, name)
-
-def get_example_data(name):
-    return load(get_example_data_path(name))
 
 def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, image_glob='*.tif'):
     """
@@ -303,14 +337,3 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
     if not is_none(refimg):
         accumulator = update_metadata(accumulator, refimg.medium_index, refimg.illum_wavelen, refimg.illum_polarization, refimg.normals)    
     return update_metadata(accumulator, medium_index, illum_wavelen, illum_polarization, normals)
-
-def bg_correct(raw, bg, df=None):
-
-    if is_none(df):
-        df = ImageSchema(raw.shape,get_spacing(raw))
-
-    if not (raw.shape == bg.shape == df.shape and list(get_spacing(raw)) == list(get_spacing(bg)) == list(get_spacing(df))):
-        raise BadImage("raw and background images must have the same shape and spacing")
-
-    holo = (raw - df) / zero_filter(bg - df)
-    return copy_metadata(raw, holo)

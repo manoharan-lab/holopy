@@ -30,7 +30,7 @@ import numpy as np
 
 
 from . import Scatterer
-from ...core.tools.math import rotate_points
+from ...core.math import rotate_points
 
 class Scatterers(Scatterer):
     '''

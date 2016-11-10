@@ -22,22 +22,18 @@ import numpy as np
 import holopy as hp
 import xarray as xr
 
-from numpy.testing import assert_raises
-from nose.plugins.skip import SkipTest
 from nose.plugins.attrib import attr
-from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, assert_array_equal
-from holopy.scattering.scatterer import Sphere, Spheres
-from holopy.scattering.theory import Mie
+from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, assert_raises
+from holopy.scattering import Sphere, Spheres, Mie, calc_holo
 from holopy.core import ImageSchema, load, save
-from holopy.core.metadata import angles_list, theta_phi_flat
-from holopy.core.tools import normalize, copy_metadata
+from holopy.core.metadata import theta_phi_flat, copy_metadata, angles_list
+from holopy.core.process import normalize
 from holopy.fitting import fit, Parameter, ComplexParameter, par, Parametrization, Model
 from holopy.core.tests.common import (assert_obj_close, get_example_data,
                                   assert_read_matches_write)
 from holopy.fitting import Model, FitResult
 from ..errors import InvalidMinimizer
 from holopy.fitting.model import limit_overlaps, ParameterizedObject
-from holopy.scattering.calculations import calc_holo
 
 gold_alpha = .6497
 

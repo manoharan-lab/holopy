@@ -35,7 +35,7 @@ from nose.plugins.attrib import attr
 import scipy
 
 from holopy.scattering.calculations import calc_holo
-from ...core.metadata import angles_list, ImageSchema
+from ...core.metadata import ImageSchema, angles_list
 from ..theory import Multisphere
 from ..scatterer import Sphere, Spheres
 from ..errors import InvalidScatterer, TheoryNotCompatibleError, MultisphereFailure
