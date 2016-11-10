@@ -60,7 +60,7 @@ class ScatteringTheory(HoloPyObject):
         e_field : :mod:`.VectorGrid`
             scattered electric field
         """
-        def get_field(s, schema):
+        def get_field(s):
             if isinstance(scatterer,Sphere) and scatterer.center is None:
                 raise MissingParameter("center")
             positions = kr_theta_phi_flat(schema, s.center, wavevec=wavevec(schema))
@@ -79,13 +79,13 @@ class ScatteringTheory(HoloPyObject):
 
         # See if we can handle the scatterer in one step
         if self._can_handle(scatterer):
-            field = get_field(scatterer, schema)
+            field = get_field(scatterer)
         elif isinstance(scatterer, Scatterers):
         # if it is a composite, try superposition
             scatterers = scatterer.get_component_list()
-            field = get_field(scatterers[0], schema)
+            field = get_field(scatterers[0])
             for s in scatterers[1:]:
-                field += get_field(s, schema)
+                field += get_field(s)
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
