@@ -203,7 +203,16 @@ def simulate_noise(shape, mean=.1, smoothing=.01, poisson_lambda=1000):
        A copy of the input image with noise added.
 
     """
-
     raw_poisson = np.random.poisson(poisson_lambda, shape)
     smoothed = scipy.ndimage.gaussian_filter(raw_poisson, np.array(shape)*smoothing)
     return smoothed/smoothed.mean() * mean
+
+def bg_correct(raw, bg, df=None):
+    if is_none(df):
+        df = ImageSchema(raw.shape,get_spacing(raw))
+
+    if not (raw.shape == bg.shape == df.shape and list(get_spacing(raw)) == list(get_spacing(bg)) == list(get_spacing(df))):
+        raise BadImage("raw and background images must have the same shape and spacing")
+
+    holo = (raw - df) / zero_filter(bg - df)
+    return copy_metadata(raw, holo)

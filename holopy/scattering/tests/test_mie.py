@@ -35,14 +35,13 @@ from holopy.scattering.scatterer.sphere import LayeredSphere
 from ..theory import Mie
 
 from ..errors import TheoryNotCompatibleError, InvalidScatterer
-from ...core import ImageSchema, Image
+from ...core.metadata import ImageSchema, Image, angles_list, kr_theta_phi_flat, flat, to_vector
 from ...core.process import subimage
 from .common import verify, sphere, xschema, scaling_alpha, yschema, xpolarization, ypolarization, polarization
 from .common import x, y, z, n, radius, wavelen, index
-from ...core.tests.common import assert_allclose, assert_obj_close, angles_list
+from ...core.tests.common import assert_allclose, assert_obj_close
 
 from holopy.scattering.calculations import calc_field, calc_holo, calc_intensity, calc_scat_matrix, calc_cross_sections
-from holopy.core.metadata import kr_theta_phi_flat, flat, to_vector
 
 @attr('fast')
 def test_single_sphere():

@@ -26,11 +26,11 @@ from nose.plugins.attrib import attr
 from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, assert_raises
 from holopy.scattering import Sphere, Spheres, Mie, calc_holo
 from holopy.core import ImageSchema, load, save
-from holopy.core.metadata import theta_phi_flat, copy_metadata
+from holopy.core.metadata import theta_phi_flat, copy_metadata, angles_list
 from holopy.core.process import normalize
 from holopy.fitting import fit, Parameter, ComplexParameter, par, Parametrization, Model
 from holopy.core.tests.common import (assert_obj_close, get_example_data,
-                                  assert_read_matches_write, angles_list)
+                                  assert_read_matches_write)
 from holopy.fitting import Model, FitResult
 from ..errors import InvalidMinimizer
 from holopy.fitting.model import limit_overlaps, ParameterizedObject

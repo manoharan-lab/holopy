@@ -24,7 +24,7 @@ Classes for defining metadata about experimental or calculated results.
 
 import numpy as np
 import xarray as xr
-from xarray.ufuncs import sqrt,arctan2
+from xarray.ufuncs import sqrt, arctan2
 from warnings import warn
 from .utils import _ensure_pair, _ensure_array, is_none, updated
 
@@ -43,6 +43,20 @@ def ImageSchema(shape, spacing, medium_index=None, illum_wavelen=None, illum_pol
 
     d = np.zeros(shape)
     return Image(d, spacing, medium_index, illum_wavelen, illum_polarization, normals)
+
+def angles_list(theta, phi, medium_index, illum_wavelen, illum_polarization, normals=(0, 0, 1)):
+    # This is a hack that gets the data into a format that we can use
+    # elsewhere, but feels like an abuse of xarray, it would be nice to replace this with something more ideomatic
+
+    theta = _ensure_array(theta)
+    phi = _ensure_array(phi)
+    if len(theta) == 1:
+        theta = np.repeat(theta,len(phi))
+    elif len(phi) == 1:
+        phi = np.repeat(phi,len(theta))
+
+    out = xr.DataArray(np.zeros(len(theta)), dims=['point'], attrs={'theta':theta, 'phi':phi})
+    return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
 
 def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None):
     attrlist = {'medium_index': medium_index, 'illum_wavelen': illum_wavelen, 'illum_polarization': to_vector(illum_polarization), 'normals': to_vector(normals)}

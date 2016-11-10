@@ -38,6 +38,6 @@ Main use cases are
 
 """
 
-from .metadata import Image, ImageSchema, update_metadata, copy_metadata
-from .io import load, load_image, save, save_image, bg_correct
+from .metadata import ImageSchema, update_metadata, copy_metadata
+from .io import load, load_image, save, save_image
 from . import process

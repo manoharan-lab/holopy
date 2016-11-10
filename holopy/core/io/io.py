@@ -112,15 +112,16 @@ def load(inf, lazy=False):
             if not lazy:
                 ds = ds.load()
 
+            #loaded dataset potential contains multiple DataArrays. We need
+            #to find out their names and loop through them to unpack metadata
             data_vars = list(ds.data_vars.keys())
             for var in data_vars:
                 ds[var].attrs = unpack_attrs(ds[var].attrs)
+
+            #return either a single DataArray or a DataSet containing multiple DataArrays.
             if len(data_vars)==1:
-                if ds[data_vars[0]].name is None:
-                    ds[data_vars[0]].name = os.path.splitext(os.path.split(inf)[-1])[0]
                 return ds[data_vars[0]]
             else:
-                #DataSet contains multiple DataArrays
                 return ds
     except (OSError, ValueError):
         pass
@@ -295,18 +296,6 @@ def save_image(filename, im, scaling='auto', depth=8):
         pilimage.fromarray(im.values).save(filename, tiffinfo=tiffinfo)
     else:
         pilimage.fromarray(im.values).save(filename)
-
-
-def bg_correct(raw, bg, df=None):
-
-    if is_none(df):
-        df = ImageSchema(raw.shape,get_spacing(raw))
-
-    if not (raw.shape == bg.shape == df.shape and list(get_spacing(raw)) == list(get_spacing(bg)) == list(get_spacing(df))):
-        raise BadImage("raw and background images must have the same shape and spacing")
-
-    holo = (raw - df) / zero_filter(bg - df)
-    return copy_metadata(raw, holo)
 
 def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, image_glob='*.tif'):
     """
