@@ -26,7 +26,7 @@ from nose.plugins.attrib import attr
 from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, assert_raises
 from holopy.scattering import Sphere, Spheres, Mie, calc_holo
 from holopy.core import ImageSchema, load, save
-from holopy.core.metadata import theta_phi_flat, copy_metadata, angles_list
+from holopy.core.metadata import sphere_coords, copy_metadata, angles_list
 from holopy.core.process import normalize
 from holopy.fitting import fit, Parameter, ComplexParameter, par, Parametrization, Model
 from holopy.core.tests.common import (assert_obj_close, get_example_data,
@@ -200,43 +200,6 @@ def test_model_guess():
     ps = Sphere(n=par(1.59, [1.5,1.7]), r = .5, center=(5,5,5))
     m = Model(ps, calc_holo)
     assert_obj_close(m.scatterer.guess, Sphere(n=1.59, r=0.5, center=[5, 5, 5]))
-
-
-@attr('fast')
-def test_fit_complex_parameter():
-    # use a Sphere with complex n
-    # a fake scattering model
-    def scat_func(schema, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, scaling=None, theory=None):
-        sph=scatterer
-        # TODO: all variables required, seems like a silly kluge
-        def silly_function(theta):
-            return theta * sph.r + sph.n.real * theta **2  + 2. * sph.n.imag
-        pos = theta_phi_flat(schema)
-        return copy_metadata(schema, xr.DataArray(np.array([silly_function(theta) for theta, phi in
-                                zip(pos.theta, pos.phi)])))
-
-    # generate data
-    ref_schema = angles_list(np.linspace(0., np.pi/2., 6), np.linspace(0, np.pi/4, 6), 1, 1, (1, 0))
-    ref_sph = Sphere(r = 1.5, n = 0.4 + 0.8j)
-    data = scat_func(ref_schema, ref_sph)
-
-    # varying both real and imaginary parts
-    par_s = Sphere(r = par(1.49),
-                   n = ComplexParameter(real = par(0.405), imag = par(0.81)))
-    model = Model(par_s, scat_func)
-    result = fit(model, data)
-    assert_allclose(result.scatterer.r, ref_sph.r)
-    assert_allclose(result.scatterer.n.real, ref_sph.n.real)
-    assert_allclose(result.scatterer.n.imag, ref_sph.n.imag)
-
-    # varying just the real part
-    par_s2 = Sphere(r = par(1.49), n = ComplexParameter(real = par(0.405),
-                                                       imag = 0.8))
-    model2 = Model(par_s2, scat_func)
-    result2 = fit(model2, data)
-    assert_allclose(result2.scatterer.r, ref_sph.r)
-    assert_allclose(result2.scatterer.n.real, ref_sph.n.real)
-    assert_allclose(result2.scatterer.n.imag, ref_sph.n.imag)
 
 def test_constraint():
     sch = ImageSchema(100, spacing=1)

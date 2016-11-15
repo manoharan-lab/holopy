@@ -140,6 +140,7 @@ def load(inf, lazy=False):
             if meta['spacing'] is None:
                 raise NoMetadata
             else:
+                print(meta['name'])
                 im = load_image(inf, meta['spacing'], name = meta['name'])
                 im.attrs = unpack_attrs(meta)
                 return im
@@ -184,12 +185,8 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
         spacing=1
 
     if name is None:
-        name = inf
-    out = xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing), name=name)
-
-    return update_metadata(out, medium_index=medium_index,
-                    illum_wavelen=illum_wavelen,
-                    illum_polarization=illum_polarization, normals=normals)
+        name = os.path.splitext(os.path.split(inf)[-1])[0]
+    return Image(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, name = name)
 
 def save(outf, obj):
     """
@@ -260,11 +257,13 @@ def save_image(filename, im, scaling='auto', depth=8):
     
     metadat=False
     if os.path.splitext(filename)[1] in tiflist:
+        if im.name is None:
+            im.name=os.path.splitext(os.path.split(filename)[-1])[0]
         metadat = pack_attrs(im, do_spacing = True)
         tiffinfo = ifd2()
         tiffinfo[270] = yaml.dump(metadat) #This edits the 'imagedescription' field of the tiff metadata
 
-    im=im.copy()
+    im=im.copy().sel(z=0)
     if scaling is not None:
         if scaling is 'auto':
             min = im.min()

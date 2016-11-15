@@ -29,6 +29,7 @@ import xarray as xr
 from xarray.ufuncs import sqrt
 from ..core.process import fft, ifft
 from ..core.utils import _ensure_pair, _ensure_array
+from ..core.metadata import update_metadata, copy_metadata
 from ..core.process.fourier import ft_coord
 from ..scattering.errors import MissingParameter
 
@@ -66,15 +67,12 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_f
         # Propagating no distance has no effect
         return data
 
-    if illum_wavelen is None:
-        illum_wavelen = data.illum_wavelen
-    if medium_index is None:
-        medium_index = data.medium_index
+    data = update_metadata(data, medium_index = medium_index, illum_wavelen = illum_wavelen)
 
-    if medium_index is None or illum_wavelen is None:
+    if data.medium_index is None or data.illum_wavelen is None:
         raise MissingParameter("refractive index and wavelength")
 
-    med_wavelen = illum_wavelen/medium_index
+    med_wavelen = data.illum_wavelen/data.medium_index
 
     # Computing the transfer function will fail for d = 0. So, if we
     # are asked to compute a reconstruction for a set of distances
@@ -92,16 +90,15 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_f
 
     ft = fft(data)
 
-    res = ifft(ft * G, overwrite=True)
+    res = ifft(ft.squeeze('z') * G, overwrite=True)
 
     # This will not work correctly if you have 0 in the distances more
     # than once. But why would you do that?
     if contains_zero:
         d = d_old
-        res = np.insert(res, np.nonzero(d==0)[0][0], data, axis=2)
+        res[dict(zprop=0)]=0
 
-    res.attrs = ft.attrs
-    return res
+    return copy_metadata(ft.attrs, res.attrs)
 
 def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
     """

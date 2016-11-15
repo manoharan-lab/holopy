@@ -218,8 +218,7 @@ class Multisphere(FortranTheory):
         warn("Fields inside your Sphere(s) set to 0 because {0} Theory "
              " does not yet support calculating internal fields".format(
                  self.__class__.__name__))
-        return [np.zeros(positions[1].shape, dtype='complex') for i in
-                range(3)]
+        return [np.zeros(positions.shape[0], dtype='complex') for i in range(3)]
 
     def _calc_cext(self, scatterer, medium_wavevec, medium_index, illum_polarization, amn = None, lmax = None):
         """
@@ -247,8 +246,7 @@ class Multisphere(FortranTheory):
 
     def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
         amn, lmax = self._scsmfo_setup(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index)
-        scat_matrs = [_asm_far(theta, phi, amn, lmax) for
-                      theta, phi in zip(pos.theta, pos.phi)]
+        scat_matrs = [_asm_far(theta, phi, amn, lmax) for r, theta, phi in pos.T]
         return scat_matrs
 
     def _calc_cscat(self, scatterer, medium_wavevec, medium_index, illum_polarization, amn = None, lmax = None):

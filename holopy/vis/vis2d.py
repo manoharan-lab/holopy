@@ -27,7 +27,7 @@ import numpy as np
 from holopy.core.metadata import get_spacing
 
 class plotter:
-    def __init__(self, im, i=0, j=0, axis_names = ('x', 'y')):
+    def __init__(self, im, z0=0, t=0, axis_names = ('x', 'y')):
         # Delay the pylab import until we actually use it to avoid a hard
         # dependency on matplotlib, and to avoid paying the cost of importing it
         # for non interactive code
@@ -35,8 +35,8 @@ class plotter:
 
         self.im = im
         self.axis_names = axis_names
-        self.i = i
-        self.j = j
+        self.i = z0
+        self.j = t
         self.vmin = im.min()
         self.vmax = im.max()
         self.fig = pylab.figure()
@@ -51,12 +51,12 @@ class plotter:
         self.fig.canvas.mpl_connect('button_press_event', self.click)
 
     def draw(self):
-        if self.im.ndim is 2:
-            im = self.im
-        if self.im.ndim is 3:
-            im = self.im[...,self.i]
-        elif self.im.ndim is 4:
-            im = self.im[...,self.i,self.j]
+        im = self.im
+        if hasattr(im, 'z'):
+            im=im.sel(z=self.i)
+        if hasattr(im, 'time'):
+            im=im.sel(time=self.j)
+
         self._title()
 
         #to show non-square pixels correctly
@@ -120,11 +120,11 @@ class plotter:
             old_i = self.i
             old_j = self.j
             if event.key=='right':
-                self.i = min(self.im.shape[2]-1, self.i+1)
+                self.i = min(len(self.im.z)-1, self.i+1)
             elif event.key == 'left':
                 self.i = max(0, self.i-1)
             elif event.key == 'up':
-                self.j = min(self.im.shape[3]-1, self.j+1)
+                self.j = min(len(self.im.time)-1, self.j+1)
             elif event.key == 'down':
                 self.j = max(0, self.j-1)
             if old_i != self.i or old_j != self.j:
@@ -143,7 +143,7 @@ class plotter:
         if titlestring is not "":
             self.ax.set_title(titlestring)
 
-def show2d(im, i=0, t=0, phase = False):
+def show2d(im, z0=0, t=0, phase = False):
     """
     Display a hologram or reconstruction
 
@@ -154,12 +154,10 @@ def show2d(im, i=0, t=0, phase = False):
     ----------
     im : ndarray
        Image to be shown
-    i : int
-       slice along third dimension to show first.  For holograms this will be
-       time, for reconstructions this will be z
+    z0 : int
+       slice along z dimension to show first.  
     t : int
-       slice along t to show for reconstructions.  Ignored for holograms (or any
-       less than 4D array)
+       slice along time to show for reconstructions.
 
     """
     if isinstance(im, (list, tuple)):
@@ -168,9 +166,9 @@ def show2d(im, i=0, t=0, phase = False):
     # Switch and show an x-z or y-z plane if the im has unit extent in
     # y or x
     axis_names = ['x', 'y']
-    if im.shape[0] == 1:
+    if len(im.x) == 1:
         axis_names = ['y', 'z']
-    if im.shape[1] == 1:
+    if len(im.y) == 1:
         axis_names = ['x', 'z']
 
     if np.iscomplexobj(im):
@@ -179,7 +177,7 @@ def show2d(im, i=0, t=0, phase = False):
         else:
             im = np.abs(im)
 
-    plotter(im, i, t, axis_names = axis_names)
+    plotter(im, z0, t, axis_names = axis_names)
 
 def show_scatterer_slices(scatterer, spacing):
     """

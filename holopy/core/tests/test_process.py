@@ -36,7 +36,7 @@ def test_FoundLocation():
 def test_subimage():
     i = ImageSchema(shape=(10, 10), spacing=1)
     s = subimage(i, (5,5), 2)
-    assert s.shape == (2,2)
+    assert s.shape == (1,2,2)
 
     i2 = Image(i, 1)
     s2 = subimage(i2, (5, 5), 2)

@@ -41,6 +41,7 @@ video microscopy, Optics Express 17, 13071-13079 (2009).
 import numpy as np
 from .img_proc import normalize, subimage
 from scipy.ndimage import sobel, filters
+from copy import copy
 
 def centered_subimage(image, shape, threshold=.5, blursize=3):
     """
@@ -125,8 +126,9 @@ def center_find(image, centers=1, threshold=.5, blursize=3.):
     contribute to finding the centers and the code will take a little
     bit longer.
     """
+    image=copy(image)
     if blursize>0:
-        image = filters.gaussian_filter(image,blursize)
+        image.values = filters.gaussian_filter(image.values,blursize)
     col_deriv, row_deriv = image_gradient(image)
     res = hough(col_deriv, row_deriv, centers, threshold)
     if centers==1:
@@ -153,9 +155,9 @@ def image_gradient(image):
         y-components of intensity gradient
     """
     image = normalize(image)
-    grad_col = sobel(image, axis=0)
-    grad_row = -sobel(image, axis=1)
-    return grad_col.astype(float), grad_row.astype(float)
+    grad_col = sobel(image, axis=image.dims.index('x'))
+    grad_row = -sobel(image, axis=image.dims.index('y'))
+    return np.squeeze(grad_col.astype(float)), np.squeeze(grad_row.astype(float))
 
 
 def hough(col_deriv, row_deriv, centers=1, threshold=.25):

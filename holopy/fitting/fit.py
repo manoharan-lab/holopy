@@ -32,7 +32,7 @@ from copy import copy, deepcopy
 import numpy as np
 
 from ..core.holopy_object import HoloPyObject
-from holopy.core.metadata import flat, get_values, copy_metadata
+from holopy.core.metadata import flat, copy_metadata
 from holopy.core.math import chisq, rsq
 from .errors import MinimizerConvergenceFailed, InvalidMinimizer
 from holopy.scattering.errors import MultisphereFailure

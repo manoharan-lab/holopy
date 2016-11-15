@@ -26,7 +26,7 @@ or detrending
 """
 
 
-from ..metadata import get_values, vector
+from ..utils import _ensure_array
 from scipy import fftpack
 import numpy as np
 import xarray as xr
@@ -122,16 +122,18 @@ def ifft(a, overwrite=False, shift=True):
 
 #The following handles transforming coordinates for fft/ifft
 def transform_metadata(a, inverse):
+    dims=_ensure_array(a.dims)
+
     if not inverse:
         coords = ft_coords(a.coords)
-        dims = ['m', 'n']
+        dims[dims=='x']='m'
+        dims[dims=='y']='n'
     else:
+        dims[dims=='m']='x'
+        dims[dims=='n']='y'
         coords = ift_coords(a.coords)
-        dims = ['x', 'y']
-    if 'z' in coords and coords['z'].shape is not ():
-        dims = dims + ['z']
-    if vector in coords:
-        dims = [vector] + dims
+    dims=list(dims)
+
     return {'dims': dims, 'coords': coords, 'attrs': a.attrs}
 
 def get_spacing(c):
@@ -144,13 +146,13 @@ def ft_coord(c):
     spacing = get_spacing(c)
     dim = len(c)
     ext = spacing * dim
-    return np.linspace(-get_values(dim/(2*ext)), get_values(dim/(2*ext)), dim)
+    return np.linspace(-dim/(2*ext), dim/(2*ext), dim)
 
 def ift_coord(c):
     spacing = get_spacing(c)
     dim = len(c)
     ext = spacing * dim
-    return np.linspace(0, get_values(dim/ext), dim)
+    return np.linspace(0, dim/ext, dim)
 
 def ft_coords(cs):
     d = {k: v.values for k, v in cs.items()}

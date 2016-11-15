@@ -30,10 +30,17 @@ from warnings import warn
 from holopy.core.holopy_object import HoloPyObject
 from ..scatterer import Scatterers, Sphere
 from ..errors import TheoryNotCompatibleError, MissingParameter
-from ...core.metadata import kr_theta_phi_flat, vector, theta_phi_flat
+from ...core.metadata import vector, sphere_coords
+from ...core.utils import dict_without
 
 def wavevec(a):
-        return 2*np.pi/(a.illum_wavelen/a.medium_index)    
+        return 2*np.pi/(a.illum_wavelen/a.medium_index)
+
+def stack_spherical(a):
+    if not 'r' in a:
+        a['r']=[np.inf]*len(a['theta'])
+    return np.vstack((a['r'],a['theta'],a['phi']))
+  
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -63,8 +70,8 @@ class ScatteringTheory(HoloPyObject):
         def get_field(s):
             if isinstance(scatterer,Sphere) and scatterer.center is None:
                 raise MissingParameter("center")
-            positions = kr_theta_phi_flat(schema, s.center, wavevec=wavevec(schema))
-            field = np.vstack(self._raw_fields(np.vstack((positions.kr, positions.theta, positions.phi)), s, medium_wavevec=wavevec(schema), medium_index=schema.medium_index, illum_polarization=schema.illum_polarization)).T
+            positions = sphere_coords(schema, s.center, wavevec=wavevec(schema))
+            field = np.vstack(self._raw_fields(stack_spherical(positions), s, medium_wavevec=wavevec(schema), medium_index=schema.medium_index, illum_polarization=schema.illum_polarization)).T
             phase = np.exp(-1j*wavevec(schema)*s.center[2])
             # TODO: fix and re-enable internal fields
             #if self._scatterer_overlaps_schema(scatterer, schema):
@@ -73,7 +80,7 @@ class ScatteringTheory(HoloPyObject):
             #        self._raw_internal_fields(positions[inner].T, s,
             #                                  optics)).T
             field *= phase
-            field = xr.DataArray(field, dims=['flat', vector], coords={'flat': positions.flat, vector: ['x', 'y', 'z']}, attrs=schema.attrs)
+            field = xr.DataArray(field, dims=['flat', vector], coords={'flat': positions['flat'], vector: ['x', 'y', 'z']}, attrs=schema.attrs)
             return field
 
 
@@ -113,17 +120,22 @@ class ScatteringTheory(HoloPyObject):
         instantiate a theory object if it has adjustable parameters and you want
         to use non-default values.
         """
-        pos = theta_phi_flat(schema, scatterer.center)
-        scat_matrs = self._raw_scat_matrs(scatterer, pos, medium_wavevec=wavevec(schema), medium_index=schema.medium_index)
-        d = {k: v for k, v in pos.coords.items()}
-        d['Epar'] = ['S2', 'S3']
-        d['Eperp'] = ['S4', 'S1']
-        dims = ['Epar', 'Eperp']
-        if hasattr(pos, 'flat'):
-            dims = ['flat'] + dims
+        positions = sphere_coords(schema, scatterer.center, include_r=False)
+        scat_matrs = self._raw_scat_matrs(scatterer, stack_spherical(positions), medium_wavevec=wavevec(schema), medium_index=schema.medium_index)   
+        if  'flat' in positions:
+            dimstr='flat'
         else:
-            dims = ['point'] + dims
-        return xr.DataArray(scat_matrs, dims=dims, coords=d, attrs=schema.attrs)
+            dimstr='point'
+
+        for coorstr in dict_without(positions, ['flat', 'point']):
+            positions[coorstr] = (dimstr, positions[coorstr])
+
+        dims = ['Epar', 'Eperp']
+        dims = [dimstr] + dims
+        positions['Epar'] = ['S2', 'S3']
+        positions['Eperp'] = ['S4', 'S1']
+
+        return xr.DataArray(scat_matrs, dims=dims, coords=positions, attrs=schema.attrs)
 
 
 # Subclass of scattering theory, overrides functions that depend on array
