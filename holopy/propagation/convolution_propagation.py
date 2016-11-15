@@ -28,7 +28,7 @@ import numpy as np
 import xarray as xr
 from xarray.ufuncs import sqrt
 from ..core.process import fft, ifft
-from ..core.utils import _ensure_pair, _ensure_array
+from ..core.utils import _ensure_array
 from ..core.metadata import update_metadata, copy_metadata
 from ..core.process.fourier import ft_coord
 from ..scattering.errors import MissingParameter
@@ -89,16 +89,17 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_f
     G = trans_func(data, d, med_wavelen, cfsp=cfsp, gradient_filter=gradient_filter)
 
     ft = fft(data)
-
     res = ifft(ft.squeeze('z') * G, overwrite=True)
 
-    # This will not work correctly if you have 0 in the distances more
-    # than once. But why would you do that?
+    #we may have lost coordinate values to floating point precision during fft/ifft
+    res.name = 'propagation'
+    res = res.to_dataset().update({'x':data.x, 'y':data.y})[res.name]
+
     if contains_zero:
         d = d_old
-        res[dict(zprop=0)]=0
+        res = xr.concat([res, data], dim='z')
 
-    return copy_metadata(ft.attrs, res.attrs)
+    return copy_metadata(data, res)
 
 def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
     """
@@ -143,7 +144,7 @@ def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
 
     """
     if not hasattr(d, 'z'):
-        d = xr.DataArray(d, coords={'z': d})
+        d = xr.DataArray(_ensure_array(d), dims=['z'], coords={'z': _ensure_array(d)})
 
     if(cfsp > 0):
         cfsp = int(abs(cfsp)) # should be nonnegative integer

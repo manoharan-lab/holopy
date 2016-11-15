@@ -24,15 +24,21 @@ Classes for defining metadata about experimental or calculated results.
 
 import numpy as np
 import xarray as xr
-from xarray.ufuncs import sqrt, arctan2
 from warnings import warn
-from .utils import _ensure_pair, _ensure_array, is_none, updated, repeat_sing_dim
+from .utils import _ensure_array, is_none, updated, repeat_sing_dim
 from .math import to_spherical
 
 
 vector = 'vector'
 
-def Image(arr, spacing=1, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=(0, 0, 1), name=None):
+def Image(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None):
+    if spacing is None:
+        spacing = 1
+    if is_none(normals):
+        normals=(0, 0, 1)
+    if name is None:
+        name = 'data'    
+
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
     if arr.ndim==2:
@@ -40,17 +46,18 @@ def Image(arr, spacing=1, medium_index=None, illum_wavelen=None, illum_polarizat
     out = xr.DataArray(arr, dims=['z','x', 'y'], coords=make_coords(arr.shape, spacing), name=name)
     return update_metadata(out, medium_index, illum_wavelen, illum_polarization,normals)    
 
-def ImageSchema(shape, spacing, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=(0, 0, 1)):
+def ImageSchema(shape, spacing, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None):
     if np.isscalar(shape):
         shape = np.repeat(shape, 2)
 
     d = np.zeros(shape)
-    return Image(d, spacing, medium_index, illum_wavelen, illum_polarization, normals)
+    return Image(d, spacing, medium_index, illum_wavelen, illum_polarization, normals, name)
 
-def angles_list(theta, phi, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=(0, 0, 1)):
+def angles_list(theta, phi, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None):
     # This is a hack that gets the data into a format that we can use
     # elsewhere, but feels like an abuse of xarray, it would be nice to replace this with something more ideomatic
 
+    #TODO default normals should be radially outwards.
     [theta, phi] = repeat_sing_dim([theta, phi])
     out = xr.DataArray(np.zeros(len(theta)), dims=['point'], coords={'theta':('point',theta), 'phi':('point',phi)})
     return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
@@ -82,8 +89,7 @@ def copy_metadata(old, new, do_coords=True):
             new=xr.DataArray(new, dims=['x', 'y'])
         new.attrs = old.attrs
         new.name = old.name
-        #if hasattr(old, 'z') and not hasattr(new, 'z'):
-        #    new.coords['z'] = old.coords['z']
+
         if hasattr(old, 'flat') and hasattr(new, 'flat'):
             new['flat'] = old['flat']
         if do_coords:

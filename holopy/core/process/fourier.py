@@ -71,9 +71,8 @@ def fft(a, overwrite=False, shift=True):
         else:
             res = fftpack.fft2(a, axes=[a.dims.index('x'), a.dims.index('y')], overwrite_x=overwrite)
 
-    if hasattr(a, 'coords') and hasattr(a, 'attrs'):
+    if isinstance(a, xr.DataArray):
         res = xr.DataArray(res, **transform_metadata(a, False))
-        res.name = a.name
     return res
 
 def ifft(a, overwrite=False, shift=True):
@@ -115,9 +114,8 @@ def ifft(a, overwrite=False, shift=True):
         else:
             res = fftpack.ifft2(a, overwrite_x=overwrite)
 
-    if hasattr(a, 'coords') and hasattr(a, 'attrs'):
+    if isinstance(a, xr.DataArray):
         res = xr.DataArray(res, **transform_metadata(a, True))
-        res.name = a.name
     return res
 
 #The following handles transforming coordinates for fft/ifft
@@ -134,7 +132,7 @@ def transform_metadata(a, inverse):
         coords = ift_coords(a.coords)
     dims=list(dims)
 
-    return {'dims': dims, 'coords': coords, 'attrs': a.attrs}
+    return {'dims': dims, 'coords': coords, 'attrs': a.attrs, 'name': a.name}
 
 def get_spacing(c):
     spacing = np.diff(c)

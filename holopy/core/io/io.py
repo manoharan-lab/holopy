@@ -140,7 +140,6 @@ def load(inf, lazy=False):
             if meta['spacing'] is None:
                 raise NoMetadata
             else:
-                print(meta['name'])
                 im = load_image(inf, meta['spacing'], name = meta['name'])
                 im.attrs = unpack_attrs(meta)
                 return im
@@ -181,12 +180,9 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
     elif channel is not None and channel > 0:
         warn("Warning: not a color image (channel number ignored)")
 
-    if is_none(spacing):
-        spacing=1
-
     if name is None:
         name = os.path.splitext(os.path.split(inf)[-1])[0]
-    return Image(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, name = name)
+    return Image(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, name)
 
 def save(outf, obj):
     """
