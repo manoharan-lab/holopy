@@ -124,3 +124,18 @@ def updated(d, update={}, filter_none=True, **kwargs):
             d[key] = val
 
     return d
+
+
+def repeat_sing_dim(inlist):
+    inlist = [_ensure_array(dim) for dim in inlist]
+    maxlen = max([len(dim) for dim in inlist])
+    outlist=[]
+
+    for dim in inlist:
+        if len(dim)==maxlen:
+            outlist.append(dim)
+        elif len(dim)==1:
+            outlist.append(np.repeat(dim,maxlen))
+        else:
+            raise ValueError("Cannot combine arrays of different lengths")
+    return outlist

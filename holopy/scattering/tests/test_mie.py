@@ -35,7 +35,7 @@ from holopy.scattering.scatterer.sphere import LayeredSphere
 from ..theory import Mie
 
 from ..errors import TheoryNotCompatibleError, InvalidScatterer
-from ...core.metadata import ImageSchema, Image, angles_list, kr_theta_phi_flat, flat, to_vector
+from ...core.metadata import ImageSchema, Image, angles_list, flat, to_vector, sphere_coords
 from ...core.process import subimage
 from .common import verify, sphere, xschema, scaling_alpha, yschema, xpolarization, ypolarization, polarization
 from .common import x, y, z, n, radius, wavelen, index
@@ -287,7 +287,7 @@ def test_layered():
     assert_obj_close(hl, hs, rtol=0)
 
 def test_large_sphere():
-    large_sphere_gold=[[0.96371831,1.04338683],[1.04240049,0.99605225]]
+    large_sphere_gold=[[[0.96371831],[1.04338683]],[[1.04240049],[0.99605225]]]
     s=Sphere(n=1.5, r=5, center=(10,10,10))
     sch=ImageSchema(10,.2, illum_wavelen=.66, medium_index=1, illum_polarization=(1,0))
     hl=calc_holo(sch, s)
@@ -337,8 +337,8 @@ def test_raw_fields():
     pol = to_vector((0, 1))
     sch = ImageSchema(3, .1)
     wavevec=2*np.pi/(wavelen/index)
-    pos = kr_theta_phi_flat(sch, (10, 10, 5), wavevec=wavevec)
-    rf = Mie()._raw_fields(np.vstack((pos.kr, pos.theta, pos.phi)), sp, medium_wavevec=wavevec, medium_index=index, illum_polarization=pol)
+    pos = sphere_coords(sch, (10, 10, 5), wavevec=wavevec)
+    rf = Mie()._raw_fields(np.vstack((pos['r'], pos['theta'], pos['phi'])), sp, medium_wavevec=wavevec, medium_index=index, illum_polarization=pol)
     assert_allclose(rf, [[(0.0015606995428858754-0.0019143174710834162j),
   (-0.0003949071974815011-0.0024154494284017187j),
   (-0.002044525390662322-0.001302770747742109j),

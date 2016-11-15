@@ -24,38 +24,42 @@ Classes for defining metadata about experimental or calculated results.
 
 import numpy as np
 import xarray as xr
-from xarray.ufuncs import sqrt, arctan2
 from warnings import warn
-from .utils import _ensure_pair, _ensure_array, is_none, updated
+from .utils import _ensure_array, is_none, updated, repeat_sing_dim
+from .math import to_spherical
+
 
 vector = 'vector'
 
-def Image(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=(0, 0, 1)):
+def Image(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None):
+    if spacing is None:
+        spacing = 1
+    if is_none(normals):
+        normals=(0, 0, 1)
+    if name is None:
+        name = 'data'    
+
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
-
-    out = xr.DataArray(arr, dims=['x', 'y'], coords=make_coords(arr.shape, spacing))
+    if arr.ndim==2:
+        arr=np.array([arr])
+    out = xr.DataArray(arr, dims=['z','x', 'y'], coords=make_coords(arr.shape, spacing), name=name)
     return update_metadata(out, medium_index, illum_wavelen, illum_polarization,normals)    
 
-def ImageSchema(shape, spacing, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=(0, 0, 1)):
+def ImageSchema(shape, spacing, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None):
     if np.isscalar(shape):
         shape = np.repeat(shape, 2)
 
     d = np.zeros(shape)
-    return Image(d, spacing, medium_index, illum_wavelen, illum_polarization, normals)
+    return Image(d, spacing, medium_index, illum_wavelen, illum_polarization, normals, name)
 
-def angles_list(theta, phi, medium_index, illum_wavelen, illum_polarization, normals=(0, 0, 1)):
+def angles_list(theta, phi, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None):
     # This is a hack that gets the data into a format that we can use
     # elsewhere, but feels like an abuse of xarray, it would be nice to replace this with something more ideomatic
 
-    theta = _ensure_array(theta)
-    phi = _ensure_array(phi)
-    if len(theta) == 1:
-        theta = np.repeat(theta,len(phi))
-    elif len(phi) == 1:
-        phi = np.repeat(phi,len(theta))
-
-    out = xr.DataArray(np.zeros(len(theta)), dims=['point'], attrs={'theta':theta, 'phi':phi})
+    #TODO default normals should be radially outwards.
+    [theta, phi] = repeat_sing_dim([theta, phi])
+    out = xr.DataArray(np.zeros(len(theta)), dims=['point'], coords={'theta':('point',theta), 'phi':('point',phi)})
     return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
 
 def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None):
@@ -85,8 +89,7 @@ def copy_metadata(old, new, do_coords=True):
             new=xr.DataArray(new, dims=['x', 'y'])
         new.attrs = old.attrs
         new.name = old.name
-        if hasattr(old, 'z') and not hasattr(new, 'z'):
-            new.coords['z'] = old.coords['z']
+
         if hasattr(old, 'flat') and hasattr(new, 'flat'):
             new['flat'] = old['flat']
         if do_coords:
@@ -108,16 +111,10 @@ def to_vector(c):
 
 def flat(a, keep_xy=True):
     if hasattr(a, 'flat'):
-        # TODO handle case where we have flat but not xyz
         return a
-    if hasattr(a, 'x') and hasattr(a, 'y') and keep_xy:
-        a['x_orig'] = a.x
-        a['y_orig'] = a.y
-        # TODO: remove *_orig coords from a or avoid adding them
-        f = a.stack(flat=a.dims)
-        del a['x_orig']
-        del a['y_orig']
-        return f.rename({'x_orig': 'x', 'y_orig': 'y'})
+    elif len(a.dims)==3:
+        #want to ensure order is x, y, z
+        return a.stack(flat=('x','y','z'))
     else:
         return a.stack(flat=a.dims)
 
@@ -126,37 +123,17 @@ def from_flat(a):
         return a.unstack('flat')
     return a
 
-def to_spherical(a, origin, wavevec=None, include_r=True):
-    xo, yo, zo = origin
-    x, y, z = a.x - xo, a.y - yo, zo - a.z
-    theta = arctan2(np.sqrt(x**2 + y**2), z)
-    phi = arctan2(y, x)
-    phi = phi + 2*np.pi * (phi < 0)
-    if include_r:
-        r = sqrt(x**2 + y**2 + z**2)
-        if wavevec is not None:
-            rname = 'kr'
-            kr = r*wavevec
-        else:
-            rname = 'r'
-            kr = r
-        return xr.DataArray(a, coords={rname: kr, 'theta': theta, 'phi': phi, 'x': a.x, 'y':a.y})
+def sphere_coords(a, origin=(0,0,0), wavevec=1, include_r=True):
+    if hasattr(a,'theta') and hasattr(a, 'phi') and not include_r:
+        # we are working in far field
+        return {'theta': a.theta, 'phi': a.phi}
     else:
-        return xr.DataArray(a, coords={'theta': theta, 'phi': phi, 'x': a.x, 'y': a.y})
-
-def r_theta_phi_flat(a, origin):
-    f = flat(to_spherical(a, origin))
-    return f
-
-def kr_theta_phi_flat(a, origin, wavevec=None):
-    if wavevec is None:
-        wavevec = 2*np.pi/(a.illum_wavelen/a.medium_index)
-    return flat(to_spherical(a, origin, wavevec))
-
-def theta_phi_flat(a, origin=None):
-    if hasattr(a, 'theta') and hasattr(a, 'phi'):
-        return a
-    return flat(to_spherical(a, origin))
+        f = flat(a)
+        x, y, z = [[(point[dim]-origin[dim])*wavevec for point in f.flat.data] for dim in range(3)]
+        z = [-i for i in z] #this is due to our definition of positive z opposite light propagation
+        out = to_spherical(x,y,z)
+        out['flat'] = f.flat
+        return out
 
 def get_values(a):
     return getattr(a, 'values', a)
@@ -173,4 +150,4 @@ def make_coords(shape, spacing, z=0):
         shape = np.repeat(shape, 2)
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
-    return {'x': np.arange(shape[0])*spacing[0], 'y': np.arange(shape[1])*spacing[1], 'z': 0}
+    return {'z':np.array([z]), 'x': np.arange(shape[1])*spacing[0], 'y': np.arange(shape[2])*spacing[1]}

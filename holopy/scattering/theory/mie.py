@@ -27,14 +27,12 @@ scattered field.
 '''
 
 import numpy as np
-import xarray as xr
 from ...core.utils import _ensure_array
 from ..errors import TheoryNotCompatibleError, InvalidScatterer
 from ..scatterer import Sphere, Scatterers
 from .scatteringtheory import FortranTheory
 from holopy.scattering.theory.mie_f import mieangfuncs, miescatlib
 from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
-from holopy.core.metadata import theta_phi_flat
 import copy
 
 
@@ -82,7 +80,7 @@ class Mie(FortranTheory):
 
             # In the mie solution the amplitude scattering matrix is independent of phi
             return [mieangfuncs.asm_mie_far(scat_coeffs, theta) for
-                          theta in pos.theta]
+                          r, theta, phi in pos.T]
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
