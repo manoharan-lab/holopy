@@ -134,7 +134,7 @@ def test_invalid():
 
     assert_raises(InvalidScatterer, calc_holo, schema, sc, index, wavelen, xpolarization)
 
-    cs = Sphere(center = (0, 0, 0))
+    cs = Sphere(center = (0, 0, 11e-6))
 
     assert_raises(TheoryNotCompatibleError, calc_holo, schema, cs, index, wavelen, xpolarization, Multisphere)
 
