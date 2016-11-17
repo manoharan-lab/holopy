@@ -22,15 +22,14 @@ calc_intensity and calc_holo, based on subclass's calc_field
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
-from holopy.scattering.scatterer import Sphere, Spheres
-from holopy.scattering.theory import Mie, Multisphere
-from holopy.core import ImageSchema
-from holopy.core.tests.common import assert_obj_close
-from holopy.scattering.calculations import *
+from .. import Sphere, Spheres, Mie, Multisphere
+from ...core import detector_grid
+from ...core.tests.common import assert_obj_close
+from ..calculations import *
 
 scatterer = Sphere(n = 1.6, r=.5, center=(5, 5, 5))
 medium_index = 1.33
-locations = ImageSchema(shape=(20, 20), spacing=.1)
+locations = detector_grid(shape=(20, 20), spacing=.1)
 wavelen = 0.66
 polarization=(0, 1)
 

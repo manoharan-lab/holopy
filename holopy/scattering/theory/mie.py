@@ -27,13 +27,12 @@ scattered field.
 '''
 
 import numpy as np
-from ...core.utils import _ensure_array
+from ...core.utils import ensure_array
 from ..errors import TheoryNotCompatibleError, InvalidScatterer
 from ..scatterer import Sphere, Scatterers
 from .scatteringtheory import FortranTheory
-from holopy.scattering.theory.mie_f import mieangfuncs, miescatlib
+from .mie_f import mieangfuncs, miescatlib
 from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
-import copy
 
 
 class Mie(FortranTheory):
@@ -145,10 +144,10 @@ class Mie(FortranTheory):
         return np.array([cscat, cabs, cext, asym])
 
     def _scat_coeffs(self, s, medium_wavevec, medium_index):
-        if (_ensure_array(s.r) == 0).any():
+        if (ensure_array(s.r) == 0).any():
             raise InvalidScatterer(s, "Radius is zero")
-        x_arr = medium_wavevec * _ensure_array(s.r)
-        m_arr = _ensure_array(s.n) / medium_index
+        x_arr = medium_wavevec * ensure_array(s.r)
+        m_arr = ensure_array(s.n) / medium_index
 
         # Check that the scatterer is in a range we can compute for
         if x_arr.max() > 1e3:
@@ -166,8 +165,8 @@ class Mie(FortranTheory):
 
 
     def _scat_coeffs_internal(self, s, medium_wavevec, medium_index):
-        x_arr = medium_wavevec * _ensure_array(s.r)
-        m_arr = _ensure_array(s.n) / medium_index
+        x_arr = medium_wavevec * ensure_array(s.r)
+        m_arr = ensure_array(s.n) / medium_index
 
         # Check that the scatterer is in a range we can compute for
         if x_arr.max() > 1e3:

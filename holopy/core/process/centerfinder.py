@@ -36,51 +36,10 @@ video microscopy, Optics Express 17, 13071-13079 (2009).
 .. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
 """
 
-
-
 import numpy as np
-from .img_proc import normalize, subimage
+from .img_proc import normalize
 from scipy.ndimage import sobel, filters
 from copy import copy
-
-def centered_subimage(image, shape, threshold=.5, blursize=3):
-    """
-    Cut out a region of an image centered around an automatically detected particle
-
-    Parameters
-    ----------
-    image : ndarray or Image
-        The source image to cut from
-    shape : int or (int, int)
-        The desired subimage shape
-    threshold : float (optional)
-        fraction of the maximum gradient below which all
-        other gradients will be ignored (range 0-.99)
-    blursize : float (optional)
-        radius (in pixels) of the Gaussian filter that
-        is applied prior to Hough transform
-
-    Returns
-    -------
-    res : ndarray
-        row(s) and column(s) of center(s)
-
-    Notes
-    -----
-    See further description in center_find docstring.
-    """
-    # TODO: add centers option? maybe do something like center the cut
-    # on the com, probably warn if any centers are out of the cut
-
-    if image.ndim < 3:
-        center = center_find(image, threshold=threshold, blursize=blursize)
-        return subimage(image, center, shape)
-    else:
-        n_frames = image.shape[2]
-        result = np.zeros(shape + (n_frames,))
-        for frame in range(n_frames):
-            center = center_find(image[...,frame], threshold=threshold, blursize=blursize)
-            result[..., frame] = subimage
 
 def center_find(image, centers=1, threshold=.5, blursize=3.):
     """

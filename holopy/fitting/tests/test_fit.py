@@ -19,21 +19,16 @@
 import tempfile
 import warnings
 import numpy as np
-import holopy as hp
-import xarray as xr
-
 from nose.plugins.attrib import attr
 from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, assert_raises
-from holopy.scattering import Sphere, Spheres, Mie, calc_holo
-from holopy.core import ImageSchema, load, save
-from holopy.core.metadata import sphere_coords, copy_metadata, angles_list
-from holopy.core.process import normalize
-from holopy.fitting import fit, Parameter, ComplexParameter, par, Parametrization, Model
-from holopy.core.tests.common import (assert_obj_close, get_example_data,
-                                  assert_read_matches_write)
-from holopy.fitting import Model, FitResult
+
+from ...scattering import Sphere, Spheres, LayeredSphere, Mie, calc_holo
+from ...core import detector_grid, load, save
+from ...core.process import normalize
+from .. import fit, Parameter, ComplexParameter, par, Parametrization, Model, FitResult
+from ...core.tests.common import (assert_obj_close, get_example_data, assert_read_matches_write)
 from ..errors import InvalidMinimizer
-from holopy.fitting.model import limit_overlaps, ParameterizedObject
+from ..model import limit_overlaps, ParameterizedObject
 
 gold_alpha = .6497
 
@@ -147,7 +142,7 @@ def disable_next_model():
 
 def test_n():
     sph = Sphere(par(.5), 1.6, (5,5,5))
-    sch = ImageSchema(shape=[100, 100], spacing=[0.1, 0.1], illum_wavelen=0.66,
+    sch = detector_grid(shape=[100, 100], spacing=[0.1, 0.1], illum_wavelen=0.66,
                       medium_index=1.33, illum_polarization=[1, 0])
 
     model = Model(sph, calc_holo, 1.33, .66, illum_polarization=(1, 0), alpha=1)
@@ -164,7 +159,7 @@ def test_serialization():
 
     alpha = par(.6, [.1, 1], 'alpha')
 
-    schema = ImageSchema(shape = 100, spacing = .1151e-6, illum_wavelen=.66e-6, medium_index=1.33, illum_polarization=(1,0))
+    schema = detector_grid(shape = 100, spacing = .1151e-6, illum_wavelen=.66e-6, medium_index=1.33, illum_polarization=(1,0))
 
     model = Model(par_s, calc_func=calc_holo, medium_index=schema.medium_index, illum_wavelen=schema.illum_wavelen, alpha=alpha)
 
@@ -184,7 +179,7 @@ def test_serialization():
 
 def test_integer_correctness():
     # we keep having bugs where the fitter doesn't
-    schema = ImageSchema(shape = 100, spacing = .1, illum_wavelen = .660,
+    schema = detector_grid(shape = 100, spacing = .1, illum_wavelen = .660,
                          medium_index = 1.33, illum_polarization = (1, 0))
     s = Sphere(center = (10.2, 9.8, 10.3), r = .5, n = 1.58)
     holo = calc_holo(schema, s)
@@ -202,7 +197,7 @@ def test_model_guess():
     assert_obj_close(m.scatterer.guess, Sphere(n=1.59, r=0.5, center=[5, 5, 5]))
 
 def test_constraint():
-    sch = ImageSchema(100, spacing=1)
+    sch = detector_grid(100, spacing=1)
     with warnings.catch_warnings():
         # TODO: we should really only supress overlap warnings here,
         # but I am too lazy to figure it out right now, and I don't
@@ -217,10 +212,10 @@ def test_constraint():
 
 def test_layered():
     s = Sphere(n = (1,2), r = (1, 2), center = (2, 2, 2))
-    sch = ImageSchema((10, 10), .2, illum_wavelen=.66, medium_index=1, illum_polarization=(1, 0))
+    sch = detector_grid((10, 10), .2, illum_wavelen=.66, medium_index=1, illum_polarization=(1, 0))
     hs = calc_holo(sch, s, 1, .66, (1, 0))
 
-    guess = hp.scattering.scatterer.sphere.LayeredSphere((1,2), (par(1.01), par(.99)), (2, 2, 2))
+    guess = LayeredSphere((1,2), (par(1.01), par(.99)), (2, 2, 2))
     model = Model(guess, calc_holo)
     res = fit(model, hs)
     assert_allclose(res.scatterer.t, (1, 1), rtol = 1e-12)

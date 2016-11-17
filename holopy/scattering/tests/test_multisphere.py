@@ -28,22 +28,17 @@ import numpy as np
 
 import warnings
 from numpy.testing import (assert_equal, assert_array_almost_equal,
-                           assert_almost_equal, assert_allclose,
-                           assert_array_equal, assert_raises)
+                           assert_allclose, assert_array_equal, assert_raises)
 
 from nose.plugins.attrib import attr
 import scipy
 
-from holopy.scattering.calculations import calc_holo
-from ...core.metadata import ImageSchema, angles_list
-from ..theory import Multisphere
-from ..scatterer import Sphere, Spheres
+from .. import calc_holo, calc_scat_matrix, calc_cross_sections, Multisphere, Sphere, Spheres
+from ...core.metadata import detector_far
 from ..errors import InvalidScatterer, TheoryNotCompatibleError, MultisphereFailure
-from .common import assert_allclose, verify, xschema, yschema, index, wavelen, xpolarization, ypolarization, polarization
+from .common import xschema, yschema, index, wavelen, xpolarization, ypolarization
 from .common import scaling_alpha, sphere
-from holopy.core.tests.common import assert_obj_close
-
-from holopy.scattering.calculations import calc_scat_matrix, calc_cross_sections, calc_holo
+from holopy.core.tests.common import assert_obj_close, verify
 
 schema = xschema
 
@@ -147,7 +142,7 @@ def test_invalid():
     sc2 = Spheres([Sphere(center = [0., 0., 0.],
                           n = [1.+0.1j, 1.2],
                           r = [4e-7, 5e-7])])
-    assert_raises(TheoryNotCompatibleError, calc_cross_sections, scatterer=sc2, medium_index=index, illum_wavelen=wavelen, illum_polarization=polarization, theory=Multisphere)
+    assert_raises(TheoryNotCompatibleError, calc_cross_sections, scatterer=sc2, medium_index=index, illum_wavelen=wavelen, illum_polarization=ypolarization, theory=Multisphere)
     
 
 def test_overlap():
@@ -199,7 +194,7 @@ def test_cross_sections():
     # as well as all the scattering coefficients
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', scipy.integrate.IntegrationWarning)
-        xsects = calc_cross_sections(sc, illum_wavelen=wavelen, medium_index=index, illum_polarization=polarization)
+        xsects = calc_cross_sections(sc, illum_wavelen=wavelen, medium_index=index, illum_polarization=ypolarization)
 
     gold_xsects = np.array([0.03830316, 0.04877015, 0.08707331])
     # calculated directly by SCSMFO. Efficiencies normalized
@@ -207,7 +202,7 @@ def test_cross_sections():
     assert_allclose(xsects[:3], gold_xsects, rtol = 1e-3)
 
 def test_farfield():
-    schema = angles_list(np.linspace(0, np.pi/2), phi = np.zeros(50),
+    schema = detector_far(np.linspace(0, np.pi/2), phi = np.zeros(50),
                          illum_wavelen=.66, medium_index=1.33, illum_polarization=(1, 0))
     n = 1.59+0.01j
     r = 0.5

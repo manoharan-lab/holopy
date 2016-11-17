@@ -29,4 +29,4 @@ reconstructions.
 
 from .img_proc import normalize, detrend, zero_filter, subimage, add_noise, simulate_noise
 from .fourier import fft, ifft
-from .centerfinder import center_find, centered_subimage, hough, image_gradient
+from .centerfinder import center_find, hough, image_gradient

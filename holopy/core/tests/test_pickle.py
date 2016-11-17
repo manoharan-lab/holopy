@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-from holopy.core.tests.common import assert_pickle_roundtrip, get_example_data
+from .common import assert_pickle_roundtrip, get_example_data
 
 def test_image():
     holo = get_example_data('image0001')

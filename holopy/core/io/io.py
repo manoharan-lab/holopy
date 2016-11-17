@@ -32,10 +32,9 @@ import xarray as xr
 import importlib
 
 from . import serialize
-from ..metadata import Image, ImageSchema, get_spacing, update_metadata, to_vector, make_coords
-from ..utils import is_none, _ensure_array, dict_without
-from ..process import zero_filter
-from holopy.core.errors import NoMetadata, BadImage
+from ..metadata import data_grid, get_spacing, update_metadata
+from ..utils import is_none, ensure_array, dict_without
+from ..errors import NoMetadata
 
 attr_coords = '_attr_coords'
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
@@ -72,7 +71,7 @@ def pack_attrs(a, do_spacing=False):
             new_attrs[attr_coords][attr]={}
             for dim in val.dims:
                 new_attrs[attr_coords][attr][dim]=val[dim].values
-            new_attrs[attr]=list(_ensure_array(val))
+            new_attrs[attr]=list(ensure_array(val))
         else:
             new_attrs[attr_coords][attr]=False
             new_attrs[attr]=val
@@ -191,7 +190,7 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
 
     if name is None:
         name = os.path.splitext(os.path.split(inf)[-1])[0]
-    return Image(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, name)
+    return data_grid(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, name)
 
 def save(outf, obj):
     """

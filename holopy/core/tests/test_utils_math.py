@@ -18,13 +18,15 @@
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
-from ..utils import _ensure_array, ensure_listlike, mkdir_p
-from ..math import rotate_points, rotation_matrix
-from .common import get_example_data, assert_obj_close
 from nose.plugins.attrib import attr
 import tempfile
 import os
 import shutil
+
+from ..utils import ensure_array, ensure_listlike, mkdir_p
+from ..math import rotate_points, rotation_matrix
+from .common import assert_obj_close, get_example_data
+
 
 #Test math
 def test_rotate_single_point():
@@ -39,9 +41,9 @@ def test_rotation_matrix_degrees():
 #test utils
 @attr('fast')
 def test_ensure_array():
-    assert_equal(_ensure_array(1.0), np.array([1.0]))
-    assert_equal(_ensure_array([1.0]), np.array([1.0]))
-    assert_equal(_ensure_array(np.array([1.0])), np.array([1.0]))
+    assert_equal(ensure_array(1.0), np.array([1.0]))
+    assert_equal(ensure_array([1.0]), np.array([1.0]))
+    assert_equal(ensure_array(np.array([1.0])), np.array([1.0]))
 
 def test_ensure_listlike():
     assert ensure_listlike(None) == []

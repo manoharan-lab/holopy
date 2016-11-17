@@ -23,22 +23,14 @@ Test construction and manipulation of Scatterer objects.
 
 
 import numpy as np
-from numpy.testing import assert_equal, assert_warns, assert_raises
+from numpy.testing import assert_equal, assert_raises, assert_allclose
 from nose.plugins.attrib import attr
 
-from warnings import warn
-
-from ...core import ImageSchema
-
-from ..scatterer import (Sphere, Scatterer, Ellipsoid,
-                         Scatterers)
-
+from ...core import detector_grid
+from .. import Sphere, Scatterer, Ellipsoid, Scatterers, calc_holo
 from ..scatterer.ellipsoid import isnumber
 from ..scatterer.scatterer import find_bounds
-
 from ..errors import InvalidScatterer, MissingParameter
-from .common import assert_allclose
-from holopy.scattering.calculations import calc_holo
 
 @attr('fast')
 def test_Sphere_construction():
@@ -168,7 +160,7 @@ def test_find_bounds():
 
 def test_sphere_nocenter():
     sphere = Sphere(n = 1.59, r = .5)
-    schema = ImageSchema(spacing=.1, shape=1, illum_wavelen = .660, illum_polarization = [1, 0], medium_index = 1.33)
+    schema = detector_grid(spacing=.1, shape=1, illum_wavelen = .660, illum_polarization = [1, 0], medium_index = 1.33)
     assert_raises(MissingParameter, calc_holo, schema, sphere, 1.33, .66)
 
 def test_ellipsoid():

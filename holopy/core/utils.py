@@ -29,7 +29,7 @@ import numpy as np
 from copy import copy
 import itertools
 
-def _ensure_array(x):
+def ensure_array(x):
     if np.isscalar(x):
         return np.array([x])
     else:
@@ -43,15 +43,6 @@ def ensure_listlike(x):
         return x
     except TypeError:
         return [x]
-
-def _ensure_pair(x):
-    if x is None:
-        return None
-    try:
-        x[1]
-        return np.array(x)
-    except (IndexError, TypeError):
-        return np.array([x, x])
 
 def mkdir_p(path):
     '''
@@ -82,7 +73,7 @@ def dict_without(d, keys):
         A copy of dict without any of the specified keys
     """
     d = copy(d)
-    for key in _ensure_array(keys):
+    for key in ensure_array(keys):
         try:
             del d[key]
         except KeyError:
@@ -127,7 +118,7 @@ def updated(d, update={}, filter_none=True, **kwargs):
 
 
 def repeat_sing_dim(inlist):
-    inlist = [_ensure_array(dim) for dim in inlist]
+    inlist = [ensure_array(dim) for dim in inlist]
     maxlen = max([len(dim) for dim in inlist])
     outlist=[]
 

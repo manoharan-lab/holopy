@@ -38,17 +38,15 @@ down the problem.
 
 import os
 import yaml
-from numpy.testing import assert_allclose, assert_raises
+from numpy.testing import assert_allclose
 import numpy as np
 from numpy import sqrt, dot, pi, conj, real, imag, exp
 from nose.plugins.attrib import attr
+from scipy.special import spherical_jn, spherical_yn
 
 from ..theory.mie_f import mieangfuncs, miescatlib, multilayer_sphere_lib, \
     scsmfo_min, mie_specfuncs
-
-from holopy.scattering.theory.multisphere import _asm_far
-
-from scipy.special import spherical_jn, spherical_yn
+from ..theory.multisphere import _asm_far
 
 # basic defs
 kr = 10.
