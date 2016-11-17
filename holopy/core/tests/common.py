@@ -16,21 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
 import tempfile
 import os
 import types
 import inspect
 import yaml
 import shutil
-from numpy.testing import assert_equal, assert_almost_equal, assert_allclose
+from numpy.testing import assert_equal, assert_allclose
 import pickle
 from collections import OrderedDict
-import xarray as xr
 
-from .. import load, save, update_metadata
-from ..io import get_example_data, get_example_data_path
-from ..utils import _ensure_array
+from ..io import load, save, get_example_data
 
 # tests should fail if they give warnings
 import warnings

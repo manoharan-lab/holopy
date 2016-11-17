@@ -30,7 +30,7 @@ from copy import copy
 import numpy as np
 
 from ...core.holopy_object  import HoloPyObject
-from ...core.utils import _ensure_array
+from ...core.utils import ensure_array
 from ..errors import InvalidScatterer
 from functools import reduce
 
@@ -58,7 +58,7 @@ class Scatterer(HoloPyObject):
         if not isinstance(indicators, Indicators):
             indicators = Indicators(indicators)
         self.indicators = indicators
-        self.n = _ensure_array(n)
+        self.n = ensure_array(n)
         self.center = np.array(center)
 
     def translated(self, x, y, z):
@@ -84,7 +84,7 @@ class Scatterer(HoloPyObject):
 
     def index_at(self, points, background = 0):
         domains = self.in_domain(points)
-        ns = _ensure_array(self.n)
+        ns = ensure_array(self.n)
         if np.iscomplex(np.append(self.n, background)).any():
             dtype = np.complex
         else:

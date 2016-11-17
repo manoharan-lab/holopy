@@ -39,9 +39,8 @@ import warnings
 
 from .scatteringtheory import ScatteringTheory
 from .mie_f import mieangfuncs
-from ..scatterer import Sphere, Ellipsoid, Spheres, Capsule, Cylinder, Bisphere, Sphere_builtin, JanusSphere
-from holopy.scattering.scatterer.csg import CsgScatterer
-from ...core.utils import _ensure_array
+from ..scatterer import Sphere, Ellipsoid, Spheres, Capsule, Cylinder, Bisphere, Sphere_builtin, JanusSphere, CsgScatterer
+from ...core.utils import ensure_array
 from ..errors import DependencyMissing
 
 scatterers_handled = Sphere, JanusSphere, Ellipsoid, Spheres, Capsule, Cylinder, Bisphere, Sphere_builtin, CsgScatterer
@@ -192,7 +191,7 @@ class DDA(ScatteringTheory):
                               np.mgrid[[slice(0,d) for d in vox.shape]]],
                              3).reshape((-1, 3))
         vox = vox.flatten()
-        ns = _ensure_array(scatterer.n)
+        ns = ensure_array(scatterer.n)
         n_domains = len(ns)
         if n_domains > 1:
             out = np.hstack((idx, vox[...,np.newaxis]))

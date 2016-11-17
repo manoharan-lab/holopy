@@ -17,25 +17,17 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from ...core import ImageSchema
+from ...core import detector_grid
 from ...scattering.scatterer import Sphere
-
-from ...core.tests.common import assert_allclose, assert_obj_close, verify
 
 wavelen = 658e-9
 ypolarization = [0., 1.0] # y-polarized
 xpolarization = [1.0, 0.] # x-polarized
-divergence = 0
 pixel_scale = [.1151e-6, .1151e-6]
 index = 1.33
-imshape = 128
 
-xschema = ImageSchema(shape = 128, spacing=pixel_scale, illum_wavelen=wavelen, medium_index=index, illum_polarization=xpolarization)
-yschema = ImageSchema(shape = 128, spacing=pixel_scale, illum_wavelen=wavelen, medium_index=index, illum_polarization=ypolarization)
-
-
-schema=yschema
-polarization=ypolarization
+xschema = detector_grid(shape = 128, spacing=pixel_scale, illum_wavelen=wavelen, medium_index=index, illum_polarization=xpolarization)
+yschema = detector_grid(shape = 128, spacing=pixel_scale, illum_wavelen=wavelen, medium_index=index, illum_polarization=ypolarization)
 
 scaling_alpha = .6
 radius = .85e-6

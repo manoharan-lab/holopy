@@ -19,7 +19,7 @@
 import numpy as np
 from numpy.testing import assert_allclose
 from ..process import center_find, subimage, fft, ifft
-from ..metadata import Image, ImageSchema
+from ..metadata import data_grid, detector_grid
 from .common import get_example_data, assert_obj_close
 from scipy import fftpack
 from nose.plugins.attrib import attr
@@ -34,15 +34,15 @@ def test_FoundLocation():
 
 #Test img_proc
 def test_subimage():
-    i = ImageSchema(shape=(10, 10), spacing=1)
+    i = detector_grid(shape=(10, 10), spacing=1)
     s = subimage(i, (5,5), 2)
     assert s.shape == (1,2,2)
 
-    i2 = Image(i, 1)
+    i2 = data_grid(i, 1)
     s2 = subimage(i2, (5, 5), 2)
 
 def test_subimage_floats():
-    i = Image(np.zeros((100, 100)), .1)
+    i = data_grid(np.zeros((100, 100)), .1)
     s1 = subimage(i, (5.2,5.6), 2)
     s2 = subimage(i, (5,6), 2)
     assert_obj_close(s1, s2)

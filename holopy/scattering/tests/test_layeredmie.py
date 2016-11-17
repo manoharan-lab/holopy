@@ -24,19 +24,15 @@ Test fortran-based multilayered Mie calculations and python interface.
 
 
 import numpy as np
-from numpy import sqrt
 from numpy.testing import assert_allclose
 import yaml
 import os
-from ...core import ImageSchema
-from .common import verify
-from ..theory import Mie
-from ..theory.mie_f import multilayer_sphere_lib, miescatlib
-from ..scatterer import Sphere
-
-from holopy.scattering.calculations import calc_holo
-
 from nose.plugins.attrib import attr
+
+from ...core import detector_grid
+from ...core.tests.common import verify
+from ..theory.mie_f import multilayer_sphere_lib, miescatlib
+from .. import Sphere, calc_holo, Mie
 
 @attr('medium')
 def test_Shell():
@@ -44,7 +40,7 @@ def test_Shell():
               n=[(1.27121212428+0j), (1.49+0j)], r=[0.960957713253-0.0055,
                                                     0.960957713253])
 
-    t = ImageSchema(200, .071333, illum_wavelen=.658, medium_index=1.36, illum_polarization=(1, 0))
+    t = detector_grid(200, .071333, illum_wavelen=.658, medium_index=1.36, illum_polarization=(1, 0))
 
     thry = Mie(False)
     h = calc_holo(t,s, 1.36, .658, theory=thry, scaling = 0.4826042444701572)
@@ -85,7 +81,7 @@ def test_sooty_particles():
     x_sm = np.arange(1, n_layers + 1) * x_L / n_layers
     beta = (m_abs**2 - m_med**2) / (m_abs**2 + 2. * m_med**2)
     f = 4./3. * (x_sm / x_L) * f_v
-    m_sm = m_med * sqrt(1. + 3. * f * beta / (1. - f * beta))
+    m_sm = m_med * np.sqrt(1. + 3. * f * beta / (1. - f * beta))
 
     location = os.path.split(os.path.abspath(__file__))[0]
     gold_name = os.path.join(location, 'gold',

@@ -22,19 +22,19 @@ Tests adda based DDA calculations
 '''
 
 
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_almost_equal, assert_allclose
 import numpy as np
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
+import os.path
+
 
 from ...scattering.errors import DependencyMissing
 from ..scatterer import Sphere, Ellipsoid, Scatterer, JanusSphere, Difference
 from .. import Mie, DDA, calc_holo as calc_holo_external
-from ...core import ImageSchema
-from .common import assert_allclose, verify, assert_obj_close
-
-import os.path
+from ...core import detector_grid
+from ...core.tests.common import verify, assert_obj_close
 
 # nose setup/teardown methods
 def setup_optics():
@@ -46,7 +46,7 @@ def setup_optics():
     pixel_scale = [.1151, .1151]
     index = 1.33
 
-    schema = ImageSchema(128, spacing = pixel_scale, illum_wavelen=wavelen, medium_index=index, illum_polarization=polarization)
+    schema = detector_grid(128, spacing = pixel_scale, illum_wavelen=wavelen, medium_index=index, illum_polarization=polarization)
 
 def teardown_optics():
     global schema
@@ -109,7 +109,7 @@ def test_voxelated_complex():
 
     sv = Scatterer(s.indicators, s.n, s.center)
 
-    schema = ImageSchema(50, .1, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1, 0))
+    schema = detector_grid(50, .1, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1, 0))
 
     holo_dda = calc_holo(schema, sv, theory=DDA)
     verify(holo_dda, 'dda_voxelated_complex', rtol=1e-5)
@@ -130,7 +130,7 @@ def test_DDA_coated():
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_Ellipsoid_dda():
     e = Ellipsoid(1.5, r = (.5, .1, .1), center = (1, -1, 10))
-    schema = ImageSchema(100, .1, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1,0))
+    schema = detector_grid(100, .1, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1,0))
     h = calc_holo(schema, e)
 
     assert_obj_close(h.max(), 1.3152766077267062)
@@ -138,7 +138,7 @@ def test_Ellipsoid_dda():
     assert_obj_close(h.std(), 0.06453155384119547)
 
 def test_janus():
-    schema = ImageSchema(60, .1, illum_wavelen=.66, medium_index=1.33, illum_polarization=(1, 0))
+    schema = detector_grid(60, .1, illum_wavelen=.66, medium_index=1.33, illum_polarization=(1, 0))
     s = JanusSphere(n = [1.34, 2.0], r = [.5, .51], rotation = (-np.pi/2, 0),
                     center = (5, 5, 5))
     assert_almost_equal(s.index_at([5,5,5]),1.34)
@@ -149,7 +149,7 @@ def test_csg_dda():
     s = Sphere(n = 1.6, r=.1, center=(5, 5, 5))
     st = s.translated(.03, 0, 0)
     pacman = Difference(s, st)
-    sch = ImageSchema(10, .1, illum_wavelen=.66, medium_index=1.33, illum_polarization=(0, 1))
+    sch = detector_grid(10, .1, illum_wavelen=.66, medium_index=1.33, illum_polarization=(0, 1))
     h = calc_holo(sch, pacman, 1.33, .66, illum_polarization=(0, 1))
     verify(h, 'dda_csg')
 

@@ -25,13 +25,13 @@ Classes for defining metadata about experimental or calculated results.
 import numpy as np
 import xarray as xr
 from warnings import warn
-from .utils import _ensure_array, is_none, updated, repeat_sing_dim
-from .math import to_spherical
+from .utils import ensure_array, is_none, updated, repeat_sing_dim
+from .math import to_spherical, to_cartesian
 
 
 vector = 'vector'
 
-def Image(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None):
+def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None):
     if spacing is None:
         spacing = 1
     if is_none(normals):
@@ -44,21 +44,25 @@ def Image(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polari
     if arr.ndim==2:
         arr=np.array([arr])
     out = xr.DataArray(arr, dims=['z','x', 'y'], coords=make_coords(arr.shape, spacing), name=name)
-    return update_metadata(out, medium_index, illum_wavelen, illum_polarization,normals)    
+    return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)    
 
-def ImageSchema(shape, spacing, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None):
+def detector_grid(shape, spacing, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None):
     if np.isscalar(shape):
         shape = np.repeat(shape, 2)
 
     d = np.zeros(shape)
-    return Image(d, spacing, medium_index, illum_wavelen, illum_polarization, normals, name)
+    return data_grid(d, spacing, medium_index, illum_wavelen, illum_polarization, normals, name)
 
-def angles_list(theta, phi, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None):
-    # This is a hack that gets the data into a format that we can use
-    # elsewhere, but feels like an abuse of xarray, it would be nice to replace this with something more ideomatic
+def detector_far(theta, phi, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None):
 
-    #TODO default normals should be radially outwards.
     [theta, phi] = repeat_sing_dim([theta, phi])
+
+    if is_none(normals):
+        #default normals point radially inwards
+        normals = to_cartesian(theta, phi)
+        normals = -np.vstack((normals['x'],normals['y'],normals['z']))
+        normals = xr.DataArray(normals, dims=[vector,'point'], coords={vector: ['x', 'y', 'z']})
+
     out = xr.DataArray(np.zeros(len(theta)), dims=['point'], coords={'theta':('point',theta), 'phi':('point',phi)})
     return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
 
