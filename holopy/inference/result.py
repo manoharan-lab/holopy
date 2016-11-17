@@ -92,7 +92,7 @@ class SamplingResult(HoloPyObject):
         autocorr_to_sentinal(ds.lnprobs)
         return ds
 
-    def save(self, filename):
+    def _save(self, filename):
         self._serialization_ds().to_netcdf(filename, engine='h5netcdf')
 
     @classmethod
@@ -107,10 +107,14 @@ class SamplingResult(HoloPyObject):
 
 class TemperedSamplingResult(SamplingResult):
     def __init__(self, end_result, stage_results, model, strategy):
-        self.dataset = end_result
+        self.end_result = end_result
         self.stage_results = stage_results
         self.model = model
         self.strategy = strategy
+
+    @property
+    def dataset(self):
+        return self.end_result.dataset
 
     def _serialization_ds(self):
         ds = super()._serialization_ds()

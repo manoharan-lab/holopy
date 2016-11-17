@@ -220,6 +220,9 @@ def save(outf, obj):
             save_image(outf, obj)
             return
 
+    if hasattr(obj, '_save'):
+        obj._save(outf)
+
     if hasattr(obj, 'to_dataset'):
         obj=obj.copy()
         if obj.name is None:
