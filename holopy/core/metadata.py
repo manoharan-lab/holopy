@@ -37,14 +37,14 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_po
     if is_none(normals):
         normals=(0, 0, 1)
     if name is None:
-        name = 'data'    
+        name = 'data'
 
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
     if arr.ndim==2:
         arr=np.array([arr])
     out = xr.DataArray(arr, dims=['z','x', 'y'], coords=make_coords(arr.shape, spacing), name=name)
-    return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)    
+    return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
 
 def detector_grid(shape, spacing, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None):
     if np.isscalar(shape):
@@ -113,12 +113,19 @@ def to_vector(c):
 
     return xr.DataArray(c, coords={vector: ['x', 'y', 'z']})
 
-def flat(a, keep_xy=True):
+def flat(a, keep_dims=True):
     if hasattr(a, 'flat'):
         return a
-    elif len(a.dims)==3:
+    if len(a.dims)==3 and keep_dims:
+        a['x_orig'] = a.x
+        a['y_orig'] = a.y
+        a['z_orig'] = a.z
         #want to ensure order is x, y, z
-        return a.stack(flat=('x','y','z'))
+        r = a.stack(flat=('x','y','z'))
+        del a['x_orig']
+        del a['y_orig']
+        del a['z_orig']
+        return r.rename({'x_orig': 'x', 'y_orig': 'y', 'z_orig': 'z'})
     else:
         return a.stack(flat=a.dims)
 
@@ -133,9 +140,10 @@ def sphere_coords(a, origin=(0,0,0), wavevec=1, include_r=True):
         return {'theta': a.theta, 'phi': a.phi}
     else:
         f = flat(a)
-        x, y, z = [[(point[dim]-origin[dim])*wavevec for point in f.flat.data] for dim in range(3)]
-        z = [-i for i in z] #this is due to our definition of positive z opposite light propagation
-        out = to_spherical(x,y,z)
+        # we define positive z opposite light propagation, so we have to invert
+        x, y, z = f.x.values - origin[0], f.y.values - origin[1], origin[2] - f.z.values
+        out = to_spherical(x, y, z)
+        out['r'] *= wavevec
         out['flat'] = f.flat
         return out
 
