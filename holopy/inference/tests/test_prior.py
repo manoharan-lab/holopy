@@ -22,7 +22,8 @@
 from numpy.testing import assert_raises, assert_equal
 import numpy as np
 
-from holopy.inference import prior, mcmc
+from holopy.inference import prior
+from holopy.inference.result import UncertainValue
 from holopy.core.tests.common import assert_obj_close
 #GOLD:log(sqrt(0.5/pi))-1/2
 gold_sigma=-1.4189385332
@@ -47,7 +48,7 @@ def test_gaussian():
 
 def test_updated():
     p=prior.BoundedGaussian(1,2,-1,2)    
-    d=mcmc.UncertainValue(1,0.5,1)
+    d=UncertainValue(1,0.5,1)
     u=prior.updated(p,d)
     assert_equal(u.guess,1)
     assert_obj_close(u.lnprob(0),gold_sigma)

@@ -29,6 +29,7 @@ from scipy.misc import fromimage
 from PIL import Image as pilimage
 from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 import xarray as xr
+import importlib
 
 from . import serialize
 from ..metadata import Image, ImageSchema, get_spacing, update_metadata, to_vector, make_coords
@@ -111,6 +112,14 @@ def load(inf, lazy=False):
             # calculations.
             if not lazy:
                 ds = ds.load()
+
+            try:
+                _source_class = ds.attrs.pop('_source_class')
+                pathtok = _source_class.split('.')
+                cls = getattr(importlib.import_module(".".join(pathtok[:-1])), pathtok[-1])
+                return cls._load(ds)
+            except KeyError:
+                pass
 
             #loaded dataset potential contains multiple DataArrays. We need
             #to find out their names and loop through them to unpack metadata

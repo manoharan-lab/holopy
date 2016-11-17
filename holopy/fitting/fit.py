@@ -38,10 +38,15 @@ from .errors import MinimizerConvergenceFailed, InvalidMinimizer
 from holopy.scattering.errors import MultisphereFailure
 from .minimizer import Minimizer, Nmpfit
 
-def make_subset_data(data, random_subset, return_selection=False):
-    if random_subset is None:
+def make_subset_data(data, random_subset=None, use_pixels=None, return_selection=False):
+    if random_subset is None and use_pixels is None:
         return data
-    n_sel = int(np.ceil(data.size*random_subset))
+    if random_subset is not None and use_pixels is not None:
+        raise ValueError("You can only specify one of use_pixels or random_subset")
+    if use_pixels is not None:
+        n_sel = use_pixels
+    else:
+        n_sel = int(np.ceil(data.size*random_subset))
     selection = np.random.choice(data.size, n_sel, replace=False)
     subset = flat(data)[selection]
     subset = copy_metadata(data, subset, do_coords=False)

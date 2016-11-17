@@ -29,7 +29,8 @@ from holopy.scattering.calculations import calc_field, calc_holo
 class NoiseModel(BaseModel):
     def __init__(self, scatterer, noise_sd, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
         super().__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory)
-        self._use_parameter(noise_sd, 'noise_sd')
+        # the float cast insures we don't have noise_sd wrapped up in a needless xarray
+        self._use_parameter(float(noise_sd), 'noise_sd')
 
     def _pack(self, vals):
         return {par.name: val for par, val in zip(self.parameters, vals)}
