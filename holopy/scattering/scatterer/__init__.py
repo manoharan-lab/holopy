@@ -29,7 +29,7 @@ as Clusters.
 from .scatterer import Scatterer, Indicators
 from . import scatterer
 
-from .sphere import Sphere
+from .sphere import Sphere, LayeredSphere
 from .composite import Scatterers
 from .spherecluster import Spheres
 from .janus import JanusSphere
@@ -38,4 +38,4 @@ from .capsule import Capsule
 from .cylinder import Cylinder
 from .bisphere import Bisphere
 from .sphere_builtin import Sphere_builtin
-from .csg import Union, Difference, Intersection
+from .csg import Union, Difference, Intersection, CsgScatterer

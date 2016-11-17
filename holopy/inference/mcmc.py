@@ -20,7 +20,6 @@ from holopy.fitting.errors import ParameterSpecificationError
 from holopy.fitting.model import Model
 from holopy.core.holopy_object import HoloPyObject
 from . import prior
-from holopy.core.metadata import Image
 from holopy.fitting.fit import make_subset_data
 from emcee import PTSampler, EnsembleSampler
 import emcee

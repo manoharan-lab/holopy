@@ -21,8 +21,6 @@ Test file IO of scatterpy objects
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
-
-from ..scatterer import Sphere
 from ...core.tests.common import assert_read_matches_write
 from ..scatterer import Sphere, Spheres
 

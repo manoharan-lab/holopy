@@ -16,32 +16,24 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
-from holopy.core.tests.common import (assert_obj_close,
-                                      assert_read_matches_write,
-                                      get_example_data,
-                                      get_example_data_path,
-                                      assert_allclose)
-from holopy.core import load, save, load_image, save_image
-from holopy.core.process import normalize
-from holopy.core.metadata import Image, get_spacing
+import yaml
 import tempfile
 import os
 import shutil
-import warnings
-from nose.plugins.attrib import attr
-from numpy.testing import assert_raises, assert_equal
 import numpy as np
-from holopy.core.holopy_object import Serializable
-import yaml
+from numpy.testing import assert_equal, assert_allclose
+from nose.plugins.attrib import attr
+
+from .. import load, save, load_image, save_image
+from ..process import normalize
+from ..metadata import get_spacing
+from ..holopy_object import Serializable
+from .common import (assert_obj_close, assert_read_matches_write, get_example_data)
 
 @attr('fast')
 def test_hologram_io():
     holo = normalize(get_example_data('image0001'))
     assert_read_matches_write(holo)
-
-def test_marray_io():
-    d = Image(np.random.random((10, 10)), spacing=1, medium_index=1, illum_wavelen=1, illum_polarization=(0, 1))
-    assert_read_matches_write(d)
 
 def test_image_io():
     holo = get_example_data('image0001')

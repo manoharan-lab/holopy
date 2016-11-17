@@ -35,7 +35,6 @@ from ..core.holopy_object import HoloPyObject
 from holopy.core.metadata import flat, copy_metadata
 from holopy.core.math import chisq, rsq
 from .errors import MinimizerConvergenceFailed, InvalidMinimizer
-from holopy.scattering.errors import MultisphereFailure
 from .minimizer import Minimizer, Nmpfit
 
 def make_subset_data(data, random_subset, return_selection=False):

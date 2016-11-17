@@ -24,10 +24,11 @@ Defines Sphere, a scattering primitive
 '''
 
 import numpy as np
+from copy import copy
+
 from .scatterer import CenteredScatterer, Indicators
 from ..errors import InvalidScatterer
-from copy import copy
-from ...core.utils import _ensure_array, updated
+from ...core.utils import ensure_array, updated
 
 class Sphere(CenteredScatterer):
     '''
@@ -64,7 +65,7 @@ class Sphere(CenteredScatterer):
 
     @property
     def indicators(self):
-        rs = _ensure_array(self.r)
+        rs = ensure_array(self.r)
         funcs = [(lambda points, ri=ri: (points**2).sum(-1) < ri**2) for ri in rs]
         r = max(rs)
         return Indicators(funcs, [[-r, r], [-r, r], [-r, r]])
@@ -107,8 +108,8 @@ class LayeredSphere(Sphere):
         specifies coordinates of center of sphere
     """
     def __init__(self, n = None, t = None, center = None):
-        self.n = _ensure_array(n)
-        self.t = _ensure_array(t)
+        self.n = ensure_array(n)
+        self.t = ensure_array(t)
         self.center = center
 
     @property

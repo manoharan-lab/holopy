@@ -26,10 +26,11 @@ or detrending
 """
 
 
-from ..utils import _ensure_array
+
 from scipy import fftpack
 import numpy as np
 import xarray as xr
+from ..utils import ensure_array
 
 def fft(a, overwrite=False, shift=True):
     """
@@ -120,7 +121,7 @@ def ifft(a, overwrite=False, shift=True):
 
 #The following handles transforming coordinates for fft/ifft
 def transform_metadata(a, inverse):
-    dims=_ensure_array(a.dims)
+    dims=ensure_array(a.dims)
 
     if not inverse:
         coords = ft_coords(a.coords)

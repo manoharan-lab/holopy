@@ -26,7 +26,7 @@ or detrending
 """
 
 from ..errors import BadImage
-from ..metadata import copy_metadata
+from ..metadata import copy_metadata, detector_grid
 from scipy.signal import detrend as dt
 from scipy import fftpack
 from scipy.ndimage import gaussian_filter
@@ -209,7 +209,7 @@ def simulate_noise(shape, mean=.1, smoothing=.01, poisson_lambda=1000):
 
 def bg_correct(raw, bg, df=None):
     if is_none(df):
-        df = ImageSchema(raw.shape,get_spacing(raw))
+        df = detector_grid(raw.shape,get_spacing(raw))
 
     if not (raw.shape == bg.shape == df.shape and list(get_spacing(raw)) == list(get_spacing(bg)) == list(get_spacing(df))):
         raise BadImage("raw and background images must have the same shape and spacing")

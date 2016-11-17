@@ -17,7 +17,7 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from numpy import sin, cos, arctan2, sqrt, pi
+from numpy import sin, cos, arccos, arctan2, sqrt, pi
 from .utils import repeat_sing_dim
 
 def rotate_points(points, theta, phi, psi):
@@ -73,14 +73,21 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
 
 def to_spherical(x,y,z):
 
-    x,y,z=repeat_sing_dim([x,y,z])
-    x2 = x**2
-    y2 = y**2
-    theta = arctan2(sqrt(x2 + y2), z)
+    x, y, z = repeat_sing_dim([x,y,z])
+
+    r = sqrt(x**2 + y**2 + z**2)
+    theta = arccos(z/r)
     phi = arctan2(y, x)
     phi = phi + 2 * pi * (phi < 0)
-    r = sqrt(x2 + y2 + z**2)
+
     return {'r': r, 'theta': theta, 'phi': phi}
+
+def to_cartesian(theta, phi, r = 1):
+    theta, phi, r = repeat_sing_dim([theta, phi ,r])
+    x = r * sin(theta) * cos(phi)
+    y = r * sin(theta) * sin(phi)
+    z = r * cos(theta)
+    return {'x': x, 'y': y, 'z': z}
 
 def cartesian_distance(p1, p2):
     """

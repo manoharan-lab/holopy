@@ -27,8 +27,9 @@ Code to propagate objects/waves using scattering models.
 import numpy as np
 import xarray as xr
 from xarray.ufuncs import sqrt
+
 from ..core.process import fft, ifft
-from ..core.utils import _ensure_array
+from ..core.utils import ensure_array
 from ..core.metadata import update_metadata, copy_metadata
 from ..core.process.fourier import ft_coord
 from ..scattering.errors import MissingParameter
@@ -144,7 +145,7 @@ def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
 
     """
     if not hasattr(d, 'z'):
-        d = xr.DataArray(_ensure_array(d), dims=['z'], coords={'z': _ensure_array(d)})
+        d = xr.DataArray(ensure_array(d), dims=['z'], coords={'z': ensure_array(d)})
 
     if(cfsp > 0):
         cfsp = int(abs(cfsp)) # should be nonnegative integer

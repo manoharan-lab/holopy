@@ -27,21 +27,20 @@ import yaml
 
 import numpy as np
 from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
-                           assert_raises, assert_equal)
+                           assert_raises, assert_equal, assert_allclose)
 from nose.plugins.attrib import attr
 
-from ..scatterer import Sphere, Spheres, Ellipsoid
-from holopy.scattering.scatterer.sphere import LayeredSphere
+from ..scatterer import Sphere, Spheres, Ellipsoid, LayeredSphere
 from ..theory import Mie
 
 from ..errors import TheoryNotCompatibleError, InvalidScatterer
-from ...core.metadata import ImageSchema, Image, angles_list, flat, to_vector, sphere_coords
+from ...core.metadata import detector_grid, detector_far, to_vector, sphere_coords
 from ...core.process import subimage
-from .common import verify, sphere, xschema, scaling_alpha, yschema, xpolarization, ypolarization, polarization
+from .common import sphere, xschema, scaling_alpha, yschema, xpolarization, ypolarization
 from .common import x, y, z, n, radius, wavelen, index
-from ...core.tests.common import assert_allclose, assert_obj_close
+from ...core.tests.common import assert_obj_close, verify
 
-from holopy.scattering.calculations import calc_field, calc_holo, calc_intensity, calc_scat_matrix, calc_cross_sections
+from ..calculations import calc_field, calc_holo, calc_intensity, calc_scat_matrix, calc_cross_sections
 
 @attr('fast')
 def test_single_sphere():
@@ -110,7 +109,7 @@ def test_Mie_multiple():
     fields = calc_field(schema, sc, index, wavelen, ypolarization, thry)
 
     verify(fields, 'mie_multiple_fields')
-    calc_intensity(schema, sc, index, wavelen, polarization, thry)
+    calc_intensity(schema, sc, index, wavelen, ypolarization, thry)
 
     holo = calc_holo(schema, sc, index, wavelen, theory=thry)
     verify(holo, 'mie_multiple_holo')
@@ -247,7 +246,7 @@ def test_radiometric():
 
 @attr('fast')
 def test_farfield_matr():
-    schema = angles_list(np.linspace(0, np.pi/2), np.linspace(0, 1), illum_wavelen=.66, medium_index=1.33, illum_polarization=(1, 0))
+    schema = detector_far(np.linspace(0, np.pi/2), np.linspace(0, 1), illum_wavelen=.66, medium_index=1.33, illum_polarization=(1, 0))
     sphere = Sphere(r = .5, n = 1.59+0.1j)
 
     matr = calc_scat_matrix(schema, sphere, index, .66)
@@ -274,13 +273,13 @@ def test_radialEscat():
 # TODO: finish internal fields
 def test_internal_fields():
     s = Sphere(1.59, .5, (5, 5, 0))
-    sch = ImageSchema((100, 100), .1, illum_wavelen=.66, medium_index=1.33, illum_polarization=(1,0))
+    sch = detector_grid((100, 100), .1, illum_wavelen=.66, medium_index=1.33, illum_polarization=(1,0))
     # TODO: actually test correctness
 
 def test_layered():
     l = LayeredSphere(n = (1, 2), t = (1, 1), center = (2, 2, 2))
     s = Sphere(n = (1,2), r = (1, 2), center = (2, 2, 2))
-    sch = ImageSchema((10, 10), .2, illum_wavelen=.66, medium_index=1, illum_polarization=(1,0))
+    sch = detector_grid((10, 10), .2, illum_wavelen=.66, medium_index=1, illum_polarization=(1,0))
     wavelen = .66
     hl = calc_holo(sch, l, index, wavelen, illum_polarization=xpolarization)
     hs = calc_holo(sch, s, index, wavelen, illum_polarization=xpolarization)
@@ -289,7 +288,7 @@ def test_layered():
 def test_large_sphere():
     large_sphere_gold=[[[0.96371831],[1.04338683]],[[1.04240049],[0.99605225]]]
     s=Sphere(n=1.5, r=5, center=(10,10,10))
-    sch=ImageSchema(10,.2, illum_wavelen=.66, medium_index=1, illum_polarization=(1,0))
+    sch=detector_grid(10,.2, illum_wavelen=.66, medium_index=1, illum_polarization=(1,0))
     hl=calc_holo(sch, s)
     assert_obj_close(np.array(hl[0:2,0:2]),large_sphere_gold)
 
@@ -335,7 +334,7 @@ def test_raw_fields():
     wavelen = .66
     index = 1.33
     pol = to_vector((0, 1))
-    sch = ImageSchema(3, .1)
+    sch = detector_grid(3, .1)
     wavevec=2*np.pi/(wavelen/index)
     pos = sphere_coords(sch, (10, 10, 5), wavevec=wavevec)
     rf = Mie()._raw_fields(np.vstack((pos['r'], pos['theta'], pos['phi'])), sp, medium_wavevec=wavevec, medium_index=index, illum_polarization=pol)
