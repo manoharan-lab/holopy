@@ -58,8 +58,9 @@ def detector_far(theta, phi, medium_index=None, illum_wavelen=None, illum_polari
     [theta, phi] = repeat_sing_dim([theta, phi])
 
     if is_none(normals):
+        #default normals point radially inwards
         normals = to_cartesian(theta, phi)
-        normals = np.vstack((normals['x'],normals['y'],normals['z']))
+        normals = -np.vstack((normals['x'],normals['y'],normals['z']))
         normals = xr.DataArray(normals, dims=[vector,'point'], coords={vector: ['x', 'y', 'z']})
 
     out = xr.DataArray(np.zeros(len(theta)), dims=['point'], coords={'theta':('point',theta), 'phi':('point',phi)})
