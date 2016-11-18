@@ -13,7 +13,7 @@ holograms and light scattering. HoloPy can:
 
 * :ref:`Reconstruct <recon_tutorial>` 3D volumes from digital holograms
 
-* Do :ref:`Scattering Calculations <calc_tutorial>`
+* Perform :ref:`Scattering Calculations <calc_tutorial>` with fast Fortran/C code
 
   * **Compute** Holograms, electric fields, scattered intensity,
     cross sections, ...
@@ -50,13 +50,6 @@ questions.
    users/index
    reference/holopy
    credits
-
-
-Indices and tables
-==================
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
 HoloPy is based upon work supported by the National Science Foundation
 under Grant No. CBET-0747625 and performed in the `Manoharan Lab at

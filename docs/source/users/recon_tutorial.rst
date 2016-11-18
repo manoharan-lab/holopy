@@ -1,8 +1,7 @@
 .. _recon_tutorial:
 
-*******************************************
 Reconstructing Data (Numerical Propagation)
-*******************************************
+===========================================
 
 Holograms are typically reconstructed optically by shining light back
 through them.  This corresponds mathematically to propagating the
@@ -21,41 +20,41 @@ We'll examine each section of code in turn. The first block:
 
     import numpy as np
     import holopy as hp
-    from holopy import propagate
-    from holopy.core.io import get_example_data_path
+    from holopy.core.io import get_example_data_path, load_average
 
 loads the relevant modules from HoloPy and NumPy. The second block:
 
 ..  testcode::
     
     imagepath = get_example_data_path('image01.jpg')
-    raw_holo = hp.load_image(imagepath, spacing = 0.0851, wavelen = 0.66, index = 1.33)
-    bgpath = get_example_data_path('bg01.jpg')
-    bg = hp.load_image(bgpath)
-    holo = raw_holo / bg
+    raw_holo = hp.load_image(imagepath, spacing = 0.0851, illum_wavelen = 0.66, medium_index = 1.33)
+    bgpath = get_example_data_path(['bg01.jpg','bg02.jpg','bg03.jpg'])
+    bg = load_average(bgpath, refimg = raw_holo)
+    holo = hp.core.process.bg_correct(raw_holo, bg)
 
 reads in a hologram and divides it by a corresponding background image.
 If this is unfamiliar to you, please review the :ref:`load_tutorial` tutorial.
 
-Next, we use numpy's linspace to define a set of distances to 
-propagate to at 2-micron intervals. You can also propagate to a single distance,
+Next, we use numpy's linspace to define a set of distances at 2-micron intervals to 
+propagate our image to. You can also propagate to a single distance,
 or to a set of distances obtained in some other fashion. 
 The actual propagation is accomplished with :func:`.propagate`:
 
 ..  testcode::
 
     zstack = np.linspace(1, 15, 8)
-    rec_vol = propagate(holo, zstack)
+    rec_vol = hp.propagate(holo, zstack)
 
 ..  testcode::
     :hide:
     
-    print(rec_vol[0,0,0])
+    print(rec_vol.values[0,0,0])
 
 ..  testoutput::
     :hide:
 
-    (0.834984178898-0.0856125790499j)
+    (0.911671338697-0.0816366824816j)
+
 
 Here, HoloPy has projected the image through space using the metadata that we 
 specified when loading the image. If we forgot to load optical metadata with the image,
@@ -63,14 +62,18 @@ we can explicitly indicate the parameters for propagation to obtain an identical
 
 ..  testcode::
 
-    rec_vol = propagate(holo, zstack, wavelen = 0.660, index = 1.33)
+    rec_vol = hp.propagate(holo, zstack, illum_wavelen = 0.660, medium_index = 1.33)
 
 
-You can then visualize the reconstruction with :func:`.show`::
+Visualizing Reconstructions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can display the reconstruction with :func:`.show`::
   
   hp.show(rec_vol)
 
-You can step through volume slices with the left and right arrow keys
+Pressing the left and right arrow keys steps through volumes slices - 
+propagation to different z-planes. 
 (Don't use the down arrow key; it will mess up the stepping due to a
 peculiarity of Matplotlib. If this happens, close your plot window and
 show it again. Sorry.). 
@@ -90,16 +93,47 @@ number of wavelengths in medium:
 
 ..  testcode::
     
-  med_wavelen = holo.wavelen / holo.index
-  rec_vol = propagate(holo, zstack*med_wavelen)
+  med_wavelen = holo.illum_wavelen / holo.medium_index
+  rec_vol = hp.propagate(holo, zstack*med_wavelen)
   hp.show(rec_vol.imag)
 
 ..  testcode::
     :hide:
 
-    print(rec_vol[0,0,0].imag)
+    print(rec_vol[0,0,0].imag.values)
 
 ..  testoutput::
     :hide:
     
-    -0.00284432855731
+    0.005048845807476341
+
+
+Cascaded Free Space Propagation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+HoloPy calculates reconstructions by performing a convolution of the hologram with
+the reference illuminating electromagnetic wave over the distance to be propagated.
+By default, HoloPy calculates a single transfer function to perform the convolution
+over the specified distances. However, a better reconstruction can sometimes be
+obtained by iteratively propagating the hologram over short distances. This 
+cascaded free space propagation is particularly useful when the reconstructions have
+fine features or when propagating over large distances. For further details, refer to 
+`Kreis 2002 <http://opensample.info/frequency-analysis-of-digital-holography-with-reconstruction-by-convolution>.
+
+To impolement cascaded free space propagation in HoloPy, simply pass a ``cfsp`` variable
+into :func:`.propagate` indicating how many times the hologram should be iteratively
+propagated. For example, to propagate in three steps over each distance, we write:
+
+..  testcode::
+    
+    rec_vol = hp.propagate(holo, zstack, cfsp = 3)
+
+..  testcode::
+    :hide:
+
+    print(rec_vol.values[0,0,0])
+
+..  testoutput::
+    :hide:
+
+    (0.911671338697-0.0816366824816j)
