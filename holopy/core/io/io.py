@@ -54,7 +54,12 @@ def get_example_data_path(name):
     path = os.path.abspath(__file__)
     path = os.path.join(os.path.split(os.path.split(path)[0])[0],
                         'tests', 'exampledata')
-    return os.path.join(path, name)
+    if isinstance(name, str):
+        out = os.path.join(path,name)
+    else:
+        #name is a list of strings
+        out = [os.path.join(path,img) for img in name]
+    return out
 
 def get_example_data(name):
     return load(get_example_data_path(name))
@@ -320,8 +325,8 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
     if len(filepath) < 1:
         raise LoadError(filepath, "No images found")
 
-    if hasattr(refimg,'spacing') and is_none(spacing):
-        spacing = refimg.spacing
+    if is_none(spacing):
+        spacing = get_spacing(refimg)
     
     accumulator = load_image(filepath[0],spacing)
     for image in filepath[1:]:

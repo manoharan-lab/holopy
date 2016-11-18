@@ -27,6 +27,6 @@ reconstructions.
 '''
 
 
-from .img_proc import normalize, detrend, zero_filter, subimage, add_noise, simulate_noise
+from .img_proc import normalize, detrend, zero_filter, subimage, add_noise, simulate_noise, bg_correct
 from .fourier import fft, ifft
 from .centerfinder import center_find, hough, image_gradient
