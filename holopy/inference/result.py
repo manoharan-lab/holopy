@@ -21,11 +21,13 @@ Results of sampling
 .. moduleauthor:: Thomas G. Dimiduk <tom@dimiduk.net>
 """
 from copy import copy
-import yaml
+from collections import OrderedDict
 
+import yaml
 import xarray as xr
 import numpy as np
 import scipy.special
+import h5py
 
 from holopy.core.holopy_object import HoloPyObject
 
@@ -87,16 +89,27 @@ class SamplingResult(HoloPyObject):
         ds = copy(self.dataset)
         ds.attrs['model'] = yaml.dump(self.model)
         ds.attrs['strategy'] = yaml.dump(self.strategy)
-        ds.attrs['_source_class'] = "holopy.inference.{}".format(self.__class__.__name__)
+        ds.attrs['_source_class'] = self._source_class
         autocorr_to_sentinal(ds.samples)
         autocorr_to_sentinal(ds.lnprobs)
+        if 'flat' in ds:
+            ds.rename({'flat': 'point'}, inplace=True)
+            ds['point'].values = np.arange(len(ds.point))
         return ds
 
+    @property
+    def _source_class(self):
+        return "holopy.inference.{}".format(self.__class__.__name__)
+
     def _save(self, filename):
-        self._serialization_ds().to_netcdf(filename, engine='h5netcdf')
+        ds = self._serialization_ds()
+
+        ds.to_netcdf(filename, engine='h5netcdf')
 
     @classmethod
     def _load(cls, ds):
+        if isinstance (ds, str):
+            ds = xr.open_dataset(ds, engine='h5netcdf')
         model = yaml.load(ds.attrs.pop('model'))
         strategy = yaml.load(ds.attrs.pop('strategy'))
         r = cls(dataset=ds, model=model, strategy=strategy)
@@ -104,50 +117,67 @@ class SamplingResult(HoloPyObject):
         autocorr_from_sentinal(r.lnprobs)
         return r
 
+def get_stage_names(inf):
+    d = OrderedDict([(k, k) for k in h5py.File(inf).keys()])
+    del d['end_result']
+    return d
 
 class TemperedSamplingResult(SamplingResult):
-    def __init__(self, end_result, stage_results, model, strategy):
+    def __init__(self, end_result, stage_results, strategy):
         self.end_result = end_result
         self.stage_results = stage_results
-        self.model = model
         self.strategy = strategy
+
+
+    @property
+    def model(self):
+        return self.end_result.model
 
     @property
     def dataset(self):
         return self.end_result.dataset
 
-    def _serialization_ds(self):
-        ds = super()._serialization_ds()
-        for i, r in enumerate(self.stage_results):
-            for d in _res_ds_contents:
-                ds["stage_{}_{}".format(i, d)] = getattr(r, d)
+    def _save(self, filename):
+        # make up a dummy xarray so that we have somewhere to store the strategy
+        s = xr.Dataset({}, attrs={'strategy': yaml.dump(self.strategy), '_source_class': self._source_class})
+        s.to_netcdf(filename, engine='h5netcdf')
 
-        return ds
+        def write(ds, group, mode='a'):
+            ds.to_netcdf(filename, engine='h5netcdf', group=group, mode=mode)
+
+        write(self.end_result._serialization_ds(), 'end_result')
+
+        for i, sr in enumerate(self.stage_results):
+            write(sr._serialization_ds(), 'stage_results[{}]'.format(i))
+
 
     @classmethod
-    def _load(cls, ds):
-        model = yaml.load(ds.attrs.pop('model'))
-        strategy = yaml.load(ds.attrs.pop('strategy'))
-        i = 0
-        stages = []
-        while hasattr(ds, "stage_{}_samples".format(i)):
-            c = {}
-            for d in _res_ds_contents:
-                c[d] = getattr(ds, "stage_{}_{}".format(i, c))
-                stages.append(SamplingResult(xr.DataSet(c, model, strategy)))
-            i += 1
-        result = SamplingResult(ds, model, strategy)
-        return TemperedSamplingResult(result, stages, model, strategy)
+    def _load(cls, inf):
+        with xr.open_dataset(inf, engine='h5netcdf') as top:
+            strategy = yaml.load(top.attrs['strategy'])
 
+        with xr.open_dataset(inf, engine='h5netcdf', group='end_result') as end:
+            # we have to force the load, since the lazy load does not get
+            # called before the context manager closes the file
+            end.load()
+            end_result = SamplingResult._load(end)
+        stages = []
+        for stage in get_stage_names(inf):
+            with xr.open_dataset(inf, engine='h5netcdf', group=stage) as sds:
+                sds.load()
+                stages.append(SamplingResult._load(sds))
+
+        return TemperedSamplingResult(end_result, stages, strategy)
 
 def autocorr_to_sentinal(d):
-    if d.attrs['autocorr'] == None:
+    if 'autocorr' in d.attrs and d.attrs['autocorr'] == None:
         d.attrs['autocorr'] = -1
+    return d
 
 def autocorr_from_sentinal(d):
-    if d.attrs['autocorr'] == -1:
+    if 'autocorr' in d.attrs and d.attrs['autocorr'] == -1:
         d.attrs['autocorr'] = None
-
+    return d
 
 class UncertainValue(HoloPyObject):
     """

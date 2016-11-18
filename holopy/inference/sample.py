@@ -86,9 +86,10 @@ class TemperedStrategy(EmceeStrategy):
     def __init__(self, next_initial_dist=sample_one_sigma_gaussian, nwalkers=100, min_pixels=50, max_pixels=1000, threads='auto', stages=3, stage_len=30, seed=None):
 
         self.seed = seed
-        self.stages = []
+        self.stages = stages
+        self.stage_strategies = []
         for p in np.logspace(np.log10(min_pixels), np.log10(max_pixels), stages+1):
-            self.stages.append(EmceeStrategy(nwalkers=nwalkers, use_pixels=int(round(p)), threads=threads, seed=seed))
+            self.stage_strategies.append(EmceeStrategy(nwalkers=nwalkers, use_pixels=int(round(p)), threads=threads, seed=seed))
             if seed is not None:
                 seed += 1
 
@@ -100,14 +101,14 @@ class TemperedStrategy(EmceeStrategy):
     def sample(self, model, data, nsamples):
         stage_results = []
         guess = self.make_guess(model.parameters)
-        for stage in self.stages[:-1]:
+        for stage in self.stage_strategies[:-1]:
             result = stage.sample(model, data, nsamples=self.stage_len, walker_initial_pos=guess)
             guess = self.next_initial_dist(result)
             stage_results.append(result)
 
-        result = self.stages[-1].sample(model=model, data=data, nsamples=nsamples, walker_initial_pos=guess)
+        result = self.stage_strategies[-1].sample(model=model, data=data, nsamples=nsamples, walker_initial_pos=guess)
 
-        return TemperedSamplingResult(end_result=result, stage_results=stage_results, model=model, strategy=self)
+        return TemperedSamplingResult(end_result=result, stage_results=stage_results, strategy=self)
 
 
 def get_acor(sampler):
