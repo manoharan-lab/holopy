@@ -24,7 +24,7 @@ New custom display functions for holograms and reconstructions.
 
 
 import numpy as np
-from holopy.core.metadata import get_spacing
+from ..core.metadata import get_spacing, get_values
 
 class plotter:
     def __init__(self, im, z0=0, t=0, axis_names = ('x', 'y')):
@@ -32,7 +32,7 @@ class plotter:
         # dependency on matplotlib, and to avoid paying the cost of importing it
         # for non interactive code
         import pylab
-
+        
         self.im = im
         self.axis_names = axis_names
         self.i = z0
@@ -53,15 +53,26 @@ class plotter:
     def draw(self):
         im = self.im
         if hasattr(im, 'z'):
-            im=im.sel(z=self.i)
+            im = im.isel(z = self.i)
         if hasattr(im, 'time'):
-            im=im.sel(time=self.j)
+            im = im.isel(time = self.j)
+        
+        while len(im.shape) > 2:
+            #im has extra dimensions not named 'z' or 'time' - probably a numpy array
+            #we will take slice i along the shortest axis
+            dim_index = np.argmin(im.shape)
+            im = np.take(get_values(im), self.i, axis = dim_index)
 
         self._title()
 
         #to show non-square pixels correctly
-        spacing=get_spacing(im)
-        ratio=spacing[0]/spacing[1]
+        try:        
+            spacing = get_spacing(im)
+            ratio = spacing[0]/spacing[1]
+        except AttributeError:
+            #we are working with a numpy array not a DataArray. We don't know spacing.
+            ratio = 1
+
 
         if self.plot is not None:
             self.plot.set_array(im)
@@ -120,7 +131,13 @@ class plotter:
             old_i = self.i
             old_j = self.j
             if event.key=='right':
-                self.i = min(len(self.im.z)-1, self.i+1)
+                if hasattr(self.im,'z'):                    
+                    dim_len = len(self.im.z)
+                else:
+                    #im has no 'z' dimension - probably a numpy array
+                    #we want the smallest non-singleton dimension
+                    dim_len = min([dl for dl in self.im.shape if dl > 1])
+                self.i = min(dim_len - 1, self.i + 1)
             elif event.key == 'left':
                 self.i = max(0, self.i-1)
             elif event.key == 'up':
@@ -166,16 +183,16 @@ def show2d(im, z0=0, t=0, phase = False):
     # Switch and show an x-z or y-z plane if the im has unit extent in
     # y or x
     axis_names = ['x', 'y']
-    if len(im.x) == 1:
+    if hasattr(im, 'x') and len(im.x) == 1:
         axis_names = ['y', 'z']
-    if len(im.y) == 1:
+    if hasattr(im, 'z') and len(im.y) == 1:
         axis_names = ['x', 'z']
 
     if np.iscomplexobj(im):
         if phase:
             im = np.angle(im)
         else:
-            im = np.abs(im)
+            im = np.abs(im)    
 
     plotter(im, z0, t, axis_names = axis_names)
 
