@@ -154,7 +154,11 @@ def load_image(filename, channel=None, spacing=None, optics=None):
     elif channel > 0:
         warnings.warn("Warning: not a color image (channel number ignored)")
 
-    metadata = json.loads(description)
+    try:
+        metadata = json.loads(description)
+    except (TypeError, ValueError):
+        # Description is not a json string, so just assume no metadata
+        metadata = None
 
     return Image(arr, spacing=spacing, optics=optics, metadata=metadata)
 
