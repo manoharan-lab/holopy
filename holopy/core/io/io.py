@@ -29,6 +29,7 @@ from scipy.misc import fromimage
 from PIL import Image as pilimage
 from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 import xarray as xr
+import importlib
 
 from . import serialize
 from ..metadata import data_grid, get_spacing, update_metadata
@@ -109,12 +110,21 @@ def load(inf, lazy=False):
     """
     try:
         with xr.open_dataset(default_extension(inf), engine='h5netcdf') as ds:
+            if '_source_class' in ds.attrs:
+                _source_class = ds.attrs.pop('_source_class')
+                pathtok = _source_class.split('.')
+                cls = getattr(importlib.import_module(".".join(pathtok[:-1])), pathtok[-1])
+                ds.close()
+                return cls._load(default_extension(inf))
+
             # Xarray defaults to lazy loading of datasets, but I my reading of
             # things is that we will probably generally prefer eager loading
             # since our data is generally fairly small but we do lots of
             # calculations.
             if not lazy:
                 ds = ds.load()
+
+
 
             #loaded dataset potential contains multiple DataArrays. We need
             #to find out their names and loop through them to unpack metadata
@@ -216,14 +226,15 @@ def save(outf, obj):
             save_image(outf, obj)
             return
 
-    if hasattr(obj, 'to_dataset'):
+    if hasattr(obj, '_save'):
+        obj._save(outf)
+    elif hasattr(obj, 'to_dataset'):
         obj=obj.copy()
         if obj.name is None:
             obj.name=os.path.splitext(os.path.split(outf)[-1])[0]
         obj.attrs = pack_attrs(obj)
         ds = obj.to_dataset()
         ds.to_netcdf(default_extension(outf), engine='h5netcdf')
-
     else:
         serialize.save(outf, obj)
 

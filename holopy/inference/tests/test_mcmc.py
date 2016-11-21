@@ -21,7 +21,7 @@
 import warnings
 import numpy as np
 from numpy.testing import assert_equal
-from holopy.inference import prior, mcmc
+from holopy.inference import prior, sample
 from holopy.core.process import normalize
 from holopy.core.tests.common import assert_obj_close, get_example_data
 from holopy.scattering import Sphere, Mie
@@ -40,14 +40,6 @@ gold_nsteps=10
 gold_frac=0.925
 
 
-def test_Emcee_Class():
-    np.random.seed(40)
-    scat = model.Parametrization(0,[prior.Gaussian(0,1)])
-    mod = model.BaseModel(scat)
-    e = mcmc.Emcee(mod,[],nwalkers=3)
-    assert_equal(e.nwalkers,3)
-    assert_obj_close(e.make_guess(),prior_dist)
-
 def test_NoiseModel_lnprior():
     scat=Sphere(r=prior.Gaussian(1,1),n=prior.Gaussian(1,1),center=[10,10,10])
     mod=NoiseModel(scat, noise_sd=.1)
@@ -60,8 +52,6 @@ def test_subset_tempering():
     mod = AlphaModel(scat,noise_sd=.1, alpha=prior.Gaussian(0.7,0.1))
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        inf=mcmc.subset_tempering(mod,holo,final_len=10,nwalkers=4,stages=1,stage_len=10,threads=None, verbose=False,seed=40)
-    assert_obj_close(inf.most_probable_values(),gold_alpha, rtol=1e-5)
-    assert_equal(inf.n_steps,gold_nsteps)
-    assert_obj_close(inf.acceptance_fraction,gold_frac)
-    assert_obj_close(float(inf.data_frame(burn_in=6)[1:2].alpha),gold_alpha, rtol=1e-1)
+        #inf=mcmc.subset_tempering(mod,holo,final_len=10,nwalkers=4,stages=1,stage_len=10,threads=None, verbose=False,seed=40)
+        inf = sample.tempered_sample(mod, holo, nwalkers=4, samples=10, stages=1, stage_len=10, threads=None, seed=40)
+    assert_obj_close(inf.MAP,gold_alpha, rtol=1e-3)

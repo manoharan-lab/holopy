@@ -18,7 +18,6 @@
 
 from holopy.core.tests.common import assert_pickle_roundtrip, get_example_data
 
-from holopy.inference.mcmc import Emcee
 from holopy.inference.noise_model import AlphaModel
 from holopy.inference import prior
 from holopy.scattering.scatterer import Sphere
@@ -37,12 +36,3 @@ def test_AlphaModelholo_likelihood():
                (prior.Gaussian(5, 1), prior.Gaussian(5, 1), prior.Gaussian(5, 1)))
     model = AlphaModel(s, alpha = prior.Gaussian(.7, .1), noise_sd=.01)
     assert_pickle_roundtrip(model)
-
-
-def test_emcee():
-    holo = get_example_data('image0001')
-    s = Sphere(prior.Gaussian(.5, .1), prior.Gaussian(1.6, .1),
-               (prior.Gaussian(5, 1), prior.Gaussian(5, 1), prior.Gaussian(5, 1)))
-    model = AlphaModel(s, alpha = prior.Gaussian(.7, .1), noise_sd=.01)
-    emcee = Emcee(model, holo)
-    assert_pickle_roundtrip(emcee)
