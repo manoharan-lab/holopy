@@ -46,7 +46,7 @@ The t-matrix and mie scattering codes require working Fortran 90 and
 C compilers, as well as f2py and cython. On Ubuntu, you will need the
 "gfortran" and "python-dev" packages installed.
 '''
-
+import setuptools
 from numpy.distutils.core import setup, Extension
 
 
