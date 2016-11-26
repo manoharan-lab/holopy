@@ -202,8 +202,7 @@ def test_cross_sections():
     assert_allclose(xsects[:3], gold_xsects, rtol = 1e-3)
 
 def test_farfield():
-    schema = detector_far(np.linspace(0, np.pi/2), phi = np.zeros(50),
-                         illum_wavelen=.66, medium_index=1.33, illum_polarization=(1, 0))
+    schema = detector_far(np.linspace(0, np.pi/2), phi = np.zeros(50))
     n = 1.59+0.01j
     r = 0.5
 

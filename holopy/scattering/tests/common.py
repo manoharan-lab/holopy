@@ -17,7 +17,7 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from ...core import detector_grid
+from ...core import detector_grid, update_metadata
 from ...scattering.scatterer import Sphere
 
 wavelen = 658e-9
@@ -26,8 +26,8 @@ xpolarization = [1.0, 0.] # x-polarized
 pixel_scale = [.1151e-6, .1151e-6]
 index = 1.33
 
-xschema = detector_grid(shape = 128, spacing=pixel_scale, illum_wavelen=wavelen, medium_index=index, illum_polarization=xpolarization)
-yschema = detector_grid(shape = 128, spacing=pixel_scale, illum_wavelen=wavelen, medium_index=index, illum_polarization=ypolarization)
+xschema = update_metadata(detector_grid(shape = 128, spacing=pixel_scale), illum_wavelen=wavelen, medium_index=index, illum_polarization=xpolarization)
+yschema = update_metadata(xschema, illum_polarization=ypolarization)
 
 scaling_alpha = .6
 radius = .85e-6

@@ -46,14 +46,14 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_po
     out = xr.DataArray(arr, dims=['z','x', 'y'], coords=make_coords(arr.shape, spacing), name=name)
     return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
 
-def detector_grid(shape, spacing, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None):
+def detector_grid(shape, spacing, normals = None, name = None):
     if np.isscalar(shape):
         shape = np.repeat(shape, 2)
 
     d = np.zeros(shape)
-    return data_grid(d, spacing, medium_index, illum_wavelen, illum_polarization, normals, name)
+    return data_grid(d, spacing, normals = normals, name = name)
 
-def detector_far(theta, phi, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name = None):
+def detector_far(theta, phi, normals = None, name = None):
 
     coordict = repeat_sing_dims({'theta':theta, 'phi':phi})
     theta=coordict['theta']
@@ -64,10 +64,9 @@ def detector_far(theta, phi, medium_index=None, illum_wavelen=None, illum_polari
         normals = -np.vstack((normals['x'],normals['y'],normals['z']))
         normals = xr.DataArray(normals, dims=[vector,'point'], coords={vector: ['x', 'y', 'z']})
 
-    out = detector_points(coordict, name = name)
-    return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
+    return detector_points(coordict, name = name)
 
-def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta = None, phi = None, name = None):
+def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta = None, phi = None, normals = None, name = None):
     updatelist = {'x': x, 'y': y, 'z': z, 'r': r, 'theta': theta, 'phi': phi}
     coords = updated(coords, updatelist)
     if 'x' in coords and 'y' in coords:
@@ -82,6 +81,7 @@ def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta =
     else:
         raise CoordSysError
 
+    #TODO do something with normals
     coords = repeat_sing_dims(coords,keys)
     coords = updated(coords,{key: ('point', coords[key]) for key in keys})
     return xr.DataArray(np.zeros(len(coords[keys[0]][1])), dims = ['point'], coords = coords, name = name)
