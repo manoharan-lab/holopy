@@ -34,7 +34,7 @@ from ..scatterer import Sphere, Spheres, Ellipsoid, LayeredSphere
 from ..theory import Mie
 
 from ..errors import TheoryNotCompatibleError, InvalidScatterer
-from ...core.metadata import detector_grid, detector_far, to_vector, sphere_coords, update_metadata
+from ...core.metadata import detector_grid, detector_points, to_vector, sphere_coords, update_metadata
 from ...core.process import subimage
 from .common import sphere, xschema, scaling_alpha, yschema, xpolarization, ypolarization
 from .common import x, y, z, n, radius, wavelen, index
@@ -246,7 +246,7 @@ def test_radiometric():
 
 @attr('fast')
 def test_farfield_matr():
-    schema = update_metadata(detector_far(np.linspace(0, np.pi/2), np.linspace(0, 1)), illum_wavelen=.66, medium_index=1.33, illum_polarization=(1, 0))
+    schema = detector_points(theta = np.linspace(0, np.pi/2), phi = np.linspace(0, 1))
     sphere = Sphere(r = .5, n = 1.59+0.1j)
 
     matr = calc_scat_matrix(schema, sphere, index, .66)

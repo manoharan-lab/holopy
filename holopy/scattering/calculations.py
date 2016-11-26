@@ -216,7 +216,7 @@ def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None, illum_p
 
 # this is pulled out separate from the calc_holo method because occasionally you
 # want to turn prepared  e_fields into holograms directly
-def scattered_field_to_hologram(scat, ref, detector_normal = None):
+def scattered_field_to_hologram(scat, ref, normals):
     """
     Calculate a hologram from an E-field
 
@@ -230,12 +230,7 @@ def scattered_field_to_hologram(scat, ref, detector_normal = None):
         Vector normal to the detector the hologram should be measured at
         (defaults to z hat, a detector in the x, y plane)
     """
-    if detector_normal is None:
-        detector_normal = to_vector((0, 0, 1))
-    else:
-        detector_normal = to_vector(detector_normal)
-
-    holo = (np.abs(scat+ref)**2 * (1 - detector_normal)).sum(dim=vector)
+    holo = (np.abs(scat+ref)**2 * (1 - normals)).sum(dim=vector)
 
     return holo
 

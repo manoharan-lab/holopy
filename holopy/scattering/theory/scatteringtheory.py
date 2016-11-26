@@ -121,7 +121,7 @@ class ScatteringTheory(HoloPyObject):
         instantiate a theory object if it has adjustable parameters and you want
         to use non-default values.
         """
-        positions = sphere_coords(schema, scatterer.center, include_r=False)
+        positions = sphere_coords(schema, scatterer.center)
         scat_matrs = self._raw_scat_matrs(scatterer, stack_spherical(positions), medium_wavevec=wavevec(schema), medium_index=schema.medium_index)   
         dimstr = primdim(positions)
 

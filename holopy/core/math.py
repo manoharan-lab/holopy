@@ -71,8 +71,7 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
                      ca*cb*sg + sa*cg, -sa*cb*sg + ca*cg, sb*sg,
                      -ca*sb, sa*sb, cb]).reshape((3,3)) # row major
 
-def to_spherical(x,y,z):
-
+def to_spherical(x, y, z):
     r = sqrt(x**2 + y**2 + z**2)
     theta = arctan2(sqrt(x**2 + y**2), z) #this correctly handles x=y=z=0
     phi = arctan2(y, x)

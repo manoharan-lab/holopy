@@ -34,7 +34,7 @@ from nose.plugins.attrib import attr
 import scipy
 
 from .. import calc_holo, calc_scat_matrix, calc_cross_sections, Multisphere, Sphere, Spheres
-from ...core.metadata import detector_far
+from ...core.metadata import detector_points
 from ..errors import InvalidScatterer, TheoryNotCompatibleError, MultisphereFailure
 from .common import xschema, yschema, index, wavelen, xpolarization, ypolarization
 from .common import scaling_alpha, sphere
@@ -202,7 +202,7 @@ def test_cross_sections():
     assert_allclose(xsects[:3], gold_xsects, rtol = 1e-3)
 
 def test_farfield():
-    schema = detector_far(np.linspace(0, np.pi/2), phi = np.zeros(50))
+    schema = detector_points(theta = np.linspace(0, np.pi/2), phi = np.zeros(50))
     n = 1.59+0.01j
     r = 0.5
 

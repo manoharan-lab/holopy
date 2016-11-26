@@ -31,11 +31,10 @@ from .math import to_spherical, to_cartesian
 
 vector = 'vector'
 
-def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None):
+def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals='auto', name=None):
     if spacing is None:
         spacing = 1
-    if is_none(normals):
-        normals=(0, 0, 1)
+    normals = default_norms({'x':True}, normals)
     if name is None:
         name = 'data'
 
@@ -46,27 +45,14 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_po
     out = xr.DataArray(arr, dims=['z','x', 'y'], coords=make_coords(arr.shape, spacing), name=name)
     return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
 
-def detector_grid(shape, spacing, normals = None, name = None):
+def detector_grid(shape, spacing, normals = 'auto', name = None):
     if np.isscalar(shape):
         shape = np.repeat(shape, 2)
 
     d = np.zeros(shape)
     return data_grid(d, spacing, normals = normals, name = name)
 
-def detector_far(theta, phi, normals = None, name = None):
-
-    coordict = repeat_sing_dims({'theta':theta, 'phi':phi})
-    theta=coordict['theta']
-    phi=coordict['phi']
-    if is_none(normals):
-        #default normals point radially inwards
-        normals = to_cartesian(1, theta, phi)
-        normals = -np.vstack((normals['x'],normals['y'],normals['z']))
-        normals = xr.DataArray(normals, dims=[vector,'point'], coords={vector: ['x', 'y', 'z']})
-
-    return detector_points(coordict, name = name)
-
-def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta = None, phi = None, normals = None, name = None):
+def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta = None, phi = None, normals = 'auto', name = None):
     updatelist = {'x': x, 'y': y, 'z': z, 'r': r, 'theta': theta, 'phi': phi}
     coords = updated(coords, updatelist)
     if 'x' in coords and 'y' in coords:
@@ -79,12 +65,12 @@ def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta =
         if not 'r' in coords or is_none(coords['r']):
             coords['r'] = np.inf
     else:
-        raise CoordSysError
+        raise CoordSysError()
 
-    #TODO do something with normals
     coords = repeat_sing_dims(coords,keys)
     coords = updated(coords,{key: ('point', coords[key]) for key in keys})
-    return xr.DataArray(np.zeros(len(coords[keys[0]][1])), dims = ['point'], coords = coords, name = name)
+    attrs = {'normals': default_norms(coords, normals)}
+    return xr.DataArray(np.zeros(len(coords[keys[0]][1])), dims = ['point'], coords = coords, attrs = attrs, name = name)
 
 def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None):
     attrlist = {'medium_index': medium_index, 'illum_wavelen': illum_wavelen, 'illum_polarization': to_vector(illum_polarization), 'normals': to_vector(normals)}
@@ -96,7 +82,7 @@ def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization
             b.attrs[attr] = None
 
     if is_none(b.normals):
-        b.attrs['normals'] = to_vector((0,0,1))
+        b.attrs['normals'] = default_norms(b.coords, 'auto')
 
     return b
 
@@ -154,17 +140,20 @@ def from_flat(a):
         return a.unstack('flat')
     return a
 
-def sphere_coords(a, origin=(0,0,0), wavevec=1, include_r=True):
-    if hasattr(a,'theta') and hasattr(a, 'phi') and not include_r:
-        # we are working in far field
-        return {'theta': a.theta.values, 'phi': a.phi.values, 'point':a.point.values}
+def sphere_coords(a, origin=(0,0,0), wavevec=1):
+    if hasattr(a,'theta') and hasattr(a, 'phi'):
+        out = {'theta': a.theta.values, 'phi': a.phi.values, 'point':a.point.values}
+        if hasattr(a, 'r') and any(a.r < np.inf):
+            out['r'] = a.r.values * wavevec
+        return out
+
     else:
         f = flat(a)
         dimstr = primdim(f)
         # we define positive z opposite light propagation, so we have to invert
         x, y, z = f.x.values - origin[0], f.y.values - origin[1], origin[2] - f.z.values
         out = to_spherical(x,y,z)
-        return updated(out, {'r':out['r'] * wavevec, dimstr:f[dimstr]})
+        return updated(out, {'r':out['r'] * wavevec, dimstr:f[dimstr],'x':f.x.values, 'y':f.y.values, 'z':f.z.values})
 
 def get_values(a):
     return getattr(a, 'values', a)
@@ -177,6 +166,18 @@ def primdim(a):
     if 'point' in a:
         return 'point'
     raise ValueError('Array is not in the form of a 1D list of coordinates')
+
+def default_norms(coords,n):
+    if n is 'auto':    
+        if 'x' in coords:
+            n = (0,0,1)
+        elif 'theta' in coords:
+            n = to_cartesian(1, coords['theta'][1], coords['phi'][1])
+            n = -np.vstack((n['x'],n['y'],n['z']))
+            n = xr.DataArray(n, dims=[vector,'point'], coords={vector: ['x', 'y', 'z']})
+        else:
+            raise CoordSysError()
+    return to_vector(n)
 
 def get_spacing(im):
     xspacing = np.diff(im.x)
