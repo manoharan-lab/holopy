@@ -30,7 +30,7 @@ from warnings import warn
 from holopy.core.holopy_object import HoloPyObject
 from ..scatterer import Scatterers, Sphere
 from ..errors import TheoryNotCompatibleError, MissingParameter
-from ...core.metadata import vector, sphere_coords
+from ...core.metadata import vector, sphere_coords, primdim
 from ...core.utils import dict_without
 
 def wavevec(a):
@@ -80,7 +80,8 @@ class ScatteringTheory(HoloPyObject):
             #        self._raw_internal_fields(positions[inner].T, s,
             #                                  optics)).T
             field *= phase
-            field = xr.DataArray(field, dims=['flat', vector], coords={'flat': positions['flat'], vector: ['x', 'y', 'z']}, attrs=schema.attrs)
+            dimstr=primdim(positions)
+            field = xr.DataArray(field, dims=[dimstr, vector], coords={dimstr: positions[dimstr], vector: ['x', 'y', 'z']}, attrs=schema.attrs)
             return field
 
 
@@ -122,12 +123,9 @@ class ScatteringTheory(HoloPyObject):
         """
         positions = sphere_coords(schema, scatterer.center, include_r=False)
         scat_matrs = self._raw_scat_matrs(scatterer, stack_spherical(positions), medium_wavevec=wavevec(schema), medium_index=schema.medium_index)   
-        if  'flat' in positions:
-            dimstr='flat'
-        else:
-            dimstr='point'
+        dimstr = primdim(positions)
 
-        for coorstr in dict_without(positions, ['flat', 'point']):
+        for coorstr in dict_without(positions, [dimstr]):
             positions[coorstr] = (dimstr, positions[coorstr])
 
         dims = ['Epar', 'Eperp']

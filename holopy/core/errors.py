@@ -35,3 +35,7 @@ class BadImage(Exception):
 class NoMetadata(Exception):
     def __str__(self):
         return "File without metadata detected. To load raw images, use hp.load_image()"
+
+class CoordSysError(Exception):
+    def __str__(self):
+        return "Could not interpret your points. Use either Cartesian or spherical coordinates"
