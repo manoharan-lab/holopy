@@ -31,10 +31,9 @@ from .math import to_spherical, to_cartesian
 
 vector = 'vector'
 
-def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals='auto', name=None):
+def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None):
     if spacing is None:
         spacing = 1
-    normals = default_norms({'x':True}, normals)
     if name is None:
         name = 'data'
 
@@ -45,7 +44,7 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_po
     out = xr.DataArray(arr, dims=['z','x', 'y'], coords=make_coords(arr.shape, spacing), name=name)
     return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
 
-def detector_grid(shape, spacing, normals = 'auto', name = None):
+def detector_grid(shape, spacing, normals = None, name = None):
     if np.isscalar(shape):
         shape = np.repeat(shape, 2)
 
@@ -66,6 +65,9 @@ def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta =
             coords['r'] = np.inf
     else:
         raise CoordSysError()
+
+    if name is None:
+        name = 'data'
 
     coords = repeat_sing_dims(coords,keys)
     coords = updated(coords,{key: ('point', coords[key]) for key in keys})
