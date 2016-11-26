@@ -33,14 +33,19 @@ import numpy as np
 from warnings import warn
 from xarray.ufuncs import square
 
-def check_schema(schema):
+def check_schema(schema, pol = True):
     if schema.illum_wavelen is None:
         raise MissingParameter("wavelength")
-    if schema.med_index is None:
+    if schema.medium_index is None:
         raise MissingParameter("medium refractive index")
-    if is_none(schema.illum_polarization):
+    if pol is not False and is_none(schema.illum_polarization):
         raise MissingParameter("polarization")
     return schema
+
+def prep_schema(schema, medium_index, illum_wavelen, illum_polarization):
+    if isinstance(schema, dict):
+        schema = detector_points(schema)
+    return check_schema(update_metadata(schema, medium_index, illum_wavelen, illum_polarization), illum_polarization)
 
 def interpret_theory(scatterer,theory='auto'):
     if isinstance(theory, str) and theory == 'auto':
@@ -51,7 +56,7 @@ def interpret_theory(scatterer,theory='auto'):
 
 def finalize(schema, result):
     if not hasattr(schema, 'flat'):
-        result = from_flat(result)
+        result=from_flat(result)
     return copy_metadata(schema, result, do_coords=False)
 
 def determine_theory(scatterer):
@@ -120,7 +125,7 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None, illum_po
         Calculated hologram from the given distribution of spheres
     """
     theory = interpret_theory(scatterer,theory)
-    uschema = update_metadata(schema, medium_index, illum_wavelen, illum_polarization)
+    uschema = prep_schema(schema, medium_index, illum_wavelen, illum_polarization)
     scat = theory._calc_field(scatterer, uschema)
     holo = scattered_field_to_hologram(scat*scaling, uschema.illum_polarization, uschema.normals)
     return finalize(uschema, holo)
@@ -178,7 +183,7 @@ def calc_scat_matrix(schema, scatterer, medium_index=None, illum_wavelen=None, t
 
     """
     theory = interpret_theory(scatterer,theory)
-    uschema=update_metadata(schema, medium_index=medium_index, illum_wavelen=illum_wavelen)
+    uschema=prep_schema(schema, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization = False)
     return finalize(uschema, theory._calc_scat_matrix(scatterer, uschema))
 
 def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
@@ -206,7 +211,7 @@ def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None, illum_p
         Calculated hologram from the given distribution of spheres
     """
     theory = interpret_theory(scatterer,theory)
-    uschema = update_metadata(schema, medium_index=medium_index, illum_wavelen=illum_wavelen,illum_polarization=illum_polarization)
+    uschema = prep_schema(schema, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization)
     return finalize(uschema, theory._calc_field(scatterer, uschema))
 
 # this is pulled out separate from the calc_holo method because occasionally you
