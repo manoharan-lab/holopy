@@ -145,7 +145,7 @@ def from_flat(a):
 def sphere_coords(a, origin=(0,0,0), wavevec=1):
     if hasattr(a,'theta') and hasattr(a, 'phi'):
         out = {'theta': a.theta.values, 'phi': a.phi.values, 'point':a.point.values}
-        if hasattr(a, 'r') and any(a.r < np.inf):
+        if hasattr(a, 'r') and any(np.isfinite(a.r)):
             out['r'] = a.r.values * wavevec
         return out
 

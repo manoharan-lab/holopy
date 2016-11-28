@@ -23,7 +23,7 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 from ..core.holopy_object import SerializableMetaclass
-from ..core.metadata import vector, update_metadata, to_vector, copy_metadata, from_flat
+from ..core.metadata import vector, update_metadata, to_vector, copy_metadata, from_flat, detector_points
 from ..core.utils import dict_without, is_none
 from . import Mie, Multisphere, Sphere, Spheres
 from .theory import dda
@@ -56,7 +56,7 @@ def interpret_theory(scatterer,theory='auto'):
 
 def finalize(schema, result):
     if not hasattr(schema, 'flat'):
-        result=from_flat(result)
+        result = from_flat(result)
     return copy_metadata(schema, result, do_coords=False)
 
 def determine_theory(scatterer):

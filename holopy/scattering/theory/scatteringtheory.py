@@ -31,7 +31,7 @@ from holopy.core.holopy_object import HoloPyObject
 from ..scatterer import Scatterers, Sphere
 from ..errors import TheoryNotCompatibleError, MissingParameter
 from ...core.metadata import vector, sphere_coords, primdim
-from ...core.utils import dict_without
+from ...core.utils import dict_without, updated
 
 def wavevec(a):
         return 2*np.pi/(a.illum_wavelen/a.medium_index)
@@ -81,7 +81,9 @@ class ScatteringTheory(HoloPyObject):
             #                                  optics)).T
             field *= phase
             dimstr=primdim(positions)
-            field = xr.DataArray(field, dims=[dimstr, vector], coords={dimstr: positions[dimstr], vector: ['x', 'y', 'z']}, attrs=schema.attrs)
+            coords = {key: (dimstr, val.values) for key, val in positions[dimstr].coords.items()}
+            coords = updated(coords, {dimstr: positions[dimstr], vector: ['x', 'y', 'z']})
+            field = xr.DataArray(field, dims=[dimstr, vector], coords = coords, attrs=schema.attrs)
             return field
 
 
