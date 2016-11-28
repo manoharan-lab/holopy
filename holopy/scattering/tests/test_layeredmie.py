@@ -40,10 +40,10 @@ def test_Shell():
               n=[(1.27121212428+0j), (1.49+0j)], r=[0.960957713253-0.0055,
                                                     0.960957713253])
 
-    t = detector_grid(200, .071333, illum_wavelen=.658, medium_index=1.36, illum_polarization=(1, 0))
+    t = detector_grid(200, .071333)
 
     thry = Mie(False)
-    h = calc_holo(t,s, 1.36, .658, theory=thry, scaling = 0.4826042444701572)
+    h = calc_holo(t,s, 1.36, .658, illum_polarization=(1, 0), theory=thry, scaling = 0.4826042444701572)
 
     verify(h, 'shell')
 
