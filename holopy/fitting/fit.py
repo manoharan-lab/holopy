@@ -37,13 +37,13 @@ from holopy.core.math import chisq, rsq
 from .errors import MinimizerConvergenceFailed, InvalidMinimizer
 from .minimizer import Minimizer, Nmpfit
 
-def make_subset_data(data, random_subset=None, use_pixels=None, return_selection=False):
-    if random_subset is None and use_pixels is None:
+def make_subset_data(data, random_subset=None, pixels=None, return_selection=False):
+    if random_subset is None and pixels is None:
         return data
-    if random_subset is not None and use_pixels is not None:
-        raise ValueError("You can only specify one of use_pixels or random_subset")
-    if use_pixels is not None:
-        n_sel = use_pixels
+    if random_subset is not None and pixels is not None:
+        raise ValueError("You can only specify one of pixels or random_subset")
+    if pixels is not None:
+        n_sel = pixels
     else:
         n_sel = int(np.ceil(data.size*random_subset))
     selection = np.random.choice(data.size, n_sel, replace=False)

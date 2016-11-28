@@ -17,3 +17,4 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 from .sample import SamplingResult, TemperedSamplingResult, tempered_sample
+from .noise_model import AlphaModel
