@@ -30,8 +30,8 @@ from warnings import warn
 from holopy.core.holopy_object import HoloPyObject
 from ..scatterer import Scatterers, Sphere
 from ..errors import TheoryNotCompatibleError, MissingParameter
-from ...core.metadata import vector, sphere_coords
-from ...core.utils import dict_without
+from ...core.metadata import vector, sphere_coords, primdim
+from ...core.utils import dict_without, updated
 
 def wavevec(a):
         return 2*np.pi/(a.illum_wavelen/a.medium_index)
@@ -80,7 +80,10 @@ class ScatteringTheory(HoloPyObject):
             #        self._raw_internal_fields(positions[inner].T, s,
             #                                  optics)).T
             field *= phase
-            field = xr.DataArray(field, dims=['flat', vector], coords={'flat': positions['flat'], vector: ['x', 'y', 'z']}, attrs=schema.attrs)
+            dimstr=primdim(positions)
+            coords = {key: (dimstr, val.values) for key, val in positions[dimstr].coords.items()}
+            coords = updated(coords, {dimstr: positions[dimstr], vector: ['x', 'y', 'z']})
+            field = xr.DataArray(field, dims=[dimstr, vector], coords = coords, attrs=schema.attrs)
             return field
 
 
@@ -120,14 +123,11 @@ class ScatteringTheory(HoloPyObject):
         instantiate a theory object if it has adjustable parameters and you want
         to use non-default values.
         """
-        positions = sphere_coords(schema, scatterer.center, include_r=False)
+        positions = sphere_coords(schema, scatterer.center)
         scat_matrs = self._raw_scat_matrs(scatterer, stack_spherical(positions), medium_wavevec=wavevec(schema), medium_index=schema.medium_index)   
-        if  'flat' in positions:
-            dimstr='flat'
-        else:
-            dimstr='point'
+        dimstr = primdim(positions)
 
-        for coorstr in dict_without(positions, ['flat', 'point']):
+        for coorstr in dict_without(positions, [dimstr]):
             positions[coorstr] = (dimstr, positions[coorstr])
 
         dims = ['Epar', 'Eperp']

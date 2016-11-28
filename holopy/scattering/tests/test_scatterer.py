@@ -160,8 +160,8 @@ def test_find_bounds():
 
 def test_sphere_nocenter():
     sphere = Sphere(n = 1.59, r = .5)
-    schema = detector_grid(spacing=.1, shape=1, illum_wavelen = .660, illum_polarization = [1, 0], medium_index = 1.33)
-    assert_raises(MissingParameter, calc_holo, schema, sphere, 1.33, .66)
+    schema = detector_grid(spacing=.1, shape=1)
+    assert_raises(MissingParameter, calc_holo, schema, sphere, 1.33, .66, [1, 0])
 
 def test_ellipsoid():
     test = Ellipsoid(n = 1.585, r = [.4,0.4,1.5], center = [10,10,20])

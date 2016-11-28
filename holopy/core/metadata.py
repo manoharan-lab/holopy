@@ -25,7 +25,7 @@ Classes for defining metadata about experimental or calculated results.
 import numpy as np
 import xarray as xr
 from warnings import warn
-from .utils import ensure_array, is_none, updated, repeat_sing_dim
+from .utils import ensure_array, is_none, updated, repeat_sing_dims
 from .math import to_spherical, to_cartesian
 
 
@@ -34,8 +34,6 @@ vector = 'vector'
 def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None):
     if spacing is None:
         spacing = 1
-    if is_none(normals):
-        normals=(0, 0, 1)
     if name is None:
         name = 'data'
 
@@ -46,25 +44,35 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_po
     out = xr.DataArray(arr, dims=['z','x', 'y'], coords=make_coords(arr.shape, spacing), name=name)
     return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
 
-def detector_grid(shape, spacing, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None):
+def detector_grid(shape, spacing, normals = None, name = None):
     if np.isscalar(shape):
         shape = np.repeat(shape, 2)
 
     d = np.zeros(shape)
-    return data_grid(d, spacing, medium_index, illum_wavelen, illum_polarization, normals, name)
+    return data_grid(d, spacing, normals = normals, name = name)
 
-def detector_far(theta, phi, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None):
+def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta = None, phi = None, normals = 'auto', name = None):
+    updatelist = {'x': x, 'y': y, 'z': z, 'r': r, 'theta': theta, 'phi': phi}
+    coords = updated(coords, updatelist)
+    if 'x' in coords and 'y' in coords:
+        keys = ['x', 'y', 'z']
+        if not 'z' in coords or is_none(coords['z']):
+            coords['z'] = 0
+        
+    elif 'theta' in coords and 'phi' in coords:
+        keys = ['r', 'theta', 'phi']
+        if not 'r' in coords or is_none(coords['r']):
+            coords['r'] = np.inf
+    else:
+        raise CoordSysError()
 
-    [theta, phi] = repeat_sing_dim([theta, phi])
+    if name is None:
+        name = 'data'
 
-    if is_none(normals):
-        #default normals point radially inwards
-        normals = to_cartesian(theta, phi)
-        normals = -np.vstack((normals['x'],normals['y'],normals['z']))
-        normals = xr.DataArray(normals, dims=[vector,'point'], coords={vector: ['x', 'y', 'z']})
-
-    out = xr.DataArray(np.zeros(len(theta)), dims=['point'], coords={'theta':('point',theta), 'phi':('point',phi)})
-    return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
+    coords = repeat_sing_dims(coords,keys)
+    coords = updated(coords,{key: ('point', coords[key]) for key in keys})
+    attrs = {'normals': default_norms(coords, normals)}
+    return xr.DataArray(np.zeros(len(coords[keys[0]][1])), dims = ['point'], coords = coords, attrs = attrs, name = name)
 
 def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None):
     attrlist = {'medium_index': medium_index, 'illum_wavelen': illum_wavelen, 'illum_polarization': to_vector(illum_polarization), 'normals': to_vector(normals)}
@@ -76,7 +84,7 @@ def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization
             b.attrs[attr] = None
 
     if is_none(b.normals):
-        b.attrs['normals'] = to_vector((0,0,1))
+        b.attrs['normals'] = default_norms(b.coords, 'auto')
 
     return b
 
@@ -103,7 +111,7 @@ def copy_metadata(old, new, do_coords=True):
     return new
 
 def to_vector(c):
-    if c is None:
+    if c is None or c is False:
         return c
     if hasattr(c, vector):
         return c
@@ -114,7 +122,7 @@ def to_vector(c):
     return xr.DataArray(c, coords={vector: ['x', 'y', 'z']})
 
 def flat(a, keep_dims=True):
-    if hasattr(a, 'flat'):
+    if hasattr(a, 'flat') or hasattr(a, 'point'):
         return a
     if len(a.dims)==3 and keep_dims:
         a['x_orig'] = a.x
@@ -134,21 +142,44 @@ def from_flat(a):
         return a.unstack('flat')
     return a
 
-def sphere_coords(a, origin=(0,0,0), wavevec=1, include_r=True):
-    if hasattr(a,'theta') and hasattr(a, 'phi') and not include_r:
-        # we are working in far field
-        return {'theta': a.theta, 'phi': a.phi}
+def sphere_coords(a, origin=(0,0,0), wavevec=1):
+    if hasattr(a,'theta') and hasattr(a, 'phi'):
+        out = {'theta': a.theta.values, 'phi': a.phi.values, 'point':a.point.values}
+        if hasattr(a, 'r') and any(np.isfinite(a.r)):
+            out['r'] = a.r.values * wavevec
+        return out
+
     else:
         f = flat(a)
+        dimstr = primdim(f)
         # we define positive z opposite light propagation, so we have to invert
         x, y, z = f.x.values - origin[0], f.y.values - origin[1], origin[2] - f.z.values
-        out = to_spherical(x, y, z)
-        out['r'] *= wavevec
-        out['flat'] = f.flat
-        return out
+        out = to_spherical(x,y,z)
+        return updated(out, {'r':out['r'] * wavevec, dimstr:f[dimstr],'x':f.x.values, 'y':f.y.values, 'z':f.z.values})
 
 def get_values(a):
     return getattr(a, 'values', a)
+
+def primdim(a):
+    if isinstance(a, xr.DataArray):
+        a = a.coords
+    if 'flat' in a:
+        return 'flat'
+    if 'point' in a:
+        return 'point'
+    raise ValueError('Array is not in the form of a 1D list of coordinates')
+
+def default_norms(coords,n):
+    if n is 'auto':    
+        if 'x' in coords:
+            n = (0,0,1)
+        elif 'theta' in coords:
+            n = to_cartesian(1, coords['theta'][1], coords['phi'][1])
+            n = -np.vstack((n['x'],n['y'],n['z']))
+            n = xr.DataArray(n, dims=[vector,'point'], coords={vector: ['x', 'y', 'z']})
+        else:
+            raise CoordSysError()
+    return to_vector(n)
 
 def get_spacing(im):
     xspacing = np.diff(im.x)

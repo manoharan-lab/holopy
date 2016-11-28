@@ -116,17 +116,16 @@ def updated(d, update={}, filter_none=True, **kwargs):
 
     return d
 
+def repeat_sing_dims(indict, keys = 'all'):
+    if keys == 'all':
+        subdict = indict
+    else:
+       subdict = {key: indict[key] for key in keys}
 
-def repeat_sing_dim(inlist):
-    inlist = [ensure_array(dim) for dim in inlist]
-    maxlen = max([len(dim) for dim in inlist])
-    outlist=[]
+    subdict = {key: ensure_array(val) for key, val in subdict.items()}
+    maxlen = max([len(val) for val in subdict.values()])
 
-    for dim in inlist:
-        if len(dim)==maxlen:
-            outlist.append(dim)
-        elif len(dim)==1:
-            outlist.append(np.repeat(dim,maxlen))
-        else:
-            raise ValueError("Cannot combine arrays of different lengths")
-    return outlist
+    subdict={key:np.repeat(val, maxlen) for key, val in subdict.items() if len(val)==1}
+
+    return updated(indict, subdict)
+

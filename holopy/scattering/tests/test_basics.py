@@ -22,15 +22,15 @@ from ..scatterer import Sphere, Difference
 from ...core import detector_grid
 from ..theory import Mie
 from ...core.tests.common import assert_obj_close
-from ...core.metadata import sphere_coords
+from ...core.metadata import sphere_coords, update_metadata
 from ..calculations import calc_intensity, calc_holo, calc_field
-from ..theory.scatteringtheory import wavevec, stack_spherical
+from ..theory.scatteringtheory import stack_spherical
 
 # small tests against results from the previous version of holopy
 
 def test_sphere_coords():
-    t = detector_grid(shape = (2,2), spacing = .1, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1, 0))
-    p = sphere_coords(t, wavevec=wavevec(t), origin=(0,0,1))
+    t = detector_grid(shape = (2,2), spacing = .1)
+    p = sphere_coords(t, wavevec=2*np.pi*1.33/.66, origin=(0,0,1))
     pos = stack_spherical(p).T
     assert_allclose(pos, np.array([[ 12.66157039,   0.        ,   0.        ],
        [ 12.72472076,   0.09966865,   1.57079633],
@@ -39,9 +39,9 @@ def test_sphere_coords():
 
 def test_calc_field():
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
-    t = detector_grid(shape = (2,2), spacing = .1, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1, 0))
+    t = update_metadata(detector_grid(shape = (2,2), spacing = .1), illum_wavelen = 0.66, medium_index=1.33, illum_polarization = (1,0))
     thry = Mie(False)
-    f = calc_field(t, s, 1.33, .66, theory=thry)
+    f = calc_field(t, s, 1.33, .66, (1,0), theory=thry)
     assert_obj_close(t.attrs, f.attrs)
     gold = xr.DataArray(np.array([[[ -3.95866810e-01 +2.47924378e+00j,
                                      0.00000000e+00 +0.00000000e+00j,
@@ -60,17 +60,17 @@ def test_calc_field():
 
 def test_calc_holo():
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
-    t = detector_grid(shape = (2,2), spacing = .1, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1, 0))
+    t = detector_grid(shape = (2,2), spacing = .1)
     thry = Mie(False)
-    h = calc_holo(t, s, 1.33, .66, theory=thry)
+    h = calc_holo(t, s, 1.33, .66, (1,0), theory=thry)
     assert_allclose(h, np.array([[[ 6.51162661],[  5.67743548]],
                                  [[ 5.63554802],[  4.89856241]]]))
 
 def test_calc_intensity():
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
-    t = detector_grid(shape = (2,2), spacing = .1, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1, 0))
+    t = detector_grid(shape = (2,2), spacing = .1)
     thry = Mie(False)
-    i = calc_intensity(t, s, theory=thry)
+    i = calc_intensity(t, s, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1, 0), theory=thry)
     assert_allclose(i, np.array([[[ 6.30336023],  [5.65995739]],
                                  [[ 5.61505927],  [5.04233591]]]))
 

@@ -23,7 +23,7 @@ from nose.plugins.attrib import attr
 from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, assert_raises
 
 from ...scattering import Sphere, Spheres, LayeredSphere, Mie, calc_holo
-from ...core import detector_grid, load, save
+from ...core import detector_grid, load, save, update_metadata
 from ...core.process import normalize
 from .. import fit, Parameter, ComplexParameter, par, Parametrization, Model, FitResult
 from ...core.tests.common import (assert_obj_close, get_example_data, assert_read_matches_write)
@@ -142,8 +142,7 @@ def disable_next_model():
 
 def test_n():
     sph = Sphere(par(.5), 1.6, (5,5,5))
-    sch = detector_grid(shape=[100, 100], spacing=[0.1, 0.1], illum_wavelen=0.66,
-                      medium_index=1.33, illum_polarization=[1, 0])
+    sch = detector_grid(shape=[100, 100], spacing=[0.1, 0.1])
 
     model = Model(sph, calc_holo, 1.33, .66, illum_polarization=(1, 0), alpha=1)
     holo = calc_holo(sch, model.scatterer.guess, 1.33, .66, (1, 0))
@@ -159,7 +158,7 @@ def test_serialization():
 
     alpha = par(.6, [.1, 1], 'alpha')
 
-    schema = detector_grid(shape = 100, spacing = .1151e-6, illum_wavelen=.66e-6, medium_index=1.33, illum_polarization=(1,0))
+    schema = update_metadata(detector_grid(shape = 100, spacing = .1151e-6), illum_wavelen=.66e-6, medium_index=1.33, illum_polarization=(1,0))
 
     model = Model(par_s, calc_func=calc_holo, medium_index=schema.medium_index, illum_wavelen=schema.illum_wavelen, alpha=alpha)
 
@@ -179,10 +178,9 @@ def test_serialization():
 
 def test_integer_correctness():
     # we keep having bugs where the fitter doesn't
-    schema = detector_grid(shape = 100, spacing = .1, illum_wavelen = .660,
-                         medium_index = 1.33, illum_polarization = (1, 0))
+    schema = detector_grid(shape = 100, spacing = .1)
     s = Sphere(center = (10.2, 9.8, 10.3), r = .5, n = 1.58)
-    holo = calc_holo(schema, s)
+    holo = calc_holo(schema, s, illum_wavelen = .660, medium_index = 1.33, illum_polarization = (1, 0))
 
     par_s = Sphere(center = (par(guess = 10, limit = [5,15]), par(10, [5, 15]), par(10, [5, 15])),
                    r = .5, n = 1.58)
@@ -212,7 +210,7 @@ def test_constraint():
 
 def test_layered():
     s = Sphere(n = (1,2), r = (1, 2), center = (2, 2, 2))
-    sch = detector_grid((10, 10), .2, illum_wavelen=.66, medium_index=1, illum_polarization=(1, 0))
+    sch = detector_grid((10, 10), .2)
     hs = calc_holo(sch, s, 1, .66, (1, 0))
 
     guess = LayeredSphere((1,2), (par(1.01), par(.99)), (2, 2, 2))
