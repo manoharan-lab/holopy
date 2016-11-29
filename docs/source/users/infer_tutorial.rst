@@ -9,6 +9,7 @@ Here we infer the size, refractive index, and position of a spherical scatterer:
   import numpy as np
   from holopy.inference import prior, AlphaModel, tempered_sample
   from holopy.scattering import Sphere, calc_holo
+  from holopy.core.process import bg_correct
   from holopy import detector_grid
 
   # Make a simulated hologram
@@ -17,7 +18,7 @@ Here we infer the size, refractive index, and position of a spherical scatterer:
   h= calc_holo(d, s, illum_wavelen=.66, medium_index=1.33, illum_polarization=(0, 1))
 
   # Set up the prior
-  center_px= hp.process.center_find(h)
+  center_px= hp.core.process.center_find(h)
   center = center_px * hp.core.metadata.get_spacing(h)
   xy_sd = .1
   prior_x, prior_y = [prior.Gaussian(c, xy_sd) for c in center]
@@ -34,7 +35,7 @@ Here we infer the size, refractive index, and position of a spherical scatterer:
   r.values()
 
 
-The first few lines import the code needed to compute holograms and do parameter inference:
+The first few lines import the code needed to compute holograms and do parameter inference::
 
   import holopy as hp
   import numpy as np
@@ -50,7 +51,7 @@ as those in :ref:`calc_tutorial`::
 
   d = detector_grid((100, 100), .1)
   s = Sphere(r=.5, n=1.6, center=(5, 5, 5))
- h= calc_holo(d, s, illum_wavelen=.66, medium_index=1.33, illum_polarization=(0, 1))
+  h= calc_holo(d, s, illum_wavelen=.66, medium_index=1.33, illum_polarization=(0, 1))
 
 If you are working with your own data, it is important to remember to
 normalize the data, since calculations return a normalized result. So
@@ -58,10 +59,9 @@ if you had ``data.tif`` and ``bg.tif`` you would use something like::
 
   import holopy as hp
   from holopy.core.process import normalize
-  optics = Optics(wavelen = .660, polarization = [1, 0],
-                  index = 1.33)
-  data_holo = normalize(hp.load_image('data.tif', spacing = .1, illum_wavelen=.66, illum_polarization=[1, 0], medium_index=1.33) /
-                   hp.load_image('bg.tif', spacing = .1))
+  data_holo = normalize(bg_correct(hp.load_image('data.tif', spacing = .1, illum_wavelen=.66,
+                                                 illum_polarization=[1, 0], medium_index=1.33),
+                                   hp.load_image('bg.tif', spacing = .1)))
 
 Defining a Probability Model
 ----------------------------
@@ -79,7 +79,7 @@ of where the particle is in x and y, but, if the hologram was from actual data,
 you probably would not have a very good guess of where it is in z. So lets turn
 this information into code::
 
-  center_px= hp.process.center_find(h)
+  center_px= hp.core.process.center_find(h)
   center = center_px * hp.core.metadata.get_spacing(h)
   xy_sd = .1
   prior_x, prior_y = [prior.Gaussian(c, xy_sd) for c in center]
@@ -108,7 +108,7 @@ Sampling the Posterior
 
 Finally, we can sample the posterior probability for this model and save the results to an hdf5 file::
 
-  r = tempered_sample(model, h, nwalkers=100, samples=800, seed=40, min_pixels=10, max_pixels=1000, stages=5)
+  r = tempered_sample(model, h)
   hp.save('example-sampling.h5', r)
 
 You can get a quick look at the values with::
