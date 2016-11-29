@@ -9,7 +9,8 @@ field stored in the hologram to some different plane.  HoloPy
 generalizes this concept and allows you to numerically propagate any
 hologram (or electric field) to another position in space.
 
-Here is an example:
+Example Reconstruction
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. plot:: pyplots/basic_recon.py
    :include-source:

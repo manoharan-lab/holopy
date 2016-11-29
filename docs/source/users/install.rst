@@ -131,7 +131,7 @@ to get you started.
 Building
 --------
 Set up to build HoloPy
-======================
+~~~~~~~~~~~~~~~~~~~~~~
 
 In general what you need to build holopy (in addition to the basic
 :ref:`dependencies`) is:
