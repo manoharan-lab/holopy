@@ -3,8 +3,54 @@
 Installing HoloPy
 =================
 
+
+******************
+UNDER CONSTRUCTION
+******************
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
 Quick Start
------------
+~~~~~~~~~~~
 
 If you do not already have scientific python, we suggest using
 `Anaconda <https://www.continuum.io/downloads>`_. You will want python

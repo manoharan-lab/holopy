@@ -68,7 +68,7 @@ def test_image_io():
     #check auto scaling
     filename = os.path.join(t, 'image0001.tif')
     save_image(filename, holo, depth='float')
-    l=load_image(filename, name=holo.name)
+    l=load_image(filename, name=holo.name, spacing=get_spacing(holo))
     # skip checking full DataArray attrs because it is akward to keep them through arithmatic. Ideally we would figure out a way to preserve them and switch back to testing fully
     assert_allclose(l, (holo-holo.min())/(holo.max()-holo.min()))    
 
