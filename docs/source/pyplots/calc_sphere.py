@@ -8,4 +8,3 @@ illum_wavelen = 0.660
 illum_polarization = (1,0)
 
 holo = calc_holo(detector, sphere, medium_index, illum_wavelen, illum_polarization)
-hp.show(holo)

@@ -52,9 +52,9 @@ def tempered_sample(model, data, nwalkers=100, min_pixels=50, max_pixels=2000,
     return s.sample(model, data, samples)
 
 class EmceeStrategy(HoloPyObject):
-    def __init__(self, nwalkers=100, use_pixels=2000, threads='auto', cleanup_threads=True, seed=None):
+    def __init__(self, nwalkers=100, pixels=2000, threads='auto', cleanup_threads=True, seed=None):
         self.nwalkers = nwalkers
-        self.use_pixels = use_pixels
+        self.pixels = pixels
         self.threads = threads
         self.cleanup_threads = cleanup_threads
         self.seed = seed
@@ -63,8 +63,8 @@ class EmceeStrategy(HoloPyObject):
         return np.vstack([p.sample(size=(self.nwalkers)) for p in parameters]).T
 
     def sample(self, model, data, nsamples, walker_initial_pos=None):
-        if self.use_pixels is not None:
-            data = make_subset_data(data, use_pixels=self.use_pixels)
+        if self.pixels is not None:
+            data = make_subset_data(data, pixels=self.pixels)
         if walker_initial_pos is None:
             walker_initial_pos = self.make_guess(model.parameters)
         sampler = sample_emcee(model=model, data=data, nwalkers=self.nwalkers,
@@ -89,7 +89,7 @@ class TemperedStrategy(EmceeStrategy):
         self.stages = stages
         self.stage_strategies = []
         for p in np.logspace(np.log10(min_pixels), np.log10(max_pixels), stages+1):
-            self.stage_strategies.append(EmceeStrategy(nwalkers=nwalkers, use_pixels=int(round(p)), threads=threads, seed=seed))
+            self.stage_strategies.append(EmceeStrategy(nwalkers=nwalkers, pixels=int(round(p)), threads=threads, seed=seed))
             if seed is not None:
                 seed += 1
 
