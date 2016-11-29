@@ -1,0 +1,3 @@
+cd ~/code/holopy/docs/source
+sphinx-apidoc -o reference ../../holopy ../../holopy/core/tests/*  ../../holopy/fitting/tests/* ../../holopy/fitting/third_party/* ../../holopy/propagation/tests/* ../../holopy/scattering/tests/* ../../holopy/scattering/third_party/* ../../holopy/scattering/theory/mie_f/*
+rm reference/modules.rst
