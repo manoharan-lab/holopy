@@ -40,4 +40,3 @@ Main use cases are
 
 from .metadata import detector_grid, detector_points, update_metadata, copy_metadata
 from .io import load, load_image, save, save_image
-from . import process

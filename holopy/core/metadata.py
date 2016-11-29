@@ -34,6 +34,7 @@ vector = 'vector'
 def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None):
     if spacing is None:
         spacing = 1
+        warn("No pixel spacing provided. Setting spacing to 1, but any subsequent calculations will be wrong.")
     if name is None:
         name = 'data'
 
@@ -75,6 +76,27 @@ def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta =
     return xr.DataArray(np.zeros(len(coords[keys[0]][1])), dims = ['point'], coords = coords, attrs = attrs, name = name)
 
 def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None):
+    """Returns a copy of an image with updated metadata in its 'attrs' field.
+
+    Parameters
+    ----------
+    a : xarray.DataArray
+        image to update.
+    medium_index : float
+        Updated refractive index of the medium in the image.
+    illum_wavelen : float
+        Updated wavelength of illumination in the image.
+    illum_polarization : list-like
+        Updated polarization of illumination in the image.
+    normals : list-like
+        Updated detector orientation of the image.
+   
+    Returns
+    -------
+    b : xarray.DataArray
+        copy of input image with updated metadata. The 'normals' field is not allowed to be empty.
+    """
+
     attrlist = {'medium_index': medium_index, 'illum_wavelen': illum_wavelen, 'illum_polarization': to_vector(illum_polarization), 'normals': to_vector(normals)}
     b = a.copy()
     b.attrs = updated(b.attrs, attrlist)

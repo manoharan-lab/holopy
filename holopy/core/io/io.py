@@ -313,17 +313,27 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
 
     Parameters
     ----------
-    images : string or list(string)
-        Directory or list of filenames or filepaths. If images is a directory,
+    filepath : string or list(string)
+        Directory or list of filenames or filepaths. If filename is a directory,
         it will average all images matching image_glob.
+    refimg : xarray.DataArray
+        reference image to provide spacing and metadata for the new image.
     spacing : float
-        Spacing between pixels in the images
+        Spacing between pixels in the images. Used preferentially over refimg value if both are provided.
+    medium_index : float
+        Refractive index of the medium in the images. Used preferentially over refimg value if both are provided.
+    illum_wavelen : float
+        Wavelength of illumination in the images. Used preferentially over refimg value if both are provided.
+    illum_polarization : list-like
+        Polarization of illumination in the images. Used preferentially over refimg value if both are provided.
+    normals : list-like
+        Orientation of detector. Used preferentially over refimg value if both are provided.
     image_glob : string
         Glob used to select images (if images is a directory)
 
     Returns
     -------
-    averaged_image : :class:`.Image` object
+    averaged_image : xarray.DataArray
         Image which is an average of images
     """
 
