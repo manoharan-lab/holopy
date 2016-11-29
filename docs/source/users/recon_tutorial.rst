@@ -21,22 +21,23 @@ We'll examine each section of code in turn. The first block:
     import numpy as np
     import holopy as hp
     from holopy.core.io import get_example_data_path, load_average
+    from holopy.core.process import bg_correct
 
 loads the relevant modules from HoloPy and NumPy. The second block:
 
 ..  testcode::
     
     imagepath = get_example_data_path('image01.jpg')
-    raw_holo = hp.load_image(imagepath, spacing = 0.0851, illum_wavelen = 0.66, medium_index = 1.33)
+    raw_holo = hp.load_image(imagepath, spacing = 0.0851, medium_index = 1.33, illum_wavelen = 0.66)
     bgpath = get_example_data_path(['bg01.jpg','bg02.jpg','bg03.jpg'])
     bg = load_average(bgpath, refimg = raw_holo)
-    holo = hp.core.process.bg_correct(raw_holo, bg)
+    holo = bg_correct(raw_holo, bg)
 
 reads in a hologram and divides it by a corresponding background image.
 If this is unfamiliar to you, please review the :ref:`load_tutorial` tutorial.
 
 Next, we use numpy's linspace to define a set of distances at 2-micron intervals to 
-propagate our image to. You can also propagate to a single distance,
+propagate our image to. You can also propagate to a single distance
 or to a set of distances obtained in some other fashion. 
 The actual propagation is accomplished with :func:`.propagate`:
 
@@ -112,15 +113,15 @@ Cascaded Free Space Propagation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 HoloPy calculates reconstructions by performing a convolution of the hologram with
-the reference illuminating electromagnetic wave over the distance to be propagated.
+the reference wave over the distance to be propagated.
 By default, HoloPy calculates a single transfer function to perform the convolution
-over the specified distances. However, a better reconstruction can sometimes be
+over the specified distance. However, a better reconstruction can sometimes be
 obtained by iteratively propagating the hologram over short distances. This 
 cascaded free space propagation is particularly useful when the reconstructions have
 fine features or when propagating over large distances. For further details, refer to 
-`Kreis 2002 <http://opensample.info/frequency-analysis-of-digital-holography-with-reconstruction-by-convolution>.
+`Kreis 2002 <http://opensample.info/frequency-analysis-of-digital-holography-with-reconstruction-by-convolution>`_.
 
-To impolement cascaded free space propagation in HoloPy, simply pass a ``cfsp`` variable
+To implement cascaded free space propagation in HoloPy, simply pass a ``cfsp`` variable
 into :func:`.propagate` indicating how many times the hologram should be iteratively
 propagated. For example, to propagate in three steps over each distance, we write:
 

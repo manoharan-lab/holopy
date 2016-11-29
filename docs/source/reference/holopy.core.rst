@@ -7,8 +7,8 @@ Subpackages
 .. toctree::
 
     holopy.core.io
+    holopy.core.process
     holopy.core.tests
-    holopy.core.tools
 
 Submodules
 ----------
@@ -29,10 +29,26 @@ holopy.core.holopy_object module
     :undoc-members:
     :show-inheritance:
 
+holopy.core.math module
+-----------------------
+
+.. automodule:: holopy.core.math
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 holopy.core.metadata module
 ---------------------------
 
 .. automodule:: holopy.core.metadata
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+holopy.core.utils module
+------------------------
+
+.. automodule:: holopy.core.utils
     :members:
     :undoc-members:
     :show-inheritance:
