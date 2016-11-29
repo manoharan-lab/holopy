@@ -205,10 +205,27 @@ def simulate_noise(shape, mean=.1, smoothing=.01, poisson_lambda=1000):
 
     """
     raw_poisson = np.random.poisson(poisson_lambda, shape)
-    smoothed = scipy.ndimage.gaussian_filter(raw_poisson, np.array(shape)*smoothing)
+    smoothed = gaussian_filter(raw_poisson, np.array(shape)*smoothing)
     return smoothed/smoothed.mean() * mean
 
 def bg_correct(raw, bg, df=None):
+    """Correct for noisy images
+
+    Parameters
+    ----------
+    raw : xarray.DataArray
+        Image to be background divided.
+    bg : xarray.DataArray
+        background image recorded with the same optical setup.
+    df : xarray.DataArray
+        dark field image recorded without illumination.
+
+    Returns
+    -------
+    corrected_image : xarray.DataArray
+       A copy of the background divided input image.
+
+    """
     if is_none(df):
         df = detector_grid(raw.shape,get_spacing(raw))
 

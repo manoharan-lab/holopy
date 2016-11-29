@@ -43,8 +43,6 @@ def check_schema(schema, pol = True):
     return schema
 
 def prep_schema(schema, medium_index, illum_wavelen, illum_polarization):
-    if isinstance(schema, dict):
-        schema = detector_points(schema)
     return check_schema(update_metadata(schema, medium_index, illum_wavelen, illum_polarization), illum_polarization)
 
 def interpret_theory(scatterer,theory='auto'):

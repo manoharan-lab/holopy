@@ -28,14 +28,6 @@ holopy.fitting.fit module
     :undoc-members:
     :show-inheritance:
 
-holopy.fitting.fit_series module
---------------------------------
-
-.. automodule:: holopy.fitting.fit_series
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 holopy.fitting.minimizer module
 -------------------------------
 

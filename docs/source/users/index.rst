@@ -8,7 +8,7 @@ Skip to the :ref:`tutorials` if you already have HoloPy installed and want to
 get started quickly.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    install
    load_tutorial

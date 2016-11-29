@@ -15,9 +15,8 @@ particle radii, etc.)  must also be specified in nanometers.
 .. _coordinate_system: 
 
 Coordinate system
------------------
 
-For :class:`~holopy.core.marray.Image` data (data points arrayed in a
+For image data (data points arrayed in a
 regular grid in a single plane), HoloPy defaults to placing the
 origin, (0,0), at the top left corner as shown below. The x-axis runs
 vertically down, the y-axis runs horizontally to the right, and the
@@ -27,16 +26,6 @@ way that images are treated by most computer software.
 .. image:: ../images/HolopyCoordinateSystem.png
    :scale: 30 %
    :alt: Coordinate system used in HoloPy.
-
-.. note::
-
-  Using :func:`.subimage` changes the origin attribute of an 
-  :class:`~holopy.core.marray.Image` to be relative to the original input.
-  This is particularly relevant for using subimaged images as a 
-  :class:`~holopy.core.marray.Schema` for scattering calculations (such as
-  computing holograms): coordinates of 
-  :class:`~holopy.scattering.scatterer.Scatterer` objects need to be specified 
-  relative to the original image.
 
 In sample space, we choose the z axis so that distances to objects
 from the camera/focal plane are positive (have positive z

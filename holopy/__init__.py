@@ -32,7 +32,7 @@ images and calculations.
 
 
 from . import core, scattering, fitting, inference
-from .core import load, save, load_image, save_image, process, math, detector_grid, detector_points
+from .core import load, save, load_image, save_image, detector_grid, detector_points
 from .propagation import propagate
 from .vis import show
 
