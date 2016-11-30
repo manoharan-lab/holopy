@@ -22,7 +22,6 @@ from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering.errors import MultisphereFailure, InvalidScatterer
 
 import numpy as np
-import pandas as pd
 from copy import copy
 from holopy.scattering.calculations import calc_field, calc_holo
 

@@ -54,7 +54,7 @@ def teardown_optics():
 
 def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,**kwargs):
     try:
-        return calc_holo_external(schema, scatterer, index, wavelen, **kwargs)
+        return calc_holo_external(schema, scatterer, medium_index, illum_wavelen, **kwargs)
     except DependencyMissing:
         raise SkipTest()
 
