@@ -48,6 +48,8 @@ def configuration(parent_package='',top_path=None):
     config.add_data_files('holopy/scattering/tests/gold/*.yaml')
     config.add_data_files('holopy/core/tests/exampledata/*.h5')
     config.add_data_files('holopy/core/tests/exampledata/*.jpg')
+    config.add_data_files('holopy/propagation/tests/gold/full_data/*.h5')
+    config.add_data_files('holopy/propagation/tests/gold/*.yaml')
 
     config.get_version()
     return config
