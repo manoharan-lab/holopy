@@ -44,6 +44,7 @@ def configuration(parent_package='',top_path=None):
         config.add_subpackage(i)    
     
     config.add_data_files(['.',['AUTHORS']])
+    config.add_data_files('holopy/scattering/tests/gold/full_data/*.h5')
     config.add_data_files('holopy/core/tests/exampledata/*.h5')
     config.add_data_files('holopy/core/tests/exampledata/*.jpg')
 
