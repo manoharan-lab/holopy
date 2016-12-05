@@ -9,19 +9,20 @@ Here we infer the size, refractive index, and position of a spherical scatterer:
   import numpy as np
   from holopy.inference import prior, AlphaModel, tempered_sample
   from holopy.scattering import Sphere, calc_holo
-  from holopy.core.process import bg_correct
+  from holopy.core.process import bg_correct, add_noise
   from holopy import detector_grid
 
   # Make a simulated hologram
   d = detector_grid((100, 100), .1)
   s = Sphere(r=.5, n=1.6, center=(5, 5, 5))
-  h= calc_holo(d, s, illum_wavelen=.66, medium_index=1.33, illum_polarization=(0, 1))
+  h= add_noise(calc_holo(d, s, illum_wavelen=.66, medium_index=1.33, illum_polarization=(0, 1)))
 
   # Set up the prior
-  s = Sphere(n=prior.Gaussian(1.5, .1), r=prior.BoundedGaussian(.5, .05, 0, np.inf), center=prior.make_center_priors(h))
+  s = Sphere(n=prior.Gaussian(1.5, .1), r=prior.BoundedGaussian(.5, .05, 0, np.inf),
+             center=prior.make_center_priors(h))
 
   # Set up the noise model
-  noise_sd = .1
+  noise_sd = h.std()
   model = AlphaModel(s, noise_sd=noise_sd, alpha=1)
 
   r = tempered_sample(model, h, nwalkers=100, samples=800, seed=40, min_pixels=10, max_pixels=1000, stages=5)
@@ -75,7 +76,8 @@ of where the particle is in x and y, but, if the hologram was from actual data,
 you probably would not have a very good guess of where it is in z. So lets turn
 this information into code::
 
-  s = Sphere(n=prior.Gaussian(1.5, .1), r=prior.BoundedGaussian(.5, .05, 0, np.inf), center=prior.make_center_priors(h))
+  s = Sphere(n=prior.Gaussian(1.5, .1), r=prior.BoundedGaussian(.5, .05, 0, np.inf),
+             center=prior.make_center_priors(h))
 
 The Gaussian distribution is the prior used to describe a value for which all we
 know is some expected value and some uncertainty on that expected value. For the
@@ -96,9 +98,13 @@ Likelihood
 
 Next we need to define a model that tells HoloPy how probable it is that we
 would see the data we observed given some hypothetical scatterer position, size
-and index. In the language of statistics, this is referred to as a likelihood::
+and index. In the language of statistics, this is referred to as a likelihood.
+In order to compute a likelihood, you need some estimate of how noisy your data
+is (so that you can figure out how likely it is that the differences between
+your model and data could be explained by noise). Here we use the standard
+deviation of the data.::
 
-  noise_sd = .1
+  noise_sd = h.std()
   model = AlphaModel(s, noise_sd=noise_sd, alpha=1)
 
 Sampling the Posterior
