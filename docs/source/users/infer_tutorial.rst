@@ -18,11 +18,7 @@ Here we infer the size, refractive index, and position of a spherical scatterer:
   h= calc_holo(d, s, illum_wavelen=.66, medium_index=1.33, illum_polarization=(0, 1))
 
   # Set up the prior
-  center_px= hp.core.process.center_find(h)
-  center = center_px * hp.core.metadata.get_spacing(h)
-  xy_sd = .1
-  prior_x, prior_y = [prior.Gaussian(c, xy_sd) for c in center]
-  s = Sphere(n=prior.Gaussian(1.5, .1), r=prior.BoundedGaussian(.5, .05, 0, np.inf), center=[prior_x, prior_y, prior.Uniform(0, 100)])
+  s = Sphere(n=prior.Gaussian(1.5, .1), r=prior.BoundedGaussian(.5, .05, 0, np.inf), center=prior.make_center_priors(h))
 
   # Set up the noise model
   noise_sd = .1
@@ -79,19 +75,21 @@ of where the particle is in x and y, but, if the hologram was from actual data,
 you probably would not have a very good guess of where it is in z. So lets turn
 this information into code::
 
-  center_px= hp.core.process.center_find(h)
-  center = center_px * hp.core.metadata.get_spacing(h)
-  xy_sd = .1
-  prior_x, prior_y = [prior.Gaussian(c, xy_sd) for c in center]
-  s = Sphere(n=prior.Gaussian(1.5, .1), r=prior.BoundedGaussian(.5, .05, 0, np.inf),
-             center=[prior_x, prior_y, prior.Uniform(0, 100)])
+  s = Sphere(n=prior.Gaussian(1.5, .1), r=prior.BoundedGaussian(.5, .05, 0, np.inf), center=prior.make_center_priors(h))
 
 The Gaussian distribution is the prior used to describe a value for which all we
 know is some expected value and some uncertainty on that expected value. For the
 radius we also know that it must be nonnegative, so we can bound the Gaussian at
 zero. Finally for z, we have chosen to represent our ignorance in where the
 particle might be in z by assigning it equal probability that it might be
-anywhere between 0 and 100 microns from the focal plane.
+anywhere between 0 and 100 microns from the focal plane. The
+prior.make_center_priors(h) function automates generating priors for a sphere
+center using a hough transform centerfinder for x and y, and picks a large
+uniform prior for z. In this case the prior will be::
+
+  [Gaussian(mu=5.00013, sd=0.1),
+   Gaussian(mu=5.00010, sd=0.1),
+   Uniform(lower_bound=0, upper_bound=100.0)]
 
 Likelihood
 ----------

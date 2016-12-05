@@ -18,7 +18,8 @@
 
 
 
-
+from holopy.core.metadata import get_extents, get_spacing
+from holopy.core.process import center_find
 from holopy.fitting.parameter import Parameter
 from holopy.fitting.errors import ParameterSpecificationError
 
@@ -130,3 +131,37 @@ def updated(prior, v, extra_uncertainty=0):
                                name=prior.name)
     else:
         return Gaussian(v.value, sd, prior.name)
+
+def make_center_priors(im, z_range_extents=10, xy_uncertainty_pixels=1, z_range_units=None):
+    """
+    Make sensible default priors for the center of a sphere in a hologram
+
+    Parameters
+    ----------
+    im : xarray
+         The image you wish to make priors for
+    z_range_extents : float (optional)
+         What range to extend a uniform prior for z over, measured in multiples
+         of the total extent of the image. The default is 10 times the extent of
+         the image, a large range, but since tempering is quite good at refining
+         this, it is safer to just choose a large range to be sure to include
+         the correct value.
+    xy_uncertainty_pixels: float (optional)
+         The number of pixels of uncertainty to assume for the centerfinder.
+         The default is 1 pixel, and this is probably correct for most images.
+    z_range_units : float
+         Specify the range of the z prior in your data units. If this is provided,
+         z_range_extents is ignored.
+    """
+    if z_range_units is not None:
+        z_range = z_range_units
+    else:
+        extents = get_extents(im)
+        extent = max(extents['x'], extents['y'])
+        z_range = 0, extent * z_range_extents
+
+    spacing = get_spacing(im)
+    center = center_find(im) * spacing
+
+    xy_sd = xy_uncertainty_pixels * spacing
+    return [Gaussian(c, s) for c, s in zip(center, xy_sd)] + [Uniform(*z_range)]
