@@ -1,8 +1,7 @@
 .. _tools
 
-************
 HoloPy Tools
-************
+============
 
 Holopy contains a number of tools to help you with common tasks when analyzing holograms.
 This page provides a summary of the tools available, while full descriptions can be found
@@ -10,7 +9,7 @@ in the :mod:`tools` code reference. All tools listed here are available for impo
 the holopy.tools namespace.
 
 General Image Processing Tools
-==============================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The tools described here are frequently used when analyzing holgrams.
 
 The :func:`.normalize` function divides an image by its average,
@@ -28,7 +27,7 @@ center and crop around it.
 
 
 Specialized Image Processing Tools
-==================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The tools described in this section are used for more specific image processing applications.
 
 You can remove isolated dead pixels with zero intensity (e.g. for a background division) by
@@ -49,11 +48,14 @@ HoloPy also includes a Hough transform (:func:`.hough`) to help identify lines a
 
 
 Math Tools
-==========
+~~~~~~~~~~
 To find the distance between two points, use :func:`.cartesian_distance`.
 
 To rotate a set of points by arbitrary angles about the three coordinate axes, use :func:`.rotate_points`.
 You can also calculate a rotation matrix with :func:`.rotation_matrix` to save and use later.
+
+To convert spherical coordinates into Cartesian coordinates, use :func:`.to_cartesian`. To convert Cartesian
+coordinates into spherical coordinates, use :func:`.to_spherical`.
 
 When comparing data to a model, the chi-squared and r-squared values provide measures of goodness-of-fit.
 You can access these through :func:`.chisq` and :func:`.rsq`.

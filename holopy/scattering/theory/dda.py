@@ -39,11 +39,11 @@ import warnings
 
 from .scatteringtheory import ScatteringTheory
 from .mie_f import mieangfuncs
-from ..scatterer import Sphere, Ellipsoid, Spheres, Capsule, Cylinder, Bisphere, Sphere_builtin, JanusSphere, CsgScatterer
+from ..scatterer import Ellipsoid, Capsule, Cylinder, Bisphere, Sphere_builtin, Scatterer
 from ...core.utils import ensure_array
 from ..errors import DependencyMissing
 
-scatterers_handled = Sphere, JanusSphere, Ellipsoid, Spheres, Capsule, Cylinder, Bisphere, Sphere_builtin, CsgScatterer
+scatterers_handled = Scatterer
 
 class DDA(ScatteringTheory):
     """
@@ -90,10 +90,6 @@ class DDA(ScatteringTheory):
         self.keep_raw_calculations = keep_raw_calculations
         self.addacmd = addacmd
         super().__init__()
-
-    def _can_handle(self, scatterer):
-        # TODO: replace this with actually determining if dda we can handle it (though this isn't too far off, since dda can handle almost anything)
-        return True
 
     def _run_adda(self, scatterer, medium_wavevec, medium_index, temp_dir):
         medium_wavelen = 2*np.pi/medium_wavevec

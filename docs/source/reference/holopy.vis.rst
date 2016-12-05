@@ -4,14 +4,6 @@ holopy.vis package
 Submodules
 ----------
 
-holopy.vis.gui_manipulate module
---------------------------------
-
-.. automodule:: holopy.vis.gui_manipulate
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 holopy.vis.show module
 ----------------------
 

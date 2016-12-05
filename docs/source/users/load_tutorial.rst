@@ -52,9 +52,10 @@ can usually improve the image a lot.
 
 ..  testcode::
 
+    from holopy.core.process import bg_correct
     bgpath = get_example_data_path('bg01.jpg')
     bg = hp.load_image(bgpath, spacing = 0.0851)
-    holo = hp.core.process.bg_correct(raw_holo, bg)
+    holo = bg_correct(raw_holo, bg)
     hp.show(holo)
 
 ..  plot:: pyplots/show_bg_holo.py
@@ -66,7 +67,7 @@ we want an average image to pass into :func:`.bg_correct` as our background.
      
     bgpath = get_example_data_path(['bg01.jpg', 'bg02.jpg', 'bg03.jpg'])
     bg = hp.core.io.load_average(bgpath, refimg = raw_holo)
-    holo = hp.core.process.bg_correct(raw_holo, bg)
+    holo = bg_correct(raw_holo, bg)
     hp.show(holo)
 
 Here, we have used :func:`.load_average` to construct an average of the three background
@@ -80,7 +81,7 @@ also capture a dark-field image of your sample, recorded with no laser illuminat
 
     dfpath = get_example_data_path('df01.jpg')
     df = hp.load_image(dfpath, spacing = 0.0851)
-    holo = hp.core.process.bg_correct(raw_holo, bg, df)
+    holo = bg_correct(raw_holo, bg, df)
     hp.show(holo)
 
 ..  testcode::
@@ -104,24 +105,26 @@ conditions in mind. When you load an image, you have the option to specify some 
 information in the form of :dfn:`metadata` that is associated with the image. In fact, we 
 already saw an example of this when we specified image spacing earlier. The sample in our
 image was immersed in water, which has a refractive index of 1.33. It was illuminated by
-a red laser with wavelength of 660 nm and polarization in the x-direction. We can write:
+a red laser with wavelength of 660 nm and polarization in the x-direction. We can tell
+HoloPy all of this information when loading the image:
 
 ..  testcode::
 
-    holo = hp.core.update_metadata(holo, medium_index = 1.33, illum_wavelen = 0.660, illum_polarization = (1,0))
+    raw_holo = hp.load_image(imagepath, spacing=0.0851, medium_index=1.33, illum_wavelen=0.660, illum_polarization=(1,0))
+
 
 You can then view these metadata values as attributes of holo, as in ``holo.medium_index``.
-However, you must use :func:`.update_metadata` to edit them. Alternatively, we can specify
-some or all of these parameters immediately when loading the image:
+However, you must use a special function :func:`.update_metadata` to edit them. If we forgot to 
+specify metadata when loading the image, we can use :func:`.update_metadata` to add it later:
 
 ..  testcode::
 
-    raw_holo = hp.load_image(imagepath, medium_index = 1.33, illum_wavelen = 0.660, spacing = 0.0851)
+    holo = hp.core.update_metadata(holo, medium_index=1.33, illum_wavelen=0.660, illum_polarization=(1,0))
 
 .. note::
     Spacing and wavelength must both be written in the same units - microns in the example
     above. Holopy has no built-in length scale and requires only that you be consistent. 
-    For example, we could have specified both parameters in terms of nanometers instead.
+    For example, we could have specified both parameters in terms of nanometers or meters instead.
 
 ..  testcode::
     :hide:
@@ -135,10 +138,16 @@ some or all of these parameters immediately when loading the image:
     0.67
     0.67
 
+HoloPy images are stored as `xarray DataArray <http://xarray.pydata.org/en/stable/data-structures.html>`_ objects.
+xarray is a powerful tool that makes it easy to keep track of metadata and extra image dimensions, distinguishing between
+a time slice and a volume slice, for example. While you do not need any knowledge of xarray to use HoloPy, some
+familiarity will make certain tasks easier. This is especially true if you want to directly manipulate data
+before or after applying HoloPy's built-in functions.
+
 Saving and Reloading Holograms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Once you have a background-divided hologram and associated it with metadata, you might
+Once you have background-divided a hologram and associated it with metadata, you might
 want to save it so that you can skip those steps next time you are working with the 
 same image::
     
@@ -159,7 +168,7 @@ you reload with :func:`.load`, but not :func:`.load_image`
 
 ..  note::
 
-    Although holopy stores metadata even when writing to .tif image files, it is still recommended that 
+    Although HoloPy stores metadata even when writing to .tif image files, it is still recommended that 
     holograms be saved in HDF5 format using :func:`.save`. Floating point intensity values are rounded 
     to 8-bit integers when using :func:`.save_image`, resulting in information loss.
 
@@ -167,9 +176,11 @@ you reload with :func:`.load`, but not :func:`.load_image`
 Non-Square Pixels
 ~~~~~~~~~~~~~~~~~
 
-The holograms above make use of several default assumptions.  When you load an image like ::
+The holograms above make use of several default assumptions. When you load an image like:
 
-  raw_holo = hp.load_image(imagepath, spacing = 0.0851)
+..  testcode::  
+
+    raw_holo = hp.load_image(imagepath, spacing = 0.0851)
 
 you are making HoloPy assume a square array of evenly spaced grid
 points. If your pixels are not square, you can provide pixel spacing values in each direction: 

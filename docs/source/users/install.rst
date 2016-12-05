@@ -3,8 +3,54 @@
 Installing HoloPy
 =================
 
+
+******************
+UNDER CONSTRUCTION
+******************
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
 Quick Start
------------
+~~~~~~~~~~~
 
 If you do not already have scientific python, we suggest using
 `Anaconda <https://www.continuum.io/downloads>`_. You will want python
@@ -85,7 +131,7 @@ to get you started.
 Building
 --------
 Set up to build HoloPy
-======================
+~~~~~~~~~~~~~~~~~~~~~~
 
 In general what you need to build holopy (in addition to the basic
 :ref:`dependencies`) is:
