@@ -91,6 +91,13 @@ class DDA(ScatteringTheory):
         self.addacmd = addacmd
         super().__init__()
 
+    def _can_handle(self, scatterer):
+        # For now DDA is our most general theory, eventually this will have to
+        # change if we add other theorys that can compute things ADDA can't (or
+        # shouldn't, because it would take crazy long)
+        return True
+
+
     def _run_adda(self, scatterer, medium_wavevec, medium_index, temp_dir):
         medium_wavelen = 2*np.pi/medium_wavevec
         if self.n_cpu == 1:

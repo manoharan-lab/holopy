@@ -336,12 +336,12 @@ Since cross sections integrates over all angles, we can also omit the
 ..  testcode::
     :hide:
 
-    print(x_sec[0])
+    print(x_sec.values)
 
 ..  testoutput::
     :hide:
 
-    1.93274288711
+    [ 1.93274289  0.          1.93274289  0.91619823]
 
 x_sec returns an array containing four elements. The first element is the scattering cross section, specified in terms of the same
 units as wavelength and particle size. The second and third elements are the absorption

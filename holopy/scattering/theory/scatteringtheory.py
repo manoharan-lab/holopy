@@ -49,8 +49,15 @@ class ScatteringTheory(HoloPyObject):
     Notes
     -----
     A subclasses that do the work of computing scattering should do it by
-    implementing a _calc_field(self, scatterer, schema) function that returns a
-    VectorGrid electric field.
+    implementing _raw_fields and/or _raw_scat_matrs and (optionally)
+    _raw_cross_sections. _raw_cross_sections is needed only for
+    calc_cross_sections. Either of _raw_fields or _raw_scat_matrs will give you
+    calc_holo, calc_field, and calc_intensity. Obviously calc_scat_matrix will
+    only work if you implement _raw_cross_sections.
+
+    So the simplest thing is to just implement _raw_scat_matrs. You only need to
+    do _raw_fields there is a way to compute it more efficently and you care
+    about that speed, or if it is easier and you don't care about matricies. 
     """
     
     def _calc_field(self, scatterer, schema):
@@ -101,6 +108,15 @@ class ScatteringTheory(HoloPyObject):
 
         return field
 
+    def _calc_cross_sections(self, scatterer, medium_wavevec, medium_index, illum_polarization):
+        raw_sections = self._raw_cross_sections(scatterer=scatterer,
+                                                medium_wavevec=medium_wavevec,
+                                                medium_index=medium_index,
+                                                illum_polarization=illum_polarization)
+        return xr.DataArray(raw_sections, dims=['cross_section'],
+                            coords={'cross_section': ['scattering', 'absorbtion',
+                                                      'extinction', 'assymetry']})
+
     def _calc_scat_matrix(self, scatterer, schema):
         """
         Compute scattering matricies for scatterer
@@ -138,48 +154,8 @@ class ScatteringTheory(HoloPyObject):
         return xr.DataArray(scat_matrs, dims=dims, coords=positions, attrs=schema.attrs)
 
 
-# Subclass of scattering theory, overrides functions that depend on array
-# ordering and handles the tranposes for sending values to/from fortran
-class FortranTheory(ScatteringTheory):
-    def _scatterer_overlaps_schema(self, scatterer, schema):
-        if hasattr(schema, 'center'):
-            center_to_center = scatterer.center - schema.center
-            unit_vector = center_to_center - abs(center_to_center).sum()
-            return schema.contains(scatterer.center - unit_vector)
-        else:
-            return scatterer.contains(schema.coords).any()
-
-    def _set_internal_fields(self, fields, scatterer):
-        center_to_center = scatterer.center - fields.center
-        unit_vector = center_to_center - abs(center_to_center).sum()
-        if fields.contains(scatterer.center - unit_vector):
-            warn("Fields inside your Sphere(s) set to 0 because {0} Theory "
-                 " does not yet support calculating internal fields".format(
-                     self.__class__.__name__))
-
-            origin = fields.origin
-            extent = fields.extent
-            shape = fields.shape
-            def points(i):
-                return enumerate(np.linspace(origin[i], origin[0]+extent[i], shape[i]))
-            # TODO: may be missing hitting a point or two because of
-            # integer truncation, see about fixing that
 
 
-            # TODO: vectorize or otherwise speed this up
-            if len(shape) == 2:
-                for i, x in points(0):
-                    for j, y in points(1):
-                        if scatterer.contains((x, y, fields.center[2])):
-                            fields[i, j] = 0
-
-            else:
-                for i, x in points(0):
-                    for j, y in points(1):
-                        for k, z in points(2):
-                            if scatterer.contains((x, y, z)):
-                                fields[i, j, k] = 0
-        return fields
 
 class InvalidElectricFieldComputation(Exception):
     def __init__(self, reason):

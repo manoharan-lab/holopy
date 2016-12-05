@@ -39,11 +39,11 @@ from .mie_f import uts_scsmfo
 from ..scatterer import Spheres,Sphere
 from ..errors import (TheoryNotCompatibleError, InvalidScatterer,
                       MultisphereFailure)
-from .scatteringtheory import FortranTheory
+from .scatteringtheory import ScatteringTheory
 
 def normalize_polarization(illum_polarization):
     return (illum_polarization / np.sqrt((illum_polarization**2).sum()))[:2]
-class Multisphere(FortranTheory):
+class Multisphere(ScatteringTheory):
     """
     Exact scattering from a cluster of spheres.
 

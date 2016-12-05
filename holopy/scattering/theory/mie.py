@@ -30,12 +30,12 @@ import numpy as np
 from ...core.utils import ensure_array
 from ..errors import TheoryNotCompatibleError, InvalidScatterer
 from ..scatterer import Sphere, Scatterers
-from .scatteringtheory import FortranTheory
+from .scatteringtheory import ScatteringTheory
 from .mie_f import mieangfuncs, miescatlib
 from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
 
 
-class Mie(FortranTheory):
+class Mie(ScatteringTheory):
     """
     Compute scattering using the Lorenz-Mie solution.
 
@@ -97,7 +97,7 @@ class Mie(FortranTheory):
                                                scat_coeffs, illum_polarization)
 
 
-    def _calc_cross_sections(self, scatterer, medium_wavevec, medium_index, illum_polarization):
+    def _raw_cross_sections(self, scatterer, medium_wavevec, medium_index, illum_polarization):
         """
         Calculate scattering, absorption, and extinction cross
         sections, and asymmetry parameter for spherically
