@@ -25,14 +25,16 @@ Here we infer the size, refractive index, and position of a spherical scatterer:
   noise_sd = h.std()
   model = AlphaModel(s, noise_sd=noise_sd, alpha=1)
 
-  r = tempered_sample(model, h, nwalkers=100, samples=800, seed=40, min_pixels=10, max_pixels=1000, stages=5)
+  r = tempered_sample(model, h, nwalkers=20, samples=200, seed=40, min_pixels=10, max_pixels=1000)
   hp.save('example-sampling.h5', r)
 
   r.MAP
   r.values()
 
 
-The first few lines import the code needed to compute holograms and do parameter inference::
+The first few lines import the code needed to compute holograms and do parameter inference
+
+..  testcode::
 
   import holopy as hp
   import numpy as np
@@ -44,7 +46,9 @@ Preparing Data
 --------------
 
 Next, we compute the hologram for a microsphere using the same steps
-as those in :ref:`calc_tutorial`::
+as those in :ref:`calc_tutorial`
+
+..  testcode::
 
   d = detector_grid((100, 100), .1)
   s = Sphere(r=.5, n=1.6, center=(5, 5, 5))
@@ -74,7 +78,9 @@ uncertainty about the size and index of your particle from the supplier or prior
 work with the particle. We can use a hough transform to get a pretty good guess
 of where the particle is in x and y, but, if the hologram was from actual data,
 you probably would not have a very good guess of where it is in z. So lets turn
-this information into code::
+this information into code
+
+..  testcode::
 
   s = Sphere(n=prior.Gaussian(1.5, .1), r=prior.BoundedGaussian(.5, .05, 0, np.inf),
              center=prior.make_center_priors(h))
@@ -102,7 +108,9 @@ and index. In the language of statistics, this is referred to as a likelihood.
 In order to compute a likelihood, you need some estimate of how noisy your data
 is (so that you can figure out how likely it is that the differences between
 your model and data could be explained by noise). Here we use the standard
-deviation of the data.::
+deviation of the data.
+
+..  testcode::
 
   noise_sd = h.std()
   model = AlphaModel(s, noise_sd=noise_sd, alpha=1)
@@ -110,17 +118,44 @@ deviation of the data.::
 Sampling the Posterior
 ----------------------
 
-Finally, we can sample the posterior probability for this model and save the results to an hdf5 file::
+Finally, we can sample the posterior probability for this model
 
-  r = tempered_sample(model, h)
-  hp.save('example-sampling.h5', r)
+..  testcode::
+
+  r = tempered_sample(model, h, nwalkers=20, samples=200, seed=40, min_pixels=10, max_pixels=1000)
+
+and save the results to an hdf5 file::
+
+   hp.save('example-sampling.h5', r)
 
 You can get a quick look at the values with::
 
-  r.MAP
   r.values()
 
-r.MAP gives you the Maximium a Posteriori probability (values we observed while sampling that has the highest probability of being the correct parameter values). r.values() gives you the MAP value as well as 1 sigma (or you can request any other sigma with an argument to the function) credibility intervals. 
+..  testcode::
+  :hide:
+  print(r.values()['r']
+
+..  testoutput::
+  :hide:
+  UncertainValue(value=0.540701432289793, plus=0.13693388553650176, minus=0.1043730574133887, n_sigma=1)
+
+r.values() gives you the MAP value as well as 1 sigma (or you can request any
+other sigma with an argument to the function) credibility intervals. You can
+also use::
+
+  r.MAP
+  r.mean
+  r.median
+
+to get just the central measure.
+
+The nwalkers and nsamples values in this example were chosen to get it to run
+quickly, for a proper sampling in a real experiment, you probably want to use at
+least 100 walkers, and 600 or 800 samples. You may also want to remove the seed
+argument, or give it differnt values. The seed sets the seed for the random
+sampler, all runs with the same seed should give the same results. If you do not
+provide a seed, HoloPy will implicitly choose a distinct seed for each run. 
 
 References
 ----------

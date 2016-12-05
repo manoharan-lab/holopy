@@ -53,7 +53,8 @@ class SamplingResult(HoloPyObject):
 
     @property
     def MAP(self):
-        return self.samples[np.unravel_index(self.lnprobs.argmax(), self.lnprobs.shape)]
+        m = self.samples[np.unravel_index(self.lnprobs.argmax(), self.lnprobs.shape)]
+        return xr.DataArray(m, dims=['parameter'], coords={'parameter': m.parameter}, attrs={})
 
     @property
     def mean(self):
