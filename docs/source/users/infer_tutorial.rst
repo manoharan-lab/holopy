@@ -9,33 +9,32 @@ Here we infer the size, refractive index, and position of a spherical scatterer:
   import numpy as np
   from holopy.inference import prior, AlphaModel, tempered_sample
   from holopy.scattering import Sphere, calc_holo
-  from holopy.core.process import bg_correct
+  from holopy.core.process import bg_correct, add_noise
   from holopy import detector_grid
 
   # Make a simulated hologram
   d = detector_grid((100, 100), .1)
   s = Sphere(r=.5, n=1.6, center=(5, 5, 5))
-  h= calc_holo(d, s, illum_wavelen=.66, medium_index=1.33, illum_polarization=(0, 1))
+  h= add_noise(calc_holo(d, s, illum_wavelen=.66, medium_index=1.33, illum_polarization=(0, 1)))
 
   # Set up the prior
-  center_px= hp.core.process.center_find(h)
-  center = center_px * hp.core.metadata.get_spacing(h)
-  xy_sd = .1
-  prior_x, prior_y = [prior.Gaussian(c, xy_sd) for c in center]
-  s = Sphere(n=prior.Gaussian(1.5, .1), r=prior.BoundedGaussian(.5, .05, 0, np.inf), center=[prior_x, prior_y, prior.Uniform(0, 100)])
+  s = Sphere(n=prior.Gaussian(1.5, .1), r=prior.BoundedGaussian(.5, .05, 0, np.inf),
+             center=prior.make_center_priors(h))
 
   # Set up the noise model
-  noise_sd = .1
+  noise_sd = h.std()
   model = AlphaModel(s, noise_sd=noise_sd, alpha=1)
 
-  r = tempered_sample(model, h, nwalkers=100, samples=800, seed=40, min_pixels=10, max_pixels=1000, stages=5)
+  r = tempered_sample(model, h, nwalkers=20, samples=200, seed=40, min_pixels=10, max_pixels=1000)
   hp.save('example-sampling.h5', r)
 
   r.MAP
   r.values()
 
 
-The first few lines import the code needed to compute holograms and do parameter inference::
+The first few lines import the code needed to compute holograms and do parameter inference
+
+..  testcode::
 
   import holopy as hp
   import numpy as np
@@ -47,7 +46,9 @@ Preparing Data
 --------------
 
 Next, we compute the hologram for a microsphere using the same steps
-as those in :ref:`calc_tutorial`::
+as those in :ref:`calc_tutorial`
+
+..  testcode::
 
   d = detector_grid((100, 100), .1)
   s = Sphere(r=.5, n=1.6, center=(5, 5, 5))
@@ -77,46 +78,84 @@ uncertainty about the size and index of your particle from the supplier or prior
 work with the particle. We can use a hough transform to get a pretty good guess
 of where the particle is in x and y, but, if the hologram was from actual data,
 you probably would not have a very good guess of where it is in z. So lets turn
-this information into code::
+this information into code
 
-  center_px= hp.core.process.center_find(h)
-  center = center_px * hp.core.metadata.get_spacing(h)
-  xy_sd = .1
-  prior_x, prior_y = [prior.Gaussian(c, xy_sd) for c in center]
+..  testcode::
+
   s = Sphere(n=prior.Gaussian(1.5, .1), r=prior.BoundedGaussian(.5, .05, 0, np.inf),
-             center=[prior_x, prior_y, prior.Uniform(0, 100)])
+             center=prior.make_center_priors(h))
 
 The Gaussian distribution is the prior used to describe a value for which all we
 know is some expected value and some uncertainty on that expected value. For the
 radius we also know that it must be nonnegative, so we can bound the Gaussian at
 zero. Finally for z, we have chosen to represent our ignorance in where the
 particle might be in z by assigning it equal probability that it might be
-anywhere between 0 and 100 microns from the focal plane.
+anywhere between 0 and 100 microns from the focal plane. The
+prior.make_center_priors(h) function automates generating priors for a sphere
+center using a hough transform centerfinder for x and y, and picks a large
+uniform prior for z. In this case the prior will be::
+
+  [Gaussian(mu=5.00013, sd=0.1),
+   Gaussian(mu=5.00010, sd=0.1),
+   Uniform(lower_bound=0, upper_bound=100.0)]
 
 Likelihood
 ----------
 
 Next we need to define a model that tells HoloPy how probable it is that we
 would see the data we observed given some hypothetical scatterer position, size
-and index. In the language of statistics, this is referred to as a likelihood::
+and index. In the language of statistics, this is referred to as a likelihood.
+In order to compute a likelihood, you need some estimate of how noisy your data
+is (so that you can figure out how likely it is that the differences between
+your model and data could be explained by noise). Here we use the standard
+deviation of the data.
 
-  noise_sd = .1
+..  testcode::
+
+  noise_sd = h.std()
   model = AlphaModel(s, noise_sd=noise_sd, alpha=1)
 
 Sampling the Posterior
 ----------------------
 
-Finally, we can sample the posterior probability for this model and save the results to an hdf5 file::
+Finally, we can sample the posterior probability for this model
 
-  r = tempered_sample(model, h)
-  hp.save('example-sampling.h5', r)
+..  testcode::
+
+  r = tempered_sample(model, h, nwalkers=20, samples=200, seed=40, min_pixels=10, max_pixels=1000)
+
+and save the results to an hdf5 file::
+
+   hp.save('example-sampling.h5', r)
 
 You can get a quick look at the values with::
 
-  r.MAP
   r.values()
 
-r.MAP gives you the Maximium a Posteriori probability (values we observed while sampling that has the highest probability of being the correct parameter values). r.values() gives you the MAP value as well as 1 sigma (or you can request any other sigma with an argument to the function) credibility intervals. 
+..  testcode::
+  :hide:
+  print(r.values()['r']
+
+..  testoutput::
+  :hide:
+  UncertainValue(value=0.540701432289793, plus=0.13693388553650176, minus=0.1043730574133887, n_sigma=1)
+
+r.values() gives you the MAP value as well as 1 sigma (or you can request any
+other sigma with an argument to the function) credibility intervals. You can
+also use::
+
+  r.MAP
+  r.mean
+  r.median
+
+to get just the central measure.
+
+The nwalkers and nsamples values in this example were chosen to get it to run
+quickly, for a proper sampling in a real experiment, you probably want to use at
+least 100 walkers, and 600 or 800 samples. You may also want to remove the seed
+argument, or give it differnt values. The seed sets the seed for the random
+sampler, all runs with the same seed should give the same results. If you do not
+provide a seed, HoloPy will implicitly choose a distinct seed for each run. 
 
 References
 ----------

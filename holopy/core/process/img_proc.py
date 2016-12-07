@@ -26,7 +26,7 @@ or detrending
 """
 
 from ..errors import BadImage
-from ..metadata import copy_metadata, detector_grid, get_spacing
+from ..metadata import copy_metadata, detector_grid, get_spacing, get_values
 from ..utils import is_none
 from scipy.signal import detrend as dt
 from scipy import fftpack
@@ -176,7 +176,7 @@ def add_noise(image, noise_mean=.1, smoothing=.01, poisson_lambda=1000):
 
     """
     return copy_metadata(image, image + simulate_noise(image.shape, noise_mean, smoothing,
-                                  poisson_lambda) * image.mean())
+                                  poisson_lambda) * get_values(image.mean()))
 
 def simulate_noise(shape, mean=.1, smoothing=.01, poisson_lambda=1000):
     """Create an array of correlated noise. The noise_mean can be controlled independently of

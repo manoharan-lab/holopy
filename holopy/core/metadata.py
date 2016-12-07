@@ -210,6 +210,17 @@ def get_spacing(im):
         raise ValueError("array has nonuniform spacing, can't determine a single spacing")
     return np.array((xspacing[0], yspacing[0]))
 
+def get_extents(im):
+    def get_extent(d):
+        if len(im[d]) == 1:
+            return 0
+        # Add one extra spacing since the xarray coords are right edge only,
+        # but we actually want right edge of first pixel to left edge of last
+        # pixel
+        return float(im[d][-1] - im[d][0] + np.diff(im[d]).mean())
+    return {d: get_extent(d) for d in im.dims}
+
+
 def make_coords(shape, spacing, z=0):
     if np.isscalar(shape):
         shape = np.repeat(shape, 2)
