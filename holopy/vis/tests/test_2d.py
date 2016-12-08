@@ -35,7 +35,7 @@ def test_show():
         hp.show(d)
     except RuntimeError:
         # this occurs on travis since there is no display
-        raise SkiptTest()    
+        raise SkipTest()    
     with warnings.catch_warnings():
         warnings.simplefilter('ignore'),  (DeprecationWarning, UserWarning)
         plt.savefig(tempfile.TemporaryFile(suffix='.pdf'))
