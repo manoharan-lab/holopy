@@ -24,44 +24,60 @@ New custom display functions for holograms and reconstructions.
 
 
 import numpy as np
+from xarray import DataArray
+from ..core.errors import BadImage
 from ..core.metadata import get_spacing, get_values
+from ..core.utils import ensure_array
 
 class plotter:
-    def __init__(self, im, z0=0, t=0, axis_names = ('x', 'y')):
+    def __init__(self, im, plane_axes, slice_axis, starting_index, t):
         # Delay the pylab import until we actually use it to avoid a hard
         # dependency on matplotlib, and to avoid paying the cost of importing it
         # for non interactive code
         import pylab
         
         self.im = im
-        self.axis_names = axis_names
-        self.i = z0
-        self.j = t
+        self.axis_names = plane_axes
+        self.step_name = slice_axis
+        self.i = starting_index
+
+        if isinstance(im, DataArray):
+            self.dims = self.im.dims
+        else:
+            self.dims = range(len(im.shape))
+
+        self.selector={}
+        for d in self.dims:
+            if d not in self.axis_names:
+                self.selector[d]= 0
+
         self.vmin = im.min()
         self.vmax = im.max()
         self.fig = pylab.figure()
         pylab.gray()
         self.ax = self.fig.add_subplot(111)
-        self.ax.set_xlabel(axis_names[1])
-        self.ax.set_ylabel(axis_names[0])
+        self.ax.set_xlabel(self.axis_names[1])
+        self.ax.set_ylabel(self.axis_names[0])
         self.plot = None
         self.colorbar = None
         self.draw()
         self.fig.canvas.mpl_connect('key_press_event',self)
         self.fig.canvas.mpl_connect('button_press_event', self.click)
+        
+
 
     def draw(self):
-        im = self.im
-        if hasattr(im, 'z'):
-            im = im.isel(z = self.i)
-        if hasattr(im, 'time'):
-            im = im.isel(time = self.j)
-        
-        while len(im.shape) > 2:
-            #im has extra dimensions not named 'z' or 'time' - probably a numpy array
-            #we will take slice i along the shortest axis
-            dim_index = np.argmin(im.shape)
-            im = np.take(get_values(im), self.i, axis = dim_index)
+        if self.step_name is not None:
+            self.selector[self.step_name] = self.i
+
+        if isinstance(self.im, DataArray):
+            im = self.im.isel(**self.selector)
+        else:
+            im = ensure_array(self.im)
+            counter = 0
+            for key, val in self.selector.items():
+                im = im.take(val, axis=key-counter)
+                counter = counter + 1
 
         self._title()
 
@@ -127,24 +143,16 @@ class plotter:
 
 
     def __call__(self, event):
-        if len(self.im.shape) > 2:
-            old_i = self.i
-            old_j = self.j
+        if self.step_name is not None:
             if event.key=='right':
-                if hasattr(self.im,'z'):                    
-                    dim_len = len(self.im.z)
+                if isinstance(self.im, DataArray):
+                    dim_len = len(self.im[self.step_name])
                 else:
-                    #im has no 'z' dimension - probably a numpy array
-                    #we want the smallest non-singleton dimension
-                    dim_len = min([dl for dl in self.im.shape if dl > 1])
+                    dim_len = self.im.shape[self.step_name]
                 self.i = min(dim_len - 1, self.i + 1)
             elif event.key == 'left':
                 self.i = max(0, self.i-1)
-            elif event.key == 'up':
-                self.j = min(len(self.im.time)-1, self.j+1)
-            elif event.key == 'down':
-                self.j = max(0, self.j-1)
-            if old_i != self.i or old_j != self.j:
+            if self.selector[self.step_name] != self.i:
                 self.draw()
                 self.fig.canvas.draw()
 
@@ -160,7 +168,7 @@ class plotter:
         if titlestring is not "":
             self.ax.set_title(titlestring)
 
-def show2d(im, z0=0, t=0, phase = False):
+def show2d(im, plane_axes=None, slice_axis=None, starting_index=0, t=0, phase = False):
     """
     Display a hologram or reconstruction
 
@@ -177,16 +185,34 @@ def show2d(im, z0=0, t=0, phase = False):
        slice along time to show for reconstructions.
 
     """
-    if isinstance(im, (list, tuple)):
-        im = np.dstack(im)
+ 
+    shape = list(np.shape(im))
+    if len(shape) + (slice_axis is None) <3:
+        raise BadImage("Image does not have enough dimensions to display properly.")    
+    
+    axes = []    
+    for i in range(min(len(shape),3)):
+        axes.append(shape.index(max(shape)))
+        shape[shape.index(max(shape))] = -1
 
-    # Switch and show an x-z or y-z plane if the im has unit extent in
-    # y or x
-    axis_names = ['x', 'y']
-    if hasattr(im, 'x') and len(im.x) == 1:
-        axis_names = ['y', 'z']
-    if hasattr(im, 'z') and len(im.y) == 1:
-        axis_names = ['x', 'z']
+    if isinstance(im, DataArray):
+        axes = [im.dims[i] for i in axes]
+    
+    # Default is to display the two longest axes and step through third longest
+    if plane_axes is None:
+        plane_axes = axes[0:2]
+        if slice_axis in plane_axes:
+            plane_axes[plane_axes.index(slice_axis)] = axes[2]
+        if plane_axes[1] < plane_axes[0]:
+            #this catches the case where xarray dimensions are labeled out of order
+            #we always want to plot (x,y), not (y,x)
+            plane_axes.reverse
+    
+    if slice_axis is None and len(shape)>2:
+        for i in plane_axes:
+            axes.remove(i)
+        slice_axis=axes[0]
+
 
     if np.iscomplexobj(im):
         if phase:
@@ -194,7 +220,7 @@ def show2d(im, z0=0, t=0, phase = False):
         else:
             im = np.abs(im)    
 
-    plotter(im, z0, t, axis_names = axis_names)
+    plotter(im, plane_axes, slice_axis, starting_index, t)
 
 def show_scatterer_slices(scatterer, spacing):
     """

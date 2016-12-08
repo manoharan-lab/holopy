@@ -25,7 +25,7 @@ Classes for defining metadata about experimental or calculated results.
 import numpy as np
 import xarray as xr
 from warnings import warn
-from .utils import ensure_array, is_none, updated, repeat_sing_dims
+from .utils import is_none, updated, repeat_sing_dims
 from .math import to_spherical, to_cartesian
 
 

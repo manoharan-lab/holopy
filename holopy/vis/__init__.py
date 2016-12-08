@@ -31,3 +31,4 @@ this you may see a small lag on your first plot.
 
 
 from .show import show
+from .vis2d import show2d

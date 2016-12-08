@@ -43,8 +43,6 @@ from ..scatterer import Ellipsoid, Capsule, Cylinder, Bisphere, Sphere_builtin, 
 from ...core.utils import ensure_array
 from ..errors import DependencyMissing
 
-scatterers_handled = Scatterer
-
 class DDA(ScatteringTheory):
     """
     Computes scattering using the the Discrete Dipole Approximation (DDA).

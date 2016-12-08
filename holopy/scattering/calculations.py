@@ -26,7 +26,7 @@ from ..core.holopy_object import SerializableMetaclass
 from ..core.metadata import vector, update_metadata, to_vector, copy_metadata, from_flat, detector_points
 from ..core.utils import dict_without, is_none
 from . import Mie, Multisphere, Sphere, Spheres
-from .theory import dda
+from .theory.dda import DDA
 from .errors import AutoTheoryFailed, MissingParameter
 
 import numpy as np
@@ -66,8 +66,8 @@ def determine_theory(scatterer):
         else:
             warn("HoloPy's multisphere theory can't handle coated spheres. Using Mie theory.")
             return Mie()
-    elif isinstance(scatterer, dda.scatterers_handled):
-        return dda.DDA()
+    elif DDA()._can_handle(scatterer):
+        return DDA()
     else:
         raise AutoTheoryFailed(scatterer)
 
