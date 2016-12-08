@@ -154,7 +154,7 @@ def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None, illum_
         cross sections, and <cos theta>
     """
     theory = interpret_theory(scatterer,theory)
-    return theory._calc_cross_sections(scatterer, medium_wavevec=2*np.pi/(illum_wavelen/medium_index), medium_index=medium_index, illum_polarization=to_vector(illum_polarization))
+    return theory._calc_cross_sections(scatterer=scatterer, medium_wavevec=2*np.pi/(illum_wavelen/medium_index), medium_index=medium_index, illum_polarization=to_vector(illum_polarization))
 
 def calc_scat_matrix(schema, scatterer, medium_index=None, illum_wavelen=None, theory='auto'):
     """
