@@ -32,25 +32,28 @@ am not touching. The latter is likely due to some GOTO statements that
 could cause a variable to be referenced before it's initialized. Under
 normal usage I wouldn't worry about it.
 '''
-
+import sys
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
     from numpy.distutils.command import build_ext
-    config = Configuration('mie_f', parent_package, top_path)
-    config.add_extension('uts_scsmfo',
+    if not hasattr(sys, 'real_prefix'):
+        #we are not in a virtual_env. 
+        #going to compile fortran code
+        config = Configuration('mie_f', parent_package, top_path)
+        config.add_extension('uts_scsmfo',
                          ['uts_scsmfo.for',
                           '../../third_party/SBESJY.F']
                          )
-    config.add_extension('mieangfuncs',
+        config.add_extension('mieangfuncs',
                          ['mieangfuncs.f90',
                           'uts_scsmfo.for',
                           '../../third_party/SBESJY.F',
                           '../../third_party/csphjy.for']
                          )
-    config.add_extension('scsmfo_min',
+        config.add_extension('scsmfo_min',
                          ['scsmfo_min.for']
                          )
-    return config
+        return config
 
 if __name__ == "__main__":
     from numpy.distutils.core import setup
