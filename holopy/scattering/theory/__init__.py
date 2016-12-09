@@ -30,6 +30,13 @@ All theories have a common interface defined by
 '''
 
 
-from .mie import Mie
-from .multisphere import Multisphere
-from .dda import DDA
+try:
+    from .mie import Mie
+    from .multisphere import Multisphere
+    from .dda import DDA
+except ImportError:
+    from warnings import warn
+    warn("""
+Could not import scattering.  You will not be able to do scattering
+calculations, but the rest of holopy should remain usable.
+This is probably due to a problem with compiling fortran code""")
