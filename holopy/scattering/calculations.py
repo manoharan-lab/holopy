@@ -35,7 +35,6 @@ except:
 
 import numpy as np
 from warnings import warn
-from xarray.ufuncs import square
 
 def check_schema(schema, pol = True):
     if schema.illum_wavelen is None:
