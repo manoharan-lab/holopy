@@ -24,7 +24,7 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
             return MagicMock()
 
-MOCK_MODULES = ['xarray', 'mie_f']
+MOCK_MODULES = ['xarray', 'mie_f', 'emcee']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
