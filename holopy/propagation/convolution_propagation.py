@@ -26,7 +26,7 @@ Code to propagate objects/waves using scattering models.
 
 import numpy as np
 import xarray as xr
-from xarray import ufuncs
+from xarray.ufuncs import sqrt
 
 from ..core.process import fft, ifft
 from ..core.utils import ensure_array
@@ -159,10 +159,10 @@ def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
 
     root *= (root >= 0)
 
-    g = np.exp(-1j*2*np.pi*d/med_wavelen*ufuncs.sqrt(root))
+    g = np.exp(-1j*2*np.pi*d/med_wavelen*sqrt(root))
 
     if gradient_filter:
-        g -= np.exp(-1j*2*np.pi*(d+gradient_filter)/med_wavelen*ufuncs.sqrt(root))
+        g -= np.exp(-1j*2*np.pi*(d+gradient_filter)/med_wavelen*sqrt(root))
 
     # set the transfer function to zero where the sqrt is imaginary
     # (this is equivalent to making sure that the largest spatial

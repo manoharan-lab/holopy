@@ -27,6 +27,7 @@ import yaml
 from warnings import warn
 from scipy.misc import fromimage
 from PIL import Image as pilimage
+from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 import xarray as xr
 import importlib
 
@@ -270,7 +271,7 @@ def save_image(filename, im, scaling='auto', depth=8):
         if im.name is None:
             im.name=os.path.splitext(os.path.split(filename)[-1])[0]
         metadat = pack_attrs(im, do_spacing = True)
-        from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2 #this doesn't always play nicely, so it's hidden here
+
         tiffinfo = ifd2()
         tiffinfo[270] = yaml.dump(metadat) #This edits the 'imagedescription' field of the tiff metadata
 
