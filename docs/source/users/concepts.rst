@@ -60,7 +60,7 @@ direction about the specified axis, viewed along the positive direction of the a
 the origin. This is the usual sense of how rotations are typically defined in math:
 
 .. image:: ../images/euler_matrix_eqn.png
-   :scale: 30 %
+   :scale: 100 %
    :alt: Matrix equation for Euler rotations.
 
 
