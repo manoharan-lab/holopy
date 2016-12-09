@@ -14,7 +14,8 @@ particle radii, etc.)  must also be specified in nanometers.
 
 .. _coordinate_system: 
 
-Coordinate system
+Coordinate System
+-----------------
 
 For image data (data points arrayed in a
 regular grid in a single plane), HoloPy defaults to placing the
@@ -31,6 +32,7 @@ In sample space, we choose the z axis so that distances to objects
 from the camera/focal plane are positive (have positive z
 coordinates).  The price we pay for this choice is that the
 propagation direction of the illumination light is then negative.
+In the image above, light travels from a source located in front of the screen, through a scatterer, and onto a detector behind the screen.
 
 More complex detector geometries will define their own origin, or ask
 you to define one.
