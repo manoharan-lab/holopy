@@ -150,6 +150,7 @@ def sample_emcee(model, data, nwalkers, nsamples, walker_initial_pos,
                               threads=autothreads(threads), args=[data])
 
     if seed is not None:
+        np.random.seed(seed)
         seed_state = np.random.mtrand.RandomState(seed).get_state()
         sampler.random_state=seed_state
 
