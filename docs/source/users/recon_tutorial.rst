@@ -3,11 +3,10 @@
 Reconstructing Data (Numerical Propagation)
 ===========================================
 
-Holograms are typically reconstructed optically by shining light back
-through them.  This corresponds mathematically to propagating the
-field stored in the hologram to some different plane.  HoloPy
-generalizes this concept and allows you to numerically propagate any
-hologram (or electric field) to another position in space.
+A hologram contains information about the electric field amplitude and phase at the detector plane.
+Shining light back through a hologram allows reconstruction of the electric field at points upstream of the detector plane.
+HoloPy performs this function mathematically by numerically propagating a hologram (or electric field) to another position in space.
+This allows you to reconstruct 3D sample volumes from 2D images.
 
 Example Reconstruction
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -58,7 +57,7 @@ The actual propagation is accomplished with :func:`.propagate`:
     (0.911671338697-0.0816366824816j)
 
 
-Here, HoloPy has projected the image through space using the metadata that we 
+Here, HoloPy has projected the hologram image through space to each of the distances contained in ``zstack`` by using the metadata that we 
 specified when loading the image. If we forgot to load optical metadata with the image,
 we can explicitly indicate the parameters for propagation to obtain an identical object:
 
