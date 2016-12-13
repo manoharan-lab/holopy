@@ -94,6 +94,9 @@ class Scatterer(HoloPyObject):
             index[domains==i+1] = n
         return index
 
+    def guess(self):
+        return self
+
     def in_domain(self, points):
         """
         Tell which domain of a scatterer points are in

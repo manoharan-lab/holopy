@@ -316,13 +316,6 @@ class Model(BaseModel):
                 return 1.0
             return self.alpha
 
-    def guess_holo(self, schema):
-        if isinstance(self.alpha, Parameter):
-            alpha = self.alpha.guess
-        else:
-            alpha = self.alpha
-        return self.theory(self.scatterer.guess, schema, alpha)
-
     def _calc(self, pars, schema):
         pars = copy(pars)
         alpha = self.get_par(pars=pars, name='alpha', default=1.0)

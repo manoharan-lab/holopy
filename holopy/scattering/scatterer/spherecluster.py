@@ -51,14 +51,18 @@ class Spheres(Scatterers):
     '''
 
     def __init__(self, scatterers, warn=True):
-        # make sure all components are spheres
-        for s in scatterers:
-            if not isinstance(s, Sphere):
-                raise InvalidScatterer(self,
-                    "Spheres expects all component " +
-                    "scatterers to be Spheres.\n" +
-                    repr(s) + " is not a Sphere")
-        self.scatterers = scatterers
+        if isinstance(scatterers, Sphere):
+            #only one sphere and it's not in a list
+            self.scatterers = [scatterers]
+        else:
+            # make sure all components are spheres
+            for s in scatterers:
+                if not isinstance(s, Sphere):
+                    raise InvalidScatterer(self,
+                        "Spheres expects all component " +
+                        "scatterers to be Spheres.\n" +
+                        repr(s) + " is not a Sphere")
+            self.scatterers = scatterers
 
         if self.overlaps:
             warnings.warn(OverlapWarning(self, self.overlaps))
@@ -96,6 +100,9 @@ class Spheres(Scatterers):
                 "scatterers to be Spheres.\n" +
                 repr(scatterer) + " is not a Sphere")
         self.scatterers.append(scatterer)
+
+    def guess(self):
+        return Spheres([sphere.guess() for sphere in self.scatterers])
 
     @property
     def n(self):

@@ -47,7 +47,7 @@ def prep_schema(schema, medium_index, illum_wavelen, illum_polarization):
 
 def interpret_theory(scatterer,theory='auto'):
     if isinstance(theory, str) and theory == 'auto':
-        theory = determine_theory(scatterer)
+        theory = determine_theory(scatterer.guess())
     if isinstance(theory, SerializableMetaclass):
         theory = theory()
     return theory
@@ -122,9 +122,12 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None, illum_po
     holo : :class:`.Image` object
         Calculated hologram from the given distribution of spheres
     """
+    if hasattr(scaling, 'guess'):
+        scaling = scaling.guess
+
     theory = interpret_theory(scatterer,theory)
     uschema = prep_schema(schema, medium_index, illum_wavelen, illum_polarization)
-    scat = theory._calc_field(scatterer, uschema)
+    scat = theory._calc_field(scatterer.guess(), uschema)
     holo = scattered_field_to_hologram(scat*scaling, uschema.illum_polarization, uschema.normals)
     return finalize(uschema, holo)
 
@@ -154,7 +157,7 @@ def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None, illum_
         cross sections, and <cos theta>
     """
     theory = interpret_theory(scatterer,theory)
-    return theory._calc_cross_sections(scatterer=scatterer, medium_wavevec=2*np.pi/(illum_wavelen/medium_index), medium_index=medium_index, illum_polarization=to_vector(illum_polarization))
+    return theory._calc_cross_sections(scatterer=scatterer.guess(), medium_wavevec=2*np.pi/(illum_wavelen/medium_index), medium_index=medium_index, illum_polarization=to_vector(illum_polarization))
 
 def calc_scat_matrix(schema, scatterer, medium_index=None, illum_wavelen=None, theory='auto'):
     """
@@ -182,7 +185,7 @@ def calc_scat_matrix(schema, scatterer, medium_index=None, illum_wavelen=None, t
     """
     theory = interpret_theory(scatterer,theory)
     uschema=prep_schema(schema, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization = False)
-    return finalize(uschema, theory._calc_scat_matrix(scatterer, uschema))
+    return finalize(uschema, theory._calc_scat_matrix(scatterer.guess(), uschema))
 
 def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
     """
@@ -210,7 +213,7 @@ def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None, illum_p
     """
     theory = interpret_theory(scatterer,theory)
     uschema = prep_schema(schema, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization)
-    return finalize(uschema, theory._calc_field(scatterer, uschema))
+    return finalize(uschema, theory._calc_field(scatterer.guess(), uschema))
 
 # this is pulled out separate from the calc_holo method because occasionally you
 # want to turn prepared  e_fields into holograms directly
