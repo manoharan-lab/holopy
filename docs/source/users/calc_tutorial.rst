@@ -73,7 +73,7 @@ Congratulations! You just calculated the in-line hologram
 generated at the detector plane by interference between the
 scattered field and the reference wave. For an in-line
 hologram, the reference wave is simply the part of the field that is not scattered 
-or absorbed by the particle.  
+or absorbed by the particle.
 
 ..  testcode::
     :hide:
@@ -89,7 +89,8 @@ You might have noticed that our scattering calculation requires much of the same
 If we have an experimental image from the sysetm we would like to model, we can use that as an argument
 in :func:`.calc_holo` instead of our ``detector`` object created from :func:`.detector_grid`. Holopy will calculate a hologram
 image with pixels at the same positions as the experimental image, and so we don't need to worry about making a :func:`.detector_grid`
-with the correct ``shape`` and ``spacing`` arguments. 
+with the correct ``shape`` and ``spacing`` arguments.
+
 ..  testcode::
     
     from holopy.core.io import get_example_data_path
@@ -146,7 +147,7 @@ list of refractive indices and radii corresponding to the layers
 ..  testoutput::
     :hide:
 
-    1.1831629319255395
+    0.9750608553730731
     
 If you prefer thinking in terms of the thickness of subsequent layers, instead of their distance from the center,
 you can use :func:`.LayeredSphere` to achieve the same result:
@@ -180,7 +181,7 @@ first define the spheres individually, and then combine them into a
 ..  testoutput::
     :hide:
 
-    [ 1.24037847]
+    [ 1.04897655]
 
 .. image:: ../images/calc_sphere.png
    :scale: 300 %
@@ -233,7 +234,7 @@ calling the :func:`.calc_holo` function:
 ..  testoutput::
     :hide:
     
-    1.2474802764571784
+    1.0480235432374045
 
 Holopy can also access a discrete dipole approximation (DDA) theory to model arbitrary
 non-spherical objects. See the :ref:`dda_tutorial` tutorial for more details.
