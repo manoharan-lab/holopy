@@ -39,7 +39,8 @@ You can also load an image without specifying a spacing value if you just want
 to look at it, but most holopy calculations will give erroneous results on such an image. 
 
 The final line simply displays the loaded image on your screen 
-with the built-in HoloPy :func:`.show` function. 
+with the built-in HoloPy :func:`.show` function. If you don't see anything, you may need to set your matplotlib backend.
+Refer to :ref:`usage` for instructions. 
 
 Correcting Noisy Images
 ~~~~~~~~~~~~~~~~~~~~~~~

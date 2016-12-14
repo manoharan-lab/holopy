@@ -77,7 +77,7 @@ Pressing the left and right arrow keys steps through volumes slices -
 propagation to different z-planes. 
 (Don't use the down arrow key; it will mess up the stepping due to a
 peculiarity of Matplotlib. If this happens, close your plot window and
-show it again. Sorry.). 
+show it again. Sorry.). If the left and right arrow keys don't do anything, you might need to set your matplotlib backend. Refer to :ref:`usage` for instructions.
 
 Reconstructions are actually comprised of complex numbers. :func:`.show`
 defaults to showing you the amplitude of the image. You can get

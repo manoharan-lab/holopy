@@ -238,6 +238,8 @@ calling the :func:`.calc_holo` function:
 
 Holopy can also access a discrete dipole approximation (DDA) theory to model arbitrary
 non-spherical objects. See the :ref:`dda_tutorial` tutorial for more details.
+It is fairly easy to add your own scattering theory to HoloPy. See :ref:`scat_theory` for details.
+If you think your new scattering theory may be useful for other users, please consider submitting a `pull request <https://github.com/manoharan-lab/holopy/pulls>`_.
 
 Detector Types in HoloPy
 ------------------------
@@ -342,7 +344,3 @@ Since cross sections integrates over all angles, we can also omit the
 x_sec returns an array containing four elements. The first element is the scattering cross section, specified in terms of the same
 units as wavelength and particle size. The second and third elements are the absorption
 and extinction cross sections, respectively. The final element is the average value of the cosine of the scattering angle.
-
-
-
-

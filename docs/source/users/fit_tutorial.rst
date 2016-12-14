@@ -96,7 +96,7 @@ Finally, we save the result with:
 
   hp.save('result.h5', result)
 
-
+..  _random_subset:
 Speeding up Fits with Random Subset Fitting
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
