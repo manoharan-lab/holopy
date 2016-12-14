@@ -20,7 +20,6 @@ import holopy as hp
 from holopy.core.tests.common import get_example_data
 from nose.plugins.skip import SkipTest
 import warnings
-import sys
 
 try:
     with warnings.catch_warnings():
@@ -31,11 +30,12 @@ except ImportError:
     raise SkipTest()
 
 def test_show():
-    if hasattr(sys, 'real_prefix'):
-        #we are in a virtualenv (eg travis), and there might be no display
-        raise SkipTest()    
     d = get_example_data('image0001')
-    hp.show(d) 
+    try:
+        hp.show(d)
+    except RuntimeError:
+        # this occurs on travis since there is no display
+        raise SkipTest()    
     with warnings.catch_warnings():
         warnings.simplefilter('ignore'),  (DeprecationWarning, UserWarning)
         plt.savefig(tempfile.TemporaryFile(suffix='.pdf'))
