@@ -41,9 +41,9 @@ We will be scattering light off a :class:`~holopy.scattering.scatterer` object, 
 :class:`.Sphere`. A :class:`~holopy.scattering.scatterer` object
 contains information about the geometry (position, size, shape) and
 optical properties (refractive index) of the object that is scattering
-light.  We've defined a spherical scatterer with radius 0.5 microns,
-center of mass at x=4, y=4, z=5 microns, and index of refraction
+light.  We've defined a spherical scatterer with radius 0.5 microns and index of refraction
 1.59. This refractive index is approximately that of polystyrene.
+We place the sphere's center of mass at x=4, y=4, z=5 microns, according to the HoloPy :ref:`coordinate_system`
 The scattered light will be collected at a detector, which is frequently a digital camera mounted onto a microscope. 
 Our detector is defined as a 100 x 100 pixel array, with each square pixel of side length .1 microns.
 
