@@ -78,18 +78,21 @@ def pack_attrs(a, do_spacing=False):
             new_attrs[attr]=list(ensure_array(val))
         else:
             new_attrs[attr_coords][attr]=False
-            new_attrs[attr]=val
+            if not is_none(val):
+                new_attrs[attr]=val
     new_attrs[attr_coords]=yaml.dump(new_attrs[attr_coords])
     return new_attrs
 
 def unpack_attrs(a):
     new_attrs={}
     attr_ref=yaml.load(a[attr_coords])
-    for attr in dict_without(a,['spacing','name',attr_coords]):
+    for attr in dict_without(attr_ref,['spacing','name']):
         if attr_ref[attr]:
             new_attrs[attr] = xr.DataArray(a[attr], coords=attr_ref[attr])
-        else:
+        elif attr in a:
             new_attrs[attr] = a[attr]
+        else:
+            new_attrs[attr] = None
     return new_attrs
 
 def load(inf, lazy=False):
