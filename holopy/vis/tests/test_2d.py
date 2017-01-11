@@ -31,7 +31,11 @@ except ImportError:
 
 def test_show():
     d = get_example_data('image0001')
-    hp.show(d)
+    try:
+        hp.show(d)
+    except RuntimeError:
+        # this occurs on travis since there is no display
+        raise SkipTest()    
     with warnings.catch_warnings():
         warnings.simplefilter('ignore'),  (DeprecationWarning, UserWarning)
         plt.savefig(tempfile.TemporaryFile(suffix='.pdf'))
