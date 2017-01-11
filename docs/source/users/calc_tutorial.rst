@@ -40,8 +40,7 @@ We will be scattering light off a :class:`~holopy.scattering.scatterer` object, 
 :class:`.Sphere`. A :class:`~holopy.scattering.scatterer` object
 contains information about the geometry (position, size, shape) and
 optical properties (refractive index) of the object that is scattering
-light.  We've defined a spherical scatterer with radius 0.5 microns,
-center of mass at x=4, y=4, z=5 microns, and index of refraction
+light.  We've defined a spherical scatterer with radius 0.5 microns and index of refraction
 1.59. This refractive index is approximately that of polystyrene.
 Next, we need to describe how we are illuminating our sphere, and how that light will be detected: 
 
