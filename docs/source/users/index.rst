@@ -13,6 +13,7 @@ get started quickly.
    install
    load_tutorial
    recon_tutorial
+   ps_recon_tutorial
    calc_tutorial
    dda_tutorial
    infer_tutorial

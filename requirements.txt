@@ -1,5 +1,5 @@
 # Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -15,20 +15,16 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-"""Visualize HoloPy objects
-
-Uses Matplotlib and Mayavi to visualize holopy objects.
-
-1. :class:`.Image`, :class:`.Volume`, or :class:`.Spheres` object =>
-   plot or rendering
-
-This module does not import plotting packages until they are actually needed so
-that holopy does not have a hard dependency on mayavi or matplotlib.  Because of
-this you may see a small lag on your first plot.
-
-.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-"""
-
-
-from .show import show, test_disp
-from .vis2d import show2d
+#
+#
+#This file is used by readthedocs to install necessary packages.
+#
+numpy
+scipy
+pyYaml
+pillow
+h5py
+emcee
+matplotlib
+xarray
+h5netcdf

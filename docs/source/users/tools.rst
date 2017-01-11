@@ -5,30 +5,23 @@ HoloPy Tools
 
 Holopy contains a number of tools to help you with common tasks when analyzing holograms.
 This page provides a summary of the tools available, while full descriptions can be found
-in the :mod:`tools` code reference. All tools listed here are available for import from
-the holopy.tools namespace.
+in the relevant code reference.
 
 General Image Processing Tools
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The tools described here are frequently used when analyzing holgrams.
+The tools described here are frequently used when analyzing holgrams. They are available from the ``holopy.core.process`` namespace.
 
 The :func:`.normalize` function divides an image by its average,
 returning an image with a mean pixel value of 1. Note that this is the same normalization convention
-used by HoloPy when calculating holograms with ``calc_holo``.
+used by HoloPy when calculating holograms with :ref:`.calc_holo`.
 
 Cropping an image introduces difficulties in keeping track of the relative coordinates of features
-within an image. By using the :func:`.subimage` function, the image origin is maintained in the cropped
+within an image and maintaining metadata. By using the :func:`.subimage` function, the image origin is maintained in the cropped
 image, so coordinate locations of features (such as a scatterer) remain unchanged.
 
 Since holograms of particles usually take the form of concentric rings, the location of a scatterer
-can usually be found by locating the center(s) of the image. Use :func:`.center_find` to locate one
-or more centers in an image, or use :func:`.centered_subimage` to simultaneously find a single image
-center and crop around it.
-
-
-Specialized Image Processing Tools
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The tools described in this section are used for more specific image processing applications.
+can usually be found by locating the apparent center(s) of the image. Use :func:`.center_find` to locate one
+or more centers in an image.
 
 You can remove isolated dead pixels with zero intensity (e.g. for a background division) by
 using :func:`.zero_filter`. This function replaces the dead pixel with the average of its
@@ -49,6 +42,9 @@ HoloPy also includes a Hough transform (:func:`.hough`) to help identify lines a
 
 Math Tools
 ~~~~~~~~~~
+HoloPy contains implementations of a few mathematical functions related to scattering calculations.
+These functions are available from the ``holopy.core.math`` namespace.
+
 To find the distance between two points, use :func:`.cartesian_distance`.
 
 To rotate a set of points by arbitrary angles about the three coordinate axes, use :func:`.rotate_points`.
@@ -60,5 +56,5 @@ coordinates into spherical coordinates, use :func:`.to_spherical`.
 When comparing data to a model, the chi-squared and r-squared values provide measures of goodness-of-fit.
 You can access these through :func:`.chisq` and :func:`.rsq`.
 
-If you want to make an array or image with random, correlated noise, use :func:`.simulate_noise`.
+If you want want to convert between spherical and cartesian coordinates, use :func:`.to_cartesian` and :func:`.to_spherical`.
 

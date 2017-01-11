@@ -31,7 +31,7 @@ from .math import to_spherical, to_cartesian
 
 vector = 'vector'
 
-def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None):
+def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None, z=0):
     if spacing is None:
         spacing = 1
         warn("No pixel spacing provided. Setting spacing to 1, but any subsequent calculations will be wrong.")
@@ -42,7 +42,7 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_po
         spacing = np.repeat(spacing, 2)
     if arr.ndim==2:
         arr=np.array([arr])
-    out = xr.DataArray(arr, dims=['z','x', 'y'], coords=make_coords(arr.shape, spacing), name=name)
+    out = xr.DataArray(arr, dims=['z','x', 'y'], coords=make_coords(arr.shape, spacing, z), name=name)
     return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
 
 def detector_grid(shape, spacing, normals = None, name = None):

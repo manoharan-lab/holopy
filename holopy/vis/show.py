@@ -61,3 +61,22 @@ def show(o,color=(.5, .5, .5)):
         show_scatterer(o)
     else:
         raise VisualizationNotImplemented(o)
+
+def test_disp():
+    #diagnostic test to check matplotlib backend.
+    a = np.zeros([100, 100, 3])
+    a[25:75,25:75,0] = 1
+    for i in range(25):
+        for j in range(25):
+            if i + j <= 25:
+                a[50+i, 50+j, 1:3] = 1
+                a[50-i, 50+j, 1:3] = 1 
+                a[50-i, 50-j, 1:3] = 1
+                a[50+i, 50-j, 1:3] = 1
+            elif i**2 + j**2 <= 25**2:
+                a[50+i, 50+j, 1] = 1
+                a[50-i, 50+j, 1] = 1 
+                a[50-i, 50-j, 1] = 1
+                a[50+i, 50-j, 1] = 1
+
+    show(a)

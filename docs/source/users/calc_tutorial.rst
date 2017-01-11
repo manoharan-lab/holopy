@@ -18,6 +18,9 @@ plane wave scattering from a microsphere.
 .. plot:: pyplots/calc_sphere.py
    :include-source:
 
+.. image:: ../images/calc_sphere.png
+   :scale: 300 %
+   :alt: Calculated hologram of a single sphere.
 
 We'll examine each section of code in turn.  The first few lines :
 
@@ -27,31 +30,36 @@ We'll examine each section of code in turn.  The first few lines :
     from holopy.scattering import calc_holo, Sphere
 
 load the relevant modules from HoloPy that we'll need for doing our
-calculation.  The next lines describes the scattering experiment we would like to simulate:
+calculation.  The next lines describes the scatterer we would like to model:
 
 ..  testcode::
-    
+        
     sphere = Sphere(n = 1.59, r = .5, center = (4, 4, 5))
-    detector = hp.detector_grid(shape = 100, spacing = .1)
-    medium_index = 1.33
-    illum_wavelen = 0.660
-    illum_polarization = (1,0)
 
 We will be scattering light off a :class:`~holopy.scattering.scatterer` object, specifically a
 :class:`.Sphere`. A :class:`~holopy.scattering.scatterer` object
 contains information about the geometry (position, size, shape) and
 optical properties (refractive index) of the object that is scattering
-light.  We've defined a spherical scatterer with radius 0.5 microns,
-center of mass at x=4, y=4, z=5 microns, and index of refraction
+light.  We've defined a spherical scatterer with radius 0.5 microns and index of refraction
 1.59. This refractive index is approximately that of polystyrene.
-The scattered light will be collected at a detector, which is frequently a digital camera mounted onto a microscope. 
-Our detector is defined as a 100 x 100 pixel array, with each square pixel of side length .1 microns.
+Next, we need to describe how we are illuminating our sphere, and how that light will be detected: 
 
-After having defined our scatterer and our detector, we need to tell HoloPy something about our illumination setup.
+..  testcode::
+
+    medium_index = 1.33
+    illum_wavelen = 0.66
+    illum_polarization = (1,0)
+    detector = hp.detector_grid(shape = 100, spacing = .1)
+
 We are going to be using red light (wavelength = 660 nm in vacuum) polarized in the x-direction to 
-illuminate a scatterer immersed in water (refractive index = 1.33). Refer to 
+illuminate a sphere immersed in water (refractive index = 1.33). Refer to 
 :ref:`units` and :ref:`coordinate_system` if you're confused about how 
 the wavelength and polarization are specified.
+
+The scattered light will be collected at a detector, which is frequently a digital camera mounted onto a microscope. 
+Our detector is defined as a 100 x 100 pixel array, with each square pixel of side length .1 microns. 
+The ``shape`` argument tells HoloPy how many pixels are in the detector and affects computation time.
+The ``spacing`` argument tells HoloPy how far apart each pixel is. Both paramaters affect the absolute size of the detector.
 
 After getting everything ready, the actual scattering calculation is straightforward:
 
@@ -64,7 +72,7 @@ Congratulations! You just calculated the in-line hologram
 generated at the detector plane by interference between the
 scattered field and the reference wave. For an in-line
 hologram, the reference wave is simply the part of the field that is not scattered 
-or absorbed by the particle.  
+or absorbed by the particle.
 
 ..  testcode::
     :hide:
@@ -78,47 +86,32 @@ or absorbed by the particle.
 
 You might have noticed that our scattering calculation requires much of the same metadata we specified when loading an image.
 If we have an experimental image from the sysetm we would like to model, we can use that as an argument
-in :func:`.calc_holo` instead of our ``detector`` object created from :func:`.detector_grid`.
-HoloPy will then use the experimental image's metadata to calculate a hologram image with the same dimensions. This
-is particularly useful when comparing predicted holograms to measured data. 
+in :func:`.calc_holo` instead of our ``detector`` object created from :func:`.detector_grid`. Holopy will calculate a hologram
+image with pixels at the same positions as the experimental image, and so we don't need to worry about making a :func:`.detector_grid`
+with the correct ``shape`` and ``spacing`` arguments.
 
 ..  testcode::
     
     from holopy.core.io import get_example_data_path
-    from holopy.core.process import subimage
-    imagepath = get_example_data_path('image01.jpg')
-    exp_img = hp.load_image(imagepath, spacing=0.0851, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization)
-    exp_img = subimage(exp_img, [100,100],100)
-
-..  testcode::
-    :hide:
-    
-    print(exp_img.shape)
-
-..  testoutput::
-    :hide:
-    
-    (1, 100, 100)
-
-..  note::
-    The last line crops the image to a more manageable size, using the built-in HoloPy :func:`.subimage` function. For details on this and other built-in
-    image-processing functions, refer to the :ref:`tools` page.
-
-We can now pass our image directly to :func:`.calc_holo`, which no longer requires us to explicitly specify illumination information. 
-
-..  testcode::
-
+    imagepath = get_example_data_path('image0002.h5')
+    exp_img = hp.load(imagepath)
     holo = calc_holo(exp_img, sphere)
 
 ..  testcode::
     :hide:
     
+    print(exp_img.shape)
     print(holo[0,0].values)
 
 ..  testoutput::
     :hide:
+    
+    (1, 100, 100)
+    [ 1.01201782]
 
-    [ 1.58558629]
+Note that we didn't need to explicitly specify illumination information when calling :func:`.calc_holo`, since our image contained saved metadata and HoloPy used its values.
+Passing an image to a scattering function is particularly useful when comparing simulated data to experimental results, since we can easily recreate our experimental conditions exactly.
+
 
 So far all of the images we have calculated are holograms, or the interference pattern that results
 from the superposition of a scattered wave with a reference wave. Holopy can also be used to
@@ -153,7 +146,7 @@ list of refractive indices and radii corresponding to the layers
 ..  testoutput::
     :hide:
 
-    1.1831629319255395
+    0.9750608553730731
     
 If you prefer thinking in terms of the thickness of subsequent layers, instead of their distance from the center,
 you can use :func:`.LayeredSphere` to achieve the same result:
@@ -187,9 +180,11 @@ first define the spheres individually, and then combine them into a
 ..  testoutput::
     :hide:
 
-    [ 1.24037847]
+    [ 1.04897655]
 
-.. plot:: pyplots/calc_two_spheres.py
+.. image:: ../images/calc_sphere.png
+   :scale: 300 %
+   :alt: Calculated hologram of two spheres.
 
 Adding more spheres to the cluster is as simple as defining more
 sphere objects and passing a longer list of spheres to the
@@ -238,10 +233,12 @@ calling the :func:`.calc_holo` function:
 ..  testoutput::
     :hide:
     
-    1.2474802764571784
+    1.0480235432374045
 
 Holopy can also access a discrete dipole approximation (DDA) theory to model arbitrary
 non-spherical objects. See the :ref:`dda_tutorial` tutorial for more details.
+It is fairly easy to add your own scattering theory to HoloPy. See :ref:`scat_theory` for details.
+If you think your new scattering theory may be useful for other users, please consider submitting a `pull request <https://github.com/manoharan-lab/holopy/pulls>`_.
 
 Detector Types in HoloPy
 ------------------------
@@ -346,7 +343,3 @@ Since cross sections integrates over all angles, we can also omit the
 x_sec returns an array containing four elements. The first element is the scattering cross section, specified in terms of the same
 units as wavelength and particle size. The second and third elements are the absorption
 and extinction cross sections, respectively. The final element is the average value of the cosine of the scattering angle.
-
-
-
-

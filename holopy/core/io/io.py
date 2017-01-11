@@ -27,7 +27,6 @@ import yaml
 from warnings import warn
 from scipy.misc import fromimage
 from PIL import Image as pilimage
-from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 import xarray as xr
 import importlib
 
@@ -79,18 +78,21 @@ def pack_attrs(a, do_spacing=False):
             new_attrs[attr]=list(ensure_array(val))
         else:
             new_attrs[attr_coords][attr]=False
-            new_attrs[attr]=val
+            if not is_none(val):
+                new_attrs[attr]=val
     new_attrs[attr_coords]=yaml.dump(new_attrs[attr_coords])
     return new_attrs
 
 def unpack_attrs(a):
     new_attrs={}
     attr_ref=yaml.load(a[attr_coords])
-    for attr in dict_without(a,['spacing','name',attr_coords]):
+    for attr in dict_without(attr_ref,['spacing','name']):
         if attr_ref[attr]:
             new_attrs[attr] = xr.DataArray(a[attr], coords=attr_ref[attr])
-        else:
+        elif attr in a:
             new_attrs[attr] = a[attr]
+        else:
+            new_attrs[attr] = None
     return new_attrs
 
 def load(inf, lazy=False):
@@ -271,6 +273,7 @@ def save_image(filename, im, scaling='auto', depth=8):
         if im.name is None:
             im.name=os.path.splitext(os.path.split(filename)[-1])[0]
         metadat = pack_attrs(im, do_spacing = True)
+        from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2 #hiding this import here since it doesn't play nice in some scenarios
         tiffinfo = ifd2()
         tiffinfo[270] = yaml.dump(metadat) #This edits the 'imagedescription' field of the tiff metadata
 

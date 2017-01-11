@@ -35,7 +35,7 @@ gold_sigma=-1.4189385332
 prior_dist=np.array([[-0.6075477],[-0.12613641],[-0.68460636]])
 
 #GOLD:inference result - depends on both seeds
-gold_alpha=np.array([0.695876])
+gold_alpha=np.array([0.702416])
 gold_nsteps=10
 gold_frac=0.925
 
@@ -46,7 +46,6 @@ def test_NoiseModel_lnprior():
     assert_obj_close(mod.lnprior([0,0]),gold_sigma*2)
 
 def test_subset_tempering():
-    np.random.seed(40)
     holo = normalize(get_example_data('image0001'))
     scat = Sphere(r=0.65e-6,n=1.58,center=[5.5e-6,5.8e-6,14e-6])
     mod = AlphaModel(scat,noise_sd=.1, alpha=prior.Gaussian(0.7,0.1))

@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
-Image enhancement through background subtraction, contrast adjustment,
-or detrending
+Handles Fourier transforms of HoloPy images by using scipy's fftpack. Tries to correctly interpret dimensions from xarray.
 
 .. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
@@ -36,7 +35,7 @@ def fft(a, overwrite=False, shift=True):
     """
     More convenient Fast Fourier Transform
 
-    An easier to use fft function, it will pick the correct fft to dom
+    An easier to use fft function, it will pick the correct fft to do
     based on the shape of the Marray, and do the fftshift for you.  This
     is intended for working with images, and thus for dimensions
     greater than 2 does slicewise transforms of each "image" in a
