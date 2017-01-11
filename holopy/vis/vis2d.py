@@ -210,7 +210,10 @@ def show2d(im, plane_axes=None, slice_axis=None, starting_index=0, t=0, phase = 
     
     if slice_axis is None and len(shape)>2:
         for i in plane_axes:
-            axes.remove(i)
+            try:
+                axes.remove(i)
+            except ValueError:
+                pass
         slice_axis=axes[0]
 
 
