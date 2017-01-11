@@ -25,7 +25,8 @@ calc_intensity and calc_holo, based on subclass's calc_field
 from ..core.holopy_object import SerializableMetaclass
 from ..core.metadata import vector, update_metadata, to_vector, copy_metadata, from_flat, detector_points
 from ..core.utils import dict_without, is_none
-from . import Mie, Multisphere, Sphere, Spheres
+from .theory import Mie, Multisphere
+from .scatterer import Sphere, Spheres
 from .theory.dda import DDA
 from .errors import AutoTheoryFailed, MissingParameter
 

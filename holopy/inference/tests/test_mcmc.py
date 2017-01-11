@@ -31,11 +31,8 @@ from holopy.inference.noise_model import AlphaModel,NoiseModel
 #GOLD:log(sqrt(0.5/pi))-1/2
 gold_sigma=-1.4189385332
 
-#GOLD:Gaussian distribution - depends on np seed
-prior_dist=np.array([[-0.6075477],[-0.12613641],[-0.68460636]])
-
 #GOLD:inference result - depends on both seeds
-gold_alpha=np.array([0.702416])
+gold_alpha=np.array([0.700926])
 gold_nsteps=10
 gold_frac=0.925
 
@@ -51,6 +48,5 @@ def test_subset_tempering():
     mod = AlphaModel(scat,noise_sd=.1, alpha=prior.Gaussian(0.7,0.1))
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        #inf=mcmc.subset_tempering(mod,holo,final_len=10,nwalkers=4,stages=1,stage_len=10,threads=None, verbose=False,seed=40)
         inf = sample.tempered_sample(mod, holo, nwalkers=4, samples=10, stages=1, stage_len=10, threads=None, seed=40)
     assert_obj_close(inf.MAP,gold_alpha, rtol=1e-3)
