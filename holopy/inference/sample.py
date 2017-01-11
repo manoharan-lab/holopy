@@ -48,6 +48,7 @@ def sample_one_sigma_gaussian(result):
 def tempered_sample(model, data, nwalkers=100, min_pixels=50, max_pixels=2000,
                     samples=600, next_initial_dist=sample_one_sigma_gaussian,
                     stages=3, stage_len=30, seed=None, threads='auto'):
+    np.random.seed(seed)
     s = TemperedStrategy(next_initial_dist, nwalkers, min_pixels, max_pixels, stages=stages, stage_len=stage_len, seed=seed, threads=threads)
     return s.sample(model, data, samples)
 
@@ -149,10 +150,9 @@ def sample_emcee(model, data, nwalkers, nsamples, walker_initial_pos,
                               model.lnposterior,
                               threads=autothreads(threads), args=[data])
 
-    if seed is not None:
-        np.random.seed(seed)
-        seed_state = np.random.mtrand.RandomState(seed).get_state()
-        sampler.random_state=seed_state
+    np.random.seed(seed)
+    seed_state = np.random.mtrand.RandomState(seed).get_state()
+    sampler.random_state=seed_state
 
     sampler.run_mcmc(walker_initial_pos, nsamples)
 

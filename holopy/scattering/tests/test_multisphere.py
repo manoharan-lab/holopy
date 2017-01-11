@@ -156,6 +156,7 @@ def test_overlap():
         assert len(w) > 0
 
     # should fail to converge
+    warnings.simplefilter("always")
     assert_raises(MultisphereFailure, calc_holo, schema, sc, index, wavelen, xpolarization)
 
     # but it should succeed with a small overlap, after raising a warning
