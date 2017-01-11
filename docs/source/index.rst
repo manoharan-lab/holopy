@@ -3,38 +3,20 @@ Holography and Light Scattering in Python
 
 
 :Release: |release|
-:Date: |today|
 
 :mod:`HoloPy` is a python based tool for working with digital
-holograms and light scattering. HoloPy can:
+holograms and light scattering. HoloPy can be used to analyze holograms in two complementary ways:
 
-* :ref:`Load <load_tutorial>` images, associate them with experimental
-  :ref:`metadata <metadata>`, and visualize loaded or calculated images.
+* Backward propagation of light from a digital hologram to :ref:`reconstruct <recon_tutorial>` 3D volumes.
+    * This approach requires no prior knowledge about the scatterer
 
-* :ref:`Reconstruct <recon_tutorial>` 3D volumes from digital holograms
+* Forward propagation of light from a :ref: `scattering calculation <calc_tutorial>` of a predetermined scatterer.
+    * Comparison to a measured hologram with :ref: `Bayesian inference <infer_tutorial>` allows precise measurement of scatterer properties and position.
 
-* Perform :ref:`Scattering Calculations <calc_tutorial>` with fast Fortran/C code
-
-  * **Compute** Holograms, electric fields, scattered intensity,
-    cross sections, ...
-
-  * **From** spheres, clusters of spheres, and arbitrary structures
-    (using :ref:`DDA <dda_tutorial>`)
-
-* Use Bayesian analysis methods to :ref:`infer <infer_tutorial>` a
-  scattering model that is most consistent with experimental data.
-
-* Make fast, precise measurements to :ref:`fit scattering models
-  <fit_tutorial>` (based on the above structures) to experimental
-  data, based on an inital guess.
-
-HoloPy provides a powerful and user-friendly interface to scattering
-and optical propagation theories. It also provides a set of flexible
+HoloPy provides a powerful and user-friendly python interface to fast scattering
+and optical propagation theories implemented in Fortran and C code. It also provides a set of flexible
 objects that make it easy to describe and analyze data from complex
 experiments or simulations.
-
-The easiest way to see what HoloPy is all about is to jump to the
-examples in our :ref:`user_guide`.
 
 HoloPy started as a project in the `Manoharan Lab at Harvard
 University <http://manoharan.seas.harvard.edu/>`_. If you use HoloPy,

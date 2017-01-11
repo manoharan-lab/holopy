@@ -30,4 +30,4 @@ this you may see a small lag on your first plot.
 """
 
 
-from .show import show
+from .show import show, test_disp

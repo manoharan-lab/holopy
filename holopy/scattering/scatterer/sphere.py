@@ -82,6 +82,20 @@ class Sphere(CenteredScatterer):
                 return len(self.n)
         else:
             return 0
+    
+    def guess(self):
+
+        def checkguess(val):
+            if hasattr(val,'guess'):
+                return val.guess
+            else:
+                return val
+
+        if self.center is not None:
+            center = [checkguess(dim) for dim in self.center]
+        else:
+            center = None
+        return Sphere(checkguess(self.n), checkguess(self.r), center)
 
     def like_me(self, **overrides):
         if 'center' in overrides:
