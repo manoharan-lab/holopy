@@ -209,7 +209,7 @@ def simulate_noise(shape, mean=.1, smoothing=.01, poisson_lambda=1000):
     return smoothed/smoothed.mean() * mean
 
 def bg_correct(raw, bg, df=None):
-    """Correct for noisy images by dividing by a background. The algorithm used is (raw-df)/(bg-df). 
+    """Correct for noisy images by dividing by a background. The calculation used is (raw-df)/(bg-df). 
 
     Parameters
     ----------

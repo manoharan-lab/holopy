@@ -90,6 +90,7 @@ class Sphere(CenteredScatterer):
                 return val.guess
             else:
                 return val
+
         if self.center is not None:
             center = [checkguess(dim) for dim in self.center]
         else:
