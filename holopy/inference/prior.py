@@ -53,7 +53,7 @@ class Uniform(Prior):
 
     @property
     def guess(self):
-        return (self.upper_bound - self.lower_bound)/2
+        return (self.upper_bound + self.lower_bound)/2
 
     def sample(self, size=None):
         return random.uniform(self.lower_bound, self.upper_bound, size)

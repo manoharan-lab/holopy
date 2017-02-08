@@ -33,7 +33,7 @@ import importlib
 from . import serialize
 from ..metadata import data_grid, get_spacing, update_metadata
 from ..utils import is_none, ensure_array, dict_without
-from ..errors import NoMetadata
+from ..errors import NoMetadata, BadImage
 
 attr_coords = '_attr_coords'
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
@@ -187,13 +187,16 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
         arr=fromimage(pi).astype('d')
 
     # pick out only one channel of a color image
-    if channel is not None and len(arr.shape) > 2:
+    if channel is None:
+        if len(arr.shape) > 2:
+            raise BadImage('Not a greyscale image. You must specify a channel to use')
+    elif len(arr.shape) > 2:
         if channel >= arr.shape[2]:
             raise LoadError(filename,
                 "The image doesn't have a channel number {0}".format(channel))
         else:
             arr = arr[:, :, channel]
-    elif channel is not None and channel > 0:
+    else:
         warn("Warning: not a color image (channel number ignored)")
 
     if name is None:
@@ -310,7 +313,7 @@ def save_image(filename, im, scaling='auto', depth=8):
     else:
         pilimage.fromarray(im.values).save(filename)
 
-def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, image_glob='*.tif'):
+def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, channel=None, image_glob='*.tif'):
     """
     Average a set of images (usually as a background)
 
@@ -340,11 +343,12 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
         Image which is an average of images
     """
 
-    try:
+    if isinstance(filepath, str):
         if os.path.isdir(filepath):
             filepath = glob.glob(os.path.join(filepath, image_glob))
-    except TypeError:
-        pass
+        else:
+            #only a single image
+            filepath=[filepath]
 
     if len(filepath) < 1:
         raise LoadError(filepath, "No images found")
@@ -352,9 +356,9 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
     if is_none(spacing):
         spacing = get_spacing(refimg)
     
-    accumulator = load_image(filepath[0],spacing)
+    accumulator = load_image(filepath[0],spacing, channel=channel)
     for image in filepath[1:]:
-        accumulator += load_image(image, spacing)
+        accumulator += load_image(image, spacing,channel=channel)
     accumulator /= len(filepath)
 
     if not is_none(refimg):
