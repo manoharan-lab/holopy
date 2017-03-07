@@ -46,7 +46,6 @@ encourage you to sign up for our `User Mailing List
 on releases, answer questions, and benefit from other users'
 questions.
 
-
 HoloPy is based upon work supported by the National Science Foundation
 under grant numbers CBET-0747625, DMR-0820484, DMR-1306410, and
 DMR-1420570.
