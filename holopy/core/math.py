@@ -85,7 +85,7 @@ def to_cartesian(r, theta, phi):
     z = r * cos(theta)
     return repeat_sing_dims({'x': x, 'y': y, 'z': z})
 
-def cartesian_distance(p1, p2):
+def cartesian_distance(p1, p2=[0,0,0]):
     """
     Return the Cartesian distance between points p1 and p2.
 

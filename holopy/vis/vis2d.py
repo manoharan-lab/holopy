@@ -125,18 +125,17 @@ class plotter:
         return index
 
     def location(self, x, y):
-        index = [x, y]
+        index = [np.interp(pos+.5, range(len(self.im[axis])), self.im[axis]) for axis, pos in zip(self.axis_names, [x, y])]
         if self.im.ndim == 3:
-            index.append(self.i)
-        return [p * s + c for p, s, c in
-                zip(index, self.im.spacing, self.im.origin)]
+            index.append(self.im[self.step_name].values[self.i])
+        return index
 
 
     def click(self, event):
         if event.ydata is not None and event.xdata is not None:
             x, y = np.array((event.ydata, event.xdata))
-            if getattr(self.im, 'spacing', None) is not None:
-                print(("{0}, {1}".format(self.pixel(x, y), self.location(x, y))))
+            if isinstance(self.im, DataArray):
+                print(("[{0}, {1}],".format(self.pixel(x, y), self.location(x, y))))
             else:
                 print((self.pixel(x, y)))
             import sys; sys.stdout.flush()
@@ -206,7 +205,7 @@ def show2d(im, plane_axes=None, slice_axis=None, starting_index=0, t=0, phase = 
         if plane_axes[1] < plane_axes[0]:
             #this catches the case where xarray dimensions are labeled out of order
             #we always want to plot (x,y), not (y,x)
-            plane_axes.reverse
+            plane_axes.reverse()
     
     if slice_axis is None and len(shape)>2:
         for i in plane_axes:

@@ -280,7 +280,10 @@ def save_image(filename, im, scaling='auto', depth=8):
         tiffinfo = ifd2()
         tiffinfo[270] = yaml.dump(metadat) #This edits the 'imagedescription' field of the tiff metadata
 
-    im=im.copy().sel(z=0)
+    if len(im.dims)>2:
+        im = im.copy().isel(z=0)
+    else:
+        im = im.copy()
     if scaling is not None:
         if scaling is 'auto':
             min = im.min()
@@ -307,7 +310,6 @@ def save_image(filename, im, scaling='auto', depth=8):
         if im.max() <= 1:
             im = im * ((2**depth)-1) + .499999
             im = im.astype(typestr)
-
     if metadat:
         pilimage.fromarray(im.values).save(filename, tiffinfo=tiffinfo)
     else:
