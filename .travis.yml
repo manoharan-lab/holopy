@@ -13,6 +13,7 @@ install:
   - source activate testenv
   - conda install -c conda-forge --yes $DEPS
   - pip install emcee
+  - pip install numpy==1.11.3
 # TODO Remove these once setup.py handles dependencies correctly.
   - python setup.py install
   - python setup.py build_ext --inplace
