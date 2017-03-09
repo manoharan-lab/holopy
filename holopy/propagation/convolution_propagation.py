@@ -152,8 +152,8 @@ def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
         d = d/cfsp
 
     m, n = ft_coord(schema.x), ft_coord(schema.y)
-    m = xr.DataArray(m, coords={'m': m})
-    n = xr.DataArray(n, coords={'n': n})
+    m = xr.DataArray(dims='m', coords={'m': m})
+    n = xr.DataArray(dims='n', coords={'n': n})
 
     root = 1.+0j-(med_wavelen*n)**2 - (med_wavelen*m)**2
 

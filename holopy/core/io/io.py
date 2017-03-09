@@ -88,7 +88,7 @@ def unpack_attrs(a):
     attr_ref=yaml.load(a[attr_coords])
     for attr in dict_without(attr_ref,['spacing','name']):
         if attr_ref[attr]:
-            new_attrs[attr] = xr.DataArray(a[attr], coords=attr_ref[attr])
+            new_attrs[attr] = xr.DataArray(a[attr], dims=list(attr_ref[attr].keys()), coords=attr_ref[attr])
         elif attr in a:
             new_attrs[attr] = a[attr]
         else:
