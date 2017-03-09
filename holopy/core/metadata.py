@@ -147,22 +147,19 @@ def flat(a, keep_dims=True):
     if hasattr(a, 'flat') or hasattr(a, 'point'):
         return a
     if len(a.dims)==3 and keep_dims:
-        #a['x_orig'] = a.x
-        #a['y_orig'] = a.y
-        #a['z_orig'] = a.z
+        a = a.rename({'x': 'x_orig','y': 'y_orig','z': 'z_orig'})
         #want to ensure order is x, y, z
-        return a.stack(flat=('x','y','z'))
-        del a['x_orig']
-        del a['y_orig']
-        del a['z_orig']
-        return r.rename({'x_orig': 'x', 'y_orig': 'y', 'z_orig': 'z'})
+        r = a.stack(flat=('x_orig','y_orig','z_orig'))
+        a = a.rename({'x_orig': 'x', 'y_orig': 'y', 'z_orig': 'z'})
+        return r
     else:
         return a.stack(flat=a.dims)
 
 
 def from_flat(a):
     if hasattr(a, 'flat'):
-        return a.unstack('flat')
+        r = a.unstack('flat')
+        return r.rename({'x_orig': 'x', 'y_orig': 'y', 'z_orig': 'z'})
     return a
 
 def sphere_coords(a, origin=(0,0,0), wavevec=1):
@@ -176,7 +173,7 @@ def sphere_coords(a, origin=(0,0,0), wavevec=1):
         f = flat(a)
         dimstr = primdim(f)
         # we define positive z opposite light propagation, so we have to invert
-        x, y, z = f.x.values - origin[0], f.y.values - origin[1], origin[2] - f.z.values
+        x, y, z = f.x_orig.values - origin[0], f.y_orig.values - origin[1], origin[2] - f.z_orig.values
         out = to_spherical(x,y,z)
         return updated(out, {'r':out['r'] * wavevec, dimstr:f[dimstr]})
 
