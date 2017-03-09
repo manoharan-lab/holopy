@@ -141,21 +141,14 @@ def to_vector(c):
     if c.shape == (2,):
         c = np.append(c, 0)
 
-    return xr.DataArray(c, coords={vector: ['x', 'y', 'z']})
+    return xr.DataArray(c, dims=vector, coords={vector: ['x', 'y', 'z']})
 
-def flat(a, keep_dims=True):
+def flat(a):
     if hasattr(a, 'flat') or hasattr(a, 'point'):
         return a
-    if len(a.dims)==3 and keep_dims:
-        a['x_orig'] = a.x
-        a['y_orig'] = a.y
-        a['z_orig'] = a.z
+    if len(a.dims)==3:
         #want to ensure order is x, y, z
-        r = a.stack(flat=('x','y','z'))
-        del a['x_orig']
-        del a['y_orig']
-        del a['z_orig']
-        return r.rename({'x_orig': 'x', 'y_orig': 'y', 'z_orig': 'z'})
+        return a.stack(flat=('x','y','z'))
     else:
         return a.stack(flat=a.dims)
 
@@ -177,7 +170,7 @@ def sphere_coords(a, origin=(0,0,0), wavevec=1):
         # we define positive z opposite light propagation, so we have to invert
         x, y, z = f.x.values - origin[0], f.y.values - origin[1], origin[2] - f.z.values
         out = to_spherical(x,y,z)
-        return updated(out, {'r':out['r'] * wavevec, dimstr:f[dimstr],'x':f.x.values, 'y':f.y.values, 'z':f.z.values})
+        return updated(out, {'r':out['r'] * wavevec, dimstr:f[dimstr]})
 
 def get_values(a):
     return getattr(a, 'values', a)
