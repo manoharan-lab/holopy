@@ -170,7 +170,7 @@ def sphere_coords(a, origin=(0,0,0), wavevec=1):
         # we define positive z opposite light propagation, so we have to invert
         x, y, z = f.x.values - origin[0], f.y.values - origin[1], origin[2] - f.z.values
         out = to_spherical(x,y,z)
-        return updated(out, {'r':out['r'] * wavevec, dimstr:f[dimstr]})
+        return updated(out, {'r':out['r'] * wavevec, dimstr:f[dimstr], 'x':f.x.values, 'y':f.y.values, 'z':f.z.values})
 
 def get_values(a):
     return getattr(a, 'values', a)
