@@ -146,7 +146,7 @@ def to_vector(c):
 def flat(a, keep_dims=True):
     if hasattr(a, 'flat') or hasattr(a, 'point'):
         return a
-    #if len(a.dims)==3 and keep_dims:
+    if len(a.dims)==3 and keep_dims:
         a['x_orig'] = a.x
         a['y_orig'] = a.y
         a['z_orig'] = a.z
@@ -155,7 +155,7 @@ def flat(a, keep_dims=True):
         del a['x_orig']
         del a['y_orig']
         del a['z_orig']
-        return r.rename({'x_orig': 'x', 'y_orig': 'y', 'z_orig': 'z'})
+        return r
     else:
         return a.stack(flat=a.dims)
 
