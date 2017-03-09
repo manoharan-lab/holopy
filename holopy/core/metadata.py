@@ -147,11 +147,11 @@ def flat(a, keep_dims=True):
     if hasattr(a, 'flat') or hasattr(a, 'point'):
         return a
     if len(a.dims)==3 and keep_dims:
-        a['x_orig'] = a.x
-        a['y_orig'] = a.y
-        a['z_orig'] = a.z
+        #a['x_orig'] = a.x
+        #a['y_orig'] = a.y
+        #a['z_orig'] = a.z
         #want to ensure order is x, y, z
-        r = a.stack(flat=('x','y','z'))
+        return a.stack(flat=('x','y','z'))
         del a['x_orig']
         del a['y_orig']
         del a['z_orig']

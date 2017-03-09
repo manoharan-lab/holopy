@@ -78,6 +78,7 @@ class ScatteringTheory(HoloPyObject):
             if isinstance(scatterer,Sphere) and scatterer.center is None:
                 raise MissingParameter("center")
             positions = sphere_coords(schema, s.center, wavevec=wavevec(schema))
+            print(stack_spherical(positions))
             field = np.vstack(self._raw_fields(stack_spherical(positions), s, medium_wavevec=wavevec(schema), medium_index=schema.medium_index, illum_polarization=schema.illum_polarization)).T
             phase = np.exp(-1j*wavevec(schema)*s.center[2])
             # TODO: fix and re-enable internal fields
