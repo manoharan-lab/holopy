@@ -85,8 +85,8 @@ class plotter:
         try:        
             spacing = get_spacing(im)
             ratio = spacing[0]/spacing[1]
-        except AttributeError:
-            #we are working with a numpy array not a DataArray. We don't know spacing.
+        except:
+            #we are not working with a DataArray containing dimensions labeled 'x' and 'y'
             ratio = 1
 
 
