@@ -117,12 +117,12 @@ visualizing the reconstruction results.
 ..  testcode::
     :hide:
 
-    print(recons[0,450,550].values)
+    print(abs(recons[0,450,550].values))
 
 ..  testoutput::
     :hide:
 
-    (-7.35200151482912e-12+1.1571813575128925e-11j)
+    1.37098065519e-11
 
 Magnification and Output Image Size
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
