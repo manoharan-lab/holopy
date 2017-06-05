@@ -8,7 +8,7 @@ imagepath = get_example_data_path('ps_image01.jpg')
 bgpath = get_example_data_path('ps_bg01.jpg')
 L = 0.0407 # distance from light source to screen
 cam_spacing = 12e-6 # linear size of camera pixels
-mag = 1.0 # magnification
+mag = 9.0 # magnification
 npix_out = 1020 # linear size of output image (pixels)
 zstack = np.arange(1.08e-3, 1.18e-3, 0.01e-3) # distances from camera to reconstruct
 

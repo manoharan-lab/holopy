@@ -9,6 +9,6 @@ bgpath = get_example_data_path(['bg01.jpg','bg02.jpg','bg03.jpg'])
 bg = load_average(bgpath, refimg = raw_holo)
 holo = bg_correct(raw_holo, bg)
 
-zstack = np.linspace(1, 15, 8)
+zstack = np.linspace(0, 20, 11)
 rec_vol = hp.propagate(holo, zstack)
 hp.show(rec_vol)

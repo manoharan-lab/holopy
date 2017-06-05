@@ -84,6 +84,7 @@ visualizing the reconstruction results.
     Taking FFT
     Multiplying prefactor
     Calculating Ip
+    Taking FFT
     Multiplying prefactor
     Calculating Ip
     Taking FFT
@@ -116,12 +117,12 @@ visualizing the reconstruction results.
 ..  testcode::
     :hide:
 
-    print(recons[0,450,550].values)
+    print(abs(recons[0,450,550].values))
 
 ..  testoutput::
     :hide:
 
-    (-1.3788794632689938e-11+1.2994897474407896e-14j)
+    1.37098065519e-11
 
 Magnification and Output Image Size
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

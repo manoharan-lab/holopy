@@ -196,13 +196,13 @@ def ps_propagate_plane(data, d, L, beam_c, out_schema = None, old_Ip = False):
     
     #crop to correct size
     if npix > npix0:
-        x_cen = npix/2
-        y_cen = npix/2
+        x_cen = int(npix/2)
+        y_cen = int(npix/2)
 
         if out_schema is None:    
-            offset = npix0/2
+            offset = int(npix0/2)
         else:
-            offset = len(out_schema.x)/2
+            offset = int(len(out_schema.x)/2)
         result = result [x_cen - offset : x_cen + offset, y_cen - offset : y_cen + offset] 
    
 

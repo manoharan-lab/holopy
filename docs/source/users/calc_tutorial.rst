@@ -182,7 +182,7 @@ first define the spheres individually, and then combine them into a
 
     [ 1.04897655]
 
-.. image:: ../images/calc_sphere.png
+.. image:: ../images/calc_twosphere.png
    :scale: 300 %
    :alt: Calculated hologram of two spheres.
 

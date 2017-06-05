@@ -98,7 +98,7 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_f
 
     if contains_zero:
         d = d_old
-        res = xr.concat([res, data], dim='z')
+        res = xr.concat([data, res], dim='z')
 
     return copy_metadata(data, res)
 
