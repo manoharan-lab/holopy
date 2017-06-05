@@ -84,6 +84,7 @@ visualizing the reconstruction results.
     Taking FFT
     Multiplying prefactor
     Calculating Ip
+    Taking FFT
     Multiplying prefactor
     Calculating Ip
     Taking FFT
@@ -121,7 +122,7 @@ visualizing the reconstruction results.
 ..  testoutput::
     :hide:
 
-    (-1.3788794632689938e-11+1.2994897474407896e-14j)
+    (-7.35200151482912e-12+1.1571813575128925e-11j)
 
 Magnification and Output Image Size
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -43,7 +43,7 @@ The actual propagation is accomplished with :func:`.propagate`:
 
 ..  testcode::
 
-    zstack = np.linspace(1, 15, 8)
+    zstack = np.linspace(0, 20, 11)
     rec_vol = hp.propagate(holo, zstack)
 
 ..  testcode::
@@ -54,7 +54,7 @@ The actual propagation is accomplished with :func:`.propagate`:
 ..  testoutput::
     :hide:
 
-    (0.911671338697-0.0816366824816j)
+    (0.919642857143+0j)
 
 
 Here, HoloPy has projected the hologram image through space to each of the distances contained in ``zstack`` by using the metadata that we 
@@ -106,7 +106,7 @@ number of wavelengths in medium:
 ..  testoutput::
     :hide:
     
-    0.005048845807476341
+    0.0
 
 
 Cascaded Free Space Propagation
@@ -137,4 +137,4 @@ propagated. For example, to propagate in three steps over each distance, we writ
 ..  testoutput::
     :hide:
 
-    (0.911671338697-0.0816366824816j)
+    (0.919642857143+0j)

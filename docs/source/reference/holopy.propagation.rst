@@ -19,6 +19,14 @@ holopy.propagation.convolution_propagation module
     :undoc-members:
     :show-inheritance:
 
+holopy.propagation.point_source_propagate module
+------------------------------------------------
+
+.. automodule:: holopy.propagation.point_source_propagate
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------
