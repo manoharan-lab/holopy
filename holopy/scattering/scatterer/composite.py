@@ -31,6 +31,7 @@ import numpy as np
 
 from . import Scatterer
 from ...core.math import rotate_points
+from ...core.utils import is_none, ensure_array
 
 class Scatterers(Scatterer):
     '''
@@ -130,8 +131,30 @@ class Scatterers(Scatterer):
         return self._prettystr(0)
 
 
-    def translated(self, x, y, z):
-        trans = [s.translated(x, y, z) for s in self.scatterers]
+    def translated(self, coord1, coord2=None, coord3=None):
+        """
+        Make a copy of this scatterer translated to a new location
+
+        Parameters
+        ----------
+        x, y, z : float
+            Value of the translation along each axis
+
+        Returns
+        -------
+        translated : Scatterer
+            A copy of this scatterer translated to a new location
+        """
+        if is_none(coord2) and len(ensure_array(coord1)==3):
+            #entered translation vector
+            trans_coords = ensure_array(coord1)
+        elif not is_none(coord2) and not is_none(coord3):
+            #entered 3 coords
+            trans_coords = np.array([coord1, coord2, coord3])
+        else:
+            raise InvalidScatterer(self, "Cannot interpret translation coordinates")
+
+        trans = [s.translated(trans_coords) for s in self.scatterers]
         new = copy(self)
         new.scatterers = trans
         return new

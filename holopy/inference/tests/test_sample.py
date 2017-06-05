@@ -40,7 +40,7 @@ def test_sample_emcee():
     nwalkers = 10
     ndim = 1
     mod = SimpleModel()
-    p0 = np.linspace(0, 1, 10).reshape((nwalkers, ndim))
+    p0 = np.linspace(0, 1, nwalkers*ndim).reshape((nwalkers, ndim))
     r = sample_emcee(mod, data, nwalkers, 500, p0, threads=None, seed=40)
     assert_allclose(r.chain[r.lnprobability==r.lnprobability.max()], .5, rtol=.001)
 

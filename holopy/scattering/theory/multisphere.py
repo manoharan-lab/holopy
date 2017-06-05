@@ -169,10 +169,12 @@ class Multisphere(ScatteringTheory):
             raise InvalidScatterer(scatterer, "Particle separation "
                                         "too large, calculation would take forever")
         if self.suppress_fortran_output:
+            #NOTE: This causes an error if it is run more than 1024 times per thread
             #store default (current) stdout
             default = os.dup(1)
             #copy devnull into stdout
-            os.dup2(os.open(os.devnull,os.O_WRONLY),1)
+            devnull = os.open(os.devnull,os.O_WRONLY)
+            os.dup2(devnull,1)
 
         _, lmax, amn0, converged = scsmfo_min.amncalc(
             1, centers[:,0],  centers[:,1],
@@ -186,6 +188,7 @@ class Multisphere(ScatteringTheory):
         if self.suppress_fortran_output:
             #restore stdout to default
             os.dup2(default,1)
+            os.close(devnull)
 
         # converged == 1 if the SCSMFO iterative solver converged
         # f2py converts F77 LOGICAL to int

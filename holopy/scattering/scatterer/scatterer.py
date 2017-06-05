@@ -30,7 +30,7 @@ from copy import copy
 import numpy as np
 
 from ...core.holopy_object  import HoloPyObject
-from ...core.utils import ensure_array
+from ...core.utils import ensure_array, is_none
 from ..errors import InvalidScatterer
 from functools import reduce
 
@@ -61,7 +61,7 @@ class Scatterer(HoloPyObject):
         self.n = ensure_array(n)
         self.center = np.array(center)
 
-    def translated(self, x, y, z):
+    def translated(self, coord1, coord2=None, coord3=None):
         """
         Make a copy of this scatterer translated to a new location
 
@@ -75,8 +75,16 @@ class Scatterer(HoloPyObject):
         translated : Scatterer
             A copy of this scatterer translated to a new location
         """
+        if is_none(coord2) and len(ensure_array(coord1)==3):
+            #entered translation vector
+            trans_coords = ensure_array(coord1)
+        elif not is_none(coord2) and not is_none(coord3):
+            #entered 3 coords
+            trans_coords = np.array([coord1, coord2, coord3])
+        else:
+            raise InvalidScatterer(self, "Cannot interpret translation coordinates")
         new = copy(self)
-        new.center = self.center + np.array((x, y, z))
+        new.center = self.center + trans_coords
         return new
 
     def contains(self, points):
@@ -270,42 +278,6 @@ class CenteredScatterer(Scatterer):
             built[key] = build(val)
 
         return cls(**built)
-
-
-
-class SingleScatterer(Scatterer):
-    def __init__(self, center = None):
-        if center is not None and (np.isscalar(center) or len(center) != 3):
-            raise InvalidScatterer(self,"center specified as {0}, center "
-                "should be specified as (x, y, z)".format(center))
-        self.center = center
-
-    def translated(self, x, y, z):
-        """
-        Make a copy of this scatterer translated to a new location
-
-        Parameters
-        ----------
-        x, y, z : float
-            Value of the translation along each axis
-
-        Returns
-        -------
-        translated : Scatterer
-            A copy of this scatterer translated to a new location
-        """
-        new = copy(self)
-        new.center = self.center + np.array([x, y, z])
-        return new
-    @property
-    def x(self):
-        return self.center[0]
-    @property
-    def y(self):
-        return self.center[1]
-    @property
-    def z(self):
-        return self.center[2]
 
 def find_bounds(indicator):
     """
