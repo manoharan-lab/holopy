@@ -12,14 +12,6 @@ holopy.core.io.io module
     :undoc-members:
     :show-inheritance:
 
-holopy.core.io.serialize module
--------------------------------
-
-.. automodule:: holopy.core.io.serialize
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 
 Module contents
 ---------------

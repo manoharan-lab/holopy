@@ -8,18 +8,9 @@ Subpackages
 
     holopy.core.io
     holopy.core.process
-    holopy.core.tests
 
 Submodules
 ----------
-
-holopy.core.errors module
--------------------------
-
-.. automodule:: holopy.core.errors
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 holopy.core.holopy_object module
 --------------------------------

@@ -1,13 +1,6 @@
 holopy.propagation package
 ==========================
 
-Subpackages
------------
-
-.. toctree::
-
-    holopy.propagation.tests
-
 Submodules
 ----------
 

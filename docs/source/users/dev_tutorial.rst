@@ -58,5 +58,18 @@ by generating files and reading output files.
 ..  _infer_model:
 Adding a new inference model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-TODO by Tom
+TODO by Tom.
 Also need to refer to this somewhere in the inference tutorial.
+
+.. _nose_tests:
+Running Tests
+~~~~~~~~~~~~~
+HoloPy comes with a suite of tests that ensure everything has been
+built correctly and that it's able to perform all of the calculations
+it is designed to do.  To run these tests, navigate to the root of the
+package (e.g. ``/home/me/holopy``) and run:
+
+.. sourcecode:: bash
+
+   python run_nose.py
+

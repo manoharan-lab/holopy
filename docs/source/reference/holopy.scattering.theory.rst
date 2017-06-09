@@ -1,13 +1,6 @@
 holopy.scattering.theory package
 ================================
 
-Subpackages
------------
-
-.. toctree::
-
-    holopy.scattering.theory.mie_f
-
 Submodules
 ----------
 

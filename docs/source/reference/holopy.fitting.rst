@@ -1,24 +1,8 @@
 holopy.fitting package
 ======================
 
-Subpackages
------------
-
-.. toctree::
-
-    holopy.fitting.tests
-    holopy.fitting.third_party
-
 Submodules
 ----------
-
-holopy.fitting.errors module
-----------------------------
-
-.. automodule:: holopy.fitting.errors
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 holopy.fitting.fit module
 -------------------------
