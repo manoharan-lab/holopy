@@ -119,7 +119,7 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None, illum_po
         Scattering theory object to use for the calculation. This is optional
         if there is a clear choice of theory for your scatterer. If there is not
         a clear choice, calc_intensity will error out and ask you to specify a theory
-    scaling : scaling value (alpha) for intensity of reference wave
+    scaling : scaling value (alpha) for amplitude of reference wave
 
     Returns
     -------

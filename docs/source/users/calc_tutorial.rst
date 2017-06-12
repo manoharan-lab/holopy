@@ -30,7 +30,7 @@ We'll examine each section of code in turn.  The first few lines :
     from holopy.scattering import calc_holo, Sphere
 
 load the relevant modules from HoloPy that we'll need for doing our
-calculation.  The next lines describes the scatterer we would like to model:
+calculation.  The next line describes the scatterer we would like to model:
 
 ..  testcode::
         
@@ -59,7 +59,7 @@ the wavelength and polarization are specified.
 The scattered light will be collected at a detector, which is frequently a digital camera mounted onto a microscope. 
 Our detector is defined as a 100 x 100 pixel array, with each square pixel of side length .1 microns. 
 The ``shape`` argument tells HoloPy how many pixels are in the detector and affects computation time.
-The ``spacing`` argument tells HoloPy how far apart each pixel is. Both paramaters affect the absolute size of the detector.
+The ``spacing`` argument tells HoloPy how far apart each pixel is. Both parameters affect the absolute size of the detector.
 
 After getting everything ready, the actual scattering calculation is straightforward:
 
@@ -85,8 +85,8 @@ or absorbed by the particle.
     [ 1.01201782]
 
 You might have noticed that our scattering calculation requires much of the same metadata we specified when loading an image.
-If we have an experimental image from the sysetm we would like to model, we can use that as an argument
-in :func:`.calc_holo` instead of our ``detector`` object created from :func:`.detector_grid`. Holopy will calculate a hologram
+If we have an experimental image from the system we would like to model, we can use that as an argument
+in :func:`.calc_holo` instead of our ``detector`` object created from :func:`.detector_grid`. HoloPy will calculate a hologram
 image with pixels at the same positions as the experimental image, and so we don't need to worry about making a :func:`.detector_grid`
 with the correct ``shape`` and ``spacing`` arguments.
 
@@ -277,9 +277,11 @@ Static light scattering calculations
 Scattering Matrices
 -------------------
 In a static light scattering measurement you record the scattered
-intensity at a number of angles. In this kind of experiment you are
-usually not interested in the exact distance of the detector from the
-particles, and so it's most convenient to work with scattering matrices. 
+intensity at a number of locations. A common experimental setup contains multiple detectors at a constant radial distance from a sample (or a single detector on a
+goniometer arm that can swing to multiple angles.) In this kind of experiment you are
+usually assuming that the detector is far enough away from the particles that the
+far-field approximation is valid, and you are usually not interested in the exact 
+distance of the detector from the particles. So, it's most convenient to work with amplitude scattering matrices that are angle-dependent. (See [Bohren1983]_ for further mathematical description.)
 
 ..  testcode::
 
@@ -315,6 +317,11 @@ to look at scattering matrices on a semilog plot. You can make one as follows:
     plt.show()
 
 .. plot:: pyplots/calc_scat_matr.py
+
+You are usually interested in the intensities of the scattered fields, which are 
+proportional to the modulus squared of the amplitude scattering matrix. The 
+diagonal elements give the intensities for the incident light and the scattered light
+both polarized parallel and perpendicular to the scattering plane, respectively.
 
 Scattering Cross-Sections
 -------------------------
