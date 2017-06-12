@@ -19,7 +19,7 @@
 #
 #This file is used by readthedocs to install necessary packages.
 #
-numpy
+numpy>=1.12rm 
 scipy
 pyYaml
 pillow

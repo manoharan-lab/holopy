@@ -66,8 +66,8 @@ will need to implement _raw_cross_sections. We seperate out _raw_fields from
 _raw_scat_matrs because we want to provide a faster fields implementation for
 mie and multisphere (and you might want to for your theory).
 
-You can look at the Mie theory in holopy for an example of calling fortran
-functions to compute scattering (c functions will look similar from the python
+You can look at the Mie theory in HoloPy for an example of calling Fortran
+functions to compute scattering (C functions will look similar from the python
 side) or DDA for an an example of calling out to an external command line tool
 by generating files and reading output files.
 
