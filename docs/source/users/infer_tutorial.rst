@@ -1,9 +1,9 @@
-.. _infer_tutorial
+.. _infer_tutorial:
 
 Bayesian inference of Parameter Values
 ======================================
 
-:ref:`calc_tutorial` can inform us about the hologram produced by a specific scatterer,
+:ref:`The calc tutorial <calc_tutorial>` can inform us about the hologram produced by a specific scatterer,
 but they can't tell us anything about what type of scatterer produced an experimentally measured hologram.
 For this reverse problem, we turn to a Bayesian inference approach. We can calculate the
 holograms produced by many similar scatterers, and evaluate which ones are closest to
