@@ -14,7 +14,40 @@ DDA calculations, so you will need to install ADDA and be able to run::
 
   adda
 
-at a terminal for HoloPy DDA calculations to succeed.
+at a terminal for HoloPy DDA calculations to succeed. To install ADDA,
+first download or clone the `code <https://github.com/adda-team/adda>`_
+from GitHub. In a terminal window, go to the directory ’adda/src’ 
+and compile using one of three options::
+
+ make seq
+
+or::
+
+ make 
+
+or::
+
+ make OpenCL 
+
+‘make seq’ will not take advantage of any parallel processing of the cores
+on your computer. ‘make’ uses mpi for parallel processing. ‘make OpenCL’ uses 
+OpenCL for parallel processing. If the make does not work due to missing packages,
+you will have to download the specified packages and install them.
+
+Next, you must modify your path in your .bashrc or /bash_profile (for mac). Add the 
+line::
+
+  export PATH=$PATH:userpath/adda/src/seq
+
+or::
+
+  export PATH=$PATH:userpath/adda/src/mpi
+
+or::
+
+  export PATH=$PATH:userpath/adda/src/OpenCL
+
+where you should use the path that matches the make you chose above.
 
 A lot of the code associated with DDA is fairly new so be careful;
 there are probably bugs. If you find any, please `report
@@ -25,7 +58,8 @@ Defining the geometry of the scatterer
 
 To calculate the scattering pattern for an arbitrary object, you first
 need an indicator function which outputs 'True' if a test coordinate
-lies within your scatterer, and 'False' if it doesn't.
+lies within your scatterer, and 'False' if it doesn't. The indicator function
+is an argument of the constructor of your scatterer. 
 
 For example, if you wanted to define a dumbbell consisting of the union
 of two overlapping spheres you could do so like this::
