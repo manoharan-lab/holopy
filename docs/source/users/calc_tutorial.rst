@@ -36,13 +36,14 @@ calculation.  The next lines describes the scatterer we would like to model:
         
     sphere = Sphere(n = 1.59, r = .5, center = (4, 4, 5))
 
-We will be scattering light off a :class:`~holopy.scattering.scatterer` object, specifically a
-:class:`.Sphere`. A :class:`~holopy.scattering.scatterer` object
-contains information about the geometry (position, size, shape) and
-optical properties (refractive index) of the object that is scattering
-light.  We've defined a spherical scatterer with radius 0.5 microns and index of refraction
-1.59. This refractive index is approximately that of polystyrene.
-Next, we need to describe how we are illuminating our sphere, and how that light will be detected: 
+We will be scattering light off a :class:`~holopy.scattering.scatterer` object,
+specifically a :class:`.Sphere`. A :class:`~holopy.scattering.scatterer` object
+contains information about the geometry (position, size, shape) and optical
+properties (refractive index) of the object that is scattering light. We've
+defined a spherical scatterer with radius 0.5 microns and index of refraction
+1.59. This refractive index is approximately that of polystyrene. Next, we need
+to describe how we are illuminating our sphere, and how that light will be
+detected:
 
 ..  testcode::
 
@@ -51,15 +52,17 @@ Next, we need to describe how we are illuminating our sphere, and how that light
     illum_polarization = (1,0)
     detector = hp.detector_grid(shape = 100, spacing = .1)
 
-We are going to be using red light (wavelength = 660 nm in vacuum) polarized in the x-direction to 
-illuminate a sphere immersed in water (refractive index = 1.33). Refer to 
-:ref:`units` and :ref:`coordinate_system` if you're confused about how 
-the wavelength and polarization are specified.
+We are going to be using red light (wavelength = 660 nm in vacuum) polarized in
+the x-direction to illuminate a sphere immersed in water (refractive index =
+1.33). Refer to :ref:`units` and :ref:`coordinate_system` if you're confused
+about how the wavelength and polarization are specified.
 
-The scattered light will be collected at a detector, which is frequently a digital camera mounted onto a microscope. 
-Our detector is defined as a 100 x 100 pixel array, with each square pixel of side length .1 microns. 
-The ``shape`` argument tells HoloPy how many pixels are in the detector and affects computation time.
-The ``spacing`` argument tells HoloPy how far apart each pixel is. Both paramaters affect the absolute size of the detector.
+The scattered light will be collected at a detector, which is frequently a
+digital camera mounted onto a microscope. Our detector is defined as a 100 x 100
+pixel array, with each square pixel of side length .1 microns. The ``shape``
+argument tells HoloPy how many pixels are in the detector and affects
+computation time. The ``spacing`` argument tells HoloPy how far apart each pixel
+is. Both paramaters affect the absolute size of the detector.
 
 After getting everything ready, the actual scattering calculation is straightforward:
 
@@ -68,11 +71,10 @@ After getting everything ready, the actual scattering calculation is straightfor
     holo = calc_holo(detector, sphere, medium_index, illum_wavelen, illum_polarization)
     hp.show(holo)
 
-Congratulations! You just calculated the in-line hologram
-generated at the detector plane by interference between the
-scattered field and the reference wave. For an in-line
-hologram, the reference wave is simply the part of the field that is not scattered 
-or absorbed by the particle.
+Congratulations! You just calculated the in-line hologram generated at the
+detector plane by interference between the scattered field and the reference
+wave. For an in-line hologram, the reference wave is simply the part of the
+field that is not scattered or absorbed by the particle.
 
 ..  testcode::
     :hide:
@@ -84,11 +86,14 @@ or absorbed by the particle.
 
     [ 1.01201782]
 
-You might have noticed that our scattering calculation requires much of the same metadata we specified when loading an image.
-If we have an experimental image from the sysetm we would like to model, we can use that as an argument
-in :func:`.calc_holo` instead of our ``detector`` object created from :func:`.detector_grid`. Holopy will calculate a hologram
-image with pixels at the same positions as the experimental image, and so we don't need to worry about making a :func:`.detector_grid`
-with the correct ``shape`` and ``spacing`` arguments.
+You might have noticed that our scattering calculation requires much of the same
+metadata we specified when loading an image. If we have an experimental image
+from the sysetm we would like to model, we can use that as an argument in
+:func:`.calc_holo` instead of our ``detector`` object created from
+:func:`.detector_grid`. Holopy will calculate a hologram image with pixels at
+the same positions as the experimental image, and so we don't need to worry
+about making a :func:`.detector_grid` with the correct ``shape`` and ``spacing``
+arguments.
 
 ..  testcode::
     
@@ -109,15 +114,19 @@ with the correct ``shape`` and ``spacing`` arguments.
     (1, 100, 100)
     [ 1.01201782]
 
-Note that we didn't need to explicitly specify illumination information when calling :func:`.calc_holo`, since our image contained saved metadata and HoloPy used its values.
-Passing an image to a scattering function is particularly useful when comparing simulated data to experimental results, since we can easily recreate our experimental conditions exactly.
+Note that we didn't need to explicitly specify illumination information when
+calling :func:`.calc_holo`, since our image contained saved metadata and HoloPy
+used its values. Passing an image to a scattering function is particularly
+useful when comparing simulated data to experimental results, since we can
+easily recreate our experimental conditions exactly.
 
 
-So far all of the images we have calculated are holograms, or the interference pattern that results
-from the superposition of a scattered wave with a reference wave. Holopy can also be used to
-examine scattered fields on their own. Simply replace :func:`.calc_holo` with :func:`.calc_field` to look 
-at scattered electric fields (complex) or :func:`.calc_intensity` to look at field amplitudes, which
-is the typical measurement in a light scattering experiment.
+So far all of the images we have calculated are holograms, or the interference
+pattern that results from the superposition of a scattered wave with a reference
+wave. Holopy can also be used to examine scattered fields on their own. Simply
+replace :func:`.calc_holo` with :func:`.calc_field` to look at scattered
+electric fields (complex) or :func:`.calc_intensity` to look at field
+amplitudes, which is the typical measurement in a light scattering experiment.
 
 .. _more_scattering_ex:
 
@@ -235,10 +244,12 @@ calling the :func:`.calc_holo` function:
     
     1.0480235432374045
 
-Holopy can also access a discrete dipole approximation (DDA) theory to model arbitrary
-non-spherical objects. See the :ref:`dda_tutorial` tutorial for more details.
-It is fairly easy to add your own scattering theory to HoloPy. See :ref:`scat_theory` for details.
-If you think your new scattering theory may be useful for other users, please consider submitting a `pull request <https://github.com/manoharan-lab/holopy/pulls>`_.
+Holopy can also access a discrete dipole approximation (DDA) theory to model
+arbitrary non-spherical objects. See the :ref:`dda_tutorial` tutorial for more
+details. It is fairly easy to add your own scattering theory to HoloPy. See
+:ref:`scat_theory` for details. If you think your new scattering theory may be
+useful for other users, please consider submitting a `pull request
+<https://github.com/manoharan-lab/holopy/pulls>`_.
 
 Detector Types in HoloPy
 ------------------------
