@@ -25,24 +25,25 @@ plane wave scattering from a microsphere.
 We'll examine each section of code in turn.  The first few lines :
 
 ..  testcode::
-  
+
     import holopy as hp
     from holopy.scattering import calc_holo, Sphere
 
 load the relevant modules from HoloPy that we'll need for doing our
-calculation.  The next lines describes the scatterer we would like to model:
+calculation.  The next line describes the scatterer we would like to model:
 
 ..  testcode::
-        
+
     sphere = Sphere(n = 1.59, r = .5, center = (4, 4, 5))
 
-We will be scattering light off a :class:`~holopy.scattering.scatterer` object, specifically a
-:class:`.Sphere`. A :class:`~holopy.scattering.scatterer` object
-contains information about the geometry (position, size, shape) and
-optical properties (refractive index) of the object that is scattering
-light.  We've defined a spherical scatterer with radius 0.5 microns and index of refraction
-1.59. This refractive index is approximately that of polystyrene.
-Next, we need to describe how we are illuminating our sphere, and how that light will be detected: 
+We will be scattering light off a :class:`~holopy.scattering.scatterer` object,
+specifically a :class:`.Sphere`. A :class:`~holopy.scattering.scatterer` object
+contains information about the geometry (position, size, shape) and optical
+properties (refractive index) of the object that is scattering light. We've
+defined a spherical scatterer with radius 0.5 microns and index of refraction
+1.59. This refractive index is approximately that of polystyrene. Next, we need
+to describe how we are illuminating our sphere, and how that light will be
+detected:
 
 ..  testcode::
 
@@ -51,15 +52,18 @@ Next, we need to describe how we are illuminating our sphere, and how that light
     illum_polarization = (1,0)
     detector = hp.detector_grid(shape = 100, spacing = .1)
 
-We are going to be using red light (wavelength = 660 nm in vacuum) polarized in the x-direction to 
-illuminate a sphere immersed in water (refractive index = 1.33). Refer to 
-:ref:`units` and :ref:`coordinate_system` if you're confused about how 
-the wavelength and polarization are specified.
+We are going to be using red light (wavelength = 660 nm in vacuum) polarized in
+the x-direction to illuminate a sphere immersed in water (refractive index =
+1.33). Refer to :ref:`units` and :ref:`coordinate_system` if you're confused
+about how the wavelength and polarization are specified.
 
-The scattered light will be collected at a detector, which is frequently a digital camera mounted onto a microscope. 
-Our detector is defined as a 100 x 100 pixel array, with each square pixel of side length .1 microns. 
-The ``shape`` argument tells HoloPy how many pixels are in the detector and affects computation time.
-The ``spacing`` argument tells HoloPy how far apart each pixel is. Both paramaters affect the absolute size of the detector.
+The scattered light will be collected at a detector, which is frequently a
+digital camera mounted onto a microscope.  Our detector is defined as a 100 x
+100 pixel array, with each square pixel of side length .1 microns.  The
+``shape`` argument tells HoloPy how many pixels are in the detector and affects
+computation time. The ``spacing`` argument tells HoloPy how far apart each
+pixel is. Both parameters affect the absolute size of the detector.
+
 
 After getting everything ready, the actual scattering calculation is straightforward:
 
@@ -68,15 +72,14 @@ After getting everything ready, the actual scattering calculation is straightfor
     holo = calc_holo(detector, sphere, medium_index, illum_wavelen, illum_polarization)
     hp.show(holo)
 
-Congratulations! You just calculated the in-line hologram
-generated at the detector plane by interference between the
-scattered field and the reference wave. For an in-line
-hologram, the reference wave is simply the part of the field that is not scattered 
-or absorbed by the particle.
+Congratulations! You just calculated the in-line hologram generated at the
+detector plane by interference between the scattered field and the reference
+wave. For an in-line hologram, the reference wave is simply the part of the
+field that is not scattered or absorbed by the particle.
 
 ..  testcode::
     :hide:
-    
+
     print(holo[0,0].values)
 
 ..  testoutput::
@@ -84,14 +87,18 @@ or absorbed by the particle.
 
     [ 1.01201782]
 
-You might have noticed that our scattering calculation requires much of the same metadata we specified when loading an image.
-If we have an experimental image from the sysetm we would like to model, we can use that as an argument
-in :func:`.calc_holo` instead of our ``detector`` object created from :func:`.detector_grid`. Holopy will calculate a hologram
-image with pixels at the same positions as the experimental image, and so we don't need to worry about making a :func:`.detector_grid`
-with the correct ``shape`` and ``spacing`` arguments.
+You might have noticed that our scattering calculation requires much of the same
+metadata we specified when loading an image. If we have an experimental image
+from the system we would like to model, we can use that as an argument in
+:func:`.calc_holo` instead of our ``detector`` object created from
+:func:`.detector_grid`. HoloPy will calculate a hologram image with pixels at
+the same positions as the experimental image, and so we don't need to worry
+about making a :func:`.detector_grid` with the correct ``shape`` and ``spacing``
+arguments.
+
 
 ..  testcode::
-    
+
     from holopy.core.io import get_example_data_path
     imagepath = get_example_data_path('image0002.h5')
     exp_img = hp.load(imagepath)
@@ -99,25 +106,28 @@ with the correct ``shape`` and ``spacing`` arguments.
 
 ..  testcode::
     :hide:
-    
+
     print(exp_img.shape)
     print(holo[0,0].values)
 
 ..  testoutput::
     :hide:
-    
+
     (1, 100, 100)
     [ 1.01201782]
 
-Note that we didn't need to explicitly specify illumination information when calling :func:`.calc_holo`, since our image contained saved metadata and HoloPy used its values.
-Passing an image to a scattering function is particularly useful when comparing simulated data to experimental results, since we can easily recreate our experimental conditions exactly.
+Note that we didn't need to explicitly specify illumination information when
+calling :func:`.calc_holo`, since our image contained saved metadata and HoloPy
+used its values. Passing an image to a scattering function is particularly
+useful when comparing simulated data to experimental results, since we can
+easily recreate our experimental conditions exactly.
 
-
-So far all of the images we have calculated are holograms, or the interference pattern that results
-from the superposition of a scattered wave with a reference wave. Holopy can also be used to
-examine scattered fields on their own. Simply replace :func:`.calc_holo` with :func:`.calc_field` to look 
-at scattered electric fields (complex) or :func:`.calc_intensity` to look at field amplitudes, which
-is the typical measurement in a light scattering experiment.
+So far all of the images we have calculated are holograms, or the interference
+pattern that results from the superposition of a scattered wave with a reference
+wave. Holopy can also be used to examine scattered fields on their own. Simply
+replace :func:`.calc_holo` with :func:`.calc_field` to look at scattered
+electric fields (complex) or :func:`.calc_intensity` to look at field
+amplitudes, which is the typical measurement in a light scattering experiment.
 
 .. _more_scattering_ex:
 
@@ -148,10 +158,11 @@ list of refractive indices and radii corresponding to the layers
 
     0.9750608553730731
     
-If you prefer thinking in terms of the thickness of subsequent layers, instead of their distance from the center,
-you can use :func:`.LayeredSphere` to achieve the same result:
+If you prefer thinking in terms of the thickness of subsequent layers, instead
+of their distance from the center, you can use :func:`.LayeredSphere` to achieve
+the same result:
 
-..testcode::
+..  testcode::
     
     from holopy.scattering import LayeredSphere
     coated_sphere = LayeredSphere(center=(2.5, 5, 5), n=(1.59, 1.42), t=(0.3, 0.3))
@@ -195,7 +206,8 @@ sphere objects and passing a longer list of spheres to the
 Customizing Scattering Calculations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-While the examples above will be sufficient for most purposes, there are a few additional options that are useful in certain scenarios.
+While the examples above will be sufficient for most purposes, there are a few
+additional options that are useful in certain scenarios.
 
 Scattering Theories in HoloPy
 -----------------------------
@@ -235,18 +247,23 @@ calling the :func:`.calc_holo` function:
     
     1.0480235432374045
 
-Holopy can also access a discrete dipole approximation (DDA) theory to model arbitrary
-non-spherical objects. See the :ref:`dda_tutorial` tutorial for more details.
-It is fairly easy to add your own scattering theory to HoloPy. See :ref:`scat_theory` for details.
-If you think your new scattering theory may be useful for other users, please consider submitting a `pull request <https://github.com/manoharan-lab/holopy/pulls>`_.
+Holopy can also access a discrete dipole approximation (DDA) theory to model
+arbitrary non-spherical objects. See the :ref:`dda_tutorial` tutorial for more
+details. It is fairly easy to add your own scattering theory to HoloPy. See
+:ref:`scat_theory` for details. If you think your new scattering theory may be
+useful for other users, please consider submitting a `pull request
+<https://github.com/manoharan-lab/holopy/pulls>`_.
 
 Detector Types in HoloPy
 ------------------------
 
-The :func:`.detector_grid` function we saw earlier creates holograms that display nicely and are easily compared to experimental images.
-However, they can be computationally expensive, as they require calculations of the electric field at many points. If you only need to
-calculate values at a few points, or if your points of interest are not arranged in a 2D grid, you can use :func:`.detector_points`,
-which accepts either a dictionary of coordinates or indvidual coordinate dimensions:
+The :func:`.detector_grid` function we saw earlier creates holograms that
+display nicely and are easily compared to experimental images. However, they can
+be computationally expensive, as they require calculations of the electric field
+at many points. If you only need to calculate values at a few points, or if your
+points of interest are not arranged in a 2D grid, you can use
+:func:`.detector_points`, which accepts either a dictionary of coordinates or
+indvidual coordinate dimensions:
     
 ..  testcode::
     
@@ -267,8 +284,10 @@ which accepts either a dictionary of coordinates or indvidual coordinate dimensi
     
     0.0
 
-The coordinates for :func:.`detector_points` can be specified in terms of either Cartesian or spherical coordinates. If spherical coordinates are used, the
-the ``center`` value of your scatterer is ignored and the coordinates are interpreted as being relative to the scatterer.
+The coordinates for :func:`.detector_points` can be specified in terms of either
+Cartesian or spherical coordinates. If spherical coordinates are used, the
+``center`` value of your scatterer is ignored and the coordinates are
+interpreted as being relative to the scatterer.
 
 
 Static light scattering calculations 
@@ -276,10 +295,15 @@ Static light scattering calculations
 
 Scattering Matrices
 -------------------
-In a static light scattering measurement you record the scattered
-intensity at a number of angles. In this kind of experiment you are
-usually not interested in the exact distance of the detector from the
-particles, and so it's most convenient to work with scattering matrices. 
+In a static light scattering measurement you record the scattered intensity at a
+number of locations. A common experimental setup contains multiple detectors at
+a constant radial distance from a sample (or a single detector on a goniometer
+arm that can swing to multiple angles.) In this kind of experiment you are
+usually assuming that the detector is far enough away from the particles that
+the far-field approximation is valid, and you are usually not interested in the
+exact distance of the detector from the particles. So, it's most convenient to
+work with amplitude scattering matrices that are angle-dependent. (See
+[Bohren1983]_ for further mathematical description.)
 
 ..  testcode::
 
@@ -316,14 +340,19 @@ to look at scattering matrices on a semilog plot. You can make one as follows:
 
 .. plot:: pyplots/calc_scat_matr.py
 
+You are usually interested in the intensities of the scattered fields, which are 
+proportional to the modulus squared of the amplitude scattering matrix. The 
+diagonal elements give the intensities for the incident light and the scattered light
+both polarized parallel and perpendicular to the scattering plane, respectively.
+
 Scattering Cross-Sections
 -------------------------
 
-The scattering cross section provides a measure of how much light from an incident 
-beam is scattered by a particular scatterer. Similar to calculating scattering matrices,
-we can omit the position of the scatterer for calculation of cross sections.
-Since cross sections integrates over all angles, we can also omit the 
-``detector`` argument entirely:
+The scattering cross section provides a measure of how much light from an
+incident beam is scattered by a particular scatterer. Similar to calculating
+scattering matrices, we can omit the position of the scatterer for calculation
+of cross sections. Since cross sections integrates over all angles, we can also
+omit the ``detector`` argument entirely:
 
 ..  testcode::
 
@@ -340,6 +369,8 @@ Since cross sections integrates over all angles, we can also omit the
 
     [ 1.93274289  0.          1.93274289  0.91619823]
 
-x_sec returns an array containing four elements. The first element is the scattering cross section, specified in terms of the same
-units as wavelength and particle size. The second and third elements are the absorption
-and extinction cross sections, respectively. The final element is the average value of the cosine of the scattering angle.
+x_sec returns an array containing four elements. The first element is the
+scattering cross section, specified in terms of the same units as wavelength and
+particle size. The second and third elements are the absorption and extinction
+cross sections, respectively. The final element is the average value of the
+cosine of the scattering angle.

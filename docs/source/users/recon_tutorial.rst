@@ -73,24 +73,25 @@ You can display the reconstruction with :func:`.show`::
   
   hp.show(rec_vol)
 
-Pressing the left and right arrow keys steps through volumes slices - 
-propagation to different z-planes. 
-(Don't use the down arrow key; it will mess up the stepping due to a
-peculiarity of Matplotlib. If this happens, close your plot window and
-show it again. Sorry.). If the left and right arrow keys don't do anything, you might need to set your matplotlib backend. Refer to :ref:`usage` for instructions.
+Pressing the left and right arrow keys steps through volumes slices -
+propagation to different z-planes. (Don't use the down arrow key; it will mess
+up the stepping due to a peculiarity of Matplotlib. If this happens, close your
+plot window and show it again. Sorry.). If the left and right arrow keys don't
+do anything, you might need to set your matplotlib backend. Refer to
+:ref:`usage` for instructions.
 
 Reconstructions are actually comprised of complex numbers. :func:`.show`
-defaults to showing you the amplitude of the image. You can get
-different, and sometimes better, contrast by viewing the phase angle or
-imaginary part of the reconstruction::
+defaults to showing you the amplitude of the image. You can get different, and
+sometimes better, contrast by viewing the phase angle or imaginary part of the
+reconstruction::
 
   hp.show(rec_vol.imag)
   hp.show(np.angle(rec_vol))
 
-These phase sensitive visualizations will change contrast as you step
-through because you hit different places in the phase period. Such a
-reconstruction will work better if you use steps that are an integer
-number of wavelengths in medium:
+These phase sensitive visualizations will change contrast as you step through
+because you hit different places in the phase period. Such a reconstruction will
+work better if you use steps that are an integer number of wavelengths in
+medium:
 
 ..  testcode::
     

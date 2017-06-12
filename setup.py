@@ -35,14 +35,15 @@ from numpy.distutils.core import setup, Extension
 
 # this will automatically build the scattering extensions, using the
 # setup.py files located in their subdirectories
-def configuration(parent_package='',top_path=None):
+def configuration(parent_package='',top_path=''):
     from numpy.distutils.misc_util import Configuration
-    config = Configuration('',parent_package,top_path)
+    config = Configuration(None,parent_package,top_path)
 
-    pkglist=setuptools.find_packages()    
+    pkglist=setuptools.find_packages()
+    print(pkglist)
     for i in pkglist:
-        config.add_subpackage(i)    
-    
+        config.add_subpackage(i)
+
     config.add_data_files(['.',['AUTHORS']])
     config.add_data_files('holopy/scattering/tests/gold/full_data/*.h5')
     config.add_data_files('holopy/scattering/tests/gold/*.yaml')
@@ -62,13 +63,15 @@ except ImportError:
     pass
 
 if __name__ == "__main__":
+    requires=[l for l in open("requirements.txt").readlines() if l[0] != '#']
     setup(configuration=configuration,
           name='HoloPy',
           version=__version__,
           description='Holography in Python',
-          requires=['numpy', 'scipy', 'PyYAML', 'pillow','h5py','emcee','matplotlib','xarray','h5netcdf'],
+          install_requires=requires,
           author='Manoharan Lab, Harvard University',
           author_email='vnm@seas.harvard.edu',
           url='http://manoharan.seas.harvard.edu/holopy',
           license='GNU GPL',
+          test_suite='nose.collector',
           package=['HoloPy'])

@@ -9,8 +9,10 @@ The drawback is that good intial guesses of each parameter are required to obtai
 
 ..  note::
 
-    The HoloPy fitting methods have been superseded by the Bayesian inference techniques described in the :ref:`.infer_tutorial` tutorial. 
-    We strongly recommend that approach unless you have a good reason that fitting is preferable in your particular situation.
+    The HoloPy fitting methods have been superseded by the Bayesian inference
+    techniques described in the :ref:`infer_tutorial` tutorial. We strongly
+    recommend that approach unless you have a good reason that fitting is
+    preferable in your particular situation.
 
 A Simple Fit
 ~~~~~~~~~~~~
@@ -92,11 +94,12 @@ the data with::
 
   result_holo = calc_holo(data_holo, result.scatterer, scaling=result.alpha)
 
-Finally, we save the result with:
+Finally, we save the result with::
 
   hp.save('result.h5', result)
 
-..  _random_subset:
+.. _random_subset:
+
 Speeding up Fits with Random Subset Fitting
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
