@@ -40,11 +40,23 @@ from .mie_specfuncs import Qratio, log_der_13, riccati_psi_xi
 def scatcoeffs_multi(marray, xarray, eps1 = 1e-3, eps2 = 1e-16):
     '''
     Calculate scattered field expansion coefficients (in the Mie formalism)
-    for a particle with an arbitrary number of layers.
+    for a particle with an arbitrary number of spherically symmetric layers.
 
-    Inputs:
-    marray: numpy array of layer indices, innermost first
-    xarray: numpy array of layer size parameters (k * radius), innermost first
+    Parameters
+    ----------
+    marray : array_like, complex128
+        array of layer indices, innermost first
+    xarray : array_like, real 
+        array of layer size parameters (k * outer radius), innermost first
+    eps1 : float, optional
+        underflow criterion for Lentz continued fraction for Dn1
+    eps2 : float, optional
+        convergence criterion for Lentz continued fraction for Dn1
+
+    Returns
+    -------
+    scat_coeffs : ndarray (complex)
+        Scattering coefficients
     '''
     # ensure correct data types
     marray = np.array(marray, dtype = 'complex128')
