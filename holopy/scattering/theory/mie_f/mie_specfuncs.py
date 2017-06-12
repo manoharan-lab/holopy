@@ -130,8 +130,8 @@ def Qratio(z1, z2, nstop, dns1 = None, dns2 = None, eps1 = 1e-3, eps2 = 1e-16):
     z2 = np.complex128(z2)
 
     if dns1 == None:
-        logdersz1 = LogDer13(z1, nstop, eps1, eps2)
-        logdersz2 = LogDer13(z2, nstop, eps1, eps2)
+        logdersz1 = log_der_13(z1, nstop, eps1, eps2)
+        logdersz2 = log_der_13(z2, nstop, eps1, eps2)
         d1z1 = logdersz1[0]
         d3z1 = logdersz1[1]
         d1z2 = logdersz2[0]
