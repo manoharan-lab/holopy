@@ -1,9 +1,30 @@
 ..  _dev_tutorial
 
 Developer's Guide
-=================
 
-.. _xarray:
+.. _dev_install:
+Installing HoloPy for Developers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If you are going to hack on holopy, you probably only want to compile the
+scattering extensions.
+
+Download or clone the latest version of HoloPy from Git Hub at `https://github.com/manoharan-lab/holopy <https://github.com/manoharan-lab/holopy>`_. 
+
+Let's say you downloaded or cloned HoloPy to
+``/home/me/holopy``. Then open a terminal, ``cd`` to ``/home/me/holopy`` and run::
+    python setup.py build_ext --inplace
+
+This puts the extensions inside the source tree, so that you can work
+directly from ``/home/me/holopy``.  You will need to add
+``/home/me/holopy`` to your python_path for python to find the
+module when you import it.
+
+**Note for Mac users:** gfortran may put its library in a place python can't find it. If you get errors including something like ``can't find /usr/local/libgfortran.3.dynlib`` you can symlink them in from your install. You can do this by running::
+
+  sudo ln -s /usr/local/gfortran/lib/libgfortran.3.dynlib /usr/local/lib
+  sudo ln -s /usr/local/gfortran/lib/libquadmath.3.dynlib /usr/local/lib
+
+..  _xarray:
 
 How HoloPy Stores Data
 ~~~~~~~~~~~~~~~~~~~~~~
