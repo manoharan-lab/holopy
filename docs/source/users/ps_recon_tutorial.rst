@@ -3,20 +3,19 @@
 Reconstructing Point Source Holograms (Numerical Propagation)
 ===========================================
 
-Holograms are typically reconstructed optically by shining light back
-through them.  This corresponds mathematically to propagating the
-field stored in the hologram to some different plane. The propagation 
-performed here assumes that the hologram was recorded using a 
-point source (diverging spherical wave) as the light source. This is 
-also known as lens-free holography. Note that this is different than 
-than propagation calculations where a collimated light source (plane
-wave) is used. For recontructions using a plane wave see
-:ref:`recon_tutorial`.
+Holograms are typically reconstructed optically by shining light back through
+them. This corresponds mathematically to propagating the field stored in the
+hologram to some different plane. The propagation performed here assumes that
+the hologram was recorded using a point source (diverging spherical wave) as the
+light source. This is also known as lens-free holography. Note that this is
+different than propagation calculations where a collimated light source (plane
+wave) is used. For recontructions using a plane wave see :ref:`recon_tutorial`.
 
-This point-source propagation calculation is an implementation of the
-algorithm that appears in `Jericho and Kreuzer 2010 <http://link.springer.com/chapter/10.1007%2F978-3-642-15813-1_1>`_. 
-Curently, only square input images and propagation through media with
-a refractive index of 1 are supported.
+This point-source propagation calculation is an implementation of the algorithm
+that appears in `Jericho and Kreuzer 2010
+<http://link.springer.com/chapter/10.1007%2F978-3-642-15813-1_1>`_. Curently,
+only square input images and propagation through media with a refractive index
+of 1 are supported.
 
 Example Reconstruction
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -24,7 +23,7 @@ Example Reconstruction
 .. plot:: pyplots/basic_ps_recon.py
    :include-source:
 
-We'll examine each section of code in turn. The first block:
+We'll examine each bsection of code in turn. The first block:
 
 ..  testcode::
 
