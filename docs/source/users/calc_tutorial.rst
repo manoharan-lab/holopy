@@ -30,7 +30,7 @@ We'll examine each section of code in turn.  The first few lines :
     from holopy.scattering import calc_holo, Sphere
 
 load the relevant modules from HoloPy that we'll need for doing our
-calculation.  The next lines describes the scatterer we would like to model:
+calculation.  The next line describes the scatterer we would like to model:
 
 ..  testcode::
         
@@ -59,7 +59,7 @@ the wavelength and polarization are specified.
 The scattered light will be collected at a detector, which is frequently a digital camera mounted onto a microscope. 
 Our detector is defined as a 100 x 100 pixel array, with each square pixel of side length .1 microns. 
 The ``shape`` argument tells HoloPy how many pixels are in the detector and affects computation time.
-The ``spacing`` argument tells HoloPy how far apart each pixel is. Both paramaters affect the absolute size of the detector.
+The ``spacing`` argument tells HoloPy how far apart each pixel is. Both parameters affect the absolute size of the detector.
 
 After getting everything ready, the actual scattering calculation is straightforward:
 
@@ -85,8 +85,8 @@ or absorbed by the particle.
     [ 1.01201782]
 
 You might have noticed that our scattering calculation requires much of the same metadata we specified when loading an image.
-If we have an experimental image from the sysetm we would like to model, we can use that as an argument
-in :func:`.calc_holo` instead of our ``detector`` object created from :func:`.detector_grid`. Holopy will calculate a hologram
+If we have an experimental image from the system we would like to model, we can use that as an argument
+in :func:`.calc_holo` instead of our ``detector`` object created from :func:`.detector_grid`. HoloPy will calculate a hologram
 image with pixels at the same positions as the experimental image, and so we don't need to worry about making a :func:`.detector_grid`
 with the correct ``shape`` and ``spacing`` arguments.
 
