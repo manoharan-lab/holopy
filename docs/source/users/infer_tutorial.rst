@@ -211,11 +211,13 @@ other sigma with an argument to the function) credibility intervals. You can als
     result.mean
     result.median
 
-Since calculation of useful results takes a long time, you will usually want to save them to an hdf5 file:
+Since calculation of useful results takes a long time, you will usually want to save them to an hdf5 file::
+    
+    hp.save('example-sampling.h5', result)
 
 ..  testcode::
 
-   hp.save('example-sampling.h5', result)
+   #hp.save('example-sampling.h5', result)
 
 References
 ~~~~~~~~~~
