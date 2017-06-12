@@ -3,20 +3,19 @@
 Reconstructing Point Source Holograms (Numerical Propagation)
 ===========================================
 
-Holograms are typically reconstructed optically by shining light back
-through them.  This corresponds mathematically to propagating the
-field stored in the hologram to some different plane. The propagation 
-performed here assumes that the hologram was recorded using a 
-point source (diverging spherical wave) as the light source. This is 
-also known as lens-free holography. Note that this is different than 
-than propagation calculations where a collimated light source (plane
-wave) is used. For recontructions using a plane wave see
-:ref:`recon_tutorial`.
+Holograms are typically reconstructed optically by shining light back through
+them. This corresponds mathematically to propagating the field stored in the
+hologram to some different plane. The propagation performed here assumes that
+the hologram was recorded using a point source (diverging spherical wave) as the
+light source. This is also known as lens-free holography. Note that this is
+different than propagation calculations where a collimated light source (plane
+wave) is used. For recontructions using a plane wave see :ref:`recon_tutorial`.
 
-This point-source propagation calculation is an implementation of the
-algorithm that appears in `Jericho and Kreuzer 2010 <http://link.springer.com/chapter/10.1007%2F978-3-642-15813-1_1>`_. 
-Curently, only square input images and propagation through media with
-a refractive index of 1 are supported.
+This point-source propagation calculation is an implementation of the algorithm
+that appears in `Jericho and Kreuzer 2010
+<http://link.springer.com/chapter/10.1007%2F978-3-642-15813-1_1>`_. Curently,
+only square input images and propagation through media with a refractive index
+of 1 are supported.
 
 Example Reconstruction
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -24,7 +23,7 @@ Example Reconstruction
 .. plot:: pyplots/basic_ps_recon.py
    :include-source:
 
-We'll examine each section of code in turn. The first block:
+We'll examine each bsection of code in turn. The first block:
 
 ..  testcode::
 
@@ -129,30 +128,30 @@ Magnification and Output Image Size
 Unlike the case where a collimated beam is used as the illumination
 and the pixel spacing in the reconstruction is the same as in the 
 original hologram, for lens-free reconstructions the pixel spacing
-in the reconstruction can be chosen arbitraily. In order to magnify 
+in the reconstruction can be chosen arbitrarily. In order to magnify 
 the reconstruction the spacing in the reconstruction plane should be 
 smaller than spacing in the original hologram. In the code above, the
 magnification of the reconstruction can be set using the variable 
-``mag``, or when calling :func:`.ps_propagate` directly the desired
+:func:`.mag`, or when calling :func:`.ps_propagate` directly the desired
 pixel spacing in the reconstruction is specified through the 
-spacing of ``out_schema``. Note that the output spacing will not be
-the spacing of ``out_schema`` exactly, but should be within a few
-percent of it. We recommend calling ``get_spacing(recons)`` to get 
+spacing of :func:`.out_schema`. Note that the output spacing will not be
+the spacing of :func:`.out_schema` exactly, but should be within a few
+percent of it. We recommend calling :func:`.get_spacing(recons)` to get 
 the actual spacing used.
 
 Note that the total physical size of the plane that is reconstructed 
 remains the same when different output pixel spacings are used. This 
 means that reconstructions with large output spacings will only have
-a small nunber of pixels, and reconstructions with small output
+a small number of pixels, and reconstructions with small output
 spacings will have a large number of pixels. If the linear size (in 
 pixels) of the total reconstruction plane is smaller than 
-``npix_out``, the entire recontruction plane will be returned. 
+:func:`.npix_out`, the entire reconstruction plane will be returned. 
 However, if the linear size of total reconstruction plane is
-larger than ``npix_out``, only the center region of the 
-reconstruction plane with linear size ``npix_out`` is returned.
+larger than :func:`.npix_out`, only the center region of the 
+reconstruction plane with linear size :func:`.npix_out` is returned.
 
 In the current version of the code, the amount of memory needed to 
-perform a reconstruction scales with ``mag``:sup:`2`. Presumably this
+perform a reconstruction scales with :func:`.mag`:sup:`2`. Presumably this
 limitation can be overcome by implementing the steps described in the
 *Convolution* section of the *Appendix* of 
 `Jericho and Kreuzer 2010 <http://link.springer.com/chapter/10.1007%2F978-3-642-15813-1_1>`_. 

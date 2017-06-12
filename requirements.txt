@@ -26,5 +26,5 @@ pillow
 h5py
 emcee
 matplotlib
-xarray
+xarray>=0.9
 h5netcdf
