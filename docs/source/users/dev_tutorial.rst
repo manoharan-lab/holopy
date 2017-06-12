@@ -1,6 +1,7 @@
 ..  _dev_tutorial
 
 Developer's Guide
+=================
 
 .. _dev_install:
 Installing HoloPy for Developers
