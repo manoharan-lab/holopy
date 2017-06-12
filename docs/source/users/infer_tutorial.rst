@@ -108,9 +108,9 @@ In statistics, we call this a prior. For the case we are
 investigating here, you would probably have some best guess and
 uncertainty about the size and index of your particle, obtained from the supplier or from prior
 work with the particle. We will guess radius to be 0.5 microns (with 50 nm error) and refractive index to be 1.5 (with 0.1 error).
-We also need to provided a prior for the position of the sphere.
+We also need to provide a prior for the position of the sphere.
 We can use a :func:`.hough` transform to get a pretty good guess
-of where the particle is in x and y, but it is difficul to determine where it is in z.
+of where the particle is in x and y, but it is difficult to determine where it is in z.
 
 ..  note::
     One trick to get a better estimate of z position is to numerically propagate the hologram backwards in space 
@@ -154,7 +154,7 @@ and index. In the language of statistics, this is referred to as a likelihood.
 In order to compute a likelihood, you need some estimate of how noisy your data
 is (so that you can figure out how likely it is that the differences between
 your model and data could be explained by noise). Here we use the standard
-deviation of the data, which is an overestimate of the true noise, since it also includes variaion due to our signal. 
+deviation of the data, which is an overestimate of the true noise, since it also includes variation due to our signal. 
 
 ..  testcode::
 
@@ -193,12 +193,12 @@ In our last line of code, we have adjusted three parameters to make the code run
 ``nwalkers`` describes the number of scatterers produced in each generation.
 ``samples`` describes how many generations of scatterers to produce. 
 Together, they define how many scatterering calculations must be performed. 
-For the values chosen inthe fast code, a Monte Carlo steady state will not yet have been achieved, so the resulting posterior distribution is not very meaningful.
+For the values chosen in the fast code, a Monte Carlo steady state will not yet have been achieved, so the resulting posterior distribution is not very meaningful.
 ``max_pixels`` describes the maximum number of pixels compared between the experimental holgoram and the test holograms.
 It turns out that holograms contain a lot of redundant information (e.g. radial symmetry), so a subset of pixels can be analyzed without loss of accuracy.
 However, 100 pixels is probably too few to capture all of the relevant information in the hologram. 
 
-You can get a quick look at our obtained values with::
+You can get a quick look at our obtained values with:
 
 ..  testcode::
 
@@ -211,7 +211,7 @@ other sigma with an argument to the function) credibility intervals. You can als
     result.mean
     result.median
 
-Since calculation of useful results takes a long time, you will usually want to save them to an hdf5 file::
+Since calculation of useful results takes a long time, you will usually want to save them to an hdf5 file:
 
 ..  testcode::
 
