@@ -17,6 +17,7 @@ closest to our measured hologram. We can then use known information about the
 scatterers to determine which exact scatterer parameters were most likely to
 have produced the observed hologram.
 
+
 In this example, we will infer the size, refractive index, and position of a spherical scatterer::
 
     import holopy as hp
