@@ -92,7 +92,7 @@ the data with::
 
   result_holo = calc_holo(data_holo, result.scatterer, scaling=result.alpha)
 
-Finally, we save the result with:
+Finally, we save the result with::
 
   hp.save('result.h5', result)
 
