@@ -4,8 +4,8 @@
 User Guide
 ==========
 
-Skip to the :ref:`load_tutorial` if you already have HoloPy installed and want to
-get started quickly.
+Skip to the :ref:`load_tutorial` tutorial if you already have HoloPy installed
+and want to get started quickly.
 
 .. toctree::
    :maxdepth: 1
