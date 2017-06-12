@@ -151,7 +151,7 @@ list of refractive indices and radii corresponding to the layers
 If you prefer thinking in terms of the thickness of subsequent layers, instead of their distance from the center,
 you can use :func:`.LayeredSphere` to achieve the same result:
 
-..testcode::
+..  testcode::
     
     from holopy.scattering import LayeredSphere
     coated_sphere = LayeredSphere(center=(2.5, 5, 5), n=(1.59, 1.42), t=(0.3, 0.3))
@@ -267,7 +267,7 @@ which accepts either a dictionary of coordinates or indvidual coordinate dimensi
     
     0.0
 
-The coordinates for :func:.`detector_points` can be specified in terms of either Cartesian or spherical coordinates. If spherical coordinates are used, the
+The coordinates for :func:`.detector_points` can be specified in terms of either Cartesian or spherical coordinates. If spherical coordinates are used,
 the ``center`` value of your scatterer is ignored and the coordinates are interpreted as being relative to the scatterer.
 
 
