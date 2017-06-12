@@ -11,3 +11,5 @@ holopy/scattering/tests/gold/full_data/*.yaml
 *.eggs
 .ipynb_checkpoints
 HoloPy.egg-info
+.DS_Store
+docs/.DS_Store

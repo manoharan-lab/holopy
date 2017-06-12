@@ -21,6 +21,23 @@ from numpy import sin, cos, arccos, arctan2, sqrt, pi
 from .utils import repeat_sing_dims
 
 def rotate_points(points, theta, phi, psi):
+    """
+    Rotate an array of points about Euler angles in a z, y, z convention.
+
+    Parameters
+    ----------
+    points: array-like (n,3)
+        Set of points to be rotated
+    theta, phi, psi: float
+        Euler rotation angles in z, y, z convention. These are *not* the
+        same as angles in spherical coordinates.
+
+    Returns
+    -------
+    rotated_points: array(n,3)
+        Points rotated by Euler angles
+
+    """
     points = np.array(points)
     rot = rotation_matrix(theta, phi, psi)
     if points.ndim == 1:
@@ -72,6 +89,26 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
                      -ca*sb, sa*sb, cb]).reshape((3,3)) # row major
 
 def to_spherical(x, y, z):
+    """
+    Return the spherical polar coordinates of a point in Cartesian coordinates.
+
+    Parameters
+    ----------
+    x, y, z: float
+        Cartesian coordinates of point
+
+    Returns
+    -------
+    spherical_coords: dict
+        Dictionary of spherical polar coordinates (r, theta, phi) of point
+        with keys 'r', 'theta', 'phi'.
+
+    Notes
+    -----
+    theta is the polar angle measured from the z axis with range (0, pi). 
+    phi is the azimuthal angle with range (0, 2 pi).
+
+    """
     r = sqrt(x**2 + y**2 + z**2)
     theta = arctan2(sqrt(x**2 + y**2), z) #this correctly handles x=y=z=0
     phi = arctan2(y, x)
@@ -80,6 +117,22 @@ def to_spherical(x, y, z):
     return repeat_sing_dims({'r': r, 'theta': theta, 'phi': phi})
 
 def to_cartesian(r, theta, phi):
+    """
+    Returns Cartesian coordinates of a point given in spherical polar 
+    coordinates.
+
+    Parameters
+    ----------
+    r, theta, phi: float
+        Spherical polar coordinates of point.
+
+    Returns
+    -------
+    cartesian_coords: dict
+        Dictionary of Cartesian coordinates of point with keys 'x', 'y', 
+        and 'z'.
+
+    """
     x = r * sin(theta) * cos(phi)
     y = r * sin(theta) * sin(phi)
     z = r * cos(theta)
@@ -105,9 +158,60 @@ def cartesian_distance(p1, p2=[0,0,0]):
     return np.sqrt(np.sum((p1-p2)**2))
 
 def chisq(fit, data):
+    """
+    Calculate per-point value of chi-squared comparing a best-fit model and 
+    data.
+
+    Parameters
+    ----------
+    fit : array_like
+        Values of best-fit model to be compared to data
+    data : array_like
+        Data values to be compared to model
+
+    Returns
+    -------
+    chisq : float
+        Chi-squared per point
+
+    Notes
+    -----
+    chi-squared is defined as 
+
+    .. math::
+        \chi^2 = \frac{1}{N}\sum_{\textrm{points}} (\textrm{fit} - \textrm{data})^2
+
+    where :math:`N` is the number of data points.
+    """
     return float((((fit-data))**2).sum() / fit.size)
 
 def rsq(fit, data):
+    """
+    Calculate correlation coeffiction R-squared comparing a best-fit model
+    and data.
+
+    Parameters
+    ----------
+    fit : array_like
+        Values of best-fit model to be compared to data
+    data : array_like
+        Data values to be compared to model
+
+    Returns
+    -------
+    rsq : float
+        Correlation coefficient R-squared.
+
+    Notes
+    -----
+    R-squared is defined as 
+
+    .. math::
+        R^2 = 1 - \frac{\sum_{\textrm{points}} (\textrm{data} - \textrm{fit})^2}{\sum_{\textrm{points}} (\textrm{data} - \bar{\textrm{data}})^2}
+
+    where :math:`\bar{\textrm{data}}` is the mean value of the data. If the 
+    model perfectly describes the data, :math:`R^2 = 1`.
+    """
     return float(1 - ((data - fit)**2).sum()/((data - data.mean())**2).sum())
 
 

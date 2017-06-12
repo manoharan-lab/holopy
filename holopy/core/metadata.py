@@ -32,6 +32,19 @@ from .math import to_spherical, to_cartesian
 vector = 'vector'
 
 def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None, z=0):
+    """
+    Create a set of detector points along with other experimental metadata.
+
+    Returns
+    -------
+    DataArray object
+
+    Notes
+    -----
+    Use of higher-level detector_grid() and detector_points() functions is 
+    recommended.
+    """
+    
     if spacing is None:
         spacing = 1
         warn("No pixel spacing provided. Setting spacing to 1, but any subsequent calculations will be wrong.")
@@ -46,6 +59,35 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_po
     return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
 
 def detector_grid(shape, spacing, normals = None, name = None):
+    """
+    Create a rectangular grid of pixels to represent a detector on which
+    scattering calculations are to be performed.
+
+    Parameters
+    ----------
+    shape : int or list-like (2)
+        If int, detector is a square grid of shape x shape points. 
+        If array_like, detector has `shape`[0] rows and `shape`[1] columns.
+    spacing : int or list-like (2)
+        If int, distance between square detector pixels.
+        If array_like, `spacing`[0] between adjacent rows and `spacing`[1] 
+        between adjacent columns.
+    normals : list-like or None
+        If list-like, detector orientation.
+    name : string
+
+    Returns
+    -------
+    grid : DataArray object
+        DataArray of zeros with coordinates calculated according to `shape` and
+        `spacing`
+
+    Notes
+    -----
+    Typically used to define a set of points to represent the pixels of a 
+    digital camera in scattering calculations.
+        
+    """
     if np.isscalar(shape):
         shape = np.repeat(shape, 2)
 
@@ -53,6 +95,47 @@ def detector_grid(shape, spacing, normals = None, name = None):
     return data_grid(d, spacing, normals = normals, name = name)
 
 def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta = None, phi = None, normals = 'auto', name = None):
+    """
+    Returns a one-dimensional set of detector coordinates at which scattering 
+    calculations are to be done.
+
+    Parameters
+    ----------
+    coords : dict, optional
+        Dictionary of detector coordinates. Default: empty dictionary.
+        Typical usage should not pass this argument, giving other parameters
+        (Cartesian `x`, `y`, and `z` or polar `r`, `theta`, and `phi` 
+        coordinates) instead.
+    x, y : int or array_like, optional
+        Cartesian x and y coordinates of detectors.
+    z : int or array_like, optional
+        Cartesian z coordinates of detectors. If not specified, assume `z` = 0.
+    r : int or array_like, optional
+        Spherical polar radial coordinates of detectors. If not specified,
+        assume `r` = infinity (far-field).
+    theta : int or array_like, optional
+        Spherical polar coordinates (polar angle from z axis) of detectors.
+    phi : int or array_like, optional
+        Spherical polar azimuthal coodinates of detectors.
+    normals : string, optional
+        Default behavior: normal in +z direction for Cartesian coordinates,
+        -r direction for polar coordinates. Non-default behavior not currently
+        implemented.
+    name : string
+
+    Returns
+    -------
+    grid : DataArray object
+        DataArray of zeros with calculated coordinates.
+
+    Notes
+    -----
+    Specify either the Cartesian or the polar coordinates of your detector. 
+    This may be helpful for modeling static light scattering calculations.
+    Use detector_grid() to specify coordinates of a grid of pixels (e.g., 
+    a digital camera.)
+
+    """
     updatelist = {'x': x, 'y': y, 'z': z, 'r': r, 'theta': theta, 'phi': phi}
     coords = updated(coords, updatelist)
     if 'x' in coords and 'y' in coords:
