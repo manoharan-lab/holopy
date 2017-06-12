@@ -277,9 +277,11 @@ Static light scattering calculations
 Scattering Matrices
 -------------------
 In a static light scattering measurement you record the scattered
-intensity at a number of angles. In this kind of experiment you are
-usually not interested in the exact distance of the detector from the
-particles, and so it's most convenient to work with scattering matrices. 
+intensity at a number of locations. A common experimental setup contains multiple detectors at a constant radial distance from a sample (or a single detector on a
+goniometer arm that can swing to multiple angles.) In this kind of experiment you are
+usually assuming that the detector is far enough away from the particles that the
+far-field approximation is valid, and you are usually not interested in the exact 
+distance of the detector from the particles. So, it's most convenient to work with amplitude scattering matrices that are angle-dependent. (See [Bohren1983]_ for further mathematical description.)
 
 ..  testcode::
 
@@ -315,6 +317,11 @@ to look at scattering matrices on a semilog plot. You can make one as follows:
     plt.show()
 
 .. plot:: pyplots/calc_scat_matr.py
+
+You are usually interested in the intensities of the scattered fields, which are 
+proportional to the modulus squared of the amplitude scattering matrix. The 
+diagonal elements give the intensities for the incident light and the scattered light
+both polarized parallel and perpendicular to the scattering plane, respectively.
 
 Scattering Cross-Sections
 -------------------------
