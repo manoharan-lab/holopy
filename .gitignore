@@ -8,3 +8,6 @@ holopy/scattering/tests/gold/full_data/*.yaml
 .coverage
 .nfs*
 *~
+*.eggs
+.ipynb_checkpoints
+HoloPy.egg-info
