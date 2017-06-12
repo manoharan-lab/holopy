@@ -98,6 +98,7 @@ arguments.
 
 
 ..  testcode::
+
     from holopy.core.io import get_example_data_path
     imagepath = get_example_data_path('image0002.h5')
     exp_img = hp.load(imagepath)
