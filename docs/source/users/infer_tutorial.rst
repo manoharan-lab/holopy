@@ -3,12 +3,20 @@
 Bayesian inference of Parameter Values
 ======================================
 
-:ref:`The calc tutorial <calc_tutorial>` can inform us about the hologram produced by a specific scatterer,
-but they can't tell us anything about what type of scatterer produced an experimentally measured hologram.
-For this reverse problem, we turn to a Bayesian inference approach. We can calculate the
-holograms produced by many similar scatterers, and evaluate which ones are closest to
-our measured hologram. We can then use known information about the scatterers to determine
-which exact scatterer parameters were most likely to have produced the observed hologram.
+
+Note: This section describes how to do Bayesian inference on holograms. For more
+information, see [Dimiduk2016]_. For more information on Bayesian inference in
+general, see [Gregory2005]_.
+
+:ref:`The calc tutorial <calc_tutorial>` can inform us about the hologram
+produced by a specific scatterer, but they can't tell us anything about what
+type of scatterer produced an experimentally measured hologram. For this reverse
+problem, we turn to a Bayesian inference approach. We can calculate the
+holograms produced by many similar scatterers, and evaluate which ones are
+closest to our measured hologram. We can then use known information about the
+scatterers to determine which exact scatterer parameters were most likely to
+have produced the observed hologram.
+
 
 In this example, we will infer the size, refractive index, and position of a spherical scatterer::
 
@@ -211,7 +219,5 @@ Since calculation of useful results takes a long time, you will usually want to 
 
 References
 ~~~~~~~~~~
-
-.. [Dimiduk2016] Dimiduk, T. G., Manoharan, V. N. (2016) Bayesian approach to analyzing holograms of colloidal particles. Optics Express
 
 .. [Gregory2005] Gregory, P. (2005) Bayesian Logical Data Analysis. Cambridge University Press
