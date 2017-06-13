@@ -151,6 +151,3 @@ class ComplexParameter(Parameter):
     @property
     def guess(self):
         return self.real.guess + self.imag.guess*1.0j
-
-# provide a shortcut name for Parameter since users will have to type it a lot
-par = Parameter

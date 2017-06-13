@@ -35,5 +35,5 @@ The fitting module is used to:
 
 from .fit import fit, rsq, chisq, FitResult, make_subset_data
 from .model import Model, Parametrization
-from .parameter import Parameter, par, ComplexParameter
+from .parameter import Parameter, ComplexParameter
 from .minimizer import Nmpfit

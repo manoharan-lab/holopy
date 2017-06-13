@@ -24,7 +24,7 @@ import numpy as np
 from numpy.testing import assert_equal, assert_raises, assert_allclose
 from ...scattering.scatterer import Sphere, Spheres
 from ...core import detector_grid
-from .. import fit, Parameter, par, Model
+from .. import fit, Parameter, Model
 from ..minimizer import Nmpfit
 from ..errors import ParameterSpecificationError, MinimizerConvergenceFailed
 from ...core.tests.common import assert_obj_close
@@ -92,11 +92,11 @@ def test_iter_limit():
     holo = calc_holo(schema, cluster, 1.33, .66, illum_polarization=(1,0))
 
     #trying to do a fast fit:
-    guess1 = Sphere(center = (par(guess = 15, limit = [5,25]), par(15, [5, 25]), par(20, [5, 25])), r = (par(guess = .45, limit=[.4,.6])), n = 1.59)
-    guess2 = Sphere(center = (par(guess = 14, limit = [5,25]), par(14, [5, 25]), par(20, [5, 25])), r = (par(guess = .45, limit=[.4,.6])), n = 1.59)
+    guess1 = Sphere(center = (Parameter(guess = 15, limit = [5,25]), Parameter(15, [5, 25]), Parameter(20, [5, 25])), r = (Parameter(guess = .45, limit=[.4,.6])), n = 1.59)
+    guess2 = Sphere(center = (Parameter(guess = 14, limit = [5,25]), Parameter(14, [5, 25]), Parameter(20, [5, 25])), r = (Parameter(guess = .45, limit=[.4,.6])), n = 1.59)
     par_s = Spheres([guess1,guess2])
 
-    model = Model(par_s, calc_holo, 1.33, .66, illum_polarization=(1, 0), alpha = par(.6, [.1, 1]))
+    model = Model(par_s, calc_holo, 1.33, .66, illum_polarization=(1, 0), alpha = Parameter(.6, [.1, 1]))
     warnings.simplefilter("always")
     result = fit(model, holo, minimizer = Nmpfit(maxiter=2))
     assert_obj_close(gold_fit_dict,result.parameters,rtol=1e-6)
