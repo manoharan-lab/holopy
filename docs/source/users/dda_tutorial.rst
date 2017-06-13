@@ -76,8 +76,8 @@ of two overlapping spheres you could do so like this::
 
 Here we take advantage of the fact that Spheres can tell us if a point
 lies inside them. We use ``s1`` and ``s2`` as purely geometrical
-constructs, so we do not give them indicies of refraction, instead
-specifying n when defining ``dumbell``.
+constructs, so we do not give them indices of refraction, instead
+specifying n when defining ``dumbbell``.
 
 HoloPy contains convenient wrappers for many built-in ADDA constructions. 
 The dumbbell defined explicitly above could also have been defined with the HoloPy :class:`.Bisphere` class instead. 

@@ -223,7 +223,7 @@ A scatterer composed of multiple spheres can exhibit multiple scattering
 and coupling of the near-fields of neighbouring particles. Mie theory doesn't include
 these effects, so :class:`.Spheres` objects are by default calculated using the
 SCSMFO package from `Daniel Mackowski <http://www.eng.auburn.edu/~dmckwski/>`_. 
-This calculation uses transfer matrix methods to give the exact solution to Maxwell's equation
+This calculation uses T-matrix methods to give the exact solution to Maxwell's equation
 for the scattering from an arbitrary arrangement of non-overlapping spheres. 
 
 Sometimes you might want to calculate scattering from multiple spheres 
