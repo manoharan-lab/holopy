@@ -77,10 +77,11 @@ def ps_propagate_plane(data, d, L, beam_c, out_schema = None, old_Ip = False):
     beam_c = [x,y] coodinates of beam center, in pixels
     out_schema = size of output image and pixel spacing, default is the schema of data.
     if Ip == True, returns Ip to be used on calculations in the stack
-        if Ip == False compute reconstructed image as normal
-        if Ip is an image, use this to speed up calculations
+    if Ip == False compute reconstructed image as normal
+    if Ip is an image, use this to speed up calculations
     
-    returns an image(volume) corresponding to the reconstruction at plane(s) d.'''    
+    returns an image(volume) corresponding to the reconstruction at plane(s) d.
+    '''    
 
     npix0 = float(len(data.x)) # size of original image in pixels
     wavelen = float(data.illum_wavelen) #laser wavelength in meters
@@ -214,7 +215,8 @@ def interpolate2D(data,i,j,fill=None):
     
     ''' Interpolates values from a 2D array (data) given non-integer indecies i and j.    
     If [i,j] is outside of the shape of data, fill is returned.
-        If fill=None, the value of the closest edge pixel to (i,j) is used. '''
+    If fill=None, the value of the closest edge pixel to (i,j) is used.
+    '''
 
 
     #only access pixels in the range of the image by replacing out of bounds indecies with an edge index

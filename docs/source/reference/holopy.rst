@@ -1,6 +1,14 @@
 holopy package
 ==============
 
+Module contents
+---------------
+
+.. automodule:: holopy
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
@@ -13,10 +21,4 @@ Subpackages
     holopy.scattering
     holopy.vis
 
-Module contents
----------------
 
-.. automodule:: holopy
-    :members:
-    :undoc-members:
-    :show-inheritance:

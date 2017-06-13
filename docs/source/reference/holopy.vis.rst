@@ -1,8 +1,13 @@
 holopy.vis package
 ==================
 
-Submodules
-----------
+Module contents
+---------------
+
+.. automodule:: holopy.vis
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 holopy.vis.show module
 ----------------------
@@ -29,10 +34,4 @@ holopy.vis.vis3d module
     :show-inheritance:
 
 
-Module contents
----------------
 
-.. automodule:: holopy.vis
-    :members:
-    :undoc-members:
-    :show-inheritance:

@@ -1,8 +1,13 @@
 holopy.core.process package
 ===========================
 
-Submodules
-----------
+Module contents
+---------------
+
+.. automodule:: holopy.core.process
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 holopy.core.process.centerfinder module
 ---------------------------------------
@@ -24,15 +29,6 @@ holopy.core.process.img_proc module
 -----------------------------------
 
 .. automodule:: holopy.core.process.img_proc
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: holopy.core.process
     :members:
     :undoc-members:
     :show-inheritance:

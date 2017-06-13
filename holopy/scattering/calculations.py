@@ -110,7 +110,7 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None, illum_po
     ----------
     scatterer : :class:`.scatterer` object
         (possibly composite) scatterer for which to compute scattering
-     medium_index : float or complex
+    medium_index : float or complex
         Refractive index of the medium in which the scatter is imbedded
     illum_wavelen : float or ndarray(float)
         Wavelength of illumination light. If illum_wavelen is an array result

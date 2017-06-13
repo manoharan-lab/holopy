@@ -158,7 +158,7 @@ def cartesian_distance(p1, p2=[0,0,0]):
     return np.sqrt(np.sum((p1-p2)**2))
 
 def chisq(fit, data):
-    """
+    r"""
     Calculate per-point value of chi-squared comparing a best-fit model and 
     data.
 
@@ -186,7 +186,7 @@ def chisq(fit, data):
     return float((((fit-data))**2).sum() / fit.size)
 
 def rsq(fit, data):
-    """
+    r"""
     Calculate correlation coeffiction R-squared comparing a best-fit model
     and data.
 

@@ -1,7 +1,7 @@
 .. ps_recon_tutorial:
 
-Reconstructing Point Source Holograms (Numerical Propagation)
-===========================================
+Reconstructing Point Source Holograms
+=====================================
 
 Holograms are typically reconstructed optically by shining light back through
 them. This corresponds mathematically to propagating the field stored in the
@@ -136,7 +136,7 @@ magnification of the reconstruction can be set using the variable
 pixel spacing in the reconstruction is specified through the 
 spacing of ``out_schema``. Note that the output spacing will not be
 the spacing of ``out_schema`` exactly, but should be within a few
-percent of it. We recommend calling :func:`.get_spacing` on ``recons`` 
+percent of it. We recommend calling :func:`~holopy.core.metadata.get_spacing` on ``recons`` 
 to get the actual spacing used.
 
 Note that the total physical size of the plane that is reconstructed 

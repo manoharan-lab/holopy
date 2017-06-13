@@ -125,7 +125,7 @@ class FitResult(HoloPyObject):
     ----------
     parameters : array(float)
         The fitted values for each parameter
-    scatterer : :mod:`.scatterer`
+    scatterer : :class:`.Scatterer`
         The best fit scatterer
     chisq : float
         The :math:`\chi^2` goodness of fit

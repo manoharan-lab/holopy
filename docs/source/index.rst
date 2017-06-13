@@ -34,5 +34,4 @@ questions.
    credits
 
 HoloPy is based upon work supported by the National Science Foundation
-under Grant No. CBET-0747625 and performed in the `Manoharan Lab at
-Harvard University <http://manoharan.seas.harvard.edu>`_
+under Grant No. CBET-0747625 and performed at Harvard University in the `Manoharan Lab <http://manoharan.seas.harvard.edu/holopy>`_.

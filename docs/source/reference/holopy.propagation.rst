@@ -1,8 +1,13 @@
 holopy.propagation package
 ==========================
 
-Submodules
-----------
+Module contents
+---------------
+
+.. automodule:: holopy.propagation
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 holopy.propagation.convolution_propagation module
 -------------------------------------------------
@@ -21,10 +26,4 @@ holopy.propagation.point_source_propagate module
     :show-inheritance:
 
 
-Module contents
----------------
 
-.. automodule:: holopy.propagation
-    :members:
-    :undoc-members:
-    :show-inheritance:

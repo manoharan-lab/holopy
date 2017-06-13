@@ -9,8 +9,13 @@ Subpackages
     holopy.scattering.scatterer
     holopy.scattering.theory
 
-Submodules
-----------
+Module contents
+---------------
+
+.. automodule:: holopy.scattering
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 holopy.scattering.calculations module
 -------------------------------------
@@ -29,10 +34,4 @@ holopy.scattering.geometry module
     :show-inheritance:
 
 
-Module contents
----------------
 
-.. automodule:: holopy.scattering
-    :members:
-    :undoc-members:
-    :show-inheritance:

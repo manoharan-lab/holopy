@@ -1,8 +1,13 @@
 holopy.inference package
 ========================
 
-Submodules
-----------
+Module contents
+---------------
+
+.. automodule:: holopy.inference
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 holopy.inference.noise_model module
 -----------------------------------
@@ -37,10 +42,4 @@ holopy.inference.sample module
     :show-inheritance:
 
 
-Module contents
----------------
 
-.. automodule:: holopy.inference
-    :members:
-    :undoc-members:
-    :show-inheritance:
