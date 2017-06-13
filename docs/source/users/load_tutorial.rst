@@ -77,6 +77,7 @@ image that is used to provide spacing and other metadata to the new, averaged im
 
 If you are worried about stray light in your optical train, you should 
 also capture a dark-field image of your sample, recorded with no laser illumination.
+A dark-field image is specified as an optional third argument to :func:`.bg_correct`.
 
 ..  testcode::
 
@@ -94,6 +95,8 @@ also capture a dark-field image of your sample, recorded with no laser illuminat
     :hide:
     
     0.919642857143
+
+Some convenient tools for manipulating image data are included within HoloPy. See the :ref:`tools` page for details.
 
 .. _metadata:
 
@@ -114,7 +117,7 @@ HoloPy all of this information when loading the image:
     raw_holo = hp.load_image(imagepath, spacing=0.0851, medium_index=1.33, illum_wavelen=0.660, illum_polarization=(1,0))
 
 
-You can then view these metadata values as attributes of holo, as in ``holo.medium_index``.
+You can then view these metadata values as attributes of ``raw_holo``, as in ``raw_holo.medium_index``.
 However, you must use a special function :func:`.update_metadata` to edit them. If we forgot to 
 specify metadata when loading the image, we can use :func:`.update_metadata` to add it later:
 

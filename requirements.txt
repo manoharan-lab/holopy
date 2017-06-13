@@ -17,7 +17,7 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 #
 #
-#This file is used by readthedocs to install necessary packages.
+#This file is used by readthedocs and setup.py to install necessary packages.
 #
 numpy>=1.12
 scipy

@@ -39,7 +39,7 @@ loads the relevant modules. The second block:
     
     imagepath = get_example_data_path('ps_image01.jpg')
     bgpath = get_example_data_path('ps_bg01.jpg')
-    L = 0.0407 # distance from light source to screen
+    L = 0.0407 # distance from light source to screen/camera
     cam_spacing = 12e-6 # linear size of camera pixels
     mag = 9.0 # magnification
     npix_out = 1020 # linear size of output image (pixels)
@@ -132,12 +132,12 @@ in the reconstruction can be chosen arbitrarily. In order to magnify
 the reconstruction the spacing in the reconstruction plane should be 
 smaller than spacing in the original hologram. In the code above, the
 magnification of the reconstruction can be set using the variable 
-:func:`.mag`, or when calling :func:`.ps_propagate` directly the desired
+``mag``, or when calling :func:`.ps_propagate` directly the desired
 pixel spacing in the reconstruction is specified through the 
-spacing of :func:`.out_schema`. Note that the output spacing will not be
-the spacing of :func:`.out_schema` exactly, but should be within a few
-percent of it. We recommend calling :func:`.get_spacing(recons)` to get 
-the actual spacing used.
+spacing of ``out_schema``. Note that the output spacing will not be
+the spacing of ``out_schema`` exactly, but should be within a few
+percent of it. We recommend calling :func:`.get_spacing` on ``recons`` 
+to get the actual spacing used.
 
 Note that the total physical size of the plane that is reconstructed 
 remains the same when different output pixel spacings are used. This 
@@ -145,13 +145,13 @@ means that reconstructions with large output spacings will only have
 a small number of pixels, and reconstructions with small output
 spacings will have a large number of pixels. If the linear size (in 
 pixels) of the total reconstruction plane is smaller than 
-:func:`.npix_out`, the entire reconstruction plane will be returned. 
+``npix_out``, the entire reconstruction plane will be returned. 
 However, if the linear size of total reconstruction plane is
-larger than :func:`.npix_out`, only the center region of the 
-reconstruction plane with linear size :func:`.npix_out` is returned.
+larger than ``npix_out``, only the center region of the 
+reconstruction plane with linear size ``npix_out`` is returned.
 
 In the current version of the code, the amount of memory needed to 
-perform a reconstruction scales with :func:`.mag`:sup:`2`. Presumably this
+perform a reconstruction scales with ``mag``:sup:`2`. Presumably this
 limitation can be overcome by implementing the steps described in the
 *Convolution* section of the *Appendix* of 
 `Jericho and Kreuzer 2010 <http://link.springer.com/chapter/10.1007%2F978-3-642-15813-1_1>`_. 

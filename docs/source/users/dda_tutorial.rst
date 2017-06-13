@@ -29,8 +29,8 @@ or::
 
  make OpenCL 
 
-‘make seq’ will not take advantage of any parallel processing of the cores
-on your computer. ‘make’ uses mpi for parallel processing. ‘make OpenCL’ uses 
+``make seq`` will not take advantage of any parallel processing of the cores
+on your computer. ``make`` uses mpi for parallel processing. ``make OpenCL`` uses 
 OpenCL for parallel processing. If the make does not work due to missing packages,
 you will have to download the specified packages and install them.
 
@@ -78,6 +78,10 @@ Here we take advantage of the fact that Spheres can tell us if a point
 lies inside them. We use ``s1`` and ``s2`` as purely geometrical
 constructs, so we do not give them indicies of refraction, instead
 specifying n when defining ``dumbell``.
+
+HoloPy contains convenient wrappers for many built-in ADDA constructions. 
+The dumbbell defined explicitly above could also have been defined with the HoloPy :class:`.Bisphere` class instead. 
+Similar classes exist to define an :class:`.Ellipsoid`, :class:`.Cylinder`, or :class:`.Capsule`.
 
 Mutiple Materials: A Janus Sphere
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

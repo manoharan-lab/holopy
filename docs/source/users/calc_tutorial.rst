@@ -36,8 +36,8 @@ calculation.  The next line describes the scatterer we would like to model:
 
     sphere = Sphere(n = 1.59, r = .5, center = (4, 4, 5))
 
-We will be scattering light off a :class:`~holopy.scattering.scatterer` object,
-specifically a :class:`.Sphere`. A :class:`~holopy.scattering.scatterer` object
+We will be scattering light off a :class:`.Scatterer` object,
+specifically a :class:`.Sphere`. A :class:`.Scatterer` object
 contains information about the geometry (position, size, shape) and optical
 properties (refractive index) of the object that is scattering light. We've
 defined a spherical scatterer with radius 0.5 microns and index of refraction
@@ -58,7 +58,7 @@ the x-direction to illuminate a sphere immersed in water (refractive index =
 about how the wavelength and polarization are specified.
 
 The scattered light will be collected at a detector, which is frequently a
-digital camera mounted onto a microscope.  Our detector is defined as a 100 x
+digital camera mounted onto a microscope.  We defined our detector as a 100 x
 100 pixel array, with each square pixel of side length .1 microns.  The
 ``shape`` argument tells HoloPy how many pixels are in the detector and affects
 computation time. The ``spacing`` argument tells HoloPy how far apart each
@@ -139,7 +139,7 @@ Coated Spheres
 
 HoloPy can also calculate holograms from coated (or multilayered) spheres.
 Constructing a coated sphere differs only in specifying a
-list of refractive indices and radii corresponding to the layers 
+list of refractive indices and outer radii corresponding to the layers 
 (starting from the core and working outwards).
 
 ..  testcode::
@@ -159,7 +159,7 @@ list of refractive indices and radii corresponding to the layers
     0.9750608553730731
     
 If you prefer thinking in terms of the thickness of subsequent layers, instead
-of their distance from the center, you can use :func:`.LayeredSphere` to achieve
+of their distance from the center, you can use :class:`.LayeredSphere` to achieve
 the same result:
 
 ..  testcode::
@@ -222,9 +222,9 @@ Ludvig Lorenz in the early 1900s.
 A scatterer composed of multiple spheres can exhibit multiple scattering 
 and coupling of the near-fields of neighbouring particles. Mie theory doesn't include
 these effects, so :class:`.Spheres` objects are by default calculated using the
-SCSMFO package from `Daniel Mackowski <http://www.eng.auburn.edu/~dmckwski/>`_,
-which gives the exact solution to Maxwell's equation for the scattering from an 
-arbitrary arrangement of non-overlapping spheres. 
+SCSMFO package from `Daniel Mackowski <http://www.eng.auburn.edu/~dmckwski/>`_. 
+This calculation uses transfer matrix methods to give the exact solution to Maxwell's equation
+for the scattering from an arbitrary arrangement of non-overlapping spheres. 
 
 Sometimes you might want to calculate scattering from multiple spheres 
 using Mie theory if you are worried about computation time or if you are

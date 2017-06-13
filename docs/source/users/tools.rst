@@ -65,6 +65,3 @@ When comparing data to a model, the chi-squared and r-squared values provide
 measures of goodness-of-fit. You can access these through :func:`.chisq` and
 :func:`.rsq`.
 
-If you want want to convert between spherical and cartesian coordinates, use
-:func:`.to_cartesian` and :func:`.to_spherical`.
-
