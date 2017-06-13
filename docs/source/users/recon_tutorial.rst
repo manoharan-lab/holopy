@@ -57,7 +57,7 @@ The actual propagation is accomplished with :func:`.propagate`:
     (0.919642857143+0j)
 
 
-Here, HoloPy has projected the hologram image through space to each of the distances contained in :func:`.zstack` by using the metadata that we 
+Here, HoloPy has projected the hologram image through space to each of the distances contained in ``zstack`` by using the metadata that we 
 specified when loading the image. If we forgot to load optical metadata with the image,
 we can explicitly indicate the parameters for propagation to obtain an identical object:
 
@@ -120,9 +120,9 @@ over the specified distance. However, a better reconstruction can sometimes be
 obtained by iteratively propagating the hologram over short distances. This 
 cascaded free space propagation is particularly useful when the reconstructions have
 fine features or when propagating over large distances. For further details, refer to 
-`Kreis 2002 <http://opensample.info/frequency-analysis-of-digital-holography-with-reconstruction-by-convolution>`_.
+`Kreis 2002 <http://dx.doi.org/10.1117/1.1489678>`_.
 
-To implement cascaded free space propagation in HoloPy, simply pass a :func:`.cfsp` variable
+To implement cascaded free space propagation in HoloPy, simply pass a ``cfsp`` argument
 into :func:`.propagate` indicating how many times the hologram should be iteratively
 propagated. For example, to propagate in three steps over each distance, we write:
 

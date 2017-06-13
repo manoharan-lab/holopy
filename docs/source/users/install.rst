@@ -27,8 +27,8 @@ If this line works, skip to :ref:`usage` before diving into the tutorials.
 Dependencies
 ------------
 
-HoloPy depends on numpy, scipy, and xarray. Optional dependencies for certain
-calculations include:
+HoloPy's hard dependencies can be found in `requirements.txt <https://github.com/manoharan-lab/holopy/blob/master/requirements.txt>`_.
+Optional dependencies for certain calculations include:
 
 * `a-dda <http://code.google.com/p/a-dda/>`_ (Discrete Dipole calculations of arbitrary scatterers)
 
@@ -36,6 +36,7 @@ calculations include:
 
 Windows Support
 ---------------
+TODO BY RON
 
 HoloPy is not currently supported on Windows due to Fortran compiler issues. If
 this is an area you know something about, we welcome any assistance in getting
@@ -76,11 +77,13 @@ kernel and immediately enter the ``%matplotlib`` command before doing anything
 else. Sometimes a backend will be chosen for you (that cannot be changed later)
 as soon as you plot something, for example by running ``test_disp()`` or
 :func:`.show`. Trying to set to one of the above backends that is not installed
-will result in an error, but will also prevent you from setting a different
+on your system will result in an error, but will also prevent you from setting a different
 backend until you restart your kernel.
 
 An additional option in Spyder is to change the backend through the menu: Tools
 > Preferences > IPython console > Graphics. It will not take effect until you
 restart your kernel, but it will then remember your backend for future sessions,
-which can be convenient. An additional option in jupyter is to use ``%matplotlib
+which can be convenient.
+
+An additional option in jupyter is to use ``%matplotlib
 nbagg`` to use inline interactive plots.

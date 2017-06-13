@@ -134,7 +134,7 @@ distribution we can use if all we know is some expected value and some
 uncertainty on that expected value. For the radius we also know that it must be
 nonnegative, so we can bound the Gaussian at zero. The
 :func:`.make_center_priors` function automates generating priors for a sphere
-center using :func:`.center_finder` (based on a hough transform). It assigns
+center using :func:`.center_find` (based on a hough transform). It assigns
 Gaussian priors for x and y, and picks a large uniform prior for z to represent
 our ignorance about how far the particle is from the imaging plane. In this case
 the center prior will be::
@@ -191,7 +191,7 @@ parameters that best reproduce the target hologram. We end up with a
 distribution of values for each parameter (the posterior) that represents our
 updated knowledge about the scatterer when accounting for the expected
 experimental hologram. To do the actual sampling, we use
-:func:`.tempered_sample` (ignoring any RuntimeWarnings about invalid values):
+:func:`.tempered_sample` (ignoring any RuntimeWarnings about invalid values)::
 
     result = tempered_sample(model, data_holo)
 
@@ -223,7 +223,7 @@ You can get a quick look at our obtained values with:
 
     result.values()
 
-result.values() gives you the maximum a posteriori probability (MAP) value as
+``result.values()`` gives you the maximum a posteriori probability (MAP) value as
 well as one-sigma credibility intervals (or you can request any other sigma with
 an argument to the function). You can also look only at central measures::
 

@@ -42,16 +42,17 @@ Define a Model
 --------------
 The model specification is a little bit different from the inference case.
 First, we define a parameterized scatterer including initial guesses and absolute bounds
-using the :func:`.par` function. Note that the bounds here are not uncertainty values as in
-the inference case, but instead represent the full allowed range of a parameter (like the :func:`.uniform` prior).
+using the :class:`.Parameter` class. Note that the bounds here are not uncertainty values as in
+the inference case, but instead represent the full allowed range of a parameter (like the :class:`.Uniform` prior).
 The ``center`` coordinates must be specified as (`x`, `y`, and `z`, in that order).
 Here, we will keep particle radius and refractive index fixed. Fitting works best when there are only a few uncertain parameters.
-You can find guesses for `x` and `y` coordinates with :func:`.center_finder`, and guess `z` with :func:`.propagate`.
-In this image (uncropped version), the particle's is near (24, 22, 15), with coordinates in microns. 
+You can find guesses for `x` and `y` coordinates with :func:`.center_find`, and guess `z` with :func:`.propagate`.
+In this image (uncropped version), the particle's center is near (24, 22, 15), with coordinates in microns. 
 
 ..  testcode::
 
-    from holopy.fitting import par, fit, Model
+    from holopy.fitting import fit, Model
+    from holopy.fitting import Parameter as par
     par_s = Sphere(center = (par(guess = 24, limit = [15,30]),
       par(22, [15, 30]), par(15, [10, 20])), r = .5, n = 1.58)
 
@@ -62,8 +63,7 @@ used to define a model:
 
    model = Model(par_s, calc_holo, alpha = par(.6, [.1, 1]))
 
-``alpha`` is an additional fitting parameter first introduced by Lee
-et al. in [Lee2007] (see :ref:`credits` for additional details).
+``alpha`` is an additional fitting parameter first introduced in [Lee2007] (see :ref:`credits` for additional details).
 
 To see how well the guess in your model lines up with the hologram you
 are fitting to, use :

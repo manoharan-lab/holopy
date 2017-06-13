@@ -6,7 +6,7 @@ from scipy.ndimage.measurements import center_of_mass
 
 imagepath = get_example_data_path('ps_image01.jpg')
 bgpath = get_example_data_path('ps_bg01.jpg')
-L = 0.0407 # distance from light source to screen
+L = 0.0407 # distance from light source to screen/camera
 cam_spacing = 12e-6 # linear size of camera pixels
 mag = 9.0 # magnification
 npix_out = 1020 # linear size of output image (pixels)

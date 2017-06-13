@@ -33,7 +33,7 @@ Installation on Windows is still a work in progress, but we have been able to ge
 2. Install the C compiler. It's included in `Visual Studio 2015 Community <https://www.visualstudio.com/downloads/>`_. Make sure it is working with a C helloworld.
 3. From now on, make sure any command prompt window invokes the right environment conditions for compiling with VC. To do this, make sure ``C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat`` is added to the system path variable. This batch detects your architecture, then runs another batch that sets the path include the directory with the correct version of the VC compiler.
 4. Install cython and made sure it works.
-5. Install `Intel's Fortran compiler <https://software.intel.com/en-us/fortran-compilers/try-buy>`_. I downloaded the trial version of what is called Parallel Studio XE. Make sure it is working with a Fortran helloworld.
+5. Install `Intel's Fortran compiler <https://software.intel.com/en-us/fortran-compilers/try-buy>`_. A good place to start is the trial version of Parallel Studio XE. Make sure it is working with a Fortran helloworld.
 6. Download or clone HoloPy from `https://github.com/manoharan-lab/holopy <https://github.com/manoharan-lab/holopy>`_. 
 7. Open the command prompt included in Intel's Parallel Studio. Run ``holopy/setup.py``. It is necessay to use Intel's Parallel Studio command prompt to avoid compiling errors.
 8. Install the following dependencies that don't come with Anaconda::
@@ -41,7 +41,7 @@ Installation on Windows is still a work in progress, but we have been able to ge
         conda install xarray dask netCDF4 bottleneck
         conda install -c astropy emcee=2.2.1
 
-9. Open an iPython console where holopy is installed and try ``import holopy``. It succeeds.
+9. Open an iPython console where holopy is installed and try ``import holopy``.
 
 
 
@@ -77,7 +77,7 @@ HoloPy's use of DataArrays sometimes assigns smaller DataArrays in ``attrs``,
 which can lead to problems when saving data to a file. When saving a DataArray
 to file, HoloPy converts any DataArrays in ``attrs`` to numpy arrays, and keeps
 track of their dimension names separately. HoloPy's :func:`.save_image` writes a
-yaml dump of `attrs`` (along with spacing information) to the
+yaml dump of ``attrs`` (along with spacing information) to the
 ``imagedescription`` field of .tif file metadata.
 
 -TODO: how inference results are saved
