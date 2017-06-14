@@ -1,8 +1,13 @@
 holopy.core.io package
 ======================
 
-Submodules
-----------
+Module contents
+---------------
+
+.. automodule:: holopy.core.io
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 holopy.core.io.io module
 ------------------------
@@ -12,11 +17,3 @@ holopy.core.io.io module
     :undoc-members:
     :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: holopy.core.io
-    :members:
-    :undoc-members:
-    :show-inheritance:

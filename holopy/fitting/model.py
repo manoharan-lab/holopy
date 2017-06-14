@@ -102,7 +102,7 @@ class ParameterizedObject(Parametrization):
 
     Parameters
     ----------
-    obj : :mod:`.scatterer`
+    obj : :mod:`~holopy.scattering.scatterer.scatterer`
         Object containing parameters specifying any values vary in the fit.  It
         can also include numbers for any fixed values
     """
@@ -273,11 +273,6 @@ class Model(BaseModel):
 
     Parameters
     ----------
-    parameters  :class:`.Paramatrization`
-        The parameters which can be varied in this model.
-    theory : :func:`scattering.theory.ScatteringTheory.calc_*`
-        The scattering calc function that should be used to compute results for
-        comparison with the data
     alpha : float or Parameter
         Extra scaling parameter, hopefully this will be removed by improvements
         in our theory soon.

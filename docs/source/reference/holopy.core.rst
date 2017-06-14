@@ -9,8 +9,14 @@ Subpackages
     holopy.core.io
     holopy.core.process
 
-Submodules
-----------
+
+Module contents
+---------------
+
+.. automodule:: holopy.core
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 holopy.core.holopy_object module
 --------------------------------
@@ -45,10 +51,3 @@ holopy.core.utils module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: holopy.core
-    :members:
-    :undoc-members:
-    :show-inheritance:

@@ -1,8 +1,13 @@
 holopy.scattering.theory package
 ================================
 
-Submodules
-----------
+Module contents
+---------------
+
+.. automodule:: holopy.scattering.theory
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 holopy.scattering.theory.dda module
 -----------------------------------
@@ -37,10 +42,4 @@ holopy.scattering.theory.scatteringtheory module
     :show-inheritance:
 
 
-Module contents
----------------
 
-.. automodule:: holopy.scattering.theory
-    :members:
-    :undoc-members:
-    :show-inheritance:

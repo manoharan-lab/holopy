@@ -1,8 +1,14 @@
 holopy.scattering.scatterer package
 ===================================
 
-Submodules
-----------
+
+Module contents
+---------------
+
+.. automodule:: holopy.scattering.scatterer
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 holopy.scattering.scatterer.bisphere module
 -------------------------------------------
@@ -92,11 +98,3 @@ holopy.scattering.scatterer.spherecluster module
     :undoc-members:
     :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: holopy.scattering.scatterer
-    :members:
-    :undoc-members:
-    :show-inheritance:

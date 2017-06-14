@@ -109,7 +109,7 @@ class Scatterer(HoloPyObject):
         """
         Tell which domain of a scatterer points are in
 
-        Paramaters
+        Parameters
         ----------
         points : np.ndarray (Nx3)
            Point or list of points to evaluate

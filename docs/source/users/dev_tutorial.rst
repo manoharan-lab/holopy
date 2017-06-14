@@ -1,9 +1,10 @@
-..  _dev_tutorial
+.. _dev_tutorial:
 
 Developer's Guide
 =================
 
 .. _dev_install:
+
 Installing HoloPy for Developers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 If you are going to hack on holopy, you probably only want to compile the
@@ -15,7 +16,9 @@ Download or clone the latest version of HoloPy from Git Hub at `https://github.c
 
 Let's say you downloaded or cloned HoloPy to
 ``/home/me/holopy``. Then open a terminal, ``cd`` to ``/home/me/holopy`` and run::
+
     python setup.py build_ext --inplace
+
 This puts the extensions inside the source tree, so that you can work
 directly from ``/home/me/holopy``.  You will need to add
 ``/home/me/holopy`` to your python_path for python to find the

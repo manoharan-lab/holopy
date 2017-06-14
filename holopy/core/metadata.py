@@ -67,10 +67,10 @@ def detector_grid(shape, spacing, normals = None, name = None):
     ----------
     shape : int or list-like (2)
         If int, detector is a square grid of shape x shape points. 
-        If array_like, detector has `shape`[0] rows and `shape`[1] columns.
+        If array_like, detector has \ *shape*\ [0] rows and \ *shape*\ [1] columns.
     spacing : int or list-like (2)
         If int, distance between square detector pixels.
-        If array_like, `spacing`[0] between adjacent rows and `spacing`[1] 
+        If array_like, \ *spacing*\ [0] between adjacent rows and \ *spacing*\ [1] 
         between adjacent columns.
     normals : list-like or None
         If list-like, detector orientation.
@@ -79,8 +79,8 @@ def detector_grid(shape, spacing, normals = None, name = None):
     Returns
     -------
     grid : DataArray object
-        DataArray of zeros with coordinates calculated according to `shape` and
-        `spacing`
+        DataArray of zeros with coordinates calculated according to \ *shape* \
+        and \ *spacing*\
 
     Notes
     -----

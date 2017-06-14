@@ -1,8 +1,13 @@
 holopy.fitting package
 ======================
 
-Submodules
-----------
+Module contents
+---------------
+
+.. automodule:: holopy.fitting
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 holopy.fitting.fit module
 -------------------------
@@ -37,10 +42,4 @@ holopy.fitting.parameter module
     :show-inheritance:
 
 
-Module contents
----------------
 
-.. automodule:: holopy.fitting
-    :members:
-    :undoc-members:
-    :show-inheritance:
