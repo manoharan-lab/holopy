@@ -32,7 +32,7 @@ The HoloPy scattering module is used to:
    :class:`~holopy.core.marray.Marray` object
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 .. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>

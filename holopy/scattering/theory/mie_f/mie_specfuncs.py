@@ -33,7 +33,7 @@ cross sections in a stratified sphere," Applied Optics 29, 1551-1559, (1990).
 Yang, "Improved recursive algorithm for light scattering by a multilayered
 sphere," Applied Optics 42, 1710-1720, (1993).
 
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 """
 
 

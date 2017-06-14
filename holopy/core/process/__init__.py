@@ -23,7 +23,7 @@ reconstructions.
 .. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Tom G. Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 '''
 
 

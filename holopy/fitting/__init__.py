@@ -27,7 +27,7 @@ The fitting module is used to:
 3. Fit model to timeseries -> list of :class:`.FitResult` objects
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 

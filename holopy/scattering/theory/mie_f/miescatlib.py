@@ -21,7 +21,7 @@ MieScatLib.py
 
 Library of code to do Mie scattering calculations.
 
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 '''
 
 import numpy as np
