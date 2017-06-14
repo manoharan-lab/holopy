@@ -31,7 +31,7 @@ of those fail, failures in these low-level tests will help pin
 down the problem.
 
 
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 '''
 
 

@@ -33,7 +33,7 @@ F. C. Cheong, B. Sun, R. Dreyfus, J. Amato-Grill, K. Xiao, L. Dixon
 video microscopy, Optics Express 17, 13071-13079 (2009).
 
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 """
 
 import numpy as np

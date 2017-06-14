@@ -22,7 +22,7 @@ Levenberg-Marquardt minimizer obtained from
 
 http://stsdas.stsci.edu/pyraf/stscidocs/pytools_pkg/pytools_api/pytools.nmpfit-module.html
 
-The source code above was modified by Jerome Fung (fung@physics.harvard.edu) to
+The source code above was modified by Jerome Fung (jerome.fung@post.harvard.edu) to
 be independent of the rest of the stsci_python package, since holopy does
 
 use Numeric.

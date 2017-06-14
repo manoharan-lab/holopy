@@ -22,7 +22,7 @@ modified version of Daniel Mackowski's SCSMFO1B.FOR.  Uses full radial
 dependence of spherical Hankel functions for the scattered field.
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
