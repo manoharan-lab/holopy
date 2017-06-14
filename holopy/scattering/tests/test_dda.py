@@ -27,7 +27,7 @@ import numpy as np
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
-import os.path
+import os
 
 
 from ...scattering.errors import DependencyMissing
@@ -69,6 +69,9 @@ def test_DDA_sphere():
 
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_dda_2_cpu():
+    if os.name == 'nt':
+        raise Skiptest()
+
     sc = Sphere(n=1.59, r=3e-1, center=(1, -1, 30))
     mie_holo = calc_holo(schema, sc, index, wavelen)
     try:

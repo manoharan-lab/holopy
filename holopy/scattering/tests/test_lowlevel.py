@@ -42,6 +42,7 @@ from numpy.testing import assert_allclose
 import numpy as np
 from numpy import sqrt, dot, pi, conj, real, imag, exp
 from nose.plugins.attrib import attr
+from nose.plugins.skip import SkipTest
 from scipy.special import spherical_jn, spherical_yn
 
 from ..theory.mie_f import mieangfuncs, miescatlib, multilayer_sphere_lib, \
@@ -183,6 +184,9 @@ def test_scattered_field_from_asm():
 
 @attr('medium')
 def test_mie_internal_coeffs():
+    if os.name == 'nt':
+        raise SkipTest()
+
     m = 1.5 + 0.1j
     x = 50.
     n_stop = miescatlib.nstop(x)
