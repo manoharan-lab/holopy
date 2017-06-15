@@ -96,6 +96,10 @@ class Multisphere(ScatteringTheory):
 
     Changing these values will require recompiling Fortran extensions.
 
+    The maximum size parameter of each individual sphere in a cluster is 
+    currently limited to 1000, indepdently of the above scfodim.for 
+    parameters.
+
     References
     ----------
     .. [1] Daniel W. Mackowski, SCSMFO.FOR: Calculation of the Scattering
@@ -248,6 +252,10 @@ class Multisphere(ScatteringTheory):
         return cext
 
     def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
+        '''
+        Calculate far-field amplitude scattering matrices at multiple
+        positions
+        '''
         amn, lmax = self._scsmfo_setup(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index)
         scat_matrs = [_asm_far(theta, phi, amn, lmax) for r, theta, phi in pos.T]
         return scat_matrs
@@ -257,7 +265,9 @@ class Multisphere(ScatteringTheory):
         Calculate scattering cross section from cluster-centered field
         expansion, by analytically summing expansion coefficients.
 
-        Note that a direct calculation of the C_scat from the sphere-centered
+        Notes
+        -----
+        A direct calculation of the C_scat from the sphere-centered
         expansion is not implemented in SCSMFO and is difficult because of
         cross terms.  The sphere-centered approach is to get C_ext from the
         optical theorem and then analytically integrate the Poynting vector
@@ -375,7 +385,7 @@ class Multisphere(ScatteringTheory):
 
 def _asm_far(theta, phi, amn, lmax):
     """
-    far field amplitude scattering matrix for fixed angles
+    Calculate far field amplitude scattering matrix for fixed angles
     """
     asm = np.roll(uts_scsmfo.asm(amn, lmax, theta, phi),
                   -1).reshape((2,2)) * -0.5 #correction factor
