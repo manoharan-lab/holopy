@@ -22,13 +22,12 @@ Tests adda based DDA calculations
 '''
 
 
-from numpy.testing import assert_almost_equal, assert_allclose
+from numpy.testing import assert_almost_equal, assert_allclose, assert_equal
 import numpy as np
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
 import os.path
-
 
 from ...scattering.errors import DependencyMissing
 from ..scatterer import Sphere, Ellipsoid, Scatterer, JanusSphere, Difference
@@ -132,6 +131,9 @@ def test_Ellipsoid_dda():
     e = Ellipsoid(1.5, r = (.5, .1, .1), center = (1, -1, 10))
     schema = detector_grid(100, .1)
     h = calc_holo(schema, e, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1,0))
+    cmd = DDA()._adda_ellipsoid(e, medium_wavelen=.66, medium_index=1.33, temp_dir='temp_dir')
+    assert_equal(cmd, ['-eq_rad', '0.5', '-shape', 'ellipsoid', '0.2', '0.2', '-m', '1.12781954887', '0.0', '-orient', '0', '0', '0'])
+
 
     assert_obj_close(h.max(), 1.3152766077267062)
     assert_obj_close(h.mean(), 0.99876620628942114)
