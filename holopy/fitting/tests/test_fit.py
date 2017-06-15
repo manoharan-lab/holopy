@@ -25,7 +25,7 @@ from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, as
 from ...scattering import Sphere, Spheres, LayeredSphere, Mie, calc_holo
 from ...core import detector_grid, load, save, update_metadata
 from ...core.process import normalize
-from .. import fit, Parameter, ComplexParameter, par, Parametrization, Model, FitResult
+from .. import fit, Parameter, ComplexParameter, Parametrization, Model, FitResult
 from ...core.tests.common import (assert_obj_close, get_example_data, assert_read_matches_write)
 from ..errors import InvalidMinimizer
 from ..model import limit_overlaps, ParameterizedObject
@@ -69,13 +69,13 @@ def test_fit_mie_single():
 def test_fit_mie_par_scatterer():
     holo = normalize(get_example_data('image0001'))
 
-    s = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
-                         par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
-               r = par(8.5e-7, (1e-8, 1e-5)),
-               n = ComplexParameter(par(1.59, (1,2)), 1e-4))
+    s = Sphere(center = (Parameter(guess=.567e-5, limit=[0,1e-5]),
+                         Parameter(.567e-5, (0, 1e-5)), Parameter(15e-6, (1e-5, 2e-5))),
+               r = Parameter(8.5e-7, (1e-8, 1e-5)),
+               n = ComplexParameter(Parameter(1.59, (1,2)), 1e-4))
 
     thry = Mie(False)
-    model = Model(s, calc_holo, theory=thry, alpha = par(.6, [.1,1]))
+    model = Model(s, calc_holo, theory=thry, alpha = Parameter(.6, [.1,1]))
 
     result = fit(model, holo)
 
@@ -89,11 +89,11 @@ def test_fit_mie_par_scatterer():
 def test_fit_random_subset():
     holo = normalize(get_example_data('image0001'))
 
-    s = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),
-                         par(.567e-5, (0, 1e-5)), par(15e-6, (1e-5, 2e-5))),
-               r = par(8.5e-7, (1e-8, 1e-5)), n = ComplexParameter(par(1.59, (1,2)),1e-4))
+    s = Sphere(center = (Parameter(guess=.567e-5, limit=[0,1e-5]),
+                         Parameter(.567e-5, (0, 1e-5)), Parameter(15e-6, (1e-5, 2e-5))),
+               r = Parameter(8.5e-7, (1e-8, 1e-5)), n = ComplexParameter(Parameter(1.59, (1,2)),1e-4))
 
-    model = Model(s, calc_holo, theory=Mie(False), alpha = par(.6, [.1,1]))
+    model = Model(s, calc_holo, theory=Mie(False), alpha = Parameter(.6, [.1,1]))
     np.random.seed(40)
     result = fit(model, holo, random_subset=.1)
 
@@ -141,7 +141,7 @@ def disable_next_model():
     assert_obj_close(gold, exampleresult.next_model())
 
 def test_n():
-    sph = Sphere(par(.5), 1.6, (5,5,5))
+    sph = Sphere(Parameter(.5), 1.6, (5,5,5))
     sch = detector_grid(shape=[100, 100], spacing=[0.1, 0.1])
 
     model = Model(sph, calc_holo, 1.33, .66, illum_polarization=(1, 0), alpha=1)
@@ -151,12 +151,12 @@ def test_n():
 
 @attr('fast')
 def test_serialization():
-    par_s = Sphere(center = (par(.567e-5, [0, 1e-5]), par(.576e-6, [0, 1e-5]),
-                                                           par(15e-6, [1e-5,
+    par_s = Sphere(center = (Parameter(.567e-5, [0, 1e-5]), Parameter(.576e-6, [0, 1e-5]),
+                                                           Parameter(15e-6, [1e-5,
                                                                        2e-5])),
-                   r = par(8.5e-7, [1e-8, 1e-5]), n = par(1.59, [1,2]))
+                   r = Parameter(8.5e-7, [1e-8, 1e-5]), n = Parameter(1.59, [1,2]))
 
-    alpha = par(.6, [.1, 1], 'alpha')
+    alpha = Parameter(.6, [.1, 1], 'alpha')
 
     schema = update_metadata(detector_grid(shape = 100, spacing = .1151e-6), illum_wavelen=.66e-6, medium_index=1.33, illum_polarization=(1,0))
 
@@ -182,15 +182,15 @@ def test_integer_correctness():
     s = Sphere(center = (10.2, 9.8, 10.3), r = .5, n = 1.58)
     holo = calc_holo(schema, s, illum_wavelen = .660, medium_index = 1.33, illum_polarization = (1, 0))
 
-    par_s = Sphere(center = (par(guess = 10, limit = [5,15]), par(10, [5, 15]), par(10, [5, 15])),
+    par_s = Sphere(center = (Parameter(guess = 10, limit = [5,15]), Parameter(10, [5, 15]), Parameter(10, [5, 15])),
                    r = .5, n = 1.58)
 
-    model = Model(par_s, calc_holo, alpha = par(.6, [.1, 1]))
+    model = Model(par_s, calc_holo, alpha = Parameter(.6, [.1, 1]))
     result = fit(model, holo)
     assert_allclose(result.scatterer.center, [10.2, 9.8, 10.3])
 
 def test_model_guess():
-    ps = Sphere(n=par(1.59, [1.5,1.7]), r = .5, center=(5,5,5))
+    ps = Sphere(n=Parameter(1.59, [1.5,1.7]), r = .5, center=(5,5,5))
     m = Model(ps, calc_holo)
     assert_obj_close(m.scatterer.guess, Sphere(n=1.59, r=0.5, center=[5, 5, 5]))
 
@@ -203,7 +203,7 @@ def test_constraint():
         # caught elsewhere -tgd 2013-12-01
         warnings.simplefilter("ignore")
         spheres = Spheres([Sphere(r=.5, center=(0,0,0)),
-                           Sphere(r=.5, center=(0,0,par(.2)))])
+                           Sphere(r=.5, center=(0,0,Parameter(.2)))])
         model = Model(spheres, calc_holo, constraints=limit_overlaps())
         cost = model._calc({'1:Sphere.center[2]' : .2}, sch)
         assert_equal(cost, np.ones_like(sch)*np.inf)
@@ -213,7 +213,7 @@ def test_layered():
     sch = detector_grid((10, 10), .2)
     hs = calc_holo(sch, s, 1, .66, (1, 0))
 
-    guess = LayeredSphere((1,2), (par(1.01), par(.99)), (2, 2, 2))
+    guess = LayeredSphere((1,2), (Parameter(1.01), Parameter(.99)), (2, 2, 2))
     model = Model(guess, calc_holo)
     res = fit(model, hs)
     assert_allclose(res.scatterer.t, (1, 1), rtol = 1e-12)
