@@ -26,6 +26,11 @@ from copy import copy
 from holopy.scattering.calculations import calc_field, calc_holo
 
 class NoiseModel(BaseModel):
+    """Model probabilites of observing data
+
+    Compute probabilities that observed data could be explained by a set of
+    scatterer and observation parameters.
+    """
     def __init__(self, scatterer, noise_sd, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
         super().__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory)
         # the float cast insures we don't have noise_sd wrapped up in a needless xarray
@@ -61,11 +66,21 @@ class NoiseModel(BaseModel):
             return -np.inf
 
     def _lnlike(self, pars, data):
+        """
+        Compute the likelihood for pars given data
+
+        Parameters
+        -----------
+        pars: dict(string, float)
+            Dictionary containing values for each parameter
+        data: xarray
+            The data to compute likelihood against
+        """
         noise_sd = pars.pop('noise_sd', self.noise_sd)
-        holo = self._holo(pars, data)
+        forward = self._forward(pars, data)
         N = data.size
         return (-N*np.log(noise_sd*np.sqrt(2*np.pi)) -
-                ((holo-data)**2).sum()/(2*noise_sd**2))
+                ((forward-data)**2).sum()/(2*noise_sd**2))
 
     def lnlike(self, par_vals, data):
         return self._lnlike(self._pack(par_vals), data)
@@ -78,7 +93,7 @@ class AlphaModel(NoiseModel):
         super().__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory, noise_sd=noise_sd)
         self._use_parameter(alpha, 'alpha')
 
-    def _holo(self, pars, schema, alpha=None):
+    def _forward(self, pars, schema, alpha=None):
         if alpha is not None:
             alpha = alpha
         else:
