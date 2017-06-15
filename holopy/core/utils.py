@@ -59,7 +59,8 @@ def mkdir_p(path):
 
 def dict_without(d, keys):
     """
-    Exclude a list of keys from a dictionary
+    Exclude a list of keys from a dictionary.
+
     Silently ignores any key in keys that is not in the dict (this is
     intended to be used to make sure a dict does not contain specific
     keys)
