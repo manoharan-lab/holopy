@@ -52,6 +52,9 @@ class Mie(ScatteringTheory):
 
     By default, calculates radial component of scattered electric fields,
     which is nonradiative.
+
+    Currently, in calculating the Lorenz-Mie scattering coefficients,
+    the maximum size parameter x = ka is limited to 1000. 
     """
 
     # don't need to define __init__() because we'll use the base class
@@ -74,6 +77,10 @@ class Mie(ScatteringTheory):
         return isinstance(scatterer, Sphere)
 
     def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
+        '''
+        Returns far-field amplitude scattering matrices (with theta and phi
+        dependence only) -- assume spherical wave asymptotic r dependence
+        '''
         if isinstance(scatterer, Sphere):
             scat_coeffs = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
 
@@ -144,6 +151,27 @@ class Mie(ScatteringTheory):
         return np.array([cscat, cabs, cext, asym])
 
     def _scat_coeffs(self, s, medium_wavevec, medium_index):
+        '''
+        Calculate Mie scattering coefficients.
+
+        Parameters
+        ----------
+        s : :mod:`scatterer.Sphere` object
+        medium_wavevec : float
+            Wave vector in the medium, k = 2 * pi * n_med / lambda_0
+        medium_index : float
+            Medium refractive index
+
+        Returns
+        -------
+        ndarray (2, n), complex
+           Lorenz-Mie scattering coefficients a_n and b_n
+
+        Notes
+        -----
+        See Bohren & Huffman for mathematical description.
+
+        '''
         if (ensure_array(s.r) == 0).any():
             raise InvalidScatterer(s, "Radius is zero")
         x_arr = medium_wavevec * ensure_array(s.r)
@@ -165,6 +193,10 @@ class Mie(ScatteringTheory):
 
 
     def _scat_coeffs_internal(self, s, medium_wavevec, medium_index):
+        '''
+        Calculate expansion coefficients for Lorenz-Mie electric field 
+        inside a sphere.
+        '''
         x_arr = medium_wavevec * ensure_array(s.r)
         m_arr = ensure_array(s.n) / medium_index
 

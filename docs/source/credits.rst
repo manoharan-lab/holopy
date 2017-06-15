@@ -43,9 +43,13 @@ algorithms that HoloPy uses in its calculations:
 
 .. [Yurkin2011] Yurkin, Maxim A., and Alfons G. Hoekstra. “The Discrete-Dipole-Approximation Code ADDA: Capabilities and Known Limitations.” Journal of Quantitative Spectroscopy and Radiative Transfer 112, no. 13 (September 2011): 2234–47. doi:10.1016/j.jqsrt.2011.01.031.
 
+.. [Mackowski1990] Mackowski, D. W., Altenkirch, R. A., and Menguc, M. P. “Internal absorption cross sections in a stratified sphere.” Applied Optics 29, no. 10 (1990). do:10.1364/AO.29.001551.
+
 .. [Mackowski1996] Mackowski, Daniel W., and Michael I. Mishchenko. “Calculation of the T Matrix and the Scattering Matrix for Ensembles of Spheres.” Journal of the Optical Society of America A 13, no. 11 (November 1, 1996): 2266. doi:10.1364/JOSAA.13.002266.
 
 .. [Wiscombe1996] Wiscombe, J. “Mie Scattering Calculations: Advances in Technique and Fast, Vector-Speed Computer Codes,” 1979. doi:10.5065/D6ZP4414.
+
+.. [Wiscombe1980] Wiscombe, W. J. “Improved Mie scattering algorithms.” Applied Optics 19, no. 9 (May 1, 1980): 1505. doi:10.1364/AO.19.001505.
 
 .. [Yang2003] Yang, Wen. “Improved Recursive Algorithm for Light Scattering by a Multilayered Sphere.” Applied Optics 42, no. 9 (March 20, 2003): 1710–20. doi:10.1364/AO.42.001710.
 

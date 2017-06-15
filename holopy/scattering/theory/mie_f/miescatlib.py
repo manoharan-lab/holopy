@@ -32,10 +32,43 @@ from .mieangfuncs import dn_1_down, lentz_dn1
 from numpy import sin, cos, array
 
 def scatcoeffs(m, x, nstop, eps1 = 1e-3, eps2 = 1e-16): # see B/H eqn 4.88
-    # implement criterion used by BHMIE plus a couple more orders to
-    # be safe
-    #nmx = int(array([nstop, np.round_(np.absolute(m*x))]).max()) + 20
-    #Dnmx = mie_specfuncs.log_der_1(m*x, nmx, nstop)
+    '''
+    Calculate expansion coefficients for scattered field in Lorenz-Mie
+    solution.
+
+    Parameters
+    ----------
+    m : complex
+        Sphere relative refractive index (n_sphere / n_medium)
+    x : float
+        Sphere size parameter (k_med * a)
+    nstop : int
+        Maximum order of scattered field expansion
+    eps1 : float, optional
+        In Lentz continued fraction algorithm for logarithmic derivative
+        D_n(z), value of continued fraction numerator or denominator
+        triggering ill-conditioning workaround.
+    eps2 : float, optional
+        Convergence criterion for Lentz continued fraction algorithm
+
+    Returns
+    -------
+    array(2, nstop), complex
+        Scattering coefficients a_n and b_n
+
+    Notes
+    -----
+    Uses formula for scattering coefficients based on logarithmic derivative
+    D_n(z) of spherical Bessel function psi_n(z). See [Bohren1983]_ eq.
+    4.88.
+
+    Following BHMIE, calculates D_n for complex argument using downward 
+    recursion, and Riccati-Bessel functions psi and xi for real argument 
+    using upward recursion.
+
+    Initializes downward recursion for D_n using Lentz continued fraction 
+    algorithm [Lentz1976]_.
+    '''
     Dnmx = dn_1_down(m * x, nstop + 1, nstop,
                                  lentz_dn1(m * x, nstop + 1, eps1, eps2))
     n = np.arange(nstop+1)
@@ -51,6 +84,17 @@ def internal_coeffs(m, x, n_max, eps1 = 1e-3, eps2 = 1e-16):
     Calculate internal Mie coefficients c_n and d_n given
     relative index, size parameter, and maximum order of expansion.
 
+    Parameters
+    ----------
+    See docstring for scatcoeffs
+
+    Returns
+    -------
+    ndarray(2,n) complex
+        Internal coefficients c_n and d_n
+    
+    Notes
+    -----
     Follow Bohren & Huffman's convention. Note that van de Hulst and Kerker
     have different conventions (labeling of c_n and d_n and factors of m)
     for their internal coefficients.
@@ -64,15 +108,40 @@ def internal_coeffs(m, x, n_max, eps1 = 1e-3, eps2 = 1e-16):
     return array([cl[1:], dl[1:]]) # start from l = 1
 
 def nstop(x):
-    #takes size parameter, outputs order to compute to according to
-    # Wiscombe, Applied Optics 19, 1505 (1980).
+    '''
+    Calculate maximum expansion order of Lorenz-Mie solution.
+
+    Parameters
+    ----------
+    x : float
+        Particle size parameter
+
+    Returns
+    -------
+    nstop : int
+
+    Notes
+    -----
+    Criterion taken from [Wiscombe1980]_.
+    '''
     # 7/7/08: generalize to apply same criterion when x is complex
     return int(np.round_(np.absolute(x+4.05*x**(1./3.)+2)))
 
 def asymmetry_parameter(al, bl):
     '''
-    Inputs: an, bn coefficient arrays from Mie solution
+    Calculate asymmetry parameter of scattered field.
 
+    Parameters
+    ----------
+    an, bn : ndarray
+        coefficient arrays from Mie solution
+
+    Returns
+    -------
+    float
+
+    Notes
+    -----
     See discussion on Bohren & Huffman p. 120.
     The output of this function omits the prefactor of 4/(x^2 Q_sca).
     '''
@@ -90,8 +159,19 @@ def cross_sections(al, bl):
     Calculates scattering and extinction cross sections
     given arrays of Mie scattering coefficients an and bn.
 
-    See Bohren & Huffman eqns. 4.61 and 4.62.
+    Parameters
+    ----------
+    an, bn : ndarray
+        coefficient arrays from Mie solution
+   
+    Returns
+    -------
+    ndarray(3)
+        Scattering, extinction, and radar backscattering cross sections
 
+    Notes
+    -----
+    See Bohren & Huffman eqns. 4.61 and 4.62.
     The output omits a scaling prefactor of 2 * pi / k^2.
     '''
     lmax = al.shape[0]

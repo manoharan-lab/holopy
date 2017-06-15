@@ -47,6 +47,25 @@ from . import mieangfuncs
 from .mieangfuncs import dn_1_down, lentz_dn1
 
 def riccati_psi_xi(x, nstop):
+    '''
+    Calculate Riccati-Bessel functions psi and xi for real argument.
+
+    Parameters
+    ----------
+    x : float
+        Argument
+    nstop : int
+        Maximum order to calculate to
+
+    Returns
+    -------
+    ndarray(2, nstop)
+        psi and xi
+
+    Notes
+    -----
+    Uses upwards recursion.
+    '''
     if np.imag(x) != 0.:
         raise TypeError('Cannot handle complex arguments.')
     psin = riccati_jn(nstop, x)
@@ -120,10 +139,14 @@ def log_der_13(z, nstop, eps1 = 1e-3, eps2 = 1e-16):
 # calculate ratio of RB's defined in Yang eqn. 23 by up recursion relation
 def Qratio(z1, z2, nstop, dns1 = None, dns2 = None, eps1 = 1e-3, eps2 = 1e-16):
     '''
-    Calculate ratio of Riccati-Bessel functions defined in Yang eq. 23
-    by up recursion.
+    Calculate ratio of Riccati-Bessel functions defined in [Yang2003]_ 
+    eq. 23 by up recursion.
 
+    Notes
+    -----
     Logarithmic derivatives calculated automatically if not specified.
+    Lentz continued fraction algorithm used to start downward recursion
+    for logarithmic derivatives.
     '''
     # convert z1 and z2 to 128 bit complex to prevent division problems
     z1 = np.complex128(z1)
@@ -161,7 +184,10 @@ def R_psi(z1, z2, nmax, eps1 = 1e-3, eps2 = 1e-16):
     '''
     Calculate ratio of Riccati-Bessel function \psi: \psi(z1)/\psi(z2).
 
-    See Mackowski eqns. 65-66.
+    Notes
+    -----
+    See [Mackowski1990]_ eqns. 65-66. Uses Lentz continued fraction algorithm
+    for logarithmic derivatives.
     '''
     output = zeros(nmax + 1, dtype = 'complex128')
     output[0] = sin(z1) / sin(z2)
