@@ -19,18 +19,13 @@
 
 from numpy.testing import assert_raises, assert_equal
 
-from ..parameter import Parameter, par, ComplexParameter
+from ..parameter import ComplexParameter
+from ..parameter import Parameter as par
 from ..errors import GuessOutOfBoundsError
 from ...core.tests.common import assert_obj_close
 
 
 def test_parameter():
-    # basic parameter
-    p1 = Parameter(guess = 5, limit = [4, 6])
-    # now make a par using shorthands
-    p2 = par(5, [4,6])
-    # they should be the same
-    assert_obj_close(p1, p2)
 
     p3 = par(limit = 7)
 

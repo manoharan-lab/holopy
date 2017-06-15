@@ -25,7 +25,8 @@ from nose.plugins.attrib import attr
 from numpy.testing import assert_equal
 from holopy.scattering.theory import Mie
 from holopy.scattering.scatterer import Sphere, Spheres
-from holopy.fitting import par, Model, ComplexParameter, Parametrization
+from holopy.fitting import Model, ComplexParameter, Parametrization
+from holopy.fitting import Parameter as par
 from holopy.core.tests.common import assert_read_matches_write
 from holopy.scattering.calculations import calc_holo
 
