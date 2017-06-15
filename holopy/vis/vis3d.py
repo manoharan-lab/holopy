@@ -22,6 +22,8 @@ Show sphere clusters using mayavi
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 """
 
+#This file is experimental and features are not currently tested.
+#Stay tuned for updates.
 
 
 from numpy import arange

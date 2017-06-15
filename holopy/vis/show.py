@@ -26,9 +26,7 @@ sensible way.
 
 import numpy as np
 import xarray as xr
-from ..scattering.scatterer import Spheres, Scatterer
 from .vis2d import show2d
-from .vis3d import show_sphere_cluster, show_scatterer
 
 class VisualizationNotImplemented(Exception):
     def __init__(self, o):
@@ -53,12 +51,8 @@ def show(o,color=(.5, .5, .5)):
     to import all of matplotlib or mayavi just to load holopy)
     """
 
-    if isinstance(o, Spheres):
-        show_sphere_cluster(o,color)
-    elif isinstance(o, (xr.DataArray, np.ndarray, list, tuple)):
+    if isinstance(o, (xr.DataArray, np.ndarray, list, tuple)):
         show2d(o)
-    elif isinstance(o, Scatterer):
-        show_scatterer(o)
     else:
         raise VisualizationNotImplemented(o)
 
