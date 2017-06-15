@@ -46,6 +46,8 @@ Installation on Windows is still a work in progress, but we have been able to ge
 
 9. Open an iPython console where holopy is installed and try ``import holopy``.
 
+If the above procedure doesn't work, or you find something else that does, please `let us know <https://github.com/manoharan-lab/holopy/issues>`_ so that we can improve these instructions.
+
 
 
 ..  _xarray:
@@ -83,7 +85,11 @@ track of their dimension names separately. HoloPy's :func:`.save_image` writes a
 yaml dump of ``attrs`` (along with spacing information) to the
 ``imagedescription`` field of .tif file metadata.
 
--TODO: how inference results are saved
+:ref:`infer_tutorial` returns a lot of information, which is stored in the form of a :class:`.SamplingResult` object.
+This object stores the model and :class:`.EmceeStrategy` that were used in the inference calculation as attributes. 
+An additional attribute named ``dataset`` is an `xarray Dataset <http://xarray.pydata.org/en/stable/data-structures.html#dataset>`_ 
+that contains both the data used in the inference calculation, as well as the raw output.
+The parameter values at each step of the sampling chain and the calculated log-probabilities at each step are stored here under the ``samples`` and ``lnprobs`` namespaces.
 
 .. _scat_theory:
 

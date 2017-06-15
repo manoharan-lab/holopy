@@ -30,6 +30,7 @@ import scipy.special
 import h5py
 
 from holopy.core.holopy_object import HoloPyObject
+from holopy.core.io.io import pack_attrs, unpack_attrs
 
 _res_ds_contents = ['samples', 'lnprobs', 'data']
 
@@ -91,6 +92,7 @@ class SamplingResult(HoloPyObject):
         ds.attrs['model'] = yaml.dump(self.model)
         ds.attrs['strategy'] = yaml.dump(self.strategy)
         ds.attrs['_source_class'] = self._source_class
+        ds.data.attrs = pack_attrs(ds.data)
         autocorr_to_sentinal(ds.samples)
         autocorr_to_sentinal(ds.lnprobs)
         if 'flat' in ds:
@@ -111,6 +113,7 @@ class SamplingResult(HoloPyObject):
     def _load(cls, ds):
         if isinstance (ds, str):
             ds = xr.open_dataset(ds, engine='h5netcdf')
+        ds.data.attrs = unpack_attrs(ds.data.attrs)
         model = yaml.load(ds.attrs.pop('model'))
         strategy = yaml.load(ds.attrs.pop('strategy'))
         r = cls(dataset=ds, model=model, strategy=strategy)
