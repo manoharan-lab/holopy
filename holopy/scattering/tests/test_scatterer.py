@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -20,26 +20,17 @@ Test construction and manipulation of Scatterer objects.
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
-from __future__ import division
+
 
 import numpy as np
-from nose.tools import raises, assert_raises
-from numpy.testing import assert_equal, assert_warns
+from numpy.testing import assert_equal, assert_raises, assert_allclose
 from nose.plugins.attrib import attr
 
-from warnings import warn
-
-from ...core import ImageSchema, Optics
-
-from ..scatterer import (Sphere, Scatterer, Ellipsoid,
-                         Scatterers)
-
+from ...core import detector_grid
+from .. import Sphere, Scatterer, Ellipsoid, Scatterers, calc_holo
 from ..scatterer.ellipsoid import isnumber
 from ..scatterer.scatterer import find_bounds
-
-from ..errors import ScattererDefinitionError, NoCenter, NoPolarization
-from .common import assert_allclose
-from ..theory import Mie
+from ..errors import InvalidScatterer, MissingParameter
 
 @attr('fast')
 def test_Sphere_construction():
@@ -49,7 +40,7 @@ def test_Sphere_construction():
     s = Sphere(n = 1.59+0.0001j, r = 5e-7)
     s = Sphere()
 
-    with assert_raises(ScattererDefinitionError):
+    with assert_raises(InvalidScatterer):
         Sphere(n=1.59, r = -2, center = (1, 1, 1))
 
     # now test multilayer spheres
@@ -91,9 +82,9 @@ def test_Sphere_construct_array():
     s = Sphere(n = 1.59+0.0001j, r = 5e-7, center = center)
     assert_equal(s.center, center)
 
-    with assert_raises(ScattererDefinitionError) as cm:
+    with assert_raises(InvalidScatterer) as cm:
         Sphere(center = 1)
-    assert_equal(str(cm.exception), "Error defining scatterer object of type "
+    assert_equal(str(cm.exception), "Invalid scatterer of type "
                  "Sphere.\ncenter specified as 1, center should be specified "
                  "as (x, y, z)")
 
@@ -115,7 +106,7 @@ def test_Sphere_parameters():
 def test_Composite_construction():
     # empty composite
     comp_empty = Scatterers()
-    print comp_empty.get_component_list()
+    print(comp_empty.get_component_list())
 
     # composite of multiple spheres
     s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
@@ -135,11 +126,11 @@ def test_Composite_construction():
     s4 = Sphere(center=[0, 5e-6, 0])
     comp_spheres.add(s4)
     comp2 = Scatterers(scatterers=[comp_spheres, comp])
-    print comp2.get_component_list()
+    print(comp2.get_component_list())
 
     # even more levels
     comp3 = Scatterers(scatterers=[comp2, cs])
-    print comp3
+    print(comp3)
 
 @attr('fast')
 def test_like_me():
@@ -169,12 +160,8 @@ def test_find_bounds():
 
 def test_sphere_nocenter():
     sphere = Sphere(n = 1.59, r = .5)
-    schema = ImageSchema(spacing=.1, shape=1, optics=Optics(wavelen = .660, polarization = [1, 0],index = 1.33))
-    assert_raises(NoCenter, Mie.calc_holo, sphere, schema)
-
-def test_calc_holo_nopolarization():
-    sphere = Sphere(n = 1.59, r = .5, center = (5, 5, 5))
-    assert_warns(UserWarning, Optics, wavelen = .660, index = 1.33)
+    schema = detector_grid(spacing=.1, shape=1)
+    assert_raises(MissingParameter, calc_holo, schema, sphere, 1.33, .66, [1, 0])
 
 def test_ellipsoid():
     test = Ellipsoid(n = 1.585, r = [.4,0.4,1.5], center = [10,10,20])

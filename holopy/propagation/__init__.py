@@ -1,4 +1,4 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
 # Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 #
 # This file is part of HoloPy.
@@ -15,24 +15,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-"""Numerical light propagation.
 
-Computes light propagation from one known set of points to another set
-using the convolution algorithm.
-
-Propagation is used primarily for one operation:
-
-1. :class:`.Image` or :class:`.VectorGrid` (Electric field) =->
-   :class:`.Image`, :class:`.Volume` or :class:`.VectorGrid` at
-   another position
-
-holopy.propagate depends on holopy.core
-
-.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
-.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
-
-"""
-from __future__ import division
-
-from convolution_propagation import propagate
+from .convolution_propagation import propagate
+from .point_source_propagate import ps_propagate

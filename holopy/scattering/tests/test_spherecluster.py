@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -23,13 +23,13 @@ Test construction and manipulation of Scatterer objects.
 '''
 
 import numpy as np
-from nose.tools import raises, assert_raises
 from numpy.testing import assert_equal, assert_almost_equal
 from nose.plugins.attrib import attr
+from nose.tools import raises
 
 from ..scatterer import Sphere, Ellipsoid
 from ..scatterer import Spheres
-from ..errors import ScattererDefinitionError, OverlapWarning
+from ..errors import InvalidScatterer, OverlapWarning
 
 import warnings
 
@@ -41,8 +41,8 @@ def test_Spheres_construction():
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
     s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,0,0])
     sc = Spheres(scatterers=[s1, s2, s3])
-    print sc.get_component_list()
-    print sc
+    print(sc.get_component_list())
+    print(sc)
 
     # test attribute access
     sc.n
@@ -57,7 +57,7 @@ def test_Spheres_construction():
 
 
 @attr('fast')
-@raises(ScattererDefinitionError)
+@raises(InvalidScatterer)
 def test_Spheres_construction_typechecking():
     # heterogeneous composite should raise exception, since a
     # sphere cluster must contain only Spheres
@@ -71,7 +71,7 @@ def test_Spheres_construction_typechecking():
 @attr('fast')
 def test_Spheres_ovelap_checking():
     s1 = Sphere(n = 1.59, r = 5e-7, center=(1e-6, -1e-6, 10e-6))
-    with warnings.catch_warnings(True) as w:
+    with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter('always', OverlapWarning)
         sc = Spheres([s1, s1, s1])
         assert len(w) > 0

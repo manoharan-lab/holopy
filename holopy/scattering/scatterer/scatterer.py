@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -21,7 +21,7 @@ The abstract base class for all scattering objects
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
-from __future__ import division
+
 from collections import defaultdict
 
 from itertools import chain
@@ -30,8 +30,9 @@ from copy import copy
 import numpy as np
 
 from ...core.holopy_object  import HoloPyObject
-from ...core.helpers import _ensure_array
-from ..errors import ScattererDefinitionError
+from ...core.utils import ensure_array, is_none
+from ..errors import InvalidScatterer
+from functools import reduce
 
 
 class Scatterer(HoloPyObject):
@@ -39,7 +40,7 @@ class Scatterer(HoloPyObject):
     Base class for scatterers
 
     """
-    def __init__(self, indicators, n, location):
+    def __init__(self, indicators, n, center):
         """
         Parameters
         ----------
@@ -48,6 +49,8 @@ class Scatterer(HoloPyObject):
             inside a specific domain) and false outside.
         n : complex
             Index of refraction of the scatterer or each domain.
+        center : (float, float, float)
+            The center of mass of the scatterer. 
         bounding_box : ((float, float), (float, float), (float, float))
             Optional. Box containing the scatterer. If a bounding box is not given, the
             constructor will attempt to determine one.
@@ -55,10 +58,10 @@ class Scatterer(HoloPyObject):
         if not isinstance(indicators, Indicators):
             indicators = Indicators(indicators)
         self.indicators = indicators
-        self.n = _ensure_array(n)
-        self.location = np.array(location)
+        self.n = ensure_array(n)
+        self.center = np.array(center)
 
-    def translated(self, x, y, z):
+    def translated(self, coord1, coord2=None, coord3=None):
         """
         Make a copy of this scatterer translated to a new location
 
@@ -72,8 +75,16 @@ class Scatterer(HoloPyObject):
         translated : Scatterer
             A copy of this scatterer translated to a new location
         """
+        if is_none(coord2) and len(ensure_array(coord1)==3):
+            #entered translation vector
+            trans_coords = ensure_array(coord1)
+        elif not is_none(coord2) and not is_none(coord3):
+            #entered 3 coords
+            trans_coords = np.array([coord1, coord2, coord3])
+        else:
+            raise InvalidScatterer(self, "Cannot interpret translation coordinates")
         new = copy(self)
-        new.location = self.location + np.array((x, y, z))
+        new.center = self.center + trans_coords
         return new
 
     def contains(self, points):
@@ -81,7 +92,7 @@ class Scatterer(HoloPyObject):
 
     def index_at(self, points, background = 0):
         domains = self.in_domain(points)
-        ns = _ensure_array(self.n)
+        ns = ensure_array(self.n)
         if np.iscomplex(np.append(self.n, background)).any():
             dtype = np.complex
         else:
@@ -91,11 +102,14 @@ class Scatterer(HoloPyObject):
             index[domains==i+1] = n
         return index
 
+    def guess(self):
+        return self
+
     def in_domain(self, points):
         """
         Tell which domain of a scatterer points are in
 
-        Paramaters
+        Parameters
         ----------
         points : np.ndarray (Nx3)
            Point or list of points to evaluate
@@ -110,7 +124,7 @@ class Scatterer(HoloPyObject):
             points = points.reshape((1, 3))
         domains = np.zeros(points.shape[:-1], dtype='int')
         # Indicators earlier in the list have priority
-        for i, ind in reversed(list(enumerate(self.indicators(points-self.location)))):
+        for i, ind in reversed(list(enumerate(self.indicators(points-self.center)))):
             domains[np.nonzero(ind)] = i+1
         return domains
 
@@ -126,23 +140,17 @@ class Scatterer(HoloPyObject):
 
     @property
     def x(self):
-        return self.location[0]
+        return self.center[0]
     @property
     def y(self):
-        return self.location[1]
+        return self.center[1]
     @property
     def z(self):
-        return self.location[2]
-
-    def like_me(self, **overrides):
-        pars = dict(self._dict)
-        pars.update(overrides)
-
-        return self.__class__(**pars)
+        return self.center[2]
 
     @property
     def bounds(self):
-        return [(c+b[0], c+b[1]) for c, b in zip(self.location,
+        return [(c+b[0], c+b[1]) for c, b in zip(self.center,
                                                  self.indicators.bound)]
 
     def _voxel_coords(self, spacing):
@@ -179,17 +187,9 @@ class Scatterer(HoloPyObject):
 class CenteredScatterer(Scatterer):
     def __init__(self, center = None):
         if center is not None and (np.isscalar(center) or len(center) != 3):
-            raise ScattererDefinitionError("center specified as {0}, center "
-                "should be specified as (x, y, z)".format(center), self)
-        self.location = center
-
-    @property
-    def center(self):
-        return self.location
-
-    @center.setter
-    def center(self, val):
-        self.location = val
+            raise InvalidScatterer(self,"center specified as {0}, center "
+                "should be specified as (x, y, z)".format(center))
+        self.center = center
 
     # eliminate parameters and from_parameters?  This is kind of fitting
     # specific information.  Or should it be in serializable?  In many ways this
@@ -223,7 +223,7 @@ class CenteredScatterer(Scatterer):
             else:
                 return [(key, par)]
 
-        return dict(chain(*[expand(*p) for p in self._dict.iteritems()]))
+        return dict(chain(*[expand(*p) for p in self._dict.items()]))
 
     @classmethod
     def from_parameters(cls, parameters):
@@ -246,7 +246,7 @@ class CenteredScatterer(Scatterer):
 
         collected = defaultdict(dict)
 
-        for key, val in parameters.iteritems():
+        for key, val in parameters.items():
             tok = key.split('.', 1)
             if len(tok) > 1:
                 collected[tok[0]][tok[1]] = val
@@ -254,7 +254,7 @@ class CenteredScatterer(Scatterer):
                 collected[key] = val
 
         collected_arrays = defaultdict(dict)
-        for key, val in collected.iteritems():
+        for key, val in collected.items():
             tok = key.split('[', 1)
             if len(key.split('[', 1)) > 1:
                 sub_key, n = key.split('[', 1)
@@ -268,52 +268,16 @@ class CenteredScatterer(Scatterer):
         def build(par):
             if isinstance(par, dict):
                 reduce(lambda x, i: isinstance(i, int) and x,
-                       par.keys(), True)
-                d = [p[1] for p in sorted(par.iteritems(), key =
+                       list(par.keys()), True)
+                d = [p[1] for p in sorted(iter(par.items()), key =
                                           lambda x: x[0])]
                 return [build(p) for p in d]
             return par
 
-        for key, val in collected_arrays.iteritems():
+        for key, val in collected_arrays.items():
             built[key] = build(val)
 
         return cls(**built)
-
-
-
-class SingleScatterer(Scatterer):
-    def __init__(self, center = None):
-        if center is not None and (np.isscalar(center) or len(center) != 3):
-            raise ScattererDefinitionError("center specified as {0}, center "
-                "should be specified as (x, y, z)".format(center), self)
-        self.center = center
-
-    def translated(self, x, y, z):
-        """
-        Make a copy of this scatterer translated to a new location
-
-        Parameters
-        ----------
-        x, y, z : float
-            Value of the translation along each axis
-
-        Returns
-        -------
-        translated : Scatterer
-            A copy of this scatterer translated to a new location
-        """
-        new = copy(self)
-        new.center = self.center + np.array([x, y, z])
-        return new
-    @property
-    def x(self):
-        return self.center[0]
-    @property
-    def y(self):
-        return self.center[1]
-    @property
-    def z(self):
-        return self.center[2]
 
 def find_bounds(indicator):
     """

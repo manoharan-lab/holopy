@@ -1,4 +1,4 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
 # Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 #
 # This file is part of HoloPy.
@@ -33,20 +33,43 @@ cross sections in a stratified sphere," Applied Optics 29, 1551-1559, (1990).
 Yang, "Improved recursive algorithm for light scattering by a multilayered
 sphere," Applied Optics 42, 1710-1720, (1993).
 
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 """
 
-from __future__ import division
+
 
 import numpy as np
 from numpy import array, sin, cos, zeros, arange, real, imag, exp
 
 import scipy
 from scipy.special import riccati_jn, riccati_yn
-import mieangfuncs
-from mieangfuncs import dn_1_down, lentz_dn1
+
+try:
+    from . import mieangfuncs
+    from .mieangfuncs import dn_1_down, lentz_dn1
+except ImportError:
+    pass
 
 def riccati_psi_xi(x, nstop):
+    '''
+    Calculate Riccati-Bessel functions psi and xi for real argument.
+
+    Parameters
+    ----------
+    x : float
+        Argument
+    nstop : int
+        Maximum order to calculate to
+
+    Returns
+    -------
+    ndarray(2, nstop)
+        psi and xi
+
+    Notes
+    -----
+    Uses upwards recursion.
+    '''
     if np.imag(x) != 0.:
         raise TypeError('Cannot handle complex arguments.')
     psin = riccati_jn(nstop, x)
@@ -120,18 +143,22 @@ def log_der_13(z, nstop, eps1 = 1e-3, eps2 = 1e-16):
 # calculate ratio of RB's defined in Yang eqn. 23 by up recursion relation
 def Qratio(z1, z2, nstop, dns1 = None, dns2 = None, eps1 = 1e-3, eps2 = 1e-16):
     '''
-    Calculate ratio of Riccati-Bessel functions defined in Yang eq. 23
-    by up recursion.
+    Calculate ratio of Riccati-Bessel functions defined in [Yang2003]_ 
+    eq. 23 by up recursion.
 
+    Notes
+    -----
     Logarithmic derivatives calculated automatically if not specified.
+    Lentz continued fraction algorithm used to start downward recursion
+    for logarithmic derivatives.
     '''
     # convert z1 and z2 to 128 bit complex to prevent division problems
     z1 = np.complex128(z1)
     z2 = np.complex128(z2)
 
     if dns1 == None:
-        logdersz1 = LogDer13(z1, nstop, eps1, eps2)
-        logdersz2 = LogDer13(z2, nstop, eps1, eps2)
+        logdersz1 = log_der_13(z1, nstop, eps1, eps2)
+        logdersz2 = log_der_13(z2, nstop, eps1, eps2)
         d1z1 = logdersz1[0]
         d3z1 = logdersz1[1]
         d1z2 = logdersz2[0]
@@ -161,7 +188,10 @@ def R_psi(z1, z2, nmax, eps1 = 1e-3, eps2 = 1e-16):
     '''
     Calculate ratio of Riccati-Bessel function \psi: \psi(z1)/\psi(z2).
 
-    See Mackowski eqns. 65-66.
+    Notes
+    -----
+    See [Mackowski1990]_ eqns. 65-66. Uses Lentz continued fraction algorithm
+    for logarithmic derivatives.
     '''
     output = zeros(nmax + 1, dtype = 'complex128')
     output[0] = sin(z1) / sin(z2)

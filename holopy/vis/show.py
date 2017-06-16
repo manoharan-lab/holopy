@@ -1,4 +1,4 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
 # Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 #
 # This file is part of HoloPy.
@@ -22,13 +22,11 @@ sensible way.
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
-from __future__ import division
+
 
 import numpy as np
-from ..scattering.scatterer import Spheres, Scatterer
-from ..core import Image
+import xarray as xr
 from .vis2d import show2d
-from .vis3d import show_sphere_cluster, show_scatterer
 
 class VisualizationNotImplemented(Exception):
     def __init__(self, o):
@@ -53,11 +51,26 @@ def show(o,color=(.5, .5, .5)):
     to import all of matplotlib or mayavi just to load holopy)
     """
 
-    if isinstance(o, Spheres):
-        show_sphere_cluster(o,color)
-    elif isinstance(o, (Image, np.ndarray, list, tuple)):
+    if isinstance(o, (xr.DataArray, np.ndarray, list, tuple)):
         show2d(o)
-    elif isinstance(o, Scatterer):
-        show_scatterer(o)
     else:
         raise VisualizationNotImplemented(o)
+
+def test_disp():
+    #diagnostic test to check matplotlib backend.
+    a = np.zeros([100, 100, 3])
+    a[25:75,25:75,0] = 1
+    for i in range(25):
+        for j in range(25):
+            if i + j <= 25:
+                a[50+i, 50+j, 1:3] = 1
+                a[50-i, 50+j, 1:3] = 1 
+                a[50-i, 50-j, 1:3] = 1
+                a[50+i, 50-j, 1:3] = 1
+            elif i**2 + j**2 <= 25**2:
+                a[50+i, 50+j, 1] = 1
+                a[50-i, 50+j, 1] = 1 
+                a[50-i, 50-j, 1] = 1
+                a[50+i, 50-j, 1] = 1
+
+    show(a)

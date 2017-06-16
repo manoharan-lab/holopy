@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -15,22 +15,17 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import division
 
-from nose.tools import assert_raises, assert_equal
 
-from ..parameter import Parameter, par, ComplexParameter
+from numpy.testing import assert_raises, assert_equal
+
+from ..parameter import ComplexParameter
+from ..parameter import Parameter as par
 from ..errors import GuessOutOfBoundsError
 from ...core.tests.common import assert_obj_close
 
 
 def test_parameter():
-    # basic parameter
-    p1 = Parameter(guess = 5, limit = [4, 6])
-    # now make a par using shorthands
-    p2 = par(5, [4,6])
-    # they should be the same
-    assert_obj_close(p1, p2)
 
     p3 = par(limit = 7)
 

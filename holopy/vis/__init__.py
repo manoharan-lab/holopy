@@ -1,4 +1,4 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
 # Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 #
 # This file is part of HoloPy.
@@ -28,6 +28,7 @@ this you may see a small lag on your first plot.
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
-from __future__ import division
 
-from show import show
+
+from .show import show, test_disp
+from .vis2d import show2d

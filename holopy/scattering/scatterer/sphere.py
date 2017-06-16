@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -24,10 +24,11 @@ Defines Sphere, a scattering primitive
 '''
 
 import numpy as np
-from .scatterer import CenteredScatterer, Indicators
-from ..errors import ScattererDefinitionError
 from copy import copy
-from ...core.helpers import _ensure_array, updated
+
+from .scatterer import CenteredScatterer, Indicators
+from ..errors import InvalidScatterer
+from ...core.utils import ensure_array, updated
 
 class Sphere(CenteredScatterer):
     '''
@@ -52,12 +53,19 @@ class Sphere(CenteredScatterer):
         self.r = r
         super(Sphere, self).__init__(center)
 
-        if np.any(self.r < 0):
-            raise ScattererDefinitionError("radius is negative", self)
+        try:
+            if np.any(np.array(self.r) < 0):
+                raise InvalidScatterer(self,"radius is negative")
+        except TypeError:
+            # Simplest solution to deal with spheres with a parameter or prior
+            # as arguments, just don't check them. It might be worth doing some
+            # testing of the guess, but for now I am not doing that to avoid
+            # introducing a dependency on something in fit
+            pass
 
     @property
     def indicators(self):
-        rs = _ensure_array(self.r)
+        rs = ensure_array(self.r)
         funcs = [(lambda points, ri=ri: (points**2).sum(-1) < ri**2) for ri in rs]
         r = max(rs)
         return Indicators(funcs, [[-r, r], [-r, r], [-r, r]])
@@ -74,6 +82,20 @@ class Sphere(CenteredScatterer):
                 return len(self.n)
         else:
             return 0
+    
+    def guess(self):
+
+        def checkguess(val):
+            if hasattr(val,'guess'):
+                return val.guess
+            else:
+                return val
+
+        if self.center is not None:
+            center = [checkguess(dim) for dim in self.center]
+        else:
+            center = None
+        return Sphere(checkguess(self.n), checkguess(self.r), center)
 
     def like_me(self, **overrides):
         if 'center' in overrides:
@@ -100,8 +122,8 @@ class LayeredSphere(Sphere):
         specifies coordinates of center of sphere
     """
     def __init__(self, n = None, t = None, center = None):
-        self.n = _ensure_array(n)
-        self.t = _ensure_array(t)
+        self.n = ensure_array(n)
+        self.t = ensure_array(t)
         self.center = center
 
     @property

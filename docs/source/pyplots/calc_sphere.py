@@ -1,13 +1,11 @@
 import holopy as hp
-from holopy.scattering.scatterer import Sphere
-from holopy.core import ImageSchema, Optics
-from holopy.scattering.theory import Mie
+from holopy.scattering import calc_holo, Sphere
 
-sphere = Sphere(n = 1.59+.0001j, r = .5, center = (4, 4, 5))
+sphere = Sphere(n = 1.59, r = .5, center = (4, 4, 5))
+medium_index = 1.33
+illum_wavelen = 0.660
+illum_polarization = (1,0)
+detector = hp.detector_grid(shape = 100, spacing = .1)
 
-schema = ImageSchema(shape = 100, spacing = .1,
-                     optics = Optics(wavelen = .660, index = 1.33,
-                                     polarization = [1,0]))
-
-holo = Mie.calc_holo(sphere, schema)
+holo = calc_holo(detector, sphere, medium_index, illum_wavelen, illum_polarization)
 hp.show(holo)

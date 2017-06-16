@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -23,14 +23,14 @@ Defines Spheres, a Scatterers scatterer consisting of Spheres
 '''
 # COVERAGE: I think all uncovered code is either unreachable or due likely to be
 # refactored away
-from __future__ import division
+
 
 import numpy as np
 import warnings
 
 from .sphere import Sphere
 from .composite import Scatterers
-from ..errors import OverlapWarning, ScattererDefinitionError
+from ..errors import OverlapWarning, InvalidScatterer
 from ...core.math import cartesian_distance, rotate_points
 
 # default to always warning the user about overlaps.  This can be overriden by
@@ -51,14 +51,18 @@ class Spheres(Scatterers):
     '''
 
     def __init__(self, scatterers, warn=True):
-        # make sure all components are spheres
-        for s in scatterers:
-            if not isinstance(s, Sphere):
-                raise ScattererDefinitionError(
-                    "Spheres expects all component " +
-                    "scatterers to be Spheres.\n" +
-                    repr(s) + " is not a Sphere", self)
-        self.scatterers = scatterers
+        if isinstance(scatterers, Sphere):
+            #only one sphere and it's not in a list
+            self.scatterers = [scatterers]
+        else:
+            # make sure all components are spheres
+            for s in scatterers:
+                if not isinstance(s, Sphere):
+                    raise InvalidScatterer(self,
+                        "Spheres expects all component " +
+                        "scatterers to be Spheres.\n" +
+                        repr(s) + " is not a Sphere")
+            self.scatterers = scatterers
 
         if self.overlaps:
             warnings.warn(OverlapWarning(self, self.overlaps))
@@ -91,11 +95,14 @@ class Spheres(Scatterers):
 
     def add(self, scatterer):
         if not isinstance(scatterer, Sphere):
-            raise ScattererDefinitionError(
+            raise InvalidScatterer(self,
                 "Spheres expects all component " +
                 "scatterers to be Spheres.\n" +
-                repr(scatterer) + " is not a Sphere", self)
+                repr(scatterer) + " is not a Sphere")
         self.scatterers.append(scatterer)
+
+    def guess(self):
+        return Spheres([sphere.guess() for sphere in self.scatterers])
 
     @property
     def n(self):

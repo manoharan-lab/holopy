@@ -1,4 +1,4 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
 # Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 #
 # This file is part of HoloPy.
@@ -22,14 +22,20 @@ from nose.plugins.skip import SkipTest
 import warnings
 
 try:
-    import matplotlib.pyplot as plt
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        import matplotlib.pyplot as plt
     plt.ioff()
 except ImportError:
     raise SkipTest()
 
 def test_show():
-    d = get_example_data('image0001.yaml')
-    hp.show(d)
+    d = get_example_data('image0001')
+    try:
+        hp.show(d)
+    except RuntimeError:
+        # this occurs on travis since there is no display
+        raise SkipTest()    
     with warnings.catch_warnings():
-        warnings.simplefilter('ignore', DeprecationWarning)
+        warnings.simplefilter('ignore'),  (DeprecationWarning, UserWarning)
         plt.savefig(tempfile.TemporaryFile(suffix='.pdf'))

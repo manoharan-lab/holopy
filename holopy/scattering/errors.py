@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -21,18 +21,26 @@ other exceptions in other parts of HoloPy to keep things modular.
 
 .. moduleauthor :: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 """
-from __future__ import division
+
 
 import warnings
-import exceptions
+
+class NoScattering(ImportWarning):
+    def __init__(self, theory):
+        self.theory = theory
+    def __str__(self):
+        return "Could not import "+self.theory+" scattering theory. You will not be able to do scattering calculations but the rest of HoloPy should remain usable. This is probably due to a problem with compiling Fortran code."
+
 
 class InvalidScatterer(Exception):
     def __init__(self, scatterer, message):
         self.scatterer = scatterer
-        super(InvalidScatterer, self).__init__(message)
+        super(InvalidScatterer, self).__init__(
+            "Invalid scatterer of type " +
+            self.scatterer.__class__.__name__ +
+            ".\n" + message)
 
-
-class OverlapWarning(exceptions. UserWarning):
+class OverlapWarning(UserWarning):
     def __init__(self, scatterer, overlaps):
         self.scatterer = scatterer
         self.overlaps = overlaps
@@ -40,16 +48,6 @@ class OverlapWarning(exceptions. UserWarning):
         return "{0} has overlaps between spheres: {1}".format(repr(self.scatterer),
                                                               self.overlaps)
 warnings.simplefilter('always', OverlapWarning)
-
-
-class ScattererDefinitionError(Exception):
-    def __init__(self, message, scatterer):
-        self.scatterer = scatterer
-        super(ScattererDefinitionError, self).__init__(
-            "Error defining scatterer object of type " +
-            self.scatterer.__class__.__name__ +
-            ".\n" + message)
-
 
 class TheoryNotCompatibleError(Exception):
     def __init__(self, theory, scatterer, reason=None):
@@ -62,39 +60,26 @@ class TheoryNotCompatibleError(Exception):
             message += " because: " + message
         super(TheoryNotCompatibleError, self).__init__(message)
 
+class MissingParameter(Exception):
+    def __init__(self, parameter_name):
+        self.parameter_name = parameter_name
+    def __str__(self):
+        return ("Calculation requires specification of " + self.parameter_name + ".")
 
-class UnrealizableScatterer(Exception):
-    def __init__(self, theory, scatterer, reason=None):
-        self.theory = theory
+class MultisphereFailure(Exception):
+    def __str__(self):
+        return ("Multisphere calculations failed to converge, or returned NaN. this probably means "
+                "your scatterer is unphysical.")
+
+class DependencyMissing(Exception):
+    def __init__(self, dep):
+        self.dep = dep
+    def __str__(self):
+        return "External Dependency: " + self.dep + " could not be found, terminating."
+
+class AutoTheoryFailed(Exception):
+    def __init__(self, scatterer):
         self.scatterer = scatterer
-        message = ("Cannot compute scattering with "+ self.theory.__class__.__name__
-                + " scattering theory for a scatterer of type " +
-                self.scatterer.__class__.__name__)
-        if reason is not None:
-            message += ' because: ' + reason
-        super(UnrealizableScatterer, self).__init__(message)
 
-class ModelInputError(Exception):
-    pass
-
-class NoCenter(Exception):
-    pass
-
-class NoPolarization(Exception):
-    pass
-
-class MultisphereFieldNaN(UnrealizableScatterer):
     def __str__(self):
-        return "Fields computed with Multisphere are NaN, this probably "
-        "represents a failure of the code to converge, check your scatterer."
-
-
-class MultisphereExpansionNaN(Exception):
-    def __str__(self):
-        return ("Internal expansion for Multisphere coefficients contains "
-                "NaN.  This probably means your scatterer is unphysical.")
-
-class ConvergenceFailureMultisphere(Exception):
-    def __str__(self):
-        return ("Multisphere calculations failed to converge, this probably means "
-                "your scatterer is unphysical, or possibly just huge")
+        return ("Could not automatically determine a theory to compute scattering from scatterer: {}. You will have to manually specify a theory (or submit a bug if you think we should be able to tell what theory you need). ".format(self.scatterer))

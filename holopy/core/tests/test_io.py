@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -16,120 +16,74 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
-from holopy.core.tests.common import (assert_obj_close,
-                                      assert_read_matches_write,
-                                      get_example_data,
-                                      get_example_data_path)
-from holopy.core import Optics, Marray, load, save
-from holopy.core.process import normalize
+import yaml
 import tempfile
 import os
 import shutil
-import warnings
-from nose.plugins.attrib import attr
-from numpy.testing import assert_raises, assert_equal
 import numpy as np
-from holopy.core.io import save_image, load_image
-from holopy.core.holopy_object import Serializable
-import yaml
+from numpy.testing import assert_equal, assert_allclose
+from nose.plugins.attrib import attr
+
+from .. import load, save, load_image, save_image
+from ..process import normalize
+from ..metadata import get_spacing
+from ..holopy_object import Serializable
+from .common import (assert_obj_close, assert_read_matches_write, get_example_data)
 
 @attr('fast')
 def test_hologram_io():
-    holo = normalize(get_example_data('image0001.yaml'))
-
+    holo = normalize(get_example_data('image0001'))
     assert_read_matches_write(holo)
 
-@attr('fast')
-def test_load_optics():
-    optics_yaml = """wavelen: 785e-9
-polarization: [1.0, 0]
-divergence: 0
-pixel_size: [6.8e-6, 6.8e-6]
-pixel_scale: [3.3e-7, 3.3e-7]"""
-    t = tempfile.TemporaryFile()
-    t.write(optics_yaml)
-    t.seek(0)
-
-    o = Optics(**load(t))
-
-    assert_obj_close(o, Optics(wavelen=7.85e-07, polarization=[1.0, 0.0], divergence=0, pixel_size=[6.8e-06, 6.8e-06], pixel_scale=[3.3e-07, 3.3e-07]))
-
-def test_marray_io():
-    d = Marray(np.random.random((10, 10)))
-    assert_read_matches_write(d)
-
 def test_image_io():
-    holo = get_example_data('image0001.yaml')
+    holo = get_example_data('image0001')
+
     t = tempfile.mkdtemp()
 
     filename = os.path.join(t, 'image0001.tif')
-    save(filename, holo)
+    save_image(filename, holo, scaling=None)
     l = load(filename)
     assert_obj_close(l, holo)
 
     # check that it defaults to saving as tif
     filename = os.path.join(t, 'image0002')
-    save_image(filename, holo)
-    l = load(filename+'.tif')
+    save_image(filename, holo, scaling=None)
+    l = load_image(filename+'.tif', name=holo.name, medium_index=holo.medium_index, spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen, illum_polarization=holo.illum_polarization, normals=holo.normals)
     assert_obj_close(l, holo)
+
+    ##check saving/loading non-tif
+    filename = os.path.join(t, 'image0001.bmp')
+    save_image(filename, holo, scaling=None)
+    # For now we don't support writing metadata to image formats other
+    # than tiff, so we have to specify the metadata here
+    l=load_image(filename, name=holo.name, medium_index=holo.medium_index, spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen, illum_polarization=holo.illum_polarization, normals=holo.normals)
+    assert_obj_close(l, holo)    
+
+    #check specify scaling
+    filename = os.path.join(t, 'image0001.tif')
+    save_image(filename, holo, scaling=(0,255))
+    l=load_image(filename, name=holo.name, medium_index=holo.medium_index, spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen, illum_polarization=holo.illum_polarization, normals=holo.normals)
+    assert_obj_close(l, holo)
+
+    #check auto scaling
+    filename = os.path.join(t, 'image0001.tif')
+    save_image(filename, holo, depth='float')
+    l=load_image(filename, name=holo.name, spacing=get_spacing(holo))
+    # skip checking full DataArray attrs because it is akward to keep them through arithmatic. Ideally we would figure out a way to preserve them and switch back to testing fully
+    assert_allclose(l, (holo-holo.min())/(holo.max()-holo.min()))    
 
     # check saving 16 bit
     filename = os.path.join(t, 'image0003')
     save_image(filename, holo, scaling=None, depth=16)
-    l = load(filename+'.tif')
+    l = load_image(filename+'.tif', name=holo.name, medium_index=holo.medium_index, spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen, illum_polarization=holo.illum_polarization, normals=holo.normals)
     assert_obj_close(l, holo)
 
     # test that yaml save works corretly with a string instead of a file
-    filename = os.path.join(t, 'image0001.yaml')
+    filename = os.path.join(t, 'image0001')
     save(filename, holo)
     loaded = load(filename)
     assert_obj_close(loaded, holo)
-
-    f = get_example_data_path('image0001.yaml')
-    spacing = .1
-    optics = Optics(.66, 1.33, (1,0))
-    with warnings.catch_warnings(record =True) as w:
-        warnings.simplefilter('always')
-        h = load(f, spacing = spacing, optics = optics)
-        assert_obj_close(h.optics, optics)
-        assert_equal(h.spacing, spacing)
-        assert_equal(len(w), 1)
-        assert "Overriding spacing and optics of loaded yaml" in w[-1].message
-
-
-    with warnings.catch_warnings(record =True) as w:
-        warnings.simplefilter('always')
-        h = load(f, optics = optics)
-        assert_obj_close(h.optics, optics)
-        assert_equal(h.spacing, holo.spacing)
-        assert_equal(len(w), 1)
-        assert ("WARNING: overriding optics of loaded yaml without "
-                "overriding spacing, this is probably incorrect." in
-                w[-1].message)
-
-
-    with warnings.catch_warnings(record =True) as w:
-        warnings.simplefilter('always')
-        h = load(f, spacing = spacing)
-        assert_obj_close(h.optics, holo.optics)
-        assert_equal(h.spacing, spacing)
-        assert_equal(len(w), 1)
-        assert ("WARNING: overriding spacing of loaded yaml without "
-                "overriding optics, this is probably incorrect." in
-                w[-1].message)
-
     shutil.rmtree(t)
-
-def test_non_tiff():
-    # test loading a few other image formats.  We have some in the docs
-    # director, so just use them
-    import holopy
-    root = os.path.split(os.path.split(holopy.__file__)[0])[0]
-    doc_images = os.path.join(root, 'docs', 'source', 'images')
-
-    load(os.path.join(doc_images, 'image_5Particle_Hologram.jpg'))
-    load(os.path.join(doc_images, 'ReconVolume_mlab_5Particle_Hologram.png'))
-
 
 # test a number of little prettying up of yaml output that we do for
 # numpy types
@@ -140,14 +94,6 @@ def test_yaml_output():
 
     assert_equal(yaml.dump(np.dtype('float')),"!dtype 'float64'\n")
     assert_equal(yaml.load(yaml.dump(np.dtype('float'))), np.dtype('float64'))
-
-    assert_equal(yaml.dump(Optics), "!class 'holopy.core.metadata.Optics'\n")
-    assert_equal(yaml.load(yaml.dump(Optics)), Optics)
-
-    def test(x):
-        return x*x
-
-    assert_equal(yaml.dump(test), "!function 'return x*x'\n")
 
     # this should fail on Windows64 because int and long are both
     # int32

@@ -1,4 +1,4 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
 # Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 #
 # This file is part of HoloPy.
@@ -24,12 +24,12 @@ as Clusters.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimidusk@physics.harvard.edu>
 '''
-from __future__ import division
+
 
 from .scatterer import Scatterer, Indicators
-import scatterer
+from . import scatterer
 
-from .sphere import Sphere
+from .sphere import Sphere, LayeredSphere
 from .composite import Scatterers
 from .spherecluster import Spheres
 from .janus import JanusSphere
@@ -38,4 +38,4 @@ from .capsule import Capsule
 from .cylinder import Cylinder
 from .bisphere import Bisphere
 from .sphere_builtin import Sphere_builtin
-from csg import Union, Difference, Intersection
+from .csg import Union, Difference, Intersection, CsgScatterer

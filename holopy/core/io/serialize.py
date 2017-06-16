@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -25,72 +25,32 @@ analysis procedures.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 """
-from __future__ import division
+
 import numpy as np
 import yaml
 from yaml.reader import ReaderError
-import re
 import inspect
 import types
 
-from holopy.core.helpers import is_none
-from holopy.core.holopy_object import SerializableMetaclass
-from holopy.core.marray import Marray
-from holopy.core import marray
+from ..utils import is_none
+from ..holopy_object import SerializableMetaclass
 
 def save(outf, obj):
-    if isinstance(outf, basestring):
-        outf = file(outf, 'wb')
+    if isinstance(outf, str):
+        outf = open(outf, 'wb')
 
-    yaml.dump(obj, outf)
-    if isinstance(obj, Marray):
-        # yaml saves of large arrays are very slow, so we have numpy save the array
-        # parts of Marray objects.  This will mean the file isn't stricktly
-        # a valid yaml (or even a valid text file really), but we can still read
-        # it, and with the right programs (like linux more) you can still see
-        # the text yaml information, and it keeps everything in one file
-        outf.write('array: !NpyBinary\n')
-        np.save(outf, obj)
-
+    outf.write(yaml.dump(obj).encode())
 
 def load(inf):
-    if isinstance(inf, basestring):
-        inf = file(inf, mode = 'rU')
-
-    line = inf.readline()
-    cls = line.strip('{} !\n')
-    lines = []
-    if hasattr(marray, cls) and issubclass(getattr(marray, cls), Marray):
-        while not re.search('!NpyBinary', line):
-            lines.append(line)
-            line = inf.readline()
-        arr = np.load(inf)
-        head = ''.join(lines[1:])
-        kwargs = yaml.load(head)
-        if kwargs is None:
-            kwargs = {} #pragma: nocover
-        return getattr(marray, cls)(arr, **kwargs)
-
-
+    if isinstance(inf, str):
+        with open(inf, mode='rb') as inf:
+            return yaml.load(inf)
     else:
-        inf.seek(0)
-        obj = yaml.load(inf)
-        if isinstance(obj, dict):
-            # sometimes yaml doesn't convert strings to floats properly, so we
-            # have to check for that.
-            for key in obj:
-                if isinstance(obj[key], basestring):
-                    try:
-                        obj[key] = float(obj[key])
-                    except ValueError: #pragma: nocover
-                        pass #pragma: nocover
-
-        return obj
-
+        return yaml.load(inf)
 
 def _pickle_method(method):
-    func_name = method.im_func.__name__
-    obj = method.im_self
+    func_name = method.__func__.__name__
+    obj = method.__self__
     return _unpickle_method, (func_name, obj)
 
 def _unpickle_method(func_name, obj):
@@ -98,9 +58,9 @@ def _unpickle_method(func_name, obj):
 
 
 
-import copy_reg
+import copyreg
 import types
-copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
+copyreg.pickle(types.MethodType, _pickle_method, _unpickle_method)
 
 ###################################################################
 # Custom Yaml Representers
@@ -111,9 +71,9 @@ def ignore_aliases(data):
         # numpy arrays no longer want to be compared to None, so instead check for a none by looking for if it is an instance of NoneType
         if is_none(data) or data is ():
             return True
-        if isinstance(data, (str, unicode, bool, int, float)):
+        if isinstance(data, (str, bool, int, float)):
             return True
-    except TypeError, e:
+    except TypeError as e:
         pass
 yaml.representer.SafeRepresenter.ignore_aliases = \
     staticmethod(ignore_aliases)
@@ -167,11 +127,11 @@ def class_loader(loader, node):
     for t in tok[1:]:
         mod = mod.__getattribute__(t)
     return mod
-yaml.add_constructor(u'!class', class_loader)
+yaml.add_constructor('!class', class_loader)
 
 def instancemethod_representer(dumper, data):
-    func = data.im_func.func_name
-    obj = data.im_self
+    func = data.__func__.__name__
+    obj = data.__self__
     if isinstance(obj, SerializableMetaclass):
         obj = obj()
     rep = yaml.dump(obj)
@@ -193,24 +153,3 @@ def instancemethod_constructor(loader, node):
     obj = yaml.load(obj)['dummy']
     return getattr(obj, method)
 yaml.add_constructor('!method', instancemethod_constructor)
-
-def function_representer(dumper, data):
-    code = inspect.getsource(data)
-    code = code.split('\n',)
-    # first line will be function name, we don't want that
-    code = code[1].strip()
-    return dumper.represent_scalar('!function', code)
-# here I refer to function_representer.__class__ because I am not sure how else
-# to access the type of a fuction (function does not work)
-yaml.add_representer(function_representer.__class__, function_representer)
-
-# for now punt if we attempt to read in functions.
-# make_scatterer in model is allowed to be any function, so we may encounter
-# them.  This constructor allows the read to succeed, but the function will be
-# absent.
-# It is possible to read in functions from the file, but it is more than a
-# little subtle and kind of dangrous, so I want to think more about it before
-# doing it - tgd 2012-06-4
-def function_constructor(loader, node):
-    return None
-yaml.add_constructor('!function', function_constructor)

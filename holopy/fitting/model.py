@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -21,16 +21,17 @@ Classes for defining models of scattering for fitting
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <jfung@physics.harvard.edu>
 """
-from __future__ import division
 
+
+from copy import copy
 import numpy as np
 import inspect
 from os.path import commonprefix
-from .errors import ModelDefinitionError
+from .errors import ParameterSpecificationError
 from ..core.holopy_object import HoloPyObject
 from .parameter import Parameter, ComplexParameter
-from holopy.core.helpers import ensure_listlike
-
+from holopy.core.utils import ensure_listlike
+from holopy.core.metadata import get_values
 
 class Parametrization(HoloPyObject):
     """
@@ -66,7 +67,7 @@ class Parametrization(HoloPyObject):
     def make_from(self, parameters):
         # parameters is an ordered dictionary
         for_schema = {}
-        for arg in inspect.getargspec(self.make_scatterer).args:
+        for arg in inspect.signature(self.make_scatterer).parameters:
             if (arg + '.real') in parameters and (arg + '.imag') in parameters:
                 for_schema[arg] = (parameters[arg + '.real'] + 1.j *
                                    parameters[arg + '.imag'])
@@ -101,7 +102,7 @@ class ParameterizedObject(Parametrization):
 
     Parameters
     ----------
-    obj : :mod:`.scatterer`
+    obj : :mod:`~holopy.scattering.scatterer.scatterer`
         Object containing parameters specifying any values vary in the fit.  It
         can also include numbers for any fixed values
     """
@@ -111,7 +112,7 @@ class ParameterizedObject(Parametrization):
         # find all the Parameter's in the obj
         parameters = []
         ties = {}
-        for name, par in sorted(obj.parameters.iteritems(), key=lambda x: x[0]):
+        for name, par in sorted(iter(obj.parameters.items()), key=lambda x: x[0]):
             def add_par(p, name):
                 if p in parameters:
                     # if the parameter is already in the parameters list, it
@@ -150,7 +151,7 @@ class ParameterizedObject(Parametrization):
     @property
     def guess(self):
         pars = self.obj.parameters
-        for key in pars.keys():
+        for key in list(pars.keys()):
             if hasattr(pars[key], 'guess'):
                 if isinstance(pars[key], ComplexParameter):
                     pars[key+'.real'] = pars[key].real.guess
@@ -162,10 +163,10 @@ class ParameterizedObject(Parametrization):
     def make_from(self, parameters):
         obj_pars = {}
 
-        for name, par in self.obj.parameters.iteritems():
+        for name, par in self.obj.parameters.items():
             # if this par is in a tie group, we need to work with its tie group
             # name since that will be what is in parameters
-            for groupname, group in self.ties.iteritems():
+            for groupname, group in self.ties.items():
                 if name in group:
                     name = groupname
 
@@ -216,15 +217,41 @@ def limit_overlaps(fraction=.1):
     return constraint
 
 class BaseModel(HoloPyObject):
-    def __init__(self, scatterer):
+    def __init__(self, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
         if not isinstance(scatterer, Parametrization):
             scatterer = ParameterizedObject(scatterer)
         self.scatterer = scatterer
         self._parameters = self.scatterer.parameters
+        self._use_parameter(medium_index, 'medium_index')
+        self._use_parameter(illum_wavelen, 'illum_wavelen')
+        self._use_parameter(illum_polarization, 'illum_polarization')
+        self._use_parameter(theory, 'theory')
 
     @property
     def parameters(self):
         return self._parameters
+
+    def par(self, name, schema=None, default=None):
+        if hasattr(self, name) and getattr(self, name) is not None:
+            return getattr(self, name)
+        if schema is not None and hasattr(schema, name):
+            return getattr(schema, name)
+        if default is not None:
+            return default
+
+        if schema is not None:
+            schematxt = " or Schema"
+
+        raise ValueError("Cannot find value for {} in Model{}".format(name, schema))
+
+    def get_par(self, name, pars, schema=None, default=None):
+        return pars.pop(name, self.par(name, schema, default=default))
+
+    def get_pars(self, names, pars, schema=None):
+        r = {}
+        for name in names:
+            r[name] = self.get_par(name, pars, schema)
+        return r
 
     def _use_parameter(self, par, name):
         setattr(self, name, par)
@@ -232,6 +259,11 @@ class BaseModel(HoloPyObject):
             if par.name is None:
                 par.name = name
             self._parameters.append(par)
+
+    def _optics_scatterer(self, pars, schema):
+        optics = self.get_pars(['medium_index', 'illum_wavelen', 'illum_polarization'], pars, schema)
+        scatterer = self.scatterer.make_from(pars)
+        return optics, scatterer
 
 
 
@@ -241,11 +273,6 @@ class Model(BaseModel):
 
     Parameters
     ----------
-    parameters  :class:`.Paramatrization`
-        The parameters which can be varied in this model.
-    theory : :func:`scattering.theory.ScatteringTheory.calc_*`
-        The scattering calc function that should be used to compute results for
-        comparison with the data
     alpha : float or Parameter
         Extra scaling parameter, hopefully this will be removed by improvements
         in our theory soon.
@@ -254,21 +281,17 @@ class Model(BaseModel):
         a scaterer as an argument and return False if you wish to disallow that
         scatterer (usually because it is un-physical for some reason)
     """
-    def __init__(self, scatterer, theory, alpha=None,
+    def __init__(self, scatterer, calc_func, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', alpha=None,
                  use_random_fraction=None, constraints=[]):
-        super(Model, self).__init__(scatterer)
-        if isinstance(theory, basestring):
-            import holopy.scattering.theory as theory_module
-            kind, func = theory.split('.')
-            theory = getattr(getattr(theory_module, kind), func)
+        super().__init__(scatterer, medium_index, illum_wavelen, illum_polarization, theory)
+        self.calc_func = calc_func
 
-        self.theory = theory
         self.use_random_fraction = use_random_fraction
 
         self._use_parameter(alpha, 'alpha')
 
         if len(self.parameters) == 0:
-            raise ModelDefinitionError("You must specify at least one parameter to vary in a fit")
+            raise ParameterSpecificationError("You must specify at least one parameter to vary in a fit")
 
         self.constraints = ensure_listlike(constraints)
 
@@ -288,11 +311,23 @@ class Model(BaseModel):
                 return 1.0
             return self.alpha
 
-    def guess_holo(self, schema):
-        if isinstance(self.alpha, Parameter):
-            alpha = self.alpha.guess
-        else:
-            alpha = self.alpha
-        return self.theory(self.scatterer.guess, schema, alpha)
+    def _calc(self, pars, schema):
+        pars = copy(pars)
+        alpha = self.get_par(pars=pars, name='alpha', default=1.0)
+        optics, scatterer = self._optics_scatterer(pars, schema)
+
+        valid = True
+        for constraint in self.constraints:
+            valid = valid and constraint(scatterer)
+        if not valid:
+            return np.ones_like(schema) * np.inf
+
+        try:
+            return self.calc_func(schema=schema, scatterer=scatterer, scaling=alpha, theory=self.theory, **optics)
+        except:
+            return np.ones_like(schema) * np.inf
+
+    def residual(self, pars, data):
+        return get_values(self._calc(pars, data)) - get_values(data)
 
     # TODO: Allow a layer on top of theory to do things like moving sphere

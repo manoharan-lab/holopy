@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -27,14 +27,13 @@ The fitting module is used to:
 3. Fit model to timeseries -> list of :class:`.FitResult` objects
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 
 """
 
-from fit import fit, rsq, chisq, FitResult
-from model import Model, Parametrization
-from parameter import Parameter, par, ComplexParameter
-from fit_series import fit_series
-from minimizer import Nmpfit
+from .fit import fit, rsq, chisq, FitResult, make_subset_data
+from .model import Model, Parametrization
+from .parameter import Parameter, ComplexParameter
+from .minimizer import Nmpfit

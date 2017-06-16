@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -23,19 +23,36 @@ Routines for fitting a hologram to an exact solution
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 
 """
-from __future__ import division
+
 
 import warnings
 import time
+from copy import copy, deepcopy
+
+import numpy as np
 
 from ..core.holopy_object import HoloPyObject
+from holopy.core.metadata import flat, copy_metadata
+from holopy.core.math import chisq, rsq
 from .errors import MinimizerConvergenceFailed, InvalidMinimizer
-from holopy.scattering.errors import MultisphereFieldNaN
 from .minimizer import Minimizer, Nmpfit
-import numpy as np
-from ..core.marray import Schema
 
-from copy import copy, deepcopy
+def make_subset_data(data, random_subset=None, pixels=None, return_selection=False):
+    if random_subset is None and pixels is None:
+        return data
+    if random_subset is not None and pixels is not None:
+        raise ValueError("You can only specify one of pixels or random_subset")
+    if pixels is not None:
+        n_sel = pixels
+    else:
+        n_sel = int(np.ceil(data.size*random_subset))
+    selection = np.random.choice(data.size, n_sel, replace=False)
+    subset = flat(data)[selection]
+    subset = copy_metadata(data, subset, do_coords=False)
+    if return_selection:
+        return subset, selection
+    else:
+        return subset
 
 def fit(model, data, minimizer=Nmpfit, random_subset=None):
     """
@@ -67,10 +84,16 @@ def fit(model, data, minimizer=Nmpfit, random_subset=None):
             raise InvalidMinimizer("Object supplied as a minimizer could not be"
                                    "interpreted as a minimizer")
 
-    coster = CostComputer(data, model, random_subset)
+    if random_subset is None:
+        data = flat(data)
+    else:
+        data = make_subset_data(data, random_subset)
+
+    def residual(par_vals):
+        return model.residual(par_vals, data)
+
     try:
-        fitted_pars, minimizer_info = minimizer.minimize(model.parameters,
-                                                         coster.flattened_difference)
+        fitted_pars, minimizer_info = minimizer.minimize(model.parameters, residual)
         converged = True
     except MinimizerConvergenceFailed as cf:
         warnings.warn("Minimizer Convergence Failed, your results may not be "
@@ -84,9 +107,10 @@ def fit(model, data, minimizer=Nmpfit, random_subset=None):
     fitted_scatterer = model.scatterer.make_from(fitted_pars)
 
     time_stop = time.time()
+    fitted = model._calc(fitted_pars, data)
 
-    return FitResult(fitted_pars, fitted_scatterer, coster.chisq(fitted_pars),
-                     coster.rsq(fitted_pars), converged, time_stop - time_start,
+    return FitResult(fitted_pars, fitted_scatterer, chisq(fitted, data),
+                     rsq(fitted, data), converged, time_stop - time_start,
                      model, minimizer, minimizer_info)
 
 
@@ -101,7 +125,7 @@ class FitResult(HoloPyObject):
     ----------
     parameters : array(float)
         The fitted values for each parameter
-    scatterer : :mod:`.scatterer`
+    scatterer : :class:`.Scatterer`
         The best fit scatterer
     chisq : float
         The :math:`\chi^2` goodness of fit
@@ -182,59 +206,3 @@ class FitResult(HoloPyObject):
         # TODO: have this correctly pull number of iterations from
         # non-nmpfit minimizers.
         return self.minimization_details.niter
-
-
-
-
-def chisq(fit, data):
-    return float((((fit-data))**2).sum() / fit.size)
-
-def rsq(fit, data):
-    return float(1 - ((data - fit)**2).sum()/((data - data.mean())**2).sum())
-
-class CostComputer(HoloPyObject):
-    def __init__(self, data, model, random_subset=None):
-        self.model = model
-
-        schema = data
-
-        if random_subset is None and model.use_random_fraction is not None:
-            random_fraction = model.use_random_fraction
-            warnings.warn("Setting random fraction from model is depricated, use the random fraction option in fit")
-
-        if random_subset is not None:
-            n_sel = int(np.ceil(data.size*random_subset))
-            self.selection = np.random.choice(data.size, n_sel, replace=False)
-            self.data = data.ravel()[self.selection]
-            positions = schema.positions.xyz()[self.selection]
-            self.schema = Schema(positions=positions,
-                                 origin=schema.origin,
-                                 optics=schema.optics)
-        else:
-            self.selection = None
-            self.data = data
-            self.schema = schema
-
-
-    def _calc(self, pars):
-        s = self.model.scatterer.make_from(pars)
-
-        valid = True
-        for constraint in self.model.constraints:
-            valid = valid and constraint(s)
-        if not valid:
-            return np.ones_like(self.schema) * np.inf
-
-        try:
-            return self.model.theory(s, self.schema, scaling=self.model.get_alpha(pars))
-        except MultisphereFieldNaN:
-            return np.ones_like(self.schema) * np.inf
-
-    def flattened_difference(self, pars):
-        return (self._calc(pars) -  self.data).ravel()
-
-    def rsq(self, pars):
-        return rsq(self._calc(pars), self.data)
-
-    def chisq(self, pars):
-        return chisq(self._calc(pars), self.data)

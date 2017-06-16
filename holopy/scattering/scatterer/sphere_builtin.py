@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -23,11 +23,7 @@ Defines Sphere, a scattering primitive
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
-import numpy as np
-from .scatterer import CenteredScatterer, Indicators
-from ..errors import ScattererDefinitionError
-from copy import copy
-from ...core.helpers import _ensure_array
+from .scatterer import CenteredScatterer
 
 class Sphere_builtin(CenteredScatterer):
     '''

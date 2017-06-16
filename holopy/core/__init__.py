@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -38,10 +38,5 @@ Main use cases are
 
 """
 
-from marray import (Marray, Image, Schema, ImageSchema, Volume,
-                    VolumeSchema, VectorGrid, VectorGridSchema,
-                    subimage)
-from metadata import Optics, Grid, Angles, UnevenGrid
-from io import load, load_image, save
-import process
-import helpers
+from .metadata import detector_grid, detector_points, update_metadata, copy_metadata, get_spacing
+from .io import load, load_image, save, save_image

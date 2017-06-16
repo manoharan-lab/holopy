@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -22,12 +22,11 @@ of third party minimizers.
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
-from __future__ import division
+
 
 import numpy as np
 from ..core.holopy_object import HoloPyObject
 from .errors import ParameterSpecificationError, MinimizerConvergenceFailed
-from ..scattering.errors import ScattererDefinitionError
 from .third_party import nmpfit
 
 
@@ -52,12 +51,8 @@ class Minimizer(HoloPyObject):
     # if minimizers do any parameter rescaling, they are responsible for putting
     # the parameters back before handing them off to the model.
     def pars_from_minimizer(self, parameters, values):
-        pars = {}
-        for par, value in zip(parameters, values):
-            pars[par.name] = par.unscale(value)
-
-        return pars
-
+        assert len(parameters) == len(values)
+        return {par.name: par.unscale(value) for par, value in zip(parameters, values)}
 
 class Nmpfit(Minimizer):
     """
@@ -122,7 +117,7 @@ class Nmpfit(Minimizer):
                                                     "parameters")
             # Check for other allowed parinfo keys here: see nmpfit docs
             allowed_keys = ['step', 'mpside', 'mpmaxstep']
-            for key, value in par.kwargs.iteritems():
+            for key, value in par.kwargs.items():
                 if key in allowed_keys:
                     if key == 'mpside':
                         d[key] = value
@@ -153,47 +148,5 @@ class Nmpfit(Minimizer):
             return result_pars, fitresult, nmp_pars
         else:
             return result_pars, fitresult
-
-    minimize.__doc__ = Minimizer.minimize.__doc__
-
-class OpenOpt(Minimizer):
-    def __init__(self, algorithm = 'ralg', quiet = False, plot = False):
-        self.algorithm = algorithm
-        self.quiet = quiet
-        self.plot = plot
-        import openopt
-        openopt_nllsq = ['scipy_leastsq']
-        # scipy_leastsq cannot handle bounds
-        openopt_nlp = ['ralg', 'scipy_lbfgsb', 'scipy_slsqp']
-        openopt_global = ['galileo']
-        if algorithm in openopt_nlp:
-            self.problem_type = openopt.NLP
-        elif algorithm in openopt_global:
-            self.problem_type = openopt.GLP
-        elif algorithm in openopt_nllsq:
-            self.problem_type = openopt.NLLSP
-
-    def minimize(self, parameters, cost_func):
-        lb = []
-        ub = []
-        for p in parameters:
-            if p.limit is not None:
-                lb.append(p.scale(p.limit[0]))
-                ub.append(p.scale(p.limit[1]))
-            else:
-                lb.append(-np.inf)
-                ub.append(np.inf)
-        guess = [p.scale(p.guess) for p in parameters]
-        def resid_wrapper(p):
-            try:
-                resid = cost_func(self.pars_from_minimizer(parameters, p))
-                return np.dot(resid, resid)
-            except ScattererDefinitionError:
-                return np.inf
-        problem = self.problem_type(resid_wrapper, guess, lb=lb, ub=ub, iprint = self.quiet,
-                                    plot = self.plot)
-        r = problem.solve(self.algorithm)
-        result_pars = self.pars_from_minimizer(parameters, r.xf)
-        return result_pars, r
 
     minimize.__doc__ = Minimizer.minimize.__doc__

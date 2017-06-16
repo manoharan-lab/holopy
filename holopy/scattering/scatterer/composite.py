@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -15,7 +15,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-
 '''
 Defines Scatterers, a scatterer that consists of other scatterers,
 including scattering primitives (e.g. Sphere) or other Scatterers
@@ -23,7 +22,7 @@ scatterers (e.g. two trimers).
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
-from __future__ import division
+
 
 from copy import copy
 
@@ -32,6 +31,7 @@ import numpy as np
 
 from . import Scatterer
 from ...core.math import rotate_points
+from ...core.utils import is_none, ensure_array
 
 class Scatterers(Scatterer):
     '''
@@ -78,16 +78,16 @@ class Scatterers(Scatterer):
     def parameters(self):
         d = {}
         for i, scatterer in enumerate(self.scatterers):
-            for key, par in scatterer.parameters.iteritems():
+            for key, par in scatterer.parameters.items():
                 d['{0}:{1}.{2}'.format(i, scatterer.__class__.__name__, key)] = par
-        return dict(sorted(d.items(), key = lambda t: t[0]))
+        return dict(sorted(list(d.items()), key = lambda t: t[0]))
 
     @classmethod
     def from_parameters(cls, parameters):
-        n_scatterers = len(set([p.split(':')[0] for p in parameters.keys()]))
+        n_scatterers = len(set([p.split(':')[0] for p in list(parameters.keys())]))
         collected = [{} for i in range(n_scatterers)]
         types = [None] * n_scatterers
-        for key, val in parameters.iteritems():
+        for key, val in parameters.items():
             n, spec = key.split(':', 1)
             n = int(n)
             scat_type, par = spec.split('.', 1)
@@ -131,8 +131,30 @@ class Scatterers(Scatterer):
         return self._prettystr(0)
 
 
-    def translated(self, x, y, z):
-        trans = [s.translated(x, y, z) for s in self.scatterers]
+    def translated(self, coord1, coord2=None, coord3=None):
+        """
+        Make a copy of this scatterer translated to a new location
+
+        Parameters
+        ----------
+        x, y, z : float
+            Value of the translation along each axis
+
+        Returns
+        -------
+        translated : Scatterer
+            A copy of this scatterer translated to a new location
+        """
+        if is_none(coord2) and len(ensure_array(coord1)==3):
+            #entered translation vector
+            trans_coords = ensure_array(coord1)
+        elif not is_none(coord2) and not is_none(coord3):
+            #entered 3 coords
+            trans_coords = np.array([coord1, coord2, coord3])
+        else:
+            raise InvalidScatterer(self, "Cannot interpret translation coordinates")
+
+        trans = [s.translated(trans_coords) for s in self.scatterers]
         new = copy(self)
         new.scatterers = trans
         return new

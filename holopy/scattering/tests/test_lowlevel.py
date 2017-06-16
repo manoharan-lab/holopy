@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -31,26 +31,22 @@ of those fail, failures in these low-level tests will help pin
 down the problem.
 
 
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 '''
 
-from __future__ import division
+
 
 import os
 import yaml
-from nose.tools import assert_raises
 from numpy.testing import assert_allclose
 import numpy as np
 from numpy import sqrt, dot, pi, conj, real, imag, exp
-from nose.tools import with_setup
 from nose.plugins.attrib import attr
+from scipy.special import spherical_jn, spherical_yn
 
 from ..theory.mie_f import mieangfuncs, miescatlib, multilayer_sphere_lib, \
     scsmfo_min, mie_specfuncs
-
-from holopy.scattering.theory.multisphere import _asm_far
-
-from scipy.special import spherical_jn, spherical_yn
+from ..theory.multisphere import _asm_far
 
 # basic defs
 kr = 10.
@@ -130,7 +126,8 @@ def test_mie_amplitude_scattering_matrices():
     location = os.path.split(os.path.abspath(__file__))[0]
     gold_name = os.path.join(location, 'gold',
                              'gold_mie_scat_matrix')
-    gold_dict = yaml.load(file(gold_name + '.yaml'))
+    gold_dict = yaml.load(open(gold_name + '.yaml'))
+    
     gold = np.array([gold_dict['S11'], gold_dict['pol'],
                      gold_dict['S33'], gold_dict['S34']])
 

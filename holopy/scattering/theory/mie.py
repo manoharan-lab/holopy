@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -22,21 +22,25 @@ spheres. Uses full radial dependence of spherical Hankel functions for
 scattered field.
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
-from __future__ import division
+
 import numpy as np
-from ...core.helpers import _ensure_array
-from ..errors import TheoryNotCompatibleError, UnrealizableScatterer
+from ...core.utils import ensure_array
+from ..errors import TheoryNotCompatibleError, InvalidScatterer
 from ..scatterer import Sphere, Scatterers
-from .scatteringtheory import FortranTheory
-from holopy.scattering.theory.mie_f import mieangfuncs, miescatlib
-from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
-import copy
+from .scatteringtheory import ScatteringTheory
+try:
+    from .mie_f import mieangfuncs, miescatlib
+    from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
+except ImportError:
+    import warnings
+    from ..errors import NoScattering
+    warnings.simplefilter('always', NoScattering)
+    warnings.warn(NoScattering('Mie'))
 
-
-class Mie(FortranTheory):
+class Mie(ScatteringTheory):
     """
     Compute scattering using the Lorenz-Mie solution.
 
@@ -53,6 +57,9 @@ class Mie(FortranTheory):
 
     By default, calculates radial component of scattered electric fields,
     which is nonradiative.
+
+    Currently, in calculating the Lorenz-Mie scattering coefficients,
+    the maximum size parameter x = ka is limited to 1000. 
     """
 
     # don't need to define __init__() because we'll use the base class
@@ -69,37 +76,40 @@ class Mie(FortranTheory):
         self.eps1 = eps1
         self.eps2 = eps2
         # call base class constructor
-        super(Mie, self).__init__()
+        super().__init__()
 
     def _can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
 
-    def _calc_scat_matrix(self, scatterer, schema):
+    def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
+        '''
+        Returns far-field amplitude scattering matrices (with theta and phi
+        dependence only) -- assume spherical wave asymptotic r dependence
+        '''
         if isinstance(scatterer, Sphere):
-            scat_coeffs = self._scat_coeffs(scatterer, schema.optics)
+            scat_coeffs = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
 
-            # TODO: actually use (rather than ignore) the phi
-            scat_matrs = [mieangfuncs.asm_mie_far(scat_coeffs, theta) for
-                          theta, phi in schema.positions_theta_phi()]
-            return np.array(scat_matrs)
+            # In the mie solution the amplitude scattering matrix is independent of phi
+            return [mieangfuncs.asm_mie_far(scat_coeffs, theta) for
+                          r, theta, phi in pos.T]
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
-    def _raw_fields(self, positions, scatterer, optics):
-        scat_coeffs = self._scat_coeffs(scatterer, optics)
-        return mieangfuncs.mie_fields(positions, scat_coeffs, optics.polarization,
+    def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index, illum_polarization):
+        scat_coeffs = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
+        return mieangfuncs.mie_fields(positions, scat_coeffs, illum_polarization.values[:2],
                                       self.compute_escat_radial,
                                       self.full_radial_dependence)
 
-    def _raw_internal_fields(self, positions, scatterer, optics):
-        scat_coeffs = self._scat_coeffs(scatterer, optics)
+    def _raw_internal_fields(self, positions, scatterer, medium_wavevec, medium_index, illum_polarization):
+        scat_coeffs = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
         # TODO BUG: this isn't right for layered spheres (and will
         # probably crash)
         return mieangfuncs.mie_internal_fields(positions, scatterer.n,
-                                               scat_coeffs, optics.polarization)
+                                               scat_coeffs, illum_polarization)
 
 
-    def _calc_cross_sections(self, scatterer, optics):
+    def _raw_cross_sections(self, scatterer, medium_wavevec, medium_index, illum_polarization):
         """
         Calculate scattering, absorption, and extinction cross
         sections, and asymmetry parameter for spherically
@@ -130,28 +140,51 @@ class Mie(FortranTheory):
         where I_0 is the incident intensity.  See van de Hulst, p. 14.
         """
         if isinstance(scatterer, Scatterers):
-            raise UnrealizableScatterer(self, scatterer,
+            raise InvalidScatterer(scatterer,
                                         "Use Multisphere to calculate " +
                                         "radiometric quantities")
-        albl = self._scat_coeffs(scatterer, optics)
+        albl = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
 
         cscat, cext, cback = miescatlib.cross_sections(albl[0], albl[1]) * \
-            (2. * np.pi / optics.wavevec**2)
+            (2. * np.pi / medium_wavevec**2)
 
         cabs = cext - cscat # conservation of energy
 
-        asym = 4. * np.pi / (optics.wavevec**2 * cscat) * \
+        asym = 4. * np.pi / (medium_wavevec**2 * cscat) * \
             miescatlib.asymmetry_parameter(albl[0], albl[1])
 
         return np.array([cscat, cabs, cext, asym])
 
-    def _scat_coeffs(self, s, optics):
-        x_arr = optics.wavevec * _ensure_array(s.r)
-        m_arr = _ensure_array(s.n) / optics.index
+    def _scat_coeffs(self, s, medium_wavevec, medium_index):
+        '''
+        Calculate Mie scattering coefficients.
+
+        Parameters
+        ----------
+        s : :mod:`scatterer.Sphere` object
+        medium_wavevec : float
+            Wave vector in the medium, k = 2 * pi * n_med / lambda_0
+        medium_index : float
+            Medium refractive index
+
+        Returns
+        -------
+        ndarray (2, n), complex
+           Lorenz-Mie scattering coefficients a_n and b_n
+
+        Notes
+        -----
+        See Bohren & Huffman for mathematical description.
+
+        '''
+        if (ensure_array(s.r) == 0).any():
+            raise InvalidScatterer(s, "Radius is zero")
+        x_arr = medium_wavevec * ensure_array(s.r)
+        m_arr = ensure_array(s.n) / medium_index
 
         # Check that the scatterer is in a range we can compute for
         if x_arr.max() > 1e3:
-            raise UnrealizableScatterer(self, s, "radius too large, field "+
+            raise InvalidScatterer(s, "radius too large, field "+
                                         "calculation would take forever")
 
         if len(x_arr) == 1 and len(m_arr) == 1:
@@ -164,13 +197,17 @@ class Mie(FortranTheory):
             return scatcoeffs_multi(m_arr, x_arr, self.eps1, self.eps2)
 
 
-    def _scat_coeffs_internal(self, s, optics):
-        x_arr = optics.wavevec * _ensure_array(s.r)
-        m_arr = _ensure_array(s.n) / optics.index
+    def _scat_coeffs_internal(self, s, medium_wavevec, medium_index):
+        '''
+        Calculate expansion coefficients for Lorenz-Mie electric field 
+        inside a sphere.
+        '''
+        x_arr = medium_wavevec * ensure_array(s.r)
+        m_arr = ensure_array(s.n) / medium_index
 
         # Check that the scatterer is in a range we can compute for
         if x_arr.max() > 1e3:
-            raise UnrealizableScatterer(self, s, "radius too large, field "+
+            raise InvalidScatterer(s, "radius too large, field "+
                                         "calculation would take forever")
 
         if len(x_arr) == 1 and len(m_arr) == 1:

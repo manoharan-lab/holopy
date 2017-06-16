@@ -1,4 +1,4 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
 # Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 #
 # This file is part of HoloPy.
@@ -21,7 +21,7 @@ Classes for describing free parameters in fitting models
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <jfung@physics.harvard.edu>
 """
-from __future__ import division
+
 
 import numpy as np
 from ..core.holopy_object import HoloPyObject
@@ -151,6 +151,3 @@ class ComplexParameter(Parameter):
     @property
     def guess(self):
         return self.real.guess + self.imag.guess*1.0j
-
-# provide a shortcut name for Parameter since users will have to type it a lot
-par = Parameter

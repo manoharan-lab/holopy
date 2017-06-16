@@ -1,4 +1,4 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
 # Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 #
 # This file is part of HoloPy.
@@ -22,7 +22,9 @@ Show sphere clusters using mayavi
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 """
 
-from __future__ import division
+#This file is experimental and features are not currently tested.
+#Stay tuned for updates.
+
 
 from numpy import arange
 import numpy as np

@@ -1,5 +1,5 @@
 # Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -17,12 +17,13 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from __future__ import division
 
-from nose.tools import assert_raises, assert_equal
+
+from numpy.testing import assert_raises, assert_equal
 import numpy as np
 
-from holopy.inference import prior, mcmc
+from holopy.inference import prior
+from holopy.inference.result import UncertainValue
 from holopy.core.tests.common import assert_obj_close
 #GOLD:log(sqrt(0.5/pi))-1/2
 gold_sigma=-1.4189385332
@@ -47,7 +48,7 @@ def test_gaussian():
 
 def test_updated():
     p=prior.BoundedGaussian(1,2,-1,2)    
-    d=mcmc.UncertainValue(1,0.5,1)
+    d=UncertainValue(1,0.5,1)
     u=prior.updated(p,d)
     assert_equal(u.guess,1)
     assert_obj_close(u.lnprob(0),gold_sigma)

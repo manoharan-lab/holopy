@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -32,12 +32,14 @@ The HoloPy scattering module is used to:
    :class:`~holopy.core.marray.Marray` object
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 .. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 
 '''
-from __future__ import division
-import theory
-import scatterer
+
+from . import scatterer, theory
+from .scatterer import Sphere, Spheres, Scatterer, Scatterers, JanusSphere, Ellipsoid, Capsule, Cylinder, Bisphere, LayeredSphere
+from .calculations import calc_holo, calc_field, calc_intensity, calc_cross_sections, calc_scat_matrix
+from .theory import Mie, Multisphere, DDA

@@ -1,158 +1,83 @@
 .. _install:
 
-Installing HoloPy
-=================
+Getting Started
+===============
 
-Quick Start
------------
+Installation
+~~~~~~~~~~~~
 
-If you do not already have scientific python, we suggest using
-`Anaconda <https://www.continuum.io/downloads>`_. You will want python
-2.7 (HoloPy is not yet python 3 compatible).
+As of version 3.0, HoloPy supports only Python 3. We recommend using the
+`anaconda <https://www.continuum.io/anaconda-overview>`_ distribution of Python,
+which makes it easy to install the required dependencies. In the future
+(hopefully by the time you read this documentation), HoloPy will be available on
+`conda-forge <https://conda-forge.github.io/>`_, so that you can install it
+with::
 
-HoloPy has not had a release in years, so you will probably just want
-to download a `zip of the master
-<https://github.com/manoharan-lab/holopy/archive/master.zip>`_. We
-make a reasonable effort to keep the master in a usable state, so
-hopefully it will work for you.
+  conda install -c conda-forge holopy
 
-Unpack the archive, then, from a terminal, as root/adiminstrator, in
-the archive directory, run::
-
-  python setup.py install
-
-Or put the archive directory in your PYTHONPATH to import it directly
-from the archive.
-
-Once you have done that, start up python (we would suggest ipython or the jupyter notebook) and run::
+in a shell, terminal, or command prompt. Once you have HoloPy installed, open an
+IPython console or Jupyter Notebook and run::
 
   import holopy
 
-If you get your prompt back without errors, congratulations! You have
-successfully installed HoloPy. Proceed to the :ref:`tutorials`. If you
-get errors or just want to learn more, keep reading.
+If this line works, skip to :ref:`usage` before diving into the tutorials.
 
 .. _dependencies:
 
 Dependencies
 ------------
 
-HoloPy requires:
-
-* python 2.7 (or python 2.6 + `ordereddict <http://pypi.python.org/pypi/ordereddict>`_)
-
-* numpy
-
-* scipy
-
-* `PyYAML <http://pypi.python.org/pypi/PyYAML/>`_
-
-For interactive use we suggest (highly suggest in the case of ipython and matplotlib):
-
-* `ipython <http://ipython.org>`_ (better python terminal)
-
-* `matplotlib <http://matplotlib.org>`_ (plotting for python)
-
-* `mayavi2 <http://docs.enthought.com/mayavi/mayavi/>`_ (if you want to do 3D plotting)
-
-Optional dependencies for certain calculations:
+HoloPy's hard dependencies can be found in `requirements.txt <https://github.com/manoharan-lab/holopy/blob/master/requirements.txt>`_.
+Optional dependencies for certain calculations include:
 
 * `a-dda <http://code.google.com/p/a-dda/>`_ (Discrete Dipole calculations of arbitrary scatterers)
 
-* `OpenOpt <http://openopt.org>`_ (More minimizers)
+* `mayavi2 <http://docs.enthought.com/mayavi/mayavi/>`_ (if you want to do 3D plotting [experimental])
 
-If you want to build HoloPy from source there are a few other python
-dependencies.  You will also need C and Fortran compilers.  Please see
-:ref:`building`.
+Windows Support
+---------------
+We are working on distributing a Windows HoloPy build that does not require Fortran compilers.
+In the mean-time your best option is to build it yourself by following the instructions for :ref:`dev_install`.
 
-Linux (Ubuntu/Debian)
-~~~~~~~~~~~~~~~~~~~~~
-.. code-block:: bash
+..  _usage:
 
-  sudo apt-get install python-scipy ipython python-matplotlib python-yaml mayavi2
+Using HoloPy
+~~~~~~~~~~~~
 
-Other flavors of linux might have slightly different package names.
+You will probably be most comfortable using HoloPy in Jupyter (resembles
+Mathematica) or Spyder (resembles Matlab) interfaces. One perennially tricky
+issue concerns matplotlib backends. HoloPy is designed to be used with an
+interactive backend. In the console, try running::
 
-Windows/Mac
-~~~~~~~~~~~
+    from holopy import test_disp
+    test_disp()
 
-The `Enthought Python Distribution
-<http://www.enthought.com/products/epd.php>`_ should have the basics
-to get you started.
+You should see a window pop up with an image, and you should be able to change
+the square to a circle or diamond by using the left/right arrow keys. If you
+can, then you're all set! Check out our :ref:`load_tutorial` tutorial to start
+using HoloPy. If you don't see an image, or if the arrow keys don't do anything,
+you can try setting your backend with *one* of the following::
 
-.. _building:
+    %matplotlib tk
+    %matplotlib qt
+    %matplotlib gtk
+    %matplotlib gtk3
 
-Building
---------
+Note that these commands will only work in an IPython console or Jupyter
+Notebook. If the one that you tried gave an ``ImportError``, you should restart
+your kernel and try another. Note that there can only be one matplotlib backend
+per ipython kernel, so you have the best chance of success if you restart your
+kernel and immediately enter the ``%matplotlib`` command before doing anything
+else. Sometimes a backend will be chosen for you (that cannot be changed later)
+as soon as you plot something, for example by running ``test_disp()`` or
+:func:`.show`. Trying to set to one of the above backends that is not installed
+on your system will result in an error, but will also prevent you from setting a different
+backend until you restart your kernel.
 
-.. toctree::
-   build_env
+An additional option in Spyder is to change the backend through the menu: Tools
+> Preferences > IPython console > Graphics. It will not take effect until you
+restart your kernel, but it will then remember your backend for future sessions,
+which can be convenient.
 
-`Download
-<https://github.com/manoharan-lab/holopy/archive/master.zip>`_ and
-unpack a source build, or
-check out the source from launchpad::
-
-  bzr branch lp:holopy
-
-To build HoloPy run (in the root of HoloPy)::
-
-  python setup.py build
-
-This will generate a build directory and put all the modules
-there. You can then install HoloPy by running (as administrator)::
-
-  python setup.py install
-
-
-If you are a developer, you might not want use ``python setup.py
-install`` because you might eventually find yourself with two versions
-of HoloPy on your system, one installed globally and one installed
-locally.  Thus, if you are going to hack on HoloPy, you probably only
-want to compile the scattering extensions, but not install the module
-globally on your system.  Let's say you unpack the source archive in
-``/home/me/holopy``.  Then cd to ``/home/me/holopy`` and run
-
-``python setup.py build_ext --inplace``
-
-This puts the extensions inside the source tree, so that you can work
-directly from ``/home/me/holopy``.  You will need to add
-``/home/me/holopy`` to your ``python_path`` for python to find the
-module when you import it.
-
-Testing
-~~~~~~~
-
-HoloPy comes with a suite of tests that ensure everything has been
-built correctly and that it's able to perform all of the calculations
-it is designed to do.  To run these tests, navigate to the root of the
-package (e.g. ``/home/me/holopy``) and run:
-
-.. sourcecode:: bash
-
-   python run_nose.py
-
-or
-
-.. sourcecode:: bash
-
-   nosetests -a '!slow'
-
-There is some extra test data that is not distributed with HoloPy but
-can help catch some kinds of bugs. The tests will run just fine
-without it, but should you want to run a slightly more thorough test
-you can retrieve this data with a script in the ``management`` directory::
-
-  python get_test_golds.py
-
-Building the Docs
-~~~~~~~~~~~~~~~~~
-
-To compile the documentation run (from the docs directory)::
-
-  make html
-
-(or type ``make`` to see the different kinds of formats you can
-create).  This will generate documentation in the ``docs/build``
-directory.  Building the docs requires matplotlib version 1.1
-or newer.
+An additional option in jupyter is to use ``%matplotlib
+nbagg`` to use inline interactive plots.

@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -15,23 +15,21 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import division
+
 
 import numpy as np
-from ...core import ImageSchema, VolumeSchema, Optics
-from ...scattering.theory import Mie
-from ...scattering.scatterer import Sphere
+from ...core import detector_grid
+from ...scattering import Mie, Sphere, calc_field
 from .. import propagate
 from ...core.tests.common import assert_obj_close, verify, get_example_data
 
 def test_propagate_e_field():
-    e = Mie(False).calc_field(Sphere(1.59, .5, (5, 5, 5)),
-                              ImageSchema(100, .1, Optics(.66, 1.33, (1,0))))
+    e = calc_field(detector_grid(100,.1), Sphere(1.59, .5, (5, 5, 5)), illum_wavelen=.66, medium_index=1.33, illum_polarization=(1,0), theory=Mie(False))
     prop_e = propagate(e, 10)
     verify(prop_e, 'propagate_e_field')
 
 def test_reconstruction():
-    im = get_example_data('image0003.yaml')
+    im = get_example_data('image0003')
     rec = propagate(im, 4e-6)
     verify(rec, 'recon_single')
 
@@ -39,7 +37,7 @@ def test_reconstruction():
     verify(rec, 'recon_multiple')
 
 def test_propagate_0_distance():
-    im = get_example_data('image0003.yaml')
+    im = get_example_data('image0003')
     rec = propagate(im, 0)
     # propagating no distance should leave the image unchanged
     assert_obj_close(im, rec)

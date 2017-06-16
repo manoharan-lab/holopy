@@ -3,83 +3,78 @@
 **********************
 References and credits
 **********************
-Please see the following references:
 
-.. [Fung2012] Fung, J., Perry, R. W., Dimiduk, T. G., & Manoharan, V. N. (2012). Imaging multiple colloidal particles by fitting electromagnetic scattering solutions to digital holograms. Journal of Quantitative Spectroscopy and Radiative Transfer, (0). doi:10.1016/j.jqsrt.2012.06.007
+.. use Chicago Manual of Style 16th edition (full note) for citation format. In
+   Zotero, select this style as your copy-and-paste style - then you can hit
+   Ctrl-Shift-C to copy references from your library and then paste them into
+   the document
 
-.. [Perry2012] Perry, R. W., Meng, G., Dimiduk, T. G., Fung, J., & Manoharan, V. N. (2012). Real-space studies of the structure and dynamics of self-assembled colloidal clusters. Faraday Discussions. doi:10.1039/c2fd20061a
+The following references describe applications of HoloPy and technical advances.
+If you use HoloPy, we ask that you cite the articles that are relevant to your
+application.
 
-.. [Fung2011] J\. Fung *et al.*, "Measuring translational, rotational, and vibrational dynamics in colloids with digital holographic microscopy," *Optics Express* **19**, 8051-8065, (2011).
+.. [Dimiduk2016] Dimiduk, Thomas G., and Vinothan N. Manoharan. “Bayesian Approach to Analyzing Holograms of Colloidal Particles.” Optics Express 24, no. 21 (October 17, 2016): 24045–60. doi:10.1364/OE.24.024045.
 
-.. [Lee2007] S\. H\. Lee *et al.*, "Characterizing and tracking single colloidal particles with video holographic microscopy," *Optics Express* **15**, 18275-18282, (2007).
+.. [Wang2016] Wang, Anna, Rees F. Garmann, and Vinothan N. Manoharan. “Tracking E. Coli Runs and Tumbles with Scattering Solutions and Digital Holographic Microscopy.” Optics Express 24, no. 21 (October 17, 2016): 23719–25. doi:10.1364/OE.24.023719.
 
-.. [Lentz1976] W\. J\. Lentz, “Generating Bessel functions in Mie scattering calculations using continued fractions,” *Applied Optics* **15**, 668-671, (1976).
+.. [Dimiduk2014] Dimiduk, Thomas G., Rebecca W. Perry, Jerome Fung, and Vinothan N. Manoharan. “Random-Subset Fitting of Digital Holograms for Fast Three-Dimensional Particle Tracking.” Applied Optics 53, no. 27 (September 20, 2014): G177–83. doi:10.1364/AO.53.00G177.
 
-.. [Mackowski1996] D\. W\. Mackowski and M\. I\. Mishchenko, "Calculation of the T matrix and the scattering matrix for ensembles of spheres," *J. Opt. Soc. Am. A.* **13**, 2266-2278, (1996).
+.. [Wang2014] Wang, Anna, Thomas G. Dimiduk, Jerome Fung, Sepideh Razavi, Ilona Kretzschmar, Kundan Chaudhary, and Vinothan N. Manoharan. “Using the Discrete Dipole Approximation and Holographic Microscopy to Measure Rotational Dynamics of Non-Spherical Colloidal Particles.” Journal of Quantitative Spectroscopy and Radiative Transfer 146 (October 2014): 499–509. doi:10.1016/j.jqsrt.2013.12.019.
 
-.. [Wiscombe1996] W\. J\. Wiscombe, “Mie Scattering Calculations: Advances in Technique and Fast, Vector-Speed Computer Codes,” *NCAR Technical Report*, http://diogenes.iwt.uni-bremen.de/vt/laser/codes/NCARMieReport-revised%20August%201996.pdf 
+.. [Fung2013] Fung, Jerome, and Vinothan N. Manoharan. “Holographic Measurements of Anisotropic Three-Dimensional Diffusion of Colloidal Clusters.” Physical Review E 88, no. 2 (August 30, 2013): 020302. doi:10.1103/PhysRevE.88.020302.
 
-.. [Yang2003] W\. Yang, "Improved recursive algorithm for light scattering by a multilayered sphere," *Applied Optics* **42**, 1710-1720, (2003).
+.. [Fung2012] Fung, Jerome, Rebecca W. Perry, Thomas G. Dimiduk, and Vinothan N. Manoharan. “Imaging Multiple Colloidal Particles by Fitting Electromagnetic Scattering Solutions to Digital Holograms.” Journal of Quantitative Spectroscopy and Radiative Transfer 113, no. 18 (December 2012): 2482–89. doi:10.1016/j.jqsrt.2012.06.007.
 
-.. [Yurkin2011] M\. A\. Yurkin and A\. G\. Hoekstra, "The discrete-dipole-approximation code ADDA: Capabilities and known limitations," *J. Quant. Spectrosc. Radiat. Transfer* **112**, 2234-2247 (2011).
+.. [Kaz2012] Kaz, David M., Ryan McGorty, Madhav Mani, Michael P. Brenner, and Vinothan N. Manoharan. “Physical Ageing of the Contact Line on Colloidal Particles at Liquid Interfaces.” Nature Materials 11, no. 2 (February 2012): 138–42. doi:10.1038/nmat3190.
 
-If you use HoloPy, we ask that you cite the articles above that are
-relevant to your application.
+.. [Perry2012] Perry, Rebecca W., Guangnan Meng, Thomas G. Dimiduk, Jerome Fung, and Vinothan N. Manoharan. “Real-Space Studies of the Structure and Dynamics of Self-Assembled Colloidal Clusters.” Faraday Discussions 159, no. 1 (June 7, 2012): 211–34. doi:10.1039/C2FD20061A.
 
-For scattering calculations and formalism, we draw heavily on
-the treatise of Bohren & Huffman.  We generally follow their conventions
-except where noted.
+.. [Fung2011] Fung, Jerome, K. Eric Martin, Rebecca W. Perry, David M. Kaz, Ryan McGorty, and Vinothan N. Manoharan. “Measuring Translational, Rotational, and Vibrational Dynamics in Colloids with Digital Holographic Microscopy.” Optics Express 19, no. 9 (April 25, 2011): 8051–65. doi:10.1364/OE.19.008051.
+
+
+Ovryn and Izen and Lee and coworkers were the first to develop methods to fit scattering models to digital holograms:
+
+.. [Ovryn2000] Ovryn, Ben, and Steven H. Izen. “Imaging of Transparent Spheres through a Planar Interface Using a High-Numerical-Aperture Optical Microscope.” Journal of the Optical Society of America A 17, no. 7 (July 1, 2000): 1202–13. doi:10.1364/JOSAA.17.001202.
+
+.. [Lee2007] Lee, Sang-Hyuk, Yohai Roichman, Gi-Ra Yi, Shin-Hyun Kim, Seung-Man Yang, Alfons van Blaaderen, Peter van Oostrum, and David G. Grier. “Characterizing and Tracking Single Colloidal Particles with Video Holographic Microscopy.” Optics Express 15, no. 26 (December 24, 2007): 18275–82. doi:10.1364/OE.15.018275.
+
+The following papers describe different methods for calculating scattering and various
+algorithms that HoloPy uses in its calculations:
+
+.. [Yurkin2011] Yurkin, Maxim A., and Alfons G. Hoekstra. “The Discrete-Dipole-Approximation Code ADDA: Capabilities and Known Limitations.” Journal of Quantitative Spectroscopy and Radiative Transfer 112, no. 13 (September 2011): 2234–47. doi:10.1016/j.jqsrt.2011.01.031.
+
+.. [Mackowski1990] Mackowski, D. W., Altenkirch, R. A., and Menguc, M. P. “Internal absorption cross sections in a stratified sphere.” Applied Optics 29, no. 10 (1990). do:10.1364/AO.29.001551.
+
+.. [Mackowski1996] Mackowski, Daniel W., and Michael I. Mishchenko. “Calculation of the T Matrix and the Scattering Matrix for Ensembles of Spheres.” Journal of the Optical Society of America A 13, no. 11 (November 1, 1996): 2266. doi:10.1364/JOSAA.13.002266.
+
+.. [Wiscombe1996] Wiscombe, J. “Mie Scattering Calculations: Advances in Technique and Fast, Vector-Speed Computer Codes,” 1979. doi:10.5065/D6ZP4414.
+
+.. [Wiscombe1980] Wiscombe, W. J. “Improved Mie scattering algorithms.” Applied Optics 19, no. 9 (May 1, 1980): 1505. doi:10.1364/AO.19.001505.
+
+.. [Yang2003] Yang, Wen. “Improved Recursive Algorithm for Light Scattering by a Multilayered Sphere.” Applied Optics 42, no. 9 (March 20, 2003): 1710–20. doi:10.1364/AO.42.001710.
+
+.. [Lentz1976] Lentz, William J. “Generating Bessel Functions in Mie Scattering Calculations Using Continued Fractions.” Applied Optics 15, no. 3 (March 1, 1976): 668–71. doi:10.1364/AO.15.000668.
+
+For scattering calculations and formalism, we draw heavily on the treatise of
+Bohren & Huffman. We generally follow their conventions except where noted.
 
 .. [Bohren1983] C\. F\. Bohren and D\. R\. Huffman, *Absorption and Scattering of Light by Small Particles*, Wiley (1983).
 
-The package includes code from several sources.  We thank Daniel
-Mackowski for allowing us to include his T-Matrix code, which computes
-scattering from clusters of spheres:  SCSMFO1B_.
+The package includes code from several sources. We thank Daniel Mackowski for
+allowing us to include his T-Matrix code, which computes scattering from
+clusters of spheres: SCSMFO1B_.
 
 .. _SCSMFO1B: ftp://ftp.eng.auburn.edu/pub/dmckwski/scatcodes/index.html
 
-We also make use of a modified version of the Python version of
-mpfit_, originally developed by Craig Markwardt. The modified version
-we use is drawn from the stsci_python_ package.
+We also make use of a modified version of the Python version of mpfit_,
+originally developed by Craig Markwardt. The modified version we use is drawn
+from the stsci_python_ package.
 
 .. _mpfit: http://www.physics.wisc.edu/~craigm/idl/fitting.html
 .. _stsci_python: http://www.stsci.edu/resources/software_hardware/pyraf/stsci_python
 
-We thank A. Ross Barnett for permitting us to use his routine
-SBESJY.FOR_, which computes spherical Bessel functions.
+We thank A. Ross Barnett for permitting us to use his routine SBESJY.FOR_, which
+computes spherical Bessel functions.
 
 .. _SBESJY.FOR: http://www.fresco.org.uk/programs/barnett/index.htm
 
-
-We include a copy Michele Simionato's decorator.py_ (v 3.3.3) which
-simplifies writing correct function decorators.  If you have that
-module installed it will be used preferentially.
-
-  decorator.py is Copyright (c) 2005-2012, Michele Simionato
-  All rights reserved.
-
-.. _decorator.py: http://pypi.python.org/pypi/decorator/3.3.3
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   Redistributions of source code must retain the above copyright 
-   notice, this list of conditions and the following disclaimer.
-   Redistributions in bytecode form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in
-   the documentation and/or other materials provided with the
-   distribution. 
-   
-   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-   HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-   INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-   BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-   OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-   ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
-   TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
-   USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-   DAMAGE.

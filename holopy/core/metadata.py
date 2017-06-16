@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -21,213 +21,285 @@ Classes for defining metadata about experimental or calculated results.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 
 """
-from __future__ import division
 
 import numpy as np
+import xarray as xr
 from warnings import warn
-import copy
-from .helpers import _ensure_pair, _ensure_array
-from holopy_object import HoloPyObject
+from .utils import is_none, updated, repeat_sing_dims
+from .math import to_spherical, to_cartesian
 
 
-class Optics(HoloPyObject):
+vector = 'vector'
+
+def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None, z=0):
     """
-    Contains details about the source, detector, and optical train used
-    to generate a hologram.
+    Create a set of detector points along with other experimental metadata.
 
-    Attributes
-    ----------
-    wavelen : float (optional)
-        Wavelength of imaging light in vacuo.
-    index : float (optional)
-        Refractive index of medium
-    polarization : tuple or array (optional)
-        Electric field amplitudes in x and y directions.
-    divergence : float (optional)
-        Divergence of the incident beam (currently unused)
-    pixel_size : tuple (optional)  (deprecated)
-        Physical size of the camera's pixels.
-    mag : float (optional)
-        Magnification of optical train. Ignored if pixel_scale
-        is specified.
-    pixel_scale : tuple (optional) (deprecated)
-        Size of pixel in the imaging plane. This is equal to the
-        physical size of the pixel divided by the magnification.
+    Returns
+    -------
+    DataArray object
 
     Notes
     -----
-    You don't have to specify all of these parameters, but to get fits and
-    reconstructions to work you should specify at least,
-    `wavelen` in vacuo and `index`.
+    Use of higher-level detector_grid() and detector_points() functions is 
+    recommended.
     """
+    
+    if spacing is None:
+        spacing = 1
+        warn("No pixel spacing provided. Setting spacing to 1, but any subsequent calculations will be wrong.")
+    if name is None:
+        name = 'data'
 
-    def __init__(self, wavelen=None, index=None, polarization=None,
-                 divergence=0., pixel_size=None, mag=None, pixel_scale = None):
-        # source parameters
-        self.wavelen = wavelen
-        self.index = index
-        if polarization is None:
-            warn("Polarization not specified. You will not be able to use this optics"
-                    " for most calculations")
-        self.polarization = np.array(polarization)
-        self.divergence = divergence
-        if divergence != 0.0:
-            warn("HoloPy calculations currently ignore divergence")
+    if np.isscalar(spacing):
+        spacing = np.repeat(spacing, 2)
+    if arr.ndim==2:
+        arr=np.array([arr])
+    out = xr.DataArray(arr, dims=['z','x', 'y'], coords=make_coords(arr.shape, spacing, z), name=name)
+    return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
 
-        # optical train parameters
-        self.mag = mag          # magnification
-
-        # detector parameters (deprecated: detector information should
-        # be in the Marray object since it isn't really associated
-        # withthe optical train)
-        self.pixel_size = _ensure_pair(pixel_size)
-        if pixel_scale is None:
-            if mag is not None:
-                # calculate from specified magnification
-                self.pixel_scale = self.pixel_size/mag
-            else:
-                self.pixel_scale = None
-        else:
-            self.pixel_scale = _ensure_pair(pixel_scale)
-
-    @property
-    def med_wavelen(self):
-        """
-        Calculates the wavelength in the medium.
-        """
-        return self.wavelen/self.index
-
-    def wavelen_in(self, medium_index):
-        return self.wavelen/medium_index
-
-    @property
-    def wavevec(self):
-        """
-        The wavevector k, 2pi/(wavelength in medium)
-        """
-        return 2*np.pi/self.med_wavelen
-
-    def wavevec_in(self, medium_index):
-        return 2*np.pi/self.wavelen_in(medium_index)
-
-    def resample(self, factor):
-        """
-        Update an optics instance for a resampling.  This has the effect of
-        changing the pixel_scale.
-
-        Returns a new instance
-        """
-        factor = np.array(factor)
-        new = copy.copy(self)
-        new.pixel_scale = self.pixel_scale * factor
-        return new
-
-class WavelengthNotSpecified(Exception):
-    def __init__(self):
-        pass
-    def __str__(self):
-        return ("Wavelength not specified in Optics instance.")
-
-class MediumIndexNotSpecified(Exception):
-    def __init__(self):
-        pass
-    def __str__(self):
-        return ("Medium index not specified in Optics instance.")
-
-class PositionSpecification(HoloPyObject):
+def detector_grid(shape, spacing, normals = None, name = None):
     """
-    Abstract base class for representations of positions.  You should use its
-    subclasses
-    """
-    pass
-
-class Positions(np.ndarray, HoloPyObject):
-    """
-    Positions of pixels of an Marray
+    Create a rectangular grid of pixels to represent a detector on which
+    scattering calculations are to be performed.
 
     Parameters
     ----------
-    arr : ndarray (shape ...,3)
-        Pixel positions, in Cartesian xyz coordinates
-    """
-    def __new__(cls, arr):
-        return np.asarray(arr).view(cls)
+    shape : int or list-like (2)
+        If int, detector is a square grid of shape x shape points. 
+        If array_like, detector has \ *shape*\ [0] rows and \ *shape*\ [1] columns.
+    spacing : int or list-like (2)
+        If int, distance between square detector pixels.
+        If array_like, \ *spacing*\ [0] between adjacent rows and \ *spacing*\ [1] 
+        between adjacent columns.
+    normals : list-like or None
+        If list-like, detector orientation.
+    name : string
 
-    def __array_wrap(self, out_arr, context=None):
-        return np.ndarray.__array_wrap__(self, out_arr, context)
-
-    def xyz(self):
-        return Positions(self.reshape(-1, 3))
-
-    def r_theta_phi(self, origin):
-        xg, yg, zg = self.xyz().T
-        x, y, z = origin
-
-        x = xg - x
-        y = yg - y
-        # sign is reversed for z because of our choice of image
-        # centric rather than particle centric coordinate system
-        z = z - zg
-
-        r = np.sqrt(x**2 + y**2 + z**2)
-        theta = np.arctan2(np.sqrt(x**2 + y**2), z)
-        phi = np.arctan2(y, x)
-        # get phi between 0 and 2pi
-        phi = phi + 2*np.pi * (phi < 0)
-        # if z is an array, phi will be the wrong shape. Checking its
-        # last dimension will determine this so we can correct it
-        if phi.shape[-1] != r.shape[-1]:
-            phi = phi.repeat(r.shape[-1], -1)
-
-        return np.vstack((r, theta, phi)).T
-
-    def kr_theta_phi(self, origin, optics):
-        pos = self.r_theta_phi(origin)
-        pos[:,0] *= optics.wavevec
-        return pos
-
-class Grid(PositionSpecification):
-    """
-    Rectangular grid of measurements
-    """
-    def __init__(self, spacing):
-        self.spacing = spacing
-
-
-    def resample_by_factors(self, factors):
-        new = copy.copy(self)
-        new.spacing = _ensure_array(new.spacing).astype('float')
-        new.spacing[factors.keys()] *= factors.values()
-        return new
-
-
-class UnevenGrid(Grid):
-    pass
-
-class Angles(PositionSpecification):
-    """Specify far field positions as a grid of angles
-
-    The list of thetas and phis are used to construct a grid of
-    positions angles should be specified in radians.
-
-    Parameters
-    ----------
-    theta : list or ndarray
-        coordinates for the polar angle
-    phi : list or ndarray
-        coordinates for the azimuthal angle
+    Returns
+    -------
+    grid : DataArray object
+        DataArray of zeros with coordinates calculated according to \ *shape* \
+        and \ *spacing*\
 
     Notes
+    -----
+    Typically used to define a set of points to represent the pixels of a 
+    digital camera in scattering calculations.
+        
+    """
+    if np.isscalar(shape):
+        shape = np.repeat(shape, 2)
+
+    d = np.zeros(shape)
+    return data_grid(d, spacing, normals = normals, name = name)
+
+def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta = None, phi = None, normals = 'auto', name = None):
+    """
+    Returns a one-dimensional set of detector coordinates at which scattering 
+    calculations are to be done.
+
+    Parameters
+    ----------
+    coords : dict, optional
+        Dictionary of detector coordinates. Default: empty dictionary.
+        Typical usage should not pass this argument, giving other parameters
+        (Cartesian `x`, `y`, and `z` or polar `r`, `theta`, and `phi` 
+        coordinates) instead.
+    x, y : int or array_like, optional
+        Cartesian x and y coordinates of detectors.
+    z : int or array_like, optional
+        Cartesian z coordinates of detectors. If not specified, assume `z` = 0.
+    r : int or array_like, optional
+        Spherical polar radial coordinates of detectors. If not specified,
+        assume `r` = infinity (far-field).
+    theta : int or array_like, optional
+        Spherical polar coordinates (polar angle from z axis) of detectors.
+    phi : int or array_like, optional
+        Spherical polar azimuthal coodinates of detectors.
+    normals : string, optional
+        Default behavior: normal in +z direction for Cartesian coordinates,
+        -r direction for polar coordinates. Non-default behavior not currently
+        implemented.
+    name : string
+
+    Returns
+    -------
+    grid : DataArray object
+        DataArray of zeros with calculated coordinates.
+
+    Notes
+    -----
+    Specify either the Cartesian or the polar coordinates of your detector. 
+    This may be helpful for modeling static light scattering calculations.
+    Use detector_grid() to specify coordinates of a grid of pixels (e.g., 
+    a digital camera.)
 
     """
-    def __init__(self, theta, phi = [0], units = 'radians'):
-        self.theta = theta
-        self.phi = phi
-        self.shape = len(self.theta), len(self.phi)
+    updatelist = {'x': x, 'y': y, 'z': z, 'r': r, 'theta': theta, 'phi': phi}
+    coords = updated(coords, updatelist)
+    if 'x' in coords and 'y' in coords:
+        keys = ['x', 'y', 'z']
+        if not 'z' in coords or is_none(coords['z']):
+            coords['z'] = 0
+        
+    elif 'theta' in coords and 'phi' in coords:
+        keys = ['r', 'theta', 'phi']
+        if not 'r' in coords or is_none(coords['r']):
+            coords['r'] = np.inf
+    else:
+        raise CoordSysError()
 
-    def positions_theta_phi(self):
-        pos = np.zeros((self.shape[0]*self.shape[1], 2))
-        for i, theta in enumerate(self.theta):
-            for j, phi in enumerate(self.phi):
-                pos[i*self.shape[1]+j] = theta, phi
-        return pos
+    if name is None:
+        name = 'data'
+
+    coords = repeat_sing_dims(coords,keys)
+    coords = updated(coords,{key: ('point', coords[key]) for key in keys})
+    attrs = {'normals': default_norms(coords, normals)}
+    return xr.DataArray(np.zeros(len(coords[keys[0]][1])), dims = ['point'], coords = coords, attrs = attrs, name = name)
+
+def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None):
+    """Returns a copy of an image with updated metadata in its 'attrs' field.
+
+    Parameters
+    ----------
+    a : xarray.DataArray
+        image to update.
+    medium_index : float
+        Updated refractive index of the medium in the image.
+    illum_wavelen : float
+        Updated wavelength of illumination in the image.
+    illum_polarization : list-like
+        Updated polarization of illumination in the image.
+    normals : list-like
+        Updated detector orientation of the image.
+   
+    Returns
+    -------
+    b : xarray.DataArray
+        copy of input image with updated metadata. The 'normals' field is not allowed to be empty.
+    """
+
+    attrlist = {'medium_index': medium_index, 'illum_wavelen': illum_wavelen, 'illum_polarization': to_vector(illum_polarization), 'normals': to_vector(normals)}
+    b = a.copy()
+    b.attrs = updated(b.attrs, attrlist)
+
+    for attr in attrlist:
+        if not hasattr(b, attr):
+            b.attrs[attr] = None
+
+    if is_none(b.normals):
+        b.attrs['normals'] = default_norms(b.coords, 'auto')
+
+    return b
+
+def copy_metadata(old, new, do_coords=True):
+    def find_and_rename(oldkey, oldval):
+        for newkey, newval in new.coords.items():
+            if np.array_equal(oldval.values, newval.values):
+                return new.rename({newkey: oldkey})
+            raise ValueError("Coordinate {} does not appear to have a coresponding coordinate in {}".format(oldkey, new))
+
+    if hasattr(old, 'attrs') and hasattr(old, 'name') and hasattr(old, 'coords'):
+        if not hasattr(new,'coords'):
+            #new is a numpy array, not xarray
+            new=xr.DataArray(new, dims=['x', 'y'])
+        new.attrs = old.attrs
+        new.name = old.name
+
+        if hasattr(old, 'flat') and hasattr(new, 'flat'):
+            new['flat'] = old['flat']
+        if do_coords:
+            for key, val in old.coords.items():
+                if key not in new.coords:
+                    new = find_and_rename(key, val)
+    return new
+
+def to_vector(c):
+    if c is None or c is False:
+        return c
+    if hasattr(c, vector):
+        return c
+    c = np.array(c)
+    if c.shape == (2,):
+        c = np.append(c, 0)
+
+    return xr.DataArray(c, coords={vector: ['x', 'y', 'z']}, dims=vector)
+
+def flat(a):
+    if hasattr(a, 'flat') or hasattr(a, 'point'):
+        return a
+    if len(a.dims)==3:
+        #want to ensure order is x, y, z
+        return a.stack(flat=('x','y','z'))
+    else:
+        return a.stack(flat=a.dims)
+
+def from_flat(a):
+    if hasattr(a, 'flat'):
+        return a.unstack('flat')
+    return a
+
+def sphere_coords(a, origin=(0,0,0), wavevec=1):
+    if hasattr(a,'theta') and hasattr(a, 'phi'):
+        out = {'theta': a.theta.values, 'phi': a.phi.values, 'point':a.point.values}
+        if hasattr(a, 'r') and any(np.isfinite(a.r)):
+            out['r'] = a.r.values * wavevec
+        return out
+
+    else:
+        f = flat(a)
+        dimstr = primdim(f)
+        # we define positive z opposite light propagation, so we have to invert
+        x, y, z = f.x.values - origin[0], f.y.values - origin[1], origin[2] - f.z.values
+        out = to_spherical(x,y,z)
+        return updated(out, {'r':out['r'] * wavevec, dimstr:f[dimstr]})
+
+def get_values(a):
+    return getattr(a, 'values', a)
+
+def primdim(a):
+    if isinstance(a, xr.DataArray):
+        a = a.coords
+    if 'flat' in a:
+        return 'flat'
+    if 'point' in a:
+        return 'point'
+    raise ValueError('Array is not in the form of a 1D list of coordinates')
+
+def default_norms(coords,n):
+    if n is 'auto':    
+        if 'x' in coords:
+            n = (0,0,1)
+        elif 'theta' in coords:
+            n = to_cartesian(1, coords['theta'][1], coords['phi'][1])
+            n = -np.vstack((n['x'],n['y'],n['z']))
+            n = xr.DataArray(n, dims=[vector,'point'], coords={vector: ['x', 'y', 'z']})
+        else:
+            raise CoordSysError()
+    return to_vector(n)
+
+def get_spacing(im):
+    xspacing = np.diff(im.x)
+    yspacing = np.diff(im.y)
+    if not np.allclose(xspacing[0], xspacing) and np.allclose(yspacing[0], yspacing):
+        raise ValueError("array has nonuniform spacing, can't determine a single spacing")
+    return np.array((xspacing[0], yspacing[0]))
+
+def get_extents(im):
+    def get_extent(d):
+        if len(im[d]) == 1:
+            return 0
+        # Add one extra spacing since the xarray coords are right edge only,
+        # but we actually want right edge of first pixel to left edge of last
+        # pixel
+        return float(im[d][-1] - im[d][0] + np.diff(im[d]).mean())
+    return {d: get_extent(d) for d in im.dims}
+
+
+def make_coords(shape, spacing, z=0):
+    if np.isscalar(shape):
+        shape = np.repeat(shape, 2)
+    if np.isscalar(spacing):
+        spacing = np.repeat(spacing, 2)
+    return {'z':np.array([z]), 'x': np.arange(shape[1])*spacing[0], 'y': np.arange(shape[2])*spacing[1]}

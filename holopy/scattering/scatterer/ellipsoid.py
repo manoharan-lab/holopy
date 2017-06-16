@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -21,12 +21,13 @@ Defines ellipsoidal scatterers.
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
-from __future__ import division
+
 
 import numpy as np
 
 from .scatterer import CenteredScatterer, Indicators
-from ..errors import ScattererDefinitionError
+from ..errors import InvalidScatterer
+from functools import reduce
 
 def isnumber(x):
     try:
@@ -60,18 +61,18 @@ class Ellipsoid(CenteredScatterer):
         self.n = n
 
         if np.isscalar(r) or len(r) != 3:
-            raise ScattererDefinitionError("r specified as {0}; "
+            raise InvalidScatterer(self,"r specified as {0}; "
                                            "r should be "
                                            "specified as (r_x, r_y, r_z)"
-                                           "".format(center), self)
+                                           "".format(center))
 
         self.r = r
 
         if np.isscalar(rotation) or len(rotation) != 3:
-            raise ScattererDefinitionError("rotation specified as {0}; "
+            raise InvalidScatterer(self,"rotation specified as {0}; "
                                            "rotation should be "
                                            "specified as (alpha, beta, gamma)"
-                                           "".format(rotation), self)
+                                           "".format(rotation))
         self.rotation = rotation
         super(Ellipsoid, self).__init__(center)
 

@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -22,19 +22,22 @@ Code to propagate objects/waves using scattering models.
 .. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 """
-from __future__ import division
+
 
 import numpy as np
-from ..core.math import fft, ifft
-from ..core.helpers import _ensure_pair, _ensure_array
-from ..core import Volume, Image, Grid, UnevenGrid, VolumeSchema, Marray
-from ..core.marray import VectorGrid
-from holopy.core.marray import dict_without, resize
+import xarray as xr
+from xarray.ufuncs import sqrt
+
+from ..core.process import fft, ifft
+from ..core.utils import ensure_array
+from ..core.metadata import update_metadata, copy_metadata
+from ..core.process.fourier import ft_coord
+from ..scattering.errors import MissingParameter
 
 # May eventually want to have this function take a propagation model
 # so that we can do things other than convolution
 
-def propagate(data, d, gradient_filter=False):
+def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_filter=False):
     """
     Propagates a hologram along the optical axis
 
@@ -45,6 +48,11 @@ def propagate(data, d, gradient_filter=False):
     d : float or list of floats
        Distance to propagate, in meters, or desired schema.  A list tells to
        propagate to several distances and return the volume
+    cfsp : integer (optional)
+       cascaded free-space propagation factor.  If this is an integer
+       > 0, the transfer function G will be calculated at d/csf and
+       the value returned will be G**csf. This helps avoid artifacts related to
+       the limited window of the transfer function
     gradient_filter : float
        For each distance, compute a second propagation a distance
        gradient_filter away and subtract.  This enhances contrast of
@@ -60,6 +68,13 @@ def propagate(data, d, gradient_filter=False):
         # Propagating no distance has no effect
         return data
 
+    data = update_metadata(data, medium_index = medium_index, illum_wavelen = illum_wavelen)
+
+    if data.medium_index is None or data.illum_wavelen is None:
+        raise MissingParameter("refractive index and wavelength")
+
+    med_wavelen = data.illum_wavelen/data.medium_index
+
     # Computing the transfer function will fail for d = 0. So, if we
     # are asked to compute a reconstruction for a set of distances
     # containing 0, we pull that distance out and then add in a copy
@@ -72,65 +87,22 @@ def propagate(data, d, gradient_filter=False):
             d_old = d
             d = np.delete(d, np.nonzero(d == 0))
 
-    G = trans_func(data, d, squeeze=False, gradient_filter=gradient_filter)
+    G = trans_func(data, d, med_wavelen, cfsp=cfsp, gradient_filter=gradient_filter)
 
     ft = fft(data)
+    res = ifft(ft.squeeze('z') * G, overwrite=True)
 
-    ft = np.repeat(ft[:, :, np.newaxis,...], G.shape[2], axis=2)
+    #we may have lost coordinate values to floating point precision during fft/ifft
+    res.name = 'propagation'
+    res = res.to_dataset().update({'x':data.x, 'y':data.y})[res.name]
 
-    ft = apply_trans_func(ft, G)
-
-    res = ifft(ft, overwrite=True)
-
-    # This will not work correctly if you have 0 in the distances more
-    # than once. But why would you do that?
     if contains_zero:
         d = d_old
-        res = np.insert(res, np.nonzero(d==0)[0][0], data, axis=2)
+        res = xr.concat([data, res], dim='z')
 
-    res = np.squeeze(res)
+    return copy_metadata(data, res)
 
-    origin = np.array(data.origin)
-    origin[2] += _ensure_array(d)[0]
-
-    if not np.isscalar(d) and not isinstance(data, VectorGrid):
-        # check if supplied distances are in a regular grid
-        dd = np.diff(d)
-        if np.allclose(dd[0], dd):
-            # shape of none will have the shape inferred from arr
-            spacing = np.append(data.spacing, dd[0])
-            res = Volume(res, spacing = spacing, origin = origin,
-                         **dict_without(data._dict,
-                                        ['spacing', 'origin', 'dtype']))
-        else:
-            res = Marray(res, positions=positions, origin = origin,
-                         **dict_without(data._dict, ['spacing', 'position', 'dtype']))
-
-    return res
-
-def apply_trans_func(ft, G):
-    mm, nn = [int(dim/2) for dim in G.shape[:2]]
-    m, n = ft.shape[:2]
-
-    if ft.ndim == 4:
-        # vector field input, so we need to add a dimension to G so it
-        # broadcasts correctly
-        G = G[...,np.newaxis]
-    ft[(m//2-mm):(m//2+mm),(n//2-nn):(n//2+nn)] *= G[:(mm*2),:(nn*2)]
-
-    # Transfer function may not cover the whole image, any values
-    # outside it need to be set to zero to make the reconstruction
-    # correct
-    ft[0:n//2-nn,...] = 0
-    ft[n//2+nn:n,...] = 0
-    ft[:,0:m//2-mm,...] = 0
-    ft[:,m//2+mm:m,...] = 0
-
-    return ft
-
-
-def trans_func(schema, d, cfsp=0, squeeze=True,
-               gradient_filter=0):
+def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
     """
     Calculates the optical transfer function to use in reconstruction
 
@@ -153,10 +125,7 @@ def trans_func(schema, d, cfsp=0, squeeze=True,
     cfsp : integer (optional)
        cascaded free-space propagation factor.  If this is an integer
        > 0, the transfer function G will be calculated at d/csf and
-       the value returned will be G**csf.
-    squeeze : Bool (optional)
-       Remove length 1 dimensions (so that if only one distance is
-       specified trans_func will be a 2d array)
+       the value returned will be G**csf. 
     gradient_filter : float (optional)
        Subtract a second transfer function a distance gradient_filter
        from each z
@@ -175,41 +144,25 @@ def trans_func(schema, d, cfsp=0, squeeze=True,
     .. [2] Kreis, Optical Engineering 41(8):1829, section 5
 
     """
-    d = np.array([d])
-
-    wavelen = schema.optics.med_wavelen
-
-    d = d.reshape([1, 1, d.size])
+    if not hasattr(d, 'z'):
+        d = xr.DataArray(ensure_array(d), dims=['z'], coords={'z': ensure_array(d)})
 
     if(cfsp > 0):
         cfsp = int(abs(cfsp)) # should be nonnegative integer
         d = d/cfsp
 
-    # The transfer function is only defined on a finite domain of
-    # spatial frequencies; outside this domain the transfer function
-    # is zero (see Kreis, Optical Engineering 41(8):1829, page 1836).
-    # It is important to set it to zero outside the domain, otherwise
-    # the reconstruction is not correct.  Here I save memory by making
-    # the size of the array only as large as the domain corresponding
-    # to the transfer function at the smallest z-distance
+    m, n = ft_coord(schema.x), ft_coord(schema.y)
+    m = xr.DataArray(m, dims='m', coords={'m': m})
+    n = xr.DataArray(n, dims='n', coords={'n': n})
 
-    # for this we need to use the magnitude of d, size of the image
-    # should be a positive number
-
-    m, n = np.ogrid[[slice(-dim/(2*ext), dim/(2*ext), dim*1j) for
-                     (dim, ext) in zip(schema.shape[:2], schema.extent[:2])]]
-
-    root = 1.+0j-(wavelen*n)**2 - (wavelen*m)**2
+    root = 1.+0j-(med_wavelen*n)**2 - (med_wavelen*m)**2
 
     root *= (root >= 0)
 
-    # add the z axis to this array so it broadcasts correctly
-    root = root[..., np.newaxis]
-
-    g = np.exp(-1j*2*np.pi*d/wavelen*np.sqrt(root))
+    g = np.exp(-1j*2*np.pi*d/med_wavelen*sqrt(root))
 
     if gradient_filter:
-        g -= np.exp(-1j*2*np.pi*(d+gradient_filter)/wavelen*np.sqrt(root))
+        g -= np.exp(-1j*2*np.pi*(d+gradient_filter)/med_wavelen*sqrt(root))
 
     # set the transfer function to zero where the sqrt is imaginary
     # (this is equivalent to making sure that the largest spatial
@@ -218,10 +171,9 @@ def trans_func(schema, d, cfsp=0, squeeze=True,
     # false.  Multiplying by this boolean matrix masks the array.
     g = g*(root>=0)
 
+
+ 
     if cfsp > 0:
         g = g**cfsp
 
-    if squeeze:
-        return np.squeeze(g)
-    else:
-        return g
+    return g
