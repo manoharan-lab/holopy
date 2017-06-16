@@ -21,6 +21,9 @@ Theories to compute scattering from objects.
 All theories have a common interface defined by
 :class:`holopy.scattering.theory.scatteringtheory.ScatteringTheory`.
 
+Documentation in this module won't display properly without a Fortran compiler.
+Refer to the individual files for docstrings. 
+
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
