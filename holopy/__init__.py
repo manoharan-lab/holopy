@@ -36,5 +36,5 @@ from .core import load, save, load_image, save_image, detector_grid, detector_po
 from .propagation import propagate
 from .vis import show, test_disp
 
-__version__ = '2.0.0'
+__version__ = '3.0.0'
 __version_info__ = tuple([ int(num) for num in __version__.split('.')])

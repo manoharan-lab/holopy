@@ -46,6 +46,8 @@ Installation on Windows is still a work in progress, but we have been able to ge
 
 9. Open an iPython console where holopy is installed and try ``import holopy``.
 
+If the above procedure doesn't work, or you find something else that does, please `let us know <https://github.com/manoharan-lab/holopy/issues>`_ so that we can improve these instructions.
+
 
 
 ..  _xarray:
@@ -83,7 +85,11 @@ track of their dimension names separately. HoloPy's :func:`.save_image` writes a
 yaml dump of ``attrs`` (along with spacing information) to the
 ``imagedescription`` field of .tif file metadata.
 
--TODO: how inference results are saved
+:ref:`infer_tutorial` returns a lot of information, which is stored in the form of a :class:`.SamplingResult` object.
+This object stores the model and :class:`.EmceeStrategy` that were used in the inference calculation as attributes. 
+An additional attribute named ``dataset`` is an `xarray Dataset <http://xarray.pydata.org/en/stable/data-structures.html#dataset>`_ 
+that contains both the data used in the inference calculation, as well as the raw output.
+The parameter values at each step of the sampling chain and the calculated log-probabilities at each step are stored here under the ``samples`` and ``lnprobs`` namespaces.
 
 .. _scat_theory:
 
@@ -121,12 +127,12 @@ by generating files and reading output files.
 Adding a new inference model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To perform inference, you need a noise model. You can make a new noise model by inheriting from :class:`~holopy.inference.noise_model.NoiseModel`. This class has all the machinery to compute likelihoods of observing data given some set of parameters and assuming gaussian noise. 
+To perform inference, you need a noise model. You can make a new noise model by inheriting from :class:`~holopy.inference.noise_model.NoiseModel`. This class has all the machinery to compute likelihoods of observing data given some set of parameters and assuming Gaussian noise. 
 
-To implement a new model, you just need to implement one function: _forward. 
-This function receives a dictionary of parameter values and a data shape schema and needs to return simulated data of shape specified. See the _forward function in :class:`~holopy.inference.noise_model.AlphaModel` for an example of how to do this. 
+To implement a new model, you just need to implement one function: ``_forward``. 
+This function receives a dictionary of parameter values and a data shape schema (defined by :func:`.detector_grid`, for example) and needs to return simulated data of shape specified. See the ``_forward`` function in :class:`~holopy.inference.noise_model.AlphaModel` for an example of how to do this. 
 
-If you want to use some other noise model, you may need to override _lnlike and to define the probablity given your uncertainty. You can reference _lnlike in :class:`~holopy.inference.noise_model.NoiseModel`.
+If you want to use some other noise model, you may need to override _lnlike and define the probablity given your uncertainty. You can reference _lnlike in :class:`~holopy.inference.noise_model.NoiseModel`.
 
 .. _nose_tests:
 

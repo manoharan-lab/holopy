@@ -32,18 +32,12 @@ Optional dependencies for certain calculations include:
 
 * `a-dda <http://code.google.com/p/a-dda/>`_ (Discrete Dipole calculations of arbitrary scatterers)
 
-* `mayavi2 <http://docs.enthought.com/mayavi/mayavi/>`_ (if you want to do 3D plotting)
+* `mayavi2 <http://docs.enthought.com/mayavi/mayavi/>`_ (if you want to do 3D plotting [experimental])
 
 Windows Support
 ---------------
-TODO BY RON
-
-HoloPy is not currently supported on Windows due to Fortran compiler issues. If
-this is an area you know something about, we welcome any assistance in getting
-things working. In the mean time, your best option is probably to compile on the
-`Windows Subsystem for Linux
-<https://msdn.microsoft.com/en-us/commandline/wsl/install_guide>`_, available in
-recent versions of Windows.
+We are working on distributing a Windows HoloPy build that does not require Fortran compilers.
+In the mean-time your best option is to build it yourself by following the instructions for :ref:`dev_install`.
 
 ..  _usage:
 
