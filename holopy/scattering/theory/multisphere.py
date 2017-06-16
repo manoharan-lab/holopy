@@ -33,13 +33,20 @@ from numpy import arctan2, sin, cos
 from warnings import warn
 from scipy.integrate import dblquad
 
-from .mie_f import mieangfuncs
-from .mie_f import scsmfo_min
-from .mie_f import uts_scsmfo
 from ..scatterer import Spheres,Sphere
 from ..errors import (TheoryNotCompatibleError, InvalidScatterer,
                       MultisphereFailure)
 from .scatteringtheory import ScatteringTheory
+
+try:
+    from .mie_f import mieangfuncs
+    from .mie_f import scsmfo_min
+    from .mie_f import uts_scsmfo
+except ImportError:
+    import warnings
+    from ..errors import NoScattering
+    warnings.simplefilter('always', NoScattering)
+    warnings.warn(NoScattering('multisphere'))
 
 def normalize_polarization(illum_polarization):
     return (illum_polarization / np.sqrt((illum_polarization**2).sum()))[:2]

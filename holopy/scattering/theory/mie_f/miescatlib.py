@@ -25,11 +25,15 @@ Library of code to do Mie scattering calculations.
 '''
 
 import numpy as np
-from . import mie_specfuncs
-
-from .mieangfuncs import dn_1_down, lentz_dn1
-
 from numpy import sin, cos, array
+
+try:
+    from . import mie_specfuncs
+    from .mieangfuncs import dn_1_down, lentz_dn1
+except ImportError:
+    pass
+
+
 
 def scatcoeffs(m, x, nstop, eps1 = 1e-3, eps2 = 1e-16): # see B/H eqn 4.88
     '''

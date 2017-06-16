@@ -31,9 +31,14 @@ from ...core.utils import ensure_array
 from ..errors import TheoryNotCompatibleError, InvalidScatterer
 from ..scatterer import Sphere, Scatterers
 from .scatteringtheory import ScatteringTheory
-from .mie_f import mieangfuncs, miescatlib
-from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
-
+try:
+    from .mie_f import mieangfuncs, miescatlib
+    from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
+except ImportError:
+    import warnings
+    from ..errors import NoScattering
+    warnings.simplefilter('always', NoScattering)
+    warnings.warn(NoScattering('Mie'))
 
 class Mie(ScatteringTheory):
     """

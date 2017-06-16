@@ -33,11 +33,3 @@ holopy.scattering.theory.mie_f.multilayer_sphere_lib module
     :undoc-members:
     :show-inheritance:
 
-holopy.scattering.theory.mie_f.setup module
--------------------------------------------
-
-.. automodule:: holopy.scattering.theory.mie_f.setup
-    :members:
-    :undoc-members:
-    :show-inheritance:
-

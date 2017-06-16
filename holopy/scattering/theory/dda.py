@@ -38,10 +38,15 @@ import time
 import warnings
 
 from .scatteringtheory import ScatteringTheory
-from .mie_f import mieangfuncs
+
 from ..scatterer import Ellipsoid, Capsule, Cylinder, Bisphere, Sphere_builtin, Scatterer
 from ...core.utils import ensure_array
 from ..errors import DependencyMissing
+
+try:
+    from .mie_f import mieangfuncs
+except ImportError:
+    pass
 
 class DDA(ScatteringTheory):
     """

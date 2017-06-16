@@ -19,9 +19,6 @@
 Fortran extension module for calculating cluster holograms using tmatrix
 scattering theory.
 
-Documentation in this module won't display properly without a Fortran compiler.
-Refer to the individual files for docstrings. 
-
 .. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 """
 

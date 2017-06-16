@@ -42,9 +42,4 @@ The HoloPy scattering module is used to:
 from . import scatterer, theory
 from .scatterer import Sphere, Spheres, Scatterer, Scatterers, JanusSphere, Ellipsoid, Capsule, Cylinder, Bisphere, LayeredSphere
 from .calculations import calc_holo, calc_field, calc_intensity, calc_cross_sections, calc_scat_matrix
-
-try:
-    from .theory import Mie, Multisphere, DDA
-except ImportError:
-    pass
-
+from .theory import Mie, Multisphere, DDA

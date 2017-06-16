@@ -43,8 +43,12 @@ from numpy import array, sin, cos, zeros, arange, real, imag, exp
 
 import scipy
 from scipy.special import riccati_jn, riccati_yn
-from . import mieangfuncs
-from .mieangfuncs import dn_1_down, lentz_dn1
+
+try:
+    from . import mieangfuncs
+    from .mieangfuncs import dn_1_down, lentz_dn1
+except ImportError:
+    pass
 
 def riccati_psi_xi(x, nstop):
     '''

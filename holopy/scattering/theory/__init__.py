@@ -21,10 +21,6 @@ Theories to compute scattering from objects.
 All theories have a common interface defined by
 :class:`holopy.scattering.theory.scatteringtheory.ScatteringTheory`.
 
-Documentation in this module won't display properly without a Fortran compiler.
-Refer to the individual files for docstrings. 
-
-
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 .. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
@@ -32,14 +28,7 @@ Refer to the individual files for docstrings.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
+from .mie import Mie
+from .multisphere import Multisphere
+from .dda import DDA
 
-try:
-    from .mie import Mie
-    from .multisphere import Multisphere
-    from .dda import DDA
-except ImportError:
-    from warnings import warn
-    warn("""
-Could not import scattering.  You will not be able to do scattering
-calculations, but the rest of holopy should remain usable.
-This is probably due to a problem with compiling fortran code""")

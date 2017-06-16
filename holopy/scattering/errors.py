@@ -25,6 +25,13 @@ other exceptions in other parts of HoloPy to keep things modular.
 
 import warnings
 
+class NoScattering(ImportWarning):
+    def __init__(self, theory):
+        self.theory = theory
+    def __str__(self):
+        return "Could not import "+self.theory+" scattering theory. You will not be able to do scattering calculations but the rest of HoloPy should remain usable. This is probably due to a problem with compiling Fortran code."
+
+
 class InvalidScatterer(Exception):
     def __init__(self, scatterer, message):
         self.scatterer = scatterer
