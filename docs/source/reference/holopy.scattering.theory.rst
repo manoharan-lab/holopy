@@ -1,6 +1,14 @@
 holopy.scattering.theory package
 ================================
 
+Subpackages
+-----------
+
+.. toctree::
+
+    holopy.scattering.theory.mie_f
+
+
 Module contents
 ---------------
 
@@ -40,6 +48,4 @@ holopy.scattering.theory.scatteringtheory module
     :members:
     :undoc-members:
     :show-inheritance:
-
-
 
