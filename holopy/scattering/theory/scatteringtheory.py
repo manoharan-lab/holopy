@@ -31,7 +31,7 @@ from holopy.core.holopy_object import HoloPyObject
 from ..scatterer import Scatterers, Sphere
 from ..errors import TheoryNotCompatibleError, MissingParameter
 from ...core.metadata import vector, sphere_coords, primdim
-from ...core.utils import dict_without, updated
+from ...core.utils import dict_without, updated, ensure_listlike
 
 def wavevec(a):
         return 2*np.pi/(a.illum_wavelen/a.medium_index)
@@ -40,7 +40,6 @@ def stack_spherical(a):
     if not 'r' in a:
         a['r']=[np.inf]*len(a['theta'])
     return np.vstack((a['r'],a['theta'],a['phi']))
-  
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -74,6 +73,15 @@ class ScatteringTheory(HoloPyObject):
         e_field : :mod:`.VectorGrid`
             scattered electric field
         """
+        fields_both = []
+        for i in np.arange(0,len(ensure_listlike(schema.optics.wavelen))):
+            print(i, schema.optics.wavelen)
+            temp = ImageSchema(shape = schema.shape, spacing = schema.spacing, optics = Optics(wavelen = schema.optics.wavelen[i], polarization = schema.optics.polarization, index = schema.optics.index))
+            fields = cls_self._calc_field(scatterer, temp) * scaling
+            fields.get_metadata_from(ImageSchema(shape = schema.shape, spacing = schema.spacing, optics = Optics(wavelen = schema.optics.wavelen[i], polarization = schema.optics.polarization, index = schema.optics.index)))
+            fields_both.append(fields)
+        return fields_both
+
         def get_field(s):
             if isinstance(scatterer,Sphere) and scatterer.center is None:
                 raise MissingParameter("center")
@@ -106,7 +114,15 @@ class ScatteringTheory(HoloPyObject):
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
-        return field
+        scat = cls_self.calc_field(scatterer, schema = schema, scaling = scaling)
+        scatholos = []
+        for i in np.arange(0,len(ensure_listlike(schema.optics.wavelen))):
+            scatholo = scattered_field_to_hologram(scat[i], scat[i].optics)
+            scatholos.append(scatholo)
+#        return scatholos
+        fieldtoholo = (scatholos[0]+scatholos[1])*0.5
+        fieldtoholo.get_metadata_from(schema)
+        return fieldtoholo
 
     def _calc_cross_sections(self, scatterer, medium_wavevec, medium_index, illum_polarization):
         raw_sections = self._raw_cross_sections(scatterer=scatterer,
