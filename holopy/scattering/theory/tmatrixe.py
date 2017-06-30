@@ -30,22 +30,16 @@ import glob
 import os
 import shutil
 import time
-from ..binding_method import binding, finish_binding
 from ..scatterer import Sphere, Spheroid
 
 from nose.plugins.skip import SkipTest
 
 from .scatteringtheory import ScatteringTheory
 from .mie_f import mieangfuncs
+from .axisym_T import Tmatrix_ep
+from ..errors import DependencyMissing
 from ..scatterer import Sphere, Ellipsoid, Spheres
-from ...core.marray import VectorGridSchema
-from ...core.helpers import _ensure_array
-
-class DependencyMissing(SkipTest, Exception):
-    def __init__(self, dep):
-        self.dep = dep
-    def __str__(self):
-        return "External Dependency: " + self.dep + " could not be found, terminating."
+from ...core.utils import ensure_array
 
 class TmatrixE(ScatteringTheory):
     """
