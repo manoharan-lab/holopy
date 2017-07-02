@@ -34,17 +34,11 @@ from ..errors import TheoryNotCompatibleError, InvalidScatterer
 from nose.plugins.skip import SkipTest
 
 from .scatteringtheory import ScatteringTheory
-
-# for the moment no fields are returned, until mieangfuncs compiles
-# on windows
-# from .mie_f import mieangfuncs
-
-
-class DependencyMissing(SkipTest, Exception):
-    def __init__(self, dep):
-        self.dep = dep
-    def __str__(self):
-        return "External Dependency: " + self.dep + " could not be found, terminating."
+from .mie_f import mieangfuncs
+from .axisym_T import Tmatrix_ep
+from ..errors import DependencyMissing
+from ..scatterer import Sphere, Ellipsoid, Spheres
+from ...core.utils import ensure_array
 
 class TmatrixE(ScatteringTheory):
     """
@@ -166,9 +160,7 @@ class TmatrixE(ScatteringTheory):
             kr, theta, phi = point
             # TODO: figure out why postfactor is needed -- it is not used in dda.py
             postfactor = np.array([[np.cos(phi),np.sin(phi)],[-np.sin(phi),np.cos(phi)]])
-            # for the moment no fields are returned, until mieangfuncs compiles
-            # on windows
-            #escat_sph = mieangfuncs.calc_scat_field(kr, phi, np.dot(scat_matr[i],postfactor),
-            #                                        illum_polarization.values[:2])
-            #fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
+            escat_sph = mieangfuncs.calc_scat_field(kr, phi, np.dot(scat_matr[i],postfactor),
+                                                    illum_polarization.values[:2])
+            fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
         return fields.T

@@ -1,5 +1,5 @@
 # Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
+# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 #
 # This file is part of HoloPy.
 #
@@ -15,22 +15,10 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-'''
-Theories to compute scattering from objects.
+"""
+Fortran extension module for calculating cluster holograms using tmatrix
+scattering theory.
 
-All theories have a common interface defined by
-:class:`holopy.scattering.theory.scatteringtheory.ScatteringTheory`.
-
-.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
-.. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
-.. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
-.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
-'''
-
-from . import mie_f, axisym_T
-
-from .mie import Mie
-from .multisphere import Multisphere
-from .dda import DDA
-from .tmatrixe import TmatrixE
+"""
+from . import Tmatrix_ep
