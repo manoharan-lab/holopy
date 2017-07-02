@@ -1,18 +1,24 @@
 import holopy as hp
-from holopy.scattering.scatterer import Axisymmetric, Spheroid
-from holopy.core import ImageSchema, Optics
-from holopy.scattering.theory import Tmatrix, DDA
+import numpy as np
+from holopy.scattering import calc_holo, calc_scat_matrix
+from holopy.scattering.scatterer import Axisymmetric, Spheroid, Sphere
+from holopy.scattering.theory import TmatrixE, DDA
 from holopy.core.math import rotation_matrix
 
-schema = ImageSchema(shape = 200, spacing = .1,
-                     optics = Optics(wavelen = .660, index = 1.33,
-                                     polarization = [1,0]))
-
-#ps = Spheroid(n = 1.585, r = [.4,1.5], rotation=[pi/2, 2], center = [10,10,20])
+#ps = Spheroid(n = 1.585, r = [.4,1.5], rotation=[np.pi/2, 2], center = [10,10,20])
 #holo = DDA.calc_holo(ps,schema)
-#hp.show(holo)
 
-ps = Axisymmetric(n = 1.585, r = [.4,1.5], rotation=[pi/2, 2], center = [10,10,20])
-holo = Tmatrix.calc_holo(ps,schema)
+ps = Axisymmetric(n = 1.585, r = [.4, 1.5], rotation=[np.pi/2, 2], center = [10,10,20])
+sphere = Sphere(n = 1.59, r = 0.9, center=(10, 10, 20))
+
+medium_index = 1.33
+illum_wavelen = 0.660
+illum_polarization = (1,0)
+detector = hp.detector_grid(shape = 100, spacing = .1)
+holo_sphere = calc_holo(detector, sphere, medium_index, illum_wavelen, illum_polarization, theory=TmatrixE)
+holo_spheroid = calc_holo(detector, ps, medium_index, illum_wavelen, illum_polarization)
+#print(calc_scat_matrix(detector, ps, medium_index, illum_wavelen))
+
+holo = holo_sphere
 hp.show(holo)
 

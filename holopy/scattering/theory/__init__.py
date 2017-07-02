@@ -31,8 +31,4 @@ All theories have a common interface defined by
 from .mie import Mie
 from .multisphere import Multisphere
 from .dda import DDA
-
-try:
-    from tmatrixe import TmatrixE
-except ImportError:
-    pass
+from .tmatrixe import TmatrixE
