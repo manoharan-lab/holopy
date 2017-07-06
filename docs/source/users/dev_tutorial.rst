@@ -111,7 +111,7 @@ the raw scattering values::
       # Your code here
 
 You can get away with just defining one of _raw_scat_matrs or _raw_fields if you
-just want holograms, fields, or intensities. If you want scattering matricies
+just want holograms, fields, or intensities. If you want scattering matrices
 you will need to implement _raw_scat_matrs, and if you want cross sections, you
 will need to implement _raw_cross_sections. We seperate out _raw_fields from
 _raw_scat_matrs because we want to provide a faster fields implementation for
