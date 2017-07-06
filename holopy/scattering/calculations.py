@@ -30,7 +30,7 @@ from .errors import AutoTheoryFailed, MissingParameter
 
 try:
     from .theory import Mie, Multisphere
-    from .theory import TmatrixE
+    from .theory import Tmatrix
     from .theory.dda import DDA
 except:
     pass
@@ -72,7 +72,7 @@ def determine_theory(scatterer):
             warn("HoloPy's multisphere theory can't handle coated spheres. Using Mie theory.")
             return Mie()
     elif isinstance(scatterer, Axisymmetric):
-        return TmatrixE()
+        return Tmatrix()
     elif DDA()._can_handle(scatterer):
         return DDA()
     else:

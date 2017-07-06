@@ -28,9 +28,9 @@ All theories have a common interface defined by
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
-from . import mie_f, axisym_T
+from . import mie_f
 
 from .mie import Mie
 from .multisphere import Multisphere
 from .dda import DDA
-from .tmatrixe import TmatrixE
+from .tmatrix import Tmatrix

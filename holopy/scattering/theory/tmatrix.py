@@ -35,12 +35,11 @@ from nose.plugins.skip import SkipTest
 
 from .scatteringtheory import ScatteringTheory
 from .mie_f import mieangfuncs
-from .axisym_T import Tmatrix_ep
 from ..errors import DependencyMissing
 from ..scatterer import Sphere, Ellipsoid, Spheres
 from ...core.utils import ensure_array
 
-class TmatrixE(ScatteringTheory):
+class Tmatrix(ScatteringTheory):
     """
     Computes scattering using the axisymmetric T-matrix solution by Mishchenko
     with extended precision.
@@ -78,7 +77,7 @@ class TmatrixE(ScatteringTheory):
         temp_dir = tempfile.mkdtemp()
         current_directory = os.getcwd()
         path, _ = os.path.split(os.path.abspath(__file__))
-        tmatrixlocation = os.path.join(path, 'tmatrix_extendedprecision', 'S.exe')
+        tmatrixlocation = os.path.join(path, 'tmatrix_f', 'S.exe')
         shutil.copy(tmatrixlocation, temp_dir)
         os.chdir(temp_dir)
 

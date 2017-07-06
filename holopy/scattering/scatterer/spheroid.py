@@ -22,8 +22,7 @@
     Defines spheroidal scatterers.
 
     .. moduleauthor:: Anna Wang, Thomas G. Dimiduk
-    '''
-from __future__ import division
+'''
 
 import numpy as np
 from ...core.math import rotation_matrix
@@ -45,17 +44,20 @@ def all_numbers(x):
 
 class Spheroid(CenteredScatterer):
     """
-        Scattering object representing spheroidal scatterers
+    Scattering object representing spheroidal scatterers
 
-        Parameters
-        ----------
-        n : complex
+    Attributes
+    ----------
+    n : complex
         Index of refraction
-        r : float or (float, float)
-        x, z semi-axes of the spheroid
-        center : 3-tuple, list or numpy array
+    r : (float, float)
+        length of xy and z semi-axes of the spheroid
+    rotation : (float, float)
+        beta and gamma Euler angles to rotate spheroid by
+        (alpha is irrelevant since the spheroid is symmetric about z)
+    center : 3-tuple, list or numpy array
         specifies coordinates of center of the scatterer
-        """
+    """
 
     def __init__(self, n=None, r=None, rotation = (0, 0), center=None):
         self.n = n
@@ -64,7 +66,7 @@ class Spheroid(CenteredScatterer):
             raise InvalidScatterer("r specified as {0}; "
                                            "r should be "
                                            "specified as (r_xy, r_z)"
-                                           "".format(center), self)
+                                           "".format(r), self)
 
         self.n = n
         self.r = r

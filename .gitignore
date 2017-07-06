@@ -1,5 +1,6 @@
 *.pyc
 *.so
+*.exe
 dist
 build
 docs/build
