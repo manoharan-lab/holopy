@@ -18,7 +18,6 @@
 """
 Base class for scattering theories.  Implements python-based
 calc_intensity and calc_holo, based on subclass's calc_field
-
 .. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
@@ -31,7 +30,7 @@ from holopy.core.holopy_object import HoloPyObject
 from ..scatterer import Scatterers, Sphere
 from ..errors import TheoryNotCompatibleError, MissingParameter
 from ...core.metadata import vector, sphere_coords, primdim
-from ...core.utils import dict_without, updated, ensure_listlike
+from ...core.utils import dict_without, updated
 
 def wavevec(a):
         return 2*np.pi/(a.illum_wavelen/a.medium_index)
@@ -41,10 +40,10 @@ def stack_spherical(a):
         a['r']=[np.inf]*len(a['theta'])
     return np.vstack((a['r'],a['theta'],a['phi']))
 
+
 class ScatteringTheory(HoloPyObject):
     """
     Defines common interface for all scattering theories.
-
     Notes
     -----
     A subclasses that do the work of computing scattering should do it by
@@ -53,35 +52,23 @@ class ScatteringTheory(HoloPyObject):
     calc_cross_sections. Either of _raw_fields or _raw_scat_matrs will give you
     calc_holo, calc_field, and calc_intensity. Obviously calc_scat_matrix will
     only work if you implement _raw_cross_sections.
-
     So the simplest thing is to just implement _raw_scat_matrs. You only need to
     do _raw_fields there is a way to compute it more efficently and you care
-    about that speed, or if it is easier and you don't care about matricies. 
+    about that speed, or if it is easier and you don't care about matrices.
     """
-    
+
     def _calc_field(self, scatterer, schema):
         """
         Calculate fields.  Implemented in derived classes only.
-
         Parameters
         ----------
         scatterer : :mod:`.scatterer` object
             (possibly composite) scatterer for which to compute scattering
-
         Returns
         -------
         e_field : :mod:`.VectorGrid`
             scattered electric field
         """
-        fields_both = []
-        for i in np.arange(0,len(ensure_listlike(schema.optics.wavelen))):
-            print(i, schema.optics.wavelen)
-            temp = ImageSchema(shape = schema.shape, spacing = schema.spacing, optics = Optics(wavelen = schema.optics.wavelen[i], polarization = schema.optics.polarization, index = schema.optics.index))
-            fields = cls_self._calc_field(scatterer, temp) * scaling
-            fields.get_metadata_from(ImageSchema(shape = schema.shape, spacing = schema.spacing, optics = Optics(wavelen = schema.optics.wavelen[i], polarization = schema.optics.polarization, index = schema.optics.index)))
-            fields_both.append(fields)
-        return fields_both
-
         def get_field(s):
             if isinstance(scatterer,Sphere) and scatterer.center is None:
                 raise MissingParameter("center")
@@ -114,15 +101,7 @@ class ScatteringTheory(HoloPyObject):
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
-        scat = cls_self.calc_field(scatterer, schema = schema, scaling = scaling)
-        scatholos = []
-        for i in np.arange(0,len(ensure_listlike(schema.optics.wavelen))):
-            scatholo = scattered_field_to_hologram(scat[i], scat[i].optics)
-            scatholos.append(scatholo)
-#        return scatholos
-        fieldtoholo = (scatholos[0]+scatholos[1])*0.5
-        fieldtoholo.get_metadata_from(schema)
-        return fieldtoholo
+        return field
 
     def _calc_cross_sections(self, scatterer, medium_wavevec, medium_index, illum_polarization):
         raw_sections = self._raw_cross_sections(scatterer=scatterer,
@@ -135,18 +114,15 @@ class ScatteringTheory(HoloPyObject):
 
     def _calc_scat_matrix(self, scatterer, schema):
         """
-        Compute scattering matricies for scatterer
-
+        Compute scattering matrices for scatterer
         Parameters
         ----------
         scatterer : :mod:`holopy.scattering.scatterer` object
             (possibly composite) scatterer for which to compute scattering
-
         Returns
         -------
         scat_matr : :mod:`.Marray`
-            Scattering matricies at specified positions
-
+            Scattering matrices at specified positions
         Notes
         -----
         calc_* functions can be called on either a theory class or a theory
@@ -156,7 +132,7 @@ class ScatteringTheory(HoloPyObject):
         to use non-default values.
         """
         positions = sphere_coords(schema, scatterer.center)
-        scat_matrs = self._raw_scat_matrs(scatterer, stack_spherical(positions), medium_wavevec=wavevec(schema), medium_index=schema.medium_index)   
+        scat_matrs = self._raw_scat_matrs(scatterer, stack_spherical(positions), medium_wavevec=wavevec(schema), medium_index=schema.medium_index)
         dimstr = primdim(positions)
 
         for coorstr in dict_without(positions, [dimstr]):
