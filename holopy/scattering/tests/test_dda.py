@@ -132,7 +132,7 @@ def test_Ellipsoid_dda():
     schema = detector_grid(100, .1)
     h = calc_holo(schema, e, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1,0))
     cmd = DDA()._adda_ellipsoid(e, medium_wavelen=.66, medium_index=1.33, temp_dir='temp_dir')
-    assert_equal(cmd, ['-eq_rad', '0.5', '-shape', 'ellipsoid', '0.2', '0.2', '-m', '1.12781954887', '0.0', '-orient', '0', '0', '0'])
+    assert_equal(cmd, ['-eq_rad', '0.5', '-shape', 'ellipsoid', '0.2', '0.2', '-m', '1.1278195488721805', '0.0', '-orient', '0', '0', '0'])
 
 
     assert_obj_close(h.max(), 1.3152766077267062)
