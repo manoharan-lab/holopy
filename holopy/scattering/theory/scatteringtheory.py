@@ -32,6 +32,10 @@ from ..scatterer import Scatterers, Sphere
 from ..errors import TheoryNotCompatibleError, MissingParameter
 from ...core.metadata import vector, sphere_coords, primdim
 from ...core.utils import dict_without, updated
+try:
+    from .mie_f import mieangfuncs
+except ImportError:
+    pass
 
 def wavevec(a):
         return 2*np.pi/(a.illum_wavelen/a.medium_index)
@@ -154,11 +158,14 @@ class ScatteringTheory(HoloPyObject):
         return xr.DataArray(scat_matrs, dims=dims, coords=positions, attrs=schema.attrs)
 
 
+    def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index, illum_polarization):
 
+        scat_matr = self._raw_scat_matrs(scatterer, pos, medium_wavevec=medium_wavevec, medium_index=medium_index)
 
-
-class InvalidElectricFieldComputation(Exception):
-    def __init__(self, reason):
-        self.reason = reason
-    def __str__(self):
-        return "Invalid Electric Computation: " + self.reason
+        fields = np.zeros_like(pos.T, dtype = np.array(scat_matr).dtype)
+        for i, point in enumerate(pos.T):
+            kr, theta, phi = point
+            escat_sph = mieangfuncs.calc_scat_field(kr, phi, scat_matr[i],
+                                                    illum_polarization.values[:2])
+            fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
+        return fields.T

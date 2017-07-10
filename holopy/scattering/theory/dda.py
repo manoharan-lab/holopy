@@ -43,11 +43,6 @@ from ..scatterer import Ellipsoid, Capsule, Cylinder, Bisphere, Sphere_builtin, 
 from ...core.utils import ensure_array
 from ..errors import DependencyMissing
 
-try:
-    from .mie_f import mieangfuncs
-except ImportError:
-    pass
-
 class DDA(ScatteringTheory):
     """
     Computes scattering using the the Discrete Dipole Approximation (DDA).
@@ -276,15 +271,3 @@ class DDA(ScatteringTheory):
             shutil.rmtree(temp_dir)
 
         return scat_matr
-
-    def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index, illum_polarization):
-        pos = pos.T
-        scat_matr = self._raw_scat_matrs(scatterer, pos, medium_wavevec=medium_wavevec, medium_index=medium_index)
-        fields = np.zeros_like(pos, dtype = scat_matr.dtype)
-
-        for i, point in enumerate(pos):
-            kr, theta, phi = point
-            escat_sph = mieangfuncs.calc_scat_field(kr, phi, scat_matr[i],
-                                                    illum_polarization.values[:2])
-            fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
-        return fields.T
