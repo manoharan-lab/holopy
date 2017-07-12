@@ -36,8 +36,17 @@ Optional dependencies for certain calculations include:
 
 Windows Support
 ---------------
-We are working on distributing a Windows HoloPy build that does not require Fortran compilers.
-In the mean-time your best option is to build it yourself by following the instructions for :ref:`dev_install`.
+To install a built distribution of HoloPy on Windows, you will need to reproduce our build environment.
+Specifically, you will need to be running a 64-bit version of Windows 10 with python 3.6 and numpy 1.13 installed.
+You can then try::
+
+conda install -c ralex0 holopy
+
+You may have to install missing dependencies (eg. emcee) from conda-forge like::
+
+conda install -c conda-forge emcee
+
+You can also try to build HoloPy from source by following the instructions for :ref:`dev_install`.
 
 ..  _usage:
 
