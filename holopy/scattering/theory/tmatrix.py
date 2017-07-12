@@ -27,17 +27,14 @@ import tempfile
 import glob
 import os
 import shutil
-import time
-from ..scatterer import Sphere, Spheroid, Axisymmetric, Ellipsoid
-from ..errors import TheoryNotCompatibleError, InvalidScatterer
-
-from nose.plugins.skip import SkipTest
+from ..scatterer import Sphere, Axisymmetric
+from ..errors import TheoryNotCompatibleError
 
 from .scatteringtheory import ScatteringTheory
-from .mie_f import mieangfuncs
-from ..errors import DependencyMissing
-from ..scatterer import Sphere, Ellipsoid, Spheres
-from ...core.utils import ensure_array
+try:
+    from .mie_f import mieangfuncs
+except:
+    pass
 
 class Tmatrix(ScatteringTheory):
     """

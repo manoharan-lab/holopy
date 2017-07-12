@@ -31,17 +31,6 @@ from numpy.linalg import norm
 from .scatterer import CenteredScatterer, Indicators
 from ..errors import InvalidScatterer
 
-def isnumber(x):
-    try:
-        x + 1
-        return True
-    except TypeError:
-        return False
-
-def all_numbers(x):
-    return reduce(lambda rest, i: isnumber(i) and rest, x, True)
-
-
 class Spheroid(CenteredScatterer):
     """
     Scattering object representing spheroidal scatterers

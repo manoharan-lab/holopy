@@ -20,45 +20,34 @@ Tests non-spherical T-matrix code calculations against Mie code
 
 .. moduleauthor:: Anna Wang <annawang@seas.harvard.edu>
 '''
-from __future__ import division
 
 
-from nose.tools import assert_raises
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_raises, assert_allclose
+
 import numpy as np
-from nose.tools import with_setup
 from nose.plugins.attrib import attr
-from ...scattering.errors import InvalidScatterer
-from ..scatterer import Sphere, Axisymmetric
+from .. import Sphere, Axisymmetric, Spheroid, Ellipsoid, calc_holo,
 
-from ...core import ImageSchema, Optics
-from ..theory import Mie, Tmatrix
-from .common import assert_allclose, verify
+from ...core import detector_grid, update_metadata
 
-import os.path
-
-schema = ImageSchema(shape = 200, spacing = .1,
-                     optics = Optics(wavelen = .660, index = 1.33,
-                                     polarization = [1,0]))
+schema = update_metadata(detector_grid(shape = 200, spacing = .1),
+                     illum_wavelen = .660, medium_index = 1.33,
+                                     illum_polarization = [1,0])
 
 @attr('medium')
-@with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_tmat_sphere():
     sc = Sphere(n=1.59, r=0.9, center=(7, 8, 30))
-    #assert_raises(InvalidScatterer, Sphere, n=1.59, r=0.9, center=(0, 0))
     sct = Axisymmetric(n=1.59, r=(0.9,0.9), center=(7, 8, 30))
-    mie_holo = Mie.calc_holo(sc, schema)
-    tmat_holo = Tmatrix.calc_holo(sct, schema)
-    assert_allclose(mie_holo, tmat_holo, rtol=.0015)
+    mie_holo = calc_holo(schema, sc)
+    tmat_holo = calc_holo(schema, sct)
+    assert_allclose(mie_holo, tmat_holo, atol=.06)
 
 '''
 def test_spheroid():
-    schema = ImageSchema(100, .1, Optics(.66, 1.33, (1, 0)))
-    s = Spheroid(n = 1.5, r = [.4, 1.], rotation = (-np.pi/2, np.pi/2),
-                    center = (5, 5, 25))
-    dda_holo = DDA.calc_holo(s, schema)
-    st = Axisymmetric(n = 1.5, r = [.4, 1.], rotation = (-np.pi/2, np.pi/2),
-                    center = (5, 5, 25))
-    tmat_holo = Tmatrix.calc_holo(st, schema)
+    e = Ellipsoid(n=1.5, r=[.4, .4, .1],rotation=(0,-np.pi/2, np.pi/2), center = (5, 5, 25))
+    s = Spheroid(n = 1.5, r = [.4, 1.], rotation = (-np.pi/2, np.pi/2), center = (5, 5, 25))
+    st = Axisymmetric(n = 1.5, r = [.4, 1.], rotation = (-np.pi/2, np.pi/2),center = (5, 5, 25))
+    dda_holo = calc_holo(schema, e)
+    tmat_holo = calc_holo(schema, st)
     assert_allclose(mie_holo, DDA_holo, rtol=.0015)
 '''
