@@ -26,7 +26,7 @@ from numpy.testing import assert_raises, assert_allclose
 
 import numpy as np
 from nose.plugins.attrib import attr
-from .. import Sphere, Axisymmetric, Spheroid, Ellipsoid, calc_holo,
+from .. import Sphere, Axisymmetric, Spheroid, Ellipsoid, calc_holo
 
 from ...core import detector_grid, update_metadata
 
