@@ -18,7 +18,6 @@
 """
 Compute holograms using the discrete dipole approximation (DDA).  Currently uses
 ADDA (http://code.google.com/p/a-dda/) to do DDA calculations.
-
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
@@ -51,7 +50,6 @@ except ImportError:
 class DDA(ScatteringTheory):
     """
     Computes scattering using the the Discrete Dipole Approximation (DDA).
-
     It can (in principle) calculate scattering from any arbitrary scatterer.
     The DDA uses a numerical method that represents arbitrary scatterers as
     an array
@@ -60,7 +58,6 @@ class DDA(ScatteringTheory):
     extremely computationally intensive, particularly if the size of the
     scatterer is larger than the wavelength of light.  This model requires an
     external scattering code: `a-dda <http://code.google.com/p/a-dda/>`_
-
     Attributes
     ----------
     n_cpu : int (optional)
@@ -75,7 +72,6 @@ class DDA(ScatteringTheory):
     Notes
     -----
     Does not handle near fields.  This introduces ~5% error at 10 microns.
-
     This can in principle handle any scatterer, but in practice it will need
     excessive memory or computation time for particularly large scatterers.
     """
@@ -252,7 +248,7 @@ class DDA(ScatteringTheory):
         return medium_wavelen / self._dpl(medium_wavelen, medium_index, n)
 
     def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
-        angles = pos[:, 1:] * 180/np.pi
+        angles = pos.T[:, 1:] * 180/np.pi
         temp_dir = tempfile.mkdtemp()
 
         outf = open(os.path.join(temp_dir, 'scat_params.dat'), 'wb')
@@ -290,15 +286,3 @@ class DDA(ScatteringTheory):
             shutil.rmtree(temp_dir)
 
         return scat_matr
-
-    def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index, illum_polarization):
-        pos = pos.T
-        scat_matr = self._raw_scat_matrs(scatterer, pos, medium_wavevec=medium_wavevec, medium_index=medium_index)
-        fields = np.zeros_like(pos, dtype = scat_matr.dtype)
-
-        for i, point in enumerate(pos):
-            kr, theta, phi = point
-            escat_sph = mieangfuncs.calc_scat_field(kr, phi, scat_matr[i],
-                                                    illum_polarization.values[:2])
-            fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
-        return fields.T

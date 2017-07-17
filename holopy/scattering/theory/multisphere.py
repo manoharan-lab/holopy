@@ -310,7 +310,6 @@ class Multisphere(ScatteringTheory):
         qscat = (qscat_0 + qscat_pi2 + cos(2. * gamma) * (qscat_0 - qscat_pi2)
                  + sin(2. * gamma) * (2. * qscat_pi4 - qscat_0 -qscat_pi2)) / 2.
 
-        print(qscat_0, qscat_pi2, qscat_pi4, qscat)
         return qscat * 4. * np.pi / medium_wavevec**2
 
     def _calc_cscat_quad(self, scatterer, medium_wavevec, medium_index, illum_polarization, amn = None, lmax = None):
