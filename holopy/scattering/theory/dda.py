@@ -39,7 +39,7 @@ import warnings
 
 from .scatteringtheory import ScatteringTheory
 
-from ..scatterer import Ellipsoid, Capsule, Cylinder, Bisphere, Sphere_builtin, Scatterer
+from ..scatterer import Ellipsoid, Capsule, Cylinder, Bisphere, Sphere_builtin, Scatterer, Spheroid
 from ...core.utils import ensure_array
 from ..errors import DependencyMissing
 
@@ -115,6 +115,8 @@ class DDA(ScatteringTheory):
 
         if isinstance(scatterer, Ellipsoid):
             scat_args = self._adda_ellipsoid(scatterer, medium_wavelen, medium_index, temp_dir)
+        elif isinstance(scatterer, Spheroid):
+            scat_args = self._adda_spheroid(scatterer, medium_wavelen, medium_index, temp_dir)
         elif isinstance(scatterer, Capsule):
             scat_args = self._adda_capsule(scatterer, medium_wavelen, medium_index, temp_dir)
         elif isinstance(scatterer, Cylinder):
@@ -137,6 +139,18 @@ class DDA(ScatteringTheory):
         cmd.extend(['-eq_rad', str(scatterer.r[0])])
         cmd.extend(['-shape', 'ellipsoid'])
         cmd.extend([str(r_i/scatterer.r[0]) for r_i in scatterer.r[1:]])
+        cmd.extend(['-m', str(scatterer.n.real/medium_index),
+                    str(scatterer.n.imag/medium_index)])
+        cmd.extend(['-orient'])
+        cmd.extend([str(angle) for angle in scatterer.rotation])
+
+        return cmd
+
+    def _adda_spheroid(self, scatterer, medium_wavelen, medium_index, temp_dir):
+        cmd = []
+        cmd.extend(['-eq_rad', str(scatterer.r[0])])
+        cmd.extend(['-shape', 'ellipsoid'])
+        cmd.extend([str(scatterer.r[1]/scatterer.r[0])]*2)
         cmd.extend(['-m', str(scatterer.n.real/medium_index),
                     str(scatterer.n.imag/medium_index)])
         cmd.extend(['-orient'])
