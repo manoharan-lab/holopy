@@ -168,7 +168,7 @@ class Scatterers(Scatterer):
             #entered 3 angles
             alpha=ang1; beta=ang2; gamma=ang3
         else:
-            raise InvalidScatterer(self, "Cannot interpret translation coordinates")
+            raise InvalidScatterer(self, "Cannot interpret rotation coordinates")
 
         centers = np.array([s.center for s in self.scatterers])
         com = centers.mean(0)
