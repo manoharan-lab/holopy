@@ -146,7 +146,7 @@ class DDA(ScatteringTheory):
         cmd = []
         cmd.extend(['-eq_rad', str(scatterer.r[0])])
         cmd.extend(['-shape', 'ellipsoid'])
-        cmd.extend([str(scatterer.r[1]/scatterer.r[0])]*2)
+        cmd.extend([str(1), str(scatterer.r[1]/scatterer.r[0])])
         cmd.extend(['-m', str(scatterer.n.real/medium_index),
                     str(scatterer.n.imag/medium_index)])
         cmd.extend(['-orient'])
