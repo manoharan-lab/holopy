@@ -1,0 +1,30 @@
+Including T-matrix code for single scatterers in fixed orientation
+
+
+MISHCHENKO, MICHAEL I. (GISS-6110) <michael.i.mishchenko@nasa.gov>	29 July 2014 17:48
+To: Anna Wang <annawang@seas.harvard.edu>
+
+Hi Anna,
+
+That would be fine.
+
+Cheers,
+Michael
+
+________________________________________
+From: bleepering@gmail.com [bleepering@gmail.com] on behalf of Anna Wang [annawang@seas.harvard.edu]
+Sent: Tuesday, July 29, 2014 1:17 PM
+To: MISHCHENKO, MICHAEL I. (GISS-6110)
+Subject: Including T-matrix code for single scatterers in fixed orientation
+
+Hi Dr Mishchenko,
+
+I'm a student in the Manoharan Lab from Harvard University. We do a lot of light scattering calculations and the code that we use HoloPy is online (https://github.com/manoharan-lab/holopy). In my PhD I have have used your LAPACK-based double and extended precision T-matrix codes to successfully track single colloidal spheroids in water, in 3D with holography and would love this capability to be available to a wider audience.
+
+I am writing to seek your permission to include a slightly edited version of your LAPACK-based T-matrix codes for single scatters in fixed orientation in a branch of HoloPy on GitHub. I am planning to include the headers you already have in the code, and a couple of lines extra explaining what's been edited.
+
+Please let me know how I should proceed.
+
+Many thanks,
+
+Anna

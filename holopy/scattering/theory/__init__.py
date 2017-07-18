@@ -31,4 +31,4 @@ All theories have a common interface defined by
 from .mie import Mie
 from .multisphere import Multisphere
 from .dda import DDA
-
+from .tmatrix import Tmatrix

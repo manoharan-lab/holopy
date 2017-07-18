@@ -18,7 +18,6 @@
 """
 Base class for scattering theories.  Implements python-based
 calc_intensity and calc_holo, based on subclass's calc_field
-
 .. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
@@ -44,12 +43,11 @@ def stack_spherical(a):
     if not 'r' in a:
         a['r']=[np.inf]*len(a['theta'])
     return np.vstack((a['r'],a['theta'],a['phi']))
-  
+
 
 class ScatteringTheory(HoloPyObject):
     """
     Defines common interface for all scattering theories.
-
     Notes
     -----
     A subclasses that do the work of computing scattering should do it by
@@ -58,21 +56,18 @@ class ScatteringTheory(HoloPyObject):
     calc_cross_sections. Either of _raw_fields or _raw_scat_matrs will give you
     calc_holo, calc_field, and calc_intensity. Obviously calc_scat_matrix will
     only work if you implement _raw_cross_sections.
-
     So the simplest thing is to just implement _raw_scat_matrs. You only need to
     do _raw_fields there is a way to compute it more efficently and you care
-    about that speed, or if it is easier and you don't care about matricies. 
+    about that speed, or if it is easier and you don't care about matrices.
     """
-    
+
     def _calc_field(self, scatterer, schema):
         """
         Calculate fields.  Implemented in derived classes only.
-
         Parameters
         ----------
         scatterer : :mod:`.scatterer` object
             (possibly composite) scatterer for which to compute scattering
-
         Returns
         -------
         e_field : :mod:`.VectorGrid`
@@ -123,18 +118,15 @@ class ScatteringTheory(HoloPyObject):
 
     def _calc_scat_matrix(self, scatterer, schema):
         """
-        Compute scattering matricies for scatterer
-
+        Compute scattering matrices for scatterer
         Parameters
         ----------
         scatterer : :mod:`holopy.scattering.scatterer` object
             (possibly composite) scatterer for which to compute scattering
-
         Returns
         -------
         scat_matr : :mod:`.Marray`
-            Scattering matricies at specified positions
-
+            Scattering matrices at specified positions
         Notes
         -----
         calc_* functions can be called on either a theory class or a theory
@@ -144,7 +136,7 @@ class ScatteringTheory(HoloPyObject):
         to use non-default values.
         """
         positions = sphere_coords(schema, scatterer.center)
-        scat_matrs = self._raw_scat_matrs(scatterer, stack_spherical(positions), medium_wavevec=wavevec(schema), medium_index=schema.medium_index)   
+        scat_matrs = self._raw_scat_matrs(scatterer, stack_spherical(positions), medium_wavevec=wavevec(schema), medium_index=schema.medium_index)
         dimstr = primdim(positions)
 
         for coorstr in dict_without(positions, [dimstr]):
