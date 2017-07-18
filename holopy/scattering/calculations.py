@@ -25,7 +25,7 @@ calc_intensity and calc_holo, based on subclass's calc_field
 from ..core.holopy_object import SerializableMetaclass
 from ..core.metadata import vector, update_metadata, to_vector, copy_metadata, from_flat, detector_points
 from ..core.utils import dict_without, is_none
-from .scatterer import Sphere, Spheres, Axisymmetric
+from .scatterer import Sphere, Spheres, Spheroid, Cylinder
 from .errors import AutoTheoryFailed, MissingParameter
 
 try:
@@ -71,7 +71,7 @@ def determine_theory(scatterer):
         else:
             warn("HoloPy's multisphere theory can't handle coated spheres. Using Mie theory.")
             return Mie()
-    elif isinstance(scatterer, Axisymmetric):
+    elif isinstance(scatterer, Spheroid) or isinstance(scatterer, Cylinder):
         return Tmatrix()
     elif DDA()._can_handle(scatterer):
         return DDA()
