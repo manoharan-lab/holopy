@@ -296,7 +296,7 @@ C   ANY DAMAGES THAT MAY RESULT FROM THE USE OF THE PROGRAM.
  
 C  OPEN FILES *******************************************************
  
-      OPEN (6,FILE='test')
+      OPEN (6,FILE='log')
  
 C  INPUT DATA ********************************************************
  

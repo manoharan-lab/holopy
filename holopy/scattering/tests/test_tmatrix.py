@@ -26,9 +26,17 @@ from numpy.testing import assert_raises, assert_allclose
 
 import numpy as np
 from nose.plugins.attrib import attr
-from .. import Sphere, Axisymmetric, Spheroid, Ellipsoid, calc_holo
-
+from nose.plugins.skip import SkipTest
+from .. import Sphere, Spheroid, Ellipsoid, calc_holo as calc_holo_external
+from ..errors import DependencyMissing
 from ...core import detector_grid, update_metadata
+
+def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,**kwargs):
+    try:
+        return calc_holo_external(schema, scatterer, medium_index, illum_wavelen, **kwargs)
+    except DependencyMissing:
+        raise SkipTest()
+
 
 schema = update_metadata(detector_grid(shape = 200, spacing = .1),
                      illum_wavelen = .660, medium_index = 1.33,
@@ -37,7 +45,7 @@ schema = update_metadata(detector_grid(shape = 200, spacing = .1),
 @attr('medium')
 def test_tmat_sphere():
     sc = Sphere(n=1.59, r=0.9, center=(7, 8, 30))
-    sct = Axisymmetric(n=1.59, r=(0.9,0.9), center=(7, 8, 30))
+    sct = Spheroid(n=1.59, r=(0.9,0.9), center=(7, 8, 30))
     mie_holo = calc_holo(schema, sc)
     tmat_holo = calc_holo(schema, sct)
     assert_allclose(mie_holo, tmat_holo, atol=.06)

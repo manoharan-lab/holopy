@@ -24,11 +24,10 @@ Compute holograms using Mishchenko's T-matrix method for axisymmetric scatterers
 import numpy as np
 import subprocess
 import tempfile
-import glob
 import os
 import shutil
-from ..scatterer import Sphere, Axisymmetric
-from ..errors import TheoryNotCompatibleError
+from ..scatterer import Sphere, Spheroid, Cylinder
+from ..errors import TheoryNotCompatibleError, TmatrixFailure, DependencyMissing
 
 from .scatteringtheory import ScatteringTheory
 try:
@@ -63,7 +62,7 @@ class Tmatrix(ScatteringTheory):
         super().__init__()
 
     def _can_handle(self, scatterer):
-        return isinstance(scatterer, Sphere) or isinstance(scatterer, Axisymmetric)
+        return isinstance(scatterer, Sphere) or isinstance(scatterer, Cylinder) or isinstance(scatterer, Spheroid)
 
     def _run_tmat(self, temp_dir):
         cmd = ['./S.exe']
@@ -75,10 +74,12 @@ class Tmatrix(ScatteringTheory):
         current_directory = os.getcwd()
         path, _ = os.path.split(os.path.abspath(__file__))
         tmatrixlocation = os.path.join(path, 'tmatrix_f', 'S.exe')
+        if not os.path.isfile(tmatrixlocation):
+            raise DependencyMissing('Tmatrix')
         shutil.copy(tmatrixlocation, temp_dir)
         os.chdir(temp_dir)
 
-        angles = pos[:, 1:] * 180/np.pi
+        angles = pos.T[:, 1:] * 180/np.pi
         outf = open(os.path.join(temp_dir, 'tmatrix_tmp.inp'), 'wb')
 
         # write the info into the scattering angles file in the following order:
@@ -96,18 +97,25 @@ class Tmatrix(ScatteringTheory):
             # shape is -1 (spheroid)
             outf.write((str(-1)+'\n').encode('utf-8'))
             outf.write((str(angles.shape[0])+'\n').encode('utf-8'))
-        elif isinstance(scatterer, Axisymmetric):
-            if scatterer.shape == -1:
-                outf.write((str((scatterer.r[1]*scatterer.r[0]**2)**(1/3.))+'\n').encode('utf-8'))
-            if scatterer.shape == -2:
-                outf.write((str((3/2.*scatterer.r[1]*scatterer.r[0]**2)**(1/3.))+'\n').encode('utf-8'))
+        elif isinstance(scatterer, Spheroid):
+            outf.write((str((scatterer.r[1]*scatterer.r[0]**2)**(1/3.))+'\n').encode('utf-8'))
             outf.write((str(med_wavelen)+'\n').encode('utf-8'))
             outf.write((str(scatterer.n.real/medium_index)+'\n').encode('utf-8'))
             outf.write((str(scatterer.n.imag/medium_index)+'\n').encode('utf-8'))
             outf.write((str(scatterer.r[0]/scatterer.r[1])+'\n').encode('utf-8'))
+            outf.write((str(scatterer.rotation[2]*180/np.pi)+'\n').encode('utf-8'))
             outf.write((str(scatterer.rotation[1]*180/np.pi)+'\n').encode('utf-8'))
-            outf.write((str(scatterer.rotation[0]*180/np.pi)+'\n').encode('utf-8'))
-            outf.write((str(scatterer.shape)+'\n').encode('utf-8'))
+            outf.write((str(-1)+'\n').encode('utf-8'))
+            outf.write((str(angles.shape[0])+'\n').encode('utf-8'))
+        elif isinstance(scatterer, Cylinder):
+            outf.write((str((3/2.*scatterer.h/2*scatterer.d**2/4)**(1/3.))+'\n').encode('utf-8'))
+            outf.write((str(med_wavelen)+'\n').encode('utf-8'))
+            outf.write((str(scatterer.n.real/medium_index)+'\n').encode('utf-8'))
+            outf.write((str(scatterer.n.imag/medium_index)+'\n').encode('utf-8'))
+            outf.write((str(scatterer.d/scatterer.h)+'\n').encode('utf-8'))
+            outf.write((str(scatterer.rotation[2]*180/np.pi)+'\n').encode('utf-8'))
+            outf.write((str(scatterer.rotation[1]*180/np.pi)+'\n').encode('utf-8'))
+            outf.write((str(-2)+'\n').encode('utf-8'))
             outf.write((str(angles.shape[0])+'\n').encode('utf-8'))
         else:
             # cleanup and raise error
@@ -120,11 +128,15 @@ class Tmatrix(ScatteringTheory):
         outf.close()
 
         self._run_tmat(temp_dir)
+        try:
+            tmat_result = np.loadtxt(os.path.join(temp_dir, 'tmatrix_tmp.out'))
+        except FileNotFoundError:
+            #No output file
+            raise TmatrixFailure(os.path.join(temp_dir, 'log'))
+        if len(tmat_result)==0:
+            #Output file is empty
+            raise TmatrixFailure(os.path.join(temp_dir, 'log'))
 
-        # Go into the results directory
-        result_file = glob.glob(os.path.join(temp_dir, 'tmatrix_tmp.out'))[0]
-
-        tmat_result = np.loadtxt(result_file)
         # columns in result are
         # s11.r s11.i s12.r s12.i s21.r s21.i s22.r s22.i
         # should be
@@ -148,15 +160,17 @@ class Tmatrix(ScatteringTheory):
         return scat_matr
 
     def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index, illum_polarization):
-        pos = pos.T
-        scat_matr = self._raw_scat_matrs(scatterer, pos, medium_wavevec=medium_wavevec, medium_index=medium_index)
-        fields = np.zeros_like(pos, dtype = scat_matr.dtype)
 
-        for i, point in enumerate(pos):
+        if not (np.array(illum_polarization)[:2] == np.array([1,0])).all():
+            raise ValueError("Our implementation of Tmatrix scattering can only handle [1,0] polarization. Adjust your reference frame accordingly.")
+
+        scat_matr = self._raw_scat_matrs(scatterer, pos, medium_wavevec=medium_wavevec, medium_index=medium_index)
+        fields = np.zeros_like(pos.T, dtype = scat_matr.dtype)
+
+        for i, point in enumerate(pos.T):
             kr, theta, phi = point
             # TODO: figure out why postfactor is needed -- it is not used in dda.py
             postfactor = np.array([[np.cos(phi),np.sin(phi)],[-np.sin(phi),np.cos(phi)]])
-            escat_sph = mieangfuncs.calc_scat_field(kr, phi, np.dot(scat_matr[i],postfactor),
-                                                    illum_polarization.values[:2])
+            escat_sph = mieangfuncs.calc_scat_field(kr, phi, np.dot(scat_matr[i],postfactor),[1,0])
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
         return fields.T
