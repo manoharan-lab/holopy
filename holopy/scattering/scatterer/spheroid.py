@@ -40,7 +40,7 @@ class Spheroid(CenteredScatterer):
     r : (float, float)
         length of xy and z semi-axes of the spheroid
     rotation : 3-tuple, list or numpy array
-        specifies the Euler angles (alpha, beta, gamma) in degrees
+        specifies the Euler angles (alpha, beta, gamma) in radians
     center : 3-tuple, list or numpy array
         specifies coordinates of center of the scatterer
     """
@@ -58,10 +58,3 @@ class Spheroid(CenteredScatterer):
         self.r = r
         self.rotation = rotation
         self.center = center
-
-    @property
-    def indicators(self):
-        inverserotate = np.linalg.inv(rotation_matrix(0, *self.rotation))
-        threeaxes = np.array([self.r[0], self.r[0], self.r[1]])
-        r = max(self.r)
-        return Indicators(lambda point: ((np.dot(inverserotate, point.reshape(-1, 3).transpose()).transpose() / threeaxes)**2).sum(-1) < 1, [[-r, r], [-r, r], [-r, r]])

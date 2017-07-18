@@ -53,7 +53,7 @@ class Ellipsoid(CenteredScatterer):
     center : 3-tuple, list or numpy array
         specifies coordinates of center of the scatterer
     rotation : 3-tuple, list or numpy.array
-        specifies the Euler angles (alpha, beta, gamma) in degrees 
+        specifies the Euler angles (alpha, beta, gamma) in radians 
         defined in a-dda manual section 8.1
     """
 

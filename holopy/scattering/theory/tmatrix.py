@@ -103,8 +103,8 @@ class Tmatrix(ScatteringTheory):
             outf.write((str(scatterer.n.real/medium_index)+'\n').encode('utf-8'))
             outf.write((str(scatterer.n.imag/medium_index)+'\n').encode('utf-8'))
             outf.write((str(scatterer.r[0]/scatterer.r[1])+'\n').encode('utf-8'))
-            outf.write((str(scatterer.rotation[2])+'\n').encode('utf-8'))
-            outf.write((str(scatterer.rotation[1])+'\n').encode('utf-8'))
+            outf.write((str(scatterer.rotation[2]*180/np.pi)+'\n').encode('utf-8'))
+            outf.write((str(scatterer.rotation[1]*180/np.pi)+'\n').encode('utf-8'))
             outf.write((str(-1)+'\n').encode('utf-8'))
             outf.write((str(angles.shape[0])+'\n').encode('utf-8'))
         elif isinstance(scatterer, Cylinder):
@@ -113,8 +113,8 @@ class Tmatrix(ScatteringTheory):
             outf.write((str(scatterer.n.real/medium_index)+'\n').encode('utf-8'))
             outf.write((str(scatterer.n.imag/medium_index)+'\n').encode('utf-8'))
             outf.write((str(scatterer.d/scatterer.h)+'\n').encode('utf-8'))
-            outf.write((str(scatterer.rotation[2])+'\n').encode('utf-8'))
-            outf.write((str(scatterer.rotation[1])+'\n').encode('utf-8'))
+            outf.write((str(scatterer.rotation[2]*180/np.pi)+'\n').encode('utf-8'))
+            outf.write((str(scatterer.rotation[1]*180/np.pi)+'\n').encode('utf-8'))
             outf.write((str(-2)+'\n').encode('utf-8'))
             outf.write((str(angles.shape[0])+'\n').encode('utf-8'))
         else:
