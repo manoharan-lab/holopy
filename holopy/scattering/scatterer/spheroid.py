@@ -25,10 +25,8 @@
 '''
 
 import numpy as np
-from ...core.math import rotation_matrix
-from numpy.linalg import norm
 
-from .scatterer import CenteredScatterer, Indicators
+from .scatterer import CenteredScatterer
 from ..errors import InvalidScatterer
 
 class Spheroid(CenteredScatterer):
@@ -41,14 +39,13 @@ class Spheroid(CenteredScatterer):
         Index of refraction
     r : (float, float)
         length of xy and z semi-axes of the spheroid
-    rotation : (float, float)
-        beta and gamma Euler angles to rotate spheroid by
-        (alpha is irrelevant since the spheroid is symmetric about z)
+    rotation : 3-tuple, list or numpy array
+        specifies the Euler angles (alpha, beta, gamma) in degrees
     center : 3-tuple, list or numpy array
         specifies coordinates of center of the scatterer
     """
 
-    def __init__(self, n=None, r=None, rotation = (0, 0), center=None):
+    def __init__(self, n=None, r=None, rotation = (0, 0, 0), center=None):
         self.n = n
 
         if np.isscalar(r) or len(r) != 2:
