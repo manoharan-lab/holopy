@@ -27,7 +27,7 @@ import tempfile
 import os
 import shutil
 from ..scatterer import Sphere, Spheroid, Cylinder
-from ..errors import TheoryNotCompatibleError
+from ..errors import TheoryNotCompatibleError, TmatrixFailure
 
 from .scatteringtheory import ScatteringTheory
 try:
@@ -126,8 +126,15 @@ class Tmatrix(ScatteringTheory):
         outf.close()
 
         self._run_tmat(temp_dir)
+        try:
+            tmat_result = np.loadtxt(os.path.join(temp_dir, 'tmatrix_tmp.out'))
+        except FileNotFoundError:
+            #No output file
+            raise TmatrixFailure(os.path.join(temp_dir, 'log'))
+        if len(tmat_result)==0:
+            #Output file is empty
+            raise TmatrixFailure(os.path.join(temp_dir, 'log'))
 
-        tmat_result = np.loadtxt(os.path.join(temp_dir, 'tmatrix_tmp.out'))
         # columns in result are
         # s11.r s11.i s12.r s12.i s21.r s21.i s22.r s22.i
         # should be
