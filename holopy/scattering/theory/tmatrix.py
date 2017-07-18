@@ -27,7 +27,7 @@ import tempfile
 import os
 import shutil
 from ..scatterer import Sphere, Spheroid, Cylinder
-from ..errors import TheoryNotCompatibleError, TmatrixFailure
+from ..errors import TheoryNotCompatibleError, TmatrixFailure, DependencyMissing
 
 from .scatteringtheory import ScatteringTheory
 try:
@@ -74,6 +74,8 @@ class Tmatrix(ScatteringTheory):
         current_directory = os.getcwd()
         path, _ = os.path.split(os.path.abspath(__file__))
         tmatrixlocation = os.path.join(path, 'tmatrix_f', 'S.exe')
+        if not os.path.isfile(tmatrixlocation):
+            raise DependencyMissing('Tmatrix')
         shutil.copy(tmatrixlocation, temp_dir)
         os.chdir(temp_dir)
 
