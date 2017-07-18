@@ -72,7 +72,7 @@ class MultisphereFailure(Exception):
                 "your scatterer is unphysical.")
 
 class TmatrixFailure(Exception):
-    def __init__(self, logfilestr)
+    def __init__(self, logfilestr):
         with open(logfilestr) as logfile:
             self.reason=list(logfile)[-1]
     def __str__(self):
