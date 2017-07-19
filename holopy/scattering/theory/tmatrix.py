@@ -71,13 +71,11 @@ class Tmatrix(ScatteringTheory):
 
     def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
         temp_dir = tempfile.mkdtemp()
-        current_directory = os.getcwd()
         path, _ = os.path.split(os.path.abspath(__file__))
         tmatrixlocation = os.path.join(path, 'tmatrix_f', 'S.exe')
         if not os.path.isfile(tmatrixlocation):
             raise DependencyMissing('Tmatrix')
         shutil.copy(tmatrixlocation, temp_dir)
-        os.chdir(temp_dir)
 
         angles = pos.T[:, 1:] * 180/np.pi
         outf = open(os.path.join(temp_dir, 'tmatrix_tmp.inp'), 'wb')
@@ -151,8 +149,6 @@ class Tmatrix(ScatteringTheory):
         # Now arrange them into a scattering matrix, noting that Mishchenko's basis
         # vectors are different from the B/H, so we need to take that into account:
         scat_matr = np.array([[s[:,0], s[:,1]], [-s[:,2], -s[:,3]]]).transpose()
-
-        os.chdir(current_directory)
 
         if self.delete:
             shutil.rmtree(temp_dir)
