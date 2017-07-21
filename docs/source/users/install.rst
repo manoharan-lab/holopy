@@ -22,6 +22,20 @@ IPython console or Jupyter Notebook and run::
 
 If this line works, skip to :ref:`usage` before diving into the tutorials.
 
+Windows Support
+---------------
+To find a built distribution of HoloPy on Windows, use ::
+
+    anaconda search holopy
+
+You will need to reproduce the build environment that compiled the built distribution for libraries to link up properly. 
+Specifically, you should be running the same versions of Windows, python, and numpy.
+You may also need to manually install any missing dependencies (eg. emcee) from conda-forge like ::
+
+    conda install -c conda-forge emcee
+
+You can also build HoloPy from source by following the instructions for :ref:`dev_install`.
+
 .. _dependencies:
 
 Dependencies
@@ -33,20 +47,6 @@ Optional dependencies for certain calculations include:
 * `a-dda <http://code.google.com/p/a-dda/>`_ (Discrete Dipole calculations of arbitrary scatterers)
 
 * `mayavi2 <http://docs.enthought.com/mayavi/mayavi/>`_ (if you want to do 3D plotting [experimental])
-
-Windows Support
----------------
-To install a built distribution of HoloPy on Windows, you will need to reproduce our build environment.
-Specifically, you will need to be running a 64-bit version of Windows 10 with python 3.6 and numpy 1.13 installed.
-You can then try::
-
-    conda install -c ralex0 holopy
-
-You may have to install missing dependencies (eg. emcee) from conda-forge like::
-
-    conda install -c conda-forge emcee
-
-You can also try to build HoloPy from source by following the instructions for :ref:`dev_install`.
 
 ..  _usage:
 
