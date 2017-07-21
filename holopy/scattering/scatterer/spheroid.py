@@ -46,7 +46,6 @@ class Spheroid(CenteredScatterer):
     """
 
     def __init__(self, n=None, r=None, rotation = (0, 0, 0), center=None):
-        self.n = n
 
         if np.isscalar(r) or len(r) != 2:
             raise InvalidScatterer("r specified as {0}; "
@@ -58,3 +57,10 @@ class Spheroid(CenteredScatterer):
         self.r = r
         self.rotation = rotation
         self.center = center
+
+    @property
+    def indicators(self):
+        inverserotate = np.linalg.inv(rotation_matrix(0, *self.rotation))
+        threeaxes = np.array([self.r[0], self.r[0], self.r[1]])
+        r = max(self.r)
+        return Indicators(lambda point: ((np.dot(inverserotate, point.reshape(-1, 3).transpose()).transpose() / threeaxes)**2).sum(-1) < 1, [[-r, r], [-r, r], [-r, r]])
