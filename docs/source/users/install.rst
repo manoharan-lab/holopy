@@ -24,13 +24,11 @@ If this line works, skip to :ref:`usage` before diving into the tutorials.
 
 Windows Support
 ---------------
-To find a built distribution of HoloPy on Windows, use ::
+To find a channel with a built distribution of HoloPy for Windows, use ::
 
     anaconda search holopy
 
-You will need to reproduce the build environment that compiled the built distribution for libraries to link up properly. 
-Specifically, you should be running the same versions of Windows, python, and numpy.
-You may also need to manually install any missing dependencies (eg. emcee) from conda-forge like ::
+You may need to manually install any missing dependencies (eg. emcee) from conda-forge like ::
 
     conda install -c conda-forge emcee
 
