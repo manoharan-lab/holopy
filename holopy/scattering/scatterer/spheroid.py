@@ -25,8 +25,9 @@
 '''
 
 import numpy as np
+from ...core.math import rotation_matrix
 
-from .scatterer import CenteredScatterer
+from .scatterer import CenteredScatterer, Indicators
 from ..errors import InvalidScatterer
 
 class Spheroid(CenteredScatterer):
@@ -60,7 +61,15 @@ class Spheroid(CenteredScatterer):
 
     @property
     def indicators(self):
-        inverserotate = np.linalg.inv(rotation_matrix(0, *self.rotation))
-        threeaxes = np.array([self.r[0], self.r[0], self.r[1]])
+        inverserotate = np.linalg.inv(rotation_matrix(*self.rotation))
+        def spheroidbody(point):
+            threeaxes = np.array([self.r[0], self.r[0], self.r[1]])
+            subdivisions = point.shape #this gives number of subdivisions in x, y, z, 3
+            point = point.reshape(-1, point.shape[-1]) #reshape into a list of coordinates, NxNyNz x 3 array
+            rotatedpoints = np.transpose(np.dot(inverserotate, np.transpose(point))) #rotates points
+            imposeshape = np.tile(threeaxes,(subdivisions[0]*subdivisions[1]*subdivisions[2],1)) #normalise by each axis
+            flat_indicator = ((rotatedpoints / imposeshape) ** 2).sum(axis=1) < 1 #gives indicators in a list
+            unflatten = flat_indicator.reshape(subdivisions[0], subdivisions[1], subdivisions[2]) #reshapes indicators to a volume
+            return unflatten
         r = max(self.r)
-        return Indicators(lambda point: ((np.dot(inverserotate, point.reshape(-1, 3).transpose()).transpose() / threeaxes)**2).sum(-1) < 1, [[-r, r], [-r, r], [-r, r]])
+        return Indicators([spheroidbody], [[-r, r], [-r, r], [-r, r]])
