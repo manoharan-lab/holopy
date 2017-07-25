@@ -24,7 +24,7 @@ If this line works, skip to :ref:`usage` before diving into the tutorials.
 
 Windows Support
 ---------------
-To find a channel with a built distribution of HoloPy for Windows, use ::
+To find a HoloPy conda package for Windows, use ::
 
     anaconda search holopy
 
