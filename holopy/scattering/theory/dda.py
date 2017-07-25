@@ -140,7 +140,8 @@ class DDA(ScatteringTheory):
         cmd.extend(['-m', str(scatterer.n.real/medium_index),
                     str(scatterer.n.imag/medium_index)])
         cmd.extend(['-orient'])
-        cmd.extend([str(angle*180/np.pi) for angle in scatterer.rotation])
+        cmd.extend([str(angle*180/np.pi) for angle in reversed(scatterer.rotation)])
+        # rotation angles are gamma, beta, alpha in adda reference frame
 
         return cmd
 
@@ -152,7 +153,8 @@ class DDA(ScatteringTheory):
         cmd.extend(['-m', str(scatterer.n.real/medium_index),
                     str(scatterer.n.imag/medium_index)])
         cmd.extend(['-orient'])
-        cmd.extend([str(angle*180/np.pi) for angle in scatterer.rotation])
+        cmd.extend([str(angle*180/np.pi) for angle in reversed(scatterer.rotation)])
+        # rotation angles are gamma, beta, alpha in adda reference frame
 
         return cmd
 
@@ -164,7 +166,8 @@ class DDA(ScatteringTheory):
         cmd.extend(['-m', str(scatterer.n.real/medium_index),
                     str(scatterer.n.imag/mediumindex)])
         cmd.extend(['-orient'])
-        cmd.extend([str(angle*180/np.pi) for angle in scatterer.rotation])
+        cmd.extend([str(angle*180/np.pi) for angle in reversed(scatterer.rotation)])
+        # rotation angles are gamma, beta, alpha in adda reference frame
 
         return cmd
 
@@ -176,7 +179,8 @@ class DDA(ScatteringTheory):
         cmd.extend(['-m', str(scatterer.n.real/medium_index),
                     str(scatterer.n.imag/medium_index)])
         cmd.extend(['-orient'])
-        cmd.extend([str(angle*180/np.pi) for angle in scatterer.rotation])
+        cmd.extend([str(angle*180/np.pi) for angle in reversed(scatterer.rotation)])
+        # rotation angles are gamma, beta, alpha in adda reference frame
 
         return cmd
 
@@ -188,7 +192,8 @@ class DDA(ScatteringTheory):
         cmd.extend(['-m', str(scatterer.n.real/medium_index),
                     str(scatterer.n.imag/medium_index)])
         cmd.extend(['-orient'])
-        cmd.extend([str(angle*180/np.pi) for angle in scatterer.rotation])
+        cmd.extend([str(angle*180/np.pi) for angle in reversed(scatterer.rotation)])
+        # rotation angles are gamma, beta, alpha in adda reference frame
 
         return cmd
 
