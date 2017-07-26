@@ -96,7 +96,7 @@ class Tmatrix(ScatteringTheory):
             rxy = scatterer.r[0]
             rz = scatterer.r[1]
             iscyl = False
-        elif isinstance(scatterer.Cylinder):
+        elif isinstance(scatterer, Cylinder):
             rxy = scatterer.d/2
             rz = scatterer.h/2
             iscyl = True

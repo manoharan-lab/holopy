@@ -232,9 +232,7 @@ an argument to the function). You can also look only at central measures::
     result.median
 
 Since calculation of useful results takes a long time, you will usually want to
-save them to an hdf5 file:
-
-..  testcode::
+save them to an hdf5 file::
 
    hp.save('example-sampling.h5', result)
 

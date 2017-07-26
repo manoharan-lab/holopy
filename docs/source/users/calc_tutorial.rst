@@ -225,7 +225,7 @@ Note that the hologram image is elongated in the horizontal direction since the 
 ..  testoutput::
     :hide:
 
-    [ 1.0053954]
+    [ 1.01179772]
 
 .. image:: ../images/calc_cylinder.png
    :scale: 300 %
