@@ -73,10 +73,11 @@ class MultisphereFailure(Exception):
 
 class TmatrixFailure(Exception):
     def __init__(self, logfilestr):
-        with open(logfilestr) as logfile:
-            self.reason=list(logfile)[-1]
+            self.logfilestr = logfilestr
     def __str__(self):
-        return("Tmatrix calculation failed. This might be because your scatterer's size or aspect ratio is too large for default parameters. \n Tmatrix error message: " + self.reason)
+        with open(self.logfilestr) as logfile:
+            reason=list(logfile)[-1]
+        return("Tmatrix calculation failed. This might be because your scatterer's size or aspect ratio is too large for default parameters. \n Tmatrix error message: " + self.reason + "\n Full details are available in " + logfilestr)
 
 class DependencyMissing(Exception):
     def __init__(self, dep):

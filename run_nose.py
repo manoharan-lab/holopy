@@ -27,6 +27,7 @@ if len(sys.argv) > 1 and sys.argv[1] == 'coverage':
 else:
     t.extend(['--processes={0}'.format(multiprocessing.cpu_count())] +
              sys.argv[2:])
+t.extend(['--process-timeout=120'])
 
 print((' '.join(t)))
 returncode = call(t)
