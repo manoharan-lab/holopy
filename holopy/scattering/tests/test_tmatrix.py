@@ -21,13 +21,12 @@ Tests non-spherical T-matrix code calculations against Mie code
 .. moduleauthor:: Anna Wang <annawang@seas.harvard.edu>
 '''
 
-
 from numpy.testing import assert_raises, assert_allclose
 
 import numpy as np
 from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
-from .. import Tmatrix, Sphere, Spheroid, Ellipsoid, calc_holo as calc_holo_external
+from .. import Tmatrix, DDA, Sphere, Spheroid, Ellipsoid, Cylinder, calc_holo as calc_holo_external
 from ..errors import DependencyMissing
 from ...core import detector_grid, update_metadata
 
@@ -43,19 +42,21 @@ schema = update_metadata(detector_grid(shape = 200, spacing = .1),
                                      illum_polarization = [1,0])
 
 @attr('medium')
-def test_tmat_sphere():
+def test_sphere():
     sc = Sphere(n=1.59, r=0.9, center=(7, 8, 30))
     sct = Spheroid(n=1.59, r=(0.9,0.9), center=(7, 8, 30))
     mie_holo = calc_holo(schema, sc)
     tmat_holo = calc_holo(schema, sct)
     assert_allclose(mie_holo, tmat_holo, atol=.06)
     
-'''
 def test_spheroid():
-    e = Ellipsoid(n=1.5, r=[.4, .4, .1],rotation=(0,-np.pi/2, np.pi/2), center = (5, 5, 25))
-    s = Spheroid(n = 1.5, r = [.4, 1.], rotation = (-np.pi/2, np.pi/2), center = (5, 5, 25))
-    st = Axisymmetric(n = 1.5, r = [.4, 1.], rotation = (-np.pi/2, np.pi/2),center = (5, 5, 25))
-    dda_holo = calc_holo(schema, e)
-    tmat_holo = calc_holo(schema, st)
-    assert_allclose(mie_holo, DDA_holo, rtol=.0015)
-'''
+    s = Spheroid(n = 1.5, r = [.4, 1.], rotation = (0, np.pi/3, 0), center = (5, 5, 25))
+    dda_holo = calc_holo(schema, s, theory = DDA)
+    tmat_holo = calc_holo(schema, s, theory = Tmatrix)
+    assert_allclose(tmat_holo, dda_holo, atol=.2)
+
+def test_cylinder():
+    c = Cylinder(n = 1.5, d=.8, h=2., rotation = (0, np.pi/3, 0), center = (5, 5, 25))
+    dda_holo = calc_holo(schema, s, theory = DDA)
+    tmat_holo = calc_holo(schema, s, theory = Tmatrix)
+    assert_allclose(tmat_holo, dda_holo, atol=.2)
