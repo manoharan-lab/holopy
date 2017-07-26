@@ -78,6 +78,9 @@ class Ellipsoid(CenteredScatterer):
 
     @property
     def indicators(self):
+        """
+        NOTE: Ellipsoid indicators does not currently apply rotations
+        """
         return Indicators(lambda point: ((point / self.r) ** 2).sum(-1) < 1,
                           [[-self.r[0], self.r[0]], [-self.r[1], self.r[1]],
                             [-self.r[2], self.r[2]]])

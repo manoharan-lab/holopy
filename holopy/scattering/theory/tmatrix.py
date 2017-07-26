@@ -26,6 +26,7 @@ import subprocess
 import tempfile
 import os
 import shutil
+import copy
 from ..scatterer import Sphere, Spheroid, Cylinder
 from ..errors import TheoryNotCompatibleError, TmatrixFailure, DependencyMissing
 
@@ -71,57 +72,46 @@ class Tmatrix(ScatteringTheory):
 
     def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
         temp_dir = tempfile.mkdtemp()
-        current_directory = os.getcwd()
         path, _ = os.path.split(os.path.abspath(__file__))
         tmatrixlocation = os.path.join(path, 'tmatrix_f', 'S.exe')
         if not os.path.isfile(tmatrixlocation):
             raise DependencyMissing('Tmatrix')
         shutil.copy(tmatrixlocation, temp_dir)
-        os.chdir(temp_dir)
 
         angles = pos.T[:, 1:] * 180/np.pi
         outf = open(os.path.join(temp_dir, 'tmatrix_tmp.inp'), 'wb')
 
-        # write the info into the scattering angles file in the following order:
-
         med_wavelen = 2*np.pi/medium_wavevec
         if isinstance(scatterer, Sphere):
-            outf.write((str(scatterer.r)+'\n').encode('utf-8'))
-            outf.write((str(med_wavelen)+'\n').encode('utf-8'))
-            outf.write((str(scatterer.n.real/medium_index)+'\n').encode('utf-8'))
-            outf.write((str(scatterer.n.imag/medium_index)+'\n').encode('utf-8'))
-            # aspect ratio is 1
-            outf.write((str(1)+'\n').encode('utf-8'))
-            outf.write((str(0)+'\n').encode('utf-8'))
-            outf.write((str(0)+'\n').encode('utf-8'))
-            # shape is -1 (spheroid)
-            outf.write((str(-1)+'\n').encode('utf-8'))
-            outf.write((str(angles.shape[0])+'\n').encode('utf-8'))
+            rxy = scatterer.r
+            rz = scatterer.r
+            iscyl = False
+            scatterer = copy.copy(scatterer)
+            scatterer.rotation = (0,0,0)
         elif isinstance(scatterer, Spheroid):
-            outf.write((str((scatterer.r[1]*scatterer.r[0]**2)**(1/3.))+'\n').encode('utf-8'))
-            outf.write((str(med_wavelen)+'\n').encode('utf-8'))
-            outf.write((str(scatterer.n.real/medium_index)+'\n').encode('utf-8'))
-            outf.write((str(scatterer.n.imag/medium_index)+'\n').encode('utf-8'))
-            outf.write((str(scatterer.r[0]/scatterer.r[1])+'\n').encode('utf-8'))
-            outf.write((str(scatterer.rotation[2]*180/np.pi)+'\n').encode('utf-8'))
-            outf.write((str(scatterer.rotation[1]*180/np.pi)+'\n').encode('utf-8'))
-            outf.write((str(-1)+'\n').encode('utf-8'))
-            outf.write((str(angles.shape[0])+'\n').encode('utf-8'))
-        elif isinstance(scatterer, Cylinder):
-            outf.write((str((3/2.*scatterer.h/2*scatterer.d**2/4)**(1/3.))+'\n').encode('utf-8'))
-            outf.write((str(med_wavelen)+'\n').encode('utf-8'))
-            outf.write((str(scatterer.n.real/medium_index)+'\n').encode('utf-8'))
-            outf.write((str(scatterer.n.imag/medium_index)+'\n').encode('utf-8'))
-            outf.write((str(scatterer.d/scatterer.h)+'\n').encode('utf-8'))
-            outf.write((str(scatterer.rotation[2]*180/np.pi)+'\n').encode('utf-8'))
-            outf.write((str(scatterer.rotation[1]*180/np.pi)+'\n').encode('utf-8'))
-            outf.write((str(-2)+'\n').encode('utf-8'))
-            outf.write((str(angles.shape[0])+'\n').encode('utf-8'))
+            rxy = scatterer.r[0]
+            rz = scatterer.r[1]
+            iscyl = False
+        elif isinstance(scatterer.Cylinder):
+            rxy = scatterer.d/2
+            rz = scatterer.h/2
+            iscyl = True
         else:
             # cleanup and raise error
             outf.close()
             shutil.rmtree(temp_dir)
             raise TheoryNotCompatibleError(self, scatterer)
+
+        # write the info into the scattering angles file in the following order:
+        outf.write((str((3/2)**iscyl*(rz*rxy**2)**(1/3.))+'\n').encode('utf-8'))
+        outf.write((str(med_wavelen)+'\n').encode('utf-8'))
+        outf.write((str(scatterer.n.real/medium_index)+'\n').encode('utf-8'))
+        outf.write((str(scatterer.n.imag/medium_index)+'\n').encode('utf-8'))
+        outf.write((str(rxy/rz)+'\n').encode('utf-8'))
+        outf.write((str(scatterer.rotation[2]*180/np.pi)+'\n').encode('utf-8'))
+        outf.write((str(scatterer.rotation[1]*180/np.pi)+'\n').encode('utf-8'))
+        outf.write((str(-1 - iscyl)+'\n').encode('utf-8'))
+        outf.write((str(angles.shape[0])+'\n').encode('utf-8'))
 
         # Now write all the angles
         np.savetxt(outf, angles)
@@ -151,8 +141,6 @@ class Tmatrix(ScatteringTheory):
         # Now arrange them into a scattering matrix, noting that Mishchenko's basis
         # vectors are different from the B/H, so we need to take that into account:
         scat_matr = np.array([[s[:,0], s[:,1]], [-s[:,2], -s[:,3]]]).transpose()
-
-        os.chdir(current_directory)
 
         if self.delete:
             shutil.rmtree(temp_dir)
