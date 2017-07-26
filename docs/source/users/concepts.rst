@@ -37,6 +37,7 @@ In the image above, light travels from a source located in front of the screen, 
 More complex detector geometries will define their own origin, or ask
 you to define one.
 	
+.. _rotations:
 
 Rotations of Scatterers
 -----------------------

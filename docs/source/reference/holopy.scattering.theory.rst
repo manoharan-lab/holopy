@@ -8,6 +8,8 @@ Subpackages
 
     holopy.scattering.theory.mie_f
 
+Submodules
+----------
 
 Module contents
 ---------------
@@ -21,6 +23,14 @@ holopy.scattering.theory.dda module
 -----------------------------------
 
 .. automodule:: holopy.scattering.theory.dda
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+holopy.scattering.theory.example_tmatrix module
+-----------------------------------------------
+
+.. automodule:: holopy.scattering.theory.example_tmatrix
     :members:
     :undoc-members:
     :show-inheritance:
@@ -49,3 +59,10 @@ holopy.scattering.theory.scatteringtheory module
     :undoc-members:
     :show-inheritance:
 
+holopy.scattering.theory.tmatrix module
+---------------------------------------
+
+.. automodule:: holopy.scattering.theory.tmatrix
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -201,6 +201,37 @@ Adding more spheres to the cluster is as simple as defining more
 sphere objects and passing a longer list of spheres to the
 :class:`.Spheres` constructor.
 
+Non-spherical Objects
+---------------------
+
+To define a non-spherical scatterer, use :class:`.Spheroid` or :class:`.Cylinder` objects. These axisymmetric scatterers are defined by two dimensions, and can describe scatterers that are elongated or squashed along one direction. 
+By default, these objects are aligned with the z-axis, but they can be rotated into any orientation by passing a set of Euler angles to the ``rotation`` argument when defining the scatterer. See :ref:`rotations` for information on how these angles are defined.
+As an example, here is a hologram produced by a cylinder aligned with the vertical axis (``x-axis`` according to the HoloPy :ref:`coordinate_system`). 
+Note that the hologram image is elongated in the horizontal direction since the sides of the cylinder scatter light more than the ends.
+
+..  testcode::
+
+    import numpy as np
+    from holopy.scattering import Cylinder
+    c = Cylinder(center=(5, 5, 7), n = 1.59, d=0.5, h=2, rotation=(0,np.pi/2, 0))
+    holo = calc_holo(exp_img, c)
+    hp.show(holo)
+
+..  testcode::
+    :hide:
+
+    print(holo[0,0].values)
+
+..  testoutput::
+    :hide:
+
+    [ 1.0053954]
+
+.. image:: ../images/calc_cylinder.png
+   :scale: 300 %
+   :alt: Calculated hologram of a cylinder.
+
+
 .. _custom_scat:
 
 Customizing Scattering Calculations
@@ -246,6 +277,8 @@ calling the :func:`.calc_holo` function:
     :hide:
     
     1.0480235432374045
+
+Similarly, HoloPy calculates scattering from cylindrical or spheroidal particles by using T-matrix code from `Michael Mishchenko <https://www.giss.nasa.gov/staff/mmishchenko/t_matrix.html>`_, but these scatterer types are not compatible with Mie theory.
 
 Holopy can also access a discrete dipole approximation (DDA) theory to model
 arbitrary non-spherical objects. See the :ref:`dda_tutorial` tutorial for more

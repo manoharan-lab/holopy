@@ -40,11 +40,9 @@ class Tmatrix(ScatteringTheory):
     Computes scattering using the axisymmetric T-matrix solution by Mishchenko
     with extended precision.
 
-    It can calculate scattering from axisymmetric scatterers. Calculations for
-    particles which are very large and have high aspect ratios may not
-    converge.
+    It can calculate scattering from axisymmetric scatterers i.e. cylinders and spheroids. Calculations for
+    particles which are very large and have high aspect ratios may not converge.
 
-    This model requires an external scattering code:
 
     Attributes
     ----------
