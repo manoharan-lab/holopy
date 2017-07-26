@@ -35,6 +35,14 @@ import os
 from os.path import join
 from numpy.distutils.core import setup, Extension
 
+#setup to make Tmatrix fortran code
+tmat_dir = join('holopy','scattering','theory','tmatrix_f')
+if os.name == 'nt':
+    make=['mingw32-make']
+    tmat_file = 'S.exe'
+else:
+    make=['make']
+    tmat_file = 'S'
 
 # this will automatically build the scattering extensions, using the
 # setup.py files located in their subdirectories
@@ -50,10 +58,11 @@ def configuration(parent_package='',top_path=''):
     config.add_data_files(['.',['AUTHORS']])
     config.add_data_files(join('holopy','scattering','tests','gold','full_data','*.h5'))
     config.add_data_files(join('holopy','scattering','tests','gold','*.yaml'))
-    config.add_data_files(join('holopy','core/tests','exampledata','*.h5'))
-    config.add_data_files(join('holopy','core/tests','exampledata','*.jpg'))
+    config.add_data_files(join('holopy','core','tests','exampledata','*.h5'))
+    config.add_data_files(join('holopy','core','tests','exampledata','*.jpg'))
     config.add_data_files(join('holopy','propagation','tests','gold','full_data','*.h5'))
     config.add_data_files(join('holopy','propagation','tests','gold','*.yaml'))
+    config.add_data_files(join(tmat_dir,tmat_file))
 
     config.get_version()
     return config
@@ -68,11 +77,7 @@ except ImportError:
 if __name__ == "__main__":
 
     #make Tmatrix fortran code
-    if os.name == 'nt':
-        make=['mingw32-make']
-    else:
-        make=['make']
-    subprocess.check_call(make, cwd=join('holopy','scattering','theory','tmatrix_f'))
+    subprocess.check_call(make, cwd=tmat_dir)
 
     requires=[l for l in open("requirements.txt").readlines() if l[0] != '#']
     setup(configuration=configuration,
