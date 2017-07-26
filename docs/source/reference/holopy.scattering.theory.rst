@@ -24,14 +24,6 @@ holopy.scattering.theory.dda module
     :undoc-members:
     :show-inheritance:
 
-holopy.scattering.theory.example_tmatrix module
------------------------------------------------
-
-.. automodule:: holopy.scattering.theory.example_tmatrix
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 holopy.scattering.theory.mie module
 -----------------------------------
 
