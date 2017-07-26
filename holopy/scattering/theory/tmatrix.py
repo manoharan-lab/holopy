@@ -40,8 +40,8 @@ class Tmatrix(ScatteringTheory):
     Computes scattering using the axisymmetric T-matrix solution by Mishchenko
     with extended precision.
 
-    It can calculate scattering from axisymmetric scatterers i.e. cylinders and spheroids. Calculations for
-    particles which are very large and have high aspect ratios may not converge.
+    It can calculate scattering from axisymmetric scatterers such as cylinders and spheroids.
+    Calculations for particles that are very large or have high aspect ratios may not converge.
 
 
     Attributes
@@ -58,7 +58,9 @@ class Tmatrix(ScatteringTheory):
     def __init__(self, delete=True):
         self.delete = delete
         path, _ = os.path.split(os.path.abspath(__file__))
-        self.tmatrixlocation = os.path.join(path, 'tmatrix_f', 'S.exe')
+        self.tmatrixlocation = os.path.join(path, 'tmatrix_f', 'S')
+        if os.name == 'nt':
+            self.tmatrixlocation += '.exe' 
         if not os.path.isfile(self.tmatrixlocation):
             raise DependencyMissing('Tmatrix')
 
@@ -68,7 +70,10 @@ class Tmatrix(ScatteringTheory):
         return isinstance(scatterer, Sphere) or isinstance(scatterer, Cylinder) or isinstance(scatterer, Spheroid)
 
     def _run_tmat(self, temp_dir):
-        cmd = ['./S.exe']
+        if os.name == 'nt':
+            cmd = ['S.exe']
+        else:
+            cmd = ['./S']
         subprocess.check_call(cmd, cwd=temp_dir)
         return
 

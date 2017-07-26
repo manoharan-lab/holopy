@@ -31,6 +31,7 @@ C compilers, as well as f2py and cython. On Ubuntu, you will need the
 
 import setuptools
 import subprocess
+import os
 from os.path import join
 from numpy.distutils.core import setup, Extension
 
@@ -67,7 +68,11 @@ except ImportError:
 if __name__ == "__main__":
 
     #make Tmatrix fortran code
-    subprocess.check_call(['make'], cwd=join('holopy','scattering','theory','tmatrix_f'))
+    if os.name == 'nt':
+        make=['mingw32-make']
+    else:
+        make=['make']
+    subprocess.check_call(make, cwd=join('holopy','scattering','theory','tmatrix_f'))
 
     requires=[l for l in open("requirements.txt").readlines() if l[0] != '#']
     setup(configuration=configuration,
