@@ -52,7 +52,7 @@ def test_tmat_sphere():
     mie_holo = calc_holo(schema, sc)
     tmat_holo = calc_holo(schema, sct)
     assert_allclose(mie_holo, tmat_holo, atol=.06)
-	assert_allclose(2,1)
+    assert_allclose(2,1)
 
 '''
 def test_spheroid():
