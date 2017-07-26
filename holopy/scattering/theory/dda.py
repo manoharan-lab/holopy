@@ -88,6 +88,7 @@ class DDA(ScatteringTheory):
 
         self.n_cpu = n_cpu
         self.max_dpl_size = max_dpl_size
+        self.use_indicators = False
         self.keep_raw_calculations = keep_raw_calculations
         self.addacmd = addacmd
         super().__init__()
@@ -121,7 +122,7 @@ class DDA(ScatteringTheory):
             scat_args = self._adda_cylinder(scatterer, medium_wavelen, medium_index, temp_dir)
         elif isinstance(scatterer, Bisphere) and not self.use_indicators:
             scat_args = self._adda_bisphere(scatterer, medium_wavelen, medium_index, temp_dir)
-        elif isinstance(scatterer, Sphere) and not self.use_indicators:
+        elif isinstance(scatterer, Sphere) and not self.use_indicators and np.isscalar(scatterer.r):
             scat_args = self._adda_sphere(scatterer, medium_wavelen, medium_index, temp_dir)
         else:
             scat_args = self._adda_scatterer(scatterer, medium_wavelen, medium_index, temp_dir)
