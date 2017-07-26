@@ -27,7 +27,7 @@ from numpy.testing import assert_raises, assert_allclose
 import numpy as np
 from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
-from .. import Sphere, Spheroid, Ellipsoid, calc_holo as calc_holo_external
+from .. import Tmatrix, Sphere, Spheroid, Ellipsoid, calc_holo as calc_holo_external
 from ..errors import DependencyMissing
 from ...core import detector_grid, update_metadata
 
@@ -42,6 +42,9 @@ schema = update_metadata(detector_grid(shape = 200, spacing = .1),
                      illum_wavelen = .660, medium_index = 1.33,
                                      illum_polarization = [1,0])
 
+def test_tmat_compiled():
+	tmat= Tmatrix() #will raise Exception if S.exe doesn't exist.
+
 @attr('medium')
 def test_tmat_sphere():
     sc = Sphere(n=1.59, r=0.9, center=(7, 8, 30))
@@ -49,6 +52,7 @@ def test_tmat_sphere():
     mie_holo = calc_holo(schema, sc)
     tmat_holo = calc_holo(schema, sct)
     assert_allclose(mie_holo, tmat_holo, atol=.06)
+	assert_allclose(2,1)
 
 '''
 def test_spheroid():
