@@ -26,9 +26,10 @@ from numpy.testing import assert_raises, assert_allclose
 import numpy as np
 from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
-from .. import Tmatrix, DDA, Sphere, Spheroid, Ellipsoid, Cylinder, calc_holo as calc_holo_external
+from .. import Tmatrix, Sphere, Spheroid, Ellipsoid, Cylinder, calc_holo as calc_holo_external
 from ..errors import DependencyMissing
 from ...core import detector_grid, update_metadata
+from ...core.tests.common import verify
 
 def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,**kwargs):
     try:
@@ -51,12 +52,5 @@ def test_sphere():
     
 def test_spheroid():
     s = Spheroid(n = 1.5, r = [.4, 1.], rotation = (0, np.pi/3, 0), center = (5, 5, 25))
-    dda_holo = calc_holo(schema, s, theory = DDA)
-    tmat_holo = calc_holo(schema, s, theory = Tmatrix)
-    assert_allclose(tmat_holo, dda_holo, atol=.2)
-
-def test_cylinder():
-    c = Cylinder(n = 1.5, d=.8, h=2., rotation = (0, np.pi/3, 0), center = (5, 5, 25))
-    dda_holo = calc_holo(schema, s, theory = DDA)
-    tmat_holo = calc_holo(schema, s, theory = Tmatrix)
-    assert_allclose(tmat_holo, dda_holo, atol=.2)
+    holo = calc_holo(schema, s, theory = Tmatrix)
+    verify(holo, 'spheroid_tmat')
