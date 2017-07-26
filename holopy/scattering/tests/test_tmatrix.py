@@ -42,9 +42,6 @@ schema = update_metadata(detector_grid(shape = 200, spacing = .1),
                      illum_wavelen = .660, medium_index = 1.33,
                                      illum_polarization = [1,0])
 
-def test_tmat_compiled():
-	tmat= Tmatrix() #will raise Exception if S.exe doesn't exist.
-
 @attr('medium')
 def test_tmat_sphere():
     sc = Sphere(n=1.59, r=0.9, center=(7, 8, 30))
