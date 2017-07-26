@@ -59,6 +59,11 @@ class Tmatrix(ScatteringTheory):
     """
     def __init__(self, delete=True):
         self.delete = delete
+        path, _ = os.path.split(os.path.abspath(__file__))
+        self.tmatrixlocation = os.path.join(path, 'tmatrix_f', 'S.exe')
+        if not os.path.isfile(self.tmatrixlocation):
+            raise DependencyMissing('Tmatrix')
+
         super().__init__()
 
     def _can_handle(self, scatterer):
@@ -72,11 +77,7 @@ class Tmatrix(ScatteringTheory):
     def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
         temp_dir = tempfile.mkdtemp()
         current_directory = os.getcwd()
-        path, _ = os.path.split(os.path.abspath(__file__))
-        tmatrixlocation = os.path.join(path, 'tmatrix_f', 'S.exe')
-        if not os.path.isfile(tmatrixlocation):
-            raise DependencyMissing('Tmatrix')
-        shutil.copy(tmatrixlocation, temp_dir)
+        shutil.copy(self.tmatrixlocation, temp_dir)
         os.chdir(temp_dir)
 
         angles = pos.T[:, 1:] * 180/np.pi
