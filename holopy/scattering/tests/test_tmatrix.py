@@ -49,8 +49,7 @@ def test_tmat_sphere():
     mie_holo = calc_holo(schema, sc)
     tmat_holo = calc_holo(schema, sct)
     assert_allclose(mie_holo, tmat_holo, atol=.06)
-    assert_allclose(2,1)
-
+    
 '''
 def test_spheroid():
     e = Ellipsoid(n=1.5, r=[.4, .4, .1],rotation=(0,-np.pi/2, np.pi/2), center = (5, 5, 25))
