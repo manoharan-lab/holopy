@@ -8,9 +8,6 @@ Subpackages
 
     holopy.scattering.theory.mie_f
 
-Submodules
-----------
-
 Module contents
 ---------------
 
