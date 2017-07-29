@@ -30,7 +30,7 @@ from nose.plugins.skip import SkipTest
 import os
 
 from ...scattering.errors import DependencyMissing
-from ..scatterer import Sphere, Ellipsoid, Scatterer, JanusSphere, Difference
+from ..scatterer import Sphere, Ellipsoid, Scatterer, JanusSphere_Uniform, Difference
 from .. import Mie, DDA, calc_holo as calc_holo_external
 from ...core import detector_grid, update_metadata
 from ...core.tests.common import verify, assert_obj_close
@@ -144,7 +144,7 @@ def test_Ellipsoid_dda():
 
 def test_janus():
     schema = detector_grid(60, .1)
-    s = JanusSphere(n = [1.34, 2.0], r = [.5, .51], rotation = (-np.pi/2, 0),
+    s = JanusSphere_Uniform(n = [1.34, 2.0], r = [.5, .51], rotation = (0, -np.pi/2, 0),
                     center = (5, 5, 5))
     assert_almost_equal(s.index_at([5,5,5]),1.34)
     holo = calc_holo(schema, s, illum_wavelen=.66, medium_index=1.33, illum_polarization=(1, 0))
