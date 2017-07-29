@@ -88,7 +88,7 @@ class DDA(ScatteringTheory):
 
         self.n_cpu = n_cpu
         self.max_dpl_size = max_dpl_size
-        self.use_indicators = False
+        self.use_indicators = use_indicators
         self.keep_raw_calculations = keep_raw_calculations
         self.addacmd = addacmd
         super().__init__()
