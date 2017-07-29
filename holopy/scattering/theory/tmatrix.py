@@ -41,11 +41,9 @@ class Tmatrix(ScatteringTheory):
     Computes scattering using the axisymmetric T-matrix solution by Mishchenko
     with extended precision.
 
-    It can calculate scattering from axisymmetric scatterers. Calculations for
-    particles which are very large and have high aspect ratios may not
-    converge.
+    It can calculate scattering from axisymmetric scatterers such as cylinders and spheroids.
+    Calculations for particles that are very large or have high aspect ratios may not converge.
 
-    This model requires an external scattering code:
 
     Attributes
     ----------
@@ -60,23 +58,29 @@ class Tmatrix(ScatteringTheory):
     """
     def __init__(self, delete=True):
         self.delete = delete
+        path, _ = os.path.split(os.path.abspath(__file__))
+        self.tmatrixlocation = os.path.join(path, 'tmatrix_f', 'S')
+        if os.name == 'nt':
+            self.tmatrixlocation += '.exe' 
+        if not os.path.isfile(self.tmatrixlocation):
+            raise DependencyMissing('Tmatrix')
+
         super().__init__()
 
     def _can_handle(self, scatterer):
         return isinstance(scatterer, Sphere) or isinstance(scatterer, Cylinder) or isinstance(scatterer, Spheroid)
 
     def _run_tmat(self, temp_dir):
-        cmd = ['./S.exe']
+        if os.name == 'nt':
+            cmd = ['S.exe']
+        else:
+            cmd = ['./S']
         subprocess.check_call(cmd, cwd=temp_dir)
         return
 
     def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
         temp_dir = tempfile.mkdtemp()
-        path, _ = os.path.split(os.path.abspath(__file__))
-        tmatrixlocation = os.path.join(path, 'tmatrix_f', 'S.exe')
-        if not os.path.isfile(tmatrixlocation):
-            raise DependencyMissing('Tmatrix')
-        shutil.copy(tmatrixlocation, temp_dir)
+        shutil.copy(self.tmatrixlocation, temp_dir)
 
         angles = pos.T[:, 1:] * 180/np.pi
         outf = open(os.path.join(temp_dir, 'tmatrix_tmp.inp'), 'wb')
@@ -92,7 +96,7 @@ class Tmatrix(ScatteringTheory):
             rxy = scatterer.r[0]
             rz = scatterer.r[1]
             iscyl = False
-        elif isinstance(scatterer.Cylinder):
+        elif isinstance(scatterer, Cylinder):
             rxy = scatterer.d/2
             rz = scatterer.h/2
             iscyl = True
