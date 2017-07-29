@@ -32,6 +32,7 @@ C compilers, as well as f2py and cython. On Ubuntu, you will need the
 import setuptools
 import subprocess
 import os
+import sys
 from os.path import join
 from numpy.distutils.core import setup, Extension
 
