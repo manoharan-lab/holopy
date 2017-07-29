@@ -37,18 +37,17 @@ Installation on Windows is still a work in progress, but we have been able to ge
 3. From now on, make sure any command prompt window invokes the right environment conditions for compiling with VC. To do this, make sure ``C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat`` is added to the system path variable. This batch detects your architecture, then runs another batch that sets the path include the directory with the correct version of the VC compiler.
 4. Install cython and made sure it works.
 5. Install `Intel's Fortran compiler <https://software.intel.com/en-us/fortran-compilers/try-buy>`_. A good place to start is the trial version of Parallel Studio XE. Make sure it is working with a Fortran helloworld.
-6. Download or clone HoloPy from `https://github.com/manoharan-lab/holopy <https://github.com/manoharan-lab/holopy>`_. 
-7. Open the command prompt included in Intel's Parallel Studio. Run ``holopy/setup.py``. It is necessay to use Intel's Parallel Studio command prompt to avoid compiling errors.
-8. Install the following dependencies that don't come with Anaconda::
+6. Install `mingw32-make <https://sourceforge.net/projects/mingw/files/MinGW/Extension/make/>`_, which does not come with Anaconda by default.
+7. Download or clone HoloPy from `https://github.com/manoharan-lab/holopy <https://github.com/manoharan-lab/holopy>`_. 
+8. Open the command prompt included in Intel's Parallel Studio. Run ``holopy/setup.py``. It is necessay to use Intel's Parallel Studio command prompt to avoid compiling errors.
+9. Install the following dependencies that don't come with Anaconda::
     
         conda install xarray dask netCDF4 bottleneck
         conda install -c astropy emcee=2.2.1
 
-9. Open an iPython console where holopy is installed and try ``import holopy``.
+10. Open an iPython console where holopy is installed and try ``import holopy``.
 
 If the above procedure doesn't work, or you find something else that does, please `let us know <https://github.com/manoharan-lab/holopy/issues>`_ so that we can improve these instructions.
-
-
 
 ..  _xarray:
 
@@ -111,7 +110,7 @@ the raw scattering values::
       # Your code here
 
 You can get away with just defining one of _raw_scat_matrs or _raw_fields if you
-just want holograms, fields, or intensities. If you want scattering matricies
+just want holograms, fields, or intensities. If you want scattering matrices
 you will need to implement _raw_scat_matrs, and if you want cross sections, you
 will need to implement _raw_cross_sections. We seperate out _raw_fields from
 _raw_scat_matrs because we want to provide a faster fields implementation for

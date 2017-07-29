@@ -133,18 +133,3 @@ class Spheres(Scatterers):
     def center(self):
         return self.centers.mean(0)
 
-# TODO: Move this code out of scatterer? It sort of has more to do with how
-# clusters move than pure geometry
-
-# (VNM) as a way of generating a new Spheres, rotate is fine.  But
-# it should become a method (and override Scatterer.rotate()) rather
-# than a function.  I would propose moving this to Scatterers, where it
-# can be made more general and inheritable.
-
-def rotate(cluster, theta, phi, psi):
-    com = cluster.centers.mean(0)
-
-    return Spheres([Sphere(n=s.n, r=s.r, center =
-                                 com+rotate_points(s.center-com, theta,
-                                                   phi, psi)) for s in
-                          cluster.scatterers])

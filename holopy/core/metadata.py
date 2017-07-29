@@ -248,6 +248,8 @@ def sphere_coords(a, origin=(0,0,0), wavevec=1):
         return out
 
     else:
+        if origin is None:
+            raise ValueError('Cannot convert detector to spherical coordinates without an origin')
         f = flat(a)
         dimstr = primdim(f)
         # we define positive z opposite light propagation, so we have to invert

@@ -18,7 +18,6 @@
 """
 Compute holograms using the discrete dipole approximation (DDA).  Currently uses
 ADDA (http://code.google.com/p/a-dda/) to do DDA calculations.
-
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
@@ -39,7 +38,7 @@ import warnings
 
 from .scatteringtheory import ScatteringTheory
 
-from ..scatterer import Ellipsoid, Capsule, Cylinder, Bisphere, Sphere_builtin, Scatterer
+from ..scatterer import Ellipsoid, Capsule, Cylinder, Bisphere, Sphere, Scatterer, Spheroid
 from ...core.utils import ensure_array
 from ..errors import DependencyMissing
 
@@ -51,7 +50,6 @@ except ImportError:
 class DDA(ScatteringTheory):
     """
     Computes scattering using the the Discrete Dipole Approximation (DDA).
-
     It can (in principle) calculate scattering from any arbitrary scatterer.
     The DDA uses a numerical method that represents arbitrary scatterers as
     an array
@@ -60,7 +58,6 @@ class DDA(ScatteringTheory):
     extremely computationally intensive, particularly if the size of the
     scatterer is larger than the wavelength of light.  This model requires an
     external scattering code: `a-dda <http://code.google.com/p/a-dda/>`_
-
     Attributes
     ----------
     n_cpu : int (optional)
@@ -69,17 +66,18 @@ class DDA(ScatteringTheory):
         Force a maximum dipole size. This is useful for forcing extra dipoles if
         necessary to resolve features in an object. This may make dda
         calculations take much longer.
+    use_indicators : bool
+        If true, a scatterer's indicators method will be used instead of its built-in adda definition
     keep_raw_calculations : bool
         If true, do not delete the temporary file we run ADDA in, instead print
         its path so you can inspect its raw results
     Notes
     -----
     Does not handle near fields.  This introduces ~5% error at 10 microns.
-
     This can in principle handle any scatterer, but in practice it will need
     excessive memory or computation time for particularly large scatterers.
     """
-    def __init__(self, n_cpu = 1, max_dpl_size=None, keep_raw_calculations=False,
+    def __init__(self, n_cpu = 1, max_dpl_size=None, use_indicators=False, keep_raw_calculations=False,
             addacmd=[]):
 
         # Check that adda is present and able to run
@@ -90,6 +88,7 @@ class DDA(ScatteringTheory):
 
         self.n_cpu = n_cpu
         self.max_dpl_size = max_dpl_size
+        self.use_indicators = use_indicators
         self.keep_raw_calculations = keep_raw_calculations
         self.addacmd = addacmd
         super().__init__()
@@ -113,16 +112,18 @@ class DDA(ScatteringTheory):
         cmd.extend(['-save_geom'])
         cmd.extend(self.addacmd)
 
-        if isinstance(scatterer, Ellipsoid):
+        if isinstance(scatterer, Ellipsoid) and not self.use_indicators:
             scat_args = self._adda_ellipsoid(scatterer, medium_wavelen, medium_index, temp_dir)
-        elif isinstance(scatterer, Capsule):
+        elif isinstance(scatterer, Spheroid) and not self.use_indicators:
+            scat_args = self._adda_spheroid(scatterer, medium_wavelen, medium_index, temp_dir)
+        elif isinstance(scatterer, Capsule) and not self.use_indicators:
             scat_args = self._adda_capsule(scatterer, medium_wavelen, medium_index, temp_dir)
-        elif isinstance(scatterer, Cylinder):
+        elif isinstance(scatterer, Cylinder) and not self.use_indicators:
             scat_args = self._adda_cylinder(scatterer, medium_wavelen, medium_index, temp_dir)
-        elif isinstance(scatterer, Bisphere):
+        elif isinstance(scatterer, Bisphere) and not self.use_indicators:
             scat_args = self._adda_bisphere(scatterer, medium_wavelen, medium_index, temp_dir)
-        elif isinstance(scatterer, Sphere_builtin):
-            scat_args = self._adda_sphere_builtin(scatterer, medium_wavelen, medium_index, temp_dir)
+        elif isinstance(scatterer, Sphere) and not self.use_indicators and np.isscalar(scatterer.r):
+            scat_args = self._adda_sphere(scatterer, medium_wavelen, medium_index, temp_dir)
         else:
             scat_args = self._adda_scatterer(scatterer, medium_wavelen, medium_index, temp_dir)
 
@@ -140,7 +141,21 @@ class DDA(ScatteringTheory):
         cmd.extend(['-m', str(scatterer.n.real/medium_index),
                     str(scatterer.n.imag/medium_index)])
         cmd.extend(['-orient'])
-        cmd.extend([str(angle) for angle in scatterer.rotation])
+        cmd.extend([str(angle*180/np.pi) for angle in reversed(scatterer.rotation)])
+        # rotation angles are gamma, beta, alpha in adda reference frame
+
+        return cmd
+
+    def _adda_spheroid(self, scatterer, medium_wavelen, medium_index, temp_dir):
+        cmd = []
+        cmd.extend(['-eq_rad', str(scatterer.r[0])])
+        cmd.extend(['-shape', 'ellipsoid'])
+        cmd.extend([str(1), str(scatterer.r[1]/scatterer.r[0])])
+        cmd.extend(['-m', str(scatterer.n.real/medium_index),
+                    str(scatterer.n.imag/medium_index)])
+        cmd.extend(['-orient'])
+        cmd.extend([str(angle*180/np.pi) for angle in reversed(scatterer.rotation)])
+        # rotation angles are gamma, beta, alpha in adda reference frame
 
         return cmd
 
@@ -152,7 +167,8 @@ class DDA(ScatteringTheory):
         cmd.extend(['-m', str(scatterer.n.real/medium_index),
                     str(scatterer.n.imag/mediumindex)])
         cmd.extend(['-orient'])
-        cmd.extend([str(angle) for angle in scatterer.rotation])
+        cmd.extend([str(angle*180/np.pi) for angle in reversed(scatterer.rotation)])
+        # rotation angles are gamma, beta, alpha in adda reference frame
 
         return cmd
 
@@ -164,7 +180,8 @@ class DDA(ScatteringTheory):
         cmd.extend(['-m', str(scatterer.n.real/medium_index),
                     str(scatterer.n.imag/medium_index)])
         cmd.extend(['-orient'])
-        cmd.extend([str(angle) for angle in scatterer.rotation])
+        cmd.extend([str(angle*180/np.pi) for angle in reversed(scatterer.rotation)])
+        # rotation angles are gamma, beta, alpha in adda reference frame
 
         return cmd
 
@@ -176,11 +193,12 @@ class DDA(ScatteringTheory):
         cmd.extend(['-m', str(scatterer.n.real/medium_index),
                     str(scatterer.n.imag/medium_index)])
         cmd.extend(['-orient'])
-        cmd.extend([str(angle) for angle in scatterer.rotation])
+        cmd.extend([str(angle*180/np.pi) for angle in reversed(scatterer.rotation)])
+        # rotation angles are gamma, beta, alpha in adda reference frame
 
         return cmd
 
-    def _adda_sphere_builtin(self, scatterer, medium_wavelen, medium_index, temp_dir):
+    def _adda_sphere(self, scatterer, medium_wavelen, medium_index, temp_dir):
         cmd = []
         cmd.extend(['-eq_rad', str(scatterer.r)])
         cmd.extend(['-shape', 'sphere'])
@@ -219,8 +237,6 @@ class DDA(ScatteringTheory):
             cmd.extend([str(m), str(n.imag/medium_index)])
         return cmd
 
-
-
     def _dpl(self, medium_wavelen, medium_index, n):
         # if the object has multiple domains, we need to pick the
         # largest required dipole number
@@ -238,7 +254,7 @@ class DDA(ScatteringTheory):
         return medium_wavelen / self._dpl(medium_wavelen, medium_index, n)
 
     def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
-        angles = pos[:, 1:] * 180/np.pi
+        angles = pos.T[:, 1:] * 180/np.pi
         temp_dir = tempfile.mkdtemp()
 
         outf = open(os.path.join(temp_dir, 'scat_params.dat'), 'wb')
@@ -276,15 +292,3 @@ class DDA(ScatteringTheory):
             shutil.rmtree(temp_dir)
 
         return scat_matr
-
-    def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index, illum_polarization):
-        pos = pos.T
-        scat_matr = self._raw_scat_matrs(scatterer, pos, medium_wavevec=medium_wavevec, medium_index=medium_index)
-        fields = np.zeros_like(pos, dtype = scat_matr.dtype)
-
-        for i, point in enumerate(pos):
-            kr, theta, phi = point
-            escat_sph = mieangfuncs.calc_scat_field(kr, phi, scat_matr[i],
-                                                    illum_polarization.values[:2])
-            fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
-        return fields.T

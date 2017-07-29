@@ -1,7 +1,6 @@
 holopy.scattering.scatterer package
 ===================================
 
-
 Module contents
 ---------------
 
@@ -82,14 +81,6 @@ holopy.scattering.scatterer.sphere module
     :undoc-members:
     :show-inheritance:
 
-holopy.scattering.scatterer.sphere_builtin module
--------------------------------------------------
-
-.. automodule:: holopy.scattering.scatterer.sphere_builtin
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 holopy.scattering.scatterer.spherecluster module
 ------------------------------------------------
 
@@ -98,3 +89,10 @@ holopy.scattering.scatterer.spherecluster module
     :undoc-members:
     :show-inheritance:
 
+holopy.scattering.scatterer.spheroid module
+-------------------------------------------
+
+.. automodule:: holopy.scattering.scatterer.spheroid
+    :members:
+    :undoc-members:
+    :show-inheritance:

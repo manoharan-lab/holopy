@@ -106,7 +106,6 @@ def test_Sphere_parameters():
 def test_Composite_construction():
     # empty composite
     comp_empty = Scatterers()
-    print(comp_empty.get_component_list())
 
     # composite of multiple spheres
     s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
@@ -126,11 +125,9 @@ def test_Composite_construction():
     s4 = Sphere(center=[0, 5e-6, 0])
     comp_spheres.add(s4)
     comp2 = Scatterers(scatterers=[comp_spheres, comp])
-    print(comp2.get_component_list())
 
     # even more levels
     comp3 = Scatterers(scatterers=[comp2, cs])
-    print(comp3)
 
 @attr('fast')
 def test_like_me():

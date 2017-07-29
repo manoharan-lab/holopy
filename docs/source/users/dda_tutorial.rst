@@ -101,7 +101,7 @@ a plastic sphere with a high index coating on the top half::
   indicators = Indicators([s1.contains, cap],
                           [[-.51, .51], [-.51, .51], [-.51, .51]])
   janus = Scatterer(indicators, (1.34, 2.0), (5, 5, 5))
-  holo = calc_holo(detector, dumbbell, medium_index=1.33, illum_wavelen=.66, illum_polarization=(1, 0))
+  holo = calc_holo(detector, janus, medium_index=1.33, illum_wavelen=.66, illum_polarization=(1, 0))
 
 We had to manually set up the bounds of the indicator functions here
 because the automatic bounds determination routine gets confused by

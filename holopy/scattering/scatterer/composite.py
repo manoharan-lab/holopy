@@ -159,7 +159,17 @@ class Scatterers(Scatterer):
         new.scatterers = trans
         return new
 
-    def rotated(self, alpha, beta, gamma):
+    def rotated(self, ang1, ang2=None, ang3=None):
+
+        if is_none(ang2) and len(ensure_array(ang1)==3):
+            #entered rotation angle tuple
+            alpha, beta, gamma = ang1
+        elif not is_none(ang2) and not is_none(ang3):
+            #entered 3 angles
+            alpha=ang1; beta=ang2; gamma=ang3
+        else:
+            raise InvalidScatterer(self, "Cannot interpret rotation coordinates")
+
         centers = np.array([s.center for s in self.scatterers])
         com = centers.mean(0)
 

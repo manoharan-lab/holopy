@@ -53,7 +53,7 @@ class Ellipsoid(CenteredScatterer):
     center : 3-tuple, list or numpy array
         specifies coordinates of center of the scatterer
     rotation : 3-tuple, list or numpy.array
-        specifies the Euler angles (alpha, beta, gamma) in degrees 
+        specifies the Euler angles (alpha, beta, gamma) in radians 
         defined in a-dda manual section 8.1
     """
 
@@ -78,6 +78,9 @@ class Ellipsoid(CenteredScatterer):
 
     @property
     def indicators(self):
+        """
+        NOTE: Ellipsoid indicators does not currently apply rotations
+        """
         return Indicators(lambda point: ((point / self.r) ** 2).sum(-1) < 1,
                           [[-self.r[0], self.r[0]], [-self.r[1], self.r[1]],
                             [-self.r[2], self.r[2]]])

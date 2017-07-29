@@ -1,10 +1,13 @@
 *.pyc
+*.pyd
 *.so
+*.exe
 dist
 build
 docs/build
 holopy/propagation/tests/gold/full_data/*.yaml
 holopy/scattering/tests/gold/full_data/*.yaml
+holopy/scattering/theory/tmatrix_f/S
 .coverage
 .nfs*
 *~

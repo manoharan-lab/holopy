@@ -71,11 +71,19 @@ class MultisphereFailure(Exception):
         return ("Multisphere calculations failed to converge, or returned NaN. this probably means "
                 "your scatterer is unphysical.")
 
+class TmatrixFailure(Exception):
+    def __init__(self, logfilestr):
+            self.logfilestr = logfilestr
+    def __str__(self):
+        with open(self.logfilestr) as logfile:
+            reason=list(logfile)[-1]
+        return("Tmatrix calculation failed. This might be because your scatterer's size or aspect ratio is too large for default parameters. \n Tmatrix error message: " + reason + "Full details are available in " + self.logfilestr)
+
 class DependencyMissing(Exception):
     def __init__(self, dep):
         self.dep = dep
     def __str__(self):
-        return "External Dependency: " + self.dep + " could not be found, terminating."
+        return("External Dependency: " + self.dep + " could not be found, terminating.")
 
 class AutoTheoryFailed(Exception):
     def __init__(self, scatterer):

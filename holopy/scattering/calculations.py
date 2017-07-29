@@ -25,11 +25,12 @@ calc_intensity and calc_holo, based on subclass's calc_field
 from ..core.holopy_object import SerializableMetaclass
 from ..core.metadata import vector, update_metadata, to_vector, copy_metadata, from_flat, detector_points
 from ..core.utils import dict_without, is_none
-from .scatterer import Sphere, Spheres
+from .scatterer import Sphere, Spheres, Spheroid, Cylinder
 from .errors import AutoTheoryFailed, MissingParameter
 
 try:
     from .theory import Mie, Multisphere
+    from .theory import Tmatrix
     from .theory.dda import DDA
 except:
     pass
@@ -70,6 +71,8 @@ def determine_theory(scatterer):
         else:
             warn("HoloPy's multisphere theory can't handle coated spheres. Using Mie theory.")
             return Mie()
+    elif isinstance(scatterer, Spheroid) or isinstance(scatterer, Cylinder):
+        return Tmatrix()
     elif DDA()._can_handle(scatterer):
         return DDA()
     else:
@@ -165,7 +168,7 @@ def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None, illum_
 
 def calc_scat_matrix(schema, scatterer, medium_index=None, illum_wavelen=None, theory='auto'):
     """
-    Compute farfield scattering matricies for scatterer
+    Compute farfield scattering matrices for scatterer
 
     Parameters
     ----------
@@ -184,7 +187,7 @@ def calc_scat_matrix(schema, scatterer, medium_index=None, illum_wavelen=None, t
     Returns
     -------
     scat_matr : :class:`.Marray`
-        Scattering matricies at specified positions
+        Scattering matrices at specified positions
 
     """
     theory = interpret_theory(scatterer,theory)

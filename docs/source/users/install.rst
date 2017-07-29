@@ -22,6 +22,18 @@ IPython console or Jupyter Notebook and run::
 
 If this line works, skip to :ref:`usage` before diving into the tutorials.
 
+Windows Support
+---------------
+To find a HoloPy conda package for Windows, use ::
+
+    anaconda search holopy
+
+You may need to manually install any missing dependencies (eg. emcee) from conda-forge like ::
+
+    conda install -c conda-forge emcee
+
+You can also build HoloPy from source by following the instructions for :ref:`dev_install`.
+
 .. _dependencies:
 
 Dependencies
@@ -33,11 +45,6 @@ Optional dependencies for certain calculations include:
 * `a-dda <http://code.google.com/p/a-dda/>`_ (Discrete Dipole calculations of arbitrary scatterers)
 
 * `mayavi2 <http://docs.enthought.com/mayavi/mayavi/>`_ (if you want to do 3D plotting [experimental])
-
-Windows Support
----------------
-We are working on distributing a Windows HoloPy build that does not require Fortran compilers.
-In the mean-time your best option is to build it yourself by following the instructions for :ref:`dev_install`.
 
 ..  _usage:
 
