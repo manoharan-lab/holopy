@@ -68,10 +68,14 @@ class Tmatrix(ScatteringTheory):
         super().__init__()
 
     def _can_handle(self, scatterer):
-        return isinstance(scatterer, Sphere) or isinstance(scatterer, Cylinder) or isinstance(scatterer, Spheroid)
+        return isinstance(scatterer, Sphere) or isinstance(scatterer, Cylinder) \
+            or isinstance(scatterer, Spheroid)
 
     def _run_tmat(self, temp_dir):
-        subprocess.run(self.tmatrix_executable, cwd=temp_dir)
+        # must give full path to executable even when specifying cwd keyword.
+        # we'll run the executable from its location in the package tree
+        subprocess.check_call(self.tmatrix_executable, cwd=temp_dir)
+        # can replace the above with subprocess run in python 3.5 and higher
         return
 
     def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
