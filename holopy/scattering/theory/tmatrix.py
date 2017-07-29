@@ -38,11 +38,12 @@ except:
 
 class Tmatrix(ScatteringTheory):
     """
-    Computes scattering using the axisymmetric T-matrix solution by Mishchenko
-    with extended precision.
+    Computes scattering using the axisymmetric T-matrix solution 
+    by Mishchenko with extended precision.
 
-    It can calculate scattering from axisymmetric scatterers such as cylinders and spheroids.
-    Calculations for particles that are very large or have high aspect ratios may not converge.
+    It can calculate scattering from axisymmetric scatterers such as 
+    cylinders and spheroids. Calculations for particles that are very 
+    large or have high aspect ratios may not converge.
 
 
     Attributes
@@ -141,8 +142,8 @@ class Tmatrix(ScatteringTheory):
         # Mishchenko, Applied Optics (2000).
         s = tmat_result[:,0::2] + 1.0j*tmat_result[:,1::2]
         s = s*(-2j*np.pi/med_wavelen)
-        # Now arrange them into a scattering matrix, noting that Mishchenko's basis
-        # vectors are different from the B/H, so we need to take that into account:
+        # Now arrange them into a scattering matrix, noting that Mishchenko's 
+        #basis vectors are different from B/H, so we need to account for that.
         scat_matr = np.array([[s[:,0], s[:,1]], [-s[:,2], -s[:,3]]]).transpose()
 
         if self.delete:
@@ -150,18 +151,22 @@ class Tmatrix(ScatteringTheory):
 
         return scat_matr
 
-    def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index, illum_polarization):
+    def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
+                    illum_polarization):
 
         if not (np.array(illum_polarization)[:2] == np.array([1,0])).all():
             raise ValueError("Our implementation of Tmatrix scattering can only handle [1,0] polarization. Adjust your reference frame accordingly.")
 
-        scat_matr = self._raw_scat_matrs(scatterer, pos, medium_wavevec=medium_wavevec, medium_index=medium_index)
+        scat_matr = self._raw_scat_matrs(scatterer, pos, 
+                    medium_wavevec=medium_wavevec, medium_index=medium_index)
         fields = np.zeros_like(pos.T, dtype = scat_matr.dtype)
 
         for i, point in enumerate(pos.T):
             kr, theta, phi = point
             # TODO: figure out why postfactor is needed -- it is not used in dda.py
-            postfactor = np.array([[np.cos(phi),np.sin(phi)],[-np.sin(phi),np.cos(phi)]])
-            escat_sph = mieangfuncs.calc_scat_field(kr, phi, np.dot(scat_matr[i],postfactor),[1,0])
+            postfactor = np.array([[np.cos(phi),np.sin(phi)],
+                                   [-np.sin(phi),np.cos(phi)]])
+            escat_sph = mieangfuncs.calc_scat_field(kr, phi, 
+                                    np.dot(scat_matr[i],postfactor), [1,0])
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
         return fields.T

@@ -30,8 +30,10 @@ from ...core.math import rotation_matrix
 class JanusSphere_Uniform(CenteredScatterer):
     def __init__(self, n = None, r = None, rotation = (0, 0, 0), center = None):
         """
-        A two layer particle with the outer layer only spanning one hemisphere. This particle has an outer layer of uniform thickness over half of the particle. A particle
-        with no rotation has its cap pointing along +z, specify other orientations by euler
+        A two layer particle with the outer layer only spanning one
+        hemisphere. This particle has an outer layer of uniform thickness
+        over half of the particle. A particle with no rotation has its 
+        cap pointing along +z, specify other orientations by euler
         angle rotations from that reference.
 
         Parameters
@@ -43,9 +45,9 @@ class JanusSphere_Uniform(CenteredScatterer):
         rotation : (float, float, float)
             Euler angles alpha, beta and gamma to rotate from the reference position
         center : (float, float, float)
-            The "center" of the janus sphere. This "center" is actually the center of the full
-            sphere, ignoring the coating. It is not actually the
-            center of mass of the whole structure.
+            The "center" of the janus sphere. This "center" is actually
+            the center of the full sphere, ignoring the coating. 
+            It is not actually the center of mass of the whole structure.
         """
         self.n = n
         self.r = r
@@ -66,14 +68,17 @@ class JanusSphere_Uniform(CenteredScatterer):
 class JanusSphere_Tapered(CenteredScatterer):
     def __init__(self, n = None, r = None, rotation = (0, 0), center = None):
         """
-        A two layer particle with the outer layer only spanning one hemisphere and tapering
-        off as it nears the edges of the particle. This is to mimic a particle that has had
-        a thin layer sputtered onto it, with directional sputtering. 
+        A two layer particle with the outer layer only spanning one 
+        hemisphere and tapering off as it nears the edges of the particle.
+        This is to mimic a particle that has had a thin layer sputtered 
+        onto it, with directional sputtering. 
         
-        A two layer particle with the outer layer only spanning one hemisphere. 
-        This particle has an outer layer that tapers near the edges of the particle.
-        This is to mimic a particle that has had a thin layer sputtered onto it, with directional sputtering.
-        A particle with no rotation has its cap pointing along +z, specify other orientations by euler angle rotations from that reference.
+        A two layer particle with the outer layer only spanning one 
+        hemisphere. This particle has an outer layer that tapers near the 
+        edges of the particle. This is to mimic a particle that has had a 
+        thin layer sputtered onto it, with directional sputtering. A 
+        particle with no rotation has its cap pointing along +z, specify 
+        other orientations by euler angle rotations from that reference.
 
         Parameters
         ----------
@@ -84,9 +89,9 @@ class JanusSphere_Tapered(CenteredScatterer):
         rotation : (float, float, float)
             Euler angles alpha, beta and gamma to rotate from the reference position
         center : (float, float, float)
-            The "center" of the janus sphere. This "center" is actually the center of the full
-            sphere, ignoring the coating. It is not actually the
-            center of mass of the whole structure.
+            The "center" of the janus sphere. This "center" is actually
+            the center of the full sphere, ignoring the coating.
+            It is not actually the center of mass of the whole structure.
         """
         self.n = n
         self.r = r

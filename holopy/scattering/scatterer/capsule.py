@@ -36,8 +36,8 @@ class Capsule(CenteredScatterer):
     """
         A cylinder with semi-spherical caps.
 
-        A particle with no rotation has its long axis pointing along +z, specify other orientations by euler
-        angle rotations from that reference.
+        A particle with no rotation has its long axis pointing along +z, 
+        specify other orientations by euler angle rotations from that reference.
 
     Parameters
     ----------
@@ -74,11 +74,21 @@ class Capsule(CenteredScatterer):
         def cylinder(point): #actually makes cylinder with round tops
             subdivisions = point.shape #this gives number of subdivisions in x, y, z, 3
             point = point.reshape(-1, point.shape[-1]) #reshape into a list of coordinates, NxNyNz x 3 array
-            flat_indicator_a = (norm(point,axis=1) < ((self.d/2)**2+(self.h/2)**2)**0.5) # sphere that circumscribes cylinder
-            tiled_normals = np.tile(normal,(subdivisions[0]*subdivisions[1]*subdivisions[2],1))
-            flat_indicator_b = norm(np.transpose(np.tile(np.dot(normal, np.transpose(point)),(3,1)))*tiled_normals/norm(normal)**2-point,axis=1) < self.d/2 # perpendicular distance to norm mustn't exceed r[0]
-            flat_indicator_c = norm(np.transpose(np.tile(-np.dot(-normal, np.transpose(point)),(3,1)))*tiled_normals/norm(normal)**2-point,axis=1) < self.d/2
-            flat_indicator = flat_indicator_a & (flat_indicator_b | flat_indicator_c)
-            return flat_indicator.reshape(subdivisions[0], subdivisions[1], subdivisions[2])
+            flat_indicator_a = (norm(point,axis=1) < ((self.d/2)**2 + 
+                                     (self.h/2)**2)**0.5) # sphere that circumscribes cylinder
+            tiled_normals = np.tile(normal,(subdivisions[0] * subdivisions[1] *
+                                            subdivisions[2], 1))
+            # perpendicular distance to norm mustn't exceed r[0]
+            flat_indicator_b = norm(np.transpose(
+                    np.tile(np.dot(normal, np.transpose(point)),(3,1))) 
+                    * tiled_normals/norm(normal)**2-point, axis=1) < self.d/2 
+            flat_indicator_c = norm(np.transpose(
+                    np.tile(-np.dot(-normal, np.transpose(point)),(3,1)))
+                    * tiled_normals/norm(normal)**2-point, axis=1) < self.d/2
+            flat_indicator = (flat_indicator_a &
+                              (flat_indicator_b | flat_indicator_c))
+            return flat_indicator.reshape(subdivisions[0], subdivisions[1],
+                                          subdivisions[2])
         r = (self.h + 2 * self.d)/2
-        return Indicators([cylinder, s0.contains, s1.contains], [[-r, r], [-r, r], [-r, r]])
+        return Indicators([cylinder, s0.contains, s1.contains],
+                          [[-r, r], [-r, r], [-r, r]])
