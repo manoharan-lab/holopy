@@ -59,10 +59,10 @@ class Tmatrix(ScatteringTheory):
     def __init__(self, delete=True):
         self.delete = delete
         path, _ = os.path.split(os.path.abspath(__file__))
-        self.tmatrixlocation = os.path.join(path, 'tmatrix_f', 'S')
+        self.tmatrix_executable = os.path.join(path, 'tmatrix_f', 'S')
         if os.name == 'nt':
-            self.tmatrixlocation += '.exe' 
-        if not os.path.isfile(self.tmatrixlocation):
+            self.tmatrix_executable += '.exe'
+        if not os.path.isfile(self.tmatrix_executable):
             raise DependencyMissing('Tmatrix')
 
         super().__init__()
@@ -71,16 +71,11 @@ class Tmatrix(ScatteringTheory):
         return isinstance(scatterer, Sphere) or isinstance(scatterer, Cylinder) or isinstance(scatterer, Spheroid)
 
     def _run_tmat(self, temp_dir):
-        if os.name == 'nt':
-            cmd = ['S.exe']
-        else:
-            cmd = ['./S']
-        subprocess.check_call(cmd, cwd=temp_dir)
+        subprocess.run(self.tmatrix_executable, cwd=temp_dir)
         return
 
     def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
         temp_dir = tempfile.mkdtemp()
-        shutil.copy(self.tmatrixlocation, temp_dir)
 
         angles = pos.T[:, 1:] * 180/np.pi
         outf = open(os.path.join(temp_dir, 'tmatrix_tmp.inp'), 'wb')

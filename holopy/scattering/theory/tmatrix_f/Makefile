@@ -8,5 +8,6 @@ endif
 $(TARGET): S.lp.f lpq.f
 	gfortran -o $(TARGET) S.lp.f lpq.f
 
+# requires msys2 on Windows
 clean:
-	rm -f $(TARGET) *.o
+	$(RM) $(TARGET) *.o
