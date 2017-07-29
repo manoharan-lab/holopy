@@ -76,8 +76,10 @@ except ImportError:
 
 if __name__ == "__main__":
 
-    #make Tmatrix fortran code
-    subprocess.check_call(make, cwd=tmat_dir)
+    if not hasattr(sys, 'real_prefix'):
+        #we are not in a virtual_env.
+        #compile Tmatrix fortran code
+        subprocess.check_call(make, cwd=tmat_dir)
 
     requires=[l for l in open("requirements.txt").readlines() if l[0] != '#']
     setup(configuration=configuration,
