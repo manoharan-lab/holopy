@@ -175,7 +175,7 @@ prior and using it in multiple places :
     s2 = Sphere(n=n_prior, r=prior.BoundedGaussian(.5, .05, 0, np.inf),
                 center=prior.make_center_priors(data_holo))
 
-    spheres = Spheres([s1, s2, s3])
+    spheres = Spheres([s1, s2])
 
 And then defining the model using :
 
