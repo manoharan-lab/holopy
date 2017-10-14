@@ -154,6 +154,36 @@ the center prior will be::
     Gaussian(mu=24.186546323529495, sd=0.08510000000000062)
 
 
+Tying Parameters
+----------------
+
+You may desire to use *tied priors*, in which several physical quantities that
+could be varied independently are constrained to have the same (but non-constant)
+value. A common example involves multi-particle holograms in which all of the
+particles are constrained to have the same refractive index, but the index is
+determined by the Bayesian inference method.  This may be done by defining a
+prior and using it in multiple places :
+
+..  testcode::
+
+    from holopy.scattering import Spheres
+
+    n_prior = prior.Gaussian(1.5, .1)
+
+    s1 = Sphere(n=n_prior, r=prior.BoundedGaussian(.5, .05, 0, np.inf),
+                center=prior.make_center_priors(data_holo))
+    s2 = Sphere(n=n_prior, r=prior.BoundedGaussian(.5, .05, 0, np.inf),
+                center=prior.make_center_priors(data_holo))
+
+    spheres = Spheres([s1, s2])
+
+And then defining the model using :
+
+..  testcode::
+
+    model = AlphaModel(spheres, noise_sd=noise_sd, alpha=1)
+
+
 Likelihood
 ----------
 
