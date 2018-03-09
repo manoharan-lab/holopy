@@ -107,7 +107,7 @@ class Gaussian(Prior):
         #need to be careful of unexpected behaviour with non-number types        
         if isinstance(value, Number):
             return Gaussian(self.mu+value, self.sd, self.name)
-        elif isinstance(value, Gaussian):
+        elif isinstance(value, Gaussian) and not isinstance(value, BoundedGaussian):
             new_sd = np.sqrt(self.sd**2 + value.sd**2)
             if self.name == value.name:
                 new_name = self.name
