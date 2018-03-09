@@ -111,11 +111,11 @@ c
       enddo
 
 
-      print*, 'single sphere max. order: ', nodrmax
+c      print*, 'single sphere max. order: ', nodrmax
       if(nodrmax.eq.nod) then
-         print*, 'Warning: single--sphere error tolerance may not 
-     1            be obtained.'
-         print*, 'Decrease qeps1 and/or increase nod.'
+c         print*, 'Warning: single--sphere error tolerance may not 
+c     1            be obtained.'
+c         print*, 'Decrease qeps1 and/or increase nod.'
       endif
 
       nblkmax=nodrmax*(nodrmax+2)
@@ -138,16 +138,16 @@ c
          nblkt(i)=nodrt(i)*(nodrt(i)+2)
       enddo
       if(nodrtmax.gt.notd) then
-         print*, 'Warning: notd dimension may be too small.'
-         print*, 'increase to ', nodrtmax
+c         print*, 'Warning: notd dimension may be too small.'
+c         print*, 'increase to ', nodrtmax
       endif
       nodrtmax=min(nodrtmax,notd)
-      print*,''
-      print*, 'Estimated cluster expansion order:', nodrtmax
+c      print*,''
+c      print*, 'Estimated cluster expansion order:', nodrtmax
       nblktmax=nodrtmax*(nodrtmax+2)
 c
       do i=1,npart
-         print*, 'assembling interaction matrix row: ', i
+c         print*, 'assembling interaction matrix row: ', i
          do j=i+1,npart
             ij=.5*(j-1)*(j-2)+j-i
             x=xp(i)-xp(j)
@@ -190,7 +190,7 @@ c
             enddo
          enddo
       enddo
-      print*, ''
+c      print*, ''
 
 15    do n=1,nblktmax
          do ip=1,2
@@ -253,7 +253,7 @@ c Iterative solution for both polarizations begins here
       max_err = 0.
 
       do k=1,2
-         print*, 'Solving for incident state ', k
+c         print*, 'Solving for incident state ', k
         
          do i=1,npart
             do n=1,nodr(i)
@@ -324,7 +324,7 @@ c max_err gets checked at the end for convergence
 
       enddo
 
-      print*, ' Cluster expansion order: ', nodrtmax
+c      print*, ' Cluster expansion order: ', nodrtmax
 
 c Check convergence: is the maximum error from iteration less than eps?
       status = .false.
@@ -492,10 +492,10 @@ c              enorm=enorm+anp(ip,n,i)*conjg(anp(ip,n,i))
          enddo
       enddo
       err=err/enorm
-      print*, '+iteration: ', iter
-      print*, 'error: ', err
+c      print*, '+iteration: ', iter
+c      print*, 'error: ', err
       if(err.lt. eps) then
-         print*, ''
+c         print*, ''
          return
       endif
       cbk=csk2/csk
@@ -510,7 +510,7 @@ c              enorm=enorm+anp(ip,n,i)*conjg(anp(ip,n,i))
       csk=csk2
       iter=iter+1
       if(iter.le.niter) goto 40
-      print*, ''
+c      print*, ''
       return
 
 200   do i=1,npart
@@ -566,10 +566,10 @@ c              enorm=enorm+anp(ip,n,i)*conjg(anp(ip,n,i))
       enddo
       err=err/enorm
       iter=iter+1
-      print*, '+iteration: ', iter
-      print*, 'error: ', err
+c      print*, '+iteration: ', iter
+c      print*, 'error: ', err
       if((err.gt.eps).and.(iter.lt.niter)) goto 310
-      print*, ''
+c      print*, ''
       return
       end
 c
