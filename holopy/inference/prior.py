@@ -121,9 +121,6 @@ class Gaussian(Prior):
     def __neg__(self):
         return Gaussian(-self.mu, self.sd, self.name)
 
-
-
-
 class BoundedGaussian(Gaussian):
     # Note: this is not normalized
     def __init__(self, mu, sd, lower_bound=-np.inf, upper_bound=np.inf, name=None):

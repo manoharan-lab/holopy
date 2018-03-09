@@ -25,7 +25,6 @@ import numpy as np
 from holopy.inference import prior
 from holopy.inference.result import UncertainValue
 from holopy.core.tests.common import assert_obj_close
-
 #GOLD:log(sqrt(0.5/pi))-1/2
 gold_sigma=-1.4189385332
 
