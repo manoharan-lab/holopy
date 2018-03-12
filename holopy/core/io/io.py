@@ -28,6 +28,7 @@ from warnings import warn
 from scipy.misc import fromimage
 from PIL import Image as pilimage
 import xarray as xr
+import numpy as np
 import importlib
 
 from . import serialize
@@ -272,7 +273,7 @@ def save_image(filename, im, scaling='auto', depth=8):
         filename += '.tif'
     
     metadat=False
-    if os.path.splitext(filename)[1] in tiflist:
+    if os.path.splitext(filename)[1] in tiflist and isinstance(im, xr.DataArray):
         if im.name is None:
             im.name=os.path.splitext(os.path.split(filename)[-1])[0]
         metadat = pack_attrs(im, do_spacing = True)
@@ -280,10 +281,20 @@ def save_image(filename, im, scaling='auto', depth=8):
         tiffinfo = ifd2()
         tiffinfo[270] = yaml.dump(metadat) #This edits the 'imagedescription' field of the tiff metadata
 
-    if len(im.dims)>2:
-        im = im.copy().isel(z=0)
+    if len(im.shape)>2:
+        try:
+            im = im.copy().isel(z=0)
+        except:
+            raise BadImage("Cannot interpret multidimensional image")
     else:
         im = im.copy()
+
+    if np.iscomplex(im).any():
+        raise BadImage("Cannot interpret image with complex values")
+
+    if isinstance(im, xr.DataArray):
+        im = im.values
+
     if scaling is not None:
         if scaling is 'auto':
             min = im.min()
@@ -310,10 +321,11 @@ def save_image(filename, im, scaling='auto', depth=8):
         if im.max() <= 1:
             im = im * ((2**depth)-1) + .499999
             im = im.astype(typestr)
+
     if metadat:
-        pilimage.fromarray(im.values).save(filename, tiffinfo=tiffinfo)
+        pilimage.fromarray(im).save(filename, tiffinfo=tiffinfo)
     else:
-        pilimage.fromarray(im.values).save(filename)
+        pilimage.fromarray(im).save(filename)
 
 def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, noise_sd=None, channel=None, image_glob='*.tif'):
     """

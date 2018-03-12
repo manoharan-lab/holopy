@@ -52,3 +52,30 @@ def test_updated():
     u=prior.updated(p,d)
     assert_equal(u.guess,1)
     assert_obj_close(u.lnprob(0),gold_sigma)
+
+def test_prior_math():
+    u = prior.Uniform(1,2)
+    g = prior.Gaussian(1,2)
+    b = prior.BoundedGaussian(1,2,0,3)
+
+    assert_equal(u+1, prior.Uniform(2,3))
+    assert_equal(1+u, prior.Uniform(2,3))
+    assert_equal(-u, prior.Uniform(-2,-1))
+    assert_equal(1-u, prior.Uniform(-1,0))
+    assert_equal(u-1, prior.Uniform(0,1))
+
+    assert_equal(g+1., prior.Gaussian(2,2.))
+    assert_equal(-g, prior.Gaussian(-1,2))
+    assert_equal(b+1., prior.BoundedGaussian(2.,2,1.,4.))
+    assert_equal(-b, prior.BoundedGaussian(-1,2,-3,0))
+
+    assert_equal(g+g, prior.Gaussian(2,np.sqrt(8)))
+    with assert_raises(TypeError):
+        u+u
+    with assert_raises(TypeError):
+        g+b
+    with assert_raises(TypeError):
+        g+[0,1]
+    with assert_raises(TypeError):
+        g+np.array([0,1])
+
