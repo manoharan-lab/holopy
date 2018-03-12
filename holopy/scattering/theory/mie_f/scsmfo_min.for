@@ -111,11 +111,11 @@ c
       enddo
 
 
-c      print*, 'single sphere max. order: ', nodrmax
+      print*, 'single sphere max. order: ', nodrmax
       if(nodrmax.eq.nod) then
-c         print*, 'Warning: single--sphere error tolerance may not 
-c     1            be obtained.'
-c         print*, 'Decrease qeps1 and/or increase nod.'
+         print*, 'Warning: single--sphere error tolerance may not 
+     1            be obtained.'
+         print*, 'Decrease qeps1 and/or increase nod.'
       endif
 
       nblkmax=nodrmax*(nodrmax+2)
@@ -138,16 +138,16 @@ c         print*, 'Decrease qeps1 and/or increase nod.'
          nblkt(i)=nodrt(i)*(nodrt(i)+2)
       enddo
       if(nodrtmax.gt.notd) then
-c         print*, 'Warning: notd dimension may be too small.'
-c         print*, 'increase to ', nodrtmax
+         print*, 'Warning: notd dimension may be too small.'
+         print*, 'increase to ', nodrtmax
       endif
       nodrtmax=min(nodrtmax,notd)
-c      print*,''
-c      print*, 'Estimated cluster expansion order:', nodrtmax
+      print*,''
+      print*, 'Estimated cluster expansion order:', nodrtmax
       nblktmax=nodrtmax*(nodrtmax+2)
 c
       do i=1,npart
-c         print*, 'assembling interaction matrix row: ', i
+         print*, 'assembling interaction matrix row: ', i
          do j=i+1,npart
             ij=.5*(j-1)*(j-2)+j-i
             x=xp(i)-xp(j)
@@ -190,7 +190,7 @@ c         print*, 'assembling interaction matrix row: ', i
             enddo
          enddo
       enddo
-c      print*, ''
+      print*, ''
 
 15    do n=1,nblktmax
          do ip=1,2
@@ -253,7 +253,7 @@ c Iterative solution for both polarizations begins here
       max_err = 0.
 
       do k=1,2
-c         print*, 'Solving for incident state ', k
+         print*, 'Solving for incident state ', k
         
          do i=1,npart
             do n=1,nodr(i)
@@ -324,7 +324,7 @@ c max_err gets checked at the end for convergence
 
       enddo
 
-c      print*, ' Cluster expansion order: ', nodrtmax
+      print*, ' Cluster expansion order: ', nodrtmax
 
 c Check convergence: is the maximum error from iteration less than eps?
       status = .false.
@@ -492,10 +492,10 @@ c              enorm=enorm+anp(ip,n,i)*conjg(anp(ip,n,i))
          enddo
       enddo
       err=err/enorm
-c      print*, '+iteration: ', iter
-c      print*, 'error: ', err
+      print*, '+iteration: ', iter
+      print*, 'error: ', err
       if(err.lt. eps) then
-c         print*, ''
+         print*, ''
          return
       endif
       cbk=csk2/csk
@@ -510,7 +510,7 @@ c         print*, ''
       csk=csk2
       iter=iter+1
       if(iter.le.niter) goto 40
-c      print*, ''
+      print*, ''
       return
 
 200   do i=1,npart
@@ -566,10 +566,10 @@ c      print*, ''
       enddo
       err=err/enorm
       iter=iter+1
-c      print*, '+iteration: ', iter
-c      print*, 'error: ', err
+      print*, '+iteration: ', iter
+      print*, 'error: ', err
       if((err.gt.eps).and.(iter.lt.niter)) goto 310
-c      print*, ''
+      print*, ''
       return
       end
 c
