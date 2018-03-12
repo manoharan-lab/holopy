@@ -31,7 +31,7 @@ from .math import to_spherical, to_cartesian
 
 vector = 'vector'
 
-def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, name=None, z=0):
+def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, noise_sd=None, name=None, z=0):
     """
     Create a set of detector points along with other experimental metadata.
 
@@ -56,7 +56,7 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_po
     if arr.ndim==2:
         arr=np.array([arr])
     out = xr.DataArray(arr, dims=['z','x', 'y'], coords=make_coords(arr.shape, spacing, z), name=name)
-    return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals)
+    return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)
 
 def detector_grid(shape, spacing, normals = None, name = None):
     """
@@ -158,7 +158,7 @@ def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta =
     attrs = {'normals': default_norms(coords, normals)}
     return xr.DataArray(np.zeros(len(coords[keys[0]][1])), dims = ['point'], coords = coords, attrs = attrs, name = name)
 
-def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None):
+def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, noise_sd=None):
     """Returns a copy of an image with updated metadata in its 'attrs' field.
 
     Parameters
@@ -173,6 +173,8 @@ def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization
         Updated polarization of illumination in the image.
     normals : list-like
         Updated detector orientation of the image.
+    noise_sd : float
+        standard deviation of Gaussian noise in the image.
    
     Returns
     -------
@@ -180,7 +182,7 @@ def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization
         copy of input image with updated metadata. The 'normals' field is not allowed to be empty.
     """
 
-    attrlist = {'medium_index': medium_index, 'illum_wavelen': illum_wavelen, 'illum_polarization': to_vector(illum_polarization), 'normals': to_vector(normals)}
+    attrlist = {'medium_index': medium_index, 'illum_wavelen': illum_wavelen, 'illum_polarization': to_vector(illum_polarization), 'normals': to_vector(normals), 'noise_sd': noise_sd}
     b = a.copy()
     b.attrs = updated(b.attrs, attrlist)
 
@@ -194,12 +196,13 @@ def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization
     return b
 
 def copy_metadata(old, new, do_coords=True):
+    #Note that this function overwrites whatever argument is passed as 'new'
     def find_and_rename(oldkey, oldval):
         for newkey, newval in new.coords.items():
             if np.array_equal(oldval.values, newval.values):
                 return new.rename({newkey: oldkey})
             raise ValueError("Coordinate {} does not appear to have a coresponding coordinate in {}".format(oldkey, new))
-
+    
     if hasattr(old, 'attrs') and hasattr(old, 'name') and hasattr(old, 'coords'):
         if not hasattr(new,'coords'):
             #new is a numpy array, not xarray
@@ -212,7 +215,7 @@ def copy_metadata(old, new, do_coords=True):
         if do_coords:
             for key, val in old.coords.items():
                 if key not in new.coords:
-                    new = find_and_rename(key, val)
+                    out = find_and_rename(key, val)
     return new
 
 def to_vector(c):

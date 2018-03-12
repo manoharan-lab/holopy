@@ -164,7 +164,7 @@ def load(inf, lazy=False):
     else:
         raise NoMetadata
 
-def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, channel=None, name=None):
+def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, noise_sd=None, channel=None, name=None):
     """
     Load data or results
 
@@ -201,7 +201,7 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
 
     if name is None:
         name = os.path.splitext(os.path.split(inf)[-1])[0]
-    return data_grid(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, name)
+    return data_grid(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, noise_sd, name)
 
 def save(outf, obj):
     """
@@ -315,7 +315,7 @@ def save_image(filename, im, scaling='auto', depth=8):
     else:
         pilimage.fromarray(im.values).save(filename)
 
-def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, channel=None, image_glob='*.tif'):
+def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, noise_sd=None, channel=None, image_glob='*.tif'):
     """
     Average a set of images (usually as a background)
 
@@ -343,6 +343,7 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
     -------
     averaged_image : xarray.DataArray
         Image which is an average of images
+        noise_sd attribute contains average pixel stdev normalized by total image intensity
     """
 
     if isinstance(filepath, str):
@@ -358,11 +359,11 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
     if is_none(spacing):
         spacing = get_spacing(refimg)
     
-    accumulator = load_image(filepath[0],spacing, channel=channel)
-    for image in filepath[1:]:
-        accumulator += load_image(image, spacing,channel=channel)
-    accumulator /= len(filepath)
+    accumulator = xr.concat([load_image(image, spacing,channel=channel).assign_attrs(normals=None) for image in filepath],'images')
+    if noise_sd is None:
+        noise_sd = (accumulator.std('images').mean()/accumulator.mean()).item()
+    accumulator = accumulator.mean('images')
 
     if not is_none(refimg):
         accumulator = update_metadata(accumulator, refimg.medium_index, refimg.illum_wavelen, refimg.illum_polarization, refimg.normals)    
-    return update_metadata(accumulator, medium_index, illum_wavelen, illum_polarization, normals)
+    return update_metadata(accumulator, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)
