@@ -202,7 +202,7 @@ def copy_metadata(old, new, do_coords=True):
             if np.array_equal(oldval.values, newval.values):
                 return new.rename({newkey: oldkey})
             raise ValueError("Coordinate {} does not appear to have a coresponding coordinate in {}".format(oldkey, new))
-    
+
     if hasattr(old, 'attrs') and hasattr(old, 'name') and hasattr(old, 'coords'):
         if not hasattr(new,'coords'):
             #new is a numpy array, not xarray
@@ -215,7 +215,7 @@ def copy_metadata(old, new, do_coords=True):
         if do_coords:
             for key, val in old.coords.items():
                 if key not in new.coords:
-                    out = find_and_rename(key, val)
+                    new = find_and_rename(key, val)
     return new
 
 def to_vector(c):
