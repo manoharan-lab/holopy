@@ -195,13 +195,15 @@ def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization
 
     return b
 
-def copy_metadata(old, new, do_coords=True):
-    #Note that this function overwrites whatever argument is passed as 'new'
+def copy_metadata(old, data, do_coords=True):
+
     def find_and_rename(oldkey, oldval):
         for newkey, newval in new.coords.items():
             if np.array_equal(oldval.values, newval.values):
                 return new.rename({newkey: oldkey})
             raise ValueError("Coordinate {} does not appear to have a coresponding coordinate in {}".format(oldkey, new))
+    
+    new=data.copy()
 
     if hasattr(old, 'attrs') and hasattr(old, 'name') and hasattr(old, 'coords'):
         if not hasattr(new,'coords'):
