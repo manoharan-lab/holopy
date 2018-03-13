@@ -25,15 +25,24 @@ from holopy.fitting.errors import ParameterSpecificationError
 
 import numpy as np
 from numpy import random
-
+from numbers import Number
 
 
 class Prior(Parameter):
-    pass
+    def __radd__(self, value):
+        return self+value
 
+    def __sub__(self, value):
+        return self + (-value)
+
+    def __rsub__(self, value):
+        return -self + value
 
 class Uniform(Prior):
     def __init__(self, lower_bound, upper_bound, name=None):
+        if lower_bound > upper_bound:
+            raise ParameterSpecificationError("Lower bound {} is greater than upper bound {}".format(lower_bound, upper_bound))
+
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         self.name = name
@@ -57,6 +66,16 @@ class Uniform(Prior):
 
     def sample(self, size=None):
         return random.uniform(self.lower_bound, self.upper_bound, size)
+
+    def __add__(self, value):
+        #need to be careful of unexpected behaviour with non-number types        
+        if isinstance(value, Number):
+            return Uniform(self.lower_bound+value, self.upper_bound+value, self.name)
+        else:
+            raise TypeError("Cannot add prior to objects of type {}".format(type(value)))
+
+    def __neg__(self):
+        return Uniform(-self.upper_bound, -self.lower_bound)            
 
 
 class Gaussian(Prior):
@@ -84,15 +103,35 @@ class Gaussian(Prior):
     def sample(self, size=None):
         return random.normal(self.mu, self.sd, size=size)
 
+    def __add__(self, value):
+        #need to be careful of unexpected behaviour with non-number types        
+        if isinstance(value, Number):
+            return Gaussian(self.mu+value, self.sd, self.name)
+        elif isinstance(value, Gaussian) and not isinstance(value, BoundedGaussian):
+            new_sd = np.sqrt(self.sd**2 + value.sd**2)
+            if self.name == value.name:
+                new_name = self.name
+            else:
+                new_name = "GaussianSum"
+            return Gaussian(self.mu + value.mu, new_sd, new_name)
+        else:
+            raise TypeError("Cannot add prior to objects of type {}".format(type(value)))
+
+
+    def __neg__(self):
+        return Gaussian(-self.mu, self.sd, self.name)
 
 class BoundedGaussian(Gaussian):
     # Note: this is not normalized
     def __init__(self, mu, sd, lower_bound=-np.inf, upper_bound=np.inf, name=None):
+
+        if lower_bound > upper_bound:
+            raise ParameterSpecificationError("Lower bound {} is greater than upper bound {}".format(lower_bound, upper_bound))
         if mu < lower_bound or mu > upper_bound:
-            raise OutOfBoundsError(mu, lower_bound, upper_bound)
+            raise ParameterSpecificationError("Gaussian mean {} is not between bounds {} and {}.".format(mu, lower_bound, upper_bound))
+
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
-
         super(BoundedGaussian, self).__init__(mu, sd, name)
 
     def lnprob(self, p):
@@ -110,6 +149,16 @@ class BoundedGaussian(Gaussian):
             val[out] = super(BoundedGaussian, self).sample(len(out[0]))
 
         return val
+
+    def __add__(self, value):
+        #need to be careful of unexpected behaviour with non-number types        
+        if isinstance(value, Number):
+            return BoundedGaussian(self.mu+value, self.sd, self.lower_bound+value, self.upper_bound+value, self.name)
+        else:
+            raise TypeError("Cannot add prior to objects of type {}".format(type(value)))
+
+    def __neg__(self):
+        return BoundedGaussian(-self.mu, self.sd, -self.upper_bound, -self.lower_bound, self.name)
 
 
 def updated(prior, v, extra_uncertainty=0):

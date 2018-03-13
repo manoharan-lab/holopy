@@ -89,7 +89,7 @@ class NoiseModel(BaseModel):
 
 
 class AlphaModel(NoiseModel):
-    def __init__(self, scatterer, noise_sd, alpha, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
+    def __init__(self, scatterer, noise_sd, alpha=1, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
         super().__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory, noise_sd=noise_sd)
         self._use_parameter(alpha, 'alpha')
 

@@ -28,6 +28,7 @@ from warnings import warn
 from scipy.misc import fromimage
 from PIL import Image as pilimage
 import xarray as xr
+import numpy as np
 import importlib
 
 from . import serialize
@@ -164,7 +165,7 @@ def load(inf, lazy=False):
     else:
         raise NoMetadata
 
-def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, channel=None, name=None):
+def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, noise_sd=None, channel=None, name=None):
     """
     Load data or results
 
@@ -201,7 +202,7 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
 
     if name is None:
         name = os.path.splitext(os.path.split(inf)[-1])[0]
-    return data_grid(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, name)
+    return data_grid(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, noise_sd, name)
 
 def save(outf, obj):
     """
@@ -272,7 +273,7 @@ def save_image(filename, im, scaling='auto', depth=8):
         filename += '.tif'
     
     metadat=False
-    if os.path.splitext(filename)[1] in tiflist:
+    if os.path.splitext(filename)[1] in tiflist and isinstance(im, xr.DataArray):
         if im.name is None:
             im.name=os.path.splitext(os.path.split(filename)[-1])[0]
         metadat = pack_attrs(im, do_spacing = True)
@@ -280,10 +281,20 @@ def save_image(filename, im, scaling='auto', depth=8):
         tiffinfo = ifd2()
         tiffinfo[270] = yaml.dump(metadat) #This edits the 'imagedescription' field of the tiff metadata
 
-    if len(im.dims)>2:
-        im = im.copy().isel(z=0)
+    if len(im.shape)>2:
+        try:
+            im = im.copy().isel(z=0)
+        except:
+            raise BadImage("Cannot interpret multidimensional image")
     else:
         im = im.copy()
+
+    if np.iscomplex(im).any():
+        raise BadImage("Cannot interpret image with complex values")
+
+    if isinstance(im, xr.DataArray):
+        im = im.values
+
     if scaling is not None:
         if scaling is 'auto':
             min = im.min()
@@ -310,12 +321,13 @@ def save_image(filename, im, scaling='auto', depth=8):
         if im.max() <= 1:
             im = im * ((2**depth)-1) + .499999
             im = im.astype(typestr)
-    if metadat:
-        pilimage.fromarray(im.values).save(filename, tiffinfo=tiffinfo)
-    else:
-        pilimage.fromarray(im.values).save(filename)
 
-def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, channel=None, image_glob='*.tif'):
+    if metadat:
+        pilimage.fromarray(im).save(filename, tiffinfo=tiffinfo)
+    else:
+        pilimage.fromarray(im).save(filename)
+
+def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, noise_sd=None, channel=None, image_glob='*.tif'):
     """
     Average a set of images (usually as a background)
 
@@ -343,6 +355,7 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
     -------
     averaged_image : xarray.DataArray
         Image which is an average of images
+        noise_sd attribute contains average pixel stdev normalized by total image intensity
     """
 
     if isinstance(filepath, str):
@@ -358,11 +371,11 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
     if is_none(spacing):
         spacing = get_spacing(refimg)
     
-    accumulator = load_image(filepath[0],spacing, channel=channel)
-    for image in filepath[1:]:
-        accumulator += load_image(image, spacing,channel=channel)
-    accumulator /= len(filepath)
+    accumulator = xr.concat([load_image(image, spacing,channel=channel).assign_attrs(normals=None) for image in filepath],'images')
+    if noise_sd is None:
+        noise_sd = (accumulator.std('images').mean()/accumulator.mean()).item()
+    accumulator = accumulator.mean('images')
 
     if not is_none(refimg):
         accumulator = update_metadata(accumulator, refimg.medium_index, refimg.illum_wavelen, refimg.illum_polarization, refimg.normals)    
-    return update_metadata(accumulator, medium_index, illum_wavelen, illum_polarization, normals)
+    return update_metadata(accumulator, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)
