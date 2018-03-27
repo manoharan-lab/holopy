@@ -80,7 +80,7 @@ class NoiseModel(BaseModel):
         forward = self._forward(pars, data)
         N = data.size
         return (-N*np.log(noise_sd*np.sqrt(2*np.pi)) -
-                ((forward-data)**2).sum()/(2*noise_sd**2))
+                ((forward-data)**2).values.sum()/(2*noise_sd**2))
 
     def lnlike(self, par_vals, data):
         return self._lnlike(self._pack(par_vals), data)
