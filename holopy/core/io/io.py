@@ -301,6 +301,8 @@ def save_image(filename, im, scaling='auto', depth=8):
             max = im.max()
         elif len(scaling) == 2:
             min, max = scaling
+            im = np.minimum(im, max)
+            im = np.maximum(im, min)
         else:
             raise Error("Invalid image scaling")
         if min is not None:
