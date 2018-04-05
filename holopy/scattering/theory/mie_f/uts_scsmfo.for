@@ -30,7 +30,8 @@ c nmax: maximum order n (int)
 c ndim: max value of m? (int)
 c Output:
 c dc: D_mn^k(beta)
-      include 'scfodim.for'
+      parameter(npd=20,nod=32,notd=70)
+c     changed from include 'scfodim.for'
       parameter(nbtd=notd*(notd+2),notd2=notd+notd,nbc=2*notd2+4)
       implicit real*8(a-h,o-z)
 c size declaration changed by me so i don't pass unnecessarily large array
@@ -121,7 +122,8 @@ c phi (detector spherical coordinate angles)
 c kr (dimensionless wavevector*distance to detector point)
 c Outputs:
 c sa (2x2 complex array)
-      include 'scfodim.for'
+      parameter(npd=20,nod=32,notd=70)
+c     changed from include 'scfodim.for'
       implicit real*8(a-h,o-z)
 c
       parameter(nbd=nod*(nod+2),nbd2=nbd+nbd,
@@ -202,7 +204,8 @@ c phi (detector spherical coordinate angles)
 c kr (dimensionless wavevector*distance to detector point)
 c Outputs:
 c as_rad (complex array, len(2))
-      include 'scfodim.for'
+      parameter(npd=20,nod=32,notd=70)
+c     changed from include 'scfodim.for'
       implicit real*8(a-h,o-z)
 c
       parameter(nbd=nod*(nod+2),nbd2=nbd+nbd,
@@ -281,7 +284,8 @@ c theta
 c phi (detector spherical coordinates) 
 c Outputs:
 c sa (2x2 complex array)
-      include 'scfodim.for'
+      parameter(npd=20,nod=32,notd=70)
+c     changed from include 'scfodim.for'
       implicit real*8(a-h,o-z)
 c
       parameter(nbd=nod*(nod+2),nbd2=nbd+nbd,
