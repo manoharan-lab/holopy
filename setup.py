@@ -33,8 +33,9 @@ import setuptools
 import subprocess
 import os
 import sys
-from os.path import join
+from os.path import join, dirname, abspath
 from numpy.distutils.core import setup, Extension
+from warnings import warn
 
 #setup to make Tmatrix fortran code
 tmat_dir = join('holopy','scattering','theory','tmatrix_f')
@@ -80,7 +81,11 @@ if __name__ == "__main__":
     if not hasattr(sys, 'real_prefix'):
         #we are not in a virtual_env.
         #compile Tmatrix fortran code
-        subprocess.check_call(make, cwd=tmat_dir)
+        try:
+            subprocess.check_call(make, cwd=tmat_dir)
+        except:
+            warn("Could not compile Tmatrix code. You should manually run the makefile in"+dirname(abspath(__file__))+"holopy/scattering/theory/tmatrix_f/")
+
 
     requires=[l for l in open("requirements.txt").readlines() if l[0] != '#']
     setup(configuration=configuration,

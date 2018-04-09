@@ -49,7 +49,8 @@ c the output ndarray in Python, as follows:
 c        amn0 = amn0[:, 0:(nodrtmax**2 + 2 * nodrtmax), :]
 c ******************************************************************
       implicit real*8(a-h,o-z)
-      include 'scfodim.for'
+      parameter(npd=20,nod=32,notd=70)
+c     changed from include 'scfodim.for'
       parameter(nbd=nod*(nod+2),nbc=4*notd+4,
      1          nbtd=notd*(notd+2),nrd=.5*(npd-1)*(npd-2)+npd-1)
       parameter (nrotd=nod*(2*nod*nod+9*nod+13)/6,
@@ -341,7 +342,8 @@ c
       subroutine itersoln(npart,nodr,nblk,eps,niter,meth,itest,ek,drot,
      1                    amnl,an1,pnp,anp,iter,err)
       implicit real*8(a-h,o-z)
-      include 'scfodim.for'
+      parameter(npd=20,nod=32,notd=70)
+c     changed from include 'scfodim.for'
       parameter(nbd=nod*(nod+2),
      1          nbtd=notd*(notd+2),nrd=.5*(npd-1)*(npd-2)+npd-1)
       parameter (nrotd=nod*(2*nod*nod+9*nod+13)/6,
@@ -586,7 +588,8 @@ c
 
       subroutine vctran(anpt,idir,nodrj,nodri,ekt,drott,amnlt,ndd,nda)
       implicit real*8(a-h,o-z)
-      include 'scfodim.for'
+      parameter(npd=20,nod=32,notd=70)
+c     changed from include 'scfodim.for'
       parameter(nbtd=notd*(notd+2),nbd=nod*(nod+2))
       parameter (nrotd=nod*(2*nod*nod+9*nod+13)/6,
      1           ntrad=nod*(nod*nod+6*nod+5)/6)
@@ -815,7 +818,8 @@ c  note that P_n^m = (-1)^m ((n-m)!/(n+m)!) dc(0,n*(n+1)-m)
 c
 
       subroutine rotcoef(cbe,kmax,nmax,dc,ndim)
-      include 'scfodim.for'
+      parameter(npd=20,nod=32,notd=70)
+c     changed from include 'scfodim.for'
       parameter(nbtd=notd*(notd+2),notd2=notd+notd,nbc=2*notd2+4)
       implicit real*8(a-h,o-z)
       real*8 dc(-ndim:ndim,0:*)
@@ -882,7 +886,8 @@ c  idir=2:
 c        a_{mnp} = e^{-i m alpha} sum_k (-1)^(m+k) d^k_{mn}(beta) a_{knp}
 c
       subroutine rotvec(alpha,cbe,nmax,mmax,amn,idir)
-      include'scfodim.for'
+      parameter(npd=20,nod=32,notd=70)
+c     changed from include'scfodim.for'
       parameter(nbtd=notd*(notd+2),nbc=4*notd+4)
       implicit real*8(a-h,o-z)
       real*8 dc(-notd:notd,-notd:notd)
@@ -998,7 +1003,8 @@ c  Particles, NASA/GISS Sept. 1998.
 c
       subroutine trancoef(itype,r,nmax,lmax,ac,nd)
       implicit real*8 (a-h,o-z)
-      include 'scfodim.for'
+      parameter(npd=20,nod=32,notd=70)
+c     changed from include 'scfodim.for'
       parameter(nbtd=notd*(notd+2),notd2=notd+notd+1,
      1         nfd=notd2*(notd2+2),nbc=4*notd+4)
       real*8 vc1(0:notd2+1),vc2(0:notd2+1),psi(0:notd2)
@@ -1072,7 +1078,8 @@ c
 
       subroutine tranvec(r,lmax,nmax,amn,eps,err)
       implicit real*8 (a-h,o-z)
-      include 'scfodim.for'
+      parameter(npd=20,nod=32,notd=70)
+c     changed from include 'scfodim.for'
       parameter(nbtd=notd*(notd+2),notd2=notd+notd+1,
      1         nfd=notd2*(notd2+2),nbc=4*notd+4)
       real*8 vc1(0:notd2+1),vc2(0:notd2+1),psi(0:notd2)
@@ -1151,7 +1158,8 @@ c vector coupling coefficients vc(iw) = C(m,n|k,l|m+k,iw)
 c uses an upwards recurrence
 c
       subroutine vcfunc(m,n,k,l,wmax,vcn)
-      include 'scfodim.for'
+      parameter(npd=20,nod=32,notd=70)
+c     changed from include 'scfodim.for'
       parameter(nbtd=notd*(notd+2),nbc=4*notd+4)
       implicit real*8(a-h,o-z)
       real*8 vcn(0:*)
@@ -1330,7 +1338,8 @@ c single-sphere lorenz/mie coefficients
 c
       subroutine mie1(x,sn,sk,nstop,qeps,qext,qsca,an)
       implicit real*8 (a-h,o-z)
-      include 'scfodim.for'
+      parameter(npd=20,nod=32,notd=70)
+c     changed from include 'scfodim.for'
       parameter(nomax2=2*nod)
       complex*16 y,ri,xip,pcp,da,db,pc(0:nomax2),xi(0:nomax2),
      1 an(2,nod),na,nb
@@ -1415,7 +1424,8 @@ c  gmn(1)/3 is the asymmetry parameter.                                         
 c                                                                               c
 
       subroutine scatexp(amn0,nodrt,nodrg,gmn)
-      include 'scfodim.for'
+      parameter(npd=20,nod=32,notd=70)
+c     changed from include 'scfodim.for'
       parameter(nbd=notd*(notd+2),notd2=2*notd,ngd=(notd2*(notd2+3))/2,
      1          nbc=2*notd2+4)
       implicit real*8(a-h,o-z)
@@ -1500,7 +1510,8 @@ c ski (array, imaginary part of relative index)
 c xi (array, particle size parameters)
 c qeps1 (float, single sphere tolerance)
 c amn0 (complex array, output of amncalc)
-c      include 'scfodim.for'
+c      parameter(npd=20,nod=32,notd=70)
+c      changed from include 'scfodim.for'
 c      parameter(nbd=nod*(nod+2),nbc=4*notd+4,
 c     1          nbtd=notd*(notd+2),nrd=.5*(npd-1)*(npd-2)+npd-1)
 c      integer i
