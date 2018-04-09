@@ -5,8 +5,8 @@ else
 	TARGET = S
 endif
 
-$(TARGET): S.lp.f lpd.f
-	gfortran -o $(TARGET) S.lp.f lpd.f
+$(TARGET): S.lpq.f lpq.f
+	gfortran -o $(TARGET) S.lpq.f lpq.f
 
 # requires msys2 on Windows
 clean:
