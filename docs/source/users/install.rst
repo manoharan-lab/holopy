@@ -8,10 +8,8 @@ Installation
 
 As of version 3.0, HoloPy supports only Python 3. We recommend using the
 `anaconda <https://www.continuum.io/anaconda-overview>`_ distribution of Python,
-which makes it easy to install the required dependencies. In the future
-(hopefully by the time you read this documentation), HoloPy will be available on
-`conda-forge <https://conda-forge.github.io/>`_, so that you can install it
-with::
+which makes it easy to install the required dependencies. HoloPy is available on
+`conda-forge <https://conda-forge.github.io/>`_, so you can install it with::
 
   conda install -c conda-forge holopy
 
@@ -21,16 +19,6 @@ IPython console or Jupyter Notebook and run::
   import holopy
 
 If this line works, skip to :ref:`usage` before diving into the tutorials.
-
-Windows Support
----------------
-To find a HoloPy conda package for Windows, use ::
-
-    anaconda search holopy
-
-You may need to manually install any missing dependencies (eg. emcee) from conda-forge like ::
-
-    conda install -c conda-forge emcee
 
 You can also build HoloPy from source by following the instructions for :ref:`dev_install`.
 
