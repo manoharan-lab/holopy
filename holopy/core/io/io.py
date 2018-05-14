@@ -32,7 +32,7 @@ import numpy as np
 import importlib
 
 from . import serialize
-from ..metadata import data_grid, get_spacing, update_metadata
+from ..metadata import data_grid, get_spacing, update_metadata, to_vector
 from ..utils import is_none, ensure_array, dict_without
 from ..errors import NoMetadata, BadImage
 
@@ -175,8 +175,8 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
         File to load.  If the file is a yaml file, all other arguments are
         ignored.  If inf is a list of image files or filenames they are all
         loaded as a a timeseries hologram
-    channel : int (optional)
-        number of channel to load for a color image (in general 0=red,
+    channel : int or tuple of ints (optional)
+        number(s) of channel to load for a color image (in general 0=red,
         1=green, 2=blue)
 
     Returns
@@ -184,25 +184,40 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
     obj : The object loaded, :class:`holopy.core.marray.Image`, or as loaded from yaml
 
     """
+    if name is None:
+        name = os.path.splitext(os.path.split(inf)[-1])[0]
+
     with pilimage.open(inf) as pi:
         arr=fromimage(pi).astype('d')
 
-    # pick out only one channel of a color image
-    if channel is None:
-        if len(arr.shape) > 2:
-            raise BadImage('Not a greyscale image. You must specify a channel to use')
-    elif len(arr.shape) > 2:
-        if channel >= arr.shape[2]:
-            raise LoadError(filename,
-                "The image doesn't have a channel number {0}".format(channel))
-        else:
-            arr = arr[:, :, channel]
-    else:
-        warn("Warning: not a color image (channel number ignored)")
+    extra_dims = None
 
-    if name is None:
-        name = os.path.splitext(os.path.split(inf)[-1])[0]
-    return data_grid(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, noise_sd, name)
+    if channel is None:
+        if arr.ndim > 2:
+            raise BadImage('Not a greyscale image. You must specify which channel(s) to use')
+    elif arr.ndim == 2:
+            warn("Warning: not a color image (channel number ignored)")
+    else:
+        # color image with specified channel(s)
+        channel = ensure_array(channel)
+        if channel.max() >= arr.shape[2]:
+            raise LoadError(filename,
+                "The image doesn't have a channel number {0}".format(channel.max()))
+        else:
+            arr = arr[:, :, channel].squeeze()
+
+            if len(channel) > 1:
+                # multiple channels. increase output dimensionality
+                if channel.max() <=2:
+                    channel = [['red','green','blue'][c] for c in channel]
+                extra_dims = {'illumination': channel}
+                if not is_none(illum_wavelen) and len(ensure_array(illum_wavelen)) == len(channel):
+                    illum_wavelen = xr.DataArray(illum_wavelen, dims='illumination', coords=extra_dims)
+                if np.array(illum_polarization).ndim == 2:
+                    pol_index = xr.DataArray(channel, dims='illumination', name='illumination')
+                    illum_polarization=xr.concat([to_vector(pol) for pol in illum_polarization], pol_index)
+
+    return data_grid(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, noise_sd, name, extra_dims)
 
 def save(outf, obj):
     """
@@ -219,12 +234,6 @@ def save(outf, obj):
     obj : :class:`holopy.core.holopy_object.HoloPyObject`
         The object to save
 
-    Notes
-    -----
-    Marray objects are actually saved as a custom yaml file consisting of a yaml
-    header and a numpy .npy binary array.  This is done because yaml's saving of
-    binary array is very slow for large arrays.  HoloPy can read these 'yaml'
-    files, but any other yaml implementation will get confused.
     """
     if isinstance(outf, str):
         filename, ext = os.path.splitext(outf)
@@ -281,7 +290,7 @@ def save_image(filename, im, scaling='auto', depth=8):
         tiffinfo = ifd2()
         tiffinfo[270] = yaml.dump(metadat) #This edits the 'imagedescription' field of the tiff metadata
 
-    if len(im.shape)>2:
+    if im.ndim > 2:
         try:
             im = im.copy().isel(z=0)
         except:

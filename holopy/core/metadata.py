@@ -31,7 +31,7 @@ from .math import to_spherical, to_cartesian
 
 vector = 'vector'
 
-def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, noise_sd=None, name=None, z=0):
+def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, noise_sd=None, name=None, extra_dims=None, z=0):
     """
     Create a set of detector points along with other experimental metadata.
 
@@ -44,7 +44,7 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_po
     Use of higher-level detector_grid() and detector_points() functions is 
     recommended.
     """
-    
+
     if spacing is None:
         spacing = 1
         warn("No pixel spacing provided. Setting spacing to 1, but any subsequent calculations will be wrong.")
@@ -53,9 +53,14 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_po
 
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
-    if arr.ndim==2:
+    if np.isscalar(z) and (len(arr) > 1 or arr.ndim==2):
         arr=np.array([arr])
-    out = xr.DataArray(arr, dims=['z','x', 'y'], coords=make_coords(arr.shape, spacing, z), name=name)
+    coords = make_coords(arr.shape, spacing, z)
+    if is_none(extra_dims):
+        extra_dims={}
+    else:
+        coords.update(extra_dims)
+    out = xr.DataArray(arr, dims=['z','x', 'y']+list(extra_dims.keys()), coords = coords, name=name)
     return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)
 
 def detector_grid(shape, spacing, normals = None, name = None):
