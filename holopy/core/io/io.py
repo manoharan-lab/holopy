@@ -32,7 +32,7 @@ import numpy as np
 import importlib
 
 from . import serialize
-from ..metadata import data_grid, get_spacing, update_metadata, to_vector
+from ..metadata import data_grid, get_spacing, update_metadata, to_vector, illumination
 from ..utils import is_none, ensure_array, dict_without
 from ..errors import NoMetadata, BadImage, LoadError
 
@@ -76,7 +76,7 @@ def pack_attrs(a, do_spacing=False):
             new_attrs[attr_coords][attr]={}
             for dim in val.dims:
                 new_attrs[attr_coords][attr][dim]=val[dim].values
-            new_attrs[attr]=list(ensure_array(val))
+            new_attrs[attr]=list(val.values)
         else:
             new_attrs[attr_coords][attr]=False
             if not is_none(val):
@@ -191,7 +191,6 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
         arr=fromimage(pi).astype('d')
 
     extra_dims = None
-
     if channel is None:
         if arr.ndim > 2:
             raise BadImage('Not a greyscale image. You must specify which channel(s) to use')
@@ -214,11 +213,11 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
                 # multiple channels. increase output dimensionality
                 if channel.max() <=2:
                     channel = [['red','green','blue'][c] for c in channel]
-                extra_dims = {'illumination': channel}
+                extra_dims = {illumination: channel}
                 if not is_none(illum_wavelen) and len(ensure_array(illum_wavelen)) == len(channel):
-                    illum_wavelen = xr.DataArray(illum_wavelen, dims='illumination', coords=extra_dims)
+                    illum_wavelen = xr.DataArray(illum_wavelen, dims=illumination, coords=extra_dims)
                 if np.array(illum_polarization).ndim == 2:
-                    pol_index = xr.DataArray(channel, dims='illumination', name='illumination')
+                    pol_index = xr.DataArray(channel, dims=illumination, name=illumination)
                     illum_polarization=xr.concat([to_vector(pol) for pol in illum_polarization], pol_index)
 
     return data_grid(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, noise_sd, name, extra_dims)

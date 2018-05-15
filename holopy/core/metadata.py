@@ -30,6 +30,7 @@ from .math import to_spherical, to_cartesian
 
 
 vector = 'vector'
+illumination = 'illumination'
 
 def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, noise_sd=None, name=None, extra_dims=None, z=0):
     """

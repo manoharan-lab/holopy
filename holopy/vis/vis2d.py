@@ -26,7 +26,7 @@ New custom display functions for holograms and reconstructions.
 import numpy as np
 import xarray as xr
 from ..core.errors import BadImage
-from ..core.metadata import get_spacing, get_values
+from ..core.metadata import get_spacing, get_values, illumination
 from ..core.utils import ensure_array
 
 class plotter:
@@ -203,8 +203,8 @@ def show2d(im, plane_axes=None, slice_axis=None, starting_index=0, color_axis=No
             plane_axes = ('x','y')
         if slice_axis is None and 'z' in im.dims:
             slice_axis = 'z'
-        if color_axis is None and 'illumination' in im.dims:
-            color_axis = 'illumination'
+        if color_axis is None and illumination in im.dims:
+            color_axis = illumination
 
 
 
