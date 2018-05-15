@@ -24,35 +24,53 @@ New custom display functions for holograms and reconstructions.
 
 
 import numpy as np
-from xarray import DataArray
+import xarray as xr
 from ..core.errors import BadImage
 from ..core.metadata import get_spacing, get_values
 from ..core.utils import ensure_array
 
 class plotter:
-    def __init__(self, im, plane_axes, slice_axis, starting_index, t):
+    def __init__(self, im, plane_axes, slice_axis, starting_index, color_axis):
         # Delay the pylab import until we actually use it to avoid a hard
         # dependency on matplotlib, and to avoid paying the cost of importing it
         # for non interactive code
         import pylab
         
-        self.im = im
+
         self.axis_names = plane_axes
         self.step_name = slice_axis
         self.i = starting_index
+        self.vmin = im.min()
+        self.vmax = im.max()
 
-        if isinstance(im, DataArray):
-            self.dims = self.im.dims
+        if isinstance(im, xr.DataArray):
+            self.dims = im.dims
         else:
             self.dims = range(len(im.shape))
 
         self.selector={}
         for d in self.dims:
-            if d not in self.axis_names:
+            if d not in self.axis_names and (color_axis is None or d not in color_axis):
                 self.selector[d]= 0
 
-        self.vmin = im.min()
-        self.vmax = im.max()
+        #to show non-square pixels correctly
+        try:
+            spacing = get_spacing(im)
+            self.ratio = spacing[0]/spacing[1]
+        except:
+            #we are not working with a DataArray containing dimensions labeled 'x' and 'y'
+            self.ratio = 1
+
+        if color_axis is not None and len(im[color_axis]) == 2:
+            new_ax = im.isel(**{color_axis:0}).copy()
+            new_ax[:] = self.vmin
+            #missing a dimension
+            for col in ['red', 'green', 'blue']:
+                if col not in im[color_axis].values:
+                    new_ax[color_axis] = col
+            self.im = self.vmax - xr.concat([im, new_ax], color_axis) + self.vmin
+        else:
+            self.im = im
         self.fig = pylab.figure()
         pylab.gray()
         self.ax = self.fig.add_subplot(111)
@@ -63,15 +81,16 @@ class plotter:
         self.draw()
         self.fig.canvas.mpl_connect('key_press_event',self)
         self.fig.canvas.mpl_connect('button_press_event', self.click)
-        
 
 
     def draw(self):
+
         if self.step_name is not None:
             self.selector[self.step_name] = self.i
 
-        if isinstance(self.im, DataArray):
+        if isinstance(self.im, xr.DataArray):
             im = self.im.isel(**self.selector)
+
         else:
             im = ensure_array(self.im)
             counter = 0
@@ -80,21 +99,11 @@ class plotter:
                 counter = counter + 1
 
         self._title()
-
-        #to show non-square pixels correctly
-        try:        
-            spacing = get_spacing(im)
-            ratio = spacing[0]/spacing[1]
-        except:
-            #we are not working with a DataArray containing dimensions labeled 'x' and 'y'
-            ratio = 1
-
-
         if self.plot is not None:
             self.plot.set_array(im)
         else:
             self.plot = self.ax.imshow(im, vmin=self.vmin, vmax=self.vmax,
-                                       interpolation="nearest", aspect=ratio)
+                                       interpolation="nearest", aspect=self.ratio)
 
             #change the numbers displayed at the bottom to be in
             #HoloPy coordinate convention
@@ -134,7 +143,7 @@ class plotter:
     def click(self, event):
         if event.ydata is not None and event.xdata is not None:
             x, y = np.array((event.ydata, event.xdata))
-            if isinstance(self.im, DataArray):
+            if isinstance(self.im, xr.DataArray):
                 print(("[{0}, {1}],".format(self.pixel(x, y), self.location(x, y))))
             else:
                 print((self.pixel(x, y)))
@@ -144,7 +153,7 @@ class plotter:
     def __call__(self, event):
         if self.step_name is not None:
             if event.key=='right':
-                if isinstance(self.im, DataArray):
+                if isinstance(self.im, xr.DataArray):
                     dim_len = len(self.im[self.step_name])
                 else:
                     dim_len = self.im.shape[self.step_name]
@@ -167,7 +176,7 @@ class plotter:
         if titlestring is not "":
             self.ax.set_title(titlestring)
 
-def show2d(im, plane_axes=None, slice_axis=None, starting_index=0, t=0, phase = False):
+def show2d(im, plane_axes=None, slice_axis=None, starting_index=0, color_axis=None, phase = False):
     """
     Display a hologram or reconstruction
 
@@ -188,25 +197,28 @@ def show2d(im, plane_axes=None, slice_axis=None, starting_index=0, t=0, phase = 
     shape = list(np.shape(im))
     if len(shape) + (slice_axis is None) <3:
         raise BadImage("Image does not have enough dimensions to display properly.")    
-    
-    axes = []    
+
+    if isinstance(im, xr.DataArray):
+        if plane_axes is None and 'x' in im.dims and 'y' in im.dims:
+            plane_axes = ('x','y')
+        if slice_axis is None and 'z' in im.dims:
+            slice_axis = 'z'
+        if color_axis is None and 'illumination' in im.dims:
+            color_axis = 'illumination'
+
+
+
+    # Default is to display the two longest axes and step through third longest
+    axes = []
     for i in range(min(len(shape),3)):
         axes.append(shape.index(max(shape)))
         shape[shape.index(max(shape))] = -1
 
-    if isinstance(im, DataArray):
-        axes = [im.dims[i] for i in axes]
-    
-    # Default is to display the two longest axes and step through third longest
     if plane_axes is None:
         plane_axes = axes[0:2]
         if slice_axis in plane_axes:
             plane_axes[plane_axes.index(slice_axis)] = axes[2]
-        if plane_axes[1] < plane_axes[0]:
-            #this catches the case where xarray dimensions are labeled out of order
-            #we always want to plot (x,y), not (y,x)
-            plane_axes.reverse()
-    
+
     if slice_axis is None and len(shape)>2:
         for i in plane_axes:
             try:
@@ -215,14 +227,13 @@ def show2d(im, plane_axes=None, slice_axis=None, starting_index=0, t=0, phase = 
                 pass
         slice_axis=axes[0]
 
-
     if np.iscomplexobj(im):
         if phase:
             im = np.angle(im)
         else:
-            im = np.abs(im)    
+            im = np.abs(im)
 
-    plotter(im, plane_axes, slice_axis, starting_index, t)
+    plotter(im, plane_axes, slice_axis, starting_index, color_axis)
 
 def show_scatterer_slices(scatterer, spacing):
     """

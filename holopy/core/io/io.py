@@ -34,7 +34,7 @@ import importlib
 from . import serialize
 from ..metadata import data_grid, get_spacing, update_metadata, to_vector
 from ..utils import is_none, ensure_array, dict_without
-from ..errors import NoMetadata, BadImage
+from ..errors import NoMetadata, BadImage, LoadError
 
 attr_coords = '_attr_coords'
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
@@ -157,7 +157,7 @@ def load(inf, lazy=False):
             if meta['spacing'] is None:
                 raise NoMetadata
             else:
-                im = load_image(inf, meta['spacing'], name = meta['name'])
+                im = load_image(inf, meta['spacing'], name = meta['name'], channel='all')
                 im.attrs = unpack_attrs(meta)
                 return im
         except KeyError:
@@ -196,9 +196,13 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
         if arr.ndim > 2:
             raise BadImage('Not a greyscale image. You must specify which channel(s) to use')
     elif arr.ndim == 2:
-            warn("Warning: not a color image (channel number ignored)")
+            if not channel == 'all':
+                warn("Warning: not a color image (channel number ignored)")
+            pass
     else:
         # color image with specified channel(s)
+        if channel == 'all':
+            channel = range(arr.shape[2])
         channel = ensure_array(channel)
         if channel.max() >= arr.shape[2]:
             raise LoadError(filename,
