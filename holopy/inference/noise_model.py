@@ -102,6 +102,6 @@ class AlphaModel(NoiseModel):
         optics, scatterer = self._optics_scatterer(pars, schema)
 
         try:
-            return calc_holo(schema, scatterer, theory=self.theory, **optics)
+            return calc_holo(schema, scatterer, theory=self.theory, scaling=alpha, **optics)
         except (MultisphereFailure, InvalidScatterer):
             return -np.inf
