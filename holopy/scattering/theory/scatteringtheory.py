@@ -29,8 +29,8 @@ from warnings import warn
 from holopy.core.holopy_object import HoloPyObject
 from ..scatterer import Scatterers, Sphere
 from ..errors import TheoryNotCompatibleError, MissingParameter
-from ...core.metadata import vector, sphere_coords, primdim
-from ...core.utils import dict_without, updated
+from ...core.metadata import vector, illumination, sphere_coords, primdim, update_metadata, clean_concat
+from ...core.utils import dict_without, updated, ensure_array
 try:
     from .mie_f import mieangfuncs
 except ImportError:
@@ -92,18 +92,25 @@ class ScatteringTheory(HoloPyObject):
             field = xr.DataArray(field, dims=[dimstr, vector], coords = coords, attrs=schema.attrs)
             return field
 
-
-        # See if we can handle the scatterer in one step
-        if self._can_handle(scatterer):
-            field = get_field(scatterer)
-        elif isinstance(scatterer, Scatterers):
-        # if it is a composite, try superposition
-            scatterers = scatterer.get_component_list()
-            field = get_field(scatterers[0])
-            for s in scatterers[1:]:
-                field += get_field(s)
+        if len(ensure_array(schema.illum_wavelen)) > 1:
+            field = []
+            for illum in schema.illum_wavelen.illumination:
+                field.append(self._calc_field(scatterer, update_metadata(schema, 
+                    illum_wavelen=ensure_array(schema.illum_wavelen.sel(illumination=illum).values)[0],
+                    illum_polarization=ensure_array(schema.illum_polarization.sel(illumination=illum).values))))
+            field = clean_concat(field, dim = schema.illum_wavelen.illumination)
         else:
-            raise TheoryNotCompatibleError(self, scatterer)
+            # See if we can handle the scatterer in one step
+            if self._can_handle(scatterer):
+                field = get_field(scatterer)
+            elif isinstance(scatterer, Scatterers):
+            # if it is a composite, try superposition
+                scatterers = scatterer.get_component_list()
+                field = get_field(scatterers[0])
+                for s in scatterers[1:]:
+                    field += get_field(s)
+            else:
+                raise TheoryNotCompatibleError(self, scatterer)
 
         return field
 

@@ -22,9 +22,10 @@ calc_intensity and calc_holo, based on subclass's calc_field
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
+import xarray as xr
 from ..core.holopy_object import SerializableMetaclass
-from ..core.metadata import vector, update_metadata, to_vector, copy_metadata, from_flat, detector_points
-from ..core.utils import dict_without, is_none
+from ..core.metadata import vector, illumination, update_metadata, to_vector, copy_metadata, from_flat, detector_points
+from ..core.utils import dict_without, is_none, ensure_array
 from .scatterer import Sphere, Spheres, Spheroid, Cylinder
 from .errors import AutoTheoryFailed, MissingParameter
 
@@ -38,17 +39,39 @@ except:
 import numpy as np
 from warnings import warn
 
-def check_schema(schema, pol = True):
+def prep_schema(schema, medium_index, illum_wavelen, illum_polarization):
+    schema = update_metadata(schema, medium_index, illum_wavelen, illum_polarization)
+
     if schema.illum_wavelen is None:
         raise MissingParameter("wavelength")
     if schema.medium_index is None:
         raise MissingParameter("medium refractive index")
-    if pol is not False and is_none(schema.illum_polarization):
+    if illum_polarization is not False and is_none(schema.illum_polarization):
         raise MissingParameter("polarization")
-    return schema
 
-def prep_schema(schema, medium_index, illum_wavelen, illum_polarization):
-    return check_schema(update_metadata(schema, medium_index, illum_wavelen, illum_polarization), illum_polarization)
+    illum_wavelen = ensure_array(schema.illum_wavelen)
+    illum_polarization=schema.illum_polarization
+
+    if len(illum_wavelen)>1 or ensure_array(illum_polarization).ndim == 2:
+        #multiple illuminations to calculate
+        if illumination in illum_polarization.dims:
+            if isinstance(illum_wavelen, xr.DataArray):
+                pass
+            else:
+                if len(illum_wavelen)==1:
+                    illum_wavelen = illum_wavelen.repeat(len(illum_polarization.illumination))
+                illum_wavelen = xr.DataArray(illum_wavelen, dims = illumination, coords={illumination:illum_polarization.illumination})
+        else:
+            #need to interpret illumination from schema.illum_wavelen
+            if not isinstance(illum_wavelen, xr.DataArray):
+                illum_wavelen = xr.DataArray(illum_wavelen, dims=illumination, coords={illumination:illum_wavelen})
+            illum_polarization= xr.broadcast(illum_polarization, illum_wavelen, exclude=[vector])[0]
+
+        if illumination in schema.dims:
+            schema = schema.sel(illumination=schema.illumination[0], drop=True)
+        schema = update_metadata(schema, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization)
+
+    return schema
 
 def interpret_theory(scatterer,theory='auto'):
     if isinstance(theory, str) and theory == 'auto':
