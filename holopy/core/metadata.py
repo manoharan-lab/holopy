@@ -309,10 +309,13 @@ def get_extents(im):
         return float(im[d][-1] - im[d][0] + np.diff(im[d]).mean())
     return {d: get_extent(d) for d in im.dims}
 
-
 def make_coords(shape, spacing, z=0):
     if np.isscalar(shape):
         shape = np.repeat(shape, 2)
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
     return {'z':np.array([z]), 'x': np.arange(shape[1])*spacing[0], 'y': np.arange(shape[2])*spacing[1]}
+
+def clean_concat(arrays, dim):
+    arrays = [array.assign_attrs(**{attr:None for attr in array.attrs if isinstance(array.attrs[attr],xr.DataArray)}) for array in arrays]
+    return xr.concat(arrays, dim)

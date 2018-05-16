@@ -26,7 +26,7 @@ New custom display functions for holograms and reconstructions.
 import numpy as np
 import xarray as xr
 from ..core.errors import BadImage
-from ..core.metadata import get_spacing, get_values, illumination
+from ..core.metadata import get_spacing, get_values, illumination, clean_concat
 from ..core.utils import ensure_array
 
 class plotter:
@@ -39,6 +39,7 @@ class plotter:
 
         self.axis_names = plane_axes
         self.step_name = slice_axis
+        self.color_axis = color_axis
         self.i = starting_index
         self.vmin = im.min()
         self.vmax = im.max()
@@ -62,15 +63,22 @@ class plotter:
             self.ratio = 1
 
         if color_axis is not None and len(im[color_axis]) == 2:
+            #missing a dimension
             new_ax = im.isel(**{color_axis:0}).copy()
             new_ax[:] = self.vmin
-            #missing a dimension
-            for col in ['red', 'green', 'blue']:
-                if col not in im[color_axis].values:
-                    new_ax[color_axis] = col
-            self.im = self.vmax - xr.concat([im, new_ax], color_axis) + self.vmin
+            if isinstance(im[color_axis].values[0], str):
+                'labels rgb'
+                concat_dim = xr.DataArray(['red','green','blue'], dims=color_axis, name=color_axis)
+                for col in concat_dim:
+                    if col not in im[color_axis].values:
+                        new_ax[color_axis] = col
+            else:
+                new_ax[color_axis] = np.NaN
+                concat_dim = color_axis
+            self.im = clean_concat([im, new_ax], concat_dim)
         else:
             self.im = im
+
         self.fig = pylab.figure()
         pylab.gray()
         self.ax = self.fig.add_subplot(111)
@@ -90,6 +98,10 @@ class plotter:
 
         if isinstance(self.im, xr.DataArray):
             im = self.im.isel(**self.selector)
+            if im.ndim == 3:
+                im = im.transpose(self.axis_names[0], self.axis_names[1], self.color_axis)
+            else:
+                im = im.transpose(self.axis_names[0], self.axis_names[1])
 
         else:
             im = ensure_array(self.im)
@@ -97,6 +109,9 @@ class plotter:
             for key, val in self.selector.items():
                 im = im.take(val, axis=key-counter)
                 counter = counter + 1
+
+        if im.ndim ==3:
+            im = (im - self.vmin)/(self.vmax-self.vmin)
 
         self._title()
         if self.plot is not None:

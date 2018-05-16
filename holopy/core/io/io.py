@@ -32,7 +32,7 @@ import numpy as np
 import importlib
 
 from . import serialize
-from ..metadata import data_grid, get_spacing, update_metadata, to_vector, illumination
+from ..metadata import data_grid, get_spacing, update_metadata, to_vector, illumination, clean_concat
 from ..utils import is_none, ensure_array, dict_without
 from ..errors import NoMetadata, BadImage, LoadError
 
@@ -385,7 +385,7 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
     if is_none(spacing):
         spacing = get_spacing(refimg)
     
-    accumulator = xr.concat([load_image(image, spacing,channel=channel).assign_attrs(normals=None) for image in filepath],'images')
+    accumulator = clean_concat([load_image(image, spacing,channel=channel) for image in filepath],'images')
     if noise_sd is None:
         noise_sd = (accumulator.std('images').mean()/accumulator.mean()).item()
     accumulator = accumulator.mean('images')
