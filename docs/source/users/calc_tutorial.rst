@@ -213,7 +213,7 @@ Note that the hologram image is elongated in the horizontal direction since the 
 
     import numpy as np
     from holopy.scattering import Cylinder
-    c = Cylinder(center=(5, 5, 7), n = 1.59, d=0.5, h=2, rotation=(0,np.pi/2, 0))
+    c = Cylinder(center=(5, 5, 7), n = 1.59, d=0.75, h=2, rotation=(0,np.pi/2, 0))
     holo = calc_holo(exp_img, c)
     hp.show(holo)
 
@@ -225,7 +225,7 @@ Note that the hologram image is elongated in the horizontal direction since the 
 ..  testoutput::
     :hide:
 
-    [1.01179772]
+    [0.97450458]
 
 .. image:: ../images/calc_cylinder.png
    :scale: 300 %
