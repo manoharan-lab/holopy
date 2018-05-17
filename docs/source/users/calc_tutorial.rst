@@ -85,7 +85,7 @@ field that is not scattered or absorbed by the particle.
 ..  testoutput::
     :hide:
 
-    [ 1.01201782]
+    [1.01201782]
 
 You might have noticed that our scattering calculation requires much of the same
 metadata we specified when loading an image. If we have an experimental image
@@ -114,7 +114,7 @@ arguments.
     :hide:
 
     (1, 100, 100)
-    [ 1.01201782]
+    [1.01201782]
 
 Note that we didn't need to explicitly specify illumination information when
 calling :func:`.calc_holo`, since our image contained saved metadata and HoloPy
@@ -191,7 +191,7 @@ first define the spheres individually, and then combine them into a
 ..  testoutput::
     :hide:
 
-    [ 1.04897655]
+    [1.04897655]
 
 .. image:: ../images/calc_twosphere.png
    :scale: 300 %
@@ -225,7 +225,7 @@ Note that the hologram image is elongated in the horizontal direction since the 
 ..  testoutput::
     :hide:
 
-    [ 1.01179772]
+    [1.01179772]
 
 .. image:: ../images/calc_cylinder.png
    :scale: 300 %
@@ -400,7 +400,7 @@ omit the ``detector`` argument entirely:
 ..  testoutput::
     :hide:
 
-    [ 1.93274289  0.          1.93274289  0.91619823]
+    [1.93274289 0.         1.93274289 0.91619823]
 
 x_sec returns an array containing four elements. The first element is the
 scattering cross section, specified in terms of the same units as wavelength and
