@@ -22,6 +22,7 @@ from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering.errors import MultisphereFailure, InvalidScatterer
 
 import numpy as np
+import xarray as xr
 from copy import copy
 from holopy.scattering.calculations import calc_field, calc_holo
 
@@ -35,7 +36,6 @@ class NoiseModel(BaseModel):
         super().__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory)
         # the float cast insures we don't have noise_sd wrapped up in a needless xarray
         self._use_parameter(float(noise_sd), 'noise_sd')
-
     def _pack(self, vals):
         return {par.name: val for par, val in zip(self.parameters, vals)}
 
@@ -85,22 +85,26 @@ class NoiseModel(BaseModel):
     def lnlike(self, par_vals, data):
         return self._lnlike(self._pack(par_vals), data)
 
-
-
-
 class AlphaModel(NoiseModel):
     def __init__(self, scatterer, noise_sd, alpha=1, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
         super().__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory, noise_sd=noise_sd)
         self._use_parameter(alpha, 'alpha')
+        if isinstance(alpha, dict):
+            self.alpha_names = list(alpha.keys())
+        elif isinstance(alpha, xr.DataArray):
+            self.alpha_names = list(alpha[alpha.dims[0]].values)
+        else:
+            self.alpha_names = None
 
     def _forward(self, pars, schema, alpha=None):
         if alpha is not None:
             alpha = alpha
         else:
-            alpha = self.get_par('alpha', pars)
-
+            if self.alpha_names is None:
+                alpha = self.get_par('alpha', pars)
+            else:
+                alpha = {key:self.get_par('alpha_'+key,pars) for key in self.alpha_names}
         optics, scatterer = self._optics_scatterer(pars, schema)
-
         try:
             return calc_holo(schema, scatterer, theory=self.theory, scaling=alpha, **optics)
         except (MultisphereFailure, InvalidScatterer):

@@ -24,9 +24,9 @@ calc_intensity and calc_holo, based on subclass's calc_field
 
 import xarray as xr
 from ..core.holopy_object import SerializableMetaclass
-from ..core.metadata import vector, illumination, update_metadata, to_vector, copy_metadata, from_flat, detector_points
+from ..core.metadata import vector, illumination, update_metadata, to_vector, copy_metadata, from_flat, detector_points, dict_to_array
 from ..core.utils import dict_without, is_none, ensure_array
-from .scatterer import Sphere, Spheres, Spheroid, Cylinder
+from .scatterer import Sphere, Spheres, Spheroid, Cylinder, checkguess
 from .errors import AutoTheoryFailed, MissingParameter
 
 try:
@@ -152,12 +152,11 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None, illum_po
     holo : :class:`.Image` object
         Calculated hologram from the given distribution of spheres
     """
-    if hasattr(scaling, 'guess'):
-        scaling = scaling.guess
 
+    scaling = checkguess(dict_to_array(schema, scaling))
     theory = interpret_theory(scatterer,theory)
     uschema = prep_schema(schema, medium_index, illum_wavelen, illum_polarization)
-    scat = theory._calc_field(scatterer.guess(), uschema)
+    scat = theory._calc_field(dict_to_array(schema, scatterer).guess(), uschema)
     holo = scattered_field_to_hologram(scat*scaling, uschema.illum_polarization, uschema.normals)
     return finalize(uschema, holo)
 

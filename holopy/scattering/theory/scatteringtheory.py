@@ -95,7 +95,7 @@ class ScatteringTheory(HoloPyObject):
         if len(ensure_array(schema.illum_wavelen)) > 1:
             field = []
             for illum in schema.illum_wavelen.illumination:
-                field.append(self._calc_field(scatterer, update_metadata(schema, 
+                field.append(self._calc_field(scatterer.select({illumination:illum}), update_metadata(schema,
                     illum_wavelen=ensure_array(schema.illum_wavelen.sel(illumination=illum).values)[0],
                     illum_polarization=ensure_array(schema.illum_polarization.sel(illumination=illum).values))))
             field = clean_concat(field, dim = schema.illum_wavelen.illumination)

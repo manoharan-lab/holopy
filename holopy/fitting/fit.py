@@ -42,12 +42,14 @@ def make_subset_data(data, random_subset=None, pixels=None, return_selection=Fal
         return data
     if random_subset is not None and pixels is not None:
         raise ValueError("You can only specify one of pixels or random_subset")
+
+    tot_pix = len(data.x)*len(data.y)
     if pixels is not None:
         n_sel = pixels
     else:
-        n_sel = int(np.ceil(data.size*random_subset))
-    selection = np.random.choice(data.size, n_sel, replace=False)
-    subset = flat(data)[selection]
+        n_sel = int(np.ceil(tot_pix*random_subset))
+    selection = np.random.choice(tot_pix, n_sel, replace=False)
+    subset = flat(data).isel(flat=selection)
     subset = copy_metadata(data, subset, do_coords=False)
     if return_selection:
         return subset, selection
