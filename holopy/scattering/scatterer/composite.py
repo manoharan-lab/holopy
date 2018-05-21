@@ -203,3 +203,8 @@ class Scatterers(Scatterer):
             return self.scatterers[self.in_domain(point)[0]].index_at(point)
         except TypeError:
             return None
+
+    def select(self, keys):
+        new = copy(self)
+        new.scatterers = [s.select(keys) for s in self.scatterers]
+        return new

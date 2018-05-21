@@ -242,7 +242,7 @@ def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None, illum_p
     """
     theory = interpret_theory(scatterer,theory)
     uschema = prep_schema(schema, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization)
-    return finalize(uschema, theory._calc_field(scatterer.guess(), uschema))
+    return finalize(uschema, theory._calc_field(dict_to_array(schema, scatterer).guess(), uschema))
 
 # this is pulled out separate from the calc_holo method because occasionally you
 # want to turn prepared  e_fields into holograms directly
