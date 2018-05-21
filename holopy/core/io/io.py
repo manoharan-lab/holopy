@@ -32,7 +32,7 @@ import numpy as np
 import importlib
 
 from . import serialize
-from ..metadata import data_grid, get_spacing, update_metadata, to_vector, illumination, clean_concat
+from ..metadata import data_grid, get_spacing, update_metadata, copy_metadata, to_vector, illumination, clean_concat
 from ..utils import is_none, ensure_array, dict_without
 from ..errors import NoMetadata, BadImage, LoadError
 
@@ -65,6 +65,22 @@ def get_example_data_path(name):
 def get_example_data(name):
     return load(get_example_data_path(name))
 
+def pad_channel(im, color_axis=illumination, padval=0):
+    new_ax = im.isel(**{color_axis:0}).copy()
+    new_ax[:] = padval
+    if isinstance(im[color_axis].values[0],str):
+        'coords labeled rgb'
+        concat_dim = xr.DataArray(['red','green','blue'], dims=color_axis, name=color_axis)
+        for col in concat_dim:
+            if col.values not in im[color_axis].values:
+                new_ax[color_axis] = col
+                im.attrs['_dummy_channel'] = list(concat_dim).index(col)
+    else:
+        new_ax[color_axis] = np.NaN
+        concat_dim = color_axis
+        im.attrs['_dummy_channel'] = -1
+    return clean_concat([im, new_ax], concat_dim)
+
 def pack_attrs(a, do_spacing=False):
     new_attrs = {'name':a.name, attr_coords:{}}
 
@@ -87,7 +103,7 @@ def pack_attrs(a, do_spacing=False):
 def unpack_attrs(a):
     new_attrs={}
     attr_ref=yaml.load(a[attr_coords])
-    for attr in dict_without(attr_ref,['spacing','name']):
+    for attr in dict_without(attr_ref,['spacing','name', '_dummy_channel']):
         if attr_ref[attr]:
             new_attrs[attr] = xr.DataArray(a[attr], coords=attr_ref[attr],dims=list(attr_ref[attr].keys()))
         elif attr in a:
@@ -159,6 +175,8 @@ def load(inf, lazy=False):
             else:
                 im = load_image(inf, meta['spacing'], name = meta['name'], channel='all')
                 im.attrs = unpack_attrs(meta)
+                if '_dummy_channel' in meta:
+                    im = im.drop(np.asscalar(im.illumination[meta['_dummy_channel']]), illumination)
                 return im
         except KeyError:
             raise NoMetadata
@@ -214,9 +232,9 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
                 if channel.max() <=2:
                     channel = [['red','green','blue'][c] for c in channel]
                 extra_dims = {illumination: channel}
-                if not is_none(illum_wavelen) and len(ensure_array(illum_wavelen)) == len(channel):
-                    illum_wavelen = xr.DataArray(illum_wavelen, dims=illumination, coords=extra_dims)
-                if np.array(illum_polarization).ndim == 2:
+                if not is_none(illum_wavelen) and not isinstance(illum_wavelen,dict) and len(ensure_array(illum_wavelen)) == len(channel):
+                    illum_wavelen = xr.DataArray(ensure_array(illum_wavelen), dims=illumination, coords=extra_dims)
+                if not isinstance(illum_polarization, dict) and np.array(illum_polarization).ndim == 2:
                     pol_index = xr.DataArray(channel, dims=illumination, name=illumination)
                     illum_polarization=xr.concat([to_vector(pol) for pol in illum_polarization], pol_index)
 
@@ -284,6 +302,18 @@ def save_image(filename, im, scaling='auto', depth=8):
     if os.path.splitext(filename)[1] is '':
         filename += '.tif'
     
+    if im.ndim > 2 + hasattr(im,illumination) + hasattr(im, 'z'):
+        raise BadImage("Cannot interpret multidimensional image")
+    else:
+        im = im.copy()
+        if isinstance(im, xr.DataArray):
+            if illumination in im.dims and len(im.illumination) == 2:
+                im = pad_channel(im)
+            elif illumination in im.dims and len(im.illumination) > 3:
+                raise BadImage("Too many illumination channels")
+            if 'z' in im.dims:
+                im = im.isel(z=0)
+
     metadat=False
     if os.path.splitext(filename)[1] in tiflist and isinstance(im, xr.DataArray):
         if im.name is None:
@@ -292,14 +322,6 @@ def save_image(filename, im, scaling='auto', depth=8):
         from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2 #hiding this import here since it doesn't play nice in some scenarios
         tiffinfo = ifd2()
         tiffinfo[270] = yaml.dump(metadat) #This edits the 'imagedescription' field of the tiff metadata
-
-    if im.ndim > 2:
-        try:
-            im = im.copy().isel(z=0)
-        except:
-            raise BadImage("Cannot interpret multidimensional image")
-    else:
-        im = im.copy()
 
     if np.iscomplex(im).any():
         raise BadImage("Cannot interpret image with complex values")
@@ -384,12 +406,14 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
 
     if is_none(spacing):
         spacing = get_spacing(refimg)
-    
-    accumulator = clean_concat([load_image(image, spacing,channel=channel) for image in filepath],'images')
+
+    if channel is None and illumination in refimg.dims:
+        channel = [i for i, col in enumerate(['red','green','blue']) if col in refimg[illumination].values]
+    accumulator = clean_concat([load_image(image, spacing, channel=channel) for image in filepath],'images')
     if noise_sd is None:
         noise_sd = (accumulator.std('images').mean()/accumulator.mean()).item()
     accumulator = accumulator.mean('images')
 
     if not is_none(refimg):
-        accumulator = update_metadata(accumulator, refimg.medium_index, refimg.illum_wavelen, refimg.illum_polarization, refimg.normals)    
+        accumulator = copy_metadata(refimg, accumulator, do_coords=False)
     return update_metadata(accumulator, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)

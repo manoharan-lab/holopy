@@ -64,7 +64,7 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_po
     out = xr.DataArray(arr, dims=['z','x', 'y']+list(extra_dims.keys()), coords = coords, name=name)
     return update_metadata(out, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)
 
-def detector_grid(shape, spacing, normals = None, name = None):
+def detector_grid(shape, spacing, normals = None, name = None, extra_dims=None):
     """
     Create a rectangular grid of pixels to represent a detector on which
     scattering calculations are to be performed.
@@ -80,7 +80,9 @@ def detector_grid(shape, spacing, normals = None, name = None):
         between adjacent columns.
     normals : list-like or None
         If list-like, detector orientation.
-    name : string
+    name : string, optional
+    extra_dims : dict, optional
+        extra dimension(s) to add to the empty detector grid as {dimname:[coords]}
 
     Returns
     -------
@@ -95,10 +97,15 @@ def detector_grid(shape, spacing, normals = None, name = None):
         
     """
     if np.isscalar(shape):
-        shape = np.repeat(shape, 2)
+        shape = [shape]*2
+    else:
+        shape = list(shape)
 
+    if extra_dims is not None:
+        for val in extra_dims.values():
+            shape.append(len(val))
     d = np.zeros(shape)
-    return data_grid(d, spacing, normals = normals, name = name)
+    return data_grid(d, spacing, normals = normals, name = name, extra_dims=extra_dims)
 
 def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta = None, phi = None, normals = 'auto', name = None):
     """
@@ -188,7 +195,7 @@ def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization
         copy of input image with updated metadata. The 'normals' field is not allowed to be empty.
     """
 
-    attrlist = {'medium_index': medium_index, 'illum_wavelen': illum_wavelen, 'illum_polarization': to_vector(illum_polarization), 'normals': to_vector(normals), 'noise_sd': noise_sd}
+    attrlist = {'medium_index': medium_index, 'illum_wavelen': dict_to_array(a,illum_wavelen), 'illum_polarization': dict_to_array(a,to_vector(illum_polarization)), 'normals': to_vector(normals), 'noise_sd': dict_to_array(a,noise_sd)}
     b = a.copy()
     b.attrs = updated(b.attrs, attrlist)
 
@@ -231,6 +238,8 @@ def to_vector(c):
         return c
     if hasattr(c, vector):
         return c
+    if isinstance(c, dict):
+        return {key:to_vector(val) for key, val in c.items()}
     c = np.array(c)
     if c.shape == (2,):
         c = np.append(c, 0)
@@ -240,11 +249,8 @@ def to_vector(c):
 def flat(a):
     if hasattr(a, 'flat') or hasattr(a, 'point'):
         return a
-    if len(a.dims)==3:
-        #want to ensure order is x, y, z
-        return a.stack(flat=('x','y','z'))
     else:
-        return a.stack(flat=a.dims)
+        return a.stack(flat=('x','y','z'))
 
 def from_flat(a):
     if hasattr(a, 'flat'):
@@ -301,13 +307,13 @@ def get_spacing(im):
 
 def get_extents(im):
     def get_extent(d):
-        if len(im[d]) == 1:
+        if len(im[d]) < 2:
             return 0
         # Add one extra spacing since the xarray coords are right edge only,
         # but we actually want right edge of first pixel to left edge of last
         # pixel
         return float(im[d][-1] - im[d][0] + np.diff(im[d]).mean())
-    return {d: get_extent(d) for d in im.dims}
+    return {d: get_extent(d) for d in ['x','y','z'] if d in im.dims}
 
 def make_coords(shape, spacing, z=0):
     if np.isscalar(shape):
@@ -317,5 +323,27 @@ def make_coords(shape, spacing, z=0):
     return {'z':np.array([z]), 'x': np.arange(shape[1])*spacing[0], 'y': np.arange(shape[2])*spacing[1]}
 
 def clean_concat(arrays, dim):
+    attrs = arrays[0].attrs
     arrays = [array.assign_attrs(**{attr:None for attr in array.attrs if isinstance(array.attrs[attr],xr.DataArray)}) for array in arrays]
-    return xr.concat(arrays, dim)
+    arrays = xr.concat(arrays, dim)
+    arrays.attrs = attrs
+    return arrays.transpose(*np.roll(arrays.dims,-1))
+
+def dict_to_array(schema, inval):
+    if isinstance(inval, dict):
+        keys = sorted(list(inval.keys()))
+        dims = {coord:sorted(list(schema.coords[coord].values)) for coord in schema.coords}
+        for name, coords in dims.items():
+            if keys == coords:
+                if isinstance(list(inval.values())[0], xr.DataArray):
+                    dim = xr.DataArray(list(inval.keys()), dims=name, name=name)
+                    return xr.concat(list(inval.values()), dim = dim)
+                else:
+                    return xr.DataArray(list(inval.values()), dims=name, coords={name:list(inval.keys())})
+    elif hasattr(inval, 'from_parameters'):
+        #inval is a Scatterer object
+        pars = inval.parameters
+        pars = {key:dict_to_array(schema, val) for key, val in pars.items()}
+        return(inval.from_parameters(pars))
+    else:
+        return inval

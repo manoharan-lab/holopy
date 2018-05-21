@@ -26,7 +26,8 @@ New custom display functions for holograms and reconstructions.
 import numpy as np
 import xarray as xr
 from ..core.errors import BadImage
-from ..core.metadata import get_spacing, get_values, illumination, clean_concat
+from ..core.metadata import get_spacing, get_values, illumination
+from ..core.io.io import pad_channel
 from ..core.utils import ensure_array
 
 class plotter:
@@ -62,20 +63,9 @@ class plotter:
             #we are not working with a DataArray containing dimensions labeled 'x' and 'y'
             self.ratio = 1
 
+        #saving color images currently only works for xr.DataArrays
         if color_axis is not None and len(im[color_axis]) == 2:
-            #missing a dimension
-            new_ax = im.isel(**{color_axis:0}).copy()
-            new_ax[:] = self.vmin
-            if isinstance(im[color_axis].values[0], str):
-                'labels rgb'
-                concat_dim = xr.DataArray(['red','green','blue'], dims=color_axis, name=color_axis)
-                for col in concat_dim:
-                    if col not in im[color_axis].values:
-                        new_ax[color_axis] = col
-            else:
-                new_ax[color_axis] = np.NaN
-                concat_dim = color_axis
-            self.im = clean_concat([im, new_ax], concat_dim)
+            self.im = pad_channel(im, color_axis, self.vmin)
         else:
             self.im = im
 
