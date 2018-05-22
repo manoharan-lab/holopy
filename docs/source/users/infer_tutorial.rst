@@ -43,8 +43,7 @@ Here is the full example.  We'll go through it step-by-step afterward::
              center=prior.make_center_priors(data_holo))
 
     # Set up the noise model
-    noise_sd = data_holo.std()
-    model = AlphaModel(s, noise_sd=noise_sd, alpha=1)
+    model = AlphaModel(s, noise_sd=data_holo.noise_sd, alpha=1)
 
     result = tempered_sample(model, data_holo)
 
@@ -161,14 +160,13 @@ would see the data we observed given some hypothetical scatterer position, size
 and index. In the language of statistics, this is referred to as a likelihood.
 In order to compute a likelihood, you need some estimate of how noisy your data
 is (so that you can figure out how likely it is that the differences between
-your model and data could be explained by noise). Here we use the standard
-deviation of the data, which is an overestimate of the true noise, since it also
-includes variation due to our signal.
+your model and data could be explained by noise). Here we use the ``noise_sd``
+attribute of our hologram, which was automatically calculated from the deviation
+in background images when we ran :func:`.bg_correct`.
 
 ..  testcode::
 
-  noise_sd = data_holo.std()
-  model = AlphaModel(s, noise_sd=noise_sd, alpha=1)
+  model = AlphaModel(s, noise_sd=data_holo.noise_sd, alpha=1)
 
 ..  note::
 
@@ -262,7 +260,7 @@ And then defining the model using :
 
 ..  testcode::
 
-    model = AlphaModel(spheres, noise_sd=noise_sd, alpha=1)
+    model = AlphaModel(spheres, noise_sd=data_holo.noise_sd, alpha=1)
 
 References
 ~~~~~~~~~~

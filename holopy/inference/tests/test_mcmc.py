@@ -32,7 +32,7 @@ from holopy.inference.noise_model import AlphaModel,NoiseModel
 gold_sigma=-1.4189385332
 
 #GOLD:inference result - depends on both seeds
-gold_alpha=np.array([0.700926])
+gold_alpha=np.array([0.649683])
 gold_nsteps=10
 gold_frac=0.925
 
