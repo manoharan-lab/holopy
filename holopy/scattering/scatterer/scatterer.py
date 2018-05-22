@@ -362,10 +362,16 @@ class Indicators(HoloPyObject):
 
 def checkguess(par):
     def guess(a):
+        if isinstance(a,np.ndarray):
+            return np.array([checkguess(val) for val in a]) 
         if hasattr(a, 'guess'):
-            return a.guess
+            try:
+                return a.guess()
+            except TypeError:
+                return a.guess
         return a
 
     if isinstance(par, xr.DataArray):
+        out = copy(par)
         return xr.apply_ufunc(guess, par)
     return guess(par)

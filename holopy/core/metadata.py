@@ -239,7 +239,10 @@ def to_vector(c):
     if hasattr(c, vector):
         return c
     if isinstance(c, dict):
-        return {key:to_vector(val) for key, val in c.items()}
+        c = c.copy()
+        for key, val in c.items():
+            c[key]=to_vector(val)
+        return c
     c = np.array(c)
     if c.shape == (2,):
         c = np.append(c, 0)
@@ -340,6 +343,7 @@ def dict_to_array(schema, inval):
                     return xr.concat(list(inval.values()), dim = dim)
                 else:
                     return xr.DataArray(list(inval.values()), dims=name, coords={name:list(inval.keys())})
+        raise ValueError("Dictionary could not be converted to DataArray because reference grid has no dimensions with matching coords")
     elif hasattr(inval, 'from_parameters'):
         #inval is a Scatterer object
         pars = inval.parameters
