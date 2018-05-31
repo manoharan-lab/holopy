@@ -31,7 +31,7 @@ import numpy as np
 import xarray as xr
 
 from ...core.holopy_object  import HoloPyObject
-from ...core.utils import ensure_array, is_none
+from ...core.utils import ensure_array, is_none, updated
 from ..errors import InvalidScatterer
 from functools import reduce
 
@@ -225,8 +225,7 @@ class CenteredScatterer(Scatterer):
 
         return dict(chain(*[expand(*p) for p in self._dict.items()]))
 
-    @classmethod
-    def from_parameters(cls, parameters):
+    def from_parameters(self, parameters, update=False):
         """
         Create a Scatterer from a dictionary of parameters
 
@@ -284,8 +283,12 @@ class CenteredScatterer(Scatterer):
             return par
 
         for key, val in collected_arrays.items():
-            built[key] = build(val)
-        return cls(**built)
+            built[key] = checkguess(build(val))
+
+        if update:
+            built = updated(checkguess(self).parameters, built)
+
+        return type(self)(**built)
 
     def select(self, keys):
         params = self.parameters
@@ -363,15 +366,24 @@ class Indicators(HoloPyObject):
 def checkguess(par):
     def guess(a):
         if isinstance(a,np.ndarray):
-            return np.array([checkguess(val) for val in a]) 
+            return np.array([checkguess(val) for val in ensure_array(a)]).squeeze()
+        elif isinstance(a, dict):
+            return {key: checkguess(val) for key, val in a.items()}
+        elif isinstance(a, list):
+            return [checkguess(val) for val in a]
+
         if hasattr(a, 'guess'):
             try:
+                # Scatterer
                 return a.guess()
             except TypeError:
+                # Prior
                 return a.guess
+        elif hasattr(a, 'value'):
+            # UncertainValue
+            return a.value
         return a
 
     if isinstance(par, xr.DataArray):
-        out = copy(par)
         return xr.apply_ufunc(guess, par)
     return guess(par)
