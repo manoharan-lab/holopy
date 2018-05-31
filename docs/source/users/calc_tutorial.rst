@@ -240,6 +240,28 @@ Customizing Scattering Calculations
 While the examples above will be sufficient for most purposes, there are a few
 additional options that are useful in certain scenarios.
 
+Multi-channel Holograms
+-----------------------
+
+Sometimes a hologram may include data from multiple illumination sources,
+such as two separate wavelengths of incident light. In this case, the extra
+arguments can be passed in as a dictionary object, with keys corresponding to 
+dimension names in the image. You can also use a multi-channel experimental image
+in place of calling :func:`.detector_grid`.
+
+..  testcode::
+
+    illum_dim = {'illumination':['red', 'green']}
+    n_dict = {'red':1.58,'green':1.60}
+    wl_dict = {'red':0.690,'green':0.520}
+    det_c = hp.detector_grid(shape=200, spacing=0.1, extra_dims = illum_dim)
+    s_c = Sphere(r=0.6, n=n_dict, center=[6,6,6])
+    holo = calc_holo(det_c, s_c, illum_wavelen=wl_dict, illum_polarization=(0,1), medium_index=1.33)
+
+..  image:: ../images/calc_multi.png
+    :scale: 300 %
+    :alt: Calculated hologram of a sphere at 2 wavelengths
+
 Scattering Theories in HoloPy
 -----------------------------
 

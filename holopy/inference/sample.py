@@ -64,7 +64,7 @@ class EmceeStrategy(HoloPyObject):
     def make_guess(self, parameters):
         return np.vstack([p.sample(size=(self.nwalkers)) for p in parameters]).T
 
-    def sample(self, model, data, nsamples, walker_initial_pos=None):
+    def sample(self, model, data, nsamples=1000, walker_initial_pos=None):
         if self.pixels is not None:
             data = make_subset_data(data, pixels=self.pixels)
         if walker_initial_pos is None:
@@ -100,7 +100,7 @@ class TemperedStrategy(EmceeStrategy):
         self.nwalkers=nwalkers
         self.next_initial_dist = next_initial_dist
 
-    def sample(self, model, data, nsamples):
+    def sample(self, model, data, nsamples=1000):
         stage_results = []
         guess = self.make_guess(model.parameters)
         for stage in self.stage_strategies[:-1]:
