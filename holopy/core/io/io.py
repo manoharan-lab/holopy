@@ -321,6 +321,8 @@ def save_image(filename, im, scaling='auto', depth=8):
                 raise BadImage("Too many illumination channels")
             if 'z' in im.dims:
                 im = im.isel(z=0)
+            if im.ndim == 3:
+                im = im.transpose('x','y','illumination')
 
     metadat=False
     if os.path.splitext(filename)[1] in tiflist and isinstance(im, xr.DataArray):
