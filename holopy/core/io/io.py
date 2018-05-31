@@ -81,12 +81,17 @@ def pad_channel(im, color_axis=illumination, padval=0):
         im.attrs['_dummy_channel'] = -1
     return clean_concat([im, new_ax], concat_dim)
 
-def pack_attrs(a, do_spacing=False):
+def pack_attrs(a, do_spacing=False, scaling = None):
     new_attrs = {'name':a.name, attr_coords:{}}
 
     if do_spacing:
         new_attrs['spacing']=list(get_spacing(a))
-        
+
+    if scaling is 'auto':
+        scaling = [np.asscalar(a.min()), np.asscalar(a.max())]
+    if scaling:
+        new_attrs['scaling']=list(scaling)
+
     for attr, val in a.attrs.items():
         if isinstance(val, xr.DataArray):
             new_attrs[attr_coords][attr]={}
@@ -103,7 +108,7 @@ def pack_attrs(a, do_spacing=False):
 def unpack_attrs(a):
     new_attrs={}
     attr_ref=yaml.load(a[attr_coords])
-    for attr in dict_without(attr_ref,['spacing','name', '_dummy_channel']):
+    for attr in dict_without(attr_ref,['spacing','name', '_dummy_channel, scaling']):
         if attr_ref[attr]:
             new_attrs[attr] = xr.DataArray(a[attr], coords=attr_ref[attr],dims=list(attr_ref[attr].keys()))
         elif attr in a:
@@ -174,9 +179,12 @@ def load(inf, lazy=False):
                 raise NoMetadata
             else:
                 im = load_image(inf, meta['spacing'], name = meta['name'], channel='all')
-                im.attrs = unpack_attrs(meta)
                 if '_dummy_channel' in meta:
                     im = im.drop(np.asscalar(im.illumination[meta['_dummy_channel']]), illumination)
+                if 'scaling' in meta:
+                    smin, smax = meta['scaling']
+                    im = (im-im.min())*(smax-smin)/(im.max()-im.min())+smin
+                im.attrs = unpack_attrs(meta)
                 return im
         except KeyError:
             raise NoMetadata
@@ -318,7 +326,7 @@ def save_image(filename, im, scaling='auto', depth=8):
     if os.path.splitext(filename)[1] in tiflist and isinstance(im, xr.DataArray):
         if im.name is None:
             im.name=os.path.splitext(os.path.split(filename)[-1])[0]
-        metadat = pack_attrs(im, do_spacing = True)
+        metadat = pack_attrs(im, do_spacing = True, scaling=scaling)
         from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2 #hiding this import here since it doesn't play nice in some scenarios
         tiffinfo = ifd2()
         tiffinfo[270] = yaml.dump(metadat) #This edits the 'imagedescription' field of the tiff metadata
