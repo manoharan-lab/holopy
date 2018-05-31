@@ -28,12 +28,14 @@ Routines for fitting a hologram to an exact solution
 import warnings
 import time
 from copy import copy, deepcopy
+import yaml
 
 import numpy as np
 
 from ..core.holopy_object import HoloPyObject
-from holopy.core.metadata import flat, copy_metadata
+from holopy.core.metadata import flat, copy_metadata, get_spacing
 from holopy.core.math import chisq, rsq
+from holopy.core.utils import dict_without
 from .errors import MinimizerConvergenceFailed, InvalidMinimizer
 from .minimizer import Minimizer, Nmpfit
 
@@ -51,6 +53,13 @@ def make_subset_data(data, random_subset=None, pixels=None, return_selection=Fal
     selection = np.random.choice(tot_pix, n_sel, replace=False)
     subset = flat(data).isel(flat=selection)
     subset = copy_metadata(data, subset, do_coords=False)
+
+    shape = (len(data.x), len(data.y))
+    spacing = (get_spacing(data))
+    start = (np.asscalar(data.x[0]), np.asscalar(data.y[0]))
+    coords = {key:val.values for key, val in dict_without(dict(data.coords), ['x','y','z']).items()}
+    subset.attrs['original_dims'] = yaml.dump((shape, spacing, start, coords))
+
     if return_selection:
         return subset, selection
     else:
