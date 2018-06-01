@@ -33,7 +33,10 @@ import xarray as xr
 def ensure_array(x):
     if isinstance(x, xr.DataArray):
         if x.shape==():
-            return x.expand_dims(x.coords)
+            if len(x.coords)==0:
+                return np.array([x.item()])
+            else:
+                return x.expand_dims(x.coords)
         else:
             return x
     elif np.isscalar(x) or isinstance(x, bool) or (isinstance(x, np.ndarray) and x.shape==()):

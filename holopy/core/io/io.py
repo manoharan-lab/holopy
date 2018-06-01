@@ -421,7 +421,7 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
         channel = [i for i, col in enumerate(['red','green','blue']) if col in refimg[illumination].values]
     accumulator = clean_concat([load_image(image, spacing, channel=channel) for image in filepath],'images')
     if noise_sd is None:
-        noise_sd = (accumulator.std('images').mean()/accumulator.mean()).item()
+        noise_sd = accumulator.std('images').mean(('x','y','z'))/accumulator.mean(('images','x','y','z'))
     accumulator = accumulator.mean('images')
 
     if not is_none(refimg):
