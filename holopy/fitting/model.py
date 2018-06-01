@@ -263,7 +263,12 @@ class BaseModel(HoloPyObject):
         raise ValueError("Cannot find value for {} in Model{}".format(name, schema))
 
     def get_par(self, name, pars, schema=None, default=None):
-        return pars.pop(name, self.par(name, schema, default=default))
+        if name in pars.keys():
+            return pars.pop(name)
+        elif hasattr(self, name+'_names'):
+            return {key:self.get_par(name+'_'+key, pars) for key in getattr(self, name+'_names')}
+        else:
+            return self.par(name, schema, default)
 
     def get_pars(self, names, pars, schema=None):
         r = {}
@@ -273,6 +278,7 @@ class BaseModel(HoloPyObject):
 
     def _use_parameter(self, par, name):
         if isinstance(par, dict):
+            setattr(self, name+'_names', list(par.keys()))
             for key, val in par.items():
                 self._use_parameter(val, name+'_'+key)
         elif isinstance(par, xr.DataArray):
@@ -280,8 +286,9 @@ class BaseModel(HoloPyObject):
                 dimname = par.dims[0]
             else:
                 raise ParameterSpecificationError('Multi-dimensional parameters are not supported')
+            setattr(self, name+'_names', list(par[dimname].values))
             for key in par[dimname]:
-                self._use_parameter(np.asscalar(par.sel(**{dimname:key})),name+'_'+np.asscalar(key))
+                self._use_parameter(par.sel(**{dimname:key}).item(),name+'_'+key.item())
         else:
             setattr(self, name, par)
             if isinstance(par, Parameter):
