@@ -26,7 +26,7 @@ as Clusters.
 '''
 
 
-from .scatterer import Scatterer, Indicators
+from .scatterer import Scatterer, Indicators, checkguess
 from . import scatterer
 
 from .sphere import Sphere, LayeredSphere

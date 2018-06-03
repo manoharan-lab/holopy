@@ -28,9 +28,18 @@ import errno
 import numpy as np
 from copy import copy
 import itertools
+import xarray as xr
 
 def ensure_array(x):
-    if np.isscalar(x):
+    if isinstance(x, xr.DataArray):
+        if x.shape==():
+            if len(x.coords)==0:
+                return np.array([x.item()])
+            else:
+                return x.expand_dims(x.coords)
+        else:
+            return x
+    elif np.isscalar(x) or isinstance(x, bool) or (isinstance(x, np.ndarray) and x.shape==()):
         return np.array([x])
     else:
         return np.array(x)

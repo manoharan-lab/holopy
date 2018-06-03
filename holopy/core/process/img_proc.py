@@ -227,15 +227,16 @@ def bg_correct(raw, bg, df=None):
 
     """
     if is_none(df):
-        df = detector_grid(raw.shape,get_spacing(raw))
+        df = raw.copy()
+        df[:] = 0
 
     if not (raw.shape == bg.shape == df.shape and list(get_spacing(raw)) == list(get_spacing(bg)) == list(get_spacing(df))):
         raise BadImage("raw and background images must have the same shape and spacing")
 
     holo = (raw - df) / zero_filter(bg - df)
-
     holo = copy_metadata(raw, holo)
 
     if hasattr(holo, 'noise_sd') and hasattr(bg, 'noise_sd') and holo.noise_sd is None:
         holo = update_metadata(holo, noise_sd = bg.noise_sd)
+
     return holo

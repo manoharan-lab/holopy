@@ -20,15 +20,18 @@
 import tempfile
 
 import numpy as np
+import xarray as xr
+from collections import OrderedDict
 
 from nose.plugins.attrib import attr
-from numpy.testing import assert_equal
+from holopy.core.tests.common import assert_equal, assert_obj_close
 from holopy.scattering.theory import Mie
 from holopy.scattering.scatterer import Sphere, Spheres
-from holopy.fitting import Model, ComplexParameter, Parametrization
+from holopy.fitting.model import Model, ComplexParameter, Parametrization, ParameterizedObject
 from holopy.fitting import Parameter as par
 from holopy.core.tests.common import assert_read_matches_write
 from holopy.scattering.calculations import calc_holo
+from holopy.inference import prior
 
 @attr('fast')
 def test_naming():
@@ -86,6 +89,18 @@ def test_ComplexPar():
     assert_equal(model.parameters[0].name,'n.real')
     assert_equal(model.parameters[1].name,'n.imag')
 
+def test_multidim():
+    s = Sphere(n = {'r':par(0,[-1,1]),'g':par(0,0),'b':prior.Gaussian(0,1),'a':0}, r = xr.DataArray([prior.Gaussian(0,1),par(0,[-1,1]),par(0,0),0], dims='alph',coords={'alph':['a','b','c','d']}), center=[par(0,[-1,1]),par(0,0),0])
+    par_s = ParameterizedObject(s)
+    params = {'n_r':3,'n_g':4,'n_b':5,'n_a':6,'r_a':7,'r_b':8,'r_c':9,'r_d':10,'center[0]':7,'center[1]':8,'center[2]':9}
+    out_s = Sphere(n={'r':3,'g':0,'b':5,'a':0}, r = xr.DataArray([7,8,0,0], dims='alph',coords={'alph':['a','b','c','d']}), center=[7,0,0])
+    assert_obj_close(par_s.make_from(params), out_s)
+
+    m = Model(s, np.sum)
+    m._use_parameter(OrderedDict([('r',par(0,[-1,1])),('g',par(0,0)),('b',prior.Gaussian(0,1)),('a',0)]),'letters')
+    m._use_parameter(xr.DataArray([prior.Gaussian(0,1),par(0,[-1,1]),par(0,0),0],dims='numbers',coords={'numbers':['one','two','three','four']}),'count')
+    expected_params = [par(0,[-1,1],'letters_r'),par(0,0,'letters_g'),prior.Gaussian(0,1,'letters_b'),prior.Gaussian(0,1,'count_one'),par(0,[-1,1],'count_two'), par(0,0,'count_three')]
+    assert_equal(m.parameters[-6:], expected_params)
 
 def test_pullingoutguess():
     g = Sphere(center = (par(guess=.567e-5, limit=[0,1e-5]),

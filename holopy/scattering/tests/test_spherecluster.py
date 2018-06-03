@@ -86,7 +86,7 @@ def test_Spheres_parameters():
     5e-07), ('1:Sphere.center[0]', 0), ('1:Sphere.center[1]', 0),
     ('1:Sphere.center[2]', 0), ('1:Sphere.n', 1.59), ('1:Sphere.r', 1e-06)]))
 
-    sc2 = Spheres.from_parameters(sc.parameters)
+    sc2 = Spheres([]).from_parameters(sc.parameters)
 
     assert_equal(sc.scatterers[0].r, sc2.scatterers[0].r)
     assert_equal(sc.scatterers[1].r, sc2.scatterers[1].r)

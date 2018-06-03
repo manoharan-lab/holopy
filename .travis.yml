@@ -4,7 +4,7 @@ python:
   - 3.4
 
 env:
-  - DEPS="numpy scipy pyyaml pillow pandas h5py sphinx matplotlib nose xarray"
+  - DEPS="numpy scipy pyyaml pillow pandas h5py sphinx matplotlib nose"
 
 
 install:
@@ -14,6 +14,7 @@ install:
   - conda install -c conda-forge --yes $DEPS
   - pip install emcee
   - pip install numpy==1.12.1
+  - pip install xarray==0.10.0
 # TODO Remove these once setup.py handles dependencies correctly.
   - python setup.py install
   - python setup.py build_ext --inplace
