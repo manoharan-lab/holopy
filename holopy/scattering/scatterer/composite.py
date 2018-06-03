@@ -31,7 +31,7 @@ import numpy as np
 
 from . import Scatterer
 from ...core.math import rotate_points
-from ...core.utils import is_none, ensure_array
+from ...core.utils import is_none, ensure_array, updated
 
 class Scatterers(Scatterer):
     '''
@@ -82,8 +82,10 @@ class Scatterers(Scatterer):
                 d['{0}:{1}.{2}'.format(i, scatterer.__class__.__name__, key)] = par
         return dict(sorted(list(d.items()), key = lambda t: t[0]))
 
-    @classmethod
-    def from_parameters(cls, parameters):
+
+    def from_parameters(self, parameters, update = False):
+        if update:
+            parameters = updated(self.parameters, {key: val for key, val in parameters.items() if key[0].isdigit()})
         n_scatterers = len(set([p.split(':')[0] for p in list(parameters.keys())]))
         collected = [{} for i in range(n_scatterers)]
         types = [None] * n_scatterers
@@ -107,9 +109,9 @@ class Scatterers(Scatterer):
         from .. import scatterer
         for i, scat_type in enumerate(types):
             scatterers.append(getattr(scatterer,
-                              scat_type).from_parameters(collected[i]))
+                              scat_type)().from_parameters(collected[i]))
 
-        return cls(scatterers)
+        return type(self)(scatterers)
 
     def _prettystr(self, level, indent="  "):
         '''
@@ -203,3 +205,8 @@ class Scatterers(Scatterer):
             return self.scatterers[self.in_domain(point)[0]].index_at(point)
         except TypeError:
             return None
+
+    def select(self, keys):
+        new = copy(self)
+        new.scatterers = [s.select(keys) for s in self.scatterers]
+        return new

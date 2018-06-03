@@ -26,7 +26,7 @@ Defines Sphere, a scattering primitive
 import numpy as np
 from copy import copy
 
-from .scatterer import CenteredScatterer, Indicators
+from .scatterer import CenteredScatterer, Indicators, checkguess
 from ..errors import InvalidScatterer
 from ...core.utils import ensure_array, updated
 
@@ -84,12 +84,6 @@ class Sphere(CenteredScatterer):
             return 0
     
     def guess(self):
-
-        def checkguess(val):
-            if hasattr(val,'guess'):
-                return val.guess
-            else:
-                return val
 
         if self.center is not None:
             center = [checkguess(dim) for dim in self.center]

@@ -28,12 +28,13 @@ from warnings import warn
 from scipy.misc import fromimage
 from PIL import Image as pilimage
 import xarray as xr
+import numpy as np
 import importlib
 
 from . import serialize
-from ..metadata import data_grid, get_spacing, update_metadata
+from ..metadata import data_grid, get_spacing, update_metadata, copy_metadata, to_vector, illumination, clean_concat
 from ..utils import is_none, ensure_array, dict_without
-from ..errors import NoMetadata, BadImage
+from ..errors import NoMetadata, BadImage, LoadError
 
 attr_coords = '_attr_coords'
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
@@ -64,18 +65,39 @@ def get_example_data_path(name):
 def get_example_data(name):
     return load(get_example_data_path(name))
 
-def pack_attrs(a, do_spacing=False):
+def pad_channel(im, color_axis=illumination, padval=0):
+    new_ax = im.isel(**{color_axis:0}).copy()
+    new_ax[:] = padval
+    if isinstance(im[color_axis].values[0],str):
+        'coords labeled rgb'
+        concat_dim = xr.DataArray(['red','green','blue'], dims=color_axis, name=color_axis)
+        for col in concat_dim:
+            if col.values not in im[color_axis].values:
+                new_ax[color_axis] = col
+                im.attrs['_dummy_channel'] = list(concat_dim).index(col)
+    else:
+        new_ax[color_axis] = np.NaN
+        concat_dim = color_axis
+        im.attrs['_dummy_channel'] = -1
+    return clean_concat([im, new_ax], concat_dim)
+
+def pack_attrs(a, do_spacing=False, scaling = None):
     new_attrs = {'name':a.name, attr_coords:{}}
 
     if do_spacing:
         new_attrs['spacing']=list(get_spacing(a))
-        
+
+    if scaling is 'auto':
+        scaling = [np.asscalar(a.min()), np.asscalar(a.max())]
+    if scaling:
+        new_attrs['scaling']=list(scaling)
+
     for attr, val in a.attrs.items():
         if isinstance(val, xr.DataArray):
             new_attrs[attr_coords][attr]={}
             for dim in val.dims:
                 new_attrs[attr_coords][attr][dim]=val[dim].values
-            new_attrs[attr]=list(ensure_array(val))
+            new_attrs[attr]=list(val.values)
         else:
             new_attrs[attr_coords][attr]=False
             if not is_none(val):
@@ -86,7 +108,7 @@ def pack_attrs(a, do_spacing=False):
 def unpack_attrs(a):
     new_attrs={}
     attr_ref=yaml.load(a[attr_coords])
-    for attr in dict_without(attr_ref,['spacing','name']):
+    for attr in dict_without(attr_ref,['spacing','name', '_dummy_channel, scaling']):
         if attr_ref[attr]:
             new_attrs[attr] = xr.DataArray(a[attr], coords=attr_ref[attr],dims=list(attr_ref[attr].keys()))
         elif attr in a:
@@ -156,7 +178,12 @@ def load(inf, lazy=False):
             if meta['spacing'] is None:
                 raise NoMetadata
             else:
-                im = load_image(inf, meta['spacing'], name = meta['name'])
+                im = load_image(inf, meta['spacing'], name = meta['name'], channel='all')
+                if '_dummy_channel' in meta:
+                    im = im.drop(np.asscalar(im.illumination[meta['_dummy_channel']]), illumination)
+                if 'scaling' in meta:
+                    smin, smax = meta['scaling']
+                    im = (im-im.min())*(smax-smin)/(im.max()-im.min())+smin
                 im.attrs = unpack_attrs(meta)
                 return im
         except KeyError:
@@ -164,7 +191,7 @@ def load(inf, lazy=False):
     else:
         raise NoMetadata
 
-def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, channel=None, name=None):
+def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, noise_sd=None, channel=None, name=None):
     """
     Load data or results
 
@@ -174,8 +201,8 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
         File to load.  If the file is a yaml file, all other arguments are
         ignored.  If inf is a list of image files or filenames they are all
         loaded as a a timeseries hologram
-    channel : int (optional)
-        number of channel to load for a color image (in general 0=red,
+    channel : int or tuple of ints (optional)
+        number(s) of channel to load for a color image (in general 0=red,
         1=green, 2=blue)
 
     Returns
@@ -183,25 +210,43 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
     obj : The object loaded, :class:`holopy.core.marray.Image`, or as loaded from yaml
 
     """
+    if name is None:
+        name = os.path.splitext(os.path.split(inf)[-1])[0]
+
     with pilimage.open(inf) as pi:
         arr=fromimage(pi).astype('d')
 
-    # pick out only one channel of a color image
+    extra_dims = None
     if channel is None:
-        if len(arr.shape) > 2:
-            raise BadImage('Not a greyscale image. You must specify a channel to use')
-    elif len(arr.shape) > 2:
-        if channel >= arr.shape[2]:
-            raise LoadError(filename,
-                "The image doesn't have a channel number {0}".format(channel))
-        else:
-            arr = arr[:, :, channel]
+        if arr.ndim > 2:
+            raise BadImage('Not a greyscale image. You must specify which channel(s) to use')
+    elif arr.ndim == 2:
+            if not channel == 'all':
+                warn("Warning: not a color image (channel number ignored)")
+            pass
     else:
-        warn("Warning: not a color image (channel number ignored)")
+        # color image with specified channel(s)
+        if channel == 'all':
+            channel = range(arr.shape[2])
+        channel = ensure_array(channel)
+        if channel.max() >= arr.shape[2]:
+            raise LoadError(filename,
+                "The image doesn't have a channel number {0}".format(channel.max()))
+        else:
+            arr = arr[:, :, channel].squeeze()
 
-    if name is None:
-        name = os.path.splitext(os.path.split(inf)[-1])[0]
-    return data_grid(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, name)
+            if len(channel) > 1:
+                # multiple channels. increase output dimensionality
+                if channel.max() <=2:
+                    channel = [['red','green','blue'][c] for c in channel]
+                extra_dims = {illumination: channel}
+                if not is_none(illum_wavelen) and not isinstance(illum_wavelen,dict) and len(ensure_array(illum_wavelen)) == len(channel):
+                    illum_wavelen = xr.DataArray(ensure_array(illum_wavelen), dims=illumination, coords=extra_dims)
+                if not isinstance(illum_polarization, dict) and np.array(illum_polarization).ndim == 2:
+                    pol_index = xr.DataArray(channel, dims=illumination, name=illumination)
+                    illum_polarization=xr.concat([to_vector(pol) for pol in illum_polarization], pol_index)
+
+    return data_grid(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, noise_sd, name, extra_dims)
 
 def save(outf, obj):
     """
@@ -218,12 +263,6 @@ def save(outf, obj):
     obj : :class:`holopy.core.holopy_object.HoloPyObject`
         The object to save
 
-    Notes
-    -----
-    Marray objects are actually saved as a custom yaml file consisting of a yaml
-    header and a numpy .npy binary array.  This is done because yaml's saving of
-    binary array is very slow for large arrays.  HoloPy can read these 'yaml'
-    files, but any other yaml implementation will get confused.
     """
     if isinstance(outf, str):
         filename, ext = os.path.splitext(outf)
@@ -271,25 +310,43 @@ def save_image(filename, im, scaling='auto', depth=8):
     if os.path.splitext(filename)[1] is '':
         filename += '.tif'
     
+    if im.ndim > 2 + hasattr(im,illumination) + hasattr(im, 'z'):
+        raise BadImage("Cannot interpret multidimensional image")
+    else:
+        im = im.copy()
+        if isinstance(im, xr.DataArray):
+            if illumination in im.dims and len(im.illumination) == 2:
+                im = pad_channel(im)
+            elif illumination in im.dims and len(im.illumination) > 3:
+                raise BadImage("Too many illumination channels")
+            if 'z' in im.dims:
+                im = im.isel(z=0)
+            if im.ndim == 3:
+                im = im.transpose('x','y','illumination')
+
     metadat=False
-    if os.path.splitext(filename)[1] in tiflist:
+    if os.path.splitext(filename)[1] in tiflist and isinstance(im, xr.DataArray):
         if im.name is None:
             im.name=os.path.splitext(os.path.split(filename)[-1])[0]
-        metadat = pack_attrs(im, do_spacing = True)
+        metadat = pack_attrs(im, do_spacing = True, scaling=scaling)
         from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2 #hiding this import here since it doesn't play nice in some scenarios
         tiffinfo = ifd2()
         tiffinfo[270] = yaml.dump(metadat) #This edits the 'imagedescription' field of the tiff metadata
 
-    if len(im.dims)>2:
-        im = im.copy().isel(z=0)
-    else:
-        im = im.copy()
+    if np.iscomplex(im).any():
+        raise BadImage("Cannot interpret image with complex values")
+
+    if isinstance(im, xr.DataArray):
+        im = im.values
+
     if scaling is not None:
         if scaling is 'auto':
             min = im.min()
             max = im.max()
         elif len(scaling) == 2:
             min, max = scaling
+            im = np.minimum(im, max)
+            im = np.maximum(im, min)
         else:
             raise Error("Invalid image scaling")
         if min is not None:
@@ -310,12 +367,13 @@ def save_image(filename, im, scaling='auto', depth=8):
         if im.max() <= 1:
             im = im * ((2**depth)-1) + .499999
             im = im.astype(typestr)
-    if metadat:
-        pilimage.fromarray(im.values).save(filename, tiffinfo=tiffinfo)
-    else:
-        pilimage.fromarray(im.values).save(filename)
 
-def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, channel=None, image_glob='*.tif'):
+    if metadat:
+        pilimage.fromarray(im).save(filename, tiffinfo=tiffinfo)
+    else:
+        pilimage.fromarray(im).save(filename)
+
+def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, noise_sd=None, channel=None, image_glob='*.tif'):
     """
     Average a set of images (usually as a background)
 
@@ -343,6 +401,7 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
     -------
     averaged_image : xarray.DataArray
         Image which is an average of images
+        noise_sd attribute contains average pixel stdev normalized by total image intensity
     """
 
     if isinstance(filepath, str):
@@ -357,12 +416,14 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
 
     if is_none(spacing):
         spacing = get_spacing(refimg)
-    
-    accumulator = load_image(filepath[0],spacing, channel=channel)
-    for image in filepath[1:]:
-        accumulator += load_image(image, spacing,channel=channel)
-    accumulator /= len(filepath)
+
+    if channel is None and illumination in refimg.dims:
+        channel = [i for i, col in enumerate(['red','green','blue']) if col in refimg[illumination].values]
+    accumulator = clean_concat([load_image(image, spacing, channel=channel) for image in filepath],'images')
+    if noise_sd is None:
+        noise_sd = accumulator.std('images').mean(('x','y','z'))/accumulator.mean(('images','x','y','z'))
+    accumulator = accumulator.mean('images')
 
     if not is_none(refimg):
-        accumulator = update_metadata(accumulator, refimg.medium_index, refimg.illum_wavelen, refimg.illum_polarization, refimg.normals)    
-    return update_metadata(accumulator, medium_index, illum_wavelen, illum_polarization, normals)
+        accumulator = copy_metadata(refimg, accumulator, do_coords=False)
+    return update_metadata(accumulator, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)

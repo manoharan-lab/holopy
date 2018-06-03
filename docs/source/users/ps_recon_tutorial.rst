@@ -121,7 +121,7 @@ visualizing the reconstruction results.
 ..  testoutput::
     :hide:
 
-    1.37098065519e-11
+    1.3709806551938934e-11
 
 Magnification and Output Image Size
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

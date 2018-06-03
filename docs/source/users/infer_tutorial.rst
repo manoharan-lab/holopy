@@ -25,7 +25,7 @@ Here is the full example.  We'll go through it step-by-step afterward::
     from holopy.core.io import get_example_data_path, load_average
     from holopy.core.process import bg_correct, subimage, normalize
     from holopy.scattering import Sphere, calc_holo
-    from holopy.inference import prior, AlphaModel, tempered_sample
+    from holopy.inference import prior, AlphaModel, TemperedStrategy
 
     # load an image
     imagepath = get_example_data_path('image01.jpg')
@@ -43,12 +43,13 @@ Here is the full example.  We'll go through it step-by-step afterward::
              center=prior.make_center_priors(data_holo))
 
     # Set up the noise model
-    noise_sd = data_holo.std()
-    model = AlphaModel(s, noise_sd=noise_sd, alpha=1)
+    model = AlphaModel(s, noise_sd=data_holo.noise_sd, alpha=1)
 
-    result = tempered_sample(model, data_holo)
+    strat = TemperedStrategy()
+    result = strat.sample(model, data_holo)
 
-    result.values()
+    fit_vals = result.values()
+    fit_holo = result.best_fit()
     hp.save('example-sampling.h5', result)
 
 The first few lines import the code needed to compute holograms and do parameter estimation.
@@ -60,7 +61,7 @@ The first few lines import the code needed to compute holograms and do parameter
     from holopy.core.io import get_example_data_path, load_average
     from holopy.core.process import bg_correct, subimage, normalize
     from holopy.scattering import Sphere, calc_holo
-    from holopy.inference import prior, AlphaModel, tempered_sample
+    from holopy.inference import prior, AlphaModel, TemperedStrategy
 
 Preparing Data
 ~~~~~~~~~~~~~~
@@ -161,14 +162,13 @@ would see the data we observed given some hypothetical scatterer position, size
 and index. In the language of statistics, this is referred to as a likelihood.
 In order to compute a likelihood, you need some estimate of how noisy your data
 is (so that you can figure out how likely it is that the differences between
-your model and data could be explained by noise). Here we use the standard
-deviation of the data, which is an overestimate of the true noise, since it also
-includes variation due to our signal.
+your model and data could be explained by noise). Here we use the ``noise_sd``
+attribute of our hologram, which was automatically calculated from the deviation
+in background images when we ran :func:`.bg_correct`.
 
 ..  testcode::
 
-  noise_sd = data_holo.std()
-  model = AlphaModel(s, noise_sd=noise_sd, alpha=1)
+  model = AlphaModel(s, noise_sd=data_holo.noise_sd, alpha=1)
 
 ..  note::
 
@@ -189,10 +189,13 @@ iteratively produces and tests sets of scatterers to find the scatterer
 parameters that best reproduce the target hologram. We end up with a
 distribution of values for each parameter (the posterior) that represents our
 updated knowledge about the scatterer when accounting for the expected
-experimental hologram. To do the actual sampling, we use
-:func:`.tempered_sample` (ignoring any RuntimeWarnings about invalid values)::
+experimental hologram. We need to define a :class:`.TemperedStrategy` object that
+sets up the inference calculation, here using default settings. Then, we combine
+the model and data with the strategy to perform the actual sampling (ignoring
+any RuntimeWarnings about invalid values)::
 
-    result = tempered_sample(model, data_holo)
+    strat = TemperedStrategy()
+    result = strat.sample(model, data_holo)
 
 The above line of code may take a long time to run (it takes 10-15 mins on our
 8-core machines). If you just want to quickly see what the results look like,
@@ -200,7 +203,8 @@ try:
 
 ..  testcode::
 
-    result = tempered_sample(model, data_holo, nwalkers=10, samples=100, max_pixels=100)
+    strat = TemperedStrategy(nwalkers=10, max_pixels=100)
+    result = strat.sample(model, data_holo, nsamples=100) 
 
 This code should run very quickly, but its results cannot be trusted for any
 actual data. Nevertheless, it can give you an idea of what format the results
@@ -216,11 +220,12 @@ holograms contain a lot of redundant information owing to their symmetry, so a
 subset of pixels can be analyzed without loss of accuracy. However, 100 pixels
 is probably too few to capture all of the relevant information in the hologram.
 
-You can get a quick look at our obtained values with:
+You can get a quick look at our obtained best fit values and the resulting hologram with:
 
 ..  testcode::
 
-    result.values()
+    fit_vals = result.values()
+    fit_holo = result.best_fit()
 
 ``result.values()`` gives you the maximum a posteriori probability (MAP) value as
 well as one-sigma credibility intervals (or you can request any other sigma with
@@ -262,7 +267,7 @@ And then defining the model using :
 
 ..  testcode::
 
-    model = AlphaModel(spheres, noise_sd=noise_sd, alpha=1)
+    model = AlphaModel(spheres, noise_sd=data_holo.noise_sd, alpha=1)
 
 References
 ~~~~~~~~~~

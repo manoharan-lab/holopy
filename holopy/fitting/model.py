@@ -25,6 +25,7 @@ Classes for defining models of scattering for fitting
 
 from copy import copy
 import numpy as np
+import xarray as xr
 import inspect
 from os.path import commonprefix
 from .errors import ParameterSpecificationError
@@ -114,6 +115,8 @@ class ParameterizedObject(Parametrization):
         ties = {}
         for name, par in sorted(iter(obj.parameters.items()), key=lambda x: x[0]):
             def add_par(p, name):
+                if not isinstance(p, Parameter):
+                    p = Parameter(p,p)
                 if p in parameters:
                     # if the parameter is already in the parameters list, it
                     # means the parameter is tied
@@ -142,6 +145,16 @@ class ParameterizedObject(Parametrization):
             if isinstance(par, ComplexParameter):
                 add_par(par.real, name+'.real')
                 add_par(par.imag, name+'.imag')
+            elif isinstance(par, dict):
+                for key, val in par.items():
+                    add_par(val, name + '_' + key)
+            elif isinstance(par, xr.DataArray):
+                if len(par.dims)==1:
+                    dimname = par.dims[0]
+                else:
+                    raise ParameterSpecificationError('Multi-dimensional parameters are not supported')
+                for key in par[dimname]:
+                    add_par(np.asscalar(par.sel(**{dimname:key})),name+'_'+np.asscalar(key))
             elif isinstance(par, Parameter):
                 add_par(par, name)
 
@@ -171,7 +184,9 @@ class ParameterizedObject(Parametrization):
                     name = groupname
 
             def get_val(par, name):
-                if par.fixed:
+                if not isinstance(par, Parameter):
+                    return par
+                elif par.fixed:
                     return par.limit
                 else:
                     return parameters[name]
@@ -179,20 +194,23 @@ class ParameterizedObject(Parametrization):
             if isinstance(par, ComplexParameter):
                 par_val = (get_val(par.real, name+'.real') +
                            1j * get_val(par.imag, name+'.imag'))
+            elif isinstance(par, dict):
+                par_val = {key:get_val(val, name+'_'+key) for key, val in par.items()}
+            elif isinstance(par, xr.DataArray):
+                par_val = par.copy()
+                dimname = par_val.dims[0]
+                for key, val in zip(par[dimname], par):
+                    par_val.loc[{dimname:key}] = get_val(np.asscalar(val), name+'_'+np.asscalar(key))
             elif isinstance(par, Parameter):
                 par_val = get_val(par, name)
             else:
                 par_val = par
-
 
             if name in self.ties:
                 for tied_name in self.ties[name]:
                     obj_pars[tied_name] = par_val
             else:
                 obj_pars[name] = par_val
-
-
-
         return self.obj.from_parameters(obj_pars)
 
 def limit_overlaps(fraction=.1):
@@ -245,7 +263,12 @@ class BaseModel(HoloPyObject):
         raise ValueError("Cannot find value for {} in Model{}".format(name, schema))
 
     def get_par(self, name, pars, schema=None, default=None):
-        return pars.pop(name, self.par(name, schema, default=default))
+        if name in pars.keys():
+            return pars.pop(name)
+        elif hasattr(self, name+'_names'):
+            return {key:self.get_par(name+'_'+key, pars) for key in getattr(self, name+'_names')}
+        else:
+            return self.par(name, schema, default)
 
     def get_pars(self, names, pars, schema=None):
         r = {}
@@ -254,11 +277,24 @@ class BaseModel(HoloPyObject):
         return r
 
     def _use_parameter(self, par, name):
-        setattr(self, name, par)
-        if isinstance(par, Parameter):
-            if par.name is None:
-                par.name = name
-            self._parameters.append(par)
+        if isinstance(par, dict):
+            setattr(self, name+'_names', list(par.keys()))
+            for key, val in par.items():
+                self._use_parameter(val, name+'_'+key)
+        elif isinstance(par, xr.DataArray):
+            if len(par.dims)==1:
+                dimname = par.dims[0]
+            else:
+                raise ParameterSpecificationError('Multi-dimensional parameters are not supported')
+            setattr(self, name+'_names', list(par[dimname].values))
+            for key in par[dimname]:
+                self._use_parameter(par.sel(**{dimname:key}).item(),name+'_'+key.item())
+        else:
+            setattr(self, name, par)
+            if isinstance(par, Parameter):
+                if par.name is None:
+                    par.name = name
+                self._parameters.append(par)
 
     def _optics_scatterer(self, pars, schema):
         optics = self.get_pars(['medium_index', 'illum_wavelen', 'illum_polarization'], pars, schema)

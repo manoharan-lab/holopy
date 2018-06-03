@@ -85,7 +85,7 @@ field that is not scattered or absorbed by the particle.
 ..  testoutput::
     :hide:
 
-    [ 1.01201782]
+    [1.01201782]
 
 You might have noticed that our scattering calculation requires much of the same
 metadata we specified when loading an image. If we have an experimental image
@@ -114,7 +114,7 @@ arguments.
     :hide:
 
     (1, 100, 100)
-    [ 1.01201782]
+    [1.01201782]
 
 Note that we didn't need to explicitly specify illumination information when
 calling :func:`.calc_holo`, since our image contained saved metadata and HoloPy
@@ -191,7 +191,7 @@ first define the spheres individually, and then combine them into a
 ..  testoutput::
     :hide:
 
-    [ 1.04897655]
+    [1.04897655]
 
 .. image:: ../images/calc_twosphere.png
    :scale: 300 %
@@ -213,7 +213,7 @@ Note that the hologram image is elongated in the horizontal direction since the 
 
     import numpy as np
     from holopy.scattering import Cylinder
-    c = Cylinder(center=(5, 5, 7), n = 1.59, d=0.5, h=2, rotation=(0,np.pi/2, 0))
+    c = Cylinder(center=(5, 5, 7), n = 1.59, d=0.75, h=2, rotation=(0,np.pi/2, 0))
     holo = calc_holo(exp_img, c)
     hp.show(holo)
 
@@ -225,7 +225,7 @@ Note that the hologram image is elongated in the horizontal direction since the 
 ..  testoutput::
     :hide:
 
-    [ 1.01179772]
+    [0.97450458]
 
 .. image:: ../images/calc_cylinder.png
    :scale: 300 %
@@ -239,6 +239,28 @@ Customizing Scattering Calculations
 
 While the examples above will be sufficient for most purposes, there are a few
 additional options that are useful in certain scenarios.
+
+Multi-channel Holograms
+-----------------------
+
+Sometimes a hologram may include data from multiple illumination sources,
+such as two separate wavelengths of incident light. In this case, the extra
+arguments can be passed in as a dictionary object, with keys corresponding to 
+dimension names in the image. You can also use a multi-channel experimental image
+in place of calling :func:`.detector_grid`.
+
+..  testcode::
+
+    illum_dim = {'illumination':['red', 'green']}
+    n_dict = {'red':1.58,'green':1.60}
+    wl_dict = {'red':0.690,'green':0.520}
+    det_c = hp.detector_grid(shape=200, spacing=0.1, extra_dims = illum_dim)
+    s_c = Sphere(r=0.6, n=n_dict, center=[6,6,6])
+    holo = calc_holo(det_c, s_c, illum_wavelen=wl_dict, illum_polarization=(0,1), medium_index=1.33)
+
+..  image:: ../images/calc_multi.png
+    :scale: 300 %
+    :alt: Calculated hologram of a sphere at 2 wavelengths
 
 Scattering Theories in HoloPy
 -----------------------------
@@ -400,7 +422,7 @@ omit the ``detector`` argument entirely:
 ..  testoutput::
     :hide:
 
-    [ 1.93274289  0.          1.93274289  0.91619823]
+    [1.93274289 0.         1.93274289 0.91619823]
 
 x_sec returns an array containing four elements. The first element is the
 scattering cross section, specified in terms of the same units as wavelength and

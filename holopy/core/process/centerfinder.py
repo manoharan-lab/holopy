@@ -89,6 +89,9 @@ def center_find(image, centers=1, threshold=.5, blursize=3.):
     if blursize>0:
         image.values = filters.gaussian_filter(image.values,blursize)
     col_deriv, row_deriv = image_gradient(image)
+    while col_deriv.ndim > 2:
+        col_deriv = col_deriv[:,:,0]
+        row_deriv = row_deriv[:,:,0]
     res = hough(col_deriv, row_deriv, centers, threshold)
     if centers==1:
         res = res[0]

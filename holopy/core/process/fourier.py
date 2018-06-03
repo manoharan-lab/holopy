@@ -120,17 +120,16 @@ def ifft(a, overwrite=False, shift=True):
 
 #The following handles transforming coordinates for fft/ifft
 def transform_metadata(a, inverse):
-    dims=ensure_array(a.dims)
+    dims=list(a.dims)
 
     if not inverse:
         coords = ft_coords(a.coords)
-        dims[dims=='x']='m'
-        dims[dims=='y']='n'
+        dims[dims.index('x')]='m'
+        dims[dims.index('y')]='n'
     else:
-        dims[dims=='m']='x'
-        dims[dims=='n']='y'
+        dims[dims.index('m')]='x'
+        dims[dims.index('n')]='y'
         coords = ift_coords(a.coords)
-    dims=list(dims)
 
     return {'dims': dims, 'coords': coords, 'attrs': a.attrs, 'name': a.name}
 

@@ -21,6 +21,7 @@ from numpy.testing import assert_allclose, assert_equal
 from nose.plugins.attrib import attr
 import tempfile
 import os
+import xarray as xr
 import shutil
 
 from ..utils import ensure_array, ensure_listlike, mkdir_p
@@ -44,6 +45,14 @@ def test_ensure_array():
     assert_equal(ensure_array(1.0), np.array([1.0]))
     assert_equal(ensure_array([1.0]), np.array([1.0]))
     assert_equal(ensure_array(np.array([1.0])), np.array([1.0]))
+    len(ensure_array(1.0))
+    len(ensure_array(np.array(1.0)))
+    len(ensure_array([1.0]))
+    len(ensure_array(False))
+    len(ensure_array(xr.DataArray([12],dims='a',coords={'a':['b']})))
+    len(ensure_array(xr.DataArray([12],dims='a',coords={'a':['b']}).sel(a='b')))
+    len(ensure_array(xr.DataArray(12)))
+    
 
 def test_ensure_listlike():
     assert ensure_listlike(None) == []
