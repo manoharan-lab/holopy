@@ -29,6 +29,7 @@ import numpy as np
 import scipy.special
 import h5py
 
+from holopy.core.metadata import detector_grid, copy_metadata
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.io.io import pack_attrs, unpack_attrs
 
@@ -120,6 +121,17 @@ class SamplingResult(HoloPyObject):
         autocorr_from_sentinal(r.samples)
         autocorr_from_sentinal(r.lnprobs)
         return r
+
+    def best_fit(self):
+        shape, spacing, start, coords = yaml.load(self.dataset.data.original_dims)
+        schema = detector_grid(shape, spacing, extra_dims = coords)
+        schema['x'] = schema['x'] + start[0]
+        schema['y'] = schema['y'] + start[1]
+        schema = copy_metadata(self.dataset.data, schema, do_coords = False) 
+        return self.model._forward(self.values(), schema)
+
+    def output_scatterer(self):
+        return self.model.scatterer.make_from(self.values())
 
 def get_stage_names(inf):
     d = OrderedDict([(k, k) for k in h5py.File(inf).keys()])

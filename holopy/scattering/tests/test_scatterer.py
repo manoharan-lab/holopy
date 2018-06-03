@@ -96,7 +96,7 @@ def test_Sphere_parameters():
     1e-5), ('n', 1.59+1e-4j), ('r',
     5e-07)]))
 
-    sp = Sphere.from_parameters(s.parameters)
+    sp = Sphere().from_parameters(s.parameters)
     assert_equal(s.r, sp.r)
     assert_equal(s.n, sp.n)
     assert_equal(s.center, sp.center)

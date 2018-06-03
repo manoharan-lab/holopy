@@ -28,9 +28,10 @@ from itertools import chain
 from copy import copy
 
 import numpy as np
+import xarray as xr
 
 from ...core.holopy_object  import HoloPyObject
-from ...core.utils import ensure_array, is_none
+from ...core.utils import ensure_array, is_none, updated
 from ..errors import InvalidScatterer
 from functools import reduce
 
@@ -183,7 +184,6 @@ class Scatterer(HoloPyObject):
     def voxelate_domains(self, spacing):
         return self.in_domain(self._voxel_coords(spacing))
 
-
 class CenteredScatterer(Scatterer):
     def __init__(self, center = None):
         if center is not None and (np.isscalar(center) or len(center) != 3):
@@ -225,8 +225,7 @@ class CenteredScatterer(Scatterer):
 
         return dict(chain(*[expand(*p) for p in self._dict.items()]))
 
-    @classmethod
-    def from_parameters(cls, parameters):
+    def from_parameters(self, parameters, update=False):
         """
         Create a Scatterer from a dictionary of parameters
 
@@ -243,10 +242,16 @@ class CenteredScatterer(Scatterer):
         """
         # This will need to be overriden for subclasses that do anything
         # complicated with parameters
+        stopped = defaultdict(dict)
+        for key, val in parameters.items():
+            if isinstance(val, dict):
+                stopped[key] = {'_stop':val}
+            else:
+                stopped[key] = val
 
         collected = defaultdict(dict)
 
-        for key, val in parameters.items():
+        for key, val in stopped.items():
             tok = key.split('.', 1)
             if len(tok) > 1:
                 collected[tok[0]][tok[1]] = val
@@ -267,17 +272,30 @@ class CenteredScatterer(Scatterer):
 
         def build(par):
             if isinstance(par, dict):
-                reduce(lambda x, i: isinstance(i, int) and x,
+                if list(par.keys()) == ['_stop']:
+                    return par['_stop']
+                else:
+                    reduce(lambda x, i: isinstance(i, int) and x,
                        list(par.keys()), True)
-                d = [p[1] for p in sorted(iter(par.items()), key =
+                    d = [p[1] for p in sorted(iter(par.items()), key =
                                           lambda x: x[0])]
-                return [build(p) for p in d]
+                    return [build(p) for p in d]
             return par
 
         for key, val in collected_arrays.items():
-            built[key] = build(val)
+            built[key] = checkguess(build(val))
 
-        return cls(**built)
+        if update:
+            built = updated(checkguess(self).parameters, built)
+
+        return type(self)(**built)
+
+    def select(self, keys):
+        params = self.parameters
+        for key, val in params.items():
+            if isinstance(val, xr.DataArray):
+                params[key] = np.asscalar(val.sel(**keys))
+        return self.from_parameters(params)
 
 def find_bounds(indicator):
     """
@@ -342,6 +360,30 @@ class Indicators(HoloPyObject):
             for function in functions:
                 self.bound = bound_union(self.bound, find_bounds(function))
 
-
     def __call__(self, points):
         return [test(points) for test in self.functions]
+
+def checkguess(par):
+    def guess(a):
+        if isinstance(a,np.ndarray):
+            return np.array([checkguess(val) for val in ensure_array(a)]).squeeze()
+        elif isinstance(a, dict):
+            return {key: checkguess(val) for key, val in a.items()}
+        elif isinstance(a, list):
+            return [checkguess(val) for val in a]
+
+        if hasattr(a, 'guess'):
+            try:
+                # Scatterer
+                return a.guess()
+            except TypeError:
+                # Prior
+                return a.guess
+        elif hasattr(a, 'value'):
+            # UncertainValue
+            return a.value
+        return a
+
+    if isinstance(par, xr.DataArray):
+        return xr.apply_ufunc(guess, par)
+    return guess(par)

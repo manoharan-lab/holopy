@@ -17,13 +17,14 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 from holopy.fitting.model import BaseModel
-from holopy.fitting.parameter import Parameter
-from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering.errors import MultisphereFailure, InvalidScatterer
 
 import numpy as np
+import xarray as xr
 from copy import copy
 from holopy.scattering.calculations import calc_field, calc_holo
+from holopy.core.metadata import dict_to_array
+from holopy.core.utils import ensure_array
 
 class NoiseModel(BaseModel):
     """Model probabilites of observing data
@@ -34,8 +35,7 @@ class NoiseModel(BaseModel):
     def __init__(self, scatterer, noise_sd, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
         super().__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory)
         # the float cast insures we don't have noise_sd wrapped up in a needless xarray
-        self._use_parameter(float(noise_sd), 'noise_sd')
-
+        self._use_parameter(ensure_array(noise_sd), 'noise_sd')
     def _pack(self, vals):
         return {par.name: val for par, val in zip(self.parameters, vals)}
 
@@ -76,20 +76,17 @@ class NoiseModel(BaseModel):
         data: xarray
             The data to compute likelihood against
         """
-        noise_sd = pars.pop('noise_sd', self.noise_sd)
+        noise_sd = dict_to_array(data,self.get_par('noise_sd', pars))
         forward = self._forward(pars, data)
         N = data.size
-        return (-N*np.log(noise_sd*np.sqrt(2*np.pi)) -
-                ((forward-data)**2).sum()/(2*noise_sd**2))
+        return (-N/2*np.log(2*np.pi)-N*np.mean(np.log(ensure_array(noise_sd))) -
+                ((forward-data)**2/(2*noise_sd**2)).values.sum())
 
     def lnlike(self, par_vals, data):
         return self._lnlike(self._pack(par_vals), data)
 
-
-
-
 class AlphaModel(NoiseModel):
-    def __init__(self, scatterer, noise_sd, alpha, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
+    def __init__(self, scatterer, noise_sd, alpha=1, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
         super().__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory, noise_sd=noise_sd)
         self._use_parameter(alpha, 'alpha')
 
@@ -98,10 +95,8 @@ class AlphaModel(NoiseModel):
             alpha = alpha
         else:
             alpha = self.get_par('alpha', pars)
-
         optics, scatterer = self._optics_scatterer(pars, schema)
-
         try:
-            return calc_holo(schema, scatterer, theory=self.theory, **optics)
+            return calc_holo(schema, scatterer, theory=self.theory, scaling=alpha, **optics)
         except (MultisphereFailure, InvalidScatterer):
             return -np.inf

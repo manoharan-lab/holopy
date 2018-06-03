@@ -26,7 +26,7 @@ or detrending
 """
 
 from ..errors import BadImage
-from ..metadata import copy_metadata, detector_grid, get_spacing, get_values
+from ..metadata import copy_metadata, update_metadata, detector_grid, get_spacing, get_values
 from ..utils import is_none
 from scipy.signal import detrend as dt
 from scipy import fftpack
@@ -223,14 +223,20 @@ def bg_correct(raw, bg, df=None):
     Returns
     -------
     corrected_image : xarray.DataArray
-       A copy of the background divided input image.
+       A copy of the background divided input image with None values of noise_sd updated to match bg.
 
     """
     if is_none(df):
-        df = detector_grid(raw.shape,get_spacing(raw))
+        df = raw.copy()
+        df[:] = 0
 
     if not (raw.shape == bg.shape == df.shape and list(get_spacing(raw)) == list(get_spacing(bg)) == list(get_spacing(df))):
         raise BadImage("raw and background images must have the same shape and spacing")
 
     holo = (raw - df) / zero_filter(bg - df)
-    return copy_metadata(raw, holo)
+    holo = copy_metadata(raw, holo)
+
+    if hasattr(holo, 'noise_sd') and hasattr(bg, 'noise_sd') and holo.noise_sd is None:
+        holo = update_metadata(holo, noise_sd = bg.noise_sd)
+
+    return holo

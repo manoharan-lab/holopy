@@ -38,7 +38,7 @@ Installation on Windows is still a work in progress, but we have been able to ge
 4. Install cython and made sure it works.
 5. Install `Intel's Fortran compiler <https://software.intel.com/en-us/fortran-compilers/try-buy>`_. A good place to start is the trial version of Parallel Studio XE. Make sure it is working with a Fortran helloworld.
 6. Install `mingw32-make <https://sourceforge.net/projects/mingw/files/MinGW/Extension/make/>`_, which does not come with Anaconda by default.
-7. Download or clone HoloPy from `https://github.com/manoharan-lab/holopy <https://github.com/manoharan-lab/holopy>`_. 
+7. Download or clone the master branch of HoloPy from `https://github.com/manoharan-lab/holopy <https://github.com/manoharan-lab/holopy>`_. 
 8. Open the command prompt included in Intel's Parallel Studio. Run ``holopy/setup.py``. It is necessay to use Intel's Parallel Studio command prompt to avoid compiling errors.
 9. Install the following dependencies that don't come with Anaconda::
     

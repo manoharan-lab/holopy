@@ -54,7 +54,7 @@ The actual propagation is accomplished with :func:`.propagate`:
 ..  testoutput::
     :hide:
 
-    (0.919642857143+0j)
+    (0.9196428571428571+0j)
 
 
 Here, HoloPy has projected the hologram image through space to each of the distances contained in ``zstack`` by using the metadata that we 
@@ -138,4 +138,4 @@ propagated. For example, to propagate in three steps over each distance, we writ
 ..  testoutput::
     :hide:
 
-    (0.919642857143+0j)
+    (0.9196428571428571+0j)
