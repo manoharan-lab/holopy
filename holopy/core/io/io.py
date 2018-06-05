@@ -97,7 +97,7 @@ def pack_attrs(a, do_spacing=False, scaling = None):
             new_attrs[attr_coords][attr]={}
             for dim in val.dims:
                 new_attrs[attr_coords][attr][dim]=val[dim].values
-            new_attrs[attr]=list(val.values)
+            new_attrs[attr]=list(ensure_array(val.values))
         else:
             new_attrs[attr_coords][attr]=False
             if not is_none(val):
@@ -421,7 +421,7 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
         channel = [i for i, col in enumerate(['red','green','blue']) if col in refimg[illumination].values]
     accumulator = clean_concat([load_image(image, spacing, channel=channel) for image in filepath],'images')
     if noise_sd is None:
-        noise_sd = accumulator.std('images').mean(('x','y','z'))/accumulator.mean(('images','x','y','z'))
+        noise_sd = ensure_array((accumulator.std('images')/accumulator.mean('images')).mean(('x','y','z')))
     accumulator = accumulator.mean('images')
 
     if not is_none(refimg):
