@@ -145,7 +145,7 @@ class BoundedGaussian(Gaussian):
         val = super(BoundedGaussian, self).sample(size)
         out = True
         while np.any(out):
-            out = np.where(np.logical_and(val < self.lower_bound, val > self.upper_bound))
+            out = np.where(np.logical_or(val < self.lower_bound, val > self.upper_bound))
             val[out] = super(BoundedGaussian, self).sample(len(out[0]))
 
         return val
