@@ -20,6 +20,7 @@ import yaml
 import tempfile
 import os
 import shutil
+import warnings
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 from nose.plugins.attrib import attr
@@ -48,7 +49,9 @@ def test_image_io():
     # check that it defaults to saving as tif
     filename = os.path.join(t, 'image0002')
     save_image(filename, holo, scaling=None)
-    l = load_image(filename+'.tif', name=holo.name, medium_index=holo.medium_index, spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen, illum_polarization=holo.illum_polarization, normals=holo.normals, noise_sd=holo.noise_sd)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        l = load_image(filename+'.tif', name=holo.name, medium_index=holo.medium_index, spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen, illum_polarization=holo.illum_polarization, normals=holo.normals, noise_sd=holo.noise_sd)
     assert_obj_close(l, holo)
 
     ##check saving/loading non-tif
@@ -62,20 +65,26 @@ def test_image_io():
     #check specify scaling
     filename = os.path.join(t, 'image0001.tif')
     save_image(filename, holo, scaling=(0,255))
-    l=load_image(filename, name=holo.name, medium_index=holo.medium_index, spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen, illum_polarization=holo.illum_polarization, normals=holo.normals, noise_sd=holo.noise_sd)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        l=load_image(filename, name=holo.name, medium_index=holo.medium_index, spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen, illum_polarization=holo.illum_polarization, normals=holo.normals, noise_sd=holo.noise_sd)
     assert_obj_close(l, holo)
 
     #check auto scaling
     filename = os.path.join(t, 'image0001.tif')
     save_image(filename, holo, depth='float')
-    l=load_image(filename, name=holo.name, spacing=get_spacing(holo))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        l=load_image(filename, name=holo.name, spacing=get_spacing(holo))
     # skip checking full DataArray attrs because it is akward to keep them through arithmatic. Ideally we would figure out a way to preserve them and switch back to testing fully
     assert_allclose(l, (holo-holo.min())/(holo.max()-holo.min()))    
 
     # check saving 16 bit
     filename = os.path.join(t, 'image0003')
     save_image(filename, holo, scaling=None, depth=16)
-    l = load_image(filename+'.tif', name=holo.name, medium_index=holo.medium_index, spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen, illum_polarization=holo.illum_polarization, normals=holo.normals, noise_sd=holo.noise_sd)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        l = load_image(filename+'.tif', name=holo.name, medium_index=holo.medium_index, spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen, illum_polarization=holo.illum_polarization, normals=holo.normals, noise_sd=holo.noise_sd)
     assert_obj_close(l, holo)
 
     # test that yaml save works corretly with a string instead of a file

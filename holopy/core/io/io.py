@@ -24,7 +24,7 @@ functions.
 import os
 import glob
 import yaml
-from warnings import warn
+import warnings
 from scipy.misc import fromimage
 from PIL import Image as pilimage
 import xarray as xr
@@ -174,11 +174,15 @@ def load(inf, lazy=False):
 
     if os.path.splitext(inf)[1] in tiflist:
         try:
-            meta = yaml.load(pilimage.open(inf).tag[270][0])
+            with pilimage.open(inf) as pi:
+                meta = yaml.load(pi.tag[270][0])
             if meta['spacing'] is None:
                 raise NoMetadata
             else:
-                im = load_image(inf, meta['spacing'], name = meta['name'], channel='all')
+
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    im = load_image(inf, meta['spacing'], name = meta['name'], channel='all')
                 if '_dummy_channel' in meta:
                     im = im.drop(np.asscalar(im.illumination[meta['_dummy_channel']]), illumination)
                 if 'scaling' in meta:
@@ -186,7 +190,7 @@ def load(inf, lazy=False):
                     im = (im-im.min())*(smax-smin)/(im.max()-im.min())+smin
                 im.attrs = unpack_attrs(meta)
                 return im
-        except KeyError:
+        except KeyError or TypeError:
             raise NoMetadata
     else:
         raise NoMetadata
@@ -215,6 +219,8 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
 
     with pilimage.open(inf) as pi:
         arr=fromimage(pi).astype('d')
+        if hasattr(pi, 'tag') and isinstance(yaml.load(pi.tag[270][0]), dict):
+            warnings.warn("Metadata detected but ignored. Use hp.load to read it")
 
     extra_dims = None
     if channel is None:
@@ -222,7 +228,7 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
             raise BadImage('Not a greyscale image. You must specify which channel(s) to use')
     elif arr.ndim == 2:
             if not channel == 'all':
-                warn("Warning: not a color image (channel number ignored)")
+                warnings.warn("Not a color image (channel number ignored)")
             pass
     else:
         # color image with specified channel(s)
