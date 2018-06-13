@@ -29,14 +29,37 @@ from numbers import Number
 
 
 class Prior(Parameter):
+    def __add__(self, value):
+        if isinstance(value, Number):
+            return self.__addadd__(value)
+        elif isinstance(value, np.ndarray):
+            return np.array([self + val for val in value])
+        else:
+            raise TypeError("Cannot add prior to objects of type {}".format(type(value)))
+
+    def __mul__(self, value):
+        if isinstance(value, Number):
+            return self.__multiply__(value)
+        elif isinstance(value, np.ndarray):
+            return np.array([self * val for val in value])
+        else:
+            raise TypeError("Cannot multiply prior by objects of type {}".format(type(value)))
+
     def __radd__(self, value):
-        return self+value
+        return self + value
 
     def __sub__(self, value):
         return self + (-value)
 
     def __rsub__(self, value):
         return -self + value
+
+    def __rmul__(self, value):
+        return self * value
+
+    def __truediv__(self, value):
+        return self * (1/value)
+
 
 class Uniform(Prior):
     def __init__(self, lower_bound, upper_bound, name=None):
@@ -67,15 +90,14 @@ class Uniform(Prior):
     def sample(self, size=None):
         return random.uniform(self.lower_bound, self.upper_bound, size)
 
-    def __add__(self, value):
-        #need to be careful of unexpected behaviour with non-number types        
-        if isinstance(value, Number):
-            return Uniform(self.lower_bound+value, self.upper_bound+value, self.name)
-        else:
-            raise TypeError("Cannot add prior to objects of type {}".format(type(value)))
+    def __addadd__(self, value):
+        return Uniform(self.lower_bound+value, self.upper_bound+value, self.name)
+
+    def __multiply__(self, value):
+        return Uniform(self.lower_bound*value, self.upper_bound*value, self.name)
 
     def __neg__(self):
-        return Uniform(-self.upper_bound, -self.lower_bound)            
+        return Uniform(-self.upper_bound, -self.lower_bound)
 
 
 class Gaussian(Prior):
@@ -104,10 +126,7 @@ class Gaussian(Prior):
         return random.normal(self.mu, self.sd, size=size)
 
     def __add__(self, value):
-        #need to be careful of unexpected behaviour with non-number types        
-        if isinstance(value, Number):
-            return Gaussian(self.mu+value, self.sd, self.name)
-        elif isinstance(value, Gaussian) and not isinstance(value, BoundedGaussian):
+        if isinstance(value, Gaussian) and not isinstance(value, BoundedGaussian) and not isinstance(self, BoundedGaussian):
             new_sd = np.sqrt(self.sd**2 + value.sd**2)
             if self.name == value.name:
                 new_name = self.name
@@ -115,8 +134,13 @@ class Gaussian(Prior):
                 new_name = "GaussianSum"
             return Gaussian(self.mu + value.mu, new_sd, new_name)
         else:
-            raise TypeError("Cannot add prior to objects of type {}".format(type(value)))
+            return super().__add__(value)
 
+    def __addadd__(self, value):
+        return Gaussian(self.mu+value, self.sd, self.name)
+
+    def __multiply__(self, value):
+        return Gaussian(self.mu*value, self.sd*value, self.name)
 
     def __neg__(self):
         return Gaussian(-self.mu, self.sd, self.name)
@@ -150,12 +174,11 @@ class BoundedGaussian(Gaussian):
 
         return val
 
-    def __add__(self, value):
-        #need to be careful of unexpected behaviour with non-number types        
-        if isinstance(value, Number):
-            return BoundedGaussian(self.mu+value, self.sd, self.lower_bound+value, self.upper_bound+value, self.name)
-        else:
-            raise TypeError("Cannot add prior to objects of type {}".format(type(value)))
+    def __addadd__(self, value):
+        return BoundedGaussian(self.mu+value, self.sd, self.lower_bound+value, self.upper_bound+value, self.name)
+
+    def __multiply__(self, value):
+        return BoundedGaussian(self.mu*value, self.sd*value, self.lower_bound*value, self.upper_bount*value, self.name)
 
     def __neg__(self):
         return BoundedGaussian(-self.mu, self.sd, -self.upper_bound, -self.lower_bound, self.name)
