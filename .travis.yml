@@ -4,7 +4,7 @@ python:
   - 3.4
 
 env:
-  - DEPS="scipy pyyaml pillow pandas h5py sphinx matplotlib nose emcee xarray>=0.10"
+  - DEPS="scipy pyyaml pillow pandas h5py sphinx matplotlib nose emcee"
 
 
 install:
@@ -13,6 +13,7 @@ install:
   - source activate testenv
   - conda install -c conda-forge --yes $DEPS
   - pip install numpy==1.14.1
+  - pip install xarray==0.10.0
   - python setup.py install
   - python setup.py build_ext --inplace
 
