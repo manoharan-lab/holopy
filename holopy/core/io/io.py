@@ -174,12 +174,11 @@ def load(inf, lazy=False):
 
     if os.path.splitext(inf)[1] in tiflist:
         try:
-            with pilimage.open(inf) as pi:
-                meta = yaml.load(pi.tag[270][0])
+            with open(inf, 'rb') as imagefile:
+                meta = yaml.load(pilimage.open(imagefile).tag[270][0])
             if meta['spacing'] is None:
                 raise NoMetadata
             else:
-
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
                     im = load_image(inf, meta['spacing'], name = meta['name'], channel='all')
@@ -217,8 +216,8 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
     if name is None:
         name = os.path.splitext(os.path.split(inf)[-1])[0]
 
-    with pilimage.open(inf) as pi:
-        arr=fromimage(pi).astype('d')
+    with open(inf,'rb') as pi:
+        arr = fromimage(pilimage.open(pi)).astype('d')
         if hasattr(pi, 'tag') and isinstance(yaml.load(pi.tag[270][0]), dict):
             warnings.warn("Metadata detected but ignored. Use hp.load to read it")
 
