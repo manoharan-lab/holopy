@@ -141,8 +141,6 @@ class ParameterizedObject(Parametrization):
 
             else:
                 if not p.fixed:
-                    # add to dictionary, using parameter as key and name as value
-                    # this is because we need to look up name by parameter.
                     parameters.append(p)
                     names.append(name)
 
