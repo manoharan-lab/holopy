@@ -113,7 +113,7 @@ class SamplingResult(HoloPyObject):
     @classmethod
     def _load(cls, ds):
         if isinstance (ds, str):
-            ds = xr.open_dataset(ds, engine='h5netcdf', autoclose=True)
+            ds = xr.open_dataset(ds, engine='h5netcdf')
         ds.data.attrs = unpack_attrs(ds.data.attrs)
         model = yaml.load(ds.attrs.pop('model'))
         strategy = yaml.load(ds.attrs.pop('strategy'))
