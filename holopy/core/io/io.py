@@ -96,7 +96,7 @@ def pack_attrs(a, do_spacing=False, scaling = None):
         if isinstance(val, xr.DataArray):
             new_attrs[attr_coords][attr]={}
             for dim in val.dims:
-                new_attrs[attr_coords][attr][dim]=val[dim].values
+                new_attrs[attr_coords][attr][str(dim)]=val[dim].values
             new_attrs[attr]=list(ensure_array(val.values))
         else:
             new_attrs[attr_coords][attr]=False
