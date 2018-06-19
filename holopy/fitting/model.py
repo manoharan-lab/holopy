@@ -29,6 +29,7 @@ import xarray as xr
 import inspect
 from os.path import commonprefix
 from .errors import ParameterSpecificationError
+from ..scattering.errors import MissingParameter
 from ..core.holopy_object import HoloPyObject
 from .parameter import Parameter, ComplexParameter
 from holopy.core.utils import ensure_listlike
@@ -263,11 +264,7 @@ class BaseModel(HoloPyObject):
             return getattr(schema, name)
         if default is not None:
             return default
-
-        if schema is not None:
-            schematxt = " or Schema"
-
-        raise ValueError("Cannot find value for {} in Model{}".format(name, schema))
+        raise MissingParameter(name)
 
     def get_par(self, name, pars, schema=None, default=None):
         if name in pars.keys():
