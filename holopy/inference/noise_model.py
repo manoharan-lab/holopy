@@ -76,7 +76,7 @@ class NoiseModel(BaseModel):
         data: xarray
             The data to compute likelihood against
         """
-        noise_sd = dict_to_array(data,self.get_par('noise_sd', pars))
+        noise_sd = dict_to_array(data,self.get_par('noise_sd', pars, data))
         forward = self._forward(pars, data)
         N = data.size
         return (-N/2*np.log(2*np.pi)-N*np.mean(np.log(ensure_array(noise_sd))) -
@@ -86,7 +86,7 @@ class NoiseModel(BaseModel):
         return self._lnlike(self._pack(par_vals), data)
 
 class AlphaModel(NoiseModel):
-    def __init__(self, scatterer, noise_sd, alpha=1, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
+    def __init__(self, scatterer, noise_sd=None, alpha=1, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
         super().__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory, noise_sd=noise_sd)
         self._use_parameter(alpha, 'alpha')
 
