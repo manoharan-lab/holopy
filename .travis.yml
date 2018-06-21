@@ -4,7 +4,7 @@ python:
   - 3.4
 
 env:
-  - DEPS="numpy scipy pyyaml pillow pandas h5py sphinx matplotlib nose"
+  - DEPS="scipy pyyaml pillow pandas h5py sphinx matplotlib nose emcee"
 
 
 install:
@@ -12,10 +12,8 @@ install:
   - conda create -n testenv --yes pip python=$TRAVIS_PYTHON_VERSION
   - source activate testenv
   - conda install -c conda-forge --yes $DEPS
-  - pip install emcee
-  - pip install numpy==1.12.1
+  - pip install numpy==1.14.1
   - pip install xarray==0.10.0
-# TODO Remove these once setup.py handles dependencies correctly.
   - python setup.py install
   - python setup.py build_ext --inplace
 

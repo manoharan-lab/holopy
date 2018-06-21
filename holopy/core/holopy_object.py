@@ -90,8 +90,11 @@ class HoloPyObject(Serializable):
         return self.__repr__()
 
     def __eq__(self, other):
-        # Note, this is possibly a slightly weak form of equality, but well behaved holopy objects are equal if their _dict's are equal
-        return self._dict == other._dict
+        if hasattr(other, '_dict'):
+            # Note, this is possibly a slightly weak form of equality, but well behaved holopy objects are equal if their _dict's are equal
+            return self._dict == other._dict
+        else:
+            return False
 
     def like_me(self, filter_none=True, **kwargs):
         if filter_none:

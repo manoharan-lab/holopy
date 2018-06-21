@@ -23,12 +23,13 @@ Classes for defining models of scattering for fitting
 """
 
 
-from copy import copy
+from copy import copy, deepcopy
 import numpy as np
 import xarray as xr
 import inspect
 from os.path import commonprefix
 from .errors import ParameterSpecificationError
+from ..scattering.errors import MissingParameter
 from ..core.holopy_object import HoloPyObject
 from .parameter import Parameter, ComplexParameter
 from holopy.core.utils import ensure_listlike
@@ -109,39 +110,43 @@ class ParameterizedObject(Parametrization):
     """
     def __init__(self, obj):
         self.obj = obj
-
-        # find all the Parameter's in the obj
         parameters = []
+        names = []
         ties = {}
-        for name, par in sorted(iter(obj.parameters.items()), key=lambda x: x[0]):
-            def add_par(p, name):
-                if not isinstance(p, Parameter):
-                    p = Parameter(p,p)
-                if p in parameters:
-                    # if the parameter is already in the parameters list, it
-                    # means the parameter is tied
 
-                    # we will rename the parameter so that when it is printed it
-                    # better reflects how it is used
-                    new_name = tied_name(p.name, name)
+        def add_par(p, name):
+            if not isinstance(p, Parameter):
+                p = Parameter(p,p)
+            for par_check in parameters + [None]:
+                if p is par_check:
+                    break
+            if par_check is not None:
+                # if the above loop encountered a break, it
+                # means the parameter is tied
 
-                    if p.name in ties:
-                        # if there is already an existing tie group we need to
-                        # do a few things to get the name right
-                        group = ties[p.name]
-                        if p.name != new_name:
-                            del ties[p.name]
-                    else:
-                        group = [p.name]
+                # we will rename the parameter so that when it is printed it
+                # better reflects how it is used
+                new_name = tied_name(names[parameters.index(p)], name)
+                names[parameters.index(p)] = new_name
 
-                    group.append(name)
-                    ties[new_name] = group
-                    p.name = new_name
+                if new_name in ties:
+                    # if there is already an existing tie group we need to
+                    # do a few things to get the name right
+                    group = ties[new_name]
 
                 else:
-                    p.name = name
-                    if not p.fixed:
-                        parameters.append(p)
+                    group = [name]
+
+                group.append(name)
+                ties[new_name] = group
+
+            else:
+                if not p.fixed:
+                    parameters.append(p)
+                    names.append(name)
+
+        # find all the Parameter's in the obj
+        for name, par in sorted(iter(obj.parameters.items()), key=lambda x: x[0]):
             if isinstance(par, ComplexParameter):
                 add_par(par.real, name+'.real')
                 add_par(par.imag, name+'.imag')
@@ -158,6 +163,9 @@ class ParameterizedObject(Parametrization):
             elif isinstance(par, Parameter):
                 add_par(par, name)
 
+        parameters = deepcopy(parameters)
+        for i, name in enumerate(names):
+            parameters[i].name = name
         self.parameters = parameters
         self.ties = ties
 
@@ -256,11 +264,7 @@ class BaseModel(HoloPyObject):
             return getattr(schema, name)
         if default is not None:
             return default
-
-        if schema is not None:
-            schematxt = " or Schema"
-
-        raise ValueError("Cannot find value for {} in Model{}".format(name, schema))
+        raise MissingParameter(name)
 
     def get_par(self, name, pars, schema=None, default=None):
         if name in pars.keys():

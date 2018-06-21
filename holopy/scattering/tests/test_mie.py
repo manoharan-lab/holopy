@@ -240,7 +240,8 @@ def test_radiometric():
     location = os.path.split(os.path.abspath(__file__))[0]
     gold_name = os.path.join(location, 'gold',
                              'gold_mie_radiometric')
-    gold=yaml.load(open(gold_name + '.yaml'))
+    with open(gold_name + '.yaml') as gold_file:
+        gold = yaml.load(gold_file)
     for key, val in gold.items():
         assert_almost_equal(gold[key], val, decimal = 5)
 

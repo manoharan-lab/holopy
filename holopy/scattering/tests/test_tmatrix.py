@@ -64,7 +64,7 @@ def test_vs_dda():
     try:
         dda_holo = calc_holo(schema, s, theory=DDA)
     except DependencyMissing:
-        raise Skiptest()    
+        raise SkipTest()
     tmat_holo = calc_holo(schema, s, theory=Tmatrix)
     assert_allclose(dda_holo, tmat_holo, atol=.05)
     

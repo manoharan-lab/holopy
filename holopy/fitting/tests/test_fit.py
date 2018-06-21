@@ -172,7 +172,7 @@ def test_serialization():
     temp.flush()
     temp.seek(0)
     loaded = load(temp)
-
+    temp.close()
     assert_obj_close(result, loaded, context = 'serialized_result')
 
 
