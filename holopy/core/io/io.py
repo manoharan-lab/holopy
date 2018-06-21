@@ -24,7 +24,7 @@ functions.
 import os
 import glob
 import yaml
-from warnings import warn
+import warnings
 from scipy.misc import fromimage
 from PIL import Image as pilimage
 import xarray as xr
@@ -96,8 +96,8 @@ def pack_attrs(a, do_spacing=False, scaling = None):
         if isinstance(val, xr.DataArray):
             new_attrs[attr_coords][attr]={}
             for dim in val.dims:
-                new_attrs[attr_coords][attr][dim]=val[dim].values
-            new_attrs[attr]=list(val.values)
+                new_attrs[attr_coords][attr][str(dim)]=val[dim].values
+            new_attrs[attr]=list(ensure_array(val.values))
         else:
             new_attrs[attr_coords][attr]=False
             if not is_none(val):
@@ -174,11 +174,14 @@ def load(inf, lazy=False):
 
     if os.path.splitext(inf)[1] in tiflist:
         try:
-            meta = yaml.load(pilimage.open(inf).tag[270][0])
+            with open(inf, 'rb') as imagefile:
+                meta = yaml.load(pilimage.open(imagefile).tag[270][0])
             if meta['spacing'] is None:
                 raise NoMetadata
             else:
-                im = load_image(inf, meta['spacing'], name = meta['name'], channel='all')
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    im = load_image(inf, meta['spacing'], name = meta['name'], channel='all')
                 if '_dummy_channel' in meta:
                     im = im.drop(np.asscalar(im.illumination[meta['_dummy_channel']]), illumination)
                 if 'scaling' in meta:
@@ -186,7 +189,7 @@ def load(inf, lazy=False):
                     im = (im-im.min())*(smax-smin)/(im.max()-im.min())+smin
                 im.attrs = unpack_attrs(meta)
                 return im
-        except KeyError:
+        except KeyError or TypeError:
             raise NoMetadata
     else:
         raise NoMetadata
@@ -213,8 +216,10 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
     if name is None:
         name = os.path.splitext(os.path.split(inf)[-1])[0]
 
-    with pilimage.open(inf) as pi:
-        arr=fromimage(pi).astype('d')
+    with open(inf,'rb') as pi:
+        arr = fromimage(pilimage.open(pi)).astype('d')
+        if hasattr(pi, 'tag') and isinstance(yaml.load(pi.tag[270][0]), dict):
+            warnings.warn("Metadata detected but ignored. Use hp.load to read it")
 
     extra_dims = None
     if channel is None:
@@ -222,7 +227,7 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
             raise BadImage('Not a greyscale image. You must specify which channel(s) to use')
     elif arr.ndim == 2:
             if not channel == 'all':
-                warn("Warning: not a color image (channel number ignored)")
+                warnings.warn("Not a color image (channel number ignored)")
             pass
     else:
         # color image with specified channel(s)
@@ -421,7 +426,7 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
         channel = [i for i, col in enumerate(['red','green','blue']) if col in refimg[illumination].values]
     accumulator = clean_concat([load_image(image, spacing, channel=channel) for image in filepath],'images')
     if noise_sd is None:
-        noise_sd = accumulator.std('images').mean(('x','y','z'))/accumulator.mean(('images','x','y','z'))
+        noise_sd = ensure_array((accumulator.std('images')/accumulator.mean('images')).mean(('x','y','z')))
     accumulator = accumulator.mean('images')
 
     if not is_none(refimg):

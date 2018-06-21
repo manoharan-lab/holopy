@@ -36,10 +36,14 @@ from ..utils import is_none
 from ..holopy_object import SerializableMetaclass
 
 def save(outf, obj):
+    close = False
     if isinstance(outf, str):
         outf = open(outf, 'wb')
+        close = True
 
     outf.write(yaml.dump(obj).encode())
+    if close:
+        outf.close()
 
 def load(inf):
     if isinstance(inf, str):

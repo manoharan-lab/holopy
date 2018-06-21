@@ -243,9 +243,12 @@ def to_vector(c):
         for key, val in c.items():
             c[key]=to_vector(val)
         return c
+
     c = np.array(c)
     if c.shape == (2,):
         c = np.append(c, 0)
+    #normalize
+    c = c/np.sqrt(np.sum(c**2))
 
     return xr.DataArray(c, coords={vector: ['x', 'y', 'z']}, dims=vector)
 

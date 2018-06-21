@@ -22,6 +22,7 @@
 from numpy.testing import assert_raises, assert_equal
 import numpy as np
 
+from holopy.inference.prior import Gaussian, Uniform
 from holopy.inference import prior
 from holopy.inference.result import UncertainValue
 from holopy.core.tests.common import assert_obj_close
@@ -29,7 +30,7 @@ from holopy.core.tests.common import assert_obj_close
 gold_sigma=-1.4189385332
 
 def test_uniform():
-    u = prior.Uniform(0, 1)
+    u = Uniform(0, 1)
     assert_equal(u.lnprob(.4), 0)
     assert_equal(u.lnprob(-.1), -np.inf)
     assert_equal(u.lnprob(4), -np.inf)
@@ -42,7 +43,7 @@ def test_bounded_gaussian():
     assert_equal(g.guess, 1)
 
 def test_gaussian():
-    g = prior.Gaussian(1, 1)
+    g = Gaussian(1, 1)
     assert_equal(g.guess, 1)
     assert_obj_close(g.lnprob(0),gold_sigma)
 
@@ -54,22 +55,33 @@ def test_updated():
     assert_obj_close(u.lnprob(0),gold_sigma)
 
 def test_prior_math():
-    u = prior.Uniform(1,2)
-    g = prior.Gaussian(1,2)
+    u = Uniform(1,2)
+    g = Gaussian(1,2)
     b = prior.BoundedGaussian(1,2,0,3)
 
-    assert_equal(u+1, prior.Uniform(2,3))
-    assert_equal(1+u, prior.Uniform(2,3))
-    assert_equal(-u, prior.Uniform(-2,-1))
-    assert_equal(1-u, prior.Uniform(-1,0))
-    assert_equal(u-1, prior.Uniform(0,1))
+    assert_equal(u+1, Uniform(2,3))
+    assert_equal(1+u, Uniform(2,3))
+    assert_equal(-u, Uniform(-2,-1))
+    assert_equal(1-u, Uniform(-1,0))
+    assert_equal(u-1, Uniform(0,1))
+    assert_equal(2*u, Uniform(2,4))
+    assert_equal(u*2, Uniform(2,4))
+    assert_equal(u/2, Uniform(0.5,1))
 
-    assert_equal(g+1., prior.Gaussian(2,2.))
-    assert_equal(-g, prior.Gaussian(-1,2))
+
+    print(g+1.)
+    assert_equal(g+1., Gaussian(2,2.))
+    assert_equal(-g, Gaussian(-1,2))
     assert_equal(b+1., prior.BoundedGaussian(2.,2,1.,4.))
     assert_equal(-b, prior.BoundedGaussian(-1,2,-3,0))
+    assert_equal(2*g, Gaussian(2,4))
+    assert_equal(g*2, Gaussian(2,4))
+    assert_equal(g/2, Gaussian(0.5,1))
 
-    assert_equal(g+g, prior.Gaussian(2,np.sqrt(8)))
+    assert_equal(g+g, Gaussian(2,np.sqrt(8)))
+    assert_equal(g+np.array([0,1]),np.array([Gaussian(1,2), Gaussian(2,2)]))
+    assert_equal(g*np.array([1,2]),np.array([Gaussian(1,2), Gaussian(2,4)]))
+
     with assert_raises(TypeError):
         u+u
     with assert_raises(TypeError):
@@ -77,5 +89,5 @@ def test_prior_math():
     with assert_raises(TypeError):
         g+[0,1]
     with assert_raises(TypeError):
-        g+np.array([0,1])
+        g*g
 

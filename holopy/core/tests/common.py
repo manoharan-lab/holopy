@@ -33,11 +33,9 @@ import warnings
 warnings.simplefilter("error")
 
 def assert_read_matches_write(o):
-    tempf = tempfile.NamedTemporaryFile(suffix='.h5')
-    save(tempf.name, o)
-    tempf.flush()
-    tempf.seek(0)
-    loaded = load(tempf.name)
+    with tempfile.NamedTemporaryFile(suffix='.h5') as tempf:
+        save(tempf.name, o)
+        loaded = load(tempf.name)
     # For now our code for writing xarrays to hdf5 ends up with them picking up
     # a name attribute that their predecessor may not have, so correct for that
     # if it is true.
@@ -128,7 +126,8 @@ def verify(result, name, rtol=1e-7, atol=1e-8):
     location =  os.path.split(filename)[0]
     gold_dir = os.path.join(location, 'gold')
     gold_name = os.path.join(location, 'gold', 'gold_'+name)
-    gold_yaml = yaml.load(open(gold_name+'.yaml'))
+    with open(gold_name+'.yaml') as gold_file:
+        gold_yaml = yaml.load(gold_file)
 
     full = os.path.join(gold_dir, 'full_data', 'gold_full_{0}'.format(name))
     if os.path.exists(full):

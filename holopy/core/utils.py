@@ -41,6 +41,8 @@ def ensure_array(x):
             return x
     elif np.isscalar(x) or isinstance(x, bool) or (isinstance(x, np.ndarray) and x.shape==()):
         return np.array([x])
+    elif x is None:
+        return None
     else:
         return np.array(x)
 
