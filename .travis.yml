@@ -6,6 +6,10 @@ python:
 env:
   - DEPS="scipy pyyaml pillow pandas h5py sphinx matplotlib nose emcee"
 
+branches:
+  except:
+  - windows-build
+  - /^win_\d+(\.\d+)+.*$/
 
 install:
   - sudo apt-get install gfortran
