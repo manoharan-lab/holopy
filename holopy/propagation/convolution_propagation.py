@@ -37,6 +37,7 @@ from ..scattering.errors import MissingParameter
 # May eventually want to have this function take a propagation model
 # so that we can do things other than convolution
 
+
 def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_filter=False):
     """
     Propagates a hologram along the optical axis
@@ -49,9 +50,9 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_f
        Distance to propagate, in meters, or desired schema.  A list tells to
        propagate to several distances and return the volume
     cfsp : integer (optional)
-       cascaded free-space propagation factor.  If this is an integer
+       Cascaded free-space propagation factor.  If this is an integer
        > 0, the transfer function G will be calculated at d/csf and
-       the value returned will be G**csf. This helps avoid artifacts related to
+       the value returned will be G**csf.  This helps avoid artifacts related to
        the limited window of the transfer function
     gradient_filter : float
        For each distance, compute a second propagation a distance
@@ -68,12 +69,12 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_f
         # Propagating no distance has no effect
         return data
 
-    data = update_metadata(data, medium_index = medium_index, illum_wavelen = illum_wavelen)
+    data = update_metadata(data, medium_index=medium_index, illum_wavelen=illum_wavelen)
 
     if data.medium_index is None or data.illum_wavelen is None:
         raise MissingParameter("refractive index and wavelength")
 
-    med_wavelen = data.illum_wavelen/data.medium_index
+    med_wavelen = data.illum_wavelen / data.medium_index
 
     # Computing the transfer function will fail for d = 0. So, if we
     # are asked to compute a reconstruction for a set of distances
@@ -92,15 +93,16 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_f
     ft = fft(data)
     res = ifft(ft.squeeze('z') * G, overwrite=True)
 
-    #we may have lost coordinate values to floating point precision during fft/ifft
+    # we may have lost coordinate values to floating point precision during fft/ifft
     res.name = 'propagation'
-    res = res.to_dataset().update({'x':data.x, 'y':data.y})[res.name]
+    res = res.to_dataset().update({'x': data.x, 'y': data.y})[res.name]
 
     if contains_zero:
         d = d_old
         res = xr.concat([data, res], dim='z')
 
     return copy_metadata(data, res)
+
 
 def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
     """
@@ -114,18 +116,18 @@ def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
     Parameters
     ----------
     shape : (int, int)
-       maximum dimensions of the transfer function
+       Maximum dimensions of the transfer function
     spacing : (float, float)
-       the spacing between points is the grid to calculate
+       The spacing between points is the grid to calculate
     wavelen : float
-       the wavelength in the medium you are propagating through
+       The wavelength in the medium you are propagating through
     d : float or list of floats
-       reconstruction distance.  If list or array, this function will
+       Reconstruction distance.  If list or array, this function will
        return an array of transfer functions, one for each distance
     cfsp : integer (optional)
-       cascaded free-space propagation factor.  If this is an integer
+       Cascaded free-space propagation factor.  If this is an integer
        > 0, the transfer function G will be calculated at d/csf and
-       the value returned will be G**csf. 
+       the value returned will be G**csf
     gradient_filter : float (optional)
        Subtract a second transfer function a distance gradient_filter
        from each z
@@ -148,32 +150,30 @@ def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
         d = xr.DataArray(ensure_array(d), dims=['z'], coords={'z': ensure_array(d)})
 
     if(cfsp > 0):
-        cfsp = int(abs(cfsp)) # should be nonnegative integer
-        d = d/cfsp
+        cfsp = int(abs(cfsp))  # should be nonnegative integer
+        d = d / cfsp
 
     m, n = ft_coord(schema.x), ft_coord(schema.y)
     m = xr.DataArray(m, dims='m', coords={'m': m})
     n = xr.DataArray(n, dims='n', coords={'n': n})
 
-    root = 1.+0j-(med_wavelen*n)**2 - (med_wavelen*m)**2
+    root = 1+0j - (med_wavelen * n) ** 2 - (med_wavelen * m) ** 2
 
     root *= (root >= 0)
 
-    g = np.exp(-1j*2*np.pi*d/med_wavelen*np.sqrt(root))
+    g = np.exp(-1j * 2 * np.pi * d / med_wavelen * np.sqrt(root))
 
     if gradient_filter:
-        g -= np.exp(-1j*2*np.pi*(d+gradient_filter)/med_wavelen*np.sqrt(root))
+        g -= np.exp(-1j * 2 * np.pi * (d + gradient_filter) / med_wavelen * np.sqrt(root))
 
-    # set the transfer function to zero where the sqrt is imaginary
+    # Set the transfer function to zero where the sqrt is imaginary
     # (this is equivalent to making sure that the largest spatial
     # frequency is 1/wavelength).  (root>=0) returns a boolean matrix
     # that is equal to 1 where the condition is true and 0 where it is
     # false.  Multiplying by this boolean matrix masks the array.
-    g = g*(root>=0)
+    g = g * (root >= 0)
 
-
- 
     if cfsp > 0:
-        g = g**cfsp
+        g = g ** cfsp
 
     return g
