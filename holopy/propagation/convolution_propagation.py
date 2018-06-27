@@ -1,5 +1,6 @@
-# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
+# Copyright 2011-2018, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley,
+# Andrei Korigodski
 #
 # This file is part of HoloPy.
 #
@@ -161,7 +162,7 @@ def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
     g = np.exp(-1j*2*np.pi*d/med_wavelen*np.sqrt(root))
 
     if gradient_filter:
-        g -= np.exp(-1j*2*np.pi*(d+gradient_filter)/med_wavelen*sqrt(root))
+        g -= np.exp(-1j*2*np.pi*(d+gradient_filter)/med_wavelen*np.sqrt(root))
 
     # set the transfer function to zero where the sqrt is imaginary
     # (this is equivalent to making sure that the largest spatial
