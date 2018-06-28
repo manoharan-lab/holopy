@@ -23,10 +23,18 @@ from ...scattering import Mie, Sphere, calc_field
 from .. import propagate
 from ...core.tests.common import assert_obj_close, verify, get_example_data
 
+
 def test_propagate_e_field():
-    e = calc_field(detector_grid(100,.1), Sphere(1.59, .5, (5, 5, 5)), illum_wavelen=.66, medium_index=1.33, illum_polarization=(1,0), theory=Mie(False))
+    e = calc_field(detector_grid(100, 0.1),
+                   Sphere(1.59, .5, (5, 5, 5)),
+                   illum_wavelen=0.66,
+                   medium_index=1.33,
+                   illum_polarization=(1, 0),
+                   theory=Mie(False))
+
     prop_e = propagate(e, 10)
     verify(prop_e, 'propagate_e_field')
+
 
 def test_reconstruction():
     im = get_example_data('image0003')
@@ -35,6 +43,7 @@ def test_reconstruction():
 
     rec = propagate(im, [4e-6, 7e-6, 10e-6])
     verify(rec, 'recon_multiple')
+
 
 def test_propagate_0_distance():
     im = get_example_data('image0003')
