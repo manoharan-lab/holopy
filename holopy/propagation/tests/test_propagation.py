@@ -1,5 +1,6 @@
-# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
+# Copyright 2011-2018, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley,
+# Andrei Korigodski
 #
 # This file is part of HoloPy.
 #
@@ -43,6 +44,12 @@ def test_reconstruction():
 
     rec = propagate(im, [4e-6, 7e-6, 10e-6])
     verify(rec, 'recon_multiple')
+
+
+def test_gradient_filter():
+    im = get_example_data('image0003')
+    rec = propagate(im, [4e-6, 7e-6, 10e-6], gradient_filter=1e-6)
+    verify(rec, 'recon_multiple_gradient_filter')
 
 
 def test_propagate_0_distance():
