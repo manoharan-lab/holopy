@@ -44,7 +44,7 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_f
 
     Parameters
     ----------
-    data : :class:`.Image` or :class:`.VectorGrid`
+    data : xarray.DataArray
        Hologram to propagate
     d : float or list of floats
        Distance to propagate, in meters, or desired schema.  A list tells to
@@ -57,11 +57,12 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_f
     gradient_filter : float
        For each distance, compute a second propagation a distance
        gradient_filter away and subtract.  This enhances contrast of
-       rapidly varying features
+       rapidly varying features.  You may wish to use the number that is
+       a multiple of the medium wavelength (illum_wavelen / medium_index)
 
     Returns
     -------
-    data : :class:`.Image` or :class:`.Volume`
+    data : xarray.DataArray
        The hologram progagated to a distance d from its current location.
 
     """
@@ -115,15 +116,13 @@ def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
 
     Parameters
     ----------
-    shape : (int, int)
-       Maximum dimensions of the transfer function
-    spacing : (float, float)
-       The spacing between points is the grid to calculate
-    wavelen : float
-       The wavelength in the medium you are propagating through
+    schema : xarray.DataArray
+       Hologram to obtain the maximum dimensions of the transfer function
     d : float or list of floats
        Reconstruction distance.  If list or array, this function will
        return an array of transfer functions, one for each distance
+    med_wavelen : float
+       The wavelength in the medium you are propagating through
     cfsp : integer (optional)
        Cascaded free-space propagation factor.  If this is an integer
        > 0, the transfer function G will be calculated at d/csf and
@@ -134,7 +133,7 @@ def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
 
     Returns
     -------
-    trans_func : np.ndarray
+    trans_func : xarray.DataArray
        The calculated transfer function.  This will be at most as large as
        shape, but may be smaller if the frequencies outside that are zero
 
