@@ -200,17 +200,30 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
 
     Parameters
     ----------
-    inf : single or list of basestring or files
-        File to load.  If the file is a yaml file, all other arguments are
-        ignored.  If inf is a list of image files or filenames they are all
-        loaded as a a timeseries hologram
+    inf : string
+        File to load.
+    spacing : float or (float, float) (optional)
+        pixel size of images in each dimension - assumes square pixels if single value.
+        set equal to 1 if not passed in and issues warning.
+    medium_index : float (optional)
+        refractive index of the medium
+    illum_wavelen : float (optional)
+        wavelength (in vacuum) of illuminating light
+    illum_polarization : (float, float) (optional)
+        (x, y) polarization vector of the illuminating light
+    normals : (float, float, float) (optional)
+        (x, y, z) vector of the component of light propagation captured by detector
+    noise_sd : float (optional)
+        noise level in the image, normalized to image intensity
     channel : int or tuple of ints (optional)
         number(s) of channel to load for a color image (in general 0=red,
         1=green, 2=blue)
+	name : str (optional)
+        name to assign the xr.DataArray object resulting from load_image
 
     Returns
     -------
-    obj : The object loaded, :class:`holopy.core.marray.Image`, or as loaded from yaml
+    obj : xarray.DataArray representation of the image with associated metadata
 
     """
     if name is None:

@@ -26,8 +26,7 @@ Error classes used in holopy
 
 class LoadError(Exception):
     def __init__(self, filename, message):
-        self.filename = filename
-        super(LoadError, self).__init__("Error loading file " + self.filename + ": " + self.message)
+        super(LoadError, self).__init__("Error loading file " + filename + ": " + message)
 
 class BadImage(Exception):
     pass
