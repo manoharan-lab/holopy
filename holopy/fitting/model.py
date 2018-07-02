@@ -243,10 +243,11 @@ def limit_overlaps(fraction=.1):
     return constraint
 
 class BaseModel(HoloPyObject):
-    def __init__(self, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
+    def __init__(self, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', constraints=None):
         if not isinstance(scatterer, Parametrization):
             scatterer = ParameterizedObject(scatterer)
         self.scatterer = scatterer
+        self.constraints = constraints
         self._parameters = self.scatterer.parameters
         self._use_parameter(medium_index, 'medium_index')
         self._use_parameter(illum_wavelen, 'illum_wavelen')
@@ -323,7 +324,7 @@ class Model(BaseModel):
     """
     def __init__(self, scatterer, calc_func, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', alpha=None,
                  use_random_fraction=None, constraints=[]):
-        super().__init__(scatterer, medium_index, illum_wavelen, illum_polarization, theory)
+        super().__init__(scatterer, medium_index, illum_wavelen, illum_polarization, theory, ensure_listlike(constraints))
         self.calc_func = calc_func
 
         self.use_random_fraction = use_random_fraction
@@ -332,8 +333,6 @@ class Model(BaseModel):
 
         if len(self.parameters) == 0:
             raise ParameterSpecificationError("You must specify at least one parameter to vary in a fit")
-
-        self.constraints = ensure_listlike(constraints)
 
     @property
     def guess(self):

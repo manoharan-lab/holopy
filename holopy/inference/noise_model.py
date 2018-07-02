@@ -32,14 +32,18 @@ class NoiseModel(BaseModel):
     Compute probabilities that observed data could be explained by a set of
     scatterer and observation parameters.
     """
-    def __init__(self, scatterer, noise_sd, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
-        super().__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory)
-        # the float cast insures we don't have noise_sd wrapped up in a needless xarray
+    def __init__(self, scatterer, noise_sd, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', constraints=[]):
+        super().__init__(scatterer, medium_index, illum_wavelen, illum_polarization, theory,constraints)
         self._use_parameter(ensure_array(noise_sd), 'noise_sd')
     def _pack(self, vals):
         return {par.name: val for par, val in zip(self.parameters, vals)}
 
     def lnprior(self, par_vals):
+
+        for constraint in self.constraints:
+            if not constraint(self.scatterer.make_from(self._pack(par_vals))):
+                return -np.inf
+
         if isinstance(par_vals, dict):
             return sum([p.lnprob(par_vals[p.name]) for p in self.parameters])
         else:
@@ -86,8 +90,8 @@ class NoiseModel(BaseModel):
         return self._lnlike(self._pack(par_vals), data)
 
 class AlphaModel(NoiseModel):
-    def __init__(self, scatterer, noise_sd=None, alpha=1, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
-        super().__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory, noise_sd=noise_sd)
+    def __init__(self, scatterer, noise_sd=None, alpha=1, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', constraints=[]):
+        super().__init__(scatterer, noise_sd, medium_index, illum_wavelen, illum_polarization, theory, constraints)
         self._use_parameter(alpha, 'alpha')
 
     def _forward(self, pars, schema, alpha=None):
