@@ -127,7 +127,6 @@ class ParameterizedObject(Parametrization):
                 # we will rename the parameter so that when it is printed it
                 # better reflects how it is used
                 new_name = tied_name(names[parameters.index(p)], name)
-                names[parameters.index(p)] = new_name
 
                 if new_name in ties:
                     # if there is already an existing tie group we need to
@@ -135,8 +134,9 @@ class ParameterizedObject(Parametrization):
                     group = ties[new_name]
 
                 else:
-                    group = [name]
+                    group = [names[parameters.index(p)]]
 
+                names[parameters.index(p)] = new_name
                 group.append(name)
                 ties[new_name] = group
 
