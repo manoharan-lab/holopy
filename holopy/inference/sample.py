@@ -61,14 +61,16 @@ class EmceeStrategy(HoloPyObject):
         self.cleanup_threads = cleanup_threads
         self.seed = seed
 
-    def make_guess(self, parameters):
+    def make_guess(self, parameters, seed=None):
+        if seed is not None:
+            np.random.seed(seed)
         return np.vstack([p.sample(size=(self.nwalkers)) for p in parameters]).T
 
     def sample(self, model, data, nsamples=1000, walker_initial_pos=None):
         if self.pixels is not None:
-            data = make_subset_data(data, pixels=self.pixels)
+            data = make_subset_data(data, pixels=self.pixels, seed=self.seed)
         if walker_initial_pos is None:
-            walker_initial_pos = self.make_guess(model.parameters)
+            walker_initial_pos = self.make_guess(model.parameters, seed=self.seed)
         sampler = sample_emcee(model=model, data=data, nwalkers=self.nwalkers,
                                walker_initial_pos=walker_initial_pos, nsamples=nsamples,
                                threads=self.threads, cleanup_threads=self.cleanup_threads, seed=self.seed)

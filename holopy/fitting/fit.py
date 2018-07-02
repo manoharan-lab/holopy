@@ -39,12 +39,13 @@ from holopy.core.utils import dict_without
 from .errors import MinimizerConvergenceFailed, InvalidMinimizer
 from .minimizer import Minimizer, Nmpfit
 
-def make_subset_data(data, random_subset=None, pixels=None, return_selection=False):
+def make_subset_data(data, random_subset=None, pixels=None, return_selection=False, seed=None):
     if random_subset is None and pixels is None:
         return data
     if random_subset is not None and pixels is not None:
         raise ValueError("You can only specify one of pixels or random_subset")
-
+    if seed is not None:
+        np.random.seed(seed)
     tot_pix = len(data.x)*len(data.y)
     if pixels is not None:
         n_sel = pixels
