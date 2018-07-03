@@ -33,7 +33,7 @@ class NoiseModel(BaseModel):
     scatterer and observation parameters.
     """
     def __init__(self, scatterer, noise_sd, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', constraints=[]):
-        super().__init__(scatterer, medium_index, illum_wavelen, illum_polarization, theory,constraints)
+        super().__init__(scatterer, medium_index, illum_wavelen, illum_polarization, theory, constraints)
         self._use_parameter(ensure_array(noise_sd), 'noise_sd')
     def _pack(self, vals):
         return {par.name: val for par, val in zip(self.parameters, vals)}
@@ -41,7 +41,7 @@ class NoiseModel(BaseModel):
     def lnprior(self, par_vals):
 
         for constraint in self.constraints:
-            if not constraint(self.scatterer.make_from(self._pack(par_vals))):
+            if not constraint.check(self.scatterer.make_from(self._pack(par_vals))):
                 return -np.inf
 
         if isinstance(par_vals, dict):

@@ -30,6 +30,7 @@ import inspect
 from os.path import commonprefix
 from .errors import ParameterSpecificationError
 from ..scattering.errors import MissingParameter
+from ..scattering import Scatterer
 from ..core.holopy_object import HoloPyObject
 from .parameter import Parameter, ComplexParameter
 from holopy.core.utils import ensure_listlike
@@ -182,23 +183,22 @@ class ParameterizedObject(Parametrization):
         return self.make_from(pars)
 
     def make_from(self, parameters):
-        obj_pars = {}
 
+        def get_val(par, name):
+            if not isinstance(par, Parameter):
+                return par
+            elif par.fixed:
+                return par.limit
+            else:
+                return parameters[name]
+
+        obj_pars = {}
         for name, par in self.obj.parameters.items():
             # if this par is in a tie group, we need to work with its tie group
             # name since that will be what is in parameters
             for groupname, group in self.ties.items():
                 if name in group:
                     name = groupname
-
-            def get_val(par, name):
-                if not isinstance(par, Parameter):
-                    return par
-                elif par.fixed:
-                    return par.limit
-                else:
-                    return parameters[name]
-
             if isinstance(par, ComplexParameter):
                 par_val = (get_val(par.real, name+'.real') +
                            1j * get_val(par.imag, name+'.imag'))
@@ -213,7 +213,6 @@ class ParameterizedObject(Parametrization):
                 par_val = get_val(par, name)
             else:
                 par_val = par
-
             if name in self.ties:
                 for tied_name in self.ties[name]:
                     obj_pars[tied_name] = par_val
@@ -221,33 +220,24 @@ class ParameterizedObject(Parametrization):
                 obj_pars[name] = par_val
         return self.obj.from_parameters(obj_pars)
 
-def limit_overlaps(fraction=.1):
+class limit_overlaps(HoloPyObject):
     """
-    Generator for constraint prohibiting overlaps beyond a certain tolerance
+    Constraint prohibiting overlaps beyond a certain tolerance.
+    fraction is the largest overlap allowed, in terms of sphere diameter.
 
-    Parameters
-    ----------
-    fraction : float
-        Fraction of the sphere diameter that the spheres should be allowed to
-        overlap by
-
-
-    Returns
-    -------
-    constraint : function (scatterer -> bool)
-        A function which tests scatterers to see if the exceed the specified
-        tolerance
     """
-    def constraint(s):
-        return s.largest_overlap() < ((np.min(s.r) * 2) * fraction)
-    return constraint
+    def __init__(self, fraction=.1):
+        self.fraction = fraction
+
+    def check(self, s):
+        return s.largest_overlap() <= ((np.min(s.r) * 2) * self.fraction)
 
 class BaseModel(HoloPyObject):
     def __init__(self, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', constraints=None):
         if not isinstance(scatterer, Parametrization):
             scatterer = ParameterizedObject(scatterer)
         self.scatterer = scatterer
-        self.constraints = constraints
+        self.constraints = ensure_listlike(constraints)
         self._parameters = self.scatterer.parameters
         self._use_parameter(medium_index, 'medium_index')
         self._use_parameter(illum_wavelen, 'illum_wavelen')
@@ -324,7 +314,7 @@ class Model(BaseModel):
     """
     def __init__(self, scatterer, calc_func, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', alpha=None,
                  use_random_fraction=None, constraints=[]):
-        super().__init__(scatterer, medium_index, illum_wavelen, illum_polarization, theory, ensure_listlike(constraints))
+        super().__init__(scatterer, medium_index, illum_wavelen, illum_polarization, theory, constraints)
         self.calc_func = calc_func
 
         self.use_random_fraction = use_random_fraction
@@ -357,7 +347,7 @@ class Model(BaseModel):
 
         valid = True
         for constraint in self.constraints:
-            valid = valid and constraint(scatterer)
+            valid = valid and constraint.check(scatterer)
         if not valid:
             return np.ones_like(schema) * np.inf
 
