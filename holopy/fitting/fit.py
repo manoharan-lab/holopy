@@ -75,7 +75,7 @@ def fit(model, data, minimizer=Nmpfit, random_subset=None):
     model : :class:`~holopy.fitting.model.Model` object
         A model describing the scattering system which leads to your data and
         the parameters to vary to fit it to the data
-    data : :class:`~holopy.core.marray.Marray` object
+    data : xarray.DataArray
         The data to fit
     minimizer : (optional) :class:`~holopy.fitting.minimizer.Minimizer`
         The minimizer to use to do the fit

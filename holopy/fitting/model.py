@@ -30,7 +30,6 @@ import inspect
 from os.path import commonprefix
 from .errors import ParameterSpecificationError
 from ..scattering.errors import MissingParameter
-from ..scattering import Scatterer
 from ..core.holopy_object import HoloPyObject
 from .parameter import Parameter, ComplexParameter
 from holopy.core.utils import ensure_listlike

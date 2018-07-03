@@ -25,11 +25,10 @@ scattering theories may require external scattering codes.
 The HoloPy scattering module is used to:
 
 1. Describe geometry as a :mod:`~holopy.scattering.scatterer` object
-2. Define the result you want as a :mod:`~holopy.core.marray.Schema` object
+2. Define the result you want as a xarray.DataArray xarray.DataArray
 3. Calculate scattering quantities with an
    :mod:`~holopy.scattering.theory` appropriate for your
-   :mod:`~holopy.scattering.scatterer` ->
-   :class:`~holopy.core.marray.Marray` object
+   :mod:`~holopy.scattering.scatterer`
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>

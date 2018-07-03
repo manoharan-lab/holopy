@@ -42,7 +42,7 @@ def show(o,color=(.5, .5, .5)):
 
     Parameters
     ----------
-    o : :class:`.Image`, :class:`.Volume` or :class:`.Spheres`
+    o : xarray.DataArray or ndarray
        Object to visualize
 
     Notes

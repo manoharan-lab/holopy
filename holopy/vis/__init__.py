@@ -19,9 +19,6 @@
 
 Uses Matplotlib and Mayavi to visualize holopy objects.
 
-1. :class:`.Image`, :class:`.Volume`, or :class:`.Spheres` object =>
-   plot or rendering
-
 This module does not import plotting packages until they are actually needed so
 that holopy does not have a hard dependency on mayavi or matplotlib.  Because of
 this you may see a small lag on your first plot.

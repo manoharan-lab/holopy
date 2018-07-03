@@ -42,7 +42,7 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_f
 
     Parameters
     ----------
-    data : :class:`.Image` or :class:`.VectorGrid`
+    data : xarray.DataArray
        Hologram to propagate
     d : float or list of floats
        Distance to propagate, in meters, or desired schema.  A list tells to
@@ -59,7 +59,7 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_f
 
     Returns
     -------
-    data : :class:`.Image` or :class:`.Volume`
+    data : xarray.DataArray
        The hologram progagated to a distance d from its current location.
 
     """

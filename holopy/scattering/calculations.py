@@ -120,7 +120,7 @@ def calc_intensity(schema, scatterer, medium_index=None, illum_wavelen=None, ill
         a clear choice, calc_intensity will error out and ask you to specify a theory
     Returns
     -------
-    inten : :class:`.Image`
+    inten : xarray.DataArray
         scattered intensity
     """
     field = calc_field(schema, scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory)
@@ -149,7 +149,7 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None, illum_po
 
     Returns
     -------
-    holo : :class:`.Image` object
+    holo : xarray.DataArray
         Calculated hologram from the given distribution of spheres
     """
 
