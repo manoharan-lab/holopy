@@ -54,12 +54,16 @@ def tempered_sample(model, data, nwalkers=100, min_pixels=50, max_pixels=2000,
     return s.sample(model, data, samples)
 
 class EmceeStrategy(HoloPyObject):
-    def __init__(self, nwalkers=100, pixels=2000, threads='auto', cleanup_threads=True, seed=None):
+    def __init__(self, nwalkers=100, pixels=2000, threads='auto', cleanup_threads=True, seed=None, resample_pixels=False):
         self.nwalkers = nwalkers
         self.pixels = pixels
         self.threads = threads
         self.cleanup_threads = cleanup_threads
         self.seed = seed
+        if resample_pixels:
+            self.new_pixels = self.pixels
+        else:
+            self.new_pixels = None
 
     def make_guess(self, parameters, seed=None):
         if seed is not None:
@@ -67,13 +71,13 @@ class EmceeStrategy(HoloPyObject):
         return np.vstack([p.sample(size=(self.nwalkers)) for p in parameters]).T
 
     def sample(self, model, data, nsamples=1000, walker_initial_pos=None):
-        if self.pixels is not None:
+        if self.pixels is not None and self.new_pixels is None:
             data = make_subset_data(data, pixels=self.pixels, seed=self.seed)
         if walker_initial_pos is None:
             walker_initial_pos = self.make_guess(model.parameters, seed=self.seed)
         sampler = sample_emcee(model=model, data=data, nwalkers=self.nwalkers,
                                walker_initial_pos=walker_initial_pos, nsamples=nsamples,
-                               threads=self.threads, cleanup_threads=self.cleanup_threads, seed=self.seed)
+                               threads=self.threads, cleanup_threads=self.cleanup_threads, seed=self.seed, new_pixels=self.new_pixels)
 
         try:
             acor = sampler.acor
@@ -87,13 +91,13 @@ class EmceeStrategy(HoloPyObject):
 
 
 class TemperedStrategy(EmceeStrategy):
-    def __init__(self, next_initial_dist=sample_one_sigma_gaussian, nwalkers=100, min_pixels=50, max_pixels=1000, threads='auto', stages=3, stage_len=30, seed=None):
+    def __init__(self, next_initial_dist=sample_one_sigma_gaussian, nwalkers=100, min_pixels=50, max_pixels=1000, threads='auto', stages=3, stage_len=30, seed=None, resample_pixels=False):
 
         self.seed = seed
         self.stages = stages
         self.stage_strategies = []
         for p in np.logspace(np.log10(min_pixels), np.log10(max_pixels), stages+1):
-            self.stage_strategies.append(EmceeStrategy(nwalkers=nwalkers, pixels=int(round(p)), threads=threads, seed=seed))
+            self.stage_strategies.append(EmceeStrategy(nwalkers=nwalkers, pixels=int(round(p)), threads=threads, seed=seed, resample_pixels=resample_pixels))
             if seed is not None:
                 seed += 1
 
@@ -148,10 +152,10 @@ def sample_emcee_autocorr(model, data, nwalkers, independent_samples, walker_ini
         sampler.run_mcmc(None, more)
 
 def sample_emcee(model, data, nwalkers, nsamples, walker_initial_pos,
-                 threads='auto', cleanup_threads=True, seed=None):
+                 threads='auto', cleanup_threads=True, seed=None, new_pixels = None):
     sampler = EnsembleSampler(nwalkers, len(list(model.parameters)),
                               model.lnposterior,
-                              threads=autothreads(threads), args=[data])
+                              threads=autothreads(threads), args=[data, new_pixels])
     if seed is not None:
         np.random.seed(seed)
         seed_state = np.random.mtrand.RandomState(seed).get_state()

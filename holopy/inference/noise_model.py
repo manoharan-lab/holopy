@@ -23,6 +23,7 @@ import numpy as np
 import xarray as xr
 from copy import copy
 from holopy.scattering.calculations import calc_field, calc_holo
+from holopy.fitting import make_subset_data
 from holopy.core.metadata import dict_to_array
 from holopy.core.utils import ensure_array
 
@@ -49,7 +50,7 @@ class NoiseModel(BaseModel):
         else:
             return sum([p.lnprob(v) for p, v in zip(self.parameters, par_vals)])
 
-    def lnposterior(self, par_vals, data):
+    def lnposterior(self, par_vals, data, pixels=None):
         lnprior = self.lnprior(par_vals)
         # prior is sometimes used to forbid thing like negative radius
         # which will fail if you attempt to compute a hologram of, so
@@ -58,6 +59,8 @@ class NoiseModel(BaseModel):
         if lnprior == -np.inf:
             return lnprior
         else:
+            if pixels is not None:
+                data = make_subset_data(data, pixels=pixels)
             return lnprior + self.lnlike(par_vals, data)
 
     def _fields(self, pars, schema):
