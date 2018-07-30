@@ -101,9 +101,6 @@ class Spheres(Scatterers):
                 repr(scatterer) + " is not a Sphere")
         self.scatterers.append(scatterer)
 
-    def guess(self):
-        return Spheres([sphere.guess() for sphere in self.scatterers])
-
     @property
     def n(self):
         return np.array([s.n for s in self.scatterers])

@@ -103,8 +103,12 @@ class Scatterer(HoloPyObject):
             index[domains==i+1] = n
         return index
 
+    @property
     def guess(self):
-        return self
+        if hasattr(self, 'parameters'):
+            return self.from_parameters(checkguess(self.parameters))
+        else:
+            return self
 
     def in_domain(self, points):
         """
@@ -376,12 +380,7 @@ def checkguess(par):
             return [checkguess(val) for val in a]
 
         if hasattr(a, 'guess'):
-            try:
-                # Scatterer
-                return a.guess()
-            except TypeError:
-                # Prior
-                return a.guess
+            return a.guess
         elif hasattr(a, 'value'):
             # UncertainValue
             return a.value
