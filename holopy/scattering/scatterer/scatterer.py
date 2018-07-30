@@ -242,6 +242,8 @@ class CenteredScatterer(Scatterer):
         """
         # This will need to be overriden for subclasses that do anything
         # complicated with parameters
+
+        # organize dictionaries
         stopped = defaultdict(dict)
         for key, val in parameters.items():
             if isinstance(val, dict):
@@ -249,8 +251,8 @@ class CenteredScatterer(Scatterer):
             else:
                 stopped[key] = val
 
+        # organize scatterer object
         collected = defaultdict(dict)
-
         for key, val in stopped.items():
             tok = key.split('.', 1)
             if len(tok) > 1:
@@ -258,6 +260,7 @@ class CenteredScatterer(Scatterer):
             else:
                 collected[key] = val
 
+        # organize arrays
         collected_arrays = defaultdict(dict)
         for key, val in collected.items():
             tok = key.split('[', 1)
@@ -267,8 +270,6 @@ class CenteredScatterer(Scatterer):
                 collected_arrays[sub_key][n] = val
             else:
                 collected_arrays[key] = val
-
-        built = {}
 
         def build(par):
             if isinstance(par, dict):
@@ -282,6 +283,8 @@ class CenteredScatterer(Scatterer):
                     return [build(p) for p in d]
             return par
 
+        # assemble scatterer
+        built = {}
         for key, val in collected_arrays.items():
             built[key] = checkguess(build(val))
 

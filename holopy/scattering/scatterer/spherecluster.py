@@ -64,7 +64,7 @@ class Spheres(Scatterers):
                         repr(s) + " is not a Sphere")
             self.scatterers = scatterers
 
-        if self.overlaps:
+        if self.overlaps and warn:
             warnings.warn(OverlapWarning(self, self.overlaps))
 
     @property
@@ -132,4 +132,3 @@ class Spheres(Scatterers):
     @property
     def center(self):
         return self.centers.mean(0)
-
