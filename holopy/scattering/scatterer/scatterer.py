@@ -293,7 +293,7 @@ class CenteredScatterer(Scatterer):
             built[key] = checkguess(build(val))
 
         if update:
-            built = updated(checkguess(self).parameters, built)
+            built = updated(self.guess.parameters, built)
 
         return type(self)(**built)
 

@@ -32,6 +32,7 @@ from .sphere import Sphere
 from .composite import Scatterers
 from ..errors import OverlapWarning, InvalidScatterer
 from ...core.math import cartesian_distance, rotate_points
+from ...core.utils import ensure_array, dict_without
 
 # default to always warning the user about overlaps.  This can be overriden by
 # calling this function again with a different action.
@@ -129,3 +130,44 @@ class Spheres(Scatterers):
     @property
     def center(self):
         return self.centers.mean(0)
+
+class RigidCluster(Spheres):
+
+    def __init__(self, spheres, translation=(0,0,0), rotation=(0,0,0)):
+        if isinstance(spheres, Spheres):
+            self.spheres = spheres
+        else:
+            raise InvalidScatterer(self, "RigidCluster only accepts a scatterer of class Spheres.")
+        if not (len(ensure_array(translation))==3 and len(ensure_array(rotation))==3):
+            raise ValueError('translation and rotation must be listlike of len 3')
+        else:
+            self.translation=translation
+            self.rotation=rotation
+
+    @property
+    def scatterers(self):
+        return self.spheres.rotated(self.rotation).translated(self.translation).scatterers
+
+    @property
+    def parameters(self):
+        def expand(key, par):
+            return{'{0}[{1}]'.format(key,p[0]):p[1] for p in enumerate(par)}
+
+        d = self.spheres.parameters
+        d.update(expand('translation',self.translation))
+        d.update(expand('rotation', self.rotation))
+        return d
+
+    def from_parameters(self, parameters, update=False):
+        if update:
+            parameters = updated(self.guess.parameters,parameters)
+
+        rot_keys = ['rotation[{0}]'.format(i) for i in range(3)]
+        trans_keys=['translation[{0}]'.format(i) for i in range(3)]
+        rotation = [parameters[key] for key in rot_keys]
+        translation = [parameters[key] for key in trans_keys]
+        parameters = dict_without(parameters, rot_keys+trans_keys)
+
+        spheres = self.spheres.from_parameters(parameters)
+        return spheres.rotated(rotation).translated(translation)
+

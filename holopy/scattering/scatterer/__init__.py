@@ -31,7 +31,7 @@ from . import scatterer
 
 from .sphere import Sphere, LayeredSphere
 from .composite import Scatterers
-from .spherecluster import Spheres
+from .spherecluster import Spheres, RigidCluster
 from .janus import JanusSphere_Uniform, JanusSphere_Tapered
 from .spheroid import Spheroid
 from .ellipsoid import Ellipsoid

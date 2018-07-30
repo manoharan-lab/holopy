@@ -23,12 +23,12 @@ Test construction and manipulation of Scatterer objects.
 '''
 
 import numpy as np
-from numpy.testing import assert_equal, assert_almost_equal
+from numpy.testing import assert_equal, assert_almost_equal, assert_raises
+from holopy.core.tests.common import assert_obj_close
 from nose.plugins.attrib import attr
 from nose.tools import raises
 
-from ..scatterer import Sphere, Ellipsoid
-from ..scatterer import Spheres
+from ..scatterer import Sphere, Ellipsoid, Spheres, RigidCluster
 from ..errors import InvalidScatterer, OverlapWarning
 
 import warnings
@@ -123,3 +123,27 @@ def test_Spheres_rotation():
     assert_equal(sc.scatterers[1].n, sc2.scatterers[1].n)
     assert_almost_equal([0, -1, 0], sc2.scatterers[0].center)
     assert_almost_equal([0, 1, 1], sc2.scatterers[1].center)
+
+def test_RigidCluster():
+    # test construction
+    s1 = Sphere(n = 1, center = (1, 0, 0))
+    s2 = Sphere(n = 2, center = (-1, 0, 0))
+    s3 = Sphere(n = 3, center = (0, 1,0))
+    s4 = Sphere(n = 4, center = (0, -1, 0))
+    base = Spheres([s1, s2, s3, s4])
+    rc = RigidCluster(base)
+    assert_obj_close(rc.scatterers, base.scatterers)
+    assert_raises(InvalidScatterer, RigidCluster,s1)
+
+    # test transformation
+    ts1 = Sphere(n = 1, center = [-1/np.sqrt(2)+1, 2., -1/np.sqrt(2)+3])
+    ts2 = Sphere(n = 2, center = [1/np.sqrt(2)+1, 2., 1/np.sqrt(2)+3])
+    ts3 = Sphere(n = 3, center = [-1/np.sqrt(2)+1,2., +1/np.sqrt(2)+3])
+    ts4 = Sphere(n = 4, center = [1/np.sqrt(2)+1, 2., -1/np.sqrt(2)+3])
+    trans = Spheres([ts1,ts2,ts3,ts4])
+    trc = RigidCluster(base, rotation=(np.pi/4,np.pi/2,np.pi/2),translation=(1,2,3))
+    assert_obj_close(trc.scatterers,trans.scatterers)
+
+    # test guess, parameters, from_parameters
+    assert_obj_close(trc.guess, trans)
+    assert_obj_close(trc.from_parameters(trc.parameters), trans)
