@@ -24,7 +24,7 @@ calc_intensity and calc_holo, based on subclass's calc_field
 
 import xarray as xr
 from ..core.holopy_object import SerializableMetaclass
-from ..core.metadata import vector, illumination, update_metadata, to_vector, copy_metadata, from_flat, detector_points, dict_to_array
+from ..core.metadata import vector, illumination, update_metadata, to_vector, copy_metadata, from_flat, dict_to_array
 from ..core.utils import dict_without, is_none, ensure_array
 from .scatterer import Sphere, Spheres, Spheroid, Cylinder, checkguess
 from .errors import AutoTheoryFailed, MissingParameter

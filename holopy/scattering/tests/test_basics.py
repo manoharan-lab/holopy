@@ -19,7 +19,7 @@ import numpy as np
 import xarray as xr
 from numpy.testing import assert_allclose, assert_equal
 from ..scatterer import Sphere, Difference
-from ...core import detector_grid
+from ...core import detector_grid, detector_points
 from ..theory import Mie
 from ...core.tests.common import assert_obj_close
 from ...core.metadata import sphere_coords, update_metadata
@@ -57,6 +57,16 @@ def test_calc_field():
                                      1.72579090e-03 -8.72241140e-03j,
                                      5.70160960e-02 -2.16272927e-01j]]]), dims=['x', 'y', 'vector'], coords={'x':t.x, 'y': t.y, 'vector': ['x', 'y', 'z']})
     assert abs((f - gold).max()) < 5e-9
+
+def test_detector_points():
+    s = Sphere(n=1.59, r=.5, center=(0,0,0))
+    medium_index = 1.33; illum_wavelen = 0.660; illum_polarization = (1,0)
+    points_c = detector_points(x = [1,0,-1,0], y = [0,1,0,-1], z = 1)
+    points_p = detector_points(theta = 3*np.pi/4, phi = [0,np.pi/2,np.pi,3*np.pi/2,], r=np.sqrt(2))
+    field_c = calc_field(points_c, s, medium_index, illum_wavelen, illum_polarization)
+    field_p = calc_field(points_p, s, medium_index, illum_wavelen, illum_polarization)
+    assert_allclose(field_c, field_p)
+
 
 def test_calc_holo():
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
