@@ -41,7 +41,7 @@ tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
 def default_extension(inf, defext='.h5'):
     try:
         file, ext = os.path.splitext(inf)
-    except AttributeError:
+    except:
         # this will happen if inf is already a file, which means we don't
         # need to do anything here
         return inf
