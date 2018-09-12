@@ -431,16 +431,31 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
     if len(filepath) < 1:
         raise LoadError(filepath, "No images found")
 
+    # read spacing from refimg if none provided
     if is_none(spacing):
         spacing = get_spacing(refimg)
 
+    # read colour channels from refimg
     if channel is None and illumination in refimg.dims:
         channel = [i for i, col in enumerate(['red','green','blue']) if col in refimg[illumination].values]
     accumulator = clean_concat([load_image(image, spacing, channel=channel) for image in filepath],'images')
+
+    # crop according to refimg dimensions
+    def extent(i):
+        name = ['x','y'][i]
+        return np.around(refimg[name].values/spacing[i]).astype('int')
+    accumulator = accumulator.isel(x=extent(0), y=extent(1))
+    accumulator['x'] = refimg.x
+    accumulator['y'] = refimg.y
+
+    # calculate average noise from image
     if noise_sd is None:
         noise_sd = ensure_array((accumulator.std('images')/accumulator.mean('images')).mean(('x','y','z')))
     accumulator = accumulator.mean('images')
 
+    # copy metadata from refimg
     if not is_none(refimg):
         accumulator = copy_metadata(refimg, accumulator, do_coords=False)
+
+    # overwrite metadata from refimg with provided values
     return update_metadata(accumulator, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)
