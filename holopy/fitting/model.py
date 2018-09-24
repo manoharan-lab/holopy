@@ -356,6 +356,6 @@ class Model(BaseModel):
             return np.ones_like(schema) * np.inf
 
     def residual(self, pars, data):
-        return get_values(self._calc(pars, data)) - get_values(data)
+        return get_values(self._calc(pars, data) - data).flatten()
 
     # TODO: Allow a layer on top of theory to do things like moving sphere
