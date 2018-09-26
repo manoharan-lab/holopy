@@ -117,7 +117,7 @@ class ParameterizedObject(Parametrization):
         def add_par(p, name):
             if not isinstance(p, Parameter):
                 p = Parameter(p,p)
-            for par_check in parameters + [None]:
+            for i, par_check in enumerate(parameters + [None]):
                 if p is par_check:
                     break
             if par_check is not None:
@@ -126,7 +126,7 @@ class ParameterizedObject(Parametrization):
 
                 # we will rename the parameter so that when it is printed it
                 # better reflects how it is used
-                new_name = tied_name(names[parameters.index(p)], name)
+                new_name = tied_name(names[i], name)
 
                 if new_name in ties:
                     # if there is already an existing tie group we need to
@@ -134,9 +134,9 @@ class ParameterizedObject(Parametrization):
                     group = ties[new_name]
 
                 else:
-                    group = [names[parameters.index(p)]]
+                    group = [names[i]]
 
-                names[parameters.index(p)] = new_name
+                names[i] = new_name
                 group.append(name)
                 ties[new_name] = group
 
@@ -145,7 +145,7 @@ class ParameterizedObject(Parametrization):
                     parameters.append(p)
                     names.append(name)
 
-        # find all the Parameter's in the obj
+        # find all the Parameters in the obj
         for name, par in sorted(iter(obj.parameters.items()), key=lambda x: x[0]):
             if isinstance(par, ComplexParameter):
                 add_par(par.real, name+'.real')
@@ -189,15 +189,16 @@ class ParameterizedObject(Parametrization):
             elif par.fixed:
                 return par.limit
             else:
+                # if this par is in a tie group, we need to work with its tie group
+                # name since that will be what is in parameters
+                for groupname, group in self.ties.items():
+                    if name in group:
+                        name = groupname
                 return parameters[name]
 
         obj_pars = {}
         for name, par in self.obj.parameters.items():
-            # if this par is in a tie group, we need to work with its tie group
-            # name since that will be what is in parameters
-            for groupname, group in self.ties.items():
-                if name in group:
-                    name = groupname
+
             if isinstance(par, ComplexParameter):
                 par_val = (get_val(par.real, name+'.real') +
                            1j * get_val(par.imag, name+'.imag'))
@@ -311,12 +312,9 @@ class Model(BaseModel):
         a scaterer as an argument and return False if you wish to disallow that
         scatterer (usually because it is un-physical for some reason)
     """
-    def __init__(self, scatterer, calc_func, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', alpha=None,
-                 use_random_fraction=None, constraints=[]):
+    def __init__(self, scatterer, calc_func, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', alpha=None, constraints=[]):
         super().__init__(scatterer, medium_index, illum_wavelen, illum_polarization, theory, constraints)
         self.calc_func = calc_func
-
-        self.use_random_fraction = use_random_fraction
 
         self._use_parameter(alpha, 'alpha')
 
