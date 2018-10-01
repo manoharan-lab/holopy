@@ -55,11 +55,7 @@ def make_subset_data(data, random_subset=None, pixels=None, return_selection=Fal
     subset = flat(data).isel(flat=selection)
     subset = copy_metadata(data, subset, do_coords=False)
 
-    shape = (len(data.x), len(data.y))
-    spacing = (get_spacing(data))
-    start = (np.asscalar(data.x[0]), np.asscalar(data.y[0]))
-    coords = {key:val.values for key, val in dict_without(dict(data.coords), ['x','y','z']).items()}
-    subset.attrs['original_dims'] = yaml.dump((shape, spacing, start, coords))
+    subset.attrs['original_dims'] = {key:data[key].values for key in data.dims}
 
     if return_selection:
         return subset, selection
