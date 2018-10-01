@@ -440,6 +440,9 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
         channel = [i for i, col in enumerate(['red','green','blue']) if col in refimg[illumination].values]
     accumulator = clean_concat([load_image(image, spacing, channel=channel) for image in filepath],'images')
 
+    if np.isscalar(spacing):
+        spacing = np.repeat(spacing, 2)
+
     # crop according to refimg dimensions
     def extent(i):
         name = ['x','y'][i]
