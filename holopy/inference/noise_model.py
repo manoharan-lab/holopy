@@ -84,9 +84,9 @@ class NoiseModel(BaseModel):
             The data to compute likelihood against
         """
         noise_sd = dict_to_array(data,self.get_par('noise_sd', pars, data))
-        forward = self._forward(pars, data)
+        forward = self.forward(pars, data)
         N = data.size
-        return (-N/2*np.log(2*np.pi)-N*np.mean(np.log(ensure_array(noise_sd))) -
+        return np.asscalar(-N/2*np.log(2*np.pi)-N*np.mean(np.log(ensure_array(noise_sd))) -
                 ((forward-data)**2/(2*noise_sd**2)).values.sum())
 
     def lnlike(self, par_vals, data):
@@ -97,13 +97,22 @@ class AlphaModel(NoiseModel):
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen, illum_polarization, theory, constraints)
         self._use_parameter(alpha, 'alpha')
 
-    def _forward(self, pars, schema, alpha=None):
-        if alpha is not None:
-            alpha = alpha
-        else:
-            alpha = self.get_par('alpha', pars)
-        optics, scatterer = self._optics_scatterer(pars, schema)
+    def forward(self, pars, detector):
+        """
+        Compute a hologram from pars with dimensions and metadata of detector, scaled by alpha.
+
+        Parameters
+        -----------
+        pars: dict(string, float)
+            Dictionary containing values for each parameter used to compute the hologram.
+            Possible parameters are given by self.parameters.
+        detector: xarray
+            dimensions of the resulting hologram. Metadata taken from detector if not
+            given explicitly when instantiating self.
+        """
+        alpha = self.get_par('alpha', pars)
+        optics, scatterer = self._optics_scatterer(pars, detector)
         try:
-            return calc_holo(schema, scatterer, theory=self.theory, scaling=alpha, **optics)
+            return calc_holo(detector, scatterer, theory=self.theory, scaling=alpha, **optics)
         except (MultisphereFailure, InvalidScatterer):
             return -np.inf

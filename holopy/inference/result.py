@@ -134,7 +134,7 @@ class SamplingResult(HoloPyObject):
         schema = copy_metadata(self.dataset.data, schema, do_coords=False)
         schema['x']=x
         schema['y']=y
-        return self.model._forward(self.values(),schema)
+        return self.model.forward(self.values(),schema)
 
     def output_scatterer(self):
         return self.model.scatterer.make_from(self.values())
