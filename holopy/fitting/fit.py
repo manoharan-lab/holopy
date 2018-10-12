@@ -55,7 +55,7 @@ def make_subset_data(data, random_subset=None, pixels=None, return_selection=Fal
     subset = flat(data).isel(flat=selection)
     subset = copy_metadata(data, subset, do_coords=False)
 
-    subset.attrs['original_dims'] = {key:data[key].values for key in data.dims}
+    subset.attrs['original_dims'] = yaml.dump({key:data[key].values for key in data.dims})
 
     if return_selection:
         return subset, selection

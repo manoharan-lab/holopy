@@ -124,12 +124,13 @@ class SamplingResult(HoloPyObject):
         return r
 
     def best_fit(self):
+        original_dims = yaml.load(self.dataset.data.original_dims)
         # can't currently handle non-0 values of z, as in detector_grid
-        x = self.dataset.data.original_dims['x']
-        y = self.dataset.data.original_dims['y']
+        x = original_dims['x']
+        y = original_dims['y']
         shape = (len(x), len(y))
         spacing = (np.diff(x)[0], np.diff(y)[0])
-        schema = detector_grid(shape, spacing, extra_dims = dict_without(self.dataset.data.original_dims,['x','y','z']))
+        schema = detector_grid(shape, spacing, extra_dims = dict_without(original_dims,['x','y','z']))
         schema = copy_metadata(self.dataset.data, schema, do_coords=False)
         schema['x']=x
         schema['y']=y

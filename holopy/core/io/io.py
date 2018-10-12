@@ -29,6 +29,7 @@ from PIL import Image as pilimage
 import xarray as xr
 import numpy as np
 import importlib
+from collections import OrderedDict
 
 from . import serialize
 from ..metadata import data_grid, get_spacing, update_metadata, copy_metadata, to_vector, illumination, clean_concat
@@ -93,7 +94,7 @@ def pack_attrs(a, do_spacing=False, scaling = None):
 
     for attr, val in a.attrs.items():
         if isinstance(val, xr.DataArray):
-            new_attrs[attr_coords][attr]={}
+            new_attrs[attr_coords][attr] = OrderedDict()
             for dim in val.dims:
                 new_attrs[attr_coords][attr][str(dim)]=val[dim].values
             new_attrs[attr]=list(ensure_array(val.values))
