@@ -68,6 +68,9 @@ class NoiseModel(BaseModel):
                 data = make_subset_data(data, pixels=pixels)
             return lnprior + self.lnlike(par_vals, data)
 
+    def forward(self, pars, detector):
+        raise NotImplementedError("Implement in subclass")
+
     def _fields(self, pars, schema):
         def get_par(name):
             return pars.pop(name, self.par(name, schema))
@@ -89,12 +92,12 @@ class NoiseModel(BaseModel):
             The data to compute likelihood against
         """
         noise_sd = dict_to_array(data, self.get_par('noise_sd', pars, data))
-        forward = self.forward(pars, data)
+        forward_model = self.forward(pars, data)
         N = data.size
         log_likelihood = np.asscalar(
             -N/2 * np.log(2 * np.pi) -
             N * np.mean(np.log(ensure_array(noise_sd))) -
-            ((forward-data)**2 / (2 * noise_sd**2)).values.sum())
+            ((forward_model - data)**2 / (2 * noise_sd**2)).values.sum())
         return log_likelihood
 
     def lnlike(self, par_vals, data):
@@ -128,5 +131,33 @@ class AlphaModel(NoiseModel):
         try:
             return calc_holo(detector, scatterer, theory=self.theory,
                              scaling=alpha, **optics)
+        except (MultisphereFailure, InvalidScatterer):
+            return -np.inf
+
+
+class ExactModel(NoiseModel):
+    def __init__(self, scatterer, noise_sd=None, medium_index=None,
+                 illum_wavelen=None, illum_polarization=None, theory='auto',
+                 constraints=[]):
+        super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
+                         illum_polarization, theory, constraints)
+
+    def forward(self, pars, detector):
+        """
+        Compute a forward model (the hologram)
+
+        Parameters
+        -----------
+        pars: dict(string, float)
+            Dictionary containing values for each parameter used to compute
+            the hologram. Possible parameters are given by self.parameters.
+        detector: xarray
+            dimensions of the resulting hologram. Metadata taken from
+            detector if not given explicitly when instantiating self.
+        """
+        optics, scatterer = self._optics_scatterer(pars, detector)
+        try:
+            return calc_holo(detector, scatterer, theory=self.theory,
+                             scaling=1.0, **optics)
         except (MultisphereFailure, InvalidScatterer):
             return -np.inf
