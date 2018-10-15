@@ -10,7 +10,7 @@ MEDTOLS = {"atol": 1e-6, "rtol": 1e-6}
 SOFTTOLS = {'atol': 1e-3, 'rtol': 1e-3}
 
 
-class TestMieFieldCalculator(unittest.TestCase):
+class TestMieLensCalculator(unittest.TestCase):
     def test_fields_nonzero(self):
         field1_x, field1_y = evaluate_scattered_field_in_lens()
         should_be_nonzero = [np.linalg.norm(f) for f in [field1_x, field1_y]]
@@ -106,7 +106,7 @@ class TestJ2(unittest.TestCase):
 
 
 def evaluate_scattered_field_in_lens(delta_index=0.1, size_parameter=0.1):
-    miecalculator = mielens.MieFieldCalculator(
+    miecalculator = mielens.MieLensCalculator(
         particle_kz=10, index_ratio=1.0 + delta_index,
         size_parameter=size_parameter, lens_angle=0.9)
     krho = np.linspace(0, 30, 300)
