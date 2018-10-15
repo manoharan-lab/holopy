@@ -67,9 +67,9 @@ def test_prior_math():
     assert_equal(2*u, Uniform(2,4))
     assert_equal(u*2, Uniform(2,4))
     assert_equal(u/2, Uniform(0.5,1))
+    assert_equal(-1*u, Uniform(-2,-1))
+    assert_equal(u*(-1), Uniform(-2,-1))
 
-
-    print(g+1.)
     assert_equal(g+1., Gaussian(2,2.))
     assert_equal(-g, Gaussian(-1,2))
     assert_equal(b+1., prior.BoundedGaussian(2.,2,1.,4.))
@@ -77,6 +77,8 @@ def test_prior_math():
     assert_equal(2*g, Gaussian(2,4))
     assert_equal(g*2, Gaussian(2,4))
     assert_equal(g/2, Gaussian(0.5,1))
+    assert_equal(-1*g, Gaussian(-1,2))
+    assert_equal(g*(-1), Gaussian(-1,2))
 
     assert_equal(g+g, Gaussian(2,np.sqrt(8)))
     assert_equal(g+np.array([0,1]),np.array([Gaussian(1,2), Gaussian(2,2)]))

@@ -39,7 +39,12 @@ class Prior(Parameter):
 
     def __mul__(self, value):
         if isinstance(value, Number):
-            return self.__multiply__(value)
+            if value > 0:
+                return self.__multiply__(value)
+            elif value < 0:
+                return -self.__multiply__(-value)
+            else:
+                TypeError("Cannot multiply a prior by 0")
         elif isinstance(value, np.ndarray):
             return np.array([self * val for val in value])
         else:
