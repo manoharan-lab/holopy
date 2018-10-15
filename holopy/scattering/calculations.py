@@ -104,10 +104,12 @@ def determine_theory(scatterer):
     if isinstance(scatterer, Sphere):
         return Mie()
     elif isinstance(scatterer, Spheres):
-        if all([np.isscalar(scat.r) for i, scat in enumerate(scatterer.scatterers)]):
+        if all([np.isscalar(scat.r)
+                for i, scat in enumerate(scatterer.scatterers)]):
             return Multisphere()
         else:
-            warn("HoloPy's multisphere theory can't handle coated spheres. Using Mie theory.")
+            warn("HoloPy's multisphere theory can't handle coated spheres." +
+                 "Using Mie theory.")
             return Mie()
     elif isinstance(scatterer, Spheroid) or isinstance(scatterer, Cylinder):
         return Tmatrix()
@@ -163,9 +165,10 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
         Wavelength of illumination light. If illum_wavelen is an array result
         will add a dimension and have all wavelengths
     theory : :class:`.theory` object (optional)
-        Scattering theory object to use for the calculation. This is optional
-        if there is a clear choice of theory for your scatterer. If there is not
-        a clear choice, calc_intensity will error out and ask you to specify a theory
+        Scattering theory object to use for the calculation. This is
+        optional if there is a clear choice of theory for your scatterer.
+        If there is not a clear choice, calc_intensity will error out and
+        ask you to specify a theory
     scaling : scaling value (alpha) for amplitude of reference wave
 
     Returns
@@ -173,7 +176,6 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
     holo : xarray.DataArray
         Calculated hologram from the given distribution of spheres
     """
-
     scaling = checkguess(dict_to_array(schema, scaling))
     theory = interpret_theory(scatterer, theory)
     uschema = prep_schema(schema, medium_index, illum_wavelen,
@@ -247,9 +249,11 @@ def calc_scat_matrix(schema, scatterer, medium_index=None, illum_wavelen=None,
 
     """
     theory = interpret_theory(scatterer, theory)
-    uschema=prep_schema(schema, medium_index=medium_index,
-                        illum_wavelen=illum_wavelen, illum_polarization=False)
-    return finalize(uschema, theory._calc_scat_matrix(scatterer.guess, uschema))
+    uschema = prep_schema(
+        schema, medium_index=medium_index, illum_wavelen=illum_wavelen,
+        illum_polarization=False)
+    result = theory._calc_scat_matrix(scatterer.guess, uschema)
+    return finalize(uschema, result)
 
 
 def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None,
@@ -268,22 +272,27 @@ def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None,
         Wavelength of illumination light. If illum_wavelen is an array result
         will add a dimension and have all wavelengths
     theory : :class:`.theory` object (optional)
-        Scattering theory object to use for the calculation. This is optional
-        if there is a clear choice of theory for your scatterer. If there is not
-        a clear choice, calc_intensity will error out and ask you to specify a theory
+        Scattering theory object to use for the calculation. This is
+        optional if there is a clear choice of theory for your scatterer.
+        If there is not a clear choice, calc_intensity will error out and
+        ask you to specify a theory
 
     Returns
     -------
     e_field : :class:`.Vector` object
         Calculated hologram from the given distribution of spheres
     """
-    theory = interpret_theory(scatterer,theory)
-    uschema = prep_schema(schema, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization)
-    return finalize(uschema, theory._calc_field(dict_to_array(schema, scatterer).guess, uschema))
+    theory = interpret_theory(scatterer, theory)
+    uschema = prep_schema(
+        schema, medium_index=medium_index, illum_wavelen=illum_wavelen,
+        illum_polarization=illum_polarization)
+    result = theory._calc_field(dict_to_array(schema, scatterer).guess,
+                                uschema)
+    return finalize(uschema, result)
 
 
-# this is pulled out separate from the calc_holo method because occasionally you
-# want to turn prepared  e_fields into holograms directly
+# this is pulled out separate from the calc_holo method because
+# occasionally you want to turn prepared  e_fields into holograms directly
 def scattered_field_to_hologram(scat, ref, normals):
     """
     Calculate a hologram from an E-field

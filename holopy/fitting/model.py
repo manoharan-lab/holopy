@@ -92,9 +92,11 @@ class Parametrization(HoloPyObject):
             guess_pars[par.name] = par.guess
         return self.make_from(guess_pars)
 
+
 def tied_name(name1, name2):
     common_suffix = commonprefix([name1[::-1], name2[::-1]])[::-1]
     return common_suffix.strip(':_')
+
 
 class ParameterizedObject(Parametrization):
     """
@@ -220,6 +222,7 @@ class ParameterizedObject(Parametrization):
                 obj_pars[name] = par_val
         return self.obj.from_parameters(obj_pars)
 
+
 class limit_overlaps(HoloPyObject):
     """
     Constraint prohibiting overlaps beyond a certain tolerance.
@@ -231,6 +234,7 @@ class limit_overlaps(HoloPyObject):
 
     def check(self, s):
         return s.largest_overlap() <= ((np.min(s.r) * 2) * self.fraction)
+
 
 class BaseModel(HoloPyObject):
     def __init__(self, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', constraints=None):
@@ -295,7 +299,6 @@ class BaseModel(HoloPyObject):
         optics = self.get_pars(['medium_index', 'illum_wavelen', 'illum_polarization'], pars, schema)
         scatterer = self.scatterer.make_from(pars)
         return optics, scatterer
-
 
 
 class Model(BaseModel):
