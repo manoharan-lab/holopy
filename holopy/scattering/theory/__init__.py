@@ -29,6 +29,7 @@ All theories have a common interface defined by
 '''
 
 from .mie import Mie
+from .mielens import MieLens
 from .multisphere import Multisphere
 from .dda import DDA
 from .tmatrix import Tmatrix
