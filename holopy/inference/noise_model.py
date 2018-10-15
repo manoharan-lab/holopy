@@ -27,22 +27,27 @@ from holopy.fitting import make_subset_data
 from holopy.core.metadata import dict_to_array
 from holopy.core.utils import ensure_array
 
+
 class NoiseModel(BaseModel):
     """Model probabilites of observing data
 
     Compute probabilities that observed data could be explained by a set of
     scatterer and observation parameters.
     """
-    def __init__(self, scatterer, noise_sd, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', constraints=[]):
-        super().__init__(scatterer, medium_index, illum_wavelen, illum_polarization, theory, constraints)
+    def __init__(self, scatterer, noise_sd, medium_index=None,
+                 illum_wavelen=None, illum_polarization=None, theory='auto',
+                 constraints=[]):
+        super().__init__(scatterer, medium_index, illum_wavelen,
+                         illum_polarization, theory, constraints)
         self._use_parameter(ensure_array(noise_sd), 'noise_sd')
+
     def _pack(self, vals):
         return {par.name: val for par, val in zip(self.parameters, vals)}
 
     def lnprior(self, par_vals):
-
         for constraint in self.constraints:
-            if not constraint.check(self.scatterer.make_from(self._pack(par_vals))):
+            tocheck = self.scatterer.make_from(self._pack(par_vals))
+            if not constraint.check(tocheck):
                 return -np.inf
 
         if isinstance(par_vals, dict):
@@ -83,36 +88,45 @@ class NoiseModel(BaseModel):
         data: xarray
             The data to compute likelihood against
         """
-        noise_sd = dict_to_array(data,self.get_par('noise_sd', pars, data))
+        noise_sd = dict_to_array(data, self.get_par('noise_sd', pars, data))
         forward = self.forward(pars, data)
         N = data.size
-        return np.asscalar(-N/2*np.log(2*np.pi)-N*np.mean(np.log(ensure_array(noise_sd))) -
-                ((forward-data)**2/(2*noise_sd**2)).values.sum())
+        log_likelihood = np.asscalar(
+            -N/2 * np.log(2 * np.pi) -
+            N * np.mean(np.log(ensure_array(noise_sd))) -
+            ((forward-data)**2 / (2 * noise_sd**2)).values.sum())
+        return log_likelihood
 
     def lnlike(self, par_vals, data):
         return self._lnlike(self._pack(par_vals), data)
 
+
 class AlphaModel(NoiseModel):
-    def __init__(self, scatterer, noise_sd=None, alpha=1, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', constraints=[]):
-        super().__init__(scatterer, noise_sd, medium_index, illum_wavelen, illum_polarization, theory, constraints)
+    def __init__(self, scatterer, noise_sd=None, alpha=1, medium_index=None,
+                 illum_wavelen=None, illum_polarization=None, theory='auto',
+                 constraints=[]):
+        super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
+                         illum_polarization, theory, constraints)
         self._use_parameter(alpha, 'alpha')
 
     def forward(self, pars, detector):
         """
-        Compute a hologram from pars with dimensions and metadata of detector, scaled by alpha.
+        Compute a hologram from pars with dimensions and metadata of detector,
+        scaled by alpha.
 
         Parameters
         -----------
         pars: dict(string, float)
-            Dictionary containing values for each parameter used to compute the hologram.
-            Possible parameters are given by self.parameters.
+            Dictionary containing values for each parameter used to compute
+            the hologram. Possible parameters are given by self.parameters.
         detector: xarray
-            dimensions of the resulting hologram. Metadata taken from detector if not
-            given explicitly when instantiating self.
+            dimensions of the resulting hologram. Metadata taken from
+            detector if not given explicitly when instantiating self.
         """
         alpha = self.get_par('alpha', pars)
         optics, scatterer = self._optics_scatterer(pars, detector)
         try:
-            return calc_holo(detector, scatterer, theory=self.theory, scaling=alpha, **optics)
+            return calc_holo(detector, scatterer, theory=self.theory,
+                             scaling=alpha, **optics)
         except (MultisphereFailure, InvalidScatterer):
             return -np.inf
