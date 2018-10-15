@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from scipy.special import jn_zeros
 
-from ..theory import mielens  # as mielens
+from ..theory import mielens
 
 TOLS = {'atol': 1e-10, 'rtol': 1e-10}
 MEDTOLS = {"atol": 1e-6, "rtol": 1e-6}
