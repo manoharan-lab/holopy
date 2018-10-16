@@ -46,7 +46,7 @@ from ..calculations import (calc_field, calc_holo, calc_intensity,
                             calc_scat_matrix, calc_cross_sections)
 
 
-TOLS = {'atol': 1e-12, 'rtol': 1e-12}
+TOLS = {'atol': 1e-13, 'rtol': 1e-13}
 MEDTOLS = {"atol": 1e-6, "rtol": 1e-6}
 
 
@@ -68,7 +68,7 @@ class TestMieLens(unittest.TestCase):
         kwargs = {'particle_kz': center[2] * k,
                   'index_ratio': 1.2,
                   'size_parameter': 0.5 * k,
-                  'lens_angle': 0.8}
+                  'lens_angle': 1.0} # using the default mielens lens angle
         detector = detector_grid(10, 2.0)
         x = detector.x.values.reshape(-1, 1) - center[0]
         y = detector.y.values.reshape(1, -1) - center[1]
