@@ -63,8 +63,9 @@ class MieLens(ScatteringTheory):
         Parameters
         ----------
         positions : (3, N) numpy.ndarray
-            The (r, theta, phi) coordinates, relative to the sphere,
-            of the points to calculate the fields.
+            The (k * r, theta, phi) coordinates, relative to the sphere,
+            of the points to calculate the fields. Note that the radial
+            coordinate is rescaled by the wavevector.
         scatterer : ``scatterer.Sphere`` object
         medium_wavevec : float
         medium_index : float
@@ -86,18 +87,31 @@ class MieLens(ScatteringTheory):
         particle_z = np.mean(z)
         if np.ptp(z) / particle_z > 1e-13:
             msg = ("mielens currently assumes the detector is a fixed "+
-                  "z from the particle")
+                   "z from the particle")
             raise ValueError(msg)
-        particle_kz = medium_wavevec * particle_z
+        particle_kz = particle_z
 
         field_calculator = MieLensCalculator(
             particle_kz=particle_kz, index_ratio=index_ratio,
             size_parameter=size_parameter, lens_angle=self.lens_angle,
             **self.calculator_kwargs)
         fields_x, fields_y = field_calculator.calculate_scattered_field(
-            medium_wavevec * rho, phi)
+            rho, phi)
         field_xyz = np.zeros([3, fields_x.size], dtype='complex')
         field_xyz[0, :] = fields_x
         field_xyz[1, :] = fields_y
+        # Then we need to do 2 separate modifications to the fields.
+        # First, in a lens, the incident field is Gouy phase shifted
+        # to be E0 * 1j, whereas in holopy the field is considered as
+        # imaged without a phase shift. So since in holopy the incident
+        # field, imaged by the lens, is phase shifted by -pi/2, we need
+        # to phase-shift the scattered fields by -pi /2 as well =
+        # multiply by -1j.
+        # Second, holopy phase-shifts the reference wave by e^{ikz}.
+        # For numerical reasons, in the mielens calculation I consider
+        # the incident wave fixed and the scattered wave shifted by
+        # e^{-ikz}. So we need to fix this by multiplying by
+        # e^{ikz}. Combined, we multiply by 1j * e^{ikz}:
+        field_xyz *= 1j * np.exp(1j * particle_kz)
         return field_xyz
 
