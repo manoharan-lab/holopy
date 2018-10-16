@@ -85,7 +85,7 @@ class MieLens(ScatteringTheory):
         # FIXME mielens assumes that the detector points are at a fixed z!
         # right now I'm picking one z:
         particle_kz = np.mean(z)
-        if np.ptp(z) > 1e-13:
+        if np.ptp(z) > 1e-13 * (1 + particle_kz):
             msg = ("mielens currently assumes the detector is a fixed "+
                    "z from the particle")
             raise ValueError(msg)
@@ -110,7 +110,7 @@ class MieLens(ScatteringTheory):
         # For numerical reasons, in the mielens calculation I consider
         # the incident wave fixed and the scattered wave shifted by
         # e^{-ikz}. So we need to fix this by multiplying by
-        # e^{ikz}. Combined, we multiply by 1j * e^{ikz}:
-        field_xyz *= 1j * np.exp(1j * particle_kz)
+        # e^{ikz}. Combined, we multiply by -1j * e^{ikz}:
+        field_xyz *= -1j * np.exp(1j * particle_kz)
         return field_xyz
 
