@@ -84,12 +84,11 @@ class MieLens(ScatteringTheory):
 
         # FIXME mielens assumes that the detector points are at a fixed z!
         # right now I'm picking one z:
-        particle_z = np.mean(z)
-        if np.ptp(z) / particle_z > 1e-13:
+        particle_kz = np.mean(z)
+        if np.ptp(z) > 1e-13:
             msg = ("mielens currently assumes the detector is a fixed "+
                    "z from the particle")
             raise ValueError(msg)
-        particle_kz = particle_z
 
         field_calculator = MieLensCalculator(
             particle_kz=particle_kz, index_ratio=index_ratio,
