@@ -31,7 +31,7 @@ from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
 from nose.plugins.attrib import attr
 
 from ..scatterer import Sphere, Spheres, Ellipsoid
-from ..theory import Mie, MieLens
+from ..theory import Mie, MieLens, mielensfunctions
 
 from ..errors import TheoryNotCompatibleError, InvalidScatterer
 from ...core.metadata import (detector_grid, detector_points, to_vector,
@@ -58,28 +58,45 @@ class TestMieLens(unittest.TestCase):
                          theory=theory)
         self.assertTrue(holo is not None)
 
-    @attr('fast')
-    def _test_single_sphere(self):
-        # single sphere hologram (only tests that functions return)
-        theory = MieLens()
-        holo = calc_holo(xschema, sphere, index, wavelen, xpolarization,
-                         theory=theory)
-        field = calc_field(xschema, sphere, index, wavelen, xpolarization,
-                           theory=theory)
+    @attr("fast")
+    def test_holopy_hologram_equal_to_exact_calculation(self):
+        # Checks that phase shifts and wrappers for mielens are correct
+        illum_wavelength = 0.66  # 660 nm red light
+        k = 2 * np.pi / illum_wavelength
+        center = (10, 10, 5.)
 
-        intensity = calc_intensity(
-            xschema, sphere, medium_index=index, illum_wavelen=wavelen,
-            illum_polarization=xpolarization, theory=theory)
+        kwargs = {'particle_kz': center[2] * k,
+                  'index_ratio': 1.2,
+                  'size_parameter': 0.5 * k,
+                  'lens_angle': 0.8}
+        detector = detector_grid(10, 2.0)
+        x = detector.x.values.reshape(-1, 1) - center[0]
+        y = detector.y.values.reshape(1, -1) - center[1]
 
-        verify(holo, 'single_holo')  # core.tests.common.verify
-        verify(field, 'single_field') # -- you don't want to use these
+        rho = np.sqrt(x**2 + y**2)
+        phi = np.arctan2(y, x)
+
+        calculator = mielensfunctions.MieLensCalculator(**kwargs)
+        scatterer = Sphere(n=kwargs['index_ratio'],
+                           r=kwargs['size_parameter'] / k,
+                           center=center)
+
+        holo_calculate = calculator.calculate_total_intensity(k * rho, phi)
+        holo_holopy = calc_holo(
+            detector, scatterer, illum_wavelen=illum_wavelength,
+            medium_index=1., illum_polarization=(1, 0), theory=MieLens())
+
+        is_ok = np.allclose(holo_calculate, holo_holopy.values.squeeze(),
+                            **TOLS)
+        self.assertTrue(is_ok)
 
     @attr('fast')  #??
     def _test_large_sphere(self):
-        large_sphere_gold=[[[0.96371831],[1.04338683]],[[1.04240049],[0.99605225]]]
-        s=Sphere(n=1.5, r=5, center=(10,10,10))
-        sch=detector_grid(10,.2)
-        hl=calc_holo(sch, s, illum_wavelen=.66, medium_index=1, illum_polarization=(1,0))
+        scatterer = Sphere(n=1.2, r=5.0, center=(10, 10, 10))
+        detector = detector_grid(100, 0.2)
+        holo = calc_holo(detector, scatterer, illum_wavelen=0.66,
+                         medium_index=1.0, illum_polarization=(1, 0),
+                         theory=MieLens())
         assert_obj_close(np.array(hl[0:2,0:2]),large_sphere_gold)
 
     @attr('fast')
