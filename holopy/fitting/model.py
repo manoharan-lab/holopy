@@ -35,6 +35,7 @@ from .parameter import Parameter, ComplexParameter
 from holopy.core.utils import ensure_listlike
 from holopy.core.metadata import get_values
 
+
 class Parametrization(HoloPyObject):
     """
     Description of free parameters and how to make a scatterer from them
@@ -51,8 +52,8 @@ class Parametrization(HoloPyObject):
         self.parameters = []
         self._fixed_params = {}
         for par in parameters:
-            def add_par(p, name = None):
-                if name != None:
+            def add_par(p, name=None):
+                if name is not None:
                     p.name = name
                 if not p.fixed:
                     self.parameters.append(p)
@@ -118,7 +119,7 @@ class ParameterizedObject(Parametrization):
 
         def add_par(p, name):
             if not isinstance(p, Parameter):
-                p = Parameter(p,p)
+                p = Parameter(p, p)
             for i, par_check in enumerate(parameters + [None]):
                 if p is par_check:
                     break
@@ -148,7 +149,10 @@ class ParameterizedObject(Parametrization):
                     names.append(name)
 
         # find all the Parameters in the obj
-        for name, par in sorted(iter(obj.parameters.items()), key=lambda x: x[0]):
+        sorted_parameters = sorted(
+            iter(obj.parameters.items()),
+            key=lambda x: x[0])
+        for name, par in sorted_parameters:
             if isinstance(par, ComplexParameter):
                 add_par(par.real, name+'.real')
                 add_par(par.imag, name+'.imag')
@@ -156,12 +160,15 @@ class ParameterizedObject(Parametrization):
                 for key, val in par.items():
                     add_par(val, name + '_' + key)
             elif isinstance(par, xr.DataArray):
-                if len(par.dims)==1:
+                if len(par.dims) == 1:
                     dimname = par.dims[0]
                 else:
-                    raise ParameterSpecificationError('Multi-dimensional parameters are not supported')
+                    msg = 'Multi-dimensional parameters are not supported'
+                    raise ParameterSpecificationError(msg)
                 for key in par[dimname]:
-                    add_par(np.asscalar(par.sel(**{dimname:key})),name+'_'+np.asscalar(key))
+                    par_value = np.asscalar(par.sel(**{dimname: key}))
+                    par_name = name + '_' + np.asscalar(key)
+                    add_par(par_value, par_name)
             elif isinstance(par, Parameter):
                 add_par(par, name)
 
@@ -191,8 +198,9 @@ class ParameterizedObject(Parametrization):
             elif par.fixed:
                 return par.limit
             else:
-                # if this par is in a tie group, we need to work with its tie group
-                # name since that will be what is in parameters
+                # if this par is in a tie group, we need to work with
+                # its tie group name since that will be what is in
+                # parameters
                 for groupname, group in self.ties.items():
                     if name in group:
                         name = groupname
@@ -205,12 +213,14 @@ class ParameterizedObject(Parametrization):
                 par_val = (get_val(par.real, name+'.real') +
                            1j * get_val(par.imag, name+'.imag'))
             elif isinstance(par, dict):
-                par_val = {key:get_val(val, name+'_'+key) for key, val in par.items()}
+                par_val = {key: get_val(val, name+'_'+key)
+                           for key, val in par.items()}
             elif isinstance(par, xr.DataArray):
                 par_val = par.copy()
                 dimname = par_val.dims[0]
                 for key, val in zip(par[dimname], par):
-                    par_val.loc[{dimname:key}] = get_val(np.asscalar(val), name+'_'+np.asscalar(key))
+                    par_val.loc[{dimname: key}] = get_val(
+                        np.asscalar(val), name + '_' + np.asscalar(key))
             elif isinstance(par, Parameter):
                 par_val = get_val(par, name)
             else:
@@ -237,7 +247,8 @@ class limit_overlaps(HoloPyObject):
 
 
 class BaseModel(HoloPyObject):
-    def __init__(self, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', constraints=None):
+    def __init__(self, scatterer, medium_index=None, illum_wavelen=None,
+                 illum_polarization=None, theory='auto', constraints=None):
         if not isinstance(scatterer, Parametrization):
             scatterer = ParameterizedObject(scatterer)
         self.scatterer = scatterer
@@ -265,7 +276,8 @@ class BaseModel(HoloPyObject):
         if name in pars.keys():
             return pars.pop(name)
         elif hasattr(self, name+'_names'):
-            return {key:self.get_par(name+'_'+key, pars) for key in getattr(self, name+'_names')}
+            return {key: self.get_par(name + '_' + key, pars)
+                    for key in getattr(self, name + '_names')}
         else:
             return self.par(name, schema, default)
 
@@ -284,10 +296,12 @@ class BaseModel(HoloPyObject):
             if len(par.dims)==1:
                 dimname = par.dims[0]
             else:
-                raise ParameterSpecificationError('Multi-dimensional parameters are not supported')
-            setattr(self, name+'_names', list(par[dimname].values))
+                msg = 'Multi-dimensional parameters are not supported'
+                raise ParameterSpecificationError(msg)
+            setattr(self, name + '_names', list(par[dimname].values))
             for key in par[dimname]:
-                self._use_parameter(par.sel(**{dimname:key}).item(),name+'_'+key.item())
+                self._use_parameter(
+                    par.sel(**{dimname: key}).item(), name + '_' + key.item())
         else:
             setattr(self, name, par)
             if isinstance(par, Parameter):
@@ -296,7 +310,8 @@ class BaseModel(HoloPyObject):
                 self._parameters.append(par)
 
     def _optics_scatterer(self, pars, schema):
-        optics = self.get_pars(['medium_index', 'illum_wavelen', 'illum_polarization'], pars, schema)
+        param_names = ['medium_index', 'illum_wavelen', 'illum_polarization']
+        optics = self.get_pars(param_names, pars, schema)
         scatterer = self.scatterer.make_from(pars)
         return optics, scatterer
 
@@ -315,14 +330,17 @@ class Model(BaseModel):
         a scaterer as an argument and return False if you wish to disallow that
         scatterer (usually because it is un-physical for some reason)
     """
-    def __init__(self, scatterer, calc_func, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', alpha=None, constraints=[]):
-        super().__init__(scatterer, medium_index, illum_wavelen, illum_polarization, theory, constraints)
+    def __init__(self, scatterer, calc_func, medium_index=None,
+                 illum_wavelen=None, illum_polarization=None, theory='auto',
+                 alpha=None, constraints=[]):
+        super().__init__(scatterer, medium_index, illum_wavelen,
+                         illum_polarization, theory, constraints)
         self.calc_func = calc_func
-
         self._use_parameter(alpha, 'alpha')
 
         if len(self.parameters) == 0:
-            raise ParameterSpecificationError("You must specify at least one parameter to vary in a fit")
+            msg = "You must specify at least one parameter to vary in a fit"
+            raise ParameterSpecificationError(msg)
 
     @property
     def guess(self):
