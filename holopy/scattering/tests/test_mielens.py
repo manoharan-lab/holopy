@@ -108,7 +108,6 @@ class TestMieLens(unittest.TestCase):
         self.assertTrue(ptp_close_ish)
         self.assertTrue(median_close_ish)
 
-    @attr('fast')
     def test_mielens_x_polarization_differs_from_y(self):
         # test holograms for orthogonal polarizations; make sure they're
         # not the same, nor too different from one another.
