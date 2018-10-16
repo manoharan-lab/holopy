@@ -141,8 +141,8 @@ class MieLensCalculator(object):
         # 3. Sum for the field:
         c2p = np.cos(2 * phi)
         s2p = np.sin(2 * phi)
-        field_xcomp = -i_10 - i_20 + (i_12 - i_22) * c2p
-        field_ycomp = (i_12 - i_22) * s2p
+        field_xcomp = 0.25 * (i_10 + i_20 - (i_12 - i_22) * c2p)
+        field_ycomp = 0.25 * (i_12 - i_22) * s2p
         return field_xcomp.reshape(shp), field_ycomp.reshape(shp)
 
     def calculate_total_field(self, krho, phi):
@@ -153,7 +153,7 @@ class MieLensCalculator(object):
         # which is more-or-less from the brightfield writeups.
         # return 1j - 0.25 * mielens_field(krho, phi, **kwargs)
         fx, fy = self.calculate_scattered_field(krho, phi)
-        return 1j - 0.25 * fx, 0.25 * fy
+        return 1j + fx, fy
 
     def calculate_total_intensity(self, krho, phi):
         fx, fy = self.calculate_total_field(krho, phi)
