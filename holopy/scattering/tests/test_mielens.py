@@ -92,15 +92,6 @@ class TestMieLens(unittest.TestCase):
                             **TOLS)
         self.assertTrue(is_ok)
 
-    @attr('fast')  #??
-    def _test_large_sphere(self):
-        scatterer = Sphere(n=1.2, r=5.0, center=(10, 10, 10))
-        detector = detector_grid(100, 0.2)
-        holo = calc_holo(detector, scatterer, illum_wavelen=0.66,
-                         medium_index=1.0, illum_polarization=(1, 0),
-                         theory=MieLens())
-        assert_obj_close(np.array(hl[0:2,0:2]),large_sphere_gold)
-
     @attr('fast')
     def test_mielens_is_close_to_mieonly(self):
         """Tests that a mielens hologram is similar to a mie-only hologram."""
@@ -144,33 +135,21 @@ class TestMieLens(unittest.TestCase):
         self.assertTrue(np.isclose(holo_x.max(), holo_y.max(), **MEDTOLS))
         self.assertTrue(np.isclose(holo_x.min(), holo_y.min(), **MEDTOLS))
 
+    @attr('fast')
+    def test_mielens_multiple_returns_nonzero(self):
+        scatterers = [
+            Sphere(n=1.59, r=5e-7, center=(1e-6, -1e-6, 10e-6)),
+            Sphere(n=1.59, r=1e-6, center=[8e-6,5e-6,5e-6]),
+            Sphere(n=1.59+0.0001j, r = 5e-7, center=[5e-6,10e-6,3e-6]),
+            ]
+        sphere_collection = Spheres(scatterers=scatterers)
+        theory = MieLens()
 
-@attr('fast')
-def _test_Mie_multiple():
-    s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
-    s2 = Sphere(n = 1.59, r = 1e-6, center=[8e-6,5e-6,5e-6])
-    s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,10e-6,3e-6])
-    sc = Spheres(scatterers=[s1, s2, s3])
-    thry = Mie(False)
-
-    schema = yschema
-    fields = calc_field(schema, sc, index, wavelen, ypolarization, thry)
-
-    verify(fields, 'mie_multiple_fields')
-    calc_intensity(schema, sc, index, wavelen, ypolarization, thry)
-
-    holo = calc_holo(schema, sc, index, wavelen, theory=thry)
-    verify(holo, 'mie_multiple_holo')
-    # should throw exception when fed a ellipsoid
-    el = Ellipsoid(n = 1.59, r = (1e-6, 2e-6, 3e-6), center=[8e-6,5e-6,5e-6])
-    with assert_raises(TheoryNotCompatibleError) as cm:
-        calc_field(schema, el, index, wavelen, theory=Mie)
-    assert_equal(str(cm.exception), "Mie scattering theory can't handle "
-                 "scatterers of type Ellipsoid")
-    assert_raises(TheoryNotCompatibleError, calc_field, schema, el, index, wavelen, xpolarization, Mie)
-    assert_raises(TheoryNotCompatibleError, calc_intensity,
-                  schema, el, index, wavelen, xpolarization, Mie)
-    assert_raises(TheoryNotCompatibleError, calc_holo, schema, el, index, wavelen, xpolarization, Mie)
+        schema = yschema
+        holo = calc_holo(schema, sphere_collection, index, wavelen,
+                         theory=theory)
+        self.assertTrue(holo is not None)
+        self.assertTrue(holo.values.std() > 0)
 
 
 if __name__ == '__main__':
