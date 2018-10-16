@@ -48,6 +48,7 @@ from ..calculations import (calc_field, calc_holo, calc_intensity,
 
 TOLS = {'atol': 1e-13, 'rtol': 1e-13}
 MEDTOLS = {"atol": 1e-6, "rtol": 1e-6}
+SOFTTOLS = {"atol": 1e-3, "rtol": 1e-3}
 
 
 class TestMieLens(unittest.TestCase):
@@ -61,6 +62,7 @@ class TestMieLens(unittest.TestCase):
     @attr("fast")
     def test_holopy_hologram_equal_to_exact_calculation(self):
         # Checks that phase shifts and wrappers for mielens are correct
+        theory_mielens = MieLens()
         illum_wavelength = 0.66  # 660 nm red light
         k = 2 * np.pi / illum_wavelength
         center = (10, 10, 5.)
@@ -68,7 +70,7 @@ class TestMieLens(unittest.TestCase):
         kwargs = {'particle_kz': center[2] * k,
                   'index_ratio': 1.2,
                   'size_parameter': 0.5 * k,
-                  'lens_angle': 1.0} # using the default mielens lens angle
+                  'lens_angle': theory_mielens.lens_angle}
         detector = detector_grid(10, 2.0)
         x = detector.x.values.reshape(-1, 1) - center[0]
         y = detector.y.values.reshape(1, -1) - center[1]
@@ -84,7 +86,7 @@ class TestMieLens(unittest.TestCase):
         holo_calculate = calculator.calculate_total_intensity(k * rho, phi)
         holo_holopy = calc_holo(
             detector, scatterer, illum_wavelen=illum_wavelength,
-            medium_index=1., illum_polarization=(1, 0), theory=MieLens())
+            medium_index=1., illum_polarization=(1, 0), theory=theory_mielens)
 
         is_ok = np.allclose(holo_calculate, holo_holopy.values.squeeze(),
                             **TOLS)
@@ -135,11 +137,12 @@ class TestMieLens(unittest.TestCase):
                            illum_polarization=ypolarization, theory=theory)
 
         # the two arrays should not be equal
-        self.assertFalse(np.allclose(holo_x, holo_y, **MEDTOLS))
+        self.assertFalse(np.allclose(holo_x, holo_y, **SOFTTOLS))
 
         # but their max and min values should be very close
-        self.assertFalse(np.isclose(holo_x.max(), holo_y.max(), **MEDTOLS))
-        self.assertFalse(np.isclose(holo_x.min(), holo_y.min(), **MEDTOLS))
+        # (really exact because we lose no symmetry from the grid)
+        self.assertTrue(np.isclose(holo_x.max(), holo_y.max(), **MEDTOLS))
+        self.assertTrue(np.isclose(holo_x.min(), holo_y.min(), **MEDTOLS))
 
 
 @attr('fast')

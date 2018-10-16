@@ -78,8 +78,10 @@ class MieLens(ScatteringTheory):
         r, theta, phi = positions
         z = r * np.cos(theta)
         rho = r * np.sin(theta)
-        phi += np.arctan2(illum_polarization.values[1],
-                          illum_polarization.values[0])
+
+        pol_angle = np.arctan2(
+            illum_polarization.values[1], illum_polarization.values[0])
+        phi += pol_angle
         phi %= (2 * np.pi)
 
         # FIXME mielens assumes that the detector points are at a fixed z!
@@ -94,11 +96,18 @@ class MieLens(ScatteringTheory):
             particle_kz=particle_kz, index_ratio=index_ratio,
             size_parameter=size_parameter, lens_angle=self.lens_angle,
             **self.calculator_kwargs)
-        fields_x, fields_y = field_calculator.calculate_scattered_field(
-            rho, phi)
-        field_xyz = np.zeros([3, fields_x.size], dtype='complex')
-        field_xyz[0, :] = fields_x
-        field_xyz[1, :] = fields_y
+        fields_pll, fields_prp = field_calculator.calculate_scattered_field(
+            rho, phi)  # parallel and perp to the polarization
+
+        # Transfer from (parallel to, perpendicular to) polarziation
+        # to (x, y)
+        parallel = np.array([np.cos(pol_angle), np.sin(pol_angle)])
+        perpendicular = np.array([-np.sin(pol_angle), np.cos(pol_angle)])
+        field_xyz = np.zeros([3, fields_pll.size], dtype='complex')
+        for i in range(2):
+            field_xyz[i, :] += fields_pll * parallel[i]
+            field_xyz[i, :] += fields_prp * perpendicular[i]
+
         # Then we need to do 2 separate modifications to the fields.
         # First, in a lens, the incident field is Gouy phase shifted
         # to be E0 * 1j, whereas in holopy the field is considered as
