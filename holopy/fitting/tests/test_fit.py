@@ -107,39 +107,6 @@ def test_fit_random_subset():
 
     assert_read_matches_write(result)
 
-@attr('fast')
-# TODO: disabled for now pending reorganization of model and timeseries
-def disable_next_model():
-    exampleresult = FitResult(parameters={
-        'center[1]': 31.367170884695756, 'r': 0.6465280831465722,
-        'center[0]': 32.24150087110443,
-        'center[2]': 35.1651561654966,
-        'alpha': 0.7176299231169572,
-        'n': 1.580122175314896},
-        scatterer=Sphere(n=1.580122175314896, r=0.6465280831465722,
-        center=[32.24150087110443, 31.367170884695756, 35.1651561654966]),
-        chisq=0.0001810513851216454, rsq=0.9727020197282801,
-        converged=True, time=5.179728031158447,
-        model=Model(scatterer=ParameterizedObject(obj=
-        Sphere(n=Parameter(guess=1.59, limit=[1.4, 1.7], name='n'),
-        r=Parameter(guess=0.65, limit=[0.6, 0.7], name='r'),
-        center=[Parameter(guess=32.110424836601304, limit=[2, 40], name='center[0]'),
-        Parameter(guess=31.56683986928105, limit=[4, 40], name='center[1]'),
-        Parameter(guess=33, limit=[5, 45], name='center[2]')])),
-                    medium_index=1.33, calc_func=calc_holo, wavelen=.66, optics=Optics(polarization=(0, 1)), alpha=Parameter(guess=0.6, limit=[0.1, 1], name='alpha'),
-        constraints=[]), minimizer = None, minimization_details = None)
-
-    gold = Model(scatterer=ParameterizedObject(obj=Sphere(
-        n=Parameter(guess=1.580122175314896, limit=[1.4, 1.7], name='n'),
-        r=Parameter(guess=0.6465280831465722, limit=[0.6, 0.7], name='r'),
-        center=[Parameter(guess=32.24150087110443, limit=[2, 40], name='center[0]'),
-        Parameter(guess=31.367170884695756, limit=[4, 40], name='center[1]'),
-        Parameter(guess=35.1651561654966, limit=[5, 45], name='center[2]')])),
-        medium_index=1.33, calc_func=calc_holo, wavelen=.66, optics=Optics(polarization=(0, 1)), alpha=Parameter(guess=0.7176299231169572, limit=[0.1, 1], name='alpha'),
-        constraints=[])
-
-    assert_obj_close(gold, exampleresult.next_model())
-
 def test_n():
     sph = Sphere(Parameter(.5), 1.6, (5,5,5))
     sch = detector_grid(shape=[100, 100], spacing=[0.1, 0.1])

@@ -25,11 +25,11 @@ import os
 import glob
 import yaml
 import warnings
-from scipy.misc import fromimage
 from PIL import Image as pilimage
 import xarray as xr
 import numpy as np
 import importlib
+from collections import OrderedDict
 
 from . import serialize
 from ..metadata import data_grid, get_spacing, update_metadata, copy_metadata, to_vector, illumination, clean_concat
@@ -42,7 +42,7 @@ tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
 def default_extension(inf, defext='.h5'):
     try:
         file, ext = os.path.splitext(inf)
-    except AttributeError:
+    except:
         # this will happen if inf is already a file, which means we don't
         # need to do anything here
         return inf
@@ -94,7 +94,7 @@ def pack_attrs(a, do_spacing=False, scaling = None):
 
     for attr, val in a.attrs.items():
         if isinstance(val, xr.DataArray):
-            new_attrs[attr_coords][attr]={}
+            new_attrs[attr_coords][attr] = OrderedDict()
             for dim in val.dims:
                 new_attrs[attr_coords][attr][str(dim)]=val[dim].values
             new_attrs[attr]=list(ensure_array(val.values))
@@ -200,24 +200,37 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
 
     Parameters
     ----------
-    inf : single or list of basestring or files
-        File to load.  If the file is a yaml file, all other arguments are
-        ignored.  If inf is a list of image files or filenames they are all
-        loaded as a a timeseries hologram
+    inf : string
+        File to load.
+    spacing : float or (float, float) (optional)
+        pixel size of images in each dimension - assumes square pixels if single value.
+        set equal to 1 if not passed in and issues warning.
+    medium_index : float (optional)
+        refractive index of the medium
+    illum_wavelen : float (optional)
+        wavelength (in vacuum) of illuminating light
+    illum_polarization : (float, float) (optional)
+        (x, y) polarization vector of the illuminating light
+    normals : (float, float, float) (optional)
+        (x, y, z) vector of the component of light propagation captured by detector
+    noise_sd : float (optional)
+        noise level in the image, normalized to image intensity
     channel : int or tuple of ints (optional)
         number(s) of channel to load for a color image (in general 0=red,
         1=green, 2=blue)
+	name : str (optional)
+        name to assign the xr.DataArray object resulting from load_image
 
     Returns
     -------
-    obj : The object loaded, :class:`holopy.core.marray.Image`, or as loaded from yaml
+    obj : xarray.DataArray representation of the image with associated metadata
 
     """
     if name is None:
         name = os.path.splitext(os.path.split(inf)[-1])[0]
 
     with open(inf,'rb') as pi:
-        arr = fromimage(pilimage.open(pi)).astype('d')
+        arr = np.asarray(pilimage.open(pi)).astype('d')
         if hasattr(pi, 'tag') and isinstance(yaml.load(pi.tag[270][0]), dict):
             warnings.warn("Metadata detected but ignored. Use hp.load to read it")
 
@@ -419,16 +432,34 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
     if len(filepath) < 1:
         raise LoadError(filepath, "No images found")
 
+    # read spacing from refimg if none provided
     if is_none(spacing):
         spacing = get_spacing(refimg)
 
+    # read colour channels from refimg
     if channel is None and illumination in refimg.dims:
         channel = [i for i, col in enumerate(['red','green','blue']) if col in refimg[illumination].values]
     accumulator = clean_concat([load_image(image, spacing, channel=channel) for image in filepath],'images')
+
+    if np.isscalar(spacing):
+        spacing = np.repeat(spacing, 2)
+
+    # crop according to refimg dimensions
+    def extent(i):
+        name = ['x','y'][i]
+        return np.around(refimg[name].values/spacing[i]).astype('int')
+    accumulator = accumulator.isel(x=extent(0), y=extent(1))
+    accumulator['x'] = refimg.x
+    accumulator['y'] = refimg.y
+
+    # calculate average noise from image
     if noise_sd is None:
         noise_sd = ensure_array((accumulator.std('images')/accumulator.mean('images')).mean(('x','y','z')))
     accumulator = accumulator.mean('images')
 
+    # copy metadata from refimg
     if not is_none(refimg):
         accumulator = copy_metadata(refimg, accumulator, do_coords=False)
+
+    # overwrite metadata from refimg with provided values
     return update_metadata(accumulator, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)

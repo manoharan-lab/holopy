@@ -73,6 +73,8 @@ def test_Tying():
     assert_equal(model.parameters[0].guess, 1.59)
     assert_equal(model.parameters[1].guess, 5e-7)
     assert_equal(len(model.parameters),4)
+    assert_equal(model.scatterer.ties,{'Sphere.n': ['0:Sphere.n', '1:Sphere.n']})
+
 
 
 @attr('fast')

@@ -285,7 +285,7 @@ def get_values(a):
 
 def primdim(a):
     if isinstance(a, xr.DataArray):
-        a = a.coords
+        a = a.dims
     if 'flat' in a:
         return 'flat'
     if 'point' in a:

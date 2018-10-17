@@ -30,7 +30,7 @@ class SimpleModel:
     def __init__(self, x=None):
         self.parameters = [x]
 
-    def lnposterior(self, par_vals, data):
+    def lnposterior(self, par_vals, data, dummy):
         x = par_vals
         return -((x-data)**2).sum()
 

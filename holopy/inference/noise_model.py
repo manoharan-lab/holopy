@@ -23,6 +23,7 @@ import numpy as np
 import xarray as xr
 from copy import copy
 from holopy.scattering.calculations import calc_field, calc_holo
+from holopy.fitting import make_subset_data
 from holopy.core.metadata import dict_to_array
 from holopy.core.utils import ensure_array
 
@@ -32,20 +33,24 @@ class NoiseModel(BaseModel):
     Compute probabilities that observed data could be explained by a set of
     scatterer and observation parameters.
     """
-    def __init__(self, scatterer, noise_sd, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
-        super().__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory)
-        # the float cast insures we don't have noise_sd wrapped up in a needless xarray
+    def __init__(self, scatterer, noise_sd, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', constraints=[]):
+        super().__init__(scatterer, medium_index, illum_wavelen, illum_polarization, theory, constraints)
         self._use_parameter(ensure_array(noise_sd), 'noise_sd')
     def _pack(self, vals):
         return {par.name: val for par, val in zip(self.parameters, vals)}
 
     def lnprior(self, par_vals):
+
+        for constraint in self.constraints:
+            if not constraint.check(self.scatterer.make_from(self._pack(par_vals))):
+                return -np.inf
+
         if isinstance(par_vals, dict):
             return sum([p.lnprob(par_vals[p.name]) for p in self.parameters])
         else:
             return sum([p.lnprob(v) for p, v in zip(self.parameters, par_vals)])
 
-    def lnposterior(self, par_vals, data):
+    def lnposterior(self, par_vals, data, pixels=None):
         lnprior = self.lnprior(par_vals)
         # prior is sometimes used to forbid thing like negative radius
         # which will fail if you attempt to compute a hologram of, so
@@ -54,6 +59,8 @@ class NoiseModel(BaseModel):
         if lnprior == -np.inf:
             return lnprior
         else:
+            if pixels is not None:
+                data = make_subset_data(data, pixels=pixels)
             return lnprior + self.lnlike(par_vals, data)
 
     def _fields(self, pars, schema):
@@ -77,26 +84,35 @@ class NoiseModel(BaseModel):
             The data to compute likelihood against
         """
         noise_sd = dict_to_array(data,self.get_par('noise_sd', pars, data))
-        forward = self._forward(pars, data)
+        forward = self.forward(pars, data)
         N = data.size
-        return (-N/2*np.log(2*np.pi)-N*np.mean(np.log(ensure_array(noise_sd))) -
+        return np.asscalar(-N/2*np.log(2*np.pi)-N*np.mean(np.log(ensure_array(noise_sd))) -
                 ((forward-data)**2/(2*noise_sd**2)).values.sum())
 
     def lnlike(self, par_vals, data):
         return self._lnlike(self._pack(par_vals), data)
 
 class AlphaModel(NoiseModel):
-    def __init__(self, scatterer, noise_sd=None, alpha=1, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
-        super().__init__(scatterer, medium_index=medium_index, illum_wavelen=illum_wavelen, illum_polarization=illum_polarization, theory=theory, noise_sd=noise_sd)
+    def __init__(self, scatterer, noise_sd=None, alpha=1, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', constraints=[]):
+        super().__init__(scatterer, noise_sd, medium_index, illum_wavelen, illum_polarization, theory, constraints)
         self._use_parameter(alpha, 'alpha')
 
-    def _forward(self, pars, schema, alpha=None):
-        if alpha is not None:
-            alpha = alpha
-        else:
-            alpha = self.get_par('alpha', pars)
-        optics, scatterer = self._optics_scatterer(pars, schema)
+    def forward(self, pars, detector):
+        """
+        Compute a hologram from pars with dimensions and metadata of detector, scaled by alpha.
+
+        Parameters
+        -----------
+        pars: dict(string, float)
+            Dictionary containing values for each parameter used to compute the hologram.
+            Possible parameters are given by self.parameters.
+        detector: xarray
+            dimensions of the resulting hologram. Metadata taken from detector if not
+            given explicitly when instantiating self.
+        """
+        alpha = self.get_par('alpha', pars)
+        optics, scatterer = self._optics_scatterer(pars, detector)
         try:
-            return calc_holo(schema, scatterer, theory=self.theory, scaling=alpha, **optics)
+            return calc_holo(detector, scatterer, theory=self.theory, scaling=alpha, **optics)
         except (MultisphereFailure, InvalidScatterer):
             return -np.inf

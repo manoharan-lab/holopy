@@ -39,12 +39,13 @@ from holopy.core.utils import dict_without
 from .errors import MinimizerConvergenceFailed, InvalidMinimizer
 from .minimizer import Minimizer, Nmpfit
 
-def make_subset_data(data, random_subset=None, pixels=None, return_selection=False):
+def make_subset_data(data, random_subset=None, pixels=None, return_selection=False, seed=None):
     if random_subset is None and pixels is None:
         return data
     if random_subset is not None and pixels is not None:
         raise ValueError("You can only specify one of pixels or random_subset")
-
+    if seed is not None:
+        np.random.seed(seed)
     tot_pix = len(data.x)*len(data.y)
     if pixels is not None:
         n_sel = pixels
@@ -54,11 +55,7 @@ def make_subset_data(data, random_subset=None, pixels=None, return_selection=Fal
     subset = flat(data).isel(flat=selection)
     subset = copy_metadata(data, subset, do_coords=False)
 
-    shape = (len(data.x), len(data.y))
-    spacing = (get_spacing(data))
-    start = (np.asscalar(data.x[0]), np.asscalar(data.y[0]))
-    coords = {key:val.values for key, val in dict_without(dict(data.coords), ['x','y','z']).items()}
-    subset.attrs['original_dims'] = yaml.dump((shape, spacing, start, coords))
+    subset.attrs['original_dims'] = yaml.dump({key:data[key].values for key in data.dims})
 
     if return_selection:
         return subset, selection
@@ -74,7 +71,7 @@ def fit(model, data, minimizer=Nmpfit, random_subset=None):
     model : :class:`~holopy.fitting.model.Model` object
         A model describing the scattering system which leads to your data and
         the parameters to vary to fit it to the data
-    data : :class:`~holopy.core.marray.Marray` object
+    data : xarray.DataArray
         The data to fit
     minimizer : (optional) :class:`~holopy.fitting.minimizer.Minimizer`
         The minimizer to use to do the fit

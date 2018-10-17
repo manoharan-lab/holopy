@@ -117,7 +117,7 @@ class ParameterizedObject(Parametrization):
         def add_par(p, name):
             if not isinstance(p, Parameter):
                 p = Parameter(p,p)
-            for par_check in parameters + [None]:
+            for i, par_check in enumerate(parameters + [None]):
                 if p is par_check:
                     break
             if par_check is not None:
@@ -126,8 +126,7 @@ class ParameterizedObject(Parametrization):
 
                 # we will rename the parameter so that when it is printed it
                 # better reflects how it is used
-                new_name = tied_name(names[parameters.index(p)], name)
-                names[parameters.index(p)] = new_name
+                new_name = tied_name(names[i], name)
 
                 if new_name in ties:
                     # if there is already an existing tie group we need to
@@ -135,8 +134,9 @@ class ParameterizedObject(Parametrization):
                     group = ties[new_name]
 
                 else:
-                    group = [name]
+                    group = [names[i]]
 
+                names[i] = new_name
                 group.append(name)
                 ties[new_name] = group
 
@@ -145,7 +145,7 @@ class ParameterizedObject(Parametrization):
                     parameters.append(p)
                     names.append(name)
 
-        # find all the Parameter's in the obj
+        # find all the Parameters in the obj
         for name, par in sorted(iter(obj.parameters.items()), key=lambda x: x[0]):
             if isinstance(par, ComplexParameter):
                 add_par(par.real, name+'.real')
@@ -182,22 +182,22 @@ class ParameterizedObject(Parametrization):
         return self.make_from(pars)
 
     def make_from(self, parameters):
+
+        def get_val(par, name):
+            if not isinstance(par, Parameter):
+                return par
+            elif par.fixed:
+                return par.limit
+            else:
+                # if this par is in a tie group, we need to work with its tie group
+                # name since that will be what is in parameters
+                for groupname, group in self.ties.items():
+                    if name in group:
+                        name = groupname
+                return parameters[name]
+
         obj_pars = {}
-
         for name, par in self.obj.parameters.items():
-            # if this par is in a tie group, we need to work with its tie group
-            # name since that will be what is in parameters
-            for groupname, group in self.ties.items():
-                if name in group:
-                    name = groupname
-
-            def get_val(par, name):
-                if not isinstance(par, Parameter):
-                    return par
-                elif par.fixed:
-                    return par.limit
-                else:
-                    return parameters[name]
 
             if isinstance(par, ComplexParameter):
                 par_val = (get_val(par.real, name+'.real') +
@@ -213,7 +213,6 @@ class ParameterizedObject(Parametrization):
                 par_val = get_val(par, name)
             else:
                 par_val = par
-
             if name in self.ties:
                 for tied_name in self.ties[name]:
                     obj_pars[tied_name] = par_val
@@ -221,32 +220,24 @@ class ParameterizedObject(Parametrization):
                 obj_pars[name] = par_val
         return self.obj.from_parameters(obj_pars)
 
-def limit_overlaps(fraction=.1):
+class limit_overlaps(HoloPyObject):
     """
-    Generator for constraint prohibiting overlaps beyond a certain tolerance
+    Constraint prohibiting overlaps beyond a certain tolerance.
+    fraction is the largest overlap allowed, in terms of sphere diameter.
 
-    Parameters
-    ----------
-    fraction : float
-        Fraction of the sphere diameter that the spheres should be allowed to
-        overlap by
-
-
-    Returns
-    -------
-    constraint : function (scatterer -> bool)
-        A function which tests scatterers to see if the exceed the specified
-        tolerance
     """
-    def constraint(s):
-        return s.largest_overlap() < ((np.min(s.r) * 2) * fraction)
-    return constraint
+    def __init__(self, fraction=.1):
+        self.fraction = fraction
+
+    def check(self, s):
+        return s.largest_overlap() <= ((np.min(s.r) * 2) * self.fraction)
 
 class BaseModel(HoloPyObject):
-    def __init__(self, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto'):
+    def __init__(self, scatterer, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', constraints=None):
         if not isinstance(scatterer, Parametrization):
             scatterer = ParameterizedObject(scatterer)
         self.scatterer = scatterer
+        self.constraints = ensure_listlike(constraints)
         self._parameters = self.scatterer.parameters
         self._use_parameter(medium_index, 'medium_index')
         self._use_parameter(illum_wavelen, 'illum_wavelen')
@@ -321,19 +312,14 @@ class Model(BaseModel):
         a scaterer as an argument and return False if you wish to disallow that
         scatterer (usually because it is un-physical for some reason)
     """
-    def __init__(self, scatterer, calc_func, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', alpha=None,
-                 use_random_fraction=None, constraints=[]):
-        super().__init__(scatterer, medium_index, illum_wavelen, illum_polarization, theory)
+    def __init__(self, scatterer, calc_func, medium_index=None, illum_wavelen=None, illum_polarization=None, theory='auto', alpha=None, constraints=[]):
+        super().__init__(scatterer, medium_index, illum_wavelen, illum_polarization, theory, constraints)
         self.calc_func = calc_func
-
-        self.use_random_fraction = use_random_fraction
 
         self._use_parameter(alpha, 'alpha')
 
         if len(self.parameters) == 0:
             raise ParameterSpecificationError("You must specify at least one parameter to vary in a fit")
-
-        self.constraints = ensure_listlike(constraints)
 
     @property
     def guess(self):
@@ -358,7 +344,7 @@ class Model(BaseModel):
 
         valid = True
         for constraint in self.constraints:
-            valid = valid and constraint(scatterer)
+            valid = valid and constraint.check(scatterer)
         if not valid:
             return np.ones_like(schema) * np.inf
 
@@ -368,6 +354,6 @@ class Model(BaseModel):
             return np.ones_like(schema) * np.inf
 
     def residual(self, pars, data):
-        return get_values(self._calc(pars, data)) - get_values(data)
+        return get_values(self._calc(pars, data) - data).flatten()
 
     # TODO: Allow a layer on top of theory to do things like moving sphere

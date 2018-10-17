@@ -27,6 +27,7 @@ import numpy as np
 from nose.tools import with_setup
 from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
+from subprocess import CalledProcessError
 import os
 
 from ...scattering.errors import DependencyMissing
@@ -77,8 +78,11 @@ def test_dda_2_cpu():
         dda_n2 = DDA(n_cpu=2)
     except DependencyMissing:
         raise SkipTest()
-    dda_holo = calc_holo(schema, sc, index, wavelen, theory=dda_n2)
-
+    try:
+        dda_holo = calc_holo(schema, sc, index, wavelen, theory=dda_n2)
+    except CalledProcessError:
+        # DDA only compiled for serial calculations
+        raise SkipTest
     # TODO: figure out how to actually test that it runs on multiple cpus
 
 def in_sphere(r):

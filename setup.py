@@ -37,7 +37,8 @@ from os.path import join
 from numpy.distutils.core import setup, Extension
 
 #setup to make Tmatrix fortran code
-tmat_dir = join('holopy','scattering','theory','tmatrix_f')
+hp_root = os.path.dirname(os.path.realpath(sys.argv[0]))
+tmat_dir = join(hp_root, 'holopy','scattering','theory','tmatrix_f')
 if os.name == 'nt':
     make=['mingw32-make']
     tmat_file = 'S.exe'
@@ -47,33 +48,29 @@ else:
 
 # this will automatically build the scattering extensions, using the
 # setup.py files located in their subdirectories
-def configuration(parent_package='',top_path=''):
+def configuration(parent_package='',top_path=' '):
     from numpy.distutils.misc_util import Configuration
     config = Configuration(None,parent_package,top_path)
 
-    pkglist=setuptools.find_packages()
-    print(pkglist)
+    pkglist=setuptools.find_packages(hp_root)
     for i in pkglist:
         config.add_subpackage(i)
 
-    config.add_data_files(['.',['AUTHORS']])
-    config.add_data_files(join('holopy','scattering','tests','gold','full_data','*.h5'))
-    config.add_data_files(join('holopy','scattering','tests','gold','*.yaml'))
-    config.add_data_files(join('holopy','core','tests','exampledata','*.h5'))
-    config.add_data_files(join('holopy','core','tests','exampledata','*.jpg'))
-    config.add_data_files(join('holopy','propagation','tests','gold','full_data','*.h5'))
-    config.add_data_files(join('holopy','propagation','tests','gold','*.yaml'))
+    config.add_data_files(['.',[join(hp_root,'AUTHORS')]])
+    config.add_data_files(join(hp_root,'holopy','scattering','tests','gold','full_data','*.h5'))
+    config.add_data_files(join(hp_root,'holopy','scattering','tests','gold','*.yaml'))
+    config.add_data_files(join(hp_root,'holopy','core','tests','exampledata','*.h5'))
+    config.add_data_files(join(hp_root,'holopy','core','tests','exampledata','*.jpg'))
+    config.add_data_files(join(hp_root,'holopy','propagation','tests','gold','full_data','*.h5'))
+    config.add_data_files(join(hp_root,'holopy','propagation','tests','gold','*.yaml'))
     config.add_data_files(join(tmat_dir,tmat_file))
 
-    config.get_version()
     return config
 
-__version__ = 'unknown'
 try:
     from holopy import __version__
 except ImportError:
-    # no version specified, or file got deleted in bzr
-    pass
+    __version__ = 'unknown'
 
 if __name__ == "__main__":
 
@@ -82,7 +79,7 @@ if __name__ == "__main__":
         #compile Tmatrix fortran code
         subprocess.check_call(make, cwd=tmat_dir)
 
-    requires=[l for l in open("requirements.txt").readlines() if l[0] != '#']
+    requires=[l for l in open(os.path.join(hp_root,"requirements.txt")).readlines() if l[0] != '#']
     setup(configuration=configuration,
           name='HoloPy',
           version=__version__,

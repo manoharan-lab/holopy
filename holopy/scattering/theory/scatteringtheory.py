@@ -87,7 +87,11 @@ class ScatteringTheory(HoloPyObject):
             #                                  optics)).T
             field *= phase
             dimstr=primdim(positions)
-            coords = {key: (dimstr, val.values) for key, val in positions[dimstr].coords.items()}
+
+            if isinstance(positions[dimstr], xr.DataArray):
+                coords = {key: (dimstr, val.values) for key, val in positions[dimstr].coords.items()}
+            else:
+                coords = {key: (dimstr, val) for key, val in positions.items()}
             coords = updated(coords, {dimstr: positions[dimstr], vector: ['x', 'y', 'z']})
             field = xr.DataArray(field, dims=[dimstr, vector], coords = coords, attrs=schema.attrs)
             return field
