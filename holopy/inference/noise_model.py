@@ -137,6 +137,12 @@ class AlphaModel(NoiseModel):
 
 # TODO: Change the default theory (when it is "auto") to be
 # selected by the model.
+# -- this is a little trickier than it sounds, because
+# hlopy.scattering.determine_theory picks based off of whether the
+# object is 1 sphere or a collection of spheres etc. So you can't
+# pass MieLens as a theory
+# For now it would be OK since PerfectLensModel only works with single
+# spheres or superpositions, but I'm going to leave this for later.
 class ExactModel(NoiseModel):
     def __init__(self, scatterer, noise_sd=None, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
