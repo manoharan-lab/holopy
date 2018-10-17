@@ -18,8 +18,11 @@
 
 
 import warnings
+
 import numpy as np
 from numpy.testing import assert_equal
+from nose.plugins.attrib import attr
+
 from holopy.inference import prior, sample
 from holopy.core.process import normalize
 from holopy.core.tests.common import assert_obj_close, get_example_data
@@ -36,6 +39,7 @@ gold_nsteps = 10
 gold_frac = 0.925
 
 
+@attr("fast")
 def test_NoiseModel_lnprior():
     scat = Sphere(r=prior.Gaussian(1, 1), n=prior.Gaussian(1, 1),
                   center=[10, 10, 10])
