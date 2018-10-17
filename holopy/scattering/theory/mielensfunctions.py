@@ -116,34 +116,48 @@ class MieLensCalculator(object):
             the initial field is polarized in the x-direction. Same shape as
             krho, phi
 
-        Other Parameters
-        ----------------
-        Interpolation parameters to FarfieldMieInterpolator
-
         Notes
         -----
         This will have problems for large rho, z, because of the quadrature
-        points. Could be adaptive if needed....
+        points. Empirically this problem happens for rho >~ 4 * quad_npts.
+        Could be adaptive if needed....
         """
         # 0. Check inputs:
-        shp = krho.shape
-        if (shp != phi.shape):
+        shape = krho.shape
+        if (shape != phi.shape):
             raise ValueError('krho, phi must all be the same shape')
+        # 1. Check for regions where rho is bad and set to 0:
+        rho_too_big = krho > 3.9 * self.quad_npts
+        rho_ok = ~rho_too_big
+
+        # 2. Evaluate scattered fields only at valid rho's:
+        ex_valid, ey_valid = self._calculate_scattered_fields(
+            krho[rho_ok], phi[rho_ok])
+
+        # 3. Return
+        output_x = np.zeros(shape, dtype='complex')
+        output_y = np.zeros(shape, dtype='complex')
+        output_x[rho_ok] = ex_valid
+        output_y[rho_ok] = ey_valid
+        return output_x, output_y
+
+    def _calculate_scattered_fields(self, krho, phi):
+        shape = phi.shape
         # 2. Evaluate the integrals:
         i_10 = np.reshape(self.mielens_i_ij(krho, j=0,
-                          fi=self._interpolator_f1), shp)
+                          fi=self._interpolator_f1), shape)
         i_12 = np.reshape(self.mielens_i_ij(krho, j=2,
-                          fi=self._interpolator_f1), shp)
+                          fi=self._interpolator_f1), shape)
         i_20 = np.reshape(self.mielens_i_ij(krho, j=0,
-                          fi=self._interpolator_f2), shp)
+                          fi=self._interpolator_f2), shape)
         i_22 = np.reshape(self.mielens_i_ij(krho, j=2,
-                          fi=self._interpolator_f2), shp)
+                          fi=self._interpolator_f2), shape)
         # 3. Sum for the field:
         c2p = np.cos(2 * phi)
         s2p = np.sin(2 * phi)
         field_xcomp = 0.25 * (i_10 + i_20 - (i_12 - i_22) * c2p)
         field_ycomp = 0.25 * (i_12 - i_22) * s2p
-        return field_xcomp.reshape(shp), field_ycomp.reshape(shp)
+        return field_xcomp.reshape(shape), field_ycomp.reshape(shape)
 
     def calculate_total_field(self, krho, phi):
         """The total (incident + scattered) field at the detector

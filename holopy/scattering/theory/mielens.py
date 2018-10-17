@@ -56,7 +56,6 @@ class MieLens(ScatteringTheory):
     def _can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
 
-    # The only thing I will implement for now
     def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
         """
