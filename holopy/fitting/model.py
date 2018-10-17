@@ -310,8 +310,8 @@ class BaseModel(HoloPyObject):
                 self._parameters.append(par)
 
     def _optics_scatterer(self, pars, schema):
-        param_names = ['medium_index', 'illum_wavelen', 'illum_polarization']
-        optics = self.get_pars(param_names, pars, schema)
+        optics_keys = ['medium_index', 'illum_wavelen', 'illum_polarization']
+        optics = self.get_pars(optics_keys, pars, schema)
         scatterer = self.scatterer.make_from(pars)
         return optics, scatterer
 
