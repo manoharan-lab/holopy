@@ -17,7 +17,6 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-
 import warnings
 import numpy as np
 from numpy.testing import assert_equal
@@ -26,27 +25,31 @@ from holopy.core.process import normalize
 from holopy.core.tests.common import assert_obj_close, get_example_data
 from holopy.scattering import Sphere, Mie
 from holopy.fitting import model
-from holopy.inference.noise_model import AlphaModel,NoiseModel
+from holopy.inference.noise_model import AlphaModel, NoiseModel
 
-#GOLD:log(sqrt(0.5/pi))-1/2
-gold_sigma=-1.4189385332
+# GOLD: log(sqrt(0.5/pi))-1/2
+gold_sigma = -1.4189385332
 
-#GOLD:inference result - depends on both seeds
-gold_alpha=np.array([0.649683])
-gold_nsteps=10
-gold_frac=0.925
+# GOLD: inference result - depends on both seeds
+gold_alpha = np.array([0.649683])
+gold_nsteps = 10
+gold_frac = 0.925
 
 
 def test_NoiseModel_lnprior():
-    scat=Sphere(r=prior.Gaussian(1,1),n=prior.Gaussian(1,1),center=[10,10,10])
-    mod=NoiseModel(scat, noise_sd=.1)
-    assert_obj_close(mod.lnprior([0,0]),gold_sigma*2)
+    scat = Sphere(r=prior.Gaussian(1, 1), n=prior.Gaussian(1, 1),
+                  center=[10, 10, 10])
+    mod = NoiseModel(scat, noise_sd=.1)
+    assert_obj_close(mod.lnprior([0, 0]), gold_sigma*2)
+
 
 def test_subset_tempering():
     holo = normalize(get_example_data('image0001'))
-    scat = Sphere(r=0.65e-6,n=1.58,center=[5.5e-6,5.8e-6,14e-6])
-    mod = AlphaModel(scat,noise_sd=.1, alpha=prior.Gaussian(0.7,0.1))
+    scat = Sphere(r=0.65e-6, n=1.58, center=[5.5e-6, 5.8e-6, 14e-6])
+    mod = AlphaModel(scat, noise_sd=.1, alpha=prior.Gaussian(0.7, 0.1))
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        inf = sample.tempered_sample(mod, holo, nwalkers=4, samples=10, stages=1, stage_len=10, threads=None, seed=40)
-    assert_obj_close(inf.MAP,gold_alpha, rtol=1e-3)
+        inf = sample.tempered_sample(
+            mod, holo, nwalkers=4, samples=10, stages=1, stage_len=10,
+            threads=None, seed=40)
+    assert_obj_close(inf.MAP, gold_alpha, rtol=1e-3)
