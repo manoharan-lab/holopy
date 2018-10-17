@@ -322,13 +322,24 @@ class Model(BaseModel):
 
     Parameters
     ----------
+    scatterer :
+    calc_func :
+    medium_index : float
+    illum_wavelen : float
+    illum_polarization :
+    theory : {'auto', `holpy.scattering.theory.ScatteringTheory`}
+        The theory used to compute the scattering from the particle.
+        Default is ``'auto'``, which eventually calls
+        ``holopy.scattering.determine_theory`` when the model is
+        evaluated.
     alpha : float or Parameter
-        Extra scaling parameter, hopefully this will be removed by improvements
-        in our theory soon.
+        Extra scaling parameter, hopefully this will be removed by
+        improvements in our theory soon.
     constraints : function or list of functions
-        One or a list of constraint functions. A constraint function should take
-        a scaterer as an argument and return False if you wish to disallow that
-        scatterer (usually because it is un-physical for some reason)
+        One or a list of constraint functions. A constraint function
+        should take a scaterer as an argument and return False if you
+        wish to disallow that scatterer (usually because it is un-
+        physical for some reason)
     """
     def __init__(self, scatterer, calc_func, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
