@@ -15,14 +15,14 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-
-from holopy.fitting.model import BaseModel
-from holopy.scattering.errors import MultisphereFailure, InvalidScatterer
-
 import numpy as np
 import xarray as xr
 from copy import copy
+
+from holopy.fitting.model import BaseModel
+from holopy.scattering.errors import MultisphereFailure, InvalidScatterer
 from holopy.scattering.calculations import calc_field, calc_holo
+from holopy.scattering.theory import MieLens
 from holopy.fitting import make_subset_data
 from holopy.core.metadata import dict_to_array
 from holopy.core.utils import ensure_array
@@ -135,6 +135,8 @@ class AlphaModel(NoiseModel):
             return -np.inf
 
 
+# TODO: Change the default theory (when it is "auto") to be
+# selected by the model.
 class ExactModel(NoiseModel):
     def __init__(self, scatterer, noise_sd=None, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
@@ -161,3 +163,65 @@ class ExactModel(NoiseModel):
                              scaling=1.0, **optics)
         except (MultisphereFailure, InvalidScatterer):
             return -np.inf
+
+
+# TODO fix this!!!
+# TODO you will need to re-instantiate a theory object each time, since
+# the lens angle needs to get updated on each loop
+class PerfectLensModel(NoiseModel):
+    theory_params = ['lens_angle']
+    def __init__(self, scatterer, noise_sd=None, lens_angle=1.0,
+                 medium_index=None, illum_wavelen=None, theory='auto',
+                 illum_polarization=None, constraints=[]):
+        super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
+                         illum_polarization, theory, constraints)
+        self._use_parameter(lens_angle, 'lens_angle')
+
+    def forward(self, pars, detector):
+        """
+        Compute a forward model (the hologram)
+
+        Parameters
+        -----------
+        pars: dict(string, float)
+            Dictionary containing values for each parameter used to compute
+            the hologram. Possible parameters are given by self.parameters.
+        detector: xarray
+            dimensions of the resulting hologram. Metadata taken from
+            detector if not given explicitly when instantiating self.
+        """
+        optics_kwargs, scatterer = self._optics_scatterer(pars, detector)
+        # Does this:
+        # optics_keys = ['medium_index', 'illum_wavelen', 'illum_polarization']
+        # optics = self.get_pars(optics_keys)
+        # scatterer = self.scatterer.make_from(pars)
+        # return optics, scatterer
+        # So optics is a dict of kwargs
+
+        # We need the lens parameters for the theory:
+        # Really this could be a dict of theory_kwargs that gets unpacked
+        # and the Model could return them, that way an aberrated lens
+        # or whatever could be easily implemented.
+        # The alpha param is gotten as:
+        # alpha = self.get_par('alpha', pars)
+        # which checks if alpha is in pars.keys and pops if so. If not,
+        # basically returns
+
+        # Incidentally get_pars(names, pars) does the same, but it
+        # needs to be a list-like.
+
+        # FIXME why is self.get_pars a method? It calls like 3 functions
+        # recursively to just do a dictionary indexing on something which
+        # is not even the object's attr.
+        theory_kwargs = self.get_pars(self.theory_params, pars)
+        # FIXME would be nice to have access to the interpolator kwargs
+        theory = MieLens(**theory_kwargs)
+        try:
+            return calc_holo(detector, scatterer, theory=theory,
+                             scaling=1.0, **optics_kwargs)
+        except (MultisphereFailure, InvalidScatterer):
+            return -np.inf
+
+# TODO:
+# Make some unit tests for ExactModel, then for PerfectLensModel
+# See if there are unit tests for AlphaModel

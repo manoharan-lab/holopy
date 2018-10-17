@@ -37,8 +37,7 @@ gold_sigma = -1.4189385332
 
 # GOLD: inference result - depends on both seeds
 gold_alpha = np.array([0.649683])
-gold_nsteps = 10
-gold_frac = 0.925
+gold_lens_angle = np.array([0.675643])
 
 
 @attr("fast")
@@ -71,5 +70,5 @@ class TestSubsetTempering(unittest.TestCase):
             inference_result = sample.tempered_sample(
                 model, data, nwalkers=4, samples=10, stages=1, stage_len=10,
                 threads=None, seed=40)
-        assert_obj_close(inference_result.MAP, gold_alpha, rtol=1e-3)
+        assert_obj_close(inference_result.MAP, gold_lens_angle, rtol=1e-3)
 
