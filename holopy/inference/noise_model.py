@@ -165,9 +165,6 @@ class ExactModel(NoiseModel):
             return -np.inf
 
 
-# TODO fix this!!!
-# TODO you will need to re-instantiate a theory object each time, since
-# the lens angle needs to get updated on each loop
 class PerfectLensModel(NoiseModel):
     theory_params = ['lens_angle']
     def __init__(self, scatterer, noise_sd=None, lens_angle=1.0,
@@ -191,29 +188,11 @@ class PerfectLensModel(NoiseModel):
             detector if not given explicitly when instantiating self.
         """
         optics_kwargs, scatterer = self._optics_scatterer(pars, detector)
-        # Does this:
-        # optics_keys = ['medium_index', 'illum_wavelen', 'illum_polarization']
-        # optics = self.get_pars(optics_keys)
-        # scatterer = self.scatterer.make_from(pars)
-        # return optics, scatterer
-        # So optics is a dict of kwargs
-
         # We need the lens parameters for the theory:
-        # Really this could be a dict of theory_kwargs that gets unpacked
-        # and the Model could return them, that way an aberrated lens
-        # or whatever could be easily implemented.
-        # The alpha param is gotten as:
-        # alpha = self.get_par('alpha', pars)
-        # which checks if alpha is in pars.keys and pops if so. If not,
-        # basically returns
-
-        # Incidentally get_pars(names, pars) does the same, but it
-        # needs to be a list-like.
-
+        theory_kwargs = self.get_pars(self.theory_params, pars)
         # FIXME why is self.get_pars a method? It calls like 3 functions
         # recursively to just do a dictionary indexing on something which
         # is not even the object's attr.
-        theory_kwargs = self.get_pars(self.theory_params, pars)
         # FIXME would be nice to have access to the interpolator kwargs
         theory = MieLens(**theory_kwargs)
         try:
@@ -224,4 +203,6 @@ class PerfectLensModel(NoiseModel):
 
 # TODO:
 # Make some unit tests for ExactModel, then for PerfectLensModel
-# See if there are unit tests for AlphaModel
+# It would be nice if some of the unittests for fitting were also
+# applicable to the inference models. This should be changed later,
+# when the two fitting approaches are unified.
