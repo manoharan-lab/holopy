@@ -145,6 +145,15 @@ class TestMieLensCalculator(unittest.TestCase):
         self.assertTrue(np.allclose(field_pi2, truefield_pi2, **MEDTOLS))
         self.assertTrue(np.allclose(field_pi4, truefield_pi4, **MEDTOLS))
 
+    @attr("fast")
+    def test_fields_go_to_zero_at_large_distances(self):
+        rho = np.logspace(2.4, 5, 80)
+        calculator = mielensfunctions.MieLensCalculator(
+            size_parameter=10, lens_angle=1.0, particle_kz=10., index_ratio=1.1)
+        field_x, field_y = calculator.calculate_scattered_field(rho, 0*rho)
+        fields_dont_explode = np.all(np.abs(field_x < 2e-4))
+        self.assertTrue(fields_dont_explode)
+
     # other possible tests:
     # 1. E(x, y) = E(-x, -y)
     # 2. E_x = 0 at phi = pi/2, E_y = 0 at phi = 0
