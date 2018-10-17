@@ -20,7 +20,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 from holopy.fitting.model import BaseModel
-from holopy.inference import prior, AlphaModel
+from holopy.inference import prior
 from holopy.inference.sample import sample_emcee, EmceeStrategy, tempered_sample
 from holopy.core.metadata import detector_grid
 from holopy.fitting import make_subset_data
