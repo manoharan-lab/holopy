@@ -2,6 +2,10 @@ import numpy as np
 from scipy.special import j0, j1, spherical_jn, spherical_yn
 from scipy import interpolate
 
+
+NPTS = 100
+
+
 class MieLensCalculator(object):
     def __init__(self, particle_kz=10.0, index_ratio=1.1, size_parameter=10.0,
                  lens_angle=1.0, quad_npts=100, interpolator_maxl=None,
@@ -251,7 +255,6 @@ def spherical_h1n(n, z, derivative=False):
     return spherical_jn(n, z, derivative) + 1j * spherical_yn(n, z, derivative)
 
 
-NPTS = 100
 def gauss_legendre_pts_wts(a, b, npts=NPTS):
     """Quadrature points for integration on interval [a, b]"""
     pts, wts = np.polynomial.legendre.leggauss(npts)
@@ -405,8 +408,9 @@ def calculate_pil_taul(theta, max_order):
     Returns
     -------
     pi, tau : ndarray
-        2D arrays with shape (len(theta), max_order) containing the values of the
-        angular functions evaluated at theta up to order max_order
+        2D arrays with shape (len(theta), max_order) containing the
+        values of the angular functions evaluated at theta up to order
+        `max_order`
     """
     theta = np.atleast_1d(theta)
     cos_th = np.cos(theta)
