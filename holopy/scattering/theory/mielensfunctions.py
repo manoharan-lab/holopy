@@ -6,6 +6,20 @@ from scipy import interpolate
 NPTS = 100
 
 
+# TODO:
+# 0. Profile the code to see what is slow. Possible fixes are:
+# 1. See if it is faster to not interpolate the Mie F_i functions.
+#    Right now you call the F_i at 100 quadrature points but use
+#    ~400 (10 * ceil(4 * size_parameter)) function calls to set up
+#    the interpolator.
+# 2. Rather than evaluate the I_01 etc at each of the "lots" of
+#    rho points, create an interpolator. This will be faster because
+#    the data is 2D, so if there are ~N points in rho, there are N^2
+#    rho values you are evaluating. So you can get a lot faster her.
+#    Only works b/c of the cos(2phi) symmetry of course.
+# 3. Fast quadrature of rapidly oscillating functions
+
+
 class MieLensCalculator(object):
     def __init__(self, particle_kz=10.0, index_ratio=1.1, size_parameter=10.0,
                  lens_angle=1.0, quad_npts=100, interpolator_maxl=None,
