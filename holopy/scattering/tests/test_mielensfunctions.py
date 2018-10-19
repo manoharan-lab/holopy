@@ -154,6 +154,36 @@ class TestMieLensCalculator(unittest.TestCase):
         fields_dont_explode = np.all(np.abs(field_x < 2e-4))
         self.assertTrue(fields_dont_explode)
 
+    @attr("fast")  # 0.3 s, not really fast...
+    def test_interpolate_is_same_as_direct_computation(self):
+        k = 2 * np.pi / 0.66
+
+        rho = np.linspace(0, 15, 151)
+        phi = np.linspace(0, 8 * np.pi, rho.size)
+
+        # Test over a few particle parameters:
+        radii = [0.5, 1.5, 6.5]
+        zs = [5.0, 10.0, -10.]
+        index_ratios = [1.1, 1.2, 1.3]
+
+        for radius, z, index_ratio in zip(radii, zs, index_ratios):
+            kz = k * z
+            ka = k * radius
+            direct_calculator = mielensfunctions.MieLensCalculator(
+                particle_kz=kz, index_ratio=index_ratio, size_parameter=ka,
+                interpolate_integrals=False)
+            interpolating_calculator = mielensfunctions.MieLensCalculator(
+                particle_kz=kz, index_ratio=index_ratio, size_parameter=ka,
+                interpolate_integrals=True)
+
+            fdx, fdy = direct_calculator.calculate_scattered_field(k * rho, phi)
+            fix, fiy = direct_calculator.calculate_scattered_field(k * rho, phi)
+
+            close_enough_x = np.allclose(fdx, fix, **MEDTOLS)
+            close_enough_y = np.allclose(fdy, fiy, **MEDTOLS)
+            self.assertTrue(close_enough_x)
+            self.assertTrue(close_enough_y)
+
     # other possible tests:
     # 1. E(x, y) = E(-x, -y)
     # 2. E_x = 0 at phi = pi/2, E_y = 0 at phi = 0
