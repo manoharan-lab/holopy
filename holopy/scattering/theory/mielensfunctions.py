@@ -78,8 +78,8 @@ class MieLensCalculator(object):
                   'size_parameter': self.size_parameter,
                   'max_l': self.interpolator_maxl,
                   'npts': self.interpolator_npts}
-        f1_evaluator = FarfieldMieInterpolator(i=1, lazy=True, **kwargs)
-        f2_evaluator = FarfieldMieInterpolator(i=2, lazy=True, **kwargs)
+        f1_evaluator = FarfieldMieEvaluator(i=1, lazy=True, **kwargs)
+        f2_evaluator = FarfieldMieEvaluator(i=2, lazy=True, **kwargs)
         self._f1_values = np.reshape(
             f1_evaluator._eval(self._theta_pts), (-1, 1))
         self._f2_values = np.reshape(
@@ -198,7 +198,7 @@ class MieLensCalculator(object):
         return np.abs(fx)**2 + np.abs(fy)**2
 
 
-class FarfieldMieInterpolator(object):
+class FarfieldMieEvaluator(object):
     def __init__(self, i=1, index_ratio=1.1, size_parameter=1.0, max_l=None,
                  npts=None, lazy=False):
         """Interpolators for some derived Mie scattering functions, as
