@@ -4,25 +4,12 @@ from scipy import interpolate
 
 
 NPTS = 100
-
-
-# TODO:
-# 0. Profile the code to see what is slow. Possible fixes are:
-# 1. See if it is faster to not interpolate the Mie F_i functions.
-#    Right now you call the F_i at 100 quadrature points but use
-#    ~400 (10 * ceil(4 * size_parameter)) function calls to set up
-#    the interpolator.
-# 2. Rather than evaluate the I_01 etc at each of the "lots" of
-#    rho points, create an interpolator. This will be faster because
-#    the data is 2D, so if there are ~N points in rho, there are N^2
-#    rho values you are evaluating. So you can get a lot faster her.
-#    Only works b/c of the cos(2phi) symmetry of course.
-# 3. Fast quadrature of rapidly oscillating functions
+LEGGAUSS_PTS_WTS_NPTS = np.polynomial.legendre.leggauss(NPTS)
 
 
 # TODO:
 # fast integration of oscillatory functions.
-# precompute leggauss weights; it's 10 ms of the 70 ms eval time
+
 
 class MieLensCalculator(object):
     def __init__(self, particle_kz=10.0, index_ratio=1.1, size_parameter=10.0,
@@ -316,9 +303,12 @@ def spherical_h1n(n, z, derivative=False):
 
 def gauss_legendre_pts_wts(a, b, npts=NPTS):
     """Quadrature points for integration on interval [a, b]"""
-    pts, wts = np.polynomial.legendre.leggauss(npts)
-    pts *= (b - a) * 0.5
-    wts *= (b - a) * 0.5
+    if npts == NPTS:
+        pts_raw, wts_raw = LEGGAUSS_PTS_WTS_NPTS
+    else:
+        pts_raw, wts_raw = np.polynomial.legendre.leggauss(npts)
+    pts = pts_raw * (b - a) * 0.5
+    wts = wts_raw * (b - a) * 0.5
     pts += 0.5 * (a + b)
     return pts, wts
 
