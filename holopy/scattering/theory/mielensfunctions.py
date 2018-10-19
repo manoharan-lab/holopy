@@ -20,6 +20,10 @@ NPTS = 100
 # 3. Fast quadrature of rapidly oscillating functions
 
 
+# Init takes 14.6 ms for a 0.5 um sphere (ka=4.75) at kz=47.5
+# calculate_scattered_field takes 841 ms for rho.shape=(120, 120)
+# almost all in mielens_i_ij
+# 50% in j2
 class MieLensCalculator(object):
     def __init__(self, particle_kz=10.0, index_ratio=1.1, size_parameter=10.0,
                  lens_angle=1.0, quad_npts=100, interpolator_maxl=None,
@@ -57,19 +61,31 @@ class MieLensCalculator(object):
         self.interpolator_maxl = interpolator_maxl
         self.interpolator_npts = interpolator_npts
 
-        self._setup_interpolators()
-        self._quad_pts, self._quad_wts = gauss_legendre_pts_wts(
+        quad_pts, quad_wts = gauss_legendre_pts_wts(
             np.cos(self.lens_angle), 1.0, npts=self.quad_npts)
 
-    def _setup_interpolators(self):
+        # Precompute some quadrature points, mie functions that are
+        # independent of rho and phi
+        self._quad_pts = quad_pts.reshape(-1, 1)
+        self._theta_pts = np.arccos(quad_pts)
+        self._sintheta_pts = np.sin(self._theta_pts).reshape(-1, 1)
+        self._quad_wts = quad_wts.reshape(-1, 1)
+
+        self._precompute_fi()
+
+    def _precompute_fi(self):
         kwargs = {'index_ratio': self.index_ratio,
                   'size_parameter': self.size_parameter,
                   'max_l': self.interpolator_maxl,
                   'npts': self.interpolator_npts}
-        self._interpolator_f1 = FarfieldMieInterpolator(i=1, **kwargs)
-        self._interpolator_f2 = FarfieldMieInterpolator(i=2, **kwargs)
+        f1_evaluator = FarfieldMieInterpolator(i=1, lazy=True, **kwargs)
+        f2_evaluator = FarfieldMieInterpolator(i=2, lazy=True, **kwargs)
+        self._f1_values = np.reshape(
+            f1_evaluator._eval(self._theta_pts), (-1, 1))
+        self._f2_values = np.reshape(
+            f2_evaluator._eval(self._theta_pts), (-1, 1))
 
-    def mielens_i_ij(self, krho, fi=None, j=0):
+    def mielens_i_ij(self, krho, fi_values, j=0):
         """Calculates one of several similar integrals over the lens pupil
         which appear in the Mie + lens calculations.
 
@@ -87,8 +103,6 @@ class MieLensCalculator(object):
         numpy.ndarray
             The value of the integrand evaluated at the krho points.
         """
-        if fi is None:  # should be always passed...
-            fi = self._interpolator_f1
         if j == 0:
             ji = j0
         elif j == 2:
@@ -97,15 +111,11 @@ class MieLensCalculator(object):
             raise ValueError('j must be one of {0, 2}')
         # We do the integral with the change of variables x = cos(theta),
         # from cos(lens_angle) to 1.0:
-        # Placing things in order [quadratrue points, rho-z values]
-        pts = self._quad_pts.reshape(-1, 1)
-        wts = self._quad_wts.reshape(-1, 1)
+        # Placing things in order [quadrature points, rho-z values]
         rr = krho.reshape(1, -1)
-        theta = np.arccos(pts)  # for F_i(theta)
-        sintheta = np.sqrt(1 - pts**2)
-        integrand = (np.exp(-1j * self.particle_kz * (pts - 1)) * fi(theta) *
-                     ji(rr * sintheta))
-        return np.sum(integrand * wts, axis=0)
+        integrand = (np.exp(-1j * self.particle_kz * (self._quad_pts - 1)) *
+                     fi_values * ji(rr * self._sintheta_pts))
+        return np.sum(integrand * self._quad_wts, axis=0)
 
     def calculate_scattered_field(self, krho, phi):
         """Calculates the field from a Mie scatterer imaged through a
@@ -162,14 +172,10 @@ class MieLensCalculator(object):
     def _calculate_scattered_fields(self, krho, phi):
         shape = phi.shape
         # 2. Evaluate the integrals:
-        i_10 = np.reshape(self.mielens_i_ij(krho, j=0,
-                          fi=self._interpolator_f1), shape)
-        i_12 = np.reshape(self.mielens_i_ij(krho, j=2,
-                          fi=self._interpolator_f1), shape)
-        i_20 = np.reshape(self.mielens_i_ij(krho, j=0,
-                          fi=self._interpolator_f2), shape)
-        i_22 = np.reshape(self.mielens_i_ij(krho, j=2,
-                          fi=self._interpolator_f2), shape)
+        i_10 = np.reshape(self.mielens_i_ij(krho, self._f1_values, j=0), shape)
+        i_12 = np.reshape(self.mielens_i_ij(krho, self._f1_values, j=2), shape)
+        i_20 = np.reshape(self.mielens_i_ij(krho, self._f2_values, j=0), shape)
+        i_22 = np.reshape(self.mielens_i_ij(krho, self._f2_values, j=2), shape)
         # 3. Sum for the field:
         c2p = np.cos(2 * phi)
         s2p = np.sin(2 * phi)
@@ -194,7 +200,7 @@ class MieLensCalculator(object):
 
 class FarfieldMieInterpolator(object):
     def __init__(self, i=1, index_ratio=1.1, size_parameter=1.0, max_l=None,
-                 npts=None):
+                 npts=None, lazy=False):
         """Interpolators for some derived Mie scattering functions, as
         defined in the module docstring.
 
@@ -211,13 +217,22 @@ class FarfieldMieInterpolator(object):
             Size of the sphere in units of 1/k = 1/wavevector
         max_l : int > 0
         npts : int > 0
+        lazy : bool
+            Whether or not to set up the interpolator right away or
+            to wait until it is called.
         """
-        # init sets up interpolator
         self.i = i
         self.index_ratio = index_ratio
         self.size_parameter = size_parameter
         self.max_l = self._default_max_l() if max_l is None else max_l
         self.npts = self._default_npts() if npts is None else npts
+        self.lazy = lazy
+        if not lazy:
+            self._setup_interpolator()
+        else:
+            self._interp = None
+
+    def _setup_interpolator(self):
         self._true_pts = np.linspace(0, 0.5 * np.pi, self.npts)
         self._true_values = self._eval(self._true_pts)
         self._interp = interpolate.CubicSpline(
@@ -255,6 +270,8 @@ class FarfieldMieInterpolator(object):
 
     def __call__(self, theta):
         # call the interpolator
+        if self._interp is None:
+            self._setup_interpolator()
         return self._interp(theta)
 
 
