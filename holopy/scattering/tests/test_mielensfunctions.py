@@ -1,4 +1,5 @@
 import unittest
+import itertools
 
 import numpy as np
 from scipy.special import jn_zeros
@@ -154,7 +155,6 @@ class TestMieLensCalculator(unittest.TestCase):
         fields_dont_explode = np.all(np.abs(field_x < 2e-4))
         self.assertTrue(fields_dont_explode)
 
-    @attr("fast")  # 0.3 s, not really fast...
     def test_interpolate_is_same_as_direct_computation(self):
         k = 2 * np.pi / 0.66
 
@@ -166,9 +166,9 @@ class TestMieLensCalculator(unittest.TestCase):
         zs = [5.0, 10.0, -10.]
         index_ratios = [1.1, 1.2, 1.3]
 
-        for radius, z, index_ratio in zip(radii, zs, index_ratios):
+        for rad, z, index_ratio in itertools.product(radii, zs, index_ratios):
             kz = k * z
-            ka = k * radius
+            ka = k * rad
             direct_calculator = mielensfunctions.MieLensCalculator(
                 particle_kz=kz, index_ratio=index_ratio, size_parameter=ka,
                 interpolate_integrals=False)
