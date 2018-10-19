@@ -20,14 +20,14 @@ NPTS = 100
 # 3. Fast quadrature of rapidly oscillating functions
 
 
-# Init takes 14.6 ms for a 0.5 um sphere (ka=4.75) at kz=47.5
-# calculate_scattered_field takes 841 ms for rho.shape=(120, 120)
-# almost all in mielens_i_ij
-# 50% in j2
+# TODO:
+# fast integration of oscillatory functions.
+# precompute leggauss weights; it's 10 ms of the 70 ms eval time
+
 class MieLensCalculator(object):
     def __init__(self, particle_kz=10.0, index_ratio=1.1, size_parameter=10.0,
-                 lens_angle=1.0, quad_npts=100, interpolator_maxl=None,
-                 interpolator_npts=None):
+                 lens_angle=1.0, quad_npts=100, interpolate_integrals='check',
+                 interpolation_spacing=0.1):
         """Calculates the field from a Mie scatterer imaged in a high-NA lens.
 
         The incindent electric field is E e^{ikz}, with the particle
@@ -38,12 +38,17 @@ class MieLensCalculator(object):
         ----------
         particle_kz : float
             + z is away from the lens
-        index_ratio : float
-        size_parameter : float
-        lens_angle : float
+        index_ratio : float > 0
+        size_parameter : float > 0
+        lens_angle : float on (0, pi/2)
         quad_npts : int, optional
-        interpolator_maxl : int or None, optional
-        interpolator_npts : int or None, optional
+            The number of points for numerical quadrature of the
+            integrals over the lens pupil.
+        interpolate_integrals : {'check', True, False}
+            Whether or not to interpolate the internally-evaluated
+            integrals for speed. Default is `'check'`, which interpolates
+            if it will be faster or does direct numerical quadrature
+            otherwise.
 
         Methods
         -------
@@ -58,8 +63,8 @@ class MieLensCalculator(object):
         self.lens_angle = lens_angle
 
         self.quad_npts = quad_npts
-        self.interpolator_maxl = interpolator_maxl
-        self.interpolator_npts = interpolator_npts
+        self.interpolate_integrals = interpolate_integrals
+        self.interpolation_spacing = interpolation_spacing
 
         quad_pts, quad_wts = gauss_legendre_pts_wts(
             np.cos(self.lens_angle), 1.0, npts=self.quad_npts)
@@ -76,8 +81,7 @@ class MieLensCalculator(object):
     def _precompute_fi(self):
         kwargs = {'index_ratio': self.index_ratio,
                   'size_parameter': self.size_parameter,
-                  'max_l': self.interpolator_maxl,
-                  'npts': self.interpolator_npts}
+                  }
         f1_evaluator = FarfieldMieEvaluator(i=1, lazy=True, **kwargs)
         f2_evaluator = FarfieldMieEvaluator(i=2, lazy=True, **kwargs)
         self._f1_values = np.reshape(
@@ -103,6 +107,21 @@ class MieLensCalculator(object):
         numpy.ndarray
             The value of the integrand evaluated at the krho points.
         """
+        if self.interpolate_integrals == 'check':
+            n_interp_pnts = krho.ptp() / self.interpolation_spacing
+            n_krho_pts = krho.size
+            interpolate_integrals = n_interp_pnts < 1.1 * n_krho_pts
+        else:
+            interpolate_integrals = self.interpolate_integrals is True
+
+        if interpolate_integrals:
+            i_ij = self._interpolate_and_eval_mielens_i_ij(krho, fi_values, j)
+        else:
+            i_ij = self._direct_eval_mielens_i_ij(krho, fi_values, j)
+
+        return i_ij
+
+    def _direct_eval_mielens_i_ij(self, krho, fi_values, j=0):
         if j == 0:
             ji = j0
         elif j == 2:
@@ -115,7 +134,16 @@ class MieLensCalculator(object):
         rr = krho.reshape(1, -1)
         integrand = (np.exp(-1j * self.particle_kz * (self._quad_pts - 1)) *
                      fi_values * ji(rr * self._sintheta_pts))
-        return np.sum(integrand * self._quad_wts, axis=0)
+        answer_flat = np.sum(integrand * self._quad_wts, axis=0)
+        return answer_flat.reshape(krho.shape)
+
+    def _interpolate_and_eval_mielens_i_ij(self, krho, fi_values, j=0):
+        spacing = self.interpolation_spacing
+        interp_pts = np.arange(krho.min(), krho.max() + 5 * spacing, spacing)
+        interp_vals = self._direct_eval_mielens_i_ij(
+            interp_pts, fi_values, j=0)
+        interpolator = interpolate.CubicSpline(interp_pts, interp_vals)
+        return interpolator(krho)
 
     def calculate_scattered_field(self, krho, phi):
         """Calculates the field from a Mie scatterer imaged through a
@@ -181,7 +209,7 @@ class MieLensCalculator(object):
         s2p = np.sin(2 * phi)
         field_xcomp = 0.25 * (i_10 + i_20 - (i_12 - i_22) * c2p)
         field_ycomp = 0.25 * (i_12 - i_22) * s2p
-        return field_xcomp.reshape(shape), field_ycomp.reshape(shape)
+        return field_xcomp, field_ycomp
 
     def calculate_total_field(self, krho, phi):
         """The total (incident + scattered) field at the detector
