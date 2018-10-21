@@ -104,8 +104,7 @@ def determine_theory(scatterer):
     if isinstance(scatterer, Sphere):
         return Mie()
     elif isinstance(scatterer, Spheres):
-        if all([np.isscalar(scat.r)
-                for i, scat in enumerate(scatterer.scatterers)]):
+        if all([np.isscalar(scat.r) for scat in scatterer.scatterers]):
             return Multisphere()
         else:
             warn("HoloPy's multisphere theory can't handle coated spheres." +
