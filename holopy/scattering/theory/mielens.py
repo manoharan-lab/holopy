@@ -32,23 +32,10 @@ from .mielensfunctions import MieLensCalculator
 
 
 class MieLens(ScatteringTheory):
-    def __init__(self, lens_angle=1.0, calculator_kwargs={}):
+    def __init__(self, lens_angle=1.0, calculator_accuracy_kwargs={}):
         super(MieLens, self).__init__()
         self.lens_angle = lens_angle
-        self._check_calculator_kwargs(calculator_kwargs)
-        self.calculator_kwargs = calculator_kwargs
-
-    def _check_calculator_kwargs(self, calculator_kwargs):
-        msg = ("`calculator_kwargs` must be a dict with keys `'quad_npts'`," +
-               "`'interpolator_maxl'`, and/or `'interpolator_npts'`" +
-               ", all with integer values.")
-        try:
-            keys = {k for k in calculator_kwargs.keys()}
-        except:
-            raise ValueError(msg)
-        valid_keys = {'quad_npts', 'interpolator_maxl', 'interpolator_npts'}
-        if any([k not in valid_keys for k in keys]):
-            raise ValueError(msg)
+        self.calculator_accuracy_kwargs = calculator_accuracy_kwargs
 
     def _can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
@@ -91,7 +78,7 @@ class MieLens(ScatteringTheory):
         field_calculator = MieLensCalculator(
             particle_kz=particle_kz, index_ratio=index_ratio,
             size_parameter=size_parameter, lens_angle=self.lens_angle,
-            **self.calculator_kwargs)
+            **self.calculator_accuracy_kwargs)
         fields_pll, fields_prp = field_calculator.calculate_scattered_field(
             rho, phi)  # parallel and perp to the polarization
 
