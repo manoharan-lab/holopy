@@ -26,8 +26,6 @@ Uses superposition to calculate scattering from multiple spheres.
 
 import numpy as np
 
-# from ...core.utils import ensure_array
-# from ..errors import TheoryNotCompatibleError, InvalidScatterer
 from ..scatterer import Sphere, Scatterers
 from .scatteringtheory import ScatteringTheory
 from .mielensfunctions import MieLensCalculator
@@ -35,7 +33,6 @@ from .mielensfunctions import MieLensCalculator
 
 class MieLens(ScatteringTheory):
     def __init__(self, lens_angle=1.0, calculator_kwargs={}):
-        # some things to add -- number of interpolator points
         super(MieLens, self).__init__()
         self.lens_angle = lens_angle
         self._check_calculator_kwargs(calculator_kwargs)
