@@ -71,6 +71,90 @@ class MieLensCalculator(object):
 
         self._precompute_fi()
 
+    def calculate_scattered_field(self, krho, phi):
+        """Calculates the field from a Mie scatterer imaged through a
+        high-NA lens and excited with an electric field of unit strength
+        directed along the optical axis.
+
+            .. math::
+                \vec{E}_{sc} = A \left[ I_{12} \sin(2\phi) \hat{y} +
+                                       -I_{10} \hat{x} +
+                                        I_{12} \cos(2\phi) \hat{x} +
+                                       -I_{20} \hat{x} +
+                                       -I_{22} \cos(2\phi) \hat{x} +
+                                       -I_{22} \sin(2\phi) \hat{y} \right]
+
+        Parameters
+        ----------
+        krho, phi : numpy.ndarray
+            The position of the particle relative to the focal point of the
+            lens, in (i) cylindrical coordinates and (ii) dimensionless
+            wavevectur units. Must all be the same shape.
+
+        Returns
+        -------
+        field_xcomp, field_ycomp : numpy.ndarray
+            The (x, y) components of the electric field at the detector, where
+            the initial field is polarized in the x-direction. Same shape as
+            krho, phi
+
+        Notes
+        -----
+        This will have problems for large rho, z, because of the quadrature
+        points. Empirically this problem happens for rho >~ 4 * quad_npts.
+        Could be adaptive if needed....
+        """
+        # 0. Check inputs:
+        shape = krho.shape
+        if (shape != phi.shape):
+            raise ValueError('krho, phi must all be the same shape')
+        # 1. Check for regions where rho is bad and set to 0:
+        rho_too_big = krho > 3.9 * self.quad_npts
+        rho_ok = ~rho_too_big
+
+        # 2. Evaluate scattered fields only at valid rho's:
+        ex_valid, ey_valid = self._calculate_scattered_fields(
+            krho[rho_ok], phi[rho_ok])
+
+        # 3. Return
+        output_x = np.zeros(shape, dtype='complex')
+        output_y = np.zeros(shape, dtype='complex')
+        output_x[rho_ok] = ex_valid
+        output_y[rho_ok] = ey_valid
+        return output_x, output_y
+
+    def calculate_total_field(self, krho, phi):
+        """The total (incident + scattered) field at the detector
+        """
+        # Uses the incident field as
+        #   E_in = E_0 \hat{x} * 4 pi * (f1 / f2) * e^{ik(f1 + f2)} * i
+        # which is more-or-less from the brightfield writeups.
+        # return 1j - 0.25 * mielens_field(krho, phi, **kwargs)
+        fx, fy = self.calculate_scattered_field(krho, phi)
+        return 1j + fx, fy
+
+    def calculate_total_intensity(self, krho, phi):
+        fx, fy = self.calculate_total_field(krho, phi)
+        return np.abs(fx)**2 + np.abs(fy)**2
+
+    def _calculate_scattered_fields(self, krho, phi):
+        shape = phi.shape
+        # 2. Evaluate the integrals:
+        i_10 = np.reshape(
+            self._eval_mielens_i_ij(krho, self._f1_values, j=0), shape)
+        i_12 = np.reshape(
+            self._eval_mielens_i_ij(krho, self._f1_values, j=2), shape)
+        i_20 = np.reshape(
+            self._eval_mielens_i_ij(krho, self._f2_values, j=0), shape)
+        i_22 = np.reshape(
+            self._eval_mielens_i_ij(krho, self._f2_values, j=2), shape)
+        # 3. Sum for the field:
+        c2p = np.cos(2 * phi)
+        s2p = np.sin(2 * phi)
+        field_xcomp = 0.25 * (i_10 + i_20 - (i_12 - i_22) * c2p)
+        field_ycomp = 0.25 * (i_12 - i_22) * s2p
+        return field_xcomp, field_ycomp
+
     def _precompute_fi(self):
         kwargs = {'index_ratio': self.index_ratio,
                   'size_parameter': self.size_parameter,
@@ -142,90 +226,6 @@ class MieLensCalculator(object):
             interp_pts, fi_values, j=0)
         interpolator = interpolate.CubicSpline(interp_pts, interp_vals)
         return interpolator(krho)
-
-    def calculate_scattered_field(self, krho, phi):
-        """Calculates the field from a Mie scatterer imaged through a
-        high-NA lens and excited with an electric field of unit strength
-        directed along the optical axis.
-
-            .. math::
-                \vec{E}_{sc} = A \left[ I_{12} \sin(2\phi) \hat{y} +
-                                       -I_{10} \hat{x} +
-                                        I_{12} \cos(2\phi) \hat{x} +
-                                       -I_{20} \hat{x} +
-                                       -I_{22} \cos(2\phi) \hat{x} +
-                                       -I_{22} \sin(2\phi) \hat{y} \right]
-
-        Parameters
-        ----------
-        krho, phi : numpy.ndarray
-            The position of the particle relative to the focal point of the
-            lens, in (i) cylindrical coordinates and (ii) dimensionless
-            wavevectur units. Must all be the same shape.
-
-        Returns
-        -------
-        field_xcomp, field_ycomp : numpy.ndarray
-            The (x, y) components of the electric field at the detector, where
-            the initial field is polarized in the x-direction. Same shape as
-            krho, phi
-
-        Notes
-        -----
-        This will have problems for large rho, z, because of the quadrature
-        points. Empirically this problem happens for rho >~ 4 * quad_npts.
-        Could be adaptive if needed....
-        """
-        # 0. Check inputs:
-        shape = krho.shape
-        if (shape != phi.shape):
-            raise ValueError('krho, phi must all be the same shape')
-        # 1. Check for regions where rho is bad and set to 0:
-        rho_too_big = krho > 3.9 * self.quad_npts
-        rho_ok = ~rho_too_big
-
-        # 2. Evaluate scattered fields only at valid rho's:
-        ex_valid, ey_valid = self._calculate_scattered_fields(
-            krho[rho_ok], phi[rho_ok])
-
-        # 3. Return
-        output_x = np.zeros(shape, dtype='complex')
-        output_y = np.zeros(shape, dtype='complex')
-        output_x[rho_ok] = ex_valid
-        output_y[rho_ok] = ey_valid
-        return output_x, output_y
-
-    def _calculate_scattered_fields(self, krho, phi):
-        shape = phi.shape
-        # 2. Evaluate the integrals:
-        i_10 = np.reshape(
-            self._eval_mielens_i_ij(krho, self._f1_values, j=0), shape)
-        i_12 = np.reshape(
-            self._eval_mielens_i_ij(krho, self._f1_values, j=2), shape)
-        i_20 = np.reshape(
-            self._eval_mielens_i_ij(krho, self._f2_values, j=0), shape)
-        i_22 = np.reshape(
-            self._eval_mielens_i_ij(krho, self._f2_values, j=2), shape)
-        # 3. Sum for the field:
-        c2p = np.cos(2 * phi)
-        s2p = np.sin(2 * phi)
-        field_xcomp = 0.25 * (i_10 + i_20 - (i_12 - i_22) * c2p)
-        field_ycomp = 0.25 * (i_12 - i_22) * s2p
-        return field_xcomp, field_ycomp
-
-    def calculate_total_field(self, krho, phi):
-        """The total (incident + scattered) field at the detector
-        """
-        # Uses the incident field as
-        #   E_in = E_0 \hat{x} * 4 pi * (f1 / f2) * e^{ik(f1 + f2)} * i
-        # which is more-or-less from the brightfield writeups.
-        # return 1j - 0.25 * mielens_field(krho, phi, **kwargs)
-        fx, fy = self.calculate_scattered_field(krho, phi)
-        return 1j + fx, fy
-
-    def calculate_total_intensity(self, krho, phi):
-        fx, fy = self.calculate_total_field(krho, phi)
-        return np.abs(fx)**2 + np.abs(fy)**2
 
 
 class FarfieldMieEvaluator(object):
