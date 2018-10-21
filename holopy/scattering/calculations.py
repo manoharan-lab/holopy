@@ -167,7 +167,7 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
     theory : :class:`.theory` object (optional)
         Scattering theory object to use for the calculation. This is
         optional if there is a clear choice of theory for your scatterer.
-        If there is not a clear choice, calc_intensity will error out and
+        If there is not a clear choice, `calc_holo` will error out and
         ask you to specify a theory
     scaling : scaling value (alpha) for amplitude of reference wave
 
@@ -204,8 +204,8 @@ def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None,
     theory : :class:`.theory` object (optional)
         Scattering theory object to use for the calculation. This is
         optional if there is a clear choice of theory for your scatterer.
-        If there is not a clear choice, calc_intensity will error out
-        and ask you to specify a theory
+        If there is not a clear choice, `calc_cross_sections` will error
+        out and ask you to specify a theory
 
     Returns
     -------
@@ -239,8 +239,8 @@ def calc_scat_matrix(schema, scatterer, medium_index=None, illum_wavelen=None,
     theory : :class:`.theory` object (optional)
         Scattering theory object to use for the calculation. This is
         optional if there is a clear choice of theory for your scatterer.
-        If there is not a clear choice, calc_intensity will error out and
-        ask you to specify a theory
+        If there is not a clear choice, `calc_scat_matrix` will error out
+        and ask you to specify a theory
 
     Returns
     -------
@@ -274,7 +274,7 @@ def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None,
     theory : :class:`.theory` object (optional)
         Scattering theory object to use for the calculation. This is
         optional if there is a clear choice of theory for your scatterer.
-        If there is not a clear choice, calc_intensity will error out and
+        If there is not a clear choice, `calc_field` will error out and
         ask you to specify a theory
 
     Returns
