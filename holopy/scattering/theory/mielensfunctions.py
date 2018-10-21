@@ -36,6 +36,12 @@ class MieLensCalculator(object):
             integrals for speed. Default is `'check'`, which interpolates
             if it will be faster or does direct numerical quadrature
             otherwise.
+        interpolation_spacing : float, optional
+            The spacing, in units of `1/k`, for the nodes of the
+            CubicSpline interpolators. A lower value gives more accurate
+            retuls; values greater than about 1 will be unreliable.
+            Default is 0.1, which gives better than single-precision
+            relative accuracy.
 
         Methods
         -------
@@ -76,18 +82,23 @@ class MieLensCalculator(object):
         self._f2_values = np.reshape(
             f2_evaluator._eval(self._theta_pts), (-1, 1))
 
-    def mielens_i_ij(self, krho, fi_values, j=0):
-        """Calculates one of several similar integrals over the lens pupil
-        which appear in the Mie + lens calculations.
+    def _eval_mielens_i_ij(self, krho, fi_values, j=0):
+        """Calculates one of several similar integrals over the lens
+        pupil which appear in the Mie + lens calculations
+
+        This should only be called by `self.calculate_scattered_field`
 
         Parameters
         ----------
-        krho : numpy.ndarrays
+        krho : numpy.ndarray
             The rho values to evaluate the integrals at, in units of 1/k.
-        fi : FarfieldMieInterpolator object or None, optional
-            Pass a FarfieldMieInterpolator interpolator for speed...
-        j, i : int, optional
-            The integers which determine which of the Mie fields to evaluate.
+        fi_values : numpy.ndarray
+            The values of the far-field Mie solutions, as precomputed
+            by `self._precompute_fi`
+        j : {0, 2}, optional
+            The integers which determine which Bessel function
+            the Mie fields to evaluate. Default is 0; should always be
+            passed though.
 
         Returns
         -------
@@ -187,10 +198,14 @@ class MieLensCalculator(object):
     def _calculate_scattered_fields(self, krho, phi):
         shape = phi.shape
         # 2. Evaluate the integrals:
-        i_10 = np.reshape(self.mielens_i_ij(krho, self._f1_values, j=0), shape)
-        i_12 = np.reshape(self.mielens_i_ij(krho, self._f1_values, j=2), shape)
-        i_20 = np.reshape(self.mielens_i_ij(krho, self._f2_values, j=0), shape)
-        i_22 = np.reshape(self.mielens_i_ij(krho, self._f2_values, j=2), shape)
+        i_10 = np.reshape(
+            self._eval_mielens_i_ij(krho, self._f1_values, j=0), shape)
+        i_12 = np.reshape(
+            self._eval_mielens_i_ij(krho, self._f1_values, j=2), shape)
+        i_20 = np.reshape(
+            self._eval_mielens_i_ij(krho, self._f2_values, j=0), shape)
+        i_22 = np.reshape(
+            self._eval_mielens_i_ij(krho, self._f2_values, j=2), shape)
         # 3. Sum for the field:
         c2p = np.cos(2 * phi)
         s2p = np.sin(2 * phi)
