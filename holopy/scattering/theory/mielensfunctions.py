@@ -119,7 +119,7 @@ class MieLensCalculator(object):
         rho_ok = ~rho_too_big
 
         # 2. Evaluate scattered fields only at valid rho's:
-        ex_valid, ey_valid = self._calculate_scattered_fields(
+        ex_valid, ey_valid = self._calculate_scattered_field(
             krho[rho_ok], phi[rho_ok])
 
         # 3. Return
@@ -143,7 +143,7 @@ class MieLensCalculator(object):
         fx, fy = self.calculate_total_field(krho, phi)
         return np.abs(fx)**2 + np.abs(fy)**2
 
-    def _calculate_scattered_fields(self, krho, phi):
+    def _calculate_scattered_field(self, krho, phi):
         shape = phi.shape
         # 2. Evaluate the integrals:
         i_10 = np.reshape(
@@ -229,7 +229,7 @@ class MieLensCalculator(object):
         spacing = self.interpolation_spacing
         interp_pts = np.arange(krho.min(), krho.max() + 5 * spacing, spacing)
         interp_vals = self._direct_eval_mielens_i_ij(
-            interp_pts, fi_values, j=0)
+            interp_pts, fi_values, j=j)
         interpolator = interpolate.CubicSpline(interp_pts, interp_vals)
         return interpolator(krho)
 
