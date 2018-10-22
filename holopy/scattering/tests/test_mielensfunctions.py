@@ -14,6 +14,33 @@ SOFTTOLS = {'atol': 1e-3, 'rtol': 1e-3}
 
 class TestMieLensCalculator(unittest.TestCase):
     @attr("fast")
+    def test_raises_error_when_params_arent_specified(self):
+        kwargs = {'particle_kz': None,
+                  'index_ratio': None,
+                  'size_parameter': None,
+                  'lens_angle': None,
+                  }
+        # 1. Check when none are supplied
+
+        def create_calculator(**kwargs):
+            return mielensfunctions.MieLensCalculator(**kwargs)
+
+        self.assertRaises(ValueError, create_calculator, **kwargs)
+        # 2. Check when all but 1 are supplied
+        kwargs = {'particle_kz': 10.0,
+                  'index_ratio': 1.3,
+                  'size_parameter': 5.0,
+                  'lens_angle': 0.8,
+                  }
+        for key in kwargs.keys():
+            value = kwargs[key]  # popping it out
+            kwargs[key] = None
+            self.assertRaises(ValueError, create_calculator, **kwargs)
+            kwargs[key] = value  # putting it back
+        # 3. Check that no error is raised when all are supplied:
+        self.assertRaises(ValueError, create_calculator, **kwargs)
+
+    @attr("fast")
     def test_fields_nonzero(self):
         field1_x, field1_y = evaluate_scattered_field_in_lens()
         should_be_nonzero = [np.linalg.norm(f) for f in [field1_x, field1_y]]
@@ -84,7 +111,7 @@ class TestMieLensCalculator(unittest.TestCase):
                       -0.00588217-5.97207822e-02j,
                       -0.03450182+3.02196440e-02j,
                       0.02812761-1.82746329e-02j,
-                      -0.0102864 +1.73826090e-02j,
+                      -0.0102864 + 1.73826090e-02j,
                       -0.00449724-1.05581450e-02j,
                       0.00647334+3.89981938e-04j,
                       -0.0004959 +3.60912053e-03j,
