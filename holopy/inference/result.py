@@ -231,3 +231,7 @@ class UncertainValue(HoloPyObject):
         value_fmt = "{{:.{}g}}".format(max(display_precision, 2))
         value = value_fmt.format(self.value)
         return "${value}^{{+{s.plus:.2g}}}_{{-{s.minus:.2g}}}{confidence}$".format(s=self, confidence=confidence, value=value)
+
+    @property
+    def guess(self):
+        return self.value
