@@ -12,8 +12,8 @@ LEGGAUSS_PTS_WTS_NPTS = np.polynomial.legendre.leggauss(NPTS)
 
 
 class MieLensCalculator(object):
-    def __init__(self, particle_kz=10.0, index_ratio=1.1, size_parameter=10.0,
-                 lens_angle=1.0, quad_npts=100, interpolate_integrals='check',
+    def __init__(self, particle_kz=None, index_ratio=None, size_parameter=None,
+                 lens_angle=None, quad_npts=100, interpolate_integrals='check',
                  interpolation_spacing=0.1):
         """Calculates the field from a Mie scatterer imaged in a high-NA lens.
 
@@ -28,6 +28,18 @@ class MieLensCalculator(object):
         index_ratio : float > 0
         size_parameter : float > 0
         lens_angle : float on (0, pi/2)
+
+        Methods
+        -------
+        calculate_scattered_field(krho, phi)
+            tuple of 2 numpy.ndarrays, of shape krho
+        calculate_total_field(krho, phi)
+            tuple of 2 numpy.ndarrays, of shape krho
+        calculate_total_intensity(krho, phi)
+            numpy.ndarray, of shape krho
+
+        Other Parameters
+        ----------------
         quad_npts : int, optional
             The number of points for numerical quadrature of the
             integrals over the lens pupil.
@@ -42,18 +54,12 @@ class MieLensCalculator(object):
             retuls; values greater than about 1 will be unreliable.
             Default is 0.1, which gives better than single-precision
             relative accuracy.
-
-        Methods
-        -------
-        total_field(krho, phi)
-            numpy.ndarray, of shape krho
-        total_intensity(krho, phi)
-            numpy.ndarray, of shape krho
         """
         self.particle_kz = particle_kz
         self.index_ratio = index_ratio
         self.size_parameter = size_parameter
         self.lens_angle = lens_angle
+        self._check_parameters()
 
         self.quad_npts = quad_npts
         self.interpolate_integrals = interpolate_integrals
@@ -226,6 +232,12 @@ class MieLensCalculator(object):
             interp_pts, fi_values, j=0)
         interpolator = interpolate.CubicSpline(interp_pts, interp_vals)
         return interpolator(krho)
+
+    def _check_parameters(self):
+        must_be_specified = ['particle_kz', 'index_ratio',
+                             'size_parameter', 'lens_angle']
+        if any([getattr(self, p) is None for p in must_be_specified]):
+            raise ValueError("{} must be specified.".format(must_be_specified))
 
 
 class FarfieldMieEvaluator(object):
