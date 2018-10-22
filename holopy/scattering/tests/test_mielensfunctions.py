@@ -7,6 +7,7 @@ from nose.plugins.attrib import attr
 
 from ..theory import mielensfunctions
 
+
 TOLS = {'atol': 1e-10, 'rtol': 1e-10}
 MEDTOLS = {"atol": 1e-6, "rtol": 1e-6}
 SOFTTOLS = {'atol': 1e-3, 'rtol': 1e-3}
@@ -20,11 +21,11 @@ class TestMieLensCalculator(unittest.TestCase):
                   'size_parameter': None,
                   'lens_angle': None,
                   }
-        # 1. Check when none are supplied
 
         def create_calculator(**kwargs):
             return mielensfunctions.MieLensCalculator(**kwargs)
 
+        # 1. Check when none are supplied
         self.assertRaises(ValueError, create_calculator, **kwargs)
         # 2. Check when all but 1 are supplied
         kwargs = {'particle_kz': 10.0,
@@ -38,7 +39,7 @@ class TestMieLensCalculator(unittest.TestCase):
             self.assertRaises(ValueError, create_calculator, **kwargs)
             kwargs[key] = value  # putting it back
         # 3. Check that no error is raised when all are supplied:
-        self.assertRaises(ValueError, create_calculator, **kwargs)
+        dum = create_calculator(**kwargs)
 
     @attr("fast")
     def test_fields_nonzero(self):
@@ -196,15 +197,20 @@ class TestMieLensCalculator(unittest.TestCase):
         for rad, z, index_ratio in itertools.product(radii, zs, index_ratios):
             kz = k * z
             ka = k * rad
+            kwargs = {'particle_kz': kz,
+                      'size_parameter': ka,
+                      'index_ratio': index_ratio,
+                      'lens_angle': 1.0,
+                      }
             direct_calculator = mielensfunctions.MieLensCalculator(
-                particle_kz=kz, index_ratio=index_ratio, size_parameter=ka,
-                interpolate_integrals=False)
+                interpolate_integrals=False, **kwargs)
             interpolating_calculator = mielensfunctions.MieLensCalculator(
-                particle_kz=kz, index_ratio=index_ratio, size_parameter=ka,
-                interpolate_integrals=True)
+                interpolate_integrals=True, **kwargs)
 
-            fdx, fdy = direct_calculator.calculate_scattered_field(k * rho, phi)
-            fix, fiy = direct_calculator.calculate_scattered_field(k * rho, phi)
+            fdx, fdy = direct_calculator.calculate_scattered_field(
+                k * rho, phi)
+            fix, fiy = interpolating_calculator.calculate_scattered_field(
+                k * rho, phi)
 
             close_enough_x = np.allclose(fdx, fix, **MEDTOLS)
             close_enough_y = np.allclose(fdy, fiy, **MEDTOLS)
