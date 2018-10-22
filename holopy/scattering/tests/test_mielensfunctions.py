@@ -27,6 +27,7 @@ class TestMieLensCalculator(unittest.TestCase):
 
         # 1. Check when none are supplied
         self.assertRaises(ValueError, create_calculator, **kwargs)
+        self.assertRaises(ValueError, create_calculator)
         # 2. Check when all but 1 are supplied
         kwargs = {'particle_kz': 10.0,
                   'index_ratio': 1.3,

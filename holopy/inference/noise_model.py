@@ -204,7 +204,7 @@ class PerfectLensModel(NoiseModel):
         try:
             return calc_holo(detector, scatterer, theory=theory,
                              scaling=1.0, **optics_kwargs)
-        except (MultisphereFailure, InvalidScatterer):
+        except InvalidScatterer:
             return -np.inf
 
 # TODO:

@@ -336,10 +336,10 @@ class Model(BaseModel):
         Extra scaling parameter, hopefully this will be removed by
         improvements in our theory soon.
     constraints : function or list of functions
-        One or a list of constraint functions. A constraint function
-        should take a scaterer as an argument and return False if you
-        wish to disallow that scatterer (usually because it is un-
-        physical for some reason)
+        One or a list of constraint objects. A constraint object
+        should have a method 'check' that takes a scatterer as an
+        argument and returns False if the scatterer is disallowed
+        (usually because it is unphysical for some reason).
     """
     def __init__(self, scatterer, calc_func, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
