@@ -15,24 +15,54 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
+import numpy as np
+from nose.plugins.attrib import attr
 
 from holopy.core.tests.common import assert_pickle_roundtrip, get_example_data
 
-from holopy.inference.noise_model import AlphaModel
+from holopy.inference.noise_model import (
+    AlphaModel, ExactModel, PerfectLensModel)
 from holopy.inference import prior
 from holopy.scattering.scatterer import Sphere
 from holopy.scattering.theory import Mie
 
-import numpy as np
 
+@attr("fast")
 def test_prior():
     g = prior.Gaussian(1, 1)
     assert_pickle_roundtrip(g)
     assert_pickle_roundtrip(g.lnprob)
 
+
+@attr("fast")
 def test_AlphaModelholo_likelihood():
     holo = get_example_data('image0001')
-    s = Sphere(prior.Gaussian(.5, .1), prior.Gaussian(1.6, .1),
-               (prior.Gaussian(5, 1), prior.Gaussian(5, 1), prior.Gaussian(5, 1)))
-    model = AlphaModel(s, alpha = prior.Gaussian(.7, .1), noise_sd=.01)
+    s = Sphere(
+        prior.Gaussian(.5, .1), prior.Gaussian(1.6, .1),
+        (prior.Gaussian(5, 1), prior.Gaussian(5, 1), prior.Gaussian(5, 1)))
+    model = AlphaModel(s, alpha=prior.Gaussian(.7, .1), noise_sd=.01)
+    assert_pickle_roundtrip(model)
+
+
+@attr("fast")
+def test_ExactModelholo_likelihood():
+    holo = get_example_data('image0001')
+    sphere_center = (prior.Gaussian(5, 1),
+                     prior.Gaussian(5, 1),
+                     prior.Gaussian(5, 1))
+    s = Sphere(n=prior.Gaussian(1.6, .1), r=prior.Gaussian(.5, .1),
+               center=sphere_center)
+    model = ExactModel(s, noise_sd=.01)
+    assert_pickle_roundtrip(model)
+
+
+@attr("fast")
+def test_PerfectLensModelholo_likelihood():
+    holo = get_example_data('image0001')
+    sphere_center = (prior.Gaussian(5, 1),
+                     prior.Gaussian(5, 1),
+                     prior.Gaussian(5, 1))
+    s = Sphere(n=prior.Gaussian(1.6, .1), r=prior.Gaussian(.5, .1),
+               center=sphere_center)
+    model = PerfectLensModel(s, noise_sd=0.01, lens_angle=0.8)
     assert_pickle_roundtrip(model)
