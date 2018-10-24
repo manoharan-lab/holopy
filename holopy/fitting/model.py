@@ -31,7 +31,6 @@ from os.path import commonprefix
 from .errors import ParameterSpecificationError
 from ..scattering.errors import MissingParameter
 from ..core.holopy_object import HoloPyObject
-from .parameter import Parameter, ComplexParameter
 from holopy.core.utils import ensure_listlike
 from holopy.core.metadata import get_values
 
@@ -49,21 +48,22 @@ class Parametrization(HoloPyObject):
         The list of parameters for this Parametrization
     """
     def __init__(self, make_scatterer, parameters):
+        from holopy.inference.prior import Prior, Fixed, ComplexPrior #TODO deleteme
         self.parameters = []
         self._fixed_params = {}
         for par in parameters:
             def add_par(p, name=None):
                 if name is not None:
                     p.name = name
-                if not p.fixed:
+                if not isinstance(p, Fixed):
                     self.parameters.append(p)
                 else:
                     self._fixed_params[p.name] = p.guess
 
-            if isinstance(par, ComplexParameter):
+            if isinstance(par, ComplexPrior):
                 add_par(par.real, par.name+'.real')
                 add_par(par.imag, par.name+'.imag')
-            elif isinstance(par, Parameter):
+            elif isinstance(par, Prior):
                 add_par(par)
         self.make_scatterer = make_scatterer
 
@@ -112,14 +112,15 @@ class ParameterizedObject(Parametrization):
         can also include numbers for any fixed values
     """
     def __init__(self, obj):
+        from holopy.inference.prior import Prior, Fixed, ComplexPrior #TODO deleteme
         self.obj = obj
         parameters = []
         names = []
         ties = {}
 
         def add_par(p, name):
-            if not isinstance(p, Parameter):
-                p = Parameter(p, p)
+            if not isinstance(p, Prior):
+                p = Fixed(p)
             for i, par_check in enumerate(parameters + [None]):
                 if p is par_check:
                     break
@@ -144,7 +145,7 @@ class ParameterizedObject(Parametrization):
                 ties[new_name] = group
 
             else:
-                if not p.fixed:
+                if not isinstance(p, Fixed):
                     parameters.append(p)
                     names.append(name)
 
@@ -153,7 +154,7 @@ class ParameterizedObject(Parametrization):
             iter(obj.parameters.items()),
             key=lambda x: x[0])
         for name, par in sorted_parameters:
-            if isinstance(par, ComplexParameter):
+            if isinstance(par, ComplexPrior):
                 add_par(par.real, name+'.real')
                 add_par(par.imag, name+'.imag')
             elif isinstance(par, dict):
@@ -169,7 +170,7 @@ class ParameterizedObject(Parametrization):
                     par_value = np.asscalar(par.sel(**{dimname: key}))
                     par_name = name + '_' + np.asscalar(key)
                     add_par(par_value, par_name)
-            elif isinstance(par, Parameter):
+            elif isinstance(par, Prior):
                 add_par(par, name)
 
         parameters = deepcopy(parameters)
@@ -180,10 +181,11 @@ class ParameterizedObject(Parametrization):
 
     @property
     def guess(self):
+        from holopy.inference.prior import Prior, Fixed, ComplexPrior #TODO deleteme
         pars = self.obj.parameters
         for key in list(pars.keys()):
             if hasattr(pars[key], 'guess'):
-                if isinstance(pars[key], ComplexParameter):
+                if isinstance(pars[key], ComplexPrior):
                     pars[key+'.real'] = pars[key].real.guess
                     pars[key+'.imag'] = pars[key].imag.guess
                 else:
@@ -191,12 +193,13 @@ class ParameterizedObject(Parametrization):
         return self.make_from(pars)
 
     def make_from(self, parameters):
+        from holopy.inference.prior import Prior, Fixed, ComplexPrior #TODO deleteme
 
         def get_val(par, name):
-            if not isinstance(par, Parameter):
+            if not isinstance(par, Prior):
                 return par
-            elif par.fixed:
-                return par.limit
+            elif isinstance(par, Fixed):
+                return par.guess
             else:
                 # if this par is in a tie group, we need to work with
                 # its tie group name since that will be what is in
@@ -209,7 +212,7 @@ class ParameterizedObject(Parametrization):
         obj_pars = {}
         for name, par in self.obj.parameters.items():
 
-            if isinstance(par, ComplexParameter):
+            if isinstance(par, ComplexPrior):
                 par_val = (get_val(par.real, name+'.real') +
                            1j * get_val(par.imag, name+'.imag'))
             elif isinstance(par, dict):
@@ -221,7 +224,7 @@ class ParameterizedObject(Parametrization):
                 for key, val in zip(par[dimname], par):
                     par_val.loc[{dimname: key}] = get_val(
                         np.asscalar(val), name + '_' + np.asscalar(key))
-            elif isinstance(par, Parameter):
+            elif isinstance(par, Prior):
                 par_val = get_val(par, name)
             else:
                 par_val = par
@@ -288,6 +291,7 @@ class BaseModel(HoloPyObject):
         return r
 
     def _use_parameter(self, par, name):
+        from holopy.inference.prior import Prior, Fixed, ComplexPrior #TODO deleteme
         if isinstance(par, dict):
             setattr(self, name+'_names', list(par.keys()))
             for key, val in par.items():
@@ -304,7 +308,7 @@ class BaseModel(HoloPyObject):
                     par.sel(**{dimname: key}).item(), name + '_' + key.item())
         else:
             setattr(self, name, par)
-            if isinstance(par, Parameter):
+            if isinstance(par, Prior):
                 if par.name is None:
                     par.name = name
                 self._parameters.append(par)

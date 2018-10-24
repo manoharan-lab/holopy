@@ -15,17 +15,10 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
+import warnings
 
 class ParameterSpecificationError(Exception):
     pass
-
-class GuessOutOfBoundsError(ParameterSpecificationError):
-    def __init__(self, parameter):
-        self.par = parameter
-    def __str__(self):
-        if self.par.fixed:
-            return "guess {s.guess} does not match fixed value {s.limit}".format(s=self.par)
-        return "guess {s.guess} is not within bounds {s.limit}".format(s=self.par)
 
 class MinimizerConvergenceFailed(Exception):
     def __init__(self, result, details):
@@ -34,3 +27,9 @@ class MinimizerConvergenceFailed(Exception):
 
 class InvalidMinimizer(Exception):
     pass
+
+def fit_warning(correct_obj):
+        msg = "HoloPy's fitting API is deprecated. \
+        Use a {} object instead.".format(correct_obj)
+        warnings.warn(msg, UserWarning)
+        pass
