@@ -15,6 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
+
 import numpy as np
 import xarray as xr
 from copy import copy
@@ -39,7 +40,9 @@ class NoiseModel(BaseModel):
                  constraints=[]):
         super().__init__(scatterer, medium_index, illum_wavelen,
                          illum_polarization, theory, constraints)
-        self._use_parameter(ensure_array(noise_sd), 'noise_sd')
+        if not np.isscalar(noise_sd):
+            np.noise_sd = ensure_array(noise_sd)
+        self._use_parameter(noise_sd, 'noise_sd')
 
     def _pack(self, vals):
         return {par.name: val for par, val in zip(self.parameters, vals)}
@@ -71,14 +74,6 @@ class NoiseModel(BaseModel):
     def forward(self, pars, detector):
         raise NotImplementedError("Implement in subclass")
 
-    def _fields(self, pars, schema):
-        def get_par(name):
-            return pars.pop(name, self.par(name, schema))
-        optics, scatterer = self._optics_scatterer(pars, schema)
-        try:
-            return calc_field(schema, scatterer, theory=self.theory, **optics)
-        except (MultisphereFailure, InvalidScatterer):
-            return -np.inf
 
     def _lnlike(self, pars, data):
         """
@@ -91,7 +86,8 @@ class NoiseModel(BaseModel):
         data: xarray
             The data to compute likelihood against
         """
-        noise_sd = dict_to_array(data, self.get_par('noise_sd', pars, data))
+        noise_sd = dict_to_array(data,
+                                self.get_parameter('noise_sd', pars, data))
         forward_model = self.forward(pars, data)
         N = data.size
         log_likelihood = np.asscalar(
@@ -126,7 +122,7 @@ class AlphaModel(NoiseModel):
             dimensions of the resulting hologram. Metadata taken from
             detector if not given explicitly when instantiating self.
         """
-        alpha = self.get_par('alpha', pars)
+        alpha = self.get_parameter('alpha', pars)
         optics, scatterer = self._optics_scatterer(pars, detector)
         try:
             return calc_holo(detector, scatterer, theory=self.theory,
@@ -194,11 +190,9 @@ class PerfectLensModel(NoiseModel):
             detector if not given explicitly when instantiating self.
         """
         optics_kwargs, scatterer = self._optics_scatterer(pars, detector)
-        # We need the lens parameters for the theory:
-        theory_kwargs = self.get_pars(self.theory_params, pars)
-        # FIXME why is self.get_pars a method? It calls like 3 functions
-        # recursively to just do a dictionary indexing on something which
-        # is not even the object's attr.
+        # We need the lens parameter(s) for the theory:
+        theory_kwargs = {name:
+                self.get_parameter(name, pars) for name in self.theory_params}
         # FIXME would be nice to have access to the interpolator kwargs
         theory = MieLens(**theory_kwargs)
         try:

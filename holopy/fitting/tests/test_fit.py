@@ -25,7 +25,7 @@ from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, as
 from ...scattering import Sphere, Spheres, LayeredSphere, Mie, calc_holo
 from ...core import detector_grid, load, save, update_metadata
 from ...core.process import normalize
-from .. import fit, Parameter, ComplexParameter, Parametrization, Model, FitResult
+from .. import fit, Parameter, ComplexParameter, Model, FitResult
 from ...core.tests.common import (assert_obj_close, get_example_data, assert_read_matches_write)
 from ..errors import InvalidMinimizer
 from ..model import limit_overlaps, ParameterizedObject
@@ -50,11 +50,11 @@ def test_fit_mie_single():
                   Parameter(name='n', guess=1.59, limit = [1, 2]),
                   Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5])]
 
-    def make_scatterer(x, y, z, r, n):
-        return Sphere(n=n+1e-4j, r = r, center = (x, y, z))
+    def make_scatterer(parlist):
+        return Sphere(n=parlist[3], r = parlist[4], center = parlist[0:3])
 
     thry = Mie(False)
-    model = Model(Parametrization(make_scatterer, parameters), calc_holo, theory=thry,
+    model = Model(ParameterizedObject(make_scatterer(parameters)), calc_holo, theory=thry,
                   alpha=Parameter(name='alpha', guess=.6, limit = [.1, 1]))
 
     assert_raises(InvalidMinimizer, fit, model, holo, minimizer=Sphere)

@@ -28,41 +28,11 @@ from holopy.core.tests.common import assert_equal, assert_obj_close
 from holopy.scattering.theory import Mie
 from holopy.scattering.scatterer import Sphere, Spheres
 from holopy.fitting.model import (
-    Model, Parametrization, ParameterizedObject)
+    Model, ParameterizedObject)
 from holopy.fitting import ComplexParameter, Parameter as par
 from holopy.core.tests.common import assert_read_matches_write
 from holopy.scattering.calculations import calc_holo
 from holopy.inference import prior
-
-
-@attr('fast')
-def test_naming():
-
-    # parameterizing with fixed params
-    def makeScatterer(n, m):
-        n**2+m
-        return fake_sph
-    parm = Parametrization(makeScatterer, [par(limit=4), par(2, [1, 5])])
-
-    assert_equal(parm._fixed_params, {None: 4})
-
-
-@attr('fast')
-def test_Get_Alpha():
-    # checking get_alpha function
-    sc = Spheres(
-        [Sphere(n=1.58, r=par(0.5e-6), center=np.array([10., 10., 20.])),
-         Sphere(n=1.58, r=par(0.5e-6), center=np.array([9., 11., 21.]))])
-    model = Model(sc, calc_holo, alpha=par(.7, [.6, 1]))
-
-    sc = Spheres(
-        [Sphere(n=1.58, r=par(0.5e-6), center=np.array([10., 10., 20.])),
-         Sphere(n=1.58, r=par(0.5e-6), center=np.array([9., 11., 21.]))])
-    model2 = Model(sc, calc_holo)
-
-    assert_equal(model.get_alpha(model.parameters).guess, 0.7)
-    assert_equal(model.get_alpha(model.parameters).name, 'alpha')
-    assert_equal(model2.get_alpha(model2.parameters), 1.0)
 
 
 @attr('fast')
@@ -88,9 +58,8 @@ def test_ComplexPar():
         n**2
         return fake_sph
 
-    parm = Parametrization(
-        makeScatterer,
-        [ComplexParameter(real=par(1.58), imag=par(.001), name='n')])
+    parm = ParameterizedObject(Sphere(
+            n=ComplexParameter(real=par(1.58), imag=par(.001), name='n')))
     model = Model(parm, calc_holo, alpha=par(.7, [.6, 1]))
 
     assert_equal(model.parameters[0].name, 'n.real')
