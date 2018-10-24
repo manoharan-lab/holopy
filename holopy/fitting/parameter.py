@@ -16,30 +16,42 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
-Classes for describing free parameters in fitting models
+Classes for describing free parameters in fitting models.
+
+This API is deprecated. Use holopy.inference instead.
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <jfung@physics.harvard.edu>
 """
 
+import numpy as np
 
+from holopy.core.utils import ensure_listlike
+from holopy.fitting.errors import ParameterSpecificationError, fit_warning
 
-def Parameter(**kwargs):
-    from holopy.core.utils import ensure_array
+def Parameter(guess=None, limit=None, name=None, **kwargs):
+    fit_warning('hp.inference.prior')
     from holopy.inference.prior import Uniform, Fixed
-    """
-    Deprecated. Use inference.prior objects instead
-    """
-    args = {'limit':None, 'guess':None, 'name':None}
-    args.update(kwargs)
-    
-    limit = ensure_array(args['limit'])
-    if len(limit) == 2:
-        return Uniform(limit[0], limit[1], args['guess'], args['name'])
+    if len(ensure_listlike(limit)) == 2:
+        if limit[0] == limit[1]:
+            return Parameter(guess, limit[0])
+        out = Uniform(limit[0], limit[1], guess, name)
+    elif guess is None:
+        out = Fixed(limit, name)
+    elif guess == limit:
+        out = Fixed(guess, name)
+    elif limit is None:
+        out = Uniform(-np.inf, np.inf, guess, name)
     else:
-        return Fixed(args['guess'], args['name'])
+        raise ParameterSpecificationError(
+                "Can't interpret Parameter with limit {} and guess {}".format(
+                limit, guess))
+    setattr(out, 'limit', limit)
+    setattr(out, 'kwargs',kwargs)
+    return out
 
-def ComplexParameter(**kwargs):
+def ComplexParameter(real, imag, name=None):
+    fit_warning('hp.inference.prior.ComplexPrior')
     from holopy.inference.prior import ComplexPrior
-    return ComplexPrior(kwargs)
+    return ComplexPrior(real, imag, name)
 
