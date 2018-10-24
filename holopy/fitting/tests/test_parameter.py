@@ -21,7 +21,7 @@ from numpy.testing import assert_raises, assert_equal
 
 from ..parameter import ComplexParameter
 from ..parameter import Parameter as par
-from ..errors import GuessOutOfBoundsError
+from ..errors import ParameterSpecificationError
 from ...core.tests.common import assert_obj_close
 
 
@@ -31,15 +31,15 @@ def test_parameter():
 
     assert_equal(p3.guess, 7)
 
-    assert_raises(GuessOutOfBoundsError, par, 7, [4, 6])
+    assert_raises(ParameterSpecificationError, par, 7, [4, 6])
 
-    assert_raises(GuessOutOfBoundsError, par, 6, 7)
+    assert_raises(ParameterSpecificationError, par, 6, 7)
 
     p4 = par(0, [-1, 1])
     assert_equal(p4.scale_factor, 0.2)
 
     p5 = par(limit = [1, 4])
-    assert_equal(p5.scale_factor, 2.0)
+    assert_equal(p5.scale_factor, 2.5)
 
     # if given a guess of 0 and no limits, we fall through to the
     # default of no scaling

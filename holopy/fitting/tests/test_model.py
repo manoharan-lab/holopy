@@ -28,8 +28,8 @@ from holopy.core.tests.common import assert_equal, assert_obj_close
 from holopy.scattering.theory import Mie
 from holopy.scattering.scatterer import Sphere, Spheres
 from holopy.fitting.model import (
-    Model, ComplexParameter, Parametrization, ParameterizedObject)
-from holopy.fitting import Parameter as par
+    Model, Parametrization, ParameterizedObject)
+from holopy.fitting import ComplexParameter, Parameter as par
 from holopy.core.tests.common import assert_read_matches_write
 from holopy.scattering.calculations import calc_holo
 from holopy.inference import prior
