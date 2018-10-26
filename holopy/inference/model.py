@@ -206,9 +206,9 @@ class AlphaModel(BaseModel):
 # For now it would be OK since PerfectLensModel only works with single
 # spheres or superpositions, but I'm going to leave this for later.
 class ExactModel(BaseModel):
-    def __init__(self, scatterer, noise_sd=None, medium_index=None,
-                 illum_wavelen=None, illum_polarization=None, theory='auto',
-                 constraints=[]):
+    def __init__(self, scatterer, calc_func=calc_holo, noise_sd=None,
+                 medium_index=None, illum_wavelen=None,
+                 illum_polarization=None, theory='auto', constraints=[]):
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
                          illum_polarization, theory, constraints)
 
@@ -227,8 +227,7 @@ class ExactModel(BaseModel):
         """
         optics, scatterer = self._optics_scatterer(pars, detector)
         try:
-            return calc_holo(detector, scatterer, theory=self.theory,
-                             scaling=1.0, **optics)
+            return calc_func(detector, scatterer, theory=self.theory, **optics)
         except (MultisphereFailure, InvalidScatterer):
             return -np.inf
 
