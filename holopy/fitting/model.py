@@ -120,16 +120,7 @@ class ParameterizedObject(HoloPyObject):
 
     @property
     def guess(self):
-        from holopy.inference.prior import Prior, Fixed, ComplexPrior #TODO deleteme
-        pars = self.obj.parameters
-        for key in list(pars.keys()):
-            if hasattr(pars[key], 'guess'):
-                if isinstance(pars[key], ComplexPrior):
-                    pars[key+'.real'] = pars[key].real.guess
-                    pars[key+'.imag'] = pars[key].imag.guess
-                else:
-                    pars[key] = pars[key].guess
-        return self.make_from(pars)
+        return self.obj.guess
 
     def make_from(self, parameters):
         from holopy.inference.prior import Prior, Fixed, ComplexPrior #TODO deleteme
@@ -163,10 +154,8 @@ class ParameterizedObject(HoloPyObject):
                 for key, val in zip(par[dimname], par):
                     par_val.loc[{dimname: key}] = get_val(
                         np.asscalar(val), name + '_' + np.asscalar(key))
-            elif isinstance(par, Prior):
-                par_val = get_val(par, name)
             else:
-                par_val = par
+                par_val = get_val(par, name)
             if name in self.ties:
                 for tied_name in self.ties[name]:
                     obj_pars[tied_name] = par_val
