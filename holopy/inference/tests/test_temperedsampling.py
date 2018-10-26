@@ -8,8 +8,7 @@ from holopy.core.process import normalize
 from holopy.scattering import Sphere, Mie
 from holopy.fitting import model
 from holopy.inference import prior, TemperedStrategy
-from holopy.inference.noise_model import (
-    AlphaModel, NoiseModel, PerfectLensModel)
+from holopy.inference.model import AlphaModel, PerfectLensModel
 from holopy.core.tests.common import assert_obj_close, get_example_data
 
 

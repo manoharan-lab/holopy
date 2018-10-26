@@ -20,29 +20,83 @@ import numpy as np
 import xarray as xr
 from copy import copy
 
-from holopy.fitting.model import BaseModel
 from holopy.scattering.errors import MultisphereFailure, InvalidScatterer
 from holopy.scattering.calculations import calc_field, calc_holo
 from holopy.scattering.theory import MieLens
 from holopy.fitting import make_subset_data
+from holopy.fitting.model import ParameterizedObject
 from holopy.core.metadata import dict_to_array
-from holopy.core.utils import ensure_array
+from holopy.core.utils import ensure_array, ensure_listlike
+from holopy.core.holopy_object import HoloPyObject
 
-
-class NoiseModel(BaseModel):
+class BaseModel(HoloPyObject):
     """Model probabilites of observing data
 
     Compute probabilities that observed data could be explained by a set of
     scatterer and observation parameters.
     """
-    def __init__(self, scatterer, noise_sd, medium_index=None,
+    def __init__(self, scatterer, noise_sd=None, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
                  constraints=[]):
-        super().__init__(scatterer, medium_index, illum_wavelen,
-                         illum_polarization, theory, constraints)
+        if not isinstance(scatterer, ParameterizedObject):
+            scatterer = ParameterizedObject(scatterer)
+        self.scatterer = scatterer
+        self.constraints = ensure_listlike(constraints)
+        self._parameters = self.scatterer.parameters
+        self._use_parameter(medium_index, 'medium_index')
+        self._use_parameter(illum_wavelen, 'illum_wavelen')
+        self._use_parameter(illum_polarization, 'illum_polarization')
+        self._use_parameter(theory, 'theory')
         if not np.isscalar(noise_sd):
             np.noise_sd = ensure_array(noise_sd)
         self._use_parameter(noise_sd, 'noise_sd')
+
+    @property
+    def parameters(self):
+        return self._parameters
+
+    def get_parameter(self, name, pars, schema=None):
+        if name in pars.keys():
+            return pars.pop(name)
+        elif hasattr(self, name) and getattr(self, name) is not None:
+            return getattr(self, name)
+        elif hasattr(self, name+'_names'):
+            return {key: self.get_parameter(name + '_' + key, pars)
+                    for key in getattr(self, name + '_names')}
+        elif schema is not None and hasattr(schema, name):
+            return getattr(schema, name)
+        else:
+            raise MissingParameter(name)
+
+    def _use_parameter(self, par, name):
+        from holopy.inference.prior import Prior, Fixed, ComplexPrior #TODO deleteme
+        if isinstance(par, dict):
+            setattr(self, name+'_names', list(par.keys()))
+            for key, val in par.items():
+                self._use_parameter(val, name+'_'+key)
+        elif isinstance(par, xr.DataArray):
+            if len(par.dims)==1:
+                dimname = par.dims[0]
+            else:
+                msg = 'Multi-dimensional parameters are not supported'
+                raise ParameterSpecificationError(msg)
+            setattr(self, name + '_names', list(par[dimname].values))
+            for key in par[dimname]:
+                self._use_parameter(
+                    par.sel(**{dimname: key}).item(), name + '_' + key.item())
+        else:
+            setattr(self, name, par)
+            if isinstance(par, Prior):
+                if par.name is None:
+                    par.name = name
+                self._parameters.append(par)
+
+    def _optics_scatterer(self, pars, schema):
+        optics_keys = ['medium_index', 'illum_wavelen', 'illum_polarization']
+        optics = {key:self.get_parameter(key, pars, schema)
+                            for key in optics_keys}
+        scatterer = self.scatterer.make_from(pars)
+        return optics, scatterer
 
     def _pack(self, vals):
         return {par.name: val for par, val in zip(self.parameters, vals)}
@@ -100,7 +154,19 @@ class NoiseModel(BaseModel):
         return self._lnlike(self._pack(par_vals), data)
 
 
-class AlphaModel(NoiseModel):
+class LimitOverlaps(HoloPyObject):
+    """
+    Constraint prohibiting overlaps beyond a certain tolerance.
+    fraction is the largest overlap allowed, in terms of sphere diameter.
+
+    """
+    def __init__(self, fraction=.1):
+        self.fraction = fraction
+
+    def check(self, s):
+        return s.largest_overlap() <= ((np.min(s.r) * 2) * self.fraction)
+
+class AlphaModel(BaseModel):
     def __init__(self, scatterer, noise_sd=None, alpha=1, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
                  constraints=[]):
@@ -139,7 +205,7 @@ class AlphaModel(NoiseModel):
 # pass MieLens as a theory
 # For now it would be OK since PerfectLensModel only works with single
 # spheres or superpositions, but I'm going to leave this for later.
-class ExactModel(NoiseModel):
+class ExactModel(BaseModel):
     def __init__(self, scatterer, noise_sd=None, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
                  constraints=[]):
@@ -167,7 +233,7 @@ class ExactModel(NoiseModel):
             return -np.inf
 
 
-class PerfectLensModel(NoiseModel):
+class PerfectLensModel(BaseModel):
     theory_params = ['lens_angle']
     def __init__(self, scatterer, noise_sd=None, lens_angle=1.0,
                  medium_index=None, illum_wavelen=None, theory='auto',

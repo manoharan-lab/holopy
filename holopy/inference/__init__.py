@@ -18,4 +18,4 @@
 
 from .sample import (SamplingResult, TemperedSamplingResult, tempered_sample,
                      EmceeStrategy, TemperedStrategy)
-from .noise_model import AlphaModel, ExactModel
+from .model import AlphaModel, ExactModel

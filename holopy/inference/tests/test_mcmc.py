@@ -29,8 +29,7 @@ from holopy.core.process import normalize
 from holopy.core.tests.common import assert_obj_close, get_example_data
 from holopy.scattering import Sphere, Mie
 from holopy.fitting import model
-from holopy.inference.noise_model import (
-    AlphaModel, NoiseModel, PerfectLensModel)
+from holopy.inference.model import AlphaModel, BaseModel, PerfectLensModel
 
 # GOLD: log(sqrt(0.5/pi))-1/2
 gold_sigma = -1.4189385332
@@ -41,10 +40,10 @@ gold_lens_angle = np.array([0.675643])
 
 
 @attr("fast")
-def test_NoiseModel_lnprior():
+def test_BaseModel_lnprior():
     scat = Sphere(r=prior.Gaussian(1, 1), n=prior.Gaussian(1, 1),
                   center=[10, 10, 10])
-    mod = NoiseModel(scat, noise_sd=.1)
+    mod = BaseModel(scat, noise_sd=.1)
     assert_obj_close(mod.lnprior([0, 0]), gold_sigma * 2)
 
 

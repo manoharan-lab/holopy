@@ -20,8 +20,7 @@ from nose.plugins.attrib import attr
 
 from holopy.core.tests.common import assert_pickle_roundtrip, get_example_data
 
-from holopy.inference.noise_model import (
-    AlphaModel, ExactModel, PerfectLensModel)
+from holopy.inference.model import AlphaModel, ExactModel, PerfectLensModel
 from holopy.inference import prior
 from holopy.scattering.scatterer import Sphere
 from holopy.scattering.theory import Mie
