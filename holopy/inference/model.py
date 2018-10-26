@@ -20,14 +20,15 @@ import numpy as np
 import xarray as xr
 from copy import copy
 
-from holopy.scattering.errors import MultisphereFailure, InvalidScatterer
-from holopy.scattering.calculations import calc_field, calc_holo
-from holopy.scattering.theory import MieLens
-from holopy.fitting import make_subset_data
-from holopy.fitting.model import ParameterizedObject
 from holopy.core.metadata import dict_to_array
 from holopy.core.utils import ensure_array, ensure_listlike
 from holopy.core.holopy_object import HoloPyObject
+from holopy.scattering.errors import MultisphereFailure, InvalidScatterer
+from holopy.scattering.calculations import calc_holo
+from holopy.scattering.theory import MieLens
+from holopy.fitting import make_subset_data
+from holopy.fitting.model import ParameterizedObject
+from holopy.inference.prior import Prior, Fixed, ComplexPrior #TODO deleteme
 
 class BaseModel(HoloPyObject):
     """Model probabilites of observing data
@@ -69,7 +70,6 @@ class BaseModel(HoloPyObject):
             raise MissingParameter(name)
 
     def _use_parameter(self, par, name):
-        from holopy.inference.prior import Prior, Fixed, ComplexPrior #TODO deleteme
         if isinstance(par, dict):
             setattr(self, name+'_names', list(par.keys()))
             for key, val in par.items():
