@@ -23,7 +23,6 @@ The abstract base class for all scattering objects
 '''
 
 from collections import defaultdict
-
 from itertools import chain
 from copy import copy
 
@@ -31,9 +30,8 @@ import numpy as np
 import xarray as xr
 
 from ...core.holopy_object  import HoloPyObject
-from ...core.utils import ensure_array, is_none, updated
+from ...core.utils import ensure_array, is_none
 from ..errors import InvalidScatterer
-from functools import reduce
 
 
 class Scatterer(HoloPyObject):
@@ -106,9 +104,16 @@ class Scatterer(HoloPyObject):
     @property
     def guess(self):
         if hasattr(self, 'parameters'):
-            return self.from_parameters(checkguess(self.parameters))
+            parameters = self.parameters
+            for key in parameters.keys():
+                try:
+                    parameters[key] = parameters[key].guess
+                except AttributeError:
+                    pass
+            return self.from_parameters(parameters)
         else:
             return self
+
 
     def in_domain(self, points):
         """
@@ -195,11 +200,6 @@ class CenteredScatterer(Scatterer):
                 "should be specified as (x, y, z)".format(center))
         self.center = center
 
-    # eliminate parameters and from_parameters?  This is kind of fitting
-    # specific information.  Or should it be in serializable?  In many ways this
-    # is just a slight variation on what we do to put something in yaml format.
-    # It is probably possible to have to_dict, to_string, to_yaml all with
-    # mostly common code
     @property
     def parameters(self):
         """
@@ -215,21 +215,12 @@ class CenteredScatterer(Scatterer):
             A dictionary of this scatterer's parameters.  This dict can be
             passed to Scatterer.from_parameters to make a copy of this scatterer
         """
-
         # classes that have anything complicated happening with their variables
-        # should override this, but for simple classes the variable dict is the
-        # correct answer
+        # should override this, but for simple classes the variable self._dict
+        # is the correct answer
+        return dict(_expand_parameters(self._dict.items()))
 
-        def expand(key, par):
-            if isinstance(par, (list, tuple, np.ndarray)):
-                subs = (expand('{0}[{1}]'.format(key, p[0]), p[1]) for p in enumerate(par))
-                return chain(*subs)
-            else:
-                return [(key, par)]
-
-        return dict(chain(*[expand(*p) for p in self._dict.items()]))
-
-    def from_parameters(self, parameters, update=False):
+    def from_parameters(self, parameters):
         """
         Create a Scatterer from a dictionary of parameters
 
@@ -247,62 +238,71 @@ class CenteredScatterer(Scatterer):
         # This will need to be overriden for subclasses that do anything
         # complicated with parameters
 
-        # organize dictionaries
-        stopped = defaultdict(dict)
-        for key, val in parameters.items():
-            if isinstance(val, dict):
-                stopped[key] = {'_stop':val}
-            else:
-                stopped[key] = val
-
-        # organize scatterer object
-        collected = defaultdict(dict)
-        for key, val in stopped.items():
-            tok = key.split('.', 1)
-            if len(tok) > 1:
-                collected[tok[0]][tok[1]] = val
-            else:
-                collected[key] = val
-
-        # organize arrays
-        collected_arrays = defaultdict(dict)
-        for key, val in collected.items():
-            tok = key.split('[', 1)
-            if len(key.split('[', 1)) > 1:
-                sub_key, n = key.split('[', 1)
-                n = int(n[:-1])
-                collected_arrays[sub_key][n] = val
-            else:
-                collected_arrays[key] = val
-
-        def build(par):
-            if isinstance(par, dict):
-                if list(par.keys()) == ['_stop']:
-                    return par['_stop']
+        def extract_pars(raw_pars):
+            out_dict = {}
+            subkeys = set([key.split('.',1)[0].split('_',1)[0]
+                                             for key in raw_pars.keys()])
+            for subkey in subkeys:
+                if subkey in raw_pars.keys():
+                    val = raw_pars[subkey]
+                    if hasattr(val, 'guess'):
+                        val = val.guess
+                    out_dict[subkey] = val
                 else:
-                    reduce(lambda x, i: isinstance(i, int) and x,
-                       list(par.keys()), True)
-                    d = [p[1] for p in sorted(iter(par.items()), key =
-                                          lambda x: x[0])]
-                    return [build(p) for p in d]
-            return par
+                    clip = len(subkey)
+                    subset={}
+                    for key, val in raw_pars.items():
+                        if key.startswith(subkey):
+                            delimchar = key[clip]
+                            subset[key[clip+1:]] = val
+                    if delimchar is '_':
+                        # dict or xarray, but we don't know dim names
+                        # so we always return dict
+                        out_dict[subkey] = extract_pars(subset)
+                    elif delimchar is '.':
+                        dictform = extract_pars(subset)
+                        if '0' in dictform.keys():
+                            out_dict[subkey] = [dictform[str(i)]
+                                                 for i in range(len(dictform))]
+                        elif 'real' in dictform.keys():
+                            out_dict[subkey] = (1.0 * dictform['real'] +
+                                                     1.0j * dictform['imag'])
+                if subkey not in out_dict.keys():
+                    msg = "Cannot interpret parameter {0}.".format(subkey)
+                    raise InvalidScatterer(self, msg)
+            return out_dict
 
-        # assemble scatterer
-        built = {}
-        for key, val in collected_arrays.items():
-            built[key] = checkguess(build(val))
+        all_pars = copy(self.parameters)
+        for key in all_pars.keys():
+            if key in parameters.keys():
+                all_pars[key] = parameters[key]
+        return type(self)(extract_pars(all_pars))
 
-        if update:
-            built = updated(self.guess.parameters, built)
 
-        return type(self)(**built)
+def _expand_parameters(pairs, basekey=''):
+    subs = []
+    for subkey, par in pairs:
+        key = basekey + str(subkey)
+        def add_pars(newpairs, delimiter):
+            subs.append(_expand_parameters(newpairs, key + delimiter))
+        if isinstance(par, (list, tuple, np.ndarray)):
+            add_pars(enumerate(par), '.')
+        elif isinstance(par, dict):
+            add_pars(par.items(), '_')
+        elif isinstance(par, xr.DataArray):
+            coords = par.coords[par.dims[0]]
+            subkeys = [np.asscalar(coord) for coord in coords]
+            subvals = [par.loc[subkey] for subkey in subkeys]
+            if len(par.dims)==1:
+                subvals = map(np.asscalar, subvals)
+            add_pars(zip(subkeys, subvals), '_')
+        elif hasattr(par, 'name') and hasattr(par, 'imag'):
+            # prior.ComplexPrior
+            add_pars(zip(['real', 'imag'], [par.real, par.imag]), '.')
+        else:
+            subs.append([(key, par)])
+    return chain(*subs)
 
-    def select(self, keys):
-        params = self.parameters
-        for key, val in params.items():
-            if isinstance(val, xr.DataArray):
-                params[key] = np.asscalar(val.sel(**keys))
-        return self.from_parameters(params)
 
 def find_bounds(indicator):
     """
@@ -369,23 +369,3 @@ class Indicators(HoloPyObject):
 
     def __call__(self, points):
         return [test(points) for test in self.functions]
-
-def checkguess(par):
-    def guess(a):
-        if isinstance(a,np.ndarray):
-            return np.array([checkguess(val) for val in ensure_array(a)]).squeeze()
-        elif isinstance(a, dict):
-            return {key: checkguess(val) for key, val in a.items()}
-        elif isinstance(a, list):
-            return [checkguess(val) for val in a]
-
-        if hasattr(a, 'guess'):
-            return a.guess
-        elif hasattr(a, 'value'):
-            # UncertainValue
-            return a.value
-        return a
-
-    if isinstance(par, xr.DataArray):
-        return xr.apply_ufunc(guess, par)
-    return guess(par)
