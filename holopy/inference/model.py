@@ -16,9 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
+from copy import copy
+
 import numpy as np
 import xarray as xr
-from copy import copy
 
 from holopy.core.metadata import dict_to_array
 from holopy.core.utils import ensure_array, ensure_listlike
@@ -26,9 +27,10 @@ from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering.errors import MultisphereFailure, InvalidScatterer
 from holopy.scattering.calculations import calc_holo
 from holopy.scattering.theory import MieLens
+from holopy.scattering.scatterer import (_expand_parameters,
+                                         _interpret_parameters)
 from holopy.fitting import make_subset_data
-from holopy.fitting.model import ParameterizedObject
-from holopy.inference.prior import Prior, Fixed, ComplexPrior #TODO deleteme
+from holopy.inference.prior import Prior, Fixed
 
 class BaseModel(HoloPyObject):
     """Model probabilites of observing data
@@ -39,18 +41,15 @@ class BaseModel(HoloPyObject):
     def __init__(self, scatterer, noise_sd=None, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
                  constraints=[]):
-        if not isinstance(scatterer, ParameterizedObject):
-            scatterer = ParameterizedObject(scatterer)
         self.scatterer = scatterer
         self.constraints = ensure_listlike(constraints)
-        self._parameters = self.scatterer.parameters
-        self._use_parameter(medium_index, 'medium_index')
-        self._use_parameter(illum_wavelen, 'illum_wavelen')
-        self._use_parameter(illum_polarization, 'illum_polarization')
-        self._use_parameter(theory, 'theory')
+        self._parameters = scatterer.parameters
         if not np.isscalar(noise_sd):
-            np.noise_sd = ensure_array(noise_sd)
-        self._use_parameter(noise_sd, 'noise_sd')
+            noise_sd = ensure_array(noise_sd)
+        self._use_parameters({'medium_index': medium_index,
+                             'illum_wavelen':illum_wavelen,
+                             'illum_polarization':illum_polarization,
+                             'theory':theory, 'noise_sd':noise_sd})
 
     @property
     def parameters(self):
@@ -61,35 +60,22 @@ class BaseModel(HoloPyObject):
             return pars.pop(name)
         elif hasattr(self, name) and getattr(self, name) is not None:
             return getattr(self, name)
-        elif hasattr(self, name+'_names'):
-            return {key: self.get_parameter(name + '_' + key, pars)
-                    for key in getattr(self, name + '_names')}
-        elif schema is not None and hasattr(schema, name):
-            return getattr(schema, name)
-        else:
-            raise MissingParameter(name)
+        try:
+            return _interpret_parameters(self.parameters)[name]
+        except KeyError:
+            try:
+                getattr(schema, name)
+            except:
+                pass
+        raise MissingParameter(name)
 
-    def _use_parameter(self, par, name):
-        if isinstance(par, dict):
-            setattr(self, name+'_names', list(par.keys()))
-            for key, val in par.items():
-                self._use_parameter(val, name+'_'+key)
-        elif isinstance(par, xr.DataArray):
-            if len(par.dims)==1:
-                dimname = par.dims[0]
-            else:
-                msg = 'Multi-dimensional parameters are not supported'
-                raise ParameterSpecificationError(msg)
-            setattr(self, name + '_names', list(par[dimname].values))
-            for key in par[dimname]:
-                self._use_parameter(
-                    par.sel(**{dimname: key}).item(), name + '_' + key.item())
-        else:
+    def _use_parameters(self, parameters):
+        for name, par in parameters.items():
             setattr(self, name, par)
-            if isinstance(par, Prior):
-                if par.name is None:
-                    par.name = name
-                self._parameters.append(par)
+        parameters = _expand_parameters(parameters)
+        self._parameters.update(parameters)
+        self._parameters = {key:val for key, val in self._parameters.items()
+                     if isinstance(val, Prior) and not isinstance(val, Fixed)}
 
     def _optics_scatterer(self, pars, schema):
         optics_keys = ['medium_index', 'illum_wavelen', 'illum_polarization']
@@ -172,7 +158,7 @@ class AlphaModel(BaseModel):
                  constraints=[]):
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
                          illum_polarization, theory, constraints)
-        self._use_parameter(alpha, 'alpha')
+        self._use_parameters({'alpha':alpha})
 
     def forward(self, pars, detector):
         """
@@ -239,7 +225,7 @@ class PerfectLensModel(BaseModel):
                  illum_polarization=None, constraints=[]):
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
                          illum_polarization, theory, constraints)
-        self._use_parameter(lens_angle, 'lens_angle')
+        self._use_parameters({'lens_angle':lens_angle})
 
     def forward(self, pars, detector):
         """

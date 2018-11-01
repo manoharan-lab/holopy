@@ -31,7 +31,7 @@ import xarray as xr
 
 from ...core.holopy_object  import HoloPyObject
 from ...core.utils import ensure_array, is_none
-from ..errors import InvalidScatterer
+from ..errors import InvalidScatterer, ParameterSpecificationError
 
 
 class Scatterer(HoloPyObject):
@@ -237,47 +237,46 @@ class CenteredScatterer(Scatterer):
         """
         # This will need to be overriden for subclasses that do anything
         # complicated with parameters
-
-        def extract_pars(raw_pars):
-            out_dict = {}
-            subkeys = set([key.split('.',1)[0].split('_',1)[0]
-                                             for key in raw_pars.keys()])
-            for subkey in subkeys:
-                if subkey in raw_pars.keys():
-                    val = raw_pars[subkey]
-                    if hasattr(val, 'guess'):
-                        val = val.guess
-                    out_dict[subkey] = val
-                else:
-                    clip = len(subkey)
-                    subset={}
-                    for key, val in raw_pars.items():
-                        if key.startswith(subkey):
-                            delimchar = key[clip]
-                            subset[key[clip+1:]] = val
-                    if delimchar is '_':
-                        # dict or xarray, but we don't know dim names
-                        # so we always return dict
-                        out_dict[subkey] = extract_pars(subset)
-                    elif delimchar is '.':
-                        dictform = extract_pars(subset)
-                        if '0' in dictform.keys():
-                            out_dict[subkey] = [dictform[str(i)]
-                                                 for i in range(len(dictform))]
-                        elif 'real' in dictform.keys():
-                            out_dict[subkey] = (1.0 * dictform['real'] +
-                                                     1.0j * dictform['imag'])
-                if subkey not in out_dict.keys():
-                    msg = "Cannot interpret parameter {0}.".format(subkey)
-                    raise InvalidScatterer(self, msg)
-            return out_dict
-
         all_pars = copy(self.parameters)
         for key in all_pars.keys():
             if key in parameters.keys():
                 all_pars[key] = parameters[key]
-        return type(self)(extract_pars(all_pars))
+        return type(self)(_interpret_parameters(all_pars))
 
+
+def _interpret_parameters(raw_pars):
+    out_dict = {}
+    subkeys = set([key.split('.',1)[0].split('_',1)[0]
+                                             for key in raw_pars.keys()])
+    for subkey in subkeys:
+        if subkey in raw_pars.keys():
+            val = raw_pars[subkey]
+            if hasattr(val, 'guess'):
+                val = val.guess
+            out_dict[subkey] = val
+        else:
+            clip = len(subkey)
+            subset={}
+            for key, val in raw_pars.items():
+                if key.startswith(subkey):
+                    delimchar = key[clip]
+                    subset[key[clip+1:]] = val
+            if delimchar is '_':
+                # dict or xarray, but we don't know dim names
+                # so we always return dict
+                out_dict[subkey] = _interpret_parameters(subset)
+            elif delimchar is '.':
+                dictform = _interpret_parameters(subset)
+                if '0' in dictform.keys():
+                    out_dict[subkey] = [dictform[str(i)]
+                                             for i in range(len(dictform))]
+                elif 'real' in dictform.keys():
+                    out_dict[subkey] = (1.0 * dictform['real'] +
+                                                     1.0j * dictform['imag'])
+        if subkey not in out_dict.keys():
+            msg = "Cannot interpret parameter {0}.".format(subkey)
+            raise ParameterSpecificationError(msg)
+    return out_dict
 
 def _expand_parameters(pairs, basekey=''):
     subs = []

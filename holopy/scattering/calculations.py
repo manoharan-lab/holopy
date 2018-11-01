@@ -27,7 +27,8 @@ from ..core.holopy_object import SerializableMetaclass
 from ..core.metadata import (vector, illumination, update_metadata, to_vector,
                              copy_metadata, from_flat, dict_to_array)
 from ..core.utils import dict_without, is_none, ensure_array
-from .scatterer import Sphere, Spheres, Spheroid, Cylinder, checkguess
+from .scatterer import (Sphere, Spheres, Spheroid, Cylinder,
+                            _expand_parameters, _interpret_parameters)
 from .errors import AutoTheoryFailed, MissingParameter
 
 try:
@@ -175,7 +176,13 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
     holo : xarray.DataArray
         Calculated hologram from the given distribution of spheres
     """
-    scaling = checkguess(dict_to_array(schema, scaling))
+
+    scaling = _expand_parameters({'dummy':scaling})
+    for key in scaling.keys():
+        if hasattr(scaling[key],'guess'):
+            scaling[key] = scaling[key].guess
+    scaling = _interpret_parameters(scaling)['dummy']
+    scaling = dict_to_array(schema, schaling)
     theory = interpret_theory(scatterer, theory)
     uschema = prep_schema(schema, medium_index, illum_wavelen,
                           illum_polarization)
