@@ -15,25 +15,19 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-"""Fit models of scattering to data
-
-Make precision measurements of a scattering system by fitting a model
-of it to data
-
-The fitting module is used to:
-
-1. Define Scattering Model -> :class:`~holopy.fitting.model.Model` object
-2. Fit model to data -> :class:`.FitResult` object
-3. Fit model to timeseries -> list of :class:`.FitResult` objects
+"""
+Routines for fitting a hologram to an exact solution
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
+.. moduleauthor:: Jerome Fung <jfung@physics.harvard.edu>
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
-.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 
 """
 
-from .fit import fit, rsq, chisq, FitResult, make_subset_data
-from .model import Model, limit_overlaps
-from .parameter import Parameter, ComplexParameter
-from .minimizer import Nmpfit
+from .errors import fit_warning
+from ..inference import NmpfitStrategy
+
+def Nmpfit(quiet = False, ftol = 1e-10, xtol = 1e-10, gtol = 1e-10,
+                 damp = 0, maxiter = 100):
+    fit_warning('hp.inference.NmpStrategy')
+    return NmpfitStrategy(quiet, ftol, xtol, gtol, damp, maxiter)

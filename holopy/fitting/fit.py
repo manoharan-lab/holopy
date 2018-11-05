@@ -24,7 +24,6 @@ Routines for fitting a hologram to an exact solution
 
 """
 
-
 import warnings
 import time
 from copy import copy, deepcopy
@@ -36,63 +35,17 @@ from holopy.core.holopy_object import HoloPyObject
 from holopy.core.metadata import flat, copy_metadata, get_spacing, make_subset_data
 from holopy.core.math import chisq, rsq
 from holopy.core.utils import dict_without
-from holopy.fitting.errors import MinimizerConvergenceFailed
-from holopy.scattering.errors import ParameterSpecificationError
-from holopy.inference import NmpfitStrategy
+from .errors import fit_warning
 
 
-def fit(model, data, minimizer=NmpfitStrategy(), random_subset=None):
-    """
-    fit a model to some data
-
-    Parameters
-    ----------
-    model : :class:`~holopy.fitting.model.Model` object
-        A model describing the scattering system which leads to your data and
-        the parameters to vary to fit it to the data
-    data : xarray.DataArray
-        The data to fit
-    minimizer : (optional) :class:`~holopy.fitting.minimizer.Minimizer`
-        The minimizer to use to do the fit
-    random_subset : float (optional)
-        Fit only a randomly selected fraction of the data points in data
-
-    Returns
-    -------
-    result : :class:`FitResult`
-        an object containing the best fit parameters and information about the fit
-    """
-    time_start = time.time()
-
-    if random_subset is None:
-        data = flat(data)
-    else:
-        data = make_subset_data(data, random_subset)
-
-    def residual(par_vals):
-        return model.residual(par_vals, data)
-
-    try:
-        fitted_pars, minimizer_info = minimizer.minimize(model._parameters, residual)
-        converged = True
-    except MinimizerConvergenceFailed as cf:
-        warnings.warn("Minimizer Convergence Failed, your results may not be "
-                      "correct")
-        # we still return the data even if the minimizer fails to converge
-        # because often the data is of some value, and may in fact be what the
-        # user wants if they have set low iteration limits for a "rough fit"
-        fitted_pars, minimizer_info  = cf.result, cf.details
-        converged = False
-
-    fitted_scatterer = model.scatterer.from_parameters(fitted_pars)
-
-    time_stop = time.time()
-    fitted = model._calc(fitted_pars, data)
-
-    return FitResult(fitted_pars, fitted_scatterer, chisq(fitted, data),
-                     rsq(fitted, data), converged, time_stop - time_start,
-                     model, minimizer, minimizer_info)
-
+def fit(model, data, minimizer=None, random_subset=None):
+    from holopy.inference import NmpfitStrategy
+    fit_warning('hp.inference.prior')
+    if minimizer is None:
+        minimizer = NmpfitStrategy()
+    if random_subset is not None:
+        minimizer.random_subset = random_subset
+    return minimizer.fit(model, data)
 
 class FitResult(HoloPyObject):
     """
