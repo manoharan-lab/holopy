@@ -25,6 +25,7 @@ The abstract base class for all scattering objects
 from collections import defaultdict
 from itertools import chain
 from copy import copy
+from numbers import Number
 
 import numpy as np
 import xarray as xr
@@ -226,23 +227,22 @@ class CenteredScatterer(Scatterer):
 
         Parameters
         ----------
-        parameters: dict or list
+        parameters: dict
             Parameters for a scatterer.  This should be of the form returned by
             Scatterer.parameters.
 
         Returns
         -------
         scatterer: Scatterer class
-            A scatterer with the given parameter values
+            A scatterer with the given parameter values replacing priors
         """
         # This will need to be overriden for subclasses that do anything
         # complicated with parameters
         all_pars = copy(self.parameters)
         for key in all_pars.keys():
-            if key in parameters.keys():
+            if key in parameters.keys() and not isinstance(all_pars[key], Number):
                 all_pars[key] = parameters[key]
-        return type(self)(_interpret_parameters(all_pars))
-
+        return type(self)(**_interpret_parameters(all_pars))
 
 def _interpret_parameters(raw_pars):
     out_dict = {}
@@ -256,11 +256,11 @@ def _interpret_parameters(raw_pars):
             out_dict[subkey] = val
         else:
             clip = len(subkey)
-            subset={}
-            for key, val in raw_pars.items():
-                if key.startswith(subkey):
-                    delimchar = key[clip]
-                    subset[key[clip+1:]] = val
+            for delimchar in '._':
+                subset = {key[clip+1:]:val for key, val in raw_pars.items() 
+                                        if key.startswith(subkey + delimchar)}
+                if len(subset)>0:
+                    break
             if delimchar is '_':
                 # dict or xarray, but we don't know dim names
                 # so we always return dict

@@ -91,12 +91,12 @@ def test_Sphere_construct_array():
 @attr('fast')
 def test_Sphere_parameters():
     s = Sphere(n = 1.59+1e-4j, r = 5e-7, center=(1e-6, -1e-6, 10e-6))
-    assert_equal(s.parameters, dict([('center[0]',
-    1e-6), ('center[1]', -1e-6), ('center[2]',
+    assert_equal(s.parameters, dict([('center.0',
+    1e-6), ('center.1', -1e-6), ('center.2',
     1e-5), ('n', 1.59+1e-4j), ('r',
     5e-07)]))
 
-    sp = Sphere().from_parameters(s.parameters)
+    sp = s.from_parameters(s.parameters)
     assert_equal(s.r, sp.r)
     assert_equal(s.n, sp.n)
     assert_equal(s.center, sp.center)

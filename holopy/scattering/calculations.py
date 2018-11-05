@@ -177,12 +177,12 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
         Calculated hologram from the given distribution of spheres
     """
 
-    scaling = _expand_parameters({'dummy':scaling})
+    scaling = dict(_expand_parameters({'alpha':scaling}.items()))
     for key in scaling.keys():
         if hasattr(scaling[key],'guess'):
             scaling[key] = scaling[key].guess
-    scaling = _interpret_parameters(scaling)['dummy']
-    scaling = dict_to_array(schema, schaling)
+    scaling = _interpret_parameters(scaling)['alpha']
+    scaling = dict_to_array(schema, scaling)
     theory = interpret_theory(scatterer, theory)
     uschema = prep_schema(schema, medium_index, illum_wavelen,
                           illum_polarization)

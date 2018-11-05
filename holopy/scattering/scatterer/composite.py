@@ -25,6 +25,7 @@ scatterers (e.g. two trimers).
 
 
 from copy import copy
+from numbers import Number
 
 import numpy as np
 
@@ -79,11 +80,12 @@ class Scatterers(Scatterer):
         names = []
         for i, scatterer in enumerate(self.scatterers):
             for key, par in scatterer.parameters.items():
-                for index, par_check in enumerate(parameters + [None]):
+                for index, par_check in enumerate(pars + [None]):
                     # can't simply check par in parameters because then two
                     # priors defined separately, but identically will match
                     # whereas this way they are counted as separate objects.
-                    if par is par_check:
+                    if par is par_check and not isinstance(par, Number):
+                        # par is a prior and already exists in pars
                         break
                 if par_check is None:
                     # loop finished - par is not tied.
@@ -96,7 +98,7 @@ class Scatterers(Scatterer):
 
 
     def from_parameters(self, parameters):
-        n_scatterers = len(scatterers)
+        n_scatterers = len(self.scatterers)
         collected = [{} for i in range(n_scatterers)]
         for key, val in parameters.items():
             parts = key.split(':', 1)
@@ -107,7 +109,7 @@ class Scatterers(Scatterer):
             else:
                 # tied parameter - put it in all of them
                 for col in collected:
-                    col[par] = val
+                    col[key] = val
         scatterers = [scat.from_parameters(pars)
                          for scat, pars in zip(self.scatterers, collected)]
         return type(self)(scatterers)
