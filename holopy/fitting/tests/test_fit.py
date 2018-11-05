@@ -25,9 +25,8 @@ from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, as
 from ...scattering import Sphere, Spheres, LayeredSphere, Mie, calc_holo
 from ...core import detector_grid, load, save, update_metadata
 from ...core.process import normalize
-from .. import fit, Parameter, ComplexParameter, Model, FitResult, limit_overlaps
+from .. import fit, Parameter, ComplexParameter, Model, limit_overlaps
 from ...core.tests.common import (assert_obj_close, get_example_data, assert_read_matches_write)
-from ..errors import InvalidMinimizer
 from holopy.scattering.errors import OverlapWarning
 
 gold_alpha = .6497
@@ -56,8 +55,6 @@ def test_fit_mie_single():
     thry = Mie(False)
     model = Model(make_scatterer(parameters), calc_holo, theory=thry,
                   alpha=Parameter(name='alpha', guess=.6, limit = [.1, 1]))
-
-    assert_raises(InvalidMinimizer, fit, model, holo, minimizer=Sphere)
 
     result = fit(model, holo)
 

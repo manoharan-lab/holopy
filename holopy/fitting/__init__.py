@@ -33,7 +33,6 @@ The fitting module is used to:
 
 """
 
-from .fit import fit, rsq, chisq, FitResult
+from .fit import fit, rsq, chisq
 from .model import Model, limit_overlaps
 from .parameter import Parameter, ComplexParameter
-from .minimizer import Nmpfit

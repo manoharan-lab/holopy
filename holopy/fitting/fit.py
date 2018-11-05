@@ -32,14 +32,16 @@ import yaml
 
 import numpy as np
 
-from ..core.holopy_object import HoloPyObject
+from holopy.core.holopy_object import HoloPyObject
 from holopy.core.metadata import flat, copy_metadata, get_spacing, make_subset_data
 from holopy.core.math import chisq, rsq
 from holopy.core.utils import dict_without
-from .errors import MinimizerConvergenceFailed, InvalidMinimizer
-from .minimizer import Minimizer, Nmpfit
+from holopy.fitting.errors import MinimizerConvergenceFailed
+from holopy.scattering.errors import ParameterSpecificationError
+from holopy.inference import NmpfitStrategy
 
-def fit(model, data, minimizer=Nmpfit, random_subset=None):
+
+def fit(model, data, minimizer=NmpfitStrategy(), random_subset=None):
     """
     fit a model to some data
 
@@ -61,13 +63,6 @@ def fit(model, data, minimizer=Nmpfit, random_subset=None):
         an object containing the best fit parameters and information about the fit
     """
     time_start = time.time()
-
-    if not isinstance(minimizer, Minimizer):
-        if issubclass(minimizer, Minimizer):
-            minimizer = minimizer()
-        else:
-            raise InvalidMinimizer("Object supplied as a minimizer could not be"
-                                   "interpreted as a minimizer")
 
     if random_subset is None:
         data = flat(data)

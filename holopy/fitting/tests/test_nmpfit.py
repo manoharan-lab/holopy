@@ -23,7 +23,7 @@ Test fitting a hologram using nmpfit without any wrapping
 import numpy as np
 
 from ...scattering import Mie, Sphere, calc_holo
-from ..third_party import nmpfit
+from holopy.inference.third_party import nmpfit
 from ...core.process import normalize
 from ...core.tests.common import get_example_data, assert_obj_close
 from holopy.core.metadata import get_values, flat

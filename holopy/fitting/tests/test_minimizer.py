@@ -25,11 +25,11 @@ from numpy.testing import assert_equal, assert_raises, assert_allclose
 from ...scattering.scatterer import Sphere, Spheres
 from ...core import detector_grid
 from .. import fit, Parameter, Model
-from ..minimizer import Nmpfit
 from ..errors import MinimizerConvergenceFailed
 from ...core.tests.common import assert_obj_close
 from holopy.scattering.calculations import calc_holo
 from holopy.scattering.errors import ParameterSpecificationError
+from holopy.inference import NmpfitStrategy as Nmpfit
 
 def test_minimizer():
     x = np.arange(-10, 10, .1)

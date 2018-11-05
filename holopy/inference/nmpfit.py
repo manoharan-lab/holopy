@@ -26,36 +26,12 @@ of third party minimizers.
 
 import numpy as np
 from ..core.holopy_object import HoloPyObject
-from .errors import MinimizerConvergenceFailed
+from holopy.fitting.errors import MinimizerConvergenceFailed
 from .third_party import nmpfit
 from holopy.scattering.errors import ParameterSpecificationError
 
 
-class Minimizer(HoloPyObject):
-    """
-    Common interface to all minimizers holopy supports
-    """
-    def minimize(self, parameters, cost_func):
-        """
-        Find the best solution to an optimization problem
-
-        Parameters
-        ----------
-        parameters : list of :class:`.Parameter` objects
-            Parameters to vary in the model
-        cost_func : function
-            A function taking parameters as arguments that returns the residual
-            for the minimization problem
-        """
-        raise NotImplementedError() # pragma: nocover
-
-    # if minimizers do any parameter rescaling, they are responsible for putting
-    # the parameters back before handing them off to the model.
-    def pars_from_minimizer(self, parameters, values):
-        assert len(parameters) == len(values)
-        return {par.name: par.unscale(value) for par, value in zip(parameters, values)}
-
-class Nmpfit(Minimizer):
+class NmpfitStrategy(HoloPyObject):
     """
     Levenberg-Marquardt minimizer, from Numpy/Python translation of Craig
     Markwardt's mpfit.pro.
@@ -99,6 +75,10 @@ class Nmpfit(Minimizer):
         self.damp = 0
         self.maxiter = maxiter
         self.quiet = quiet
+
+    def pars_from_minimizer(self, parameters, values):
+        assert len(parameters) == len(values)
+        return {par.name: par.unscale(value) for par, value in zip(parameters, values)}
 
     def minimize(self, parameters, cost_func, debug = False):
         # marshall the paramters into a dict of the form nmpfit wants
@@ -149,5 +129,3 @@ class Nmpfit(Minimizer):
             return result_pars, fitresult, nmp_pars
         else:
             return result_pars, fitresult
-
-    minimize.__doc__ = Minimizer.minimize.__doc__

@@ -22,11 +22,8 @@ class MinimizerConvergenceFailed(Exception):
         self.result = result
         self.details = details
 
-class InvalidMinimizer(Exception):
-    pass
-
 def fit_warning(correct_obj):
         msg = "HoloPy's fitting API is deprecated. \
         Use a {} object instead.".format(correct_obj)
-        #warnings.warn(msg, UserWarning)
+        warnings.warn(msg, UserWarning)
         pass
