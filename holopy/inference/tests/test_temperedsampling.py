@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from nose.plugins.attrib import attr
 
-from holopy.inference import prior, sample
+from holopy.inference import prior
 from holopy.core.process import normalize
 from holopy.scattering import Sphere, Mie
 from holopy.inference import prior, TemperedStrategy

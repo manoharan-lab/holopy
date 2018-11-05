@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
-from .sample import (SamplingResult, TemperedSamplingResult, tempered_sample,
-                     EmceeStrategy, TemperedStrategy)
+from .result import SamplingResult, TemperedSamplingResult
+from .emcee import EmceeStrategy, TemperedStrategy
+from .nmpfit import NmpfitStrategy
 from .model import AlphaModel, ExactModel

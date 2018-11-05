@@ -90,7 +90,7 @@ class SamplingResult(HoloPyObject):
     def _names(self):
         return [p.name for p in self.model._parameters]
 
-    def paramters(self):
+    def parameters(self):
         return {name:val for name, val in zip(self._names, self.values())}
 
     def _serialization_ds(self):

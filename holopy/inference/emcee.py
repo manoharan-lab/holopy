@@ -45,13 +45,6 @@ def sample_one_sigma_gaussian(result):
     new_pars = [prior.updated(p, v[p.name]) for p in result.model._parameters]
     return np.vstack([p.sample(size=result.strategy.nwalkers)] for p in new_pars).T
 
-def tempered_sample(model, data, nwalkers=100, min_pixels=50, max_pixels=2000,
-                    samples=600, next_initial_dist=sample_one_sigma_gaussian,
-                    stages=3, stage_len=30, seed=None, threads='auto'):
-    if seed is not None:
-        np.random.seed(seed)
-    s = TemperedStrategy(next_initial_dist, nwalkers, min_pixels, max_pixels, stages=stages, stage_len=stage_len, seed=seed, threads=threads)
-    return s.sample(model, data, samples)
 
 class EmceeStrategy(HoloPyObject):
     def __init__(self, nwalkers=100, pixels=2000, threads='auto', cleanup_threads=True, seed=None, resample_pixels=False):
@@ -113,7 +106,7 @@ class TemperedStrategy(EmceeStrategy):
 
     def sample(self, model, data, nsamples=1000):
         stage_results = []
-        guess = self.make_guess(model._parameters)
+        guess = self.make_guess(model._parameters, seed=self.seed)
         for stage in self.stage_strategies[:-1]:
             result = stage.sample(model, data, nsamples=self.stage_len, walker_initial_pos=guess)
             guess = self.next_initial_dist(result)
