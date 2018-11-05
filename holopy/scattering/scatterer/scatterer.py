@@ -244,6 +244,32 @@ class CenteredScatterer(Scatterer):
                 all_pars[key] = parameters[key]
         return type(self)(**_interpret_parameters(all_pars))
 
+    def select(self, keys):
+        """
+        Select certain parts of a Scatterer with multiple parameter values
+
+        Parameters
+        ----------
+        parameters: dict
+            values to select. Should be of form {dim:val(s)}.
+
+        Returns
+        -------
+        scatterer: Scatterer class
+            A scatterer with only the values for each parameter specified.
+        """
+        params = _interpret_parameters(self.parameters)
+        for key in params.keys():
+            if isinstance(getattr(self, key), xr.DataArray):
+                params[key] = np.asscalar(getattr(self, key).sel(**keys))
+            elif isinstance(params[key], dict):
+                for dimkeys in keys.values():
+                    params[key] = [params[key][dimkey] 
+                                for dimkey in ensure_array(dimkeys)]
+                    if len(params[key])==1:
+                        params[key] = params[key[0]]
+        return type(self)(**params)
+
 def _interpret_parameters(raw_pars):
     out_dict = {}
     subkeys = set([key.split('.',1)[0].split('_',1)[0]
