@@ -25,10 +25,10 @@ from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, as
 from ...scattering import Sphere, Spheres, LayeredSphere, Mie, calc_holo
 from ...core import detector_grid, load, save, update_metadata
 from ...core.process import normalize
-from .. import fit, Parameter, ComplexParameter, Model, FitResult
+from .. import fit, Parameter, ComplexParameter, Model, FitResult, limit_overlaps
 from ...core.tests.common import (assert_obj_close, get_example_data, assert_read_matches_write)
 from ..errors import InvalidMinimizer
-from ..model import limit_overlaps, ParameterizedObject
+from holopy.scattering.errors import OverlapWarning
 
 gold_alpha = .6497
 
@@ -54,7 +54,7 @@ def test_fit_mie_single():
         return Sphere(n=parlist[3], r = parlist[4], center = parlist[0:3])
 
     thry = Mie(False)
-    model = Model(ParameterizedObject(make_scatterer(parameters)), calc_holo, theory=thry,
+    model = Model(make_scatterer(parameters), calc_holo, theory=thry,
                   alpha=Parameter(name='alpha', guess=.6, limit = [.1, 1]))
 
     assert_raises(InvalidMinimizer, fit, model, holo, minimizer=Sphere)
@@ -162,18 +162,13 @@ def test_model_guess():
     assert_obj_close(m.scatterer.guess, Sphere(n=1.59, r=0.5, center=[5, 5, 5]))
 
 def test_constraint():
-    sch = detector_grid(100, spacing=1)
     with warnings.catch_warnings():
-        # TODO: we should really only supress overlap warnings here,
-        # but I am too lazy to figure it out right now, and I don't
-        # think we are likely to hit warnings here that won't get
-        # caught elsewhere -tgd 2013-12-01
-        warnings.simplefilter("ignore")
+        warnings.simplefilter("ignore", OverlapWarning)
         spheres = Spheres([Sphere(r=.5, center=(0,0,0)),
                            Sphere(r=.5, center=(0,0,Parameter(.2)))])
         model = Model(spheres, calc_holo, constraints=limit_overlaps())
-        cost = model._calc({'1:Sphere.center[2]' : .2}, sch)
-        assert_equal(cost, np.ones_like(sch)*np.inf)
+        cost = model.lnprior({'1:Sphere.center[2]' : .2})
+        assert_equal(cost, -np.inf)
 
 def test_layered():
     s = Sphere(n = (1,2), r = (1, 2), center = (2, 2, 2))

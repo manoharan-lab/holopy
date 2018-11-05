@@ -25,7 +25,6 @@ calc_intensity and calc_holo, based on subclass's calc_field
 from .. import Sphere, Spheres, calc_holo
 from ...core.metadata import detector_grid, update_metadata, to_vector
 from ...inference import prior
-from ..scatterer import checkguess
 from ..calculations import prep_schema
 import numpy as np
 import xarray as xr
@@ -47,17 +46,6 @@ def test_hologram():
     both = calc_holo(sch2,b_sph, illum_wavelen=OrderedDict([('red',0.66),('green',0.52)]))
     assert_equal(both.values, joined)
 
-def test_checkguess():
-    s = Sphere(n=prior.Gaussian(1.6,0.1),center=[prior.Uniform(0.1,0.2),0.5,prior.Gaussian(0.3,0.1)])
-    assert_obj_close(checkguess(s), Sphere(n=1.6,center=[0.15,0.5,0.3]))
-
-    g = prior.Gaussian(1.7,0.1)
-    assert_equal(checkguess(g),1.7)
-    
-    assert_equal(checkguess(0.2),0.2)
-    
-    x = xr.DataArray([prior.Gaussian(1.0,0.2), prior.Uniform(1,3), 12])
-    assert_allclose(checkguess(x).values, np.array([1,2,12]))
 
 def test_select():
     s = Sphere(n=xr.DataArray([1.5,1.7],dims='ill',coords={'ill':['r','g']}),center=[0,0,0],r=0.5)

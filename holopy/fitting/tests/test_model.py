@@ -27,8 +27,7 @@ from nose.plugins.attrib import attr
 from holopy.core.tests.common import assert_equal, assert_obj_close
 from holopy.scattering.theory import Mie
 from holopy.scattering.scatterer import Sphere, Spheres
-from holopy.fitting.model import (
-    Model, ParameterizedObject)
+from holopy.fitting.model import Model
 from holopy.fitting import ComplexParameter, Parameter as par
 from holopy.core.tests.common import assert_read_matches_write
 from holopy.scattering.calculations import calc_holo
@@ -43,12 +42,9 @@ def test_Tying():
         [Sphere(n=n1, r=par(0.5e-6), center=np.array([10., 10., 20.])),
          Sphere(n=n1, r=par(0.5e-6), center=np.array([9., 11., 21.]))])
     model = Model(sc, calc_holo, alpha=par(.7, [.6, 1]))
-
-    assert_equal(model.parameters[0].guess, 1.59)
-    assert_equal(model.parameters[1].guess, 5e-7)
+    assert_equal(model.parameters['n'].guess, 1.59)
+    assert_equal(model.parameters['0:r'].guess, 5e-7)
     assert_equal(len(model.parameters), 4)
-    assert_equal(model.scatterer.ties,
-                 {'Sphere.n': ['0:Sphere.n', '1:Sphere.n']})
 
 
 @attr('fast')
@@ -58,35 +54,33 @@ def test_ComplexPar():
         n**2
         return fake_sph
 
-    parm = ParameterizedObject(Sphere(
-            n=ComplexParameter(real=par(1.58), imag=par(.001), name='n')))
+    parm = Sphere(n=ComplexParameter(real=par(1.58), imag=par(.001), name='n'))
     model = Model(parm, calc_holo, alpha=par(.7, [.6, 1]))
-
-    assert_equal(model.parameters[0].name, 'n.real')
-    assert_equal(model.parameters[1].name, 'n.imag')
+    assert_equal(model.parameters['n.real'].name, 'n.real')
+    assert_equal(model.parameters['n.imag'].name, 'n.imag')
 
 def test_multidim():
-    s = Sphere(
+    par_s = Sphere(
         n={'r': par(0,[-1,1]), 'g': par(0,0), 'b': prior.Gaussian(0,1),'a':0},
         r=xr.DataArray(
             [prior.Gaussian(0,1), par(0,[-1,1]), par(0,0),0],
             dims='alph', coords={'alph': ['a', 'b', 'c', 'd']}),
-            center=[par(0, [-1, 1]), par(0, 0), 0])
-    par_s = ParameterizedObject(s)
+            center=[par(0, [-1, 1]), 0, 0])
     params = {'n_r': 3, 'n_g': 4, 'n_b': 5, 'n_a': 6, 'r_a': 7, 'r_b': 8,
-              'r_c': 9, 'r_d': 10, 'center[0]': 7, 'center[1]': 8,
-              'center[2]': 9}
+              'r_c': 9, 'r_d': 10, 'center.0': 7, 'center.1': 8,
+              'center.2': 9}
     out_s = Sphere(
-        n={'r':3, 'g':0, 'b':5, 'a':0},
-        r=xr.DataArray([7, 8, 0, 0], dims='alph',
-            coords={'alph': ['a', 'b', 'c', 'd']}), center=[7, 0, 0])
-    assert_obj_close(par_s.make_from(params), out_s)
+        n={'r':3, 'g':4, 'b':5, 'a':0},
+        r={'a':7, 'b':8, 'c':9, 'd':0}, center=[7, 0, 0])
+    assert_obj_close(par_s.from_parameters(params), out_s)
 
-    m = Model(s, np.sum)
-    m._use_parameter(OrderedDict([('r',par(0,[-1,1])),('g',par(0,0)),('b',prior.Gaussian(0,1)),('a',0)]), 'letters')
-    m._use_parameter(xr.DataArray([prior.Gaussian(0,1),par(0,[-1,1]),par(0,0),0],dims='numbers',coords={'numbers':['one', 'two', 'three', 'four']}), 'count')
-    expected_params = [par(0,[-1,1], 'letters_r'),par(0,0, 'letters_g'),prior.Gaussian(0,1, 'letters_b'),prior.Gaussian(0,1, 'count_one'),par(0,[-1,1], 'count_two'), par(0,0, 'count_three')]
-    assert_equal(m.parameters[-6:], expected_params)
+    m = Model(out_s, np.sum)
+    parletters = {'r':par(0,[-1,1]),'g':par(0,0),'b':prior.Gaussian(0,1),'a':0}
+    parcount = xr.DataArray([prior.Gaussian(0,1),par(0,[-1,1]),par(0,0),0],dims='numbers',coords={'numbers':['one', 'two', 'three', 'four']})
+
+    m._use_parameters({'letters':parletters, 'count':parcount})
+    expected_params = {'letters_r':par(0,[-1,1], 'letters_r'),'letters_b':prior.Gaussian(0,1, 'letters_b'),'count_one':prior.Gaussian(0,1, 'count_one'),'count_two':par(0,[-1,1], 'count_two')}
+    assert_equal(m.parameters, expected_params)
 
 
 def test_pullingoutguess():

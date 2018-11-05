@@ -26,9 +26,10 @@ from ...scattering.scatterer import Sphere, Spheres
 from ...core import detector_grid
 from .. import fit, Parameter, Model
 from ..minimizer import Nmpfit
-from ..errors import ParameterSpecificationError, MinimizerConvergenceFailed
+from ..errors import MinimizerConvergenceFailed
 from ...core.tests.common import assert_obj_close
 from holopy.scattering.calculations import calc_holo
+from holopy.scattering.errors import ParameterSpecificationError
 
 def test_minimizer():
     x = np.arange(-10, 10, .1)
@@ -81,7 +82,7 @@ def test_minimizer():
     assert_obj_close(gold_dict, result2, context = 'minimized_parameters_with_parinfo')
 
 def test_iter_limit():
-    gold_fit_dict={'0:Sphere.r': 0.52480509800531849, '1:Sphere.center[1]': 14.003687569304704, 'alpha': 0.93045027963762217, '0:Sphere.center[2]': 19.93177549652841, '1:Sphere.r': 0.56292664494653732, '0:Sphere.center[1]': 15.000340621607815, '1:Sphere.center[0]': 14.020984607646726, '0:Sphere.center[0]': 15.000222185576494, '1:Sphere.center[2]': 20.115613202192328}
+    gold_fit_dict={'0:r': 0.52480509800531849, '1:center.1': 14.003687569304704, 'alpha': 0.93045027963762217, '0:center.2': 19.93177549652841, '1:r': 0.56292664494653732, '0:center.1': 15.000340621607815, '1:center.0': 14.020984607646726, '0:center.0': 15.000222185576494, '1:center.2': 20.115613202192328}
 
     #calculate a hologram with known particle positions to do a fit against
     schema = detector_grid(shape = 100, spacing = .1)

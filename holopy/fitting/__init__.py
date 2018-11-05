@@ -34,6 +34,6 @@ The fitting module is used to:
 """
 
 from .fit import fit, rsq, chisq, FitResult, make_subset_data
-from .model import Model
+from .model import Model, limit_overlaps
 from .parameter import Parameter, ComplexParameter
 from .minimizer import Nmpfit
