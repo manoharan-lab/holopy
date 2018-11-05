@@ -21,7 +21,7 @@ from numpy.testing import assert_raises, assert_equal
 
 from ..parameter import ComplexParameter
 from ..parameter import Parameter as par
-from ..errors import ParameterSpecificationError
+from ...scattering.errors import ParameterSpecificationError
 from ...core.tests.common import assert_obj_close
 
 

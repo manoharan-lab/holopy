@@ -17,9 +17,6 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 import warnings
 
-class ParameterSpecificationError(Exception):
-    pass
-
 class MinimizerConvergenceFailed(Exception):
     def __init__(self, result, details):
         self.result = result

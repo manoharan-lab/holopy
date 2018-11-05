@@ -23,7 +23,7 @@ from numbers import Number
 from holopy.core.metadata import get_extents, get_spacing
 from holopy.core.process import center_find
 from holopy.core.holopy_object import HoloPyObject
-from holopy.fitting.errors import ParameterSpecificationError
+from holopy.scattering.errors import ParameterSpecificationError
 
 EPS = 1e-6
 

@@ -27,7 +27,8 @@ This API is deprecated. Use holopy.inference instead.
 import numpy as np
 
 from holopy.core.utils import ensure_listlike
-from holopy.fitting.errors import ParameterSpecificationError, fit_warning
+from holopy.scattering.errors import ParameterSpecificationError
+from holopy.fitting.errors import fit_warning
 
 def Parameter(guess=None, limit=None, name=None, **kwargs):
     fit_warning('hp.inference.prior')

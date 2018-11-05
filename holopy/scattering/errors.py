@@ -31,7 +31,6 @@ class NoScattering(ImportWarning):
     def __str__(self):
         return "Could not import "+self.theory+" scattering theory. You will not be able to do scattering calculations but the rest of HoloPy should remain usable. This is probably due to a problem with compiling Fortran code."
 
-
 class InvalidScatterer(Exception):
     def __init__(self, scatterer, message):
         self.scatterer = scatterer
@@ -65,6 +64,9 @@ class MissingParameter(Exception):
         self.parameter_name = parameter_name
     def __str__(self):
         return ("Calculation requires specification of " + self.parameter_name + ".")
+
+class ParameterSpecificationError(Exception):
+    pass
 
 class MultisphereFailure(Exception):
     def __str__(self):

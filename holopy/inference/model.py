@@ -24,7 +24,8 @@ import xarray as xr
 from holopy.core.metadata import dict_to_array
 from holopy.core.utils import ensure_array, ensure_listlike
 from holopy.core.holopy_object import HoloPyObject
-from holopy.scattering.errors import MultisphereFailure, InvalidScatterer
+from holopy.scattering.errors import (MultisphereFailure,
+                                InvalidScatterer, MissingParameter)
 from holopy.scattering.calculations import calc_holo
 from holopy.scattering.theory import MieLens
 from holopy.scattering.scatterer import (_expand_parameters,

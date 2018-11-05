@@ -26,8 +26,9 @@ of third party minimizers.
 
 import numpy as np
 from ..core.holopy_object import HoloPyObject
-from .errors import ParameterSpecificationError, MinimizerConvergenceFailed
+from .errors import MinimizerConvergenceFailed
 from .third_party import nmpfit
+from holopy.scattering.errors import ParameterSpecificationError
 
 
 class Minimizer(HoloPyObject):
