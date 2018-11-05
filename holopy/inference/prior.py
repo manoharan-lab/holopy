@@ -29,8 +29,6 @@ EPS = 1e-6
 
 class Prior(HoloPyObject):
     def __add__(self, value):
-        if isinstance(value, Fixed):
-            value = value.guess
         if isinstance(value, Number):
             return self.__addadd__(value)
         elif isinstance(value, np.ndarray):
@@ -39,8 +37,6 @@ class Prior(HoloPyObject):
             raise TypeError("Cannot add prior to objects of type {}".format(type(value)))
 
     def __mul__(self, value):
-        if isinstance(value, Fixed):
-            value = value.guess
         if isinstance(value, Number):
             if value > 0:
                 return self.__multiply__(value)
@@ -73,42 +69,6 @@ class Prior(HoloPyObject):
 
     def unscale(self, scaled):
         return scaled * self.scale_factor
-
-
-class Fixed(Prior):
-    def __init__(self, guess, name=None):
-        if not np.isscalar(guess):
-            raise ParameterSpecificationError(
-                    "Guess {} is not a scalar value.".format(guess))
-        self.guess = guess
-        self.name = name
-        self.scale_factor = abs(self.guess)
-
-    def lnprob(self, p):
-        if p == self.guess:
-            return 0
-        else:
-            return -np.inf
-
-    def prob(self, p):
-        if p == self.guess:
-            return 1
-        else:
-            return 0
-
-    def sample(self, size=None):
-        if size is None:
-            return self.guess
-        return np.array([self.guess] * size)
-
-    def __addadd__(self, value):
-        return Fixed(self.guess + value, self.name)
-
-    def __multiply(self, value):
-        return Fixed(self.guess * value, self.name)
-
-    def __neg__(self):
-        return Fixed(-self.guess, self,name)
 
 
 class Uniform(Prior):
@@ -283,30 +243,48 @@ class ComplexPrior(Prior):
         real and imag may be scalars or Priors. If Priors, they must be
         pure real.
         '''
-        if not isinstance(real, Prior):
-            real = Fixed(real)
         self.real = real
-        if not isinstance(imag, Prior):
-            imag = Fixed(imag)
         self.imag = imag
         self.name = name
 
     @property
     def guess(self):
-        return self.real.guess + 1.0j * self.imag.guess
+        def get_val(val):
+            try:
+                return val.guess
+            except AttributeError:
+                return val
+        return get_val(self.real) + 1.0j * get_val(self.imag)
 
     def lnprob(self, p):
-        realprob = real.lnprob(np.real(p))
-        imagprob = imag.lnprob(np.imag(p))
+        try:
+            realprob = real.lnprob(np.real(p))
+        except AttributeError:
+            realprob = 0
+        try:
+            imagprob = imag.lnprob(np.imag(p))
+        except AttributeError:
+            iamgprob = 0
         return realprob + imagprob
 
     def prob(self, p):
-        realprob = real.prob(np.real(p))
-        imagprob = imag.prob(np.imag(p))
+        try:
+            realprob = real.lnprob(np.real(p))
+        except AttributeError:
+            realprob = 1
+        try:
+            imagprob = imag.lnprob(np.imag(p))
+        except AttributeError:
+            iamgprob = 1
         return realprob * imagprob
 
     def sample(self, size=None):
-        return self.real.sample(size) + 1.0j * self.imag.sample(size)
+        def get_val(val):
+            try:
+                return val.sample(size)
+            except AttributeError:
+                return val
+        return get_val(self.real) + 1.0j * get_val(self.imag)
 
     def __addadd__(self, value):
         real = self.real + np.real(value)

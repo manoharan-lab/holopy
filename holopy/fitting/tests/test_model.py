@@ -70,8 +70,8 @@ def test_multidim():
               'r_c': 9, 'r_d': 10, 'center.0': 7, 'center.1': 8,
               'center.2': 9}
     out_s = Sphere(
-        n={'r':3, 'g':4, 'b':5, 'a':0},
-        r={'a':7, 'b':8, 'c':9, 'd':0}, center=[7, 0, 0])
+        n={'r':3, 'g':0, 'b':5, 'a':0},
+        r={'a':7, 'b':8, 'c':0, 'd':0}, center=[7, 0, 0])
     assert_obj_close(par_s.from_parameters(params), out_s)
 
     m = Model(out_s, np.sum)

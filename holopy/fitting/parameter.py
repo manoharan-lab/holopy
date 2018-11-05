@@ -32,16 +32,16 @@ from holopy.fitting.errors import fit_warning
 
 def Parameter(guess=None, limit=None, name=None, **kwargs):
     fit_warning('hp.inference.prior')
-    from holopy.inference.prior import Uniform, Fixed
+    from holopy.inference.prior import Uniform
     if len(ensure_listlike(limit)) == 2:
         if limit[0] == limit[1]:
             return Parameter(guess, limit[0])
         out = Uniform(limit[0], limit[1], guess, name)
-    elif guess is None:
-        out = Fixed(limit, name)
-    elif guess == limit:
-        out = Fixed(guess, name)
-    elif limit is None:
+    elif guess is None and limit is not None:
+        return limit
+    elif guess == limit and limit is not None:
+        return guess
+    elif limit is None and guess is not None:
         out = Uniform(-np.inf, np.inf, guess, name)
     else:
         raise ParameterSpecificationError(

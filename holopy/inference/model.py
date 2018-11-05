@@ -31,7 +31,7 @@ from holopy.scattering.theory import MieLens
 from holopy.scattering.scatterer import (_expand_parameters,
                                          _interpret_parameters)
 from holopy.fitting import make_subset_data
-from holopy.inference.prior import Prior, Fixed
+from holopy.inference.prior import Prior
 
 class BaseModel(HoloPyObject):
     """Model probabilites of observing data
@@ -74,7 +74,7 @@ class BaseModel(HoloPyObject):
                     setattr(self, name, par)
         parameters = dict(_expand_parameters(parameters.items()))
         for key, val in parameters.items():
-            if isinstance(val, Prior) and not isinstance(val, Fixed):
+            if isinstance(val, Prior):
                 self._parameters.append(copy(val))
                 self._parameters[-1].name = key
 

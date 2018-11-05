@@ -27,10 +27,6 @@ from ...core.tests.common import assert_obj_close
 
 def test_parameter():
 
-    p3 = par(limit = 7)
-
-    assert_equal(p3.guess, 7)
-
     assert_raises(ParameterSpecificationError, par, 7, [4, 6])
 
     assert_raises(ParameterSpecificationError, par, 6, 7)
