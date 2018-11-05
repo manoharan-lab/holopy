@@ -33,34 +33,11 @@ import yaml
 import numpy as np
 
 from ..core.holopy_object import HoloPyObject
-from holopy.core.metadata import flat, copy_metadata, get_spacing
+from holopy.core.metadata import flat, copy_metadata, get_spacing, make_subset_data
 from holopy.core.math import chisq, rsq
 from holopy.core.utils import dict_without
 from .errors import MinimizerConvergenceFailed, InvalidMinimizer
 from .minimizer import Minimizer, Nmpfit
-
-def make_subset_data(data, random_subset=None, pixels=None, return_selection=False, seed=None):
-    if random_subset is None and pixels is None:
-        return data
-    if random_subset is not None and pixels is not None:
-        raise ValueError("You can only specify one of pixels or random_subset")
-    if seed is not None:
-        np.random.seed(seed)
-    tot_pix = len(data.x)*len(data.y)
-    if pixels is not None:
-        n_sel = pixels
-    else:
-        n_sel = int(np.ceil(tot_pix*random_subset))
-    selection = np.random.choice(tot_pix, n_sel, replace=False)
-    subset = flat(data).isel(flat=selection)
-    subset = copy_metadata(data, subset, do_coords=False)
-
-    subset.attrs['original_dims'] = yaml.dump({key:data[key].values for key in data.dims})
-
-    if return_selection:
-        return subset, selection
-    else:
-        return subset
 
 def fit(model, data, minimizer=Nmpfit, random_subset=None):
     """

@@ -28,7 +28,7 @@ from emcee import EnsembleSampler
 import emcee
 
 from holopy.core.holopy_object import HoloPyObject
-from holopy.fitting import make_subset_data
+from holopy.core.metadata import make_subset_data
 from holopy.inference.result import SamplingResult, TemperedSamplingResult
 
 from . import prior
