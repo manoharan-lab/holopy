@@ -75,7 +75,7 @@ class SamplingResult(HoloPyObject):
             return UncertainValue(mp, plus=plus, minus=minus)
 
 
-        return {p.name: uncval(MAP, si) for p, MAP, si in zip(self.model.parameters, self.MAP, self.sigma_intervals([-sigma_interval, sigma_interval]).T)}
+        return {name: uncval(MAP, si) for name, MAP, si in zip(self._names, self.MAP, self.sigma_intervals([-sigma_interval, sigma_interval]).T)}
 
     def sigma_intervals(self, sigmas=[-2, -1, 1, 2]):
         def quantile(s):
@@ -85,9 +85,13 @@ class SamplingResult(HoloPyObject):
             return p
         return xr.concat([quantile(s) for s in sigmas], dim='sigma')
 
+
     @property
     def _names(self):
-        return [p.name for p in self.model.parameters]
+        return [p.name for p in self.model._parameters]
+
+    def paramters(self):
+        return {name:val for name, val in zip(self._names, self.values())}
 
     def _serialization_ds(self):
         ds = copy(self.dataset)
@@ -137,7 +141,7 @@ class SamplingResult(HoloPyObject):
         return self.model.forward(self.values(),schema)
 
     def output_scatterer(self):
-        return self.model.scatterer.make_from(self.values())
+        return self.model.scatterer.from_parameters(self.parameters)
 
 def get_stage_names(inf):
     d = OrderedDict([(k, k) for k in h5py.File(inf).keys()])

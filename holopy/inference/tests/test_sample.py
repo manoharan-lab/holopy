@@ -19,7 +19,6 @@
 import numpy as np
 from numpy.testing import assert_allclose
 
-from holopy.fitting.model import BaseModel
 from holopy.inference import prior
 from holopy.inference.sample import sample_emcee, EmceeStrategy, tempered_sample
 from holopy.core.metadata import detector_grid
@@ -28,7 +27,7 @@ from holopy.scattering import Sphere, calc_holo
 
 class SimpleModel:
     def __init__(self, x=None):
-        self.parameters = [x]
+        self._parameters = [x]
 
     def lnposterior(self, par_vals, data, dummy):
         x = par_vals

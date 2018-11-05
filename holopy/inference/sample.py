@@ -42,7 +42,7 @@ def autothreads(threads='auto', quiet=False):
 
 def sample_one_sigma_gaussian(result):
     v = result.values()
-    new_pars = [prior.updated(p, v[p.name]) for p in result.model.parameters]
+    new_pars = [prior.updated(p, v[p.name]) for p in result.model._parameters]
     return np.vstack([p.sample(size=result.strategy.nwalkers)] for p in new_pars).T
 
 def tempered_sample(model, data, nwalkers=100, min_pixels=50, max_pixels=2000,
@@ -74,7 +74,7 @@ class EmceeStrategy(HoloPyObject):
         if self.pixels is not None and self.new_pixels is None:
             data = make_subset_data(data, pixels=self.pixels, seed=self.seed)
         if walker_initial_pos is None:
-            walker_initial_pos = self.make_guess(model.parameters, seed=self.seed)
+            walker_initial_pos = self.make_guess(model._parameters, seed=self.seed)
         sampler = sample_emcee(model=model, data=data, nwalkers=self.nwalkers,
                                walker_initial_pos=walker_initial_pos, nsamples=nsamples,
                                threads=self.threads, cleanup_threads=self.cleanup_threads, seed=self.seed, new_pixels=self.new_pixels)
@@ -84,7 +84,7 @@ class EmceeStrategy(HoloPyObject):
         except emcee.autocorr.AutocorrError:
             acor = None
 
-        samples = emcee_samples_DataArray(sampler, model.parameters)
+        samples = emcee_samples_DataArray(sampler, model._parameters)
         lnprobs = emcee_lnprobs_DataArray(sampler)
         return SamplingResult(xr.Dataset({'samples': samples, 'lnprobs': lnprobs, 'data': data}),
                               model=model, strategy=self)
@@ -108,7 +108,7 @@ class TemperedStrategy(EmceeStrategy):
 
     def sample(self, model, data, nsamples=1000):
         stage_results = []
-        guess = self.make_guess(model.parameters)
+        guess = self.make_guess(model._parameters)
         for stage in self.stage_strategies[:-1]:
             result = stage.sample(model, data, nsamples=self.stage_len, walker_initial_pos=guess)
             guess = self.next_initial_dist(result)
@@ -153,7 +153,7 @@ def sample_emcee_autocorr(model, data, nwalkers, independent_samples, walker_ini
 
 def sample_emcee(model, data, nwalkers, nsamples, walker_initial_pos,
                  threads='auto', cleanup_threads=True, seed=None, new_pixels = None):
-    sampler = EnsembleSampler(nwalkers, len(list(model.parameters)),
+    sampler = EnsembleSampler(nwalkers, len(model._parameters),
                               model.lnposterior,
                               threads=autothreads(threads), args=[data, new_pixels])
     if seed is not None:

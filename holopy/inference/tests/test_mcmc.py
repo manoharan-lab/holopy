@@ -44,7 +44,7 @@ def test_BaseModel_lnprior():
     scat = Sphere(r=prior.Gaussian(1, 1), n=prior.Gaussian(1, 1),
                   center=[10, 10, 10])
     mod = BaseModel(scat, noise_sd=.1)
-    assert_obj_close(mod.lnprior([0, 0]), gold_sigma * 2)
+    assert_obj_close(mod.lnprior({'n':0, 'r':0}), gold_sigma * 2)
 
 
 class TestSubsetTempering(unittest.TestCase):

@@ -101,7 +101,7 @@ def fit(model, data, minimizer=Nmpfit, random_subset=None):
         return model.residual(par_vals, data)
 
     try:
-        fitted_pars, minimizer_info = minimizer.minimize(model.parameters, residual)
+        fitted_pars, minimizer_info = minimizer.minimize(model._parameters, residual)
         converged = True
     except MinimizerConvergenceFailed as cf:
         warnings.warn("Minimizer Convergence Failed, your results may not be "
@@ -112,7 +112,7 @@ def fit(model, data, minimizer=Nmpfit, random_subset=None):
         fitted_pars, minimizer_info  = cf.result, cf.details
         converged = False
 
-    fitted_scatterer = model.scatterer.make_from(fitted_pars)
+    fitted_scatterer = model.scatterer.from_parameters(fitted_pars)
 
     time_stop = time.time()
     fitted = model._calc(fitted_pars, data)
@@ -162,7 +162,7 @@ class FitResult(HoloPyObject):
 
     @property
     def alpha(self):
-        return self.model.get_alpha(self.parameters)
+        return self.model.get_parameter(self.parameters)
 
     def fitted_holo(self, schema):
         return self.model.theory(self.scatterer, schema, self.alpha)
@@ -182,7 +182,7 @@ class FitResult(HoloPyObject):
         """
         nextmodel = deepcopy(self.model)
 
-        for p in nextmodel.parameters:
+        for p in nextmodel._parameters:
             name = p.name
             p.guess = self.parameters[name]
         return nextmodel
