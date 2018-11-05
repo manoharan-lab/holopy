@@ -28,7 +28,6 @@ from holopy.inference import prior, sample
 from holopy.core.process import normalize
 from holopy.core.tests.common import assert_obj_close, get_example_data
 from holopy.scattering import Sphere, Mie
-from holopy.fitting import model
 from holopy.inference.model import AlphaModel, BaseModel, PerfectLensModel
 
 # GOLD: log(sqrt(0.5/pi))-1/2
