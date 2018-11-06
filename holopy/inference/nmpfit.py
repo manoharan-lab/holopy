@@ -31,6 +31,7 @@ from holopy.core.holopy_object import HoloPyObject
 from holopy.core.metadata import flat, make_subset_data
 from holopy.core.math import chisq, rsq
 from holopy.inference.third_party import nmpfit
+from holopy.inference.prior import Uniform
 from holopy.scattering.errors import ParameterSpecificationError
 from holopy.fitting import FitResult
 
@@ -105,6 +106,7 @@ class NmpfitStrategy(HoloPyObject):
             an object containing the best fit parameters and information about the fit
         """
         time_start = time.time()
+        parameters = model._parameters
 
         if self.random_subset is None:
             data = flat(data)
@@ -113,44 +115,61 @@ class NmpfitStrategy(HoloPyObject):
 
       # marshall the parameters into a dict of the form nmpfit wants
         nmp_pars = []
-        for par  in model._parameters:
-            d = {'parname': par.name}
-            if par.limit is not None:
-                d['limited'] = [par.scale(l) is not None for l in par.limit]
-                d['limits'] = par.scale(np.array(par.limit))
-            else:
-                d['limited'] = [False, False]
-            if par.guess is not None:
-                d['value'] = par.scale(par.guess)
-            else:
-                raise ParameterSpecificationError("nmpfit requires an "
-                                                    "initial guess for all "
-                                                    "parameters")
+        for par  in parameters:
+            d = {'parname': par.name, 'value':par.scale(par.guess)}
+            d['limited'] = [False, False]
+            if hasattr(par, 'lower_bound') and par.lower_bound > -np.inf:
+                d['limited'][0] = True
+                d['limits'] = [par.scale(par.lower_bound)]
+            if hasattr(par, 'upper_bound') and par.upper_bound < np.inf:
+                d['limited'][1] = True
+                if 'limits' not in d.keys():
+                    d['limits']=[]
+                d['limits'].append(par.scale(par.upper_bound))
+
             # Check for other allowed parinfo keys here: see nmpfit docs
             allowed_keys = ['step', 'mpside', 'mpmaxstep']
-            for key, value in par.kwargs.items():
-                if key in allowed_keys:
-                    if key == 'mpside':
-                        d[key] = value
+            if hasattr(par, 'kwargs'):
+                for key, value in par.kwargs.items():
+                    if key in allowed_keys:
+                        if key == 'mpside':
+                            d[key] = value
+                        else:
+                            d[key] = par.scale(value)
                     else:
-                        d[key] = par.scale(value)
-                else:
-                    raise ParameterSpecificationError("Parameter " + par.name +
+                        raise ParameterSpecificationError("Parameter " + par.name +
                                                       " contains kwargs that" +
                                                       " are not supported by" +
                                                       " nmpfit")
             nmp_pars.append(d)
 
+        ignore_prior = np.all([isinstance(par, Uniform) for par in parameters])
+        ignore_prior = False
+        if not ignore_prior:
+            guess_prior = 10 * model.lnprior([par.guess for par in parameters])
+
         def resid_wrapper(p, fjac=None):
             status = 0
-            return [status, model.residual(self.pars_from_minimizer(model._parameters, p), data)]
+            scaled_pars = self.pars_from_minimizer(parameters, p)
+            scaled_pars, noise = model._prep_pars(scaled_pars, data)
+            residuals = model._residuals(scaled_pars, data, noise)
+            if not ignore_prior:
+                prior = model.lnprior(scaled_pars)
+                if prior > 0:
+                    prior = np.sqrt(prior)
+                elif prior < guess_prior:
+                    prior = 0
+                else:
+                    prior = np.sqrt(prior - 10 * guess_prior)
+                np.append(residuals, prior)
+            return [status, residuals]
 
         # now fit it
         fitresult = nmpfit.mpfit(resid_wrapper, parinfo=nmp_pars, ftol = self.ftol,
                                  xtol = self.xtol, gtol = self.gtol, damp = self.damp,
                                  maxiter = self.maxiter, quiet = self.quiet)
 
-        result_pars = self.pars_from_minimizer(model._parameters, fitresult.params)
+        result_pars = self.pars_from_minimizer(parameters, fitresult.params)
 
         if fitresult.status == 5:
             converged = False

@@ -30,7 +30,7 @@ from holopy.scattering.calculations import calc_holo
 from holopy.scattering.theory import MieLens
 from holopy.scattering.scatterer import (_expand_parameters,
                                          _interpret_parameters)
-from holopy.inference.prior import Prior
+from holopy.inference.prior import Prior, Uniform
 
 class BaseModel(HoloPyObject):
     """Model probabilites of observing data
@@ -112,6 +112,20 @@ class BaseModel(HoloPyObject):
     def forward(self, pars, detector):
         raise NotImplementedError("Implement in subclass")
 
+    def _prep_pars(self, pars, data):
+        if not isinstance(pars, dict):
+            pars = {par.name:val for par, val in zip(self._parameters, pars)}
+        noise = dict_to_array(data, self.get_parameter('noise_sd', pars, data))
+        if noise is None:
+            if np.all([isinstance(par, Uniform) for par in self._parameters]):
+                noise = 1
+            else:
+                raise MissingParameter('noise_sd for non-uniform priors')
+        return (pars, noise)
+
+    def _residuals(self, pars, data, noise):
+        forward_model = self.forward(pars, data)
+        return ((forward_model - data) / (np.sqrt(2) * noise)).values
 
     def lnlike(self, pars, data):
         """
@@ -124,16 +138,12 @@ class BaseModel(HoloPyObject):
         data: xarray
             The data to compute likelihood against
         """
-        if not isinstance(pars, dict):
-            pars = {par.name:val for par, val in zip(self._parameters, pars)}
-        noise_sd = dict_to_array(data,
-                                self.get_parameter('noise_sd', pars, data))
-        forward_model = self.forward(pars, data)
+        pars, noise_sd = self._prep_pars(pars, data)
         N = data.size
         log_likelihood = np.asscalar(
             -N/2 * np.log(2 * np.pi) -
             N * np.mean(np.log(ensure_array(noise_sd))) -
-            ((forward_model - data)**2 / (2 * noise_sd**2)).values.sum())
+            (self._residuals(pars, data, noise_sd)**2).sum())
         return log_likelihood
 
 
