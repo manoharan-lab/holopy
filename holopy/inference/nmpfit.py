@@ -33,7 +33,7 @@ from holopy.core.math import chisq, rsq
 from holopy.inference.third_party import nmpfit
 from holopy.inference.prior import Uniform
 from holopy.scattering.errors import ParameterSpecificationError
-from holopy.fitting import FitResult
+from holopy.fitting.fit import FitResult
 
 
 class NmpfitStrategy(HoloPyObject):

@@ -24,28 +24,10 @@ Routines for fitting a hologram to an exact solution
 
 """
 
-import warnings
-import time
 from copy import copy, deepcopy
-import yaml
-
-import numpy as np
 
 from holopy.core.holopy_object import HoloPyObject
-from holopy.core.metadata import flat, copy_metadata, get_spacing, make_subset_data
-from holopy.core.math import chisq, rsq
-from holopy.core.utils import dict_without
-from .errors import fit_warning
 
-
-def fit(model, data, minimizer=None, random_subset=None):
-    from holopy.inference import NmpfitStrategy
-    fit_warning('hp.inference.prior')
-    if minimizer is None:
-        minimizer = NmpfitStrategy()
-    if random_subset is not None:
-        minimizer.random_subset = random_subset
-    return minimizer.fit(model, data)
 
 class FitResult(HoloPyObject):
     """

@@ -19,8 +19,7 @@
 
 from numpy.testing import assert_raises, assert_equal
 
-from ..parameter import ComplexParameter
-from ..parameter import Parameter as par
+from holopy.fitting import ComplexParameter, Parameter as par
 from ...scattering.errors import ParameterSpecificationError
 from ...core.tests.common import assert_obj_close
 
