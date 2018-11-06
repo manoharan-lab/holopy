@@ -73,12 +73,7 @@ def test_minimizer():
                    Parameter(name='c', guess = 3, step = 1e-4, mpmaxstep = 2.,
                              limit = [0., 12.])]
     minimizer = Nmpfit()
-    result2, details2, parinfo = minimizer.minimize(parameters2, cost_func,
-                                                    debug = True)
-    assert_equal(parinfo[0]['mpside'], 2)
-    assert_equal(parinfo[2]['limits'], np.array([0., 12.])/3.)
-    assert_allclose(parinfo[2]['step'], 1e-4/3.)
-    assert_equal(parinfo[2]['limited'], [True, True])
+    result2, details2 = minimizer.minimize(parameters2, cost_func)
     assert_obj_close(gold_dict, result2, context = 'minimized_parameters_with_parinfo')
 
 def test_iter_limit():
