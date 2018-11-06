@@ -113,6 +113,42 @@ class NmpfitStrategy(HoloPyObject):
         else:
             data = make_subset_data(data, self.random_subset)
 
+        ignore_prior = np.all([isinstance(par, Uniform) for par in parameters])
+        ignore_prior = False
+        if not ignore_prior:
+            guess_prior = 10 * model.lnprior([par.guess for par in parameters])
+
+        def residual(par_vals):
+            pars, noise = model._prep_pars(par_vals, data)
+            residuals = model._residuals(par_vals, data, noise)
+            if not ignore_prior:
+                prior = model.lnprior(par_vals)
+                if prior > 0:
+                    prior = np.sqrt(prior)
+                elif prior < guess_prior:
+                    prior = 0
+                else:
+                    prior = np.sqrt(prior - 10 * guess_prior)
+                np.append(residuals, prior)
+            return residuals
+
+        fitted_pars, minimizer_info = self.minimize(parameters, residual)
+
+        if minimizer_info.status == 5:
+            converged = False
+            warnings.warn("Minimizer Convergence Failed, your results \
+                                may not be correct.")
+        else:
+            converged = True
+
+        fitted_scatterer = model.scatterer.from_parameters(fitted_pars)
+        time_stop = time.time()
+        fitted = model._calc(fitted_pars, data)
+        return FitResult(fitted_pars, fitted_scatterer, chisq(fitted, data),
+                     rsq(fitted, data), converged, time_stop - time_start,
+                     model, self, minimizer_info)
+
+    def minimize(self, parameters, cost_func):
       # marshall the parameters into a dict of the form nmpfit wants
         nmp_pars = []
         for par  in parameters:
@@ -143,26 +179,9 @@ class NmpfitStrategy(HoloPyObject):
                                                       " nmpfit")
             nmp_pars.append(d)
 
-        ignore_prior = np.all([isinstance(par, Uniform) for par in parameters])
-        ignore_prior = False
-        if not ignore_prior:
-            guess_prior = 10 * model.lnprior([par.guess for par in parameters])
-
         def resid_wrapper(p, fjac=None):
             status = 0
-            scaled_pars = self.pars_from_minimizer(parameters, p)
-            scaled_pars, noise = model._prep_pars(scaled_pars, data)
-            residuals = model._residuals(scaled_pars, data, noise)
-            if not ignore_prior:
-                prior = model.lnprior(scaled_pars)
-                if prior > 0:
-                    prior = np.sqrt(prior)
-                elif prior < guess_prior:
-                    prior = 0
-                else:
-                    prior = np.sqrt(prior - 10 * guess_prior)
-                np.append(residuals, prior)
-            return [status, residuals]
+            return [status, cost_func(self.pars_from_minimizer(parameters, p))]
 
         # now fit it
         fitresult = nmpfit.mpfit(resid_wrapper, parinfo=nmp_pars, ftol = self.ftol,
@@ -171,16 +190,4 @@ class NmpfitStrategy(HoloPyObject):
 
         result_pars = self.pars_from_minimizer(parameters, fitresult.params)
 
-        if fitresult.status == 5:
-            converged = False
-            warnings.warn("Minimizer Convergence Failed, your results \
-                                may not be correct.")
-        else:
-            converged = True
-
-        fitted_scatterer = model.scatterer.from_parameters(result_pars)
-        time_stop = time.time()
-        fitted = model._calc(result_pars, data)
-        return FitResult(result_pars, fitted_scatterer, chisq(fitted, data),
-                     rsq(fitted, data), converged, time_stop - time_start,
-                     model, self, fitresult)
+        return result_pars, fitresult
