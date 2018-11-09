@@ -312,12 +312,12 @@ def updated(prior, v, extra_uncertainty=0):
     """
     sd = max(v.plus, v.minus, extra_uncertainty)
     if hasattr(prior, 'lower_bound'):
-        return BoundedGaussian(v.value, sd,
+        return BoundedGaussian(v.guess, sd,
                                getattr(prior, 'lower_bound', -np.inf),
                                getattr(prior, 'upper_bound', np.inf),
                                name=prior.name)
     else:
-        return Gaussian(v.value, sd, prior.name)
+        return Gaussian(v.guess, sd, prior.name)
 
 def make_center_priors(im, z_range_extents=5, xy_uncertainty_pixels=1, z_range_units=None):
     """

@@ -21,6 +21,7 @@ Sample posterior probabilities given model and data
 .. moduleauthor:: Thomas G. Dimiduk <tom@dimiduk.net>
 """
 import multiprocessing
+import time
 
 import xarray as xr
 import numpy as np
@@ -41,8 +42,8 @@ def autothreads(threads='auto', quiet=False):
     return threads
 
 def sample_one_sigma_gaussian(result):
-    v = result.values()
-    new_pars = [prior.updated(p, v[p.name]) for p in result.model._parameters]
+    par_ranges = result.intervals
+    new_pars = [prior.updated(result.model.parameters[p.name], p) for p in par_ranges]
     return np.vstack([p.sample(size=result.strategy.nwalkers)] for p in new_pars).T
 
 
@@ -69,6 +70,7 @@ class EmceeStrategy(HoloPyObject):
         return np.vstack([sample(p) for p in parameters]).T
 
     def sample(self, model, data, nsamples=1000, walker_initial_pos=None):
+        time_start = time.time()
         if self.pixels is not None and self.new_pixels is None:
             data = make_subset_data(data, pixels=self.pixels, seed=self.seed)
         if walker_initial_pos is None:
@@ -84,8 +86,9 @@ class EmceeStrategy(HoloPyObject):
 
         samples = emcee_samples_DataArray(sampler, model._parameters)
         lnprobs = emcee_lnprobs_DataArray(sampler)
-        return SamplingResult(xr.Dataset({'samples': samples, 'lnprobs': lnprobs, 'data': data}),
-                              model=model, strategy=self)
+
+        d_time = time.time() - time_start
+        return SamplingResult(data, model, self, d_time, lnprobs, samples)
 
 
 class TemperedStrategy(EmceeStrategy):
@@ -105,6 +108,7 @@ class TemperedStrategy(EmceeStrategy):
         self.next_initial_dist = next_initial_dist
 
     def sample(self, model, data, nsamples=1000):
+        start_time = time.time()
         stage_results = []
         guess = self.make_guess(model._parameters, seed=self.seed)
         for stage in self.stage_strategies[:-1]:
@@ -112,9 +116,9 @@ class TemperedStrategy(EmceeStrategy):
             guess = self.next_initial_dist(result)
             stage_results.append(result)
 
-        result = self.stage_strategies[-1].sample(model=model, data=data, nsamples=nsamples, walker_initial_pos=guess)
-
-        return TemperedSamplingResult(end_result=result, stage_results=stage_results, strategy=self)
+        end_result = self.stage_strategies[-1].sample(model=model, data=data, nsamples=nsamples, walker_initial_pos=guess)
+        d_time = time.time()-start_time
+        return TemperedSamplingResult(end_result, stage_results, self, d_time)
 
 
 def get_acor(sampler):

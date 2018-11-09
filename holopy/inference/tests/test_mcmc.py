@@ -50,6 +50,7 @@ def test_BaseModel_lnprior():
 class SimpleModel:
     def __init__(self, x=None):
         self._parameters = [x]
+        self.parameters = {None:x}
 
     def lnposterior(self, par_vals, data, dummy):
         x = par_vals
@@ -69,7 +70,7 @@ def test_EmceeStrategy():
     mod = SimpleModel(prior.Uniform(0, 1))
     strat = EmceeStrategy(10, None, None, seed=40)
     r = strat.sample(mod, data, 500)
-    assert_allclose(r.MAP, .5, rtol=.001)
+    assert_allclose(r.guess, .5, rtol=.001)
 
 class TestSubsetTempering(unittest.TestCase):
     def test_alpha_subset_tempering(self):
@@ -81,7 +82,7 @@ class TestSubsetTempering(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             inf = strat.sample(mod, holo, nsamples=10)
-        assert_obj_close(inf.MAP, gold_alpha, rtol=1e-3)
+        assert_obj_close(inf.guess, gold_alpha, rtol=1e-3)
 
     def test_perfectlens_subset_tempering(self):
         data = normalize(get_example_data('image0001'))
@@ -93,5 +94,5 @@ class TestSubsetTempering(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             inference_result = strat.sample(model, data, nsamples=10)
-        assert_obj_close(inference_result.MAP, gold_lens_angle, rtol=1e-3)
+        assert_obj_close(inference_result.guess, gold_lens_angle, rtol=1e-3)
 
