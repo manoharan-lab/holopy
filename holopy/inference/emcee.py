@@ -79,11 +79,6 @@ class EmceeStrategy(HoloPyObject):
                                walker_initial_pos=walker_initial_pos, nsamples=nsamples,
                                threads=self.threads, cleanup_threads=self.cleanup_threads, seed=self.seed, new_pixels=self.new_pixels)
 
-        try:
-            acor = sampler.acor
-        except emcee.autocorr.AutocorrError:
-            acor = None
-
         samples = emcee_samples_DataArray(sampler, model._parameters)
         lnprobs = emcee_lnprobs_DataArray(sampler)
 
@@ -120,38 +115,14 @@ class TemperedStrategy(EmceeStrategy):
         d_time = time.time()-start_time
         return TemperedSamplingResult(end_result, stage_results, self, d_time)
 
-
-def get_acor(sampler):
-    try:
-        return sampler.acor
-    except emcee.autocorr.AutocorrError:
-        return None
-
 def emcee_samples_DataArray(sampler, parameters):
     return xr.DataArray(sampler.chain, dims=['walker', 'chain', 'parameter'],
                         coords={'parameter': [p.name for p in parameters]},
-                        attrs={"acceptance_fraction": sampler.acceptance_fraction.mean(),
-                               "autocorr": get_acor(sampler)})
+                        attrs={"acceptance_fraction": sampler.acceptance_fraction.mean()})
 
 def emcee_lnprobs_DataArray(sampler):
     return xr.DataArray(sampler.lnprobability, dims=['walker', 'chain'],
-                        attrs={"acceptance_fraction": sampler.acceptance_fraction.mean(),
-                               "autocorr": get_acor(sampler)})
-
-def sample_emcee_autocorr(model, data, nwalkers, independent_samples, walker_initial_pos,
-                          estimated_autocorr, threads='auto'):
-    def target_chain_len(autocorr):
-        return estimated_burn_in + max(desired_samples/self.nwalkers, 10) * estimated_autocorr
-
-    samples = target_chain_len(estimated_autocorr)
-
-    sampler = sample_emcee(model, data, nwalkers, walker_initial_pos, )
-
-    acor = sampler.acor
-    # if the actual autocorr is larger than our estimate, run some more samples
-    if target_chain_len(sampler.acor) > samples:
-        more = target_chain_len(sampler.acor) - samples
-        sampler.run_mcmc(None, more)
+                        attrs={"acceptance_fraction": sampler.acceptance_fraction.mean()})
 
 def sample_emcee(model, data, nwalkers, nsamples, walker_initial_pos,
                  threads='auto', cleanup_threads=True, seed=None, new_pixels = None):

@@ -167,8 +167,6 @@ class SamplingResult(InferenceResult):
         attrs = ds.attrs
         ds = xr.merge([ds, {'lnprobs':self.lnprobs, 'samples':self.samples}])
         ds.attrs = attrs
-        autocorr_to_sentinal(ds.samples)
-        autocorr_to_sentinal(ds.lnprobs)
         return ds
 
     @classmethod
@@ -195,16 +193,6 @@ class TemperedSamplingResult(SamplingResult):
         stages = [SamplingResult._load(filename, group=GROUPNAME.format(i))
                         for i in range(len(ds.strategy.stage_strategies))]
         return cls(ds, stages, ds.strategy, ds.time)
-
-def autocorr_to_sentinal(d):
-    if 'autocorr' in d.attrs and d.attrs['autocorr'] == None:
-        d.attrs['autocorr'] = -1
-    return d
-
-def autocorr_from_sentinal(d):
-    if 'autocorr' in d.attrs and d.attrs['autocorr'] == -1:
-        d.attrs['autocorr'] = None
-    return d
 
 class UncertainValue(HoloPyObject):
     """
