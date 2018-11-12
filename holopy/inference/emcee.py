@@ -48,14 +48,14 @@ def sample_one_sigma_gaussian(result):
 
 
 class EmceeStrategy(HoloPyObject):
-    def __init__(self, nwalkers=100, pixels=2000, threads='auto', cleanup_threads=True, seed=None, resample_pixels=False):
+    def __init__(self, nwalkers=100, npixels=2000, threads='auto', cleanup_threads=True, seed=None, resample_pixels=False):
         self.nwalkers = nwalkers
-        self.pixels = pixels
+        self.npixels = npixels
         self.threads = threads
         self.cleanup_threads = cleanup_threads
         self.seed = seed
         if resample_pixels:
-            self.new_pixels = self.pixels
+            self.new_pixels = self.npixels
         else:
             self.new_pixels = None
 
@@ -71,8 +71,8 @@ class EmceeStrategy(HoloPyObject):
 
     def sample(self, model, data, nsamples=1000, walker_initial_pos=None):
         time_start = time.time()
-        if self.pixels is not None and self.new_pixels is None:
-            data = make_subset_data(data, pixels=self.pixels, seed=self.seed)
+        if self.npixels is not None and self.new_pixels is None:
+            data = make_subset_data(data, pixels=self.npixels, seed=self.seed)
         if walker_initial_pos is None:
             walker_initial_pos = self.make_guess(model._parameters, seed=self.seed)
         sampler = sample_emcee(model=model, data=data, nwalkers=self.nwalkers,
@@ -87,25 +87,26 @@ class EmceeStrategy(HoloPyObject):
 
 
 class TemperedStrategy(EmceeStrategy):
-    def __init__(self, next_initial_dist=sample_one_sigma_gaussian, nwalkers=100, min_pixels=50, max_pixels=1000, threads='auto', stages=3, stage_len=30, seed=None, resample_pixels=False):
+    def __init__(self, next_initial_dist=sample_one_sigma_gaussian, nwalkers=100, min_pixels=None, npixels=1000, threads='auto', stages=3, stage_len=30, seed=None, resample_pixels=False):
 
         self.seed = seed
         self.stages = stages
         self.stage_strategies = []
-        for p in np.logspace(np.log10(min_pixels), np.log10(max_pixels), stages+1):
-            self.stage_strategies.append(EmceeStrategy(nwalkers=nwalkers, pixels=int(round(p)), threads=threads, seed=seed, resample_pixels=resample_pixels))
+        if min_pixels is None:
+            min_pixels = npixels/20
+        for p in np.logspace(np.log10(min_pixels), np.log10(npixels), stages+1):
+            self.stage_strategies.append(EmceeStrategy(nwalkers=nwalkers, npixels=int(round(p)), threads=threads, seed=seed, resample_pixels=resample_pixels))
             if seed is not None:
                 seed += 1
-
         self.threads=threads
         self.stage_len=stage_len
         self.nwalkers=nwalkers
         self.next_initial_dist = next_initial_dist
 
-    def sample(self, model, data, nsamples=1000):
+    def sample(self, model, data, nsamples=1000, walker_initial_pos = None):
         start_time = time.time()
         stage_results = []
-        guess = self.make_guess(model._parameters, seed=self.seed)
+        guess = walker_initial_pos
         for stage in self.stage_strategies[:-1]:
             result = stage.sample(model, data, nsamples=self.stage_len, walker_initial_pos=guess)
             guess = self.next_initial_dist(result)
