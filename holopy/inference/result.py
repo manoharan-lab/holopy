@@ -22,6 +22,7 @@ Results of sampling
 """
 from copy import copy
 from collections import OrderedDict
+from warnings import warn
 
 import yaml
 import xarray as xr
@@ -33,6 +34,25 @@ from holopy.core.metadata import detector_grid, copy_metadata
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.io.io import pack_attrs, unpack_attrs
 from holopy.core.utils import dict_without, ensure_array
+
+
+warn_text = 'Loading a legacy (pre-3.3) HoloPy file. Please \
+                            save a new copy to ensure future compatibility'
+
+def get_strategy(strategy):
+    try:
+        return yaml.load(strategy)
+    except:
+        # old file
+        warn(warn_text)
+    index = strategy.find('pixel')
+    if index > -1:
+        strategy = strategy[:index] + 'n' + strategy[index:]
+    index = strategy.find('sample')
+    if index > -1:
+        strategy = strategy[:index] + 'emcee' + strategy[index+6:]
+    return yaml.load(strategy)
+
 
 class InferenceResult(HoloPyObject):
     def __init__(self, data, model, strategy, intervals, time):
@@ -116,12 +136,15 @@ class InferenceResult(HoloPyObject):
     def _unserialize(cls, ds):
         data = ds.data
         data.attrs = unpack_attrs(data.attrs)
-        model = yaml.load(ds.attrs.pop('model'))
-        strategy = yaml.load(ds.attrs.pop('strategy'))
-        intervals = yaml.load(ds.attrs.pop('intervals'))
-        intervals=None
-        time = float(ds.attrs.pop('time'))
-        return [data, model, strategy, intervals, time]
+        model = yaml.load(ds.attrs['model'])
+        strategy = get_strategy(ds.attrs['strategy'])
+        outlist = [data, model, strategy]
+        for attr in ['intervals', 'time']:
+            try:
+                outlist.append(yaml.load(ds.attrs.pop(attr)))
+            except KeyError:
+                outlist.append(None)
+        return outlist
 
     @classmethod
     def _load(cls, ds, **kwargs):
@@ -164,7 +187,7 @@ class SamplingResult(InferenceResult):
 
     def _serialization_ds(self):
         ds = super()._serialization_ds()
-        attrs = ds.attrs
+        attrs = dict_without(ds.attrs, 'intervals')
         ds = xr.merge([ds, {'lnprobs':self.lnprobs, 'samples':self.samples}])
         ds.attrs = attrs
         return ds
@@ -183,15 +206,22 @@ class TemperedSamplingResult(SamplingResult):
         self.stage_results = stage_results
 
     def _save(self, filename):
-        super()._save(filename)
         for i, ds in enumerate(self.stage_results):
             ds._save(filename, group = GROUPNAME.format(i), mode='a')
+        super()._save(filename, mode='a')
 
     @classmethod
     def _load(cls, filename):
-        ds = SamplingResult._load(filename)
+        try:
+            ds = SamplingResult._load(filename)
+        except AttributeError:
+            # old file
+            warn(warn_text)
+            ds = SamplingResult._load(filename, group = 'end_result')
+            with xr.open_dataset(filename, engine='h5netcdf') as top:
+                ds.strategy = get_strategy(top.attrs['strategy'])
         stages = [SamplingResult._load(filename, group=GROUPNAME.format(i))
-                        for i in range(len(ds.strategy.stage_strategies))]
+                        for i in range(len(ds.strategy.stage_strategies)-1)]
         return cls(ds, stages, ds.strategy, ds.time)
 
 class UncertainValue(HoloPyObject):
