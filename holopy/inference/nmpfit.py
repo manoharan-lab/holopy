@@ -33,7 +33,7 @@ from holopy.core.math import chisq, rsq
 from holopy.inference.third_party import nmpfit
 from holopy.inference.prior import Uniform
 from holopy.scattering.errors import ParameterSpecificationError
-from holopy.fitting.fit import FitResult
+from holopy.inference.result import FitResult, UncertainValue
 
 
 class NmpfitStrategy(HoloPyObject):
@@ -135,18 +135,18 @@ class NmpfitStrategy(HoloPyObject):
         fitted_pars, minimizer_info = self.minimize(parameters, residual)
 
         if minimizer_info.status == 5:
-            converged = False
+            setattr(minimizer_info, 'converged', False)
             warnings.warn("Minimizer Convergence Failed, your results \
                                 may not be correct.")
         else:
-            converged = True
-
-        fitted_scatterer = model.scatterer.from_parameters(fitted_pars)
-        time_stop = time.time()
-        fitted = model._calc(fitted_pars, data)
-        return FitResult(fitted_pars, fitted_scatterer, chisq(fitted, data),
-                     rsq(fitted, data), converged, time_stop - time_start,
-                     model, self, minimizer_info)
+            setattr(minimizer_info, 'converged', True)
+        d_time = time.time() - time_start
+        perror = minimizer_info.perror
+        if perror is None:
+            perror = [0] * len(parameters)
+        intervals = [UncertainValue(fitted_pars[par.name], diff, name=par.name)
+                     for diff, par in zip(perror, parameters)]
+        return FitResult(data, model, self, intervals, d_time, minimizer_info)
 
     def minimize(self, parameters, obj_func):
       # marshall the parameters into a dict of the form nmpfit wants

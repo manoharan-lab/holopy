@@ -149,9 +149,25 @@ class InferenceResult(HoloPyObject):
     @classmethod
     def _load(cls, ds, **kwargs):
        with xr.open_dataset(ds, engine='h5netcdf', **kwargs) as ds:
-            args = cls._unserialize(ds)
+            args = cls._unserialize(ds.load())
        return cls(*args)
 
+
+class FitResult(InferenceResult):
+    def __init__(self, data, model, strategy, intervals, time, mpfit_details):
+        self.mpfit_details = mpfit_details # replace with setattr, **kwargs?
+        super().__init__(data, model, strategy, intervals, time)
+
+    def _serialization_ds(self):
+        ds = super()._serialization_ds()
+        ds.attrs['mpfit_details'] = yaml.dump(self.mpfit_details)
+        return ds
+
+    @classmethod
+    def _unserialize(cls, ds):
+        args = super()._unserialize(ds)
+        args.append(yaml.load(ds.attrs['mpfit_details']))
+        return args
 
 class SamplingResult(InferenceResult):
     def __init__(self, data, model, strategy, time, lnprobs, samples):

@@ -39,6 +39,12 @@ gold_sphere = Sphere(1.582+1e-4j, 6.484e-7,
 # random_subset=.99). This could be a sign of some deeper problem, so
 # it might be worth investigating - tgd 2014-09-18
 
+def fix_flat(result):
+    if 'flat' in result.data.coords:
+        result.data = result.data.rename({'flat': 'point'})
+        result.data['point'].values = np.arange(len(result.data.point))
+    return result
+
 @attr('slow')
 def test_fit_mie_single():
     holo = normalize(get_example_data('image0001'))
@@ -74,8 +80,7 @@ def test_fit_mie_par_scatterer():
     thry = Mie(False)
     model = Model(s, calc_holo, theory=thry, alpha = Parameter(.6, [.1,1]))
 
-    result = fit(model, holo)
-
+    result = fix_flat(fit(model, holo))
     assert_obj_close(result.scatterer, gold_sphere, rtol=1e-3)
     # TODO: see if we can get this back to 3 sig figs correct alpha
     assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=3)
@@ -92,7 +97,7 @@ def test_fit_random_subset():
 
     model = Model(s, calc_holo, theory=Mie(False), alpha = Parameter(.6, [.1,1]))
     np.random.seed(40)
-    result = fit(model, holo, random_subset=.1)
+    result = fix_flat(fit(model, holo, random_subset=.1))
 
     # TODO: this tolerance has to be rather large to pass, we should
     # probably track down if this is a sign of a problem
@@ -128,16 +133,13 @@ def test_serialization():
 
     holo = calc_holo(schema, model.scatterer.guess, scaling=model.alpha.guess)
 
-    result = fit(model, holo)
-
-    temp = tempfile.NamedTemporaryFile()
-    save(temp, result)
-
-    temp.flush()
-    temp.seek(0)
-    loaded = load(temp)
-    temp.close()
-    assert_obj_close(result, loaded, context = 'serialized_result')
+    result = fix_flat(fit(model, holo))
+    temp = tempfile.NamedTemporaryFile(suffix = '.h5', delete=False)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        save(temp.name, result)
+        loaded = load(temp.name)
+        assert_obj_close(result, loaded, context = 'serialized_result')
 
 
 def test_integer_correctness():

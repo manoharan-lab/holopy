@@ -43,6 +43,7 @@ from holopy.scattering.errors import ParameterSpecificationError
 from holopy.inference.prior import Uniform, ComplexPrior
 from holopy.inference.model import AlphaModel, ExactModel, LimitOverlaps
 from holopy.inference.nmpfit import NmpfitStrategy
+from holopy.inference.result import UncertainValue, FitResult as RealFitResult
 
 from holopy.core.math import chisq, rsq
 from holopy.core.metadata import make_subset_data
@@ -125,3 +126,21 @@ def fit(model, data, minimizer=None, random_subset=None):
     if random_subset is not None:
         minimizer.random_subset = random_subset
     return minimizer.fit(model, data)
+
+class FitResult(HoloPyObject):
+    def __new__(self, parameters, scatterer, fitchisq, fitrsq, converged, time, model,
+                 minimizer, minimization_details):
+        fit_warning('hp.inference.result.FitStrategy')
+        intervals = [UncertainValue(fitted_pars[par.name], diff, name=par.name)
+                     for diff, par in zip(minimization_details.perror, parameters)]
+        fit = RealFitResult(None, model, minimizer, intervals, None, minimization_details)
+        setattr(fit.mpfitdetails, 'converged', converged)
+        setattr(fit, 'converged', converged)
+        setattr(fit, 'chisq', fitchisq)
+        setattr(fit, 'rsq', fitrsq)
+        setattr(fit, 'niter', fit.mpfitdetails.niter)
+        def fitted_holo(schema):
+            fit.data = schema
+            return fit.best_fit()
+        setattr(fit, 'fitted_holo', fitted_holo)
+        return fit
