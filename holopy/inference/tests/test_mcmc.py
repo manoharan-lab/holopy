@@ -28,6 +28,7 @@ from holopy.inference import prior, TemperedStrategy
 from holopy.core.process import normalize
 from holopy.core.tests.common import assert_obj_close, get_example_data
 from holopy.scattering import Sphere, Mie
+from holopy.inference import prior
 from holopy.inference.model import AlphaModel, BaseModel, PerfectLensModel
 from holopy.inference.emcee import sample_emcee, EmceeStrategy
 
@@ -48,13 +49,13 @@ def test_BaseModel_lnprior():
 
 
 class SimpleModel:
-    def __init__(self, x=None):
+    def __init__(self, x=prior.Uniform(0,1)):
         self._parameters = [x]
         self.parameters = {None:x}
 
     def lnposterior(self, par_vals, data, dummy):
         x = par_vals
-        return -((x-data)**2).sum()
+        return -((x[None]-data)**2).sum()
 
 data = np.array(.5)
 

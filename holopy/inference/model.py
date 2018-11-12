@@ -91,12 +91,19 @@ class BaseModel(HoloPyObject):
             if not constraint.check(tocheck):
                 return -np.inf
 
-        if isinstance(par_vals, dict):
-            return sum([p.lnprob(par_vals[p.name]) for p in self._parameters])
-        else:
-            return sum([p.lnprob(v) for p, v in zip(self._parameters, par_vals)])
+        return sum([p.lnprob(par_vals[p.name]) for p in self._parameters])
 
     def lnposterior(self, par_vals, data, pixels=None):
+        """
+        Compute the posterior probability of pars given data
+
+        Parameters
+        -----------
+        pars: dict(string, float)
+            Dictionary containing values for each parameter
+        data: xarray
+            The data to compute posterior against
+        """
         lnprior = self.lnprior(par_vals)
         # prior is sometimes used to forbid thing like negative radius
         # which will fail if you attempt to compute a hologram of, so
@@ -113,8 +120,6 @@ class BaseModel(HoloPyObject):
         raise NotImplementedError("Implement in subclass")
 
     def _prep_pars(self, pars, data):
-        if not isinstance(pars, dict):
-            pars = {par.name:val for par, val in zip(self._parameters, pars)}
         noise = dict_to_array(data, self.get_parameter('noise_sd', pars, data))
         if noise is None:
             if np.all([isinstance(par, Uniform) for par in self._parameters]):

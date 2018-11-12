@@ -126,9 +126,11 @@ def emcee_lnprobs_DataArray(sampler):
 
 def sample_emcee(model, data, nwalkers, nsamples, walker_initial_pos,
                  threads='auto', cleanup_threads=True, seed=None, new_pixels = None):
-    sampler = EnsembleSampler(nwalkers, len(model._parameters),
-                              model.lnposterior,
-                              threads=autothreads(threads), args=[data, new_pixels])
+    def obj_func(vals):
+        pars_dict = {par.name:val for par, val in zip(model._parameters, vals)}
+        return model.lnposterior(pars_dict, data, new_pixels)
+    sampler = EnsembleSampler(nwalkers, len(model._parameters), obj_func,
+                              threads=autothreads(threads))
     if seed is not None:
         np.random.seed(seed)
         seed_state = np.random.mtrand.RandomState(seed).get_state()

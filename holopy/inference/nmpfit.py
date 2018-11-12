@@ -114,9 +114,9 @@ class NmpfitStrategy(HoloPyObject):
             data = make_subset_data(data, self.random_subset)
 
         ignore_prior = np.all([isinstance(par, Uniform) for par in parameters])
-        ignore_prior = False
         if not ignore_prior:
-            guess_prior = 10 * model.lnprior([par.guess for par in parameters])
+            guess_prior = 10 * model.lnprior({par.name:par.guess 
+                                                        for par in parameters})
 
         def residual(par_vals):
             pars, noise = model._prep_pars(par_vals, data)
@@ -148,7 +148,7 @@ class NmpfitStrategy(HoloPyObject):
                      rsq(fitted, data), converged, time_stop - time_start,
                      model, self, minimizer_info)
 
-    def minimize(self, parameters, cost_func):
+    def minimize(self, parameters, obj_func):
       # marshall the parameters into a dict of the form nmpfit wants
         nmp_pars = []
         for par  in parameters:
@@ -181,7 +181,7 @@ class NmpfitStrategy(HoloPyObject):
 
         def resid_wrapper(p, fjac=None):
             status = 0
-            return [status, cost_func(self.pars_from_minimizer(parameters, p))]
+            return [status, obj_func(self.pars_from_minimizer(parameters, p))]
 
         # now fit it
         fitresult = nmpfit.mpfit(resid_wrapper, parinfo=nmp_pars, ftol = self.ftol,
