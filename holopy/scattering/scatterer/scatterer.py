@@ -221,7 +221,7 @@ class CenteredScatterer(Scatterer):
         # is the correct answer
         return dict(_expand_parameters(self._dict.items()))
 
-    def from_parameters(self, parameters):
+    def from_parameters(self, parameters, overwrite=False):
         """
         Create a Scatterer from a dictionary of parameters
 
@@ -230,18 +230,21 @@ class CenteredScatterer(Scatterer):
         parameters: dict
             Parameters for a scatterer.  This should be of the form returned by
             Scatterer.parameters.
-
+        overwrite: boolean
+            If true, all parameters in self are replaced with parameters. 
+            Otherwise only Prior objects are
         Returns
         -------
         scatterer: Scatterer class
-            A scatterer with the given parameter values replacing priors
+            A scatterer with the given parameter values
         """
         # This will need to be overriden for subclasses that do anything
         # complicated with parameters
         all_pars = copy(self.parameters)
         for key in all_pars.keys():
-            if key in parameters.keys() and not isinstance(all_pars[key], Number):
-                all_pars[key] = parameters[key]
+            if key in parameters.keys():
+                if not isinstance(all_pars[key], Number) or overwrite:
+                    all_pars[key] = parameters[key]
         return type(self)(**_interpret_parameters(all_pars))
 
     def select(self, keys):
