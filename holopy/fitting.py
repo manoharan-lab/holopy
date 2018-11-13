@@ -39,8 +39,8 @@ from holopy.core.metadata import get_values
 from holopy.core.utils import ensure_listlike
 from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering import calc_holo
-from holopy.scattering.errors import ParameterSpecificationError
-from holopy.inference.prior import Uniform, ComplexPrior
+from holopy.scattering.errors import ParameterSpecificationError, MissingParameter
+from holopy.inference.prior import Uniform, ComplexPrior, Prior
 from holopy.inference.model import AlphaModel, ExactModel, LimitOverlaps
 from holopy.inference.nmpfit import NmpfitStrategy
 from holopy.inference.result import UncertainValue, FitResult as RealFitResult
@@ -48,15 +48,15 @@ from holopy.inference.result import UncertainValue, FitResult as RealFitResult
 from holopy.core.math import chisq, rsq
 from holopy.core.metadata import make_subset_data
 
-def fit_warning(correct_obj):
+def fit_warning(correct_obj, obselete_obj):
         msg = "HoloPy's fitting API is deprecated. \
-        Use a {} object instead.".format(correct_obj)
+        Use a {} object instead of {}.".format(correct_obj, obselete_obj)
         warnings.warn(msg, UserWarning)
         pass
 
 class Parameter(HoloPyObject):
     def __new__(self,guess=None, limit=None, name=None, **kwargs):
-        fit_warning('hp.inference.prior')
+        fit_warning('hp.inference.prior', 'Parameter')
         if len(ensure_listlike(limit)) == 2:
             if limit[0] == limit[1]:
                 return Parameter(guess, limit[0])
@@ -77,17 +77,27 @@ class Parameter(HoloPyObject):
 
 class ComplexParameter(HoloPyObject):
     def __new__(self, real, imag, name=None):
-        fit_warning('hp.inference.prior.ComplexPrior')
-        return ComplexPrior(real, imag, name)
+        fit_warning('hp.inference.prior.ComplexPrior', 'ComplexParameter')
+        if isinstance(real, Prior) or isinstance(imag, Prior):
+            return ComplexPrior(real, imag, name)
+        else:
+            return real + 1.0j * imag
 
 class ParameterizedObject(HoloPyObject):
     def __new__(self, obj):
-        fit_warning('Scatterer')
+        fit_warning('Scatterer', 'ParameterizedObject')
+        setattr(obj, 'make_from', obj.from_parameters)
         return obj
+
+class Parametrization(HoloPyObject):
+    def __new__(self, scatclass, pars):
+        fit_warning('Scatterer', 'Parametrization')
+        return ParameterizedObject(scatclass(*pars))
+
 
 class limit_overlaps(HoloPyObject):
     def __new__(self, fraction=.1):
-        fit_warning('inference.model.LimitOverlaps')
+        fit_warning('inference.model.LimitOverlaps', 'limit_overlaps')
         return LimitOverlaps(fraction)
 
 class Model(HoloPyObject):
@@ -95,13 +105,13 @@ class Model(HoloPyObject):
                  illum_wavelen=None, illum_polarization=None, theory='auto',
                  alpha=None, constraints=[]):
         if calc_func is calc_holo:
-            fit_warning('hp.inference.AlphaModel')
+            fit_warning('hp.inference.AlphaModel', 'Model')
             if alpha is None:
                 alpha = 1.0
             model = AlphaModel(scatterer, None, alpha, medium_index,
                         illum_wavelen, illum_polarization, theory, constraints)
         elif alpha is None:
-            fit_warning('hp.inference.ExactModel')
+            fit_warning('hp.inference.ExactModel','Model')
             model = ExactModel(scatterer, calc_func, None, medium_index,
                         illum_wavelen, illum_polarization, theory, constraints)
         else:
@@ -112,15 +122,21 @@ class Model(HoloPyObject):
             return model._residuals(pars, data, 1/np.sqrt(2)).flatten()
         setattr(model, '_calc', model.forward)
         setattr(model, 'residual', residual)
+        def get_alpha(pars):
+            try:
+                return model.get_parameter('alpha', pars)
+            except MissingParameter:
+                return 1.0
+        setattr(model, 'get_alpha', get_alpha)
         return model
 
 class Nmpfit(HoloPyObject):
     def __new__(self, **kwargs):
-        fit_warning('hp.inference.NmpfitStrategy')
+        fit_warning('hp.inference.NmpfitStrategy', 'Nmpfit minimizer')
         return NmpfitStrategy(**kwargs)
 
 def fit(model, data, minimizer=None, random_subset=None):
-    fit_warning('hp.inference.NmpfitStrategy')
+    fit_warning('hp.inference.NmpfitStrategy', 'fit')
     if minimizer is None:
         minimizer = NmpfitStrategy()
     if random_subset is not None:
@@ -130,7 +146,7 @@ def fit(model, data, minimizer=None, random_subset=None):
 class FitResult(HoloPyObject):
     def __new__(self, parameters, scatterer, fitchisq, fitrsq, converged, time, model,
                  minimizer, minimization_details):
-        fit_warning('hp.inference.result.FitStrategy')
+        fit_warning('hp.inference.result.FitResult', 'FitResult')
         intervals = [UncertainValue(fitted_pars[par.name], diff, name=par.name)
                      for diff, par in zip(minimization_details.perror, parameters)]
         fit = RealFitResult(None, model, minimizer, intervals, None, minimization_details)
