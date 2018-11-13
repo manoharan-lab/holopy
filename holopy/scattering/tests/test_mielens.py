@@ -60,6 +60,21 @@ class TestMieLens(unittest.TestCase):
         self.assertTrue(holo is not None)
 
     @attr("fast")
+    def test_can_calculate_for_positive_and_negative_z(self):
+        theory = MieLens()
+        ka = 5.0
+        radius = ka * wavelen * 0.5 / np.pi
+        sphere_index = 1.59
+        is_ok = []
+        for kz in [-50., 0., 50.]:
+            center = (0, 0, kz * wavelen * 0.5 / np.pi)
+            this_sphere = Sphere(n=sphere_index, r=radius, center=center)
+            holo = calc_holo(xschema, this_sphere, index, wavelen,
+                             xpolarization, theory=theory)
+            is_ok.append(holo.data.ptp() > 0)
+        self.assertTrue(all(is_ok))
+
+    @attr("fast")
     def test_holopy_hologram_equal_to_exact_calculation(self):
         # Checks that phase shifts and wrappers for mielens are correct
         theory_mielens = MieLens()
