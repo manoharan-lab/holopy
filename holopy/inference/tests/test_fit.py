@@ -22,12 +22,13 @@ import numpy as np
 from nose.plugins.attrib import attr
 from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, assert_raises
 
-from ...scattering import Sphere, Spheres, LayeredSphere, Mie, calc_holo
-from ...core import detector_grid, load, save, update_metadata
-from ...core.process import normalize
-from .. import fit, Parameter, ComplexParameter, Model, limit_overlaps
-from ...core.tests.common import (assert_obj_close, get_example_data, assert_read_matches_write)
+from holopy.scattering import Sphere, Spheres, LayeredSphere, Mie, calc_holo
+from holopy.core import detector_grid, load, save, update_metadata
+from holopy.core.process import normalize
+from holopy.core.tests.common import (assert_obj_close, get_example_data, assert_read_matches_write)
 from holopy.scattering.errors import OverlapWarning
+from holopy.inference import LimitOverlaps, ExactModel, AlphaModel, NmpfitStrategy
+from holopy.inference.prior import ComplexPrior, Uniform
 
 gold_alpha = .6497
 
@@ -49,20 +50,20 @@ def fix_flat(result):
 def test_fit_mie_single():
     holo = normalize(get_example_data('image0001'))
 
-    parameters = [Parameter(name='x', guess=.567e-5, limit = [0.0, 1e-5]),
-                  Parameter(name='y', guess=.576e-5, limit = [0, 1e-5]),
-                  Parameter(name='z', guess=15e-6, limit = [1e-5, 2e-5]),
-                  Parameter(name='n', guess=1.59, limit = [1, 2]),
-                  Parameter(name='r', guess=8.5e-7, limit = [1e-8, 1e-5])]
+    parameters = [Uniform(0, 1e-5, name='x', guess=.567e-5),
+                  Uniform(0, 1e-5, name='y', guess=.576e-5),
+                  Uniform(1e-5, 2e-5, name='z', guess=15e-6),
+                  Uniform(1, 2, name='n', guess=1.59),
+                  Uniform(1e-8, 1e-5, name='r', guess=8.5e-7)]
 
     def make_scatterer(parlist):
         return Sphere(n=parlist[3], r = parlist[4], center = parlist[0:3])
 
     thry = Mie(False)
-    model = Model(make_scatterer(parameters), calc_holo, theory=thry,
-                  alpha=Parameter(name='alpha', guess=.6, limit = [.1, 1]))
+    model = AlphaModel(make_scatterer(parameters), theory=thry,
+                  alpha=Uniform(.1, 1, name='alpha', guess=.6))
 
-    result = fit(model, holo)
+    result = NmpfitStrategy().fit(model, holo)
 
     assert_obj_close(result.scatterer, gold_sphere, rtol = 1e-3)
     assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=3)
@@ -72,15 +73,15 @@ def test_fit_mie_single():
 def test_fit_mie_par_scatterer():
     holo = normalize(get_example_data('image0001'))
 
-    s = Sphere(center = (Parameter(guess=.567e-5, limit=[0,1e-5]),
-                         Parameter(.567e-5, (0, 1e-5)), Parameter(15e-6, (1e-5, 2e-5))),
-               r = Parameter(8.5e-7, (1e-8, 1e-5)),
-               n = ComplexParameter(Parameter(1.59, (1,2)), 1e-4))
+    s = Sphere(center = (Uniform(0, 1e-5, guess=.567e-5),
+                         Uniform(0, 1e-5, .567e-5), Uniform(1e-5, 2e-5)),
+               r = Uniform(1e-8, 1e-5, 8.5e-7),
+               n = ComplexPrior(Uniform(1, 2, 1.59), 1e-4))
 
     thry = Mie(False)
-    model = Model(s, calc_holo, theory=thry, alpha = Parameter(.6, [.1,1]))
+    model = AlphaModel(s, theory=thry, alpha = Uniform(.1, 1, .6))
 
-    result = fix_flat(fit(model, holo))
+    result = fix_flat(NmpfitStrategy().fit(model, holo))
     assert_obj_close(result.scatterer, gold_sphere, rtol=1e-3)
     # TODO: see if we can get this back to 3 sig figs correct alpha
     assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=3)
@@ -91,13 +92,14 @@ def test_fit_mie_par_scatterer():
 def test_fit_random_subset():
     holo = normalize(get_example_data('image0001'))
 
-    s = Sphere(center = (Parameter(guess=.567e-5, limit=[0,1e-5]),
-                         Parameter(.567e-5, (0, 1e-5)), Parameter(15e-6, (1e-5, 2e-5))),
-               r = Parameter(8.5e-7, (1e-8, 1e-5)), n = ComplexParameter(Parameter(1.59, (1,2)),1e-4))
+    s = Sphere(center = (Uniform(0, 1e-5, guess=.567e-5),
+                         Uniform(0, 1e-5, .567e-5), Uniform(1e-5, 2e-5)),
+               r = Uniform(1e-8, 1e-5, 8.5e-7),
+               n = ComplexPrior(Uniform(1, 2, 1.59), 1e-4))
 
-    model = Model(s, calc_holo, theory=Mie(False), alpha = Parameter(.6, [.1,1]))
+    model = AlphaModel(s, theory=Mie(False), alpha = Uniform(.1, 1, .6))
     np.random.seed(40)
-    result = fix_flat(fit(model, holo, random_subset=.1))
+    result = fix_flat(NmpfitStrategy(random_subset=.1).fit(model, holo))
 
     # TODO: this tolerance has to be rather large to pass, we should
     # probably track down if this is a sign of a problem
@@ -110,30 +112,30 @@ def test_fit_random_subset():
     assert_read_matches_write(result)
 
 def test_n():
-    sph = Sphere(Parameter(.5), 1.6, (5,5,5))
+    sph = Sphere(.5, 1.6, (5,5,5))
     sch = detector_grid(shape=[100, 100], spacing=[0.1, 0.1])
 
-    model = Model(sph, calc_holo, 1.33, .66, illum_polarization=(1, 0), alpha=1)
+    model = ExactModel(sph, calc_holo, medium_index=1.33, illum_wavelen=.66, illum_polarization=(1, 0))
     holo = calc_holo(sch, model.scatterer.guess, 1.33, .66, (1, 0))
-    assert_allclose(model.residual({'n' : .5}, holo), 0)
+    assert_allclose(model._residuals({'n' : .5}, holo, 1).sum(), 0)
 
 
 @attr('fast')
 def test_serialization():
-    par_s = Sphere(center = (Parameter(.567e-5, [0, 1e-5]), Parameter(.576e-6, [0, 1e-5]),
-                                                           Parameter(15e-6, [1e-5,
-                                                                       2e-5])),
-                   r = Parameter(8.5e-7, [1e-8, 1e-5]), n = Parameter(1.59, [1,2]))
+    par_s = Sphere(center = (Uniform(0, 1e-5, guess=.567e-5),
+                         Uniform(0, 1e-5, .567e-5), Uniform(1e-5, 2e-5)),
+               r = Uniform(1e-8, 1e-5, 8.5e-7),
+               n = Uniform(1, 2, 1.59))
 
-    alpha = Parameter(.6, [.1, 1], 'alpha')
+    alpha = Uniform(.1, 1, .6, 'alpha')
 
     schema = update_metadata(detector_grid(shape = 100, spacing = .1151e-6), illum_wavelen=.66e-6, medium_index=1.33, illum_polarization=(1,0))
 
-    model = Model(par_s, calc_func=calc_holo, medium_index=schema.medium_index, illum_wavelen=schema.illum_wavelen, alpha=alpha)
+    model = AlphaModel(par_s, medium_index=schema.medium_index, illum_wavelen=schema.illum_wavelen, alpha=alpha)
 
     holo = calc_holo(schema, model.scatterer.guess, scaling=model.alpha.guess)
 
-    result = fix_flat(fit(model, holo))
+    result = fix_flat(NmpfitStrategy().fit(model, holo))
     temp = tempfile.NamedTemporaryFile(suffix = '.h5', delete=False)
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
@@ -148,24 +150,24 @@ def test_integer_correctness():
     s = Sphere(center = (10.2, 9.8, 10.3), r = .5, n = 1.58)
     holo = calc_holo(schema, s, illum_wavelen = .660, medium_index = 1.33, illum_polarization = (1, 0))
 
-    par_s = Sphere(center = (Parameter(guess = 10, limit = [5,15]), Parameter(10, [5, 15]), Parameter(10, [5, 15])),
+    par_s = Sphere(center = (Uniform(5, 15, guess = 10), Uniform(5, 15, 10), Uniform(5, 15, 10)),
                    r = .5, n = 1.58)
 
-    model = Model(par_s, calc_holo, alpha = Parameter(.6, [.1, 1]))
-    result = fit(model, holo)
+    model = AlphaModel(par_s, alpha = Uniform(.1, 1, .6))
+    result = NmpfitStrategy().fit(model, holo)
     assert_allclose(result.scatterer.center, [10.2, 9.8, 10.3])
 
 def test_model_guess():
-    ps = Sphere(n=Parameter(1.59, [1.5,1.7]), r = .5, center=(5,5,5))
-    m = Model(ps, calc_holo)
+    ps = Sphere(n=Uniform(1.5, 1.7, 1.59), r = .5, center=(5,5,5))
+    m = ExactModel(ps, calc_holo)
     assert_obj_close(m.scatterer.guess, Sphere(n=1.59, r=0.5, center=[5, 5, 5]))
 
 def test_constraint():
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", OverlapWarning)
         spheres = Spheres([Sphere(r=.5, center=(0,0,0)),
-                           Sphere(r=.5, center=(0,0,Parameter(.2)))])
-        model = Model(spheres, calc_holo, constraints=limit_overlaps())
+                           Sphere(r=.5, center=(0,0,.2))])
+        model = ExactModel(spheres, calc_holo, constraints=LimitOverlaps())
         cost = model.lnprior({'1:Sphere.center[2]' : .2})
         assert_equal(cost, -np.inf)
 
@@ -174,7 +176,7 @@ def test_layered():
     sch = detector_grid((10, 10), .2)
     hs = calc_holo(sch, s, 1, .66, (1, 0))
 
-    guess = LayeredSphere((1,2), (Parameter(1.01), Parameter(.99)), (2, 2, 2))
-    model = Model(guess, calc_holo)
-    res = fit(model, hs)
+    guess = LayeredSphere((1,2), (Uniform(1, 1.01), Uniform(.99,1)), (2, 2, 2))
+    model = ExactModel(guess, calc_holo)
+    res = NmpfitStrategy().fit(model, hs)
     assert_allclose(res.scatterer.t, (1, 1), rtol = 1e-12)
