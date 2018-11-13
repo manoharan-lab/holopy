@@ -87,7 +87,14 @@ class Uniform(Prior):
             self._lnprob = -1/EPS # don't want -inf to add likelihood
 
         if guess is None:
-            self.guess = (upper_bound + lower_bound)/2
+            if np.isfinite(lower_bound) and np.isfinite(upper_bound):
+                self.guess = (upper_bound + lower_bound) / 2
+            elif np.isfinite(lower_bound):
+                self.guess = lower_bound
+            elif np.isfinite(upper_bound):
+                self.guess = upper_bound
+            else:
+                self.guess = 0
         elif guess < lower_bound or guess > upper_bound:
             raise ParameterSpecificationError(
                     "Guess {} is not within bounds {} and {}.".format(

@@ -19,4 +19,4 @@
 from .result import SamplingResult, TemperedSamplingResult, FitResult
 from .emcee import EmceeStrategy, TemperedStrategy
 from .nmpfit import NmpfitStrategy
-from .model import AlphaModel, ExactModel
+from .model import AlphaModel, ExactModel, LimitOverlaps

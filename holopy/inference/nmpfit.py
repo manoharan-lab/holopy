@@ -32,7 +32,7 @@ from holopy.core.metadata import flat, make_subset_data
 from holopy.core.math import chisq, rsq
 from holopy.inference.third_party import nmpfit
 from holopy.inference.prior import Uniform
-from holopy.scattering.errors import ParameterSpecificationError
+from holopy.scattering.errors import ParameterSpecificationError, MissingParameter
 from holopy.inference.result import FitResult, UncertainValue
 
 
@@ -107,6 +107,8 @@ class NmpfitStrategy(HoloPyObject):
         """
         time_start = time.time()
         parameters = model._parameters
+        if len(parameters) == 0:
+            raise MissingParameter('at least one parameter to fit')
 
         if self.random_subset is None:
             data = flat(data)

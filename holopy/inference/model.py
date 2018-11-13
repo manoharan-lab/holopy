@@ -210,6 +210,7 @@ class ExactModel(BaseModel):
                  illum_polarization=None, theory='auto', constraints=[]):
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
                          illum_polarization, theory, constraints)
+        self.calc_func = calc_func
 
     def forward(self, pars, detector):
         """
@@ -226,7 +227,7 @@ class ExactModel(BaseModel):
         """
         optics, scatterer = self._optics_scatterer(pars, detector)
         try:
-            return calc_func(detector, scatterer, theory=self.theory, **optics)
+            return self.calc_func(detector, scatterer, theory=self.theory, **optics)
         except (MultisphereFailure, InvalidScatterer):
             return -np.inf
 
