@@ -23,14 +23,17 @@ Test construction and manipulation of Scatterer objects.
 
 
 import numpy as np
+import xarray as xr
 from numpy.testing import assert_equal, assert_raises, assert_allclose
 from nose.plugins.attrib import attr
 
 from ...core import detector_grid
 from .. import Sphere, Scatterer, Ellipsoid, Scatterers, calc_holo
 from ..scatterer.ellipsoid import isnumber
-from ..scatterer.scatterer import find_bounds
+from ..scatterer.scatterer import find_bounds, _expand_parameters, _interpret_parameters
+from holopy.inference.prior import ComplexPrior
 from ..errors import InvalidScatterer, MissingParameter
+
 
 @attr('fast')
 def test_Sphere_construction():
@@ -91,16 +94,26 @@ def test_Sphere_construct_array():
 @attr('fast')
 def test_Sphere_parameters():
     s = Sphere(n = 1.59+1e-4j, r = 5e-7, center=(1e-6, -1e-6, 10e-6))
-    assert_equal(s.parameters, dict([('center[0]',
-    1e-6), ('center[1]', -1e-6), ('center[2]',
+    assert_equal(s.parameters, dict([('center.0',
+    1e-6), ('center.1', -1e-6), ('center.2',
     1e-5), ('n', 1.59+1e-4j), ('r',
     5e-07)]))
 
-    sp = Sphere().from_parameters(s.parameters)
+    sp = s.from_parameters(s.parameters)
     assert_equal(s.r, sp.r)
     assert_equal(s.n, sp.n)
     assert_equal(s.center, sp.center)
 
+def test_expand_parameters():
+    f = xr.DataArray([[11,12,13],[14,15,16]],dims=['d2','d3'],coords={'d3':['H','He','Li'],'d2':['Left','Right']})
+    compressed = {'a':0, 'b':[0.5, 1, 2], 'c':{'c1':3, 'c2':4}, 'd':ComplexPrior(5, 6), 'e':{'e1':ComplexPrior(7, 8), 'e2':[9,10]},'f':f}
+    expanded = {'a': 0, 'b.0':0.5, 'b.1':1, 'b.2':2, 'c_c1':3, 'c_c2':4, 'd.real':5, 'd.imag':6, 'e_e1.real':7, 'e_e1.imag':8, 'e_e2.0':9, 'e_e2.1':10, 'f_Left_H':11, 'f_Left_He':12, 'f_Left_Li':13, 'f_Right_H':14, 'f_Right_He':15, 'f_Right_Li':16}
+    assert_equal(dict(_expand_parameters(compressed.items())), expanded)
+
+    compressed['f'] = {'Left': {'H': 11, 'He': 12, 'Li': 13}, 'Right': {'H': 14, 'He': 15, 'Li': 16}}
+    compressed['d'] = compressed['d'].guess
+    compressed['e']['e1'] = compressed['e']['e1'].guess
+    assert_equal(_interpret_parameters(expanded), compressed)
 
 @attr('fast')
 def test_Composite_construction():

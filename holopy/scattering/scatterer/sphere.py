@@ -26,7 +26,7 @@ Defines Sphere, a scattering primitive
 import numpy as np
 from copy import copy
 
-from .scatterer import CenteredScatterer, Indicators, checkguess
+from .scatterer import CenteredScatterer, Indicators
 from ..errors import InvalidScatterer
 from ...core.utils import ensure_array, updated
 

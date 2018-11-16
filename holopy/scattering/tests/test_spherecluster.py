@@ -80,13 +80,13 @@ def test_Spheres_parameters():
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
     sc = Spheres(scatterers = [s1, s2])
 
-    assert_equal(sc.parameters, dict([('0:Sphere.center[0]',
-    1e-6), ('0:Sphere.center[1]', -1e-6),
-    ('0:Sphere.center[2]', 1.0e-05), ('0:Sphere.n', 1.59),  ('0:Sphere.r',
-    5e-07), ('1:Sphere.center[0]', 0), ('1:Sphere.center[1]', 0),
-    ('1:Sphere.center[2]', 0), ('1:Sphere.n', 1.59), ('1:Sphere.r', 1e-06)]))
+    assert_equal(sc.parameters, dict([('0:center.0',
+    1e-6), ('0:center.1', -1e-6),
+    ('0:center.2', 1.0e-05), ('0:n', 1.59),  ('0:r',
+    5e-07), ('1:center.0', 0), ('1:center.1', 0),
+    ('1:center.2', 0), ('1:n', 1.59), ('1:r', 1e-06)]))
 
-    sc2 = Spheres([]).from_parameters(sc.parameters)
+    sc2 = sc.from_parameters(sc.parameters)
 
     assert_equal(sc.scatterers[0].r, sc2.scatterers[0].r)
     assert_equal(sc.scatterers[1].r, sc2.scatterers[1].r)

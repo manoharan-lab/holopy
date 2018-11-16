@@ -26,9 +26,8 @@ as Clusters.
 '''
 
 
-from .scatterer import Scatterer, Indicators, checkguess
-from . import scatterer
-
+from .scatterer import (Scatterer, Indicators, _expand_parameters,
+                         _interpret_parameters)
 from .sphere import Sphere, LayeredSphere
 from .composite import Scatterers
 from .spherecluster import Spheres, RigidCluster

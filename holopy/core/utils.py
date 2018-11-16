@@ -123,7 +123,7 @@ def updated(d, update={}, filter_none=True, **kwargs):
     """
     d = copy(d)
     for key, val in itertools.chain(update.items(), kwargs.items()):
-        if val is not None:
+        if val is not None or filter_none is False:
             d[key] = val
 
     return d
