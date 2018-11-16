@@ -115,23 +115,12 @@ class NmpfitStrategy(HoloPyObject):
         else:
             data = make_subset_data(data, self.random_subset)
 
-        ignore_prior = np.all([isinstance(par, Uniform) for par in parameters])
-        if not ignore_prior:
-            guess_prior = 10 * model.lnprior({par.name:par.guess 
-                                                        for par in parameters})
-
+        guess_prior = model.lnprior({par.name:par.guess for par in parameters})
         def residual(par_vals):
             pars, noise = model._prep_pars(par_vals, data)
             residuals = model._residuals(par_vals, data, noise)
-            if not ignore_prior:
-                prior = model.lnprior(par_vals)
-                if prior > 0:
-                    prior = np.sqrt(prior)
-                elif prior < guess_prior:
-                    prior = 0
-                else:
-                    prior = np.sqrt(prior - 10 * guess_prior)
-                np.append(residuals, prior)
+            prior = np.sqrt(guess_prior - model.lnprior(par_vals))
+            np.append(residuals, prior)
             return residuals
 
         fitted_pars, minimizer_info = self.minimize(parameters, residual)
@@ -142,12 +131,13 @@ class NmpfitStrategy(HoloPyObject):
                                 may not be correct.")
         else:
             setattr(minimizer_info, 'converged', True)
-        d_time = time.time() - time_start
+
         perror = minimizer_info.perror
         if perror is None:
             perror = [0] * len(parameters)
         intervals = [UncertainValue(fitted_pars[par.name], diff, name=par.name)
                      for diff, par in zip(perror, parameters)]
+        d_time = time.time() - time_start
         return FitResult(data, model, self, intervals, d_time, minimizer_info)
 
     def minimize(self, parameters, obj_func):
