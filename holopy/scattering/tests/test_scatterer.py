@@ -110,7 +110,7 @@ def test_expand_parameters():
     expanded = {'a': 0, 'b.0':0.5, 'b.1':1, 'b.2':2, 'c_c1':3, 'c_c2':4, 'd.real':5, 'd.imag':6, 'e_e1.real':7, 'e_e1.imag':8, 'e_e2.0':9, 'e_e2.1':10, 'f_Left_H':11, 'f_Left_He':12, 'f_Left_Li':13, 'f_Right_H':14, 'f_Right_He':15, 'f_Right_Li':16}
     assert_equal(dict(_expand_parameters(compressed.items())), expanded)
 
-    compressed['f'] = {np.asscalar(coord1):{np.asscalar(coord2):np.asscalar(f.sel({f.dims[0]:coord1, f.dims[1]:coord2})) for coord2 in f.coords[f.dims[1]]} for coord1 in f.coords[f.dims[0]]}
+    compressed['f'] = {'Left': {'H': 11, 'He': 12, 'Li': 13}, 'Right': {'H': 14, 'He': 15, 'Li': 16}}
     compressed['d'] = compressed['d'].guess
     compressed['e']['e1'] = compressed['e']['e1'].guess
     assert_equal(_interpret_parameters(expanded), compressed)
