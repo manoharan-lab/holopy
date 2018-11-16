@@ -271,19 +271,11 @@ class ComplexPrior(Prior):
         try:
             imagprob = imag.lnprob(np.imag(p))
         except AttributeError:
-            iamgprob = 0
+            imagprob = 0
         return realprob + imagprob
 
     def prob(self, p):
-        try:
-            realprob = real.lnprob(np.real(p))
-        except AttributeError:
-            realprob = 1
-        try:
-            imagprob = imag.lnprob(np.imag(p))
-        except AttributeError:
-            iamgprob = 1
-        return realprob * imagprob
+        return np.exp(self.lnprob(p))
 
     def sample(self, size=None):
         def get_val(val):
