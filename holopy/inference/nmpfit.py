@@ -141,42 +141,14 @@ class NmpfitStrategy(HoloPyObject):
         return FitResult(data, model, self, intervals, d_time, minimizer_info)
 
     def minimize(self, parameters, obj_func):
-      # marshall the parameters into a dict of the form nmpfit wants
-        nmp_pars = []
-        for par  in parameters:
-            d = {'parname': par.name, 'value':par.scale(par.guess)}
-            d['limited'] = [False, False]
-            if hasattr(par, 'lower_bound') and par.lower_bound > -np.inf:
-                d['limited'][0] = True
-                d['limits'] = [par.scale(par.lower_bound)]
-            if hasattr(par, 'upper_bound') and par.upper_bound < np.inf:
-                d['limited'][1] = True
-                if 'limits' not in d.keys():
-                    d['limits']=[]
-                d['limits'].append(par.scale(par.upper_bound))
-
-            # Check for other allowed parinfo keys here: see nmpfit docs
-            allowed_keys = ['step', 'mpside', 'mpmaxstep']
-            if hasattr(par, 'kwargs'):
-                for key, value in par.kwargs.items():
-                    if key in allowed_keys:
-                        if key == 'mpside':
-                            d[key] = value
-                        else:
-                            d[key] = par.scale(value)
-                    else:
-                        raise ParameterSpecificationError("Parameter " + par.name +
-                                                      " contains kwargs that" +
-                                                      " are not supported by" +
-                                                      " nmpfit")
-            nmp_pars.append(d)
+        nmp_pars = [par.scale(par.guess) for par in parameters]
 
         def resid_wrapper(p, fjac=None):
             status = 0
             return [status, obj_func(self.pars_from_minimizer(parameters, p))]
 
         # now fit it
-        fitresult = nmpfit.mpfit(resid_wrapper, parinfo=nmp_pars, ftol = self.ftol,
+        fitresult = nmpfit.mpfit(resid_wrapper, xall=nmp_pars, ftol = self.ftol,
                                  xtol = self.xtol, gtol = self.gtol, damp = self.damp,
                                  maxiter = self.maxiter, quiet = self.quiet)
 
