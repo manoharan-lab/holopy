@@ -18,6 +18,7 @@
 
 import tempfile
 import warnings
+import unittest
 import numpy as np
 from nose.plugins.attrib import attr
 from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, assert_raises
@@ -25,9 +26,12 @@ from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, as
 from holopy.scattering import Sphere, Spheres, LayeredSphere, Mie, calc_holo
 from holopy.core import detector_grid, load, save, update_metadata
 from holopy.core.process import normalize
-from holopy.core.tests.common import (assert_obj_close, get_example_data, assert_read_matches_write)
+from holopy.core.tests.common import (
+    assert_obj_close, get_example_data, assert_read_matches_write)
 from holopy.scattering.errors import OverlapWarning
-from holopy.inference import LimitOverlaps, ExactModel, AlphaModel, NmpfitStrategy
+from holopy.inference import (
+    LimitOverlaps, ExactModel, AlphaModel, NmpfitStrategy,
+    LeastSquaresScipyStrategy)
 from holopy.inference.prior import ComplexPrior, Uniform
 
 gold_alpha = .6497
@@ -40,11 +44,74 @@ gold_sphere = Sphere(1.582+1e-4j, 6.484e-7,
 # random_subset=.99). This could be a sign of some deeper problem, so
 # it might be worth investigating - tgd 2014-09-18
 
+
+class TestLeastSquaresScipyStrategy(unittest.TestCase):
+    @attr("slow")
+    def test_fit_mie_par_scatterer(self):
+        holo = normalize(get_example_data('image0001'))
+        center_guess = [
+            Uniform(0, 1e-5, name='x', guess=.567e-5),
+            Uniform(0, 1e-5, name='y', guess=.576e-5),
+            Uniform(1e-5, 2e-5, name='z', guess=15e-6),
+            ]
+        scatterer = Sphere(
+            n=Uniform(1, 2, name='n', guess=1.59),
+            r=Uniform(1e-8, 1e-5, name='r', guess=8.5e-7),
+            center=center_guess)
+        alpha = Uniform(0.1, 1, name='alpha', guess=0.6)
+
+        theory = Mie(compute_escat_radial=False)
+        model = AlphaModel(scatterer, theory=theory, alpha=alpha)
+
+        fitter = LeastSquaresScipyStrategy()
+        result = fitter.fit(model, holo)
+        fitted = result.scatterer
+
+        self.assertTrue(np.isclose(fitted.n, gold_sphere.n, rtol=1e-3))
+        self.assertTrue(np.isclose(fitted.r, gold_sphere.r, rtol=1e-3))
+        self.assertTrue(
+            np.allclose(fitted.center, gold_sphere.center, rtol=1e-3))
+        self.assertTrue(
+            np.isclose(result.parameters['alpha'], gold_alpha, rtol=0.1))
+        self.assertEqual(model, result.model)
+
+    @attr('fast')
+    def test_fit_random_subset(self):
+        holo = normalize(get_example_data('image0001'))
+        center_guess = [
+            Uniform(0, 1e-5, name='x', guess=.567e-5),
+            Uniform(0, 1e-5, name='y', guess=.576e-5),
+            Uniform(1e-5, 2e-5, name='z', guess=15e-6),
+            ]
+        scatterer = Sphere(
+            n=Uniform(1, 2, name='n', guess=1.59),
+            r=Uniform(1e-8, 1e-5, name='r', guess=8.5e-7),
+            center=center_guess)
+        alpha = Uniform(0.1, 1, name='alpha', guess=0.6)
+
+        theory = Mie(compute_escat_radial=False)
+        model = AlphaModel(scatterer, theory=theory, alpha=alpha)
+
+        np.random.seed(40)
+        fitter = LeastSquaresScipyStrategy(random_subset=0.1)
+        result = fix_flat(fitter.fit(model, holo))
+        fitted = result.scatterer
+
+        self.assertTrue(np.isclose(fitted.n, gold_sphere.n, rtol=1e-2))
+        self.assertTrue(np.isclose(fitted.r, gold_sphere.r, rtol=1e-2))
+        self.assertTrue(
+            np.allclose(fitted.center, gold_sphere.center, rtol=1e-2))
+        self.assertTrue(
+            np.isclose(result.parameters['alpha'], gold_alpha, rtol=0.1))
+        self.assertEqual(model, result.model)
+
+
 def fix_flat(result):
     if 'flat' in result.data.coords:
         result.data = result.data.rename({'flat': 'point'})
         result.data['point'].values = np.arange(len(result.data.point))
     return result
+
 
 @attr('slow')
 def test_fit_mie_single():
@@ -69,6 +136,7 @@ def test_fit_mie_single():
     assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=3)
     assert_equal(model, result.model)
 
+
 @attr('slow')
 def test_fit_mie_par_scatterer():
     holo = normalize(get_example_data('image0001'))
@@ -87,6 +155,7 @@ def test_fit_mie_par_scatterer():
     assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=3)
     assert_equal(model, result.model)
     assert_read_matches_write(result)
+
 
 @attr('fast')
 def test_fit_random_subset():
@@ -110,6 +179,7 @@ def test_fit_random_subset():
     assert_equal(model, result.model)
 
     assert_read_matches_write(result)
+
 
 def test_n():
     sph = Sphere(.5, 1.6, (5,5,5))
@@ -157,10 +227,12 @@ def test_integer_correctness():
     result = NmpfitStrategy().fit(model, holo)
     assert_allclose(result.scatterer.center, [10.2, 9.8, 10.3])
 
+
 def test_model_guess():
     ps = Sphere(n=Uniform(1.5, 1.7, 1.59), r = .5, center=(5,5,5))
     m = ExactModel(ps, calc_holo)
     assert_obj_close(m.scatterer.guess, Sphere(n=1.59, r=0.5, center=[5, 5, 5]))
+
 
 def test_constraint():
     with warnings.catch_warnings():
@@ -171,6 +243,7 @@ def test_constraint():
         cost = model.lnprior({'1:Sphere.center[2]' : .2})
         assert_equal(cost, -np.inf)
 
+
 def test_layered():
     s = Sphere(n = (1,2), r = (1, 2), center = (2, 2, 2))
     sch = detector_grid((10, 10), .2)
@@ -180,3 +253,7 @@ def test_layered():
     model = ExactModel(guess, calc_holo)
     res = NmpfitStrategy().fit(model, hs)
     assert_allclose(res.scatterer.t, (1, 1), rtol = 1e-12)
+
+
+if __name__ == '__main__':
+    unittest.main()
