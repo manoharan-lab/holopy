@@ -39,6 +39,7 @@ from holopy.core.utils import dict_without, ensure_array
 warn_text = 'Loading a legacy (pre-3.3) HoloPy file. Please \
                             save a new copy to ensure future compatibility'
 
+
 def get_strategy(strategy):
     try:
         return yaml.load(strategy)
@@ -72,7 +73,7 @@ class InferenceResult(HoloPyObject):
 
     @property
     def parameters(self):
-        return {name:val for name, val in zip(self._names, self.guess)}
+        return {name: val for name, val in zip(self._names, self.guess)}
 
     @property
     def scatterer(self):
@@ -91,11 +92,11 @@ class InferenceResult(HoloPyObject):
         y = original_dims['y']
         shape = (len(x), len(y))
         spacing = (np.diff(x)[0], np.diff(y)[0])
-        extra_dims = dict_without(original_dims,['x', 'y', 'z'])
-        schema = detector_grid(shape, spacing, extra_dims = extra_dims)
+        extra_dims = dict_without(original_dims, ['x', 'y', 'z'])
+        schema = detector_grid(shape, spacing, extra_dims=extra_dims)
         schema = copy_metadata(self.data, schema, do_coords=False)
-        schema['x']=x
-        schema['y']=y
+        schema['x'] = x
+        schema['y'] = y
         self._best_fit = self.model.forward(self.parameters(), schema)
         return self.best_fit()
 
@@ -119,7 +120,7 @@ class InferenceResult(HoloPyObject):
         ds_attrs = ['model', 'strategy', 'intervals', 'time', '_source_class']
         for attr_name in ds_attrs:
             attr = getattr(self, attr_name)
-            if isinstance(attr, HoloPyObject) or (isinstance(attr,list) and 
+            if isinstance(attr, HoloPyObject) or (isinstance(attr,list) and
                                             isinstance(attr[0],HoloPyObject)):
                 attr = yaml.dump(attr)
             ds.attrs[attr_name] = str(attr)
@@ -169,6 +170,7 @@ class FitResult(InferenceResult):
         args.append(yaml.load(ds.attrs['mpfit_details']))
         return args
 
+
 class SamplingResult(InferenceResult):
     def __init__(self, data, model, strategy, time, lnprobs, samples):
         self.samples = samples
@@ -214,10 +216,11 @@ class SamplingResult(InferenceResult):
         del args[3] # intervals
         return args + [ds.lnprobs, ds.samples]
 
+
 GROUPNAME = 'stage_results[{}]'
 class TemperedSamplingResult(SamplingResult):
     def __init__(self, end_result, stage_results, strategy, time):
-        super().__init__(end_result.data, end_result.model, strategy, time, 
+        super().__init__(end_result.data, end_result.model, strategy, time,
                         end_result.lnprobs, end_result.samples)
         self.stage_results = stage_results
 
@@ -239,6 +242,7 @@ class TemperedSamplingResult(SamplingResult):
         stages = [SamplingResult._load(filename, group=GROUPNAME.format(i))
                         for i in range(len(ds.strategy.stage_strategies)-1)]
         return cls(ds, stages, ds.strategy, ds.time)
+
 
 class UncertainValue(HoloPyObject):
     """
