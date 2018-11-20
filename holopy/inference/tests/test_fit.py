@@ -46,6 +46,7 @@ gold_sphere = Sphere(1.582+1e-4j, 6.484e-7,
 
 
 class TestLevenbergMarquardtStrategy(unittest.TestCase):
+    @attr("slow")
     def test_fit_mie_par_scatterer(self):
         holo = normalize(get_example_data('image0001'))
         center_guess = [
@@ -70,6 +71,36 @@ class TestLevenbergMarquardtStrategy(unittest.TestCase):
         self.assertTrue(np.isclose(fitted.r, gold_sphere.r, rtol=1e-3))
         self.assertTrue(
             np.allclose(fitted.center, gold_sphere.center, rtol=1e-3))
+        self.assertTrue(
+            np.isclose(result.parameters['alpha'], gold_alpha, rtol=0.1))
+        self.assertEqual(model, result.model)
+
+    @attr('fast')
+    def test_fit_random_subset(self):
+        holo = normalize(get_example_data('image0001'))
+        center_guess = [
+            Uniform(0, 1e-5, name='x', guess=.567e-5),
+            Uniform(0, 1e-5, name='y', guess=.576e-5),
+            Uniform(1e-5, 2e-5, name='z', guess=15e-6),
+            ]
+        scatterer = Sphere(
+            n=Uniform(1, 2, name='n', guess=1.59),
+            r=Uniform(1e-8, 1e-5, name='r', guess=8.5e-7),
+            center=center_guess)
+        alpha = Uniform(0.1, 1, name='alpha', guess=0.6)
+
+        theory = Mie(compute_escat_radial=False)
+        model = AlphaModel(scatterer, theory=theory, alpha=alpha)
+
+        np.random.seed(40)
+        fitter = LevenbergMarquardtStrategy(random_subset=0.1)
+        result = fix_flat(fitter.fit(model, holo))
+        fitted = result.scatterer
+
+        self.assertTrue(np.isclose(fitted.n, gold_sphere.n, rtol=1e-2))
+        self.assertTrue(np.isclose(fitted.r, gold_sphere.r, rtol=1e-2))
+        self.assertTrue(
+            np.allclose(fitted.center, gold_sphere.center, rtol=1e-2))
         self.assertTrue(
             np.isclose(result.parameters['alpha'], gold_alpha, rtol=0.1))
         self.assertEqual(model, result.model)
