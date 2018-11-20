@@ -31,11 +31,11 @@ class LevenbergMarquardtStrategy(HoloPyObject):
             'method': 'lm',  # FIXME
             'loss': 'linear',
             }
-        pass
 
-    def pars_from_minimizer(self, parameters, values):
+    def unscale_pars_from_minimizer(self, parameters, values):
         assert len(parameters) == len(values)
-        return {par.name: par.unscale(value) for par, value in zip(parameters, values)}
+        return {par.name: par.unscale(value)
+                for par, value in zip(parameters, values)}
 
     def fit(self, model, data):
         """
@@ -56,6 +56,7 @@ class LevenbergMarquardtStrategy(HoloPyObject):
         """
         # timing decorator...
         time_start = time.time()
+
         parameters = model._parameters
         if len(parameters) == 0:
             raise MissingParameter('at least one parameter to fit')
@@ -64,22 +65,23 @@ class LevenbergMarquardtStrategy(HoloPyObject):
             data = flat(data)
         else:
             data = make_subset_data(data, self.random_subset)
-
         guess_prior = model.lnprior({par.name:par.guess for par in parameters})
-        def residual(par_vals):
-            pars, noise = model._prep_pars(par_vals, data)
-            residuals = model._residuals(par_vals, data, noise)
-            prior = np.sqrt(guess_prior - model.lnprior(par_vals))
+
+        def residual(rescaled_values):
+            nscaled_values = self.unscale_pars_from_minimizer(
+                parameters, rescaled_values)
+            pars, noise = model._prep_pars(unscaled_values, data)
+            residuals = model._residuals(unscaled_values, data, noise)
+            prior = np.sqrt(guess_prior - model.lnprior(unscaled_values))
             np.append(residuals, prior)
             return residuals
 
         # The only work here
         fitted_pars, minimizer_info = self.minimize(parameters, residual)
-        # ~~~
+
         if not minimizer_info.success:
             warnings.warn("Minimizer Convergence Failed, your results \
                                 may not be correct.")
-
         perrors = self._estimate_error_from_fit(minimizer_info, data.size)
         assert len(parameters) == perrors.size
         intervals = [UncertainValue(fitted_pars[par.name], err, name=par.name)
@@ -88,16 +90,11 @@ class LevenbergMarquardtStrategy(HoloPyObject):
         d_time = time.time() - time_start
         return FitResult(data, model, self, intervals, d_time, minimizer_info)
 
-    def minimize(self, parameters, obj_func):
+    def minimize(self, parameters, residuals_function):
         initial_parameter_guess = [par.scale(par.guess) for par in parameters]
-
-        def resid_wrapper(p):
-            return obj_func(self.pars_from_minimizer(parameters, p))
-
-        # now fit it
-        fitresult = least_squares(
-            resid_wrapper, initial_parameter_guess, **self._optimizer_kwargs)
-        result_pars = self.pars_from_minimizer(parameters, fitresult.x)
+        fitresult = least_squares(residuals_function, initial_parameter_guess,
+                                  **self._optimizer_kwargs)
+        result_pars = self.unscale_pars_from_minimizer(parameters, fitresult.x)
         return result_pars, fitresult
 
     def _estimate_error_from_fit(self, minimizer_info, n_data_points):
