@@ -14,7 +14,7 @@ from holopy.scattering.errors import  MissingParameter
 from holopy.inference.result import FitResult, UncertainValue
 
 
-class LevenbergMarquardtStrategy(HoloPyObject):
+class LeastSquaresScipyStrategy(HoloPyObject):
     def __init__(self, ftol=1e-10, xtol=1e-10, gtol=1e-10, max_nfev=None,
                  random_subset=None):
         self.ftol = ftol

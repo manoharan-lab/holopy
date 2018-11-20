@@ -31,7 +31,7 @@ from holopy.core.tests.common import (
 from holopy.scattering.errors import OverlapWarning
 from holopy.inference import (
     LimitOverlaps, ExactModel, AlphaModel, NmpfitStrategy,
-    LevenbergMarquardtStrategy)
+    LeastSquaresScipyStrategy)
 from holopy.inference.prior import ComplexPrior, Uniform
 
 gold_alpha = .6497
@@ -45,7 +45,7 @@ gold_sphere = Sphere(1.582+1e-4j, 6.484e-7,
 # it might be worth investigating - tgd 2014-09-18
 
 
-class TestLevenbergMarquardtStrategy(unittest.TestCase):
+class TestLeastSquaresScipyStrategy(unittest.TestCase):
     @attr("slow")
     def test_fit_mie_par_scatterer(self):
         holo = normalize(get_example_data('image0001'))
@@ -63,7 +63,7 @@ class TestLevenbergMarquardtStrategy(unittest.TestCase):
         theory = Mie(compute_escat_radial=False)
         model = AlphaModel(scatterer, theory=theory, alpha=alpha)
 
-        fitter = LevenbergMarquardtStrategy()
+        fitter = LeastSquaresScipyStrategy()
         result = fitter.fit(model, holo)
         fitted = result.scatterer
 
@@ -93,7 +93,7 @@ class TestLevenbergMarquardtStrategy(unittest.TestCase):
         model = AlphaModel(scatterer, theory=theory, alpha=alpha)
 
         np.random.seed(40)
-        fitter = LevenbergMarquardtStrategy(random_subset=0.1)
+        fitter = LeastSquaresScipyStrategy(random_subset=0.1)
         result = fix_flat(fitter.fit(model, holo))
         fitted = result.scatterer
 
