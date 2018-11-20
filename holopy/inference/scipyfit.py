@@ -68,7 +68,7 @@ class LevenbergMarquardtStrategy(HoloPyObject):
         guess_prior = model.lnprior({par.name:par.guess for par in parameters})
 
         def residual(rescaled_values):
-            nscaled_values = self.unscale_pars_from_minimizer(
+            unscaled_values = self.unscale_pars_from_minimizer(
                 parameters, rescaled_values)
             pars, noise = model._prep_pars(unscaled_values, data)
             residuals = model._residuals(unscaled_values, data, noise)
