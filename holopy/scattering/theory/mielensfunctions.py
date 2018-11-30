@@ -147,13 +147,13 @@ class MieLensCalculator(object):
         shape = phi.shape
         # 2. Evaluate the integrals:
         i_10 = np.reshape(
-            self._eval_mielens_i_ij(krho, self._f1_values, j=0), shape)
+            self._eval_mielens_i_ij(krho, self._scat_s_values, j=0), shape)
         i_12 = np.reshape(
-            self._eval_mielens_i_ij(krho, self._f1_values, j=2), shape)
+            self._eval_mielens_i_ij(krho, self._scat_s_values, j=2), shape)
         i_20 = np.reshape(
-            self._eval_mielens_i_ij(krho, self._f2_values, j=0), shape)
+            self._eval_mielens_i_ij(krho, self._scat_p_values, j=0), shape)
         i_22 = np.reshape(
-            self._eval_mielens_i_ij(krho, self._f2_values, j=2), shape)
+            self._eval_mielens_i_ij(krho, self._scat_p_values, j=2), shape)
         # 3. Sum for the field:
         c2p = np.cos(2 * phi)
         s2p = np.sin(2 * phi)
@@ -165,12 +165,12 @@ class MieLensCalculator(object):
         kwargs = {'index_ratio': self.index_ratio,
                   'size_parameter': self.size_parameter,
                   }
-        f1_evaluator = FarfieldMieEvaluator(i=1, lazy=True, **kwargs)
-        f2_evaluator = FarfieldMieEvaluator(i=2, lazy=True, **kwargs)
-        self._f1_values = np.reshape(
-            f1_evaluator._eval(self._theta_pts), (-1, 1))
-        self._f2_values = np.reshape(
-            f2_evaluator._eval(self._theta_pts), (-1, 1))
+        scat_s_evaluator = FarfieldMieEvaluator(s_or_p=1, lazy=True, **kwargs)
+        scat_p_evaluator = FarfieldMieEvaluator(s_or_p=2, lazy=True, **kwargs)
+        self._scat_s_values = np.reshape(
+            scat_s_evaluator._eval(self._theta_pts), (-1, 1))
+        self._scat_p_values = np.reshape(
+            scat_p_evaluator._eval(self._theta_pts), (-1, 1))
 
     def _eval_mielens_i_ij(self, krho, fi_values, j=0):
         """Calculates one of several similar integrals over the lens
@@ -241,8 +241,8 @@ class MieLensCalculator(object):
 
 
 class FarfieldMieEvaluator(object):
-    def __init__(self, i=1, index_ratio=1.1, size_parameter=1.0, max_l=None,
-                 npts=None, lazy=False):
+    def __init__(self, s_or_p=1, index_ratio=1.1, size_parameter=1.0,
+                 max_l=None, npts=None, lazy=False):
         """Interpolators for some derived Mie scattering functions, as
         defined in the module docstring.
 
@@ -251,8 +251,10 @@ class FarfieldMieEvaluator(object):
 
         Parameters
         ----------
-        i : {1, 2}
-            Which interpolator to use. i=1 is sin(phi), i=2 is cos(phi)
+        s_or_p : {1, 2}
+            Whether to calculate the S or P scattering matrices.
+            i=1 is S / perpendicular / ~sin(phi),
+            i=2 is P / parallel      / ~cos(phi)
         index_ratio : float
             Index contrast of the particle.
         size_parameter : float
@@ -263,7 +265,7 @@ class FarfieldMieEvaluator(object):
             Whether or not to set up the interpolator right away or
             to wait until it is called.
         """
-        self.i = i
+        self.s_or_p = s_or_p
         self.index_ratio = index_ratio
         self.size_parameter = size_parameter
         self.max_l = self._default_max_l() if max_l is None else max_l
@@ -302,9 +304,9 @@ class FarfieldMieEvaluator(object):
         als_bls = [calculate_al_bl(self.index_ratio, self.size_parameter, l)
                    for l in range(1, self.max_l + 1)]
         als, bls = [np.array(i) for i in zip(*als_bls)]
-        if self.i == 1:
+        if self.s_or_p == 1:
             ans = np.sum(coeffs * (bls * tauls + als * pils), axis=1)
-        elif self.i == 2:
+        elif self.s_or_p == 2:
             ans = np.sum(coeffs * (als * tauls + bls * pils), axis=1)
         if np.isnan(ans).any():
             raise RuntimeError('nan for this value of theta, ka, max_l')
