@@ -227,7 +227,7 @@ class TestFarfieldMieEvaluator(unittest.TestCase):
     @attr("fast")
     def test_interpolator_1_accuracy(self):
         theta = np.linspace(0, 1.5, 1000)
-        interpolator = mielensfunctions.FarfieldMieEvaluator(i=1)
+        interpolator = mielensfunctions.FarfieldMieEvaluator(s_or_p=1)
 
         exact = interpolator._eval(theta)
         approx = interpolator(theta)
@@ -239,7 +239,7 @@ class TestFarfieldMieEvaluator(unittest.TestCase):
     @attr("fast")
     def test_interpolator_2_accuracy(self):
         theta = np.linspace(0, 1.5, 1000)
-        interpolator = mielensfunctions.FarfieldMieEvaluator(i=2)
+        interpolator = mielensfunctions.FarfieldMieEvaluator(s_or_p=2)
 
         exact = interpolator._eval(theta)
         approx = interpolator(theta)
@@ -251,11 +251,11 @@ class TestFarfieldMieEvaluator(unittest.TestCase):
     @attr("fast")
     def test_interpolator_maxl_accuracy(self):
         theta = np.linspace(0, 1.5, 1000)
-        interpolator_low_l = mielensfunctions.FarfieldMieEvaluator(i=1)
+        interpolator_low_l = mielensfunctions.FarfieldMieEvaluator(s_or_p=1)
 
         higher_l = np.ceil(interpolator_low_l.size_parameter * 8).astype('int')
         interpolator_higher_l = mielensfunctions.FarfieldMieEvaluator(
-            i=1, max_l=higher_l)
+            s_or_p=1, max_l=higher_l)
 
         exact = interpolator_low_l._eval(theta)
         approx = interpolator_higher_l._eval(theta)

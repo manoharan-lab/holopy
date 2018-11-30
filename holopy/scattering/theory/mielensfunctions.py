@@ -75,7 +75,7 @@ class MieLensCalculator(object):
         self._sintheta_pts = np.sin(self._theta_pts).reshape(-1, 1)
         self._quad_wts = quad_wts.reshape(-1, 1)
 
-        self._precompute_fi()
+        self._precompute_scattering_matrices()
 
     def calculate_scattered_field(self, krho, phi):
         """Calculates the field from a Mie scatterer imaged through a
@@ -145,50 +145,38 @@ class MieLensCalculator(object):
 
     def _calculate_scattered_field(self, krho, phi):
         shape = phi.shape
-        # 2. Evaluate the integrals:
-        i_10 = np.reshape(
-            self._eval_mielens_i_ij(krho, self._f1_values, j=0), shape)
-        i_12 = np.reshape(
-            self._eval_mielens_i_ij(krho, self._f1_values, j=2), shape)
-        i_20 = np.reshape(
-            self._eval_mielens_i_ij(krho, self._f2_values, j=0), shape)
-        i_22 = np.reshape(
-            self._eval_mielens_i_ij(krho, self._f2_values, j=2), shape)
-        # 3. Sum for the field:
+        i_0 = np.reshape(self._eval_mielens_i_n(krho, n=0), shape)
+        i_2 = np.reshape(self._eval_mielens_i_n(krho, n=2), shape)
         c2p = np.cos(2 * phi)
         s2p = np.sin(2 * phi)
-        field_xcomp = 0.25 * (i_10 + i_20 - (i_12 - i_22) * c2p)
-        field_ycomp = 0.25 * (i_12 - i_22) * s2p
+        field_xcomp = 0.25 * (i_0 - i_2 * c2p)
+        field_ycomp = 0.25 * i_2 * s2p
         return field_xcomp, field_ycomp
 
-    def _precompute_fi(self):
+    def _precompute_scattering_matrices(self):
         kwargs = {'index_ratio': self.index_ratio,
                   'size_parameter': self.size_parameter,
                   }
-        f1_evaluator = FarfieldMieEvaluator(i=1, lazy=True, **kwargs)
-        f2_evaluator = FarfieldMieEvaluator(i=2, lazy=True, **kwargs)
-        self._f1_values = np.reshape(
-            f1_evaluator._eval(self._theta_pts), (-1, 1))
-        self._f2_values = np.reshape(
-            f2_evaluator._eval(self._theta_pts), (-1, 1))
+        scat_s_evaluator = FarfieldMieEvaluator(s_or_p=1, lazy=True, **kwargs)
+        scat_p_evaluator = FarfieldMieEvaluator(s_or_p=2, lazy=True, **kwargs)
+        self._scat_s_values = np.reshape(
+            scat_s_evaluator._eval(self._theta_pts), (-1, 1))
+        self._scat_p_values = np.reshape(
+            scat_p_evaluator._eval(self._theta_pts), (-1, 1))
 
-    def _eval_mielens_i_ij(self, krho, fi_values, j=0):
+    def _eval_mielens_i_n(self, krho, n=0):
         """Calculates one of several similar integrals over the lens
         pupil which appear in the Mie + lens calculations
 
-        This should only be called by `self.calculate_scattered_field`
+        This should only be called by `self._calculate_scattered_field`
 
         Parameters
         ----------
         krho : numpy.ndarray
             The rho values to evaluate the integrals at, in units of 1/k.
-        fi_values : numpy.ndarray
-            The values of the far-field Mie solutions, as precomputed
-            by `self._precompute_fi`
-        j : {0, 2}, optional
-            The integers which determine which Bessel function
-            the Mie fields to evaluate. Default is 0; should always be
-            passed though.
+        n : {0, 2}, optional
+            Which integral to evaluate; 0 for S + P, 2 for S - P.
+            Default is 0; should always be passed though.
 
         Returns
         -------
@@ -201,35 +189,34 @@ class MieLensCalculator(object):
             interpolate_integrals = n_interp_pnts < 1.1 * n_krho_pts
         else:
             interpolate_integrals = self.interpolate_integrals is True
-
         if interpolate_integrals:
-            i_ij = self._interpolate_and_eval_mielens_i_ij(krho, fi_values, j)
+            i_n = self._interpolate_and_eval_mielens_i_n(krho, n)
         else:
-            i_ij = self._direct_eval_mielens_i_ij(krho, fi_values, j)
+            i_n = self._direct_eval_mielens_i_n(krho, n)
+        return i_n
 
-        return i_ij
-
-    def _direct_eval_mielens_i_ij(self, krho, fi_values, j=0):
-        if j == 0:
+    def _direct_eval_mielens_i_n(self, krho, n=0):
+        if n == 0:
             ji = j0
-        elif j == 2:
+            scatmatrix_values = self._scat_s_values + self._scat_p_values
+        elif n == 2:
             ji = j2
+            scatmatrix_values = self._scat_s_values - self._scat_p_values
         else:
-            raise ValueError('j must be one of {0, 2}')
+            raise ValueError('n must be one of {0, 2}')
         # We do the integral with the change of variables x = cos(theta),
         # from cos(lens_angle) to 1.0:
         # Placing things in order [quadrature points, rho-z values]
         rr = krho.reshape(1, -1)
         integrand = (np.exp(-1j * self.particle_kz * (self._quad_pts - 1)) *
-                     fi_values * ji(rr * self._sintheta_pts))
+                     scatmatrix_values * ji(rr * self._sintheta_pts))
         answer_flat = np.sum(integrand * self._quad_wts, axis=0)
         return answer_flat.reshape(krho.shape)
 
-    def _interpolate_and_eval_mielens_i_ij(self, krho, fi_values, j=0):
+    def _interpolate_and_eval_mielens_i_n(self, krho, n=0):
         spacing = self.interpolation_spacing
         interp_pts = np.arange(krho.min(), krho.max() + 5 * spacing, spacing)
-        interp_vals = self._direct_eval_mielens_i_ij(
-            interp_pts, fi_values, j=j)
+        interp_vals = self._direct_eval_mielens_i_n(interp_pts, n=n)
         interpolator = interpolate.CubicSpline(interp_pts, interp_vals)
         return interpolator(krho)
 
@@ -241,8 +228,8 @@ class MieLensCalculator(object):
 
 
 class FarfieldMieEvaluator(object):
-    def __init__(self, i=1, index_ratio=1.1, size_parameter=1.0, max_l=None,
-                 npts=None, lazy=False):
+    def __init__(self, s_or_p=1, index_ratio=1.1, size_parameter=1.0,
+                 max_l=None, npts=None, lazy=False):
         """Interpolators for some derived Mie scattering functions, as
         defined in the module docstring.
 
@@ -251,8 +238,10 @@ class FarfieldMieEvaluator(object):
 
         Parameters
         ----------
-        i : {1, 2}
-            Which interpolator to use. i=1 is sin(phi), i=2 is cos(phi)
+        s_or_p : {1, 2}
+            Whether to calculate the S or P scattering matrices.
+            i=1 is S / perpendicular / ~sin(phi),
+            i=2 is P / parallel      / ~cos(phi)
         index_ratio : float
             Index contrast of the particle.
         size_parameter : float
@@ -263,7 +252,7 @@ class FarfieldMieEvaluator(object):
             Whether or not to set up the interpolator right away or
             to wait until it is called.
         """
-        self.i = i
+        self.s_or_p = s_or_p
         self.index_ratio = index_ratio
         self.size_parameter = size_parameter
         self.max_l = self._default_max_l() if max_l is None else max_l
@@ -302,9 +291,9 @@ class FarfieldMieEvaluator(object):
         als_bls = [calculate_al_bl(self.index_ratio, self.size_parameter, l)
                    for l in range(1, self.max_l + 1)]
         als, bls = [np.array(i) for i in zip(*als_bls)]
-        if self.i == 1:
+        if self.s_or_p == 1:
             ans = np.sum(coeffs * (bls * tauls + als * pils), axis=1)
-        elif self.i == 2:
+        elif self.s_or_p == 2:
             ans = np.sum(coeffs * (als * tauls + bls * pils), axis=1)
         if np.isnan(ans).any():
             raise RuntimeError('nan for this value of theta, ka, max_l')
