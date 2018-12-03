@@ -270,7 +270,7 @@ class CenteredScatterer(Scatterer):
                     params[key] = [params[key][dimkey] 
                                 for dimkey in ensure_array(dimkeys)]
                     if len(params[key])==1:
-                        params[key] = params[key[0]]
+                        params[key] = params[key][0]
         return type(self)(**params)
 
 def _interpret_parameters(raw_pars):

@@ -70,7 +70,7 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         def residual(rescaled_values):
             unscaled_values = self.unscale_pars_from_minimizer(
                 parameters, rescaled_values)
-            pars, noise = model._prep_pars(unscaled_values, data)
+            noise = model.find_noise(unscaled_values, data)
             residuals = model._residuals(unscaled_values, data, noise)
             prior = np.sqrt(guess_prior - model.lnprior(unscaled_values))
             np.append(residuals, prior)

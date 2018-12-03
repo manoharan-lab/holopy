@@ -97,8 +97,8 @@ class InferenceResult(HoloPyObject):
         schema = copy_metadata(self.data, schema, do_coords=False)
         schema['x'] = x
         schema['y'] = y
-        self._best_fit = self.model.forward(self.parameters(), schema)
-        return self.best_fit()
+        self._best_fit = self.model.forward(self.parameters, schema)
+        return self.best_fit
 
     @property
     def max_lnprob(self):

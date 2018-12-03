@@ -62,7 +62,7 @@ class BaseModel(HoloPyObject):
         elif hasattr(self, name):
             return getattr(self, name)
         try:
-            getattr(schema, name)
+            return getattr(schema, name)
         except:
             raise MissingParameter(name)
 
@@ -119,14 +119,14 @@ class BaseModel(HoloPyObject):
     def forward(self, pars, detector):
         raise NotImplementedError("Implement in subclass")
 
-    def _prep_pars(self, pars, data):
+    def find_noise(self, pars, data):
         noise = dict_to_array(data, self.get_parameter('noise_sd', pars, data))
         if noise is None:
             if np.all([isinstance(par, Uniform) for par in self._parameters]):
                 noise = 1
             else:
                 raise MissingParameter('noise_sd for non-uniform priors')
-        return (pars, noise)
+        return noise
 
     def _residuals(self, pars, data, noise):
         forward_model = self.forward(pars, data)
@@ -143,7 +143,7 @@ class BaseModel(HoloPyObject):
         data: xarray
             The data to compute likelihood against
         """
-        pars, noise_sd = self._prep_pars(pars, data)
+        noise_sd = self.find_noise(pars, data)
         N = data.size
         log_likelihood = np.asscalar(
             -N/2 * np.log(2 * np.pi) -

@@ -88,7 +88,7 @@ class NmpfitStrategy(HoloPyObject):
         assert len(parameters) == len(values)
         return {par.name: par.unscale(value) for par, value in zip(parameters, values)}
 
-    def fit(self, model, data):
+    def fit(self, model, data, seed=None):
         """
         fit a model to some data
 
@@ -113,14 +113,14 @@ class NmpfitStrategy(HoloPyObject):
         if self.random_subset is None:
             data = flat(data)
         else:
-            data = make_subset_data(data, self.random_subset)
+            data = make_subset_data(data, self.random_subset, seed=seed)
 
         guess_prior = model.lnprior({par.name:par.guess for par in parameters})
         def residual(par_vals):
-            pars, noise = model._prep_pars(par_vals, data)
-            residuals = model._residuals(par_vals, data, noise)
+            noise = model.find_noise(par_vals, data)
+            residuals = model._residuals(par_vals, data, noise).flatten()
             prior = np.sqrt(guess_prior - model.lnprior(par_vals))
-            np.append(residuals, prior)
+            residuals = np.append(residuals, prior)
             return residuals
 
         fitted_pars, minimizer_info = self.minimize(parameters, residual)
@@ -141,14 +141,26 @@ class NmpfitStrategy(HoloPyObject):
         return FitResult(data, model, self, intervals, d_time, minimizer_info)
 
     def minimize(self, parameters, obj_func):
-        nmp_pars = [par.scale(par.guess) for par in parameters]
+        nmp_pars = []
+        for par in parameters:
+            d = {'parname':par.name, 'value':par.scale(par.guess),
+                'limited':[False, False], 'limits':[np.NaN, np.NaN]}
+            if hasattr(par, "lower_bound") and par.lower_bound > -np.inf:
+                d['limited'][0] = True
+                d['limits'][0] = par.scale(par.lower_bound)
+            if hasattr(par, "upper_bound") and par.upper_bound < np.inf:
+                d['limited'][1] = True
+                d['limits'][1] = par.scale(par.upper_bound)
+            nmp_pars.append(d)
 
         def resid_wrapper(p, fjac=None):
             status = 0
             return [status, obj_func(self.pars_from_minimizer(parameters, p))]
 
         # now fit it
-        fitresult = nmpfit.mpfit(resid_wrapper, xall=nmp_pars, ftol = self.ftol,
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            fitresult = nmpfit.mpfit(resid_wrapper, parinfo=nmp_pars, ftol = self.ftol,
                                  xtol = self.xtol, gtol = self.gtol, damp = self.damp,
                                  maxiter = self.maxiter, quiet = self.quiet)
 
