@@ -70,7 +70,7 @@ def test_sample_emcee():
 def test_EmceeStrategy():
     mod = SimpleModel(prior.Uniform(0, 1))
     strat = EmceeStrategy(10, None, None, seed=40)
-    r = strat.sample(mod, data, 500)
+    r = strat.optimize(mod, data, 500)
     assert_allclose(r.guess, .5, rtol=.001)
 
 class TestSubsetTempering(unittest.TestCase):
@@ -82,7 +82,7 @@ class TestSubsetTempering(unittest.TestCase):
                                     threads=None, seed=40)
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            inf = strat.sample(mod, holo, nsamples=10)
+            inf = strat.optimize(mod, holo, nsamples=10)
         assert_obj_close(inf.guess, gold_alpha, rtol=1e-3)
 
     def test_perfectlens_subset_tempering(self):
@@ -94,6 +94,6 @@ class TestSubsetTempering(unittest.TestCase):
                                     threads=None, seed=40)
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            inference_result = strat.sample(model, data, nsamples=10)
+            inference_result = strat.optimize(model, data, nsamples=10)
         assert_obj_close(inference_result.guess, gold_lens_angle, rtol=1e-3)
 

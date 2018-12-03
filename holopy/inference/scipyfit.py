@@ -16,12 +16,12 @@ from holopy.inference.result import FitResult, UncertainValue
 
 class LeastSquaresScipyStrategy(HoloPyObject):
     def __init__(self, ftol=1e-10, xtol=1e-10, gtol=1e-10, max_nfev=None,
-                 random_subset=None):
+                 npixels=None):
         self.ftol = ftol
         self.xtol = xtol
         self.gtol = gtol
         self.max_nfev = max_nfev
-        self.random_subset = random_subset
+        self.npixels = npixels
         self._optimizer_kwargs = {
             'ftol': self.ftol,
             'xtol': self.xtol,
@@ -37,7 +37,7 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         return {par.name: par.unscale(value)
                 for par, value in zip(parameters, values)}
 
-    def fit(self, model, data):
+    def optimize(self, model, data):
         """
         fit a model to some data
 
@@ -61,10 +61,10 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         if len(parameters) == 0:
             raise MissingParameter('at least one parameter to fit')
 
-        if self.random_subset is None:
+        if self.npixels is None:
             data = flat(data)
         else:
-            data = make_subset_data(data, self.random_subset)
+            data = make_subset_data(data, pixels=self.npixels)
         guess_prior = model.lnprior({par.name:par.guess for par in parameters})
 
         def residual(rescaled_values):

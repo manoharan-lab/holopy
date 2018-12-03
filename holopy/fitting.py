@@ -140,8 +140,8 @@ def fit(model, data, minimizer=None, random_subset=None):
     if minimizer is None:
         minimizer = NmpfitStrategy()
     if random_subset is not None:
-        minimizer.random_subset = random_subset
-    return minimizer.fit(model, data)
+        minimizer.npixels = int(random_subset*len(data.x)*len(data.y))
+    return minimizer.optimize(model, data)
 
 class FitResult(HoloPyObject):
     def __new__(self, parameters, scatterer, fitchisq, fitrsq, converged, time, model,

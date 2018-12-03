@@ -54,7 +54,7 @@ def _make_scatterer(data):
 
 def _sample_model_on_data(model, data):
     strategy = TemperedStrategy(nwalkers=10, max_pixels=100)
-    result = strategy.sample(model, data, nsamples=5)
+    result = strategy.optimize(model, data, nsamples=5)
     return result
 
 

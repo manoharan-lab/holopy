@@ -48,7 +48,7 @@ def sample_one_sigma_gaussian(result):
 
 
 class EmceeStrategy(HoloPyObject):
-    def __init__(self, nwalkers=100, npixels=2000, threads='auto', cleanup_threads=True, seed=None, resample_pixels=False):
+    def __init__(self, nwalkers=100, npixels=None, threads='auto', cleanup_threads=True, seed=None, resample_pixels=False):
         self.nwalkers = nwalkers
         self.npixels = npixels
         self.threads = threads
@@ -69,7 +69,7 @@ class EmceeStrategy(HoloPyObject):
             np.random.seed(seed)
         return np.vstack([sample(p) for p in parameters]).T
 
-    def sample(self, model, data, nsamples=1000, walker_initial_pos=None):
+    def optimize(self, model, data, nsamples=1000, walker_initial_pos=None):
         time_start = time.time()
         if self.npixels is not None and self.new_pixels is None:
             data = make_subset_data(data, pixels=self.npixels, seed=self.seed)
@@ -103,16 +103,16 @@ class TemperedStrategy(EmceeStrategy):
         self.nwalkers=nwalkers
         self.next_initial_dist = next_initial_dist
 
-    def sample(self, model, data, nsamples=1000, walker_initial_pos = None):
+    def optimize(self, model, data, nsamples=1000, walker_initial_pos = None):
         start_time = time.time()
         stage_results = []
         guess = walker_initial_pos
         for stage in self.stage_strategies[:-1]:
-            result = stage.sample(model, data, nsamples=self.stage_len, walker_initial_pos=guess)
+            result = stage.optimize(model, data, nsamples=self.stage_len, walker_initial_pos=guess)
             guess = self.next_initial_dist(result)
             stage_results.append(result)
 
-        end_result = self.stage_strategies[-1].sample(model=model, data=data, nsamples=nsamples, walker_initial_pos=guess)
+        end_result = self.stage_strategies[-1].optimize(model=model, data=data, nsamples=nsamples, walker_initial_pos=guess)
         d_time = time.time()-start_time
         return TemperedSamplingResult(end_result, stage_results, self, d_time)
 

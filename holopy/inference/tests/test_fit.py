@@ -39,12 +39,6 @@ gold_alpha = .6497
 gold_sphere = Sphere(1.582+1e-4j, 6.484e-7,
                      (5.534e-6, 5.792e-6, 1.415e-5))
 
-# TODO: mie_single and mie_par_scatterer do not behave well under
-# random subset fitting (par_scatterer will error with
-# random_subset=.99). This could be a sign of some deeper problem, so
-# it might be worth investigating - tgd 2014-09-18
-
-
 class TestLeastSquaresScipyStrategy(unittest.TestCase):
     @attr("slow")
     def test_fit_mie_par_scatterer(self):
@@ -64,7 +58,7 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
         model = AlphaModel(scatterer, theory=theory, alpha=alpha)
 
         fitter = LeastSquaresScipyStrategy()
-        result = fitter.fit(model, holo)
+        result = fitter.optimize(model, holo)
         fitted = result.scatterer
 
         self.assertTrue(np.isclose(fitted.n, gold_sphere.n, rtol=1e-3))
@@ -93,8 +87,8 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
         model = AlphaModel(scatterer, theory=theory, alpha=alpha)
 
         np.random.seed(40)
-        fitter = LeastSquaresScipyStrategy(random_subset=0.1)
-        result = fix_flat(fitter.fit(model, holo))
+        fitter = LeastSquaresScipyStrategy(npixels=1000)
+        result = fix_flat(fitter.optimize(model, holo))
         fitted = result.scatterer
 
         self.assertTrue(np.isclose(fitted.n, gold_sphere.n, rtol=1e-2))
@@ -130,7 +124,7 @@ def test_fit_mie_single():
     model = AlphaModel(make_scatterer(parameters), theory=thry,
                   alpha=Uniform(.1, 1, name='alpha', guess=.6))
 
-    result = NmpfitStrategy().fit(model, holo)
+    result = NmpfitStrategy().optimize(model, holo)
 
     assert_obj_close(result.scatterer, gold_sphere, rtol = 1e-3)
     assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=3)
@@ -149,7 +143,7 @@ def test_fit_mie_par_scatterer():
     thry = Mie(False)
     model = AlphaModel(s, theory=thry, alpha = Uniform(.1, 1, .6))
 
-    result = fix_flat(NmpfitStrategy().fit(model, holo))
+    result = fix_flat(NmpfitStrategy().optimize(model, holo))
     assert_obj_close(result.scatterer, gold_sphere, rtol=1e-3)
     # TODO: see if we can get this back to 3 sig figs correct alpha
     assert_approx_equal(result.parameters['alpha'], gold_alpha, significant=3)
@@ -168,7 +162,7 @@ def test_fit_random_subset():
 
     model = AlphaModel(s, theory=Mie(False), alpha = Uniform(.1, 1, .6))
     np.random.seed(40)
-    result = fix_flat(NmpfitStrategy(random_subset=.1).fit(model, holo))
+    result = fix_flat(NmpfitStrategy(npixels=1000).optimize(model, holo))
 
     # TODO: this tolerance has to be rather large to pass, we should
     # probably track down if this is a sign of a problem
@@ -205,7 +199,7 @@ def test_serialization():
 
     holo = calc_holo(schema, model.scatterer.guess, scaling=model.alpha.guess)
 
-    result = fix_flat(NmpfitStrategy().fit(model, holo))
+    result = fix_flat(NmpfitStrategy().optimize(model, holo))
     temp = tempfile.NamedTemporaryFile(suffix = '.h5', delete=False)
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
@@ -224,7 +218,7 @@ def test_integer_correctness():
                    r = .5, n = 1.58)
 
     model = AlphaModel(par_s, alpha = Uniform(.1, 1, .6))
-    result = NmpfitStrategy().fit(model, holo)
+    result = NmpfitStrategy().optimize(model, holo)
     assert_allclose(result.scatterer.center, [10.2, 9.8, 10.3])
 
 
@@ -251,7 +245,7 @@ def test_layered():
 
     guess = LayeredSphere((1,2), (Uniform(1, 1.01), Uniform(.99,1)), (2, 2, 2))
     model = ExactModel(guess, calc_holo)
-    res = NmpfitStrategy().fit(model, hs)
+    res = NmpfitStrategy().optimize(model, hs)
     assert_allclose(res.scatterer.t, (1, 1), rtol = 1e-12)
 
 

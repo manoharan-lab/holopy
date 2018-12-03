@@ -43,6 +43,8 @@ class NmpfitStrategy(HoloPyObject):
 
     Parameters
     ----------
+    npixels: None
+        Fit only a randomly selected fraction of the data points in data
     quiet: Boolean
         If True, suppress output on minimizer convergence.
     ftol: float
@@ -61,8 +63,6 @@ class NmpfitStrategy(HoloPyObject):
         nmpfit documentation.
     maxiter: int
         Maximum number of Levenberg-Marquardt iterations to be performed.
-    random_subset : float
-        Fit only a randomly selected fraction of the data points in data
 
     Notes
     -----
@@ -74,21 +74,21 @@ class NmpfitStrategy(HoloPyObject):
     you need to supply a custom residual function.
 
     """
-    def __init__(self, quiet = False, ftol = 1e-10, xtol = 1e-10, gtol = 1e-10,
-                 damp = 0, maxiter = 100, random_subset=None):
+    def __init__(self, npixels=None, quiet = False, ftol = 1e-10, xtol = 1e-10, gtol = 1e-10,
+                 damp = 0, maxiter = 100):
         self.ftol = ftol
         self.xtol = xtol
         self.gtol = gtol
         self.damp = 0
         self.maxiter = maxiter
         self.quiet = quiet
-        self.random_subset = random_subset
+        self.npixels = npixels
 
     def pars_from_minimizer(self, parameters, values):
         assert len(parameters) == len(values)
         return {par.name: par.unscale(value) for par, value in zip(parameters, values)}
 
-    def fit(self, model, data, seed=None):
+    def optimize(self, model, data, seed=None):
         """
         fit a model to some data
 
@@ -110,10 +110,10 @@ class NmpfitStrategy(HoloPyObject):
         if len(parameters) == 0:
             raise MissingParameter('at least one parameter to fit')
 
-        if self.random_subset is None:
+        if self.npixels is None:
             data = flat(data)
         else:
-            data = make_subset_data(data, self.random_subset, seed=seed)
+            data = make_subset_data(data, pixels = self.npixels, seed=seed)
 
         guess_prior = model.lnprior({par.name:par.guess for par in parameters})
         def residual(par_vals):
