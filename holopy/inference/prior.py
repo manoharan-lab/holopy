@@ -16,19 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
-
-
-from holopy.core.metadata import get_extents, get_spacing
-from holopy.core.process import center_find
-from holopy.fitting.parameter import Parameter
-from holopy.fitting.errors import ParameterSpecificationError
-
 import numpy as np
 from numpy import random
 from numbers import Number
 
+from holopy.core.metadata import get_extents, get_spacing
+from holopy.core.process import center_find
+from holopy.core.holopy_object import HoloPyObject
+from holopy.scattering.errors import ParameterSpecificationError
 
-class Prior(Parameter):
+EPS = 1e-6
+
+class Prior(HoloPyObject):
     def __add__(self, value):
         if isinstance(value, Number):
             return self.__addadd__(value)
@@ -65,16 +64,50 @@ class Prior(Parameter):
     def __truediv__(self, value):
         return self * (1/value)
 
+    def scale(self, physical):
+        return physical / self.scale_factor
+
+    def unscale(self, scaled):
+        return scaled * self.scale_factor
+
 
 class Uniform(Prior):
-    def __init__(self, lower_bound, upper_bound, name=None):
+    def __init__(self, lower_bound, upper_bound, guess=None, name=None):
         if lower_bound > upper_bound:
-            raise ParameterSpecificationError("Lower bound {} is greater than upper bound {}".format(lower_bound, upper_bound))
-
+            raise ParameterSpecificationError(
+                    "Lower bound {} is greater than upper bound {}".format(
+                    lower_bound, upper_bound))
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         self.name = name
-        self._lnprob = np.log(1/(self.upper_bound - self.lower_bound))
+
+        if np.isfinite(self.interval):
+            self._lnprob = np.log(1/self.interval)
+        else:
+            self._lnprob = -1/EPS # don't want -inf to add likelihood
+
+        if guess is None:
+            if np.isfinite(lower_bound) and np.isfinite(upper_bound):
+                self.guess = (upper_bound + lower_bound) / 2
+            elif np.isfinite(lower_bound):
+                self.guess = lower_bound
+            elif np.isfinite(upper_bound):
+                self.guess = upper_bound
+            else:
+                self.guess = 0
+        elif guess < lower_bound or guess > upper_bound:
+            raise ParameterSpecificationError(
+                    "Guess {} is not within bounds {} and {}.".format(
+                    guess, lower_bound, upper_bound))
+        else:
+            self.guess = guess
+
+        if abs(self.guess) > 1e-12:
+            self.scale_factor = abs(self.guess)
+        elif np.isfinite(self.interval):
+            self.scale_factor = self.interval/10.
+        else:
+            self.scale_factor = 1.
 
     def lnprob(self, p):
         if p < self.lower_bound or p > self.upper_bound:
@@ -84,13 +117,14 @@ class Uniform(Prior):
         # Turns out scipy.stats is noticably slower than doing it ourselves
         #return stats.uniform.logpdf(p, self.lower_bound, self.upper_bound)
 
-    @property
-    def interval(self):
-        return self.upper_bound - self.lower_bound
+    def prob(self, p):
+        if p < self.lower_bound or p > self.upper_bound:
+            return 0
+        return 1/self.interval
 
     @property
-    def guess(self):
-        return (self.upper_bound + self.lower_bound)/2
+    def interval(self):
+        return(self.upper_bound - self.lower_bound)
 
     def sample(self, size=None):
         return random.uniform(self.lower_bound, self.upper_bound, size)
@@ -104,16 +138,21 @@ class Uniform(Prior):
     def __neg__(self):
         return Uniform(-self.upper_bound, -self.lower_bound)
 
-
 class Gaussian(Prior):
     def __init__(self, mu, sd, name=None):
         self.mu = mu
         self.sd = sd
         if sd <= 0:
-            raise ParameterSpecificationError("Specified sd of {} is not greater than 0".format(sd))
+            raise ParameterSpecificationError(
+                    "Specified sd of {} is not greater than 0".format(sd))
         self.sdsq = sd**2
         self.name=name
         self._lnprob_normalization = -np.log(self.sd * np.sqrt(2*np.pi))
+
+        if abs(self.guess) > 1e-12:
+            self.scale_factor = abs(self.guess)
+        else:  # values near 0
+            self.scale_factor = self.sd
 
     def lnprob(self, p):
         return self._lnprob_normalization - (p-self.mu)**2/(2*self.sdsq)
@@ -169,14 +208,12 @@ class BoundedGaussian(Gaussian):
         else:
             return super(BoundedGaussian, self).lnprob(p)
 
-
     def sample(self, size=None):
         val = super(BoundedGaussian, self).sample(size)
         out = True
         while np.any(out):
             out = np.where(np.logical_or(val < self.lower_bound, val > self.upper_bound))
             val[out] = super(BoundedGaussian, self).sample(len(out[0]))
-
         return val
 
     def __addadd__(self, value):
@@ -187,6 +224,78 @@ class BoundedGaussian(Gaussian):
 
     def __neg__(self):
         return BoundedGaussian(-self.mu, self.sd, -self.upper_bound, -self.lower_bound, self.name)
+
+
+class ComplexPrior(Prior):
+    """
+    A complex free parameter
+
+    ComplexPrior has a real and imaginary part which can (potentially)
+    vary separately.
+
+    Parameters
+    ----------
+    real, imag : float or :class:`Prior`
+        The real and imaginary parts of this parameter.  Assign floats to fix
+        that portion or parameters to allow it to vary.  The parameters must be
+        purely real.  You should omit names for the parameters;
+        ComplexPrior will name them
+    name : string
+        Short descriptive name of the ComplexPrior.  Do not provide this if
+        using a ParameterizedScatterer, a name will be assigned based its
+        position within the scatterer.
+    """
+    def __init__(self, real, imag, name = None):
+        '''
+        real and imag may be scalars or Priors. If Priors, they must be
+        pure real.
+        '''
+        self.real = real
+        self.imag = imag
+        self.name = name
+
+    @property
+    def guess(self):
+        def get_val(val):
+            try:
+                return val.guess
+            except AttributeError:
+                return val
+        return get_val(self.real) + 1.0j * get_val(self.imag)
+
+    def lnprob(self, p):
+        try:
+            realprob = real.lnprob(np.real(p))
+        except AttributeError:
+            realprob = 0
+        try:
+            imagprob = imag.lnprob(np.imag(p))
+        except AttributeError:
+            imagprob = 0
+        return realprob + imagprob
+
+    def prob(self, p):
+        return np.exp(self.lnprob(p))
+
+    def sample(self, size=None):
+        def get_val(val):
+            try:
+                return val.sample(size)
+            except AttributeError:
+                return val
+        return get_val(self.real) + 1.0j * get_val(self.imag)
+
+    def __addadd__(self, value):
+        real = self.real + np.real(value)
+        imag = self.imag + np.imag(value)
+        return ComplexPrior(real, imag, self.name)
+
+    def __multiply__(self, value):
+        # This doesn't work for complex "value"
+        return ComplexPrior(self.real * value, self.imag * value, self.name)
+
+    def __neg__(self):
+        return ComplexPrior(-self.real, -self.imag, self.name)
 
 
 def updated(prior, v, extra_uncertainty=0):
@@ -202,12 +311,12 @@ def updated(prior, v, extra_uncertainty=0):
     """
     sd = max(v.plus, v.minus, extra_uncertainty)
     if hasattr(prior, 'lower_bound'):
-        return BoundedGaussian(v.value, sd,
+        return BoundedGaussian(v.guess, sd,
                                getattr(prior, 'lower_bound', -np.inf),
                                getattr(prior, 'upper_bound', np.inf),
                                name=prior.name)
     else:
-        return Gaussian(v.value, sd, prior.name)
+        return Gaussian(v.guess, sd, prior.name)
 
 def make_center_priors(im, z_range_extents=5, xy_uncertainty_pixels=1, z_range_units=None):
     """

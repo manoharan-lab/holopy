@@ -25,13 +25,13 @@ scatterers (e.g. two trimers).
 
 
 from copy import copy
+from numbers import Number
 
 import numpy as np
 
-
 from . import Scatterer
 from ...core.math import rotate_points
-from ...core.utils import is_none, ensure_array, updated
+from ...core.utils import is_none, ensure_array
 
 class Scatterers(Scatterer):
     '''
@@ -76,41 +76,42 @@ class Scatterers(Scatterer):
 
     @property
     def parameters(self):
-        d = {}
+        pars = []
+        names = []
         for i, scatterer in enumerate(self.scatterers):
             for key, par in scatterer.parameters.items():
-                d['{0}:{1}.{2}'.format(i, scatterer.__class__.__name__, key)] = par
-        return dict(sorted(list(d.items()), key = lambda t: t[0]))
+                for index, par_check in enumerate(pars + [None]):
+                    # can't simply check par in parameters because then two
+                    # priors defined separately, but identically will match
+                    # whereas this way they are counted as separate objects.
+                    if par is par_check and not isinstance(par, Number):
+                        # par is a prior and already exists in pars
+                        break
+                if par_check is None:
+                    # loop finished - par is not tied.
+                    names.append('{0}:{1}'.format(i,key))
+                    pars.append(par)
+                else:
+                    # loop encountered a break - parameter is tied
+                    names[index] = key
+        return {key:val for key, val in zip(names, pars)}
 
 
-    def from_parameters(self, parameters, update = False):
-        if update:
-            parameters = updated(self.parameters, {key: val for key, val in parameters.items() if key[0].isdigit()})
-        n_scatterers = len(set([p.split(':')[0] for p in list(parameters.keys())]))
+    def from_parameters(self, parameters):
+        n_scatterers = len(self.scatterers)
         collected = [{} for i in range(n_scatterers)]
-        types = [None] * n_scatterers
         for key, val in parameters.items():
-            n, spec = key.split(':', 1)
-            n = int(n)
-            scat_type, par = spec.split('.', 1)
-
-            collected[n][par] = val
-            if types[n]:
-                assert types[n] == scat_type
+            parts = key.split(':', 1)
+            if len(parts)==2:
+                n = int(parts[0])
+                par = parts[1]
+                collected[n][par] = val
             else:
-                types[n] = scat_type
-
-        scatterers = []
-        # pull in the scatterer package, this lets us grab scatterers by class
-        # name
-        # we have to do it here rather than at the top of the file because we
-        # cannot import scatterer until it is done importing, which will not
-        # happen until import of composite finishes.
-        from .. import scatterer
-        for i, scat_type in enumerate(types):
-            scatterers.append(getattr(scatterer,
-                              scat_type)().from_parameters(collected[i]))
-
+                # tied parameter - put it in all of them
+                for col in collected:
+                    col[key] = val
+        scatterers = [scat.from_parameters(pars)
+                         for scat, pars in zip(self.scatterers, collected)]
         return type(self)(scatterers)
 
     def _prettystr(self, level, indent="  "):

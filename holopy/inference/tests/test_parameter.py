@@ -15,25 +15,33 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-"""Fit models of scattering to data
 
-Make precision measurements of a scattering system by fitting a model
-of it to data
+import numpy as np
+from numpy.testing import assert_raises, assert_equal
 
-The fitting module is used to:
+from holopy.inference.prior import ComplexPrior, Uniform
+from holopy.scattering.errors import ParameterSpecificationError
+from holopy.core.tests.common import assert_obj_close
 
-1. Define Scattering Model -> :class:`~holopy.fitting.model.Model` object
-2. Fit model to data -> :class:`.FitResult` object
-3. Fit model to timeseries -> list of :class:`.FitResult` objects
 
-.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
-.. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
-.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
+def test_parameter():
 
-"""
+    assert_raises(ParameterSpecificationError, Uniform, 4, 6, 7)
 
-from .fit import fit, rsq, chisq, FitResult, make_subset_data
-from .model import Model, Parametrization
-from .parameter import Parameter, ComplexParameter
-from .minimizer import Nmpfit
+    p4 = Uniform(-1, 1, 0)
+    assert_equal(p4.scale_factor, 0.2)
+
+    p5 = Uniform(1, 4)
+    assert_equal(p5.scale_factor, 2.5)
+
+    # if given a guess of 0 and no limits, we fall through to the
+    # default of no scaling
+    p6 = Uniform(0, np.inf)
+    assert_equal(p6.scale_factor, 1)
+
+def test_complex_parameter():
+    p = ComplexPrior(1, 2)
+    assert_obj_close(p.real, 1)
+    assert_obj_close(p.imag, 2)
+
+    assert_equal(p.guess, 1+2j)
