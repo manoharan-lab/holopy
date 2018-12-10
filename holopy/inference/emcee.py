@@ -59,22 +59,12 @@ class EmceeStrategy(HoloPyObject):
         else:
             self.new_pixels = None
 
-    def make_guess(self, parameters, scaling=1, seed=None):
-        def sample(prior):
-            raw_sample = prior.sample(size=self.nwalkers)
-            scaled_guess = prior.guess + scaling * (raw_sample - prior.guess)
-            return scaled_guess
-
-        if seed is not None:
-            np.random.seed(seed)
-        return np.vstack([sample(p) for p in parameters]).T
-
     def optimize(self, model, data, nsamples=1000, walker_initial_pos=None):
         time_start = time.time()
         if self.npixels is not None and self.new_pixels is None:
             data = make_subset_data(data, pixels=self.npixels, seed=self.seed)
         if walker_initial_pos is None:
-            walker_initial_pos = self.make_guess(model._parameters, seed=self.seed)
+            walker_initial_pos = prior.make_guess(model._parameters, self.nwalkers, seed=self.seed)
         sampler = sample_emcee(model=model, data=data, nwalkers=self.nwalkers,
                                walker_initial_pos=walker_initial_pos, nsamples=nsamples,
                                threads=self.threads, cleanup_threads=self.cleanup_threads, seed=self.seed, new_pixels=self.new_pixels)
