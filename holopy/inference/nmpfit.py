@@ -74,8 +74,8 @@ class NmpfitStrategy(HoloPyObject):
     you need to supply a custom residual function.
 
     """
-    def __init__(self, npixels=None, quiet = False, ftol = 1e-10, xtol = 1e-10, gtol = 1e-10,
-                 damp = 0, maxiter = 100):
+    def __init__(self, npixels=None, quiet = False, ftol = 1e-10, xtol = 1e-10,
+                    gtol = 1e-10, damp = 0, maxiter = 100):
         self.ftol = ftol
         self.xtol = xtol
         self.gtol = gtol
@@ -138,7 +138,8 @@ class NmpfitStrategy(HoloPyObject):
         intervals = [UncertainValue(fitted_pars[par.name], diff, name=par.name)
                      for diff, par in zip(perror, parameters)]
         d_time = time.time() - time_start
-        return FitResult(data, model, self, intervals, d_time, minimizer_info)
+        return FitResult(data, model, self, intervals, d_time, 
+                                            {'mpfit_details':minimizer_info})
 
     def minimize(self, parameters, obj_func):
         nmp_pars = []

@@ -155,19 +155,22 @@ class InferenceResult(HoloPyObject):
 
 
 class FitResult(InferenceResult):
-    def __init__(self, data, model, strategy, intervals, time, mpfit_details):
-        self.mpfit_details = mpfit_details # replace with setattr, **kwargs?
+    def __init__(self, data, model, strategy, intervals, time, kwargs=None):
+        for key, val in kwargs.items():
+            setattr(self, key, val)
+        self._kwargs_keys = kwargs.keys()
         super().__init__(data, model, strategy, intervals, time)
 
     def _serialization_ds(self):
         ds = super()._serialization_ds()
-        ds.attrs['mpfit_details'] = yaml.dump(self.mpfit_details)
+        kwargs = {key: getattr(self, key) for key in self._kwargs_keys}
+        ds.attrs['_kwargs'] = yaml.dump(kwargs)
         return ds
 
     @classmethod
     def _unserialize(cls, ds):
         args = super()._unserialize(ds)
-        args.append(yaml.load(ds.attrs['mpfit_details']))
+        args.append(yaml.load(ds.attrs['_kwargs']))
         return args
 
 
