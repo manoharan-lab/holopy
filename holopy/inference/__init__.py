@@ -19,5 +19,6 @@
 from .result import SamplingResult, TemperedSamplingResult, FitResult
 from .emcee import EmceeStrategy, TemperedStrategy
 from .nmpfit import NmpfitStrategy
+from .cmaes import CmaStrategy
 from .model import AlphaModel, ExactModel, LimitOverlaps
 from .scipyfit import LeastSquaresScipyStrategy
