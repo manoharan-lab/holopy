@@ -75,7 +75,7 @@ class NmpfitStrategy(HoloPyObject):
 
     """
     def __init__(self, npixels=None, quiet = False, ftol = 1e-10, xtol = 1e-10,
-                    gtol = 1e-10, damp = 0, maxiter = 100):
+                    gtol = 1e-10, damp = 0, maxiter = 100, seed=None):
         self.ftol = ftol
         self.xtol = xtol
         self.gtol = gtol
@@ -83,12 +83,13 @@ class NmpfitStrategy(HoloPyObject):
         self.maxiter = maxiter
         self.quiet = quiet
         self.npixels = npixels
+        self.seed = seed
 
     def pars_from_minimizer(self, parameters, values):
         assert len(parameters) == len(values)
         return {par.name: par.unscale(value) for par, value in zip(parameters, values)}
 
-    def optimize(self, model, data, seed=None):
+    def optimize(self, model, data):
         """
         fit a model to some data
 
@@ -113,7 +114,7 @@ class NmpfitStrategy(HoloPyObject):
         if self.npixels is None:
             data = flat(data)
         else:
-            data = make_subset_data(data, pixels = self.npixels, seed=seed)
+            data = make_subset_data(data, pixels = self.npixels, seed=self.seed)
 
         guess_prior = model.lnprior({par.name:par.guess for par in parameters})
         def residual(par_vals):
