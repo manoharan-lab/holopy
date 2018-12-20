@@ -271,3 +271,15 @@ class PerfectLensModel(BaseModel):
 # It would be nice if some of the unittests for fitting were also
 # applicable to the inference models. This should be changed later,
 # when the two fitting approaches are unified.
+
+class lnpost_wrapper(HoloPyObject):
+    def __init__(self, model, data, new_pixels, minus=False):
+        self.parameters = model._parameters
+        self.data = data
+        self.pixels=new_pixels
+        self.func = model.lnposterior
+        self.prefactor = (-1)**minus
+
+    def evaluate(self, par_vals):
+        pars_dict = {par.name:val for par, val in zip(self.parameters, par_vals)}
+        return self.prefactor * self.func(pars_dict, self.data, self.pixels)

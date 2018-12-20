@@ -25,21 +25,15 @@ import time
 
 import xarray as xr
 import numpy as np
-from emcee import EnsembleSampler
 import emcee
 
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.metadata import make_subset_data
+from holopy.core.utils import choose_pool
+from holopy.inference.model import lnpost_wrapper
 from holopy.inference.result import SamplingResult, TemperedSamplingResult
 
 from . import prior
-
-def autothreads(threads='auto', quiet=False):
-    if threads == 'auto':
-        threads = multiprocessing.cpu_count()
-    if threads is None:
-        threads = 1
-    return threads
 
 def sample_one_sigma_gaussian(result):
     par_ranges = result.intervals
@@ -48,10 +42,10 @@ def sample_one_sigma_gaussian(result):
 
 
 class EmceeStrategy(HoloPyObject):
-    def __init__(self, nwalkers=100, npixels=None, threads='auto', cleanup_threads=True, seed=None, resample_pixels=False):
+    def __init__(self, nwalkers=100, npixels=None, parallel='auto', cleanup_threads=True, seed=None, resample_pixels=False):
         self.nwalkers = nwalkers
         self.npixels = npixels
-        self.threads = threads
+        self.parallel = parallel
         self.cleanup_threads = cleanup_threads
         self.seed = seed
         if resample_pixels:
@@ -67,7 +61,7 @@ class EmceeStrategy(HoloPyObject):
             walker_initial_pos = prior.make_guess(model._parameters, self.nwalkers, seed=self.seed)
         sampler = sample_emcee(model=model, data=data, nwalkers=self.nwalkers,
                                walker_initial_pos=walker_initial_pos, nsamples=nsamples,
-                               threads=self.threads, cleanup_threads=self.cleanup_threads, seed=self.seed, new_pixels=self.new_pixels)
+                               parallel=self.parallel, cleanup_threads=self.cleanup_threads, seed=self.seed, new_pixels=self.new_pixels)
 
         samples = emcee_samples_DataArray(sampler, model._parameters)
         lnprobs = emcee_lnprobs_DataArray(sampler)
@@ -77,18 +71,16 @@ class EmceeStrategy(HoloPyObject):
 
 
 class TemperedStrategy(EmceeStrategy):
-    def __init__(self, next_initial_dist=sample_one_sigma_gaussian, nwalkers=100, min_pixels=None, npixels=1000, threads='auto', stages=3, stage_len=30, seed=None, resample_pixels=False):
-
-        self.seed = seed
+    def __init__(self, next_initial_dist=sample_one_sigma_gaussian, nwalkers=100, min_pixels=None, npixels=1000, parallel='auto', stages=3, stage_len=30, seed=None, resample_pixels=False):
         self.stages = stages
         self.stage_strategies = []
         if min_pixels is None:
             min_pixels = npixels/20
         for p in np.logspace(np.log10(min_pixels), np.log10(npixels), stages+1):
-            self.stage_strategies.append(EmceeStrategy(nwalkers=nwalkers, npixels=int(round(p)), threads=threads, seed=seed, resample_pixels=resample_pixels))
+            self.stage_strategies.append(EmceeStrategy(nwalkers=nwalkers, npixels=int(round(p)), parallel=parallel, seed=seed, resample_pixels=resample_pixels))
             if seed is not None:
                 seed += 1
-        self.threads=threads
+        self.parallel=parallel
         self.stage_len=stage_len
         self.nwalkers=nwalkers
         self.next_initial_dist = next_initial_dist
@@ -116,22 +108,18 @@ def emcee_lnprobs_DataArray(sampler):
                         attrs={"acceptance_fraction": sampler.acceptance_fraction.mean()})
 
 def sample_emcee(model, data, nwalkers, nsamples, walker_initial_pos,
-                 threads='auto', cleanup_threads=True, seed=None, new_pixels = None):
-    def obj_func(vals):
-        pars_dict = {par.name:val for par, val in zip(model._parameters, vals)}
-        return model.lnposterior(pars_dict, data, new_pixels)
-    sampler = EnsembleSampler(nwalkers, len(model._parameters), obj_func,
-                              threads=autothreads(threads))
+                 parallel='auto', cleanup_threads=True, seed=None, new_pixels = None):
+    obj_func = lnpost_wrapper(model, data, new_pixels)
+    pool = choose_pool(parallel)
+    sampler = emcee.EnsembleSampler(nwalkers, len(model._parameters), 
+                                        obj_func.evaluate, pool=pool)
     if seed is not None:
         np.random.seed(seed)
         seed_state = np.random.mtrand.RandomState(seed).get_state()
         sampler.random_state=seed_state
 
     sampler.run_mcmc(walker_initial_pos, nsamples)
-
-    if sampler.pool is not None and cleanup_threads:
-        sampler.pool.terminate()
-        sampler.pool.join()
+    pool.close()
 
     return sampler
 
