@@ -86,17 +86,21 @@ class InferenceResult(HoloPyObject):
             return self._best_fit
         except AttributeError:
             pass
-        original_dims = yaml.load(self.data.original_dims)
-        # can't currently handle non-0 values of z, as in detector_grid
-        x = original_dims['x']
-        y = original_dims['y']
-        shape = (len(x), len(y))
-        spacing = (np.diff(x)[0], np.diff(y)[0])
-        extra_dims = dict_without(original_dims, ['x', 'y', 'z'])
-        schema = detector_grid(shape, spacing, extra_dims=extra_dims)
-        schema = copy_metadata(self.data, schema, do_coords=False)
-        schema['x'] = x
-        schema['y'] = y
+        if hasattr(self.data, 'original_dims'):
+            # dealing with subset data
+            original_dims = yaml.load(self.data.original_dims)
+            # can't currently handle non-0 values of z, as in detector_grid
+            x = original_dims['x']
+            y = original_dims['y']
+            shape = (len(x), len(y))
+            spacing = (np.diff(x)[0], np.diff(y)[0])
+            extra_dims = dict_without(original_dims, ['x', 'y', 'z'])
+            schema = detector_grid(shape, spacing, extra_dims=extra_dims)
+            schema = copy_metadata(self.data, schema, do_coords=False)
+            schema['x'] = x
+            schema['y'] = y
+        else:
+            schema = self.data
         self._best_fit = self.model.forward(self.parameters, schema)
         return self.best_fit
 
