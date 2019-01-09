@@ -167,14 +167,26 @@ class FitResult(InferenceResult):
 
     def _serialization_ds(self):
         ds = super()._serialization_ds()
-        kwargs = {key: getattr(self, key) for key in self._kwargs_keys}
-        ds.attrs['_kwargs'] = yaml.dump(kwargs)
+        xr_kw = {}
+        yaml_kw = {}
+        for key in self._kwargs_keys:
+            attr = getattr(self, key)
+            kwdict = xr_kw if isinstance(attr, xr.DataArray) else yaml_kw
+            kwdict[key] = attr
+        attrs = ds.attrs
+        attrs['_kwargs'] = yaml.dump(yaml_kw)
+        ds = xr.merge([ds, xr_kw])
+        ds.attrs = attrs
         return ds
 
     @classmethod
     def _unserialize(cls, ds):
         args = super()._unserialize(ds)
         args.append(yaml.load(ds.attrs['_kwargs']))
+        try:
+            args[-1].update({'lnprobs':ds.lnprobs, 'samples':ds.samples})
+        except:
+            pass
         return args
 
 
