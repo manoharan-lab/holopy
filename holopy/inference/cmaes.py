@@ -1,6 +1,8 @@
 import time
 import os
 import sys
+import tempfile
+import shutil
 
 import numpy as np
 import xarray as xr
@@ -83,7 +85,8 @@ class CmaStrategy(HoloPyObject):
                 for best_val, diff, par in zip(best_vals, diffs, parameters)]
         stop = dict(sampler.stop())
         d_time = time.time() - time_start
-        kwargs = {'lnprobs':lnprobs, 'samples':samples, 'stop_condition':stop}
+        kwargs = {'lnprobs':lnprobs, 'samples':samples,
+                     'stop_condition':stop, 'popsize': popsize}
         return FitResult(data, model, self, intervals, d_time, kwargs)
 
 
@@ -115,8 +118,9 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
     stds = [par.sd if isinstance(par, prior.Gaussian) 
                     else par.interval/4 for par in parameters]
     weights = [weight_function(i, popsize) for i in range(popsize)]
+    tempdir = tempfile.mkdtemp() + '/'
     cmaoptions = {'CMA_stds':stds, 'CMA_recombination_weights':weights,
-                                                                'verbose':-3}
+                  'verb_filenameprefix':tempdir, 'verbose':-3}
     cmaoptions.update(tols)
     if seed is not None:
         cmaoptions.update({'seed':seed})
@@ -139,4 +143,5 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
         cma_strategy.tell(solutions, func_vals)
         cma_strategy.logger.add()
     cma_strategy.logger.load()
+    shutil.rmtree(tempdir)
     return cma_strategy
