@@ -39,7 +39,6 @@ from holopy.core.utils import dict_without, ensure_array
 warn_text = 'Loading a legacy (pre-3.3) HoloPy file. Please \
                             save a new copy to ensure future compatibility'
 
-
 def get_strategy(strategy):
     try:
         return yaml.load(strategy)
@@ -54,14 +53,15 @@ def get_strategy(strategy):
         strategy = strategy[:index] + 'emcee' + strategy[index+6:]
     return yaml.load(strategy)
 
-
-class InferenceResult(HoloPyObject):
-    def __init__(self, data, model, strategy, intervals, time):
+class FitResult(HoloPyObject):
+    def __init__(self, data, model, strategy, time, kwargs={}):
         self.data = data
         self.model = model
         self.strategy = strategy
-        self.intervals = intervals
         self.time = time
+        for key, val in kwargs.items():
+            setattr(self, key, val)
+        self._kwargs_keys = list(kwargs.keys())
 
     @property
     def guess(self):
@@ -102,6 +102,7 @@ class InferenceResult(HoloPyObject):
         else:
             schema = self.data
         self._best_fit = self.model.forward(self.parameters, schema)
+        self._kwargs_keys.append('_best_fit')
         return self.best_fit
 
     @property
@@ -112,6 +113,7 @@ class InferenceResult(HoloPyObject):
         except AttributeError:
             pass
         self._max_lnprob = self.model.lnposterior(self.parameters, self.data)
+        self._kwargs_keys.append('_max_lnprob')
         return self.max_lnprob
 
     @property
@@ -121,16 +123,27 @@ class InferenceResult(HoloPyObject):
     def _serialization_ds(self):
         ds = xr.Dataset({'data':self.data})
         ds.data.attrs = pack_attrs(ds.data)
-        ds_attrs = ['model', 'strategy', 'intervals', 'time', '_source_class']
-        for attr_name in ds_attrs:
-            attr = getattr(self, attr_name)
-            if isinstance(attr, HoloPyObject) or (isinstance(attr,list) and
-                                            isinstance(attr[0],HoloPyObject)):
-                attr = yaml.dump(attr)
-            ds.attrs[attr_name] = str(attr)
         if 'flat' in ds:
             ds.rename({'flat': 'point'}, inplace=True)
             ds['point'].values = np.arange(len(ds.point))
+        attrs = ['model', 'strategy', 'time', '_source_class']
+        def make_yaml(key):
+            attr = getattr(self, key)
+            if isinstance(attr, HoloPyObject):
+                attr = yaml.dump(attr)
+            return str(attr)
+        attrs = {str(key): make_yaml(key) for key in attrs}
+        xr_kw = {}
+        yaml_kw = {}
+        for key in self._kwargs_keys:
+            attr = getattr(self, key)
+            kwdict = xr_kw if isinstance(attr, xr.DataArray) else yaml_kw
+            kwdict[key] = copy(attr)
+        attrs['_kwargs'] = yaml.dump(yaml_kw)
+        for key, val in xr_kw.items():
+            xr_kw[key].attrs = pack_attrs(val)
+        ds = xr.merge([ds, xr_kw])
+        ds.attrs = attrs
         return ds
 
     def _save(self, filename, **kwargs):
@@ -144,11 +157,24 @@ class InferenceResult(HoloPyObject):
         model = yaml.load(ds.attrs['model'])
         strategy = get_strategy(ds.attrs['strategy'])
         outlist = [data, model, strategy]
-        for attr in ['intervals', 'time']:
+        try:
+            outlist.append(yaml.load(ds.attrs['time']))
+        except KeyError:
+            outlist.append(None)
+            warn(warn_text)
+        kwargs = yaml.load(ds.attrs['_kwargs'])
+        try:
+            kwargs['intervals'] = yaml.load(ds.attrs['intervals'])
+            warn(warn_text)
+        except:
+            pass
+        for key in ['lnprobs', 'samples', '_best_fit']:
             try:
-                outlist.append(yaml.load(ds.attrs.pop(attr)))
-            except KeyError:
-                outlist.append(None)
+                kwargs[key] = getattr(ds, key)
+                kwargs[key].attrs = unpack_attrs(kwargs[key].attrs)
+            except AttributeError:
+                pass
+        outlist.append(kwargs)
         return outlist
 
     @classmethod
@@ -157,45 +183,10 @@ class InferenceResult(HoloPyObject):
             args = cls._unserialize(ds.load())
        return cls(*args)
 
-
-class FitResult(InferenceResult):
-    def __init__(self, data, model, strategy, intervals, time, kwargs=None):
-        for key, val in kwargs.items():
-            setattr(self, key, val)
-        self._kwargs_keys = kwargs.keys()
-        super().__init__(data, model, strategy, intervals, time)
-
-    def _serialization_ds(self):
-        ds = super()._serialization_ds()
-        xr_kw = {}
-        yaml_kw = {}
-        for key in self._kwargs_keys:
-            attr = getattr(self, key)
-            kwdict = xr_kw if isinstance(attr, xr.DataArray) else yaml_kw
-            kwdict[key] = attr
-        attrs = ds.attrs
-        attrs['_kwargs'] = yaml.dump(yaml_kw)
-        ds = xr.merge([ds, xr_kw])
-        ds.attrs = attrs
-        return ds
-
-    @classmethod
-    def _unserialize(cls, ds):
-        args = super()._unserialize(ds)
-        args.append(yaml.load(ds.attrs['_kwargs']))
-        try:
-            args[-1].update({'lnprobs':ds.lnprobs, 'samples':ds.samples})
-        except:
-            pass
-        return args
-
-
-class SamplingResult(InferenceResult):
-    def __init__(self, data, model, strategy, time, lnprobs, samples):
-        self.samples = samples
-        self.lnprobs = lnprobs
-        intervals = self._calc_intervals()
-        super().__init__(data, model, strategy, intervals, time)
+class SamplingResult(FitResult):
+    def __init__(self, data, model, strategy, time, kwargs={}):
+        super().__init__(data, model, strategy, time, kwargs)
+        self.intervals = self._calc_intervals()
 
     def _calc_intervals(self):
         P_LOW = 100 * 0.158655253931457 # (1-scipy.special.erf(1/np.sqrt(2)))/2
@@ -222,25 +213,12 @@ class SamplingResult(InferenceResult):
         burned_in.intervals = burned_in._calc_intervals()
         return burned_in
 
-    def _serialization_ds(self):
-        ds = super()._serialization_ds()
-        attrs = dict_without(ds.attrs, 'intervals')
-        ds = xr.merge([ds, {'lnprobs':self.lnprobs, 'samples':self.samples}])
-        ds.attrs = attrs
-        return ds
-
-    @classmethod
-    def _unserialize(cls, ds):
-        args = super()._unserialize(ds)
-        del args[3] # intervals
-        return args + [ds.lnprobs, ds.samples]
-
-
 GROUPNAME = 'stage_results[{}]'
 class TemperedSamplingResult(SamplingResult):
     def __init__(self, end_result, stage_results, strategy, time):
+        kwargs = {'lnprobs': end_result.lnprobs, 'samples':end_result.samples}
         super().__init__(end_result.data, end_result.model, strategy, time,
-                        end_result.lnprobs, end_result.samples)
+                        kwargs)
         self.stage_results = stage_results
 
     def _save(self, filename):

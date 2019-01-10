@@ -139,8 +139,8 @@ class NmpfitStrategy(HoloPyObject):
         intervals = [UncertainValue(fitted_pars[par.name], diff, name=par.name)
                      for diff, par in zip(perror, parameters)]
         d_time = time.time() - time_start
-        return FitResult(data, model, self, intervals, d_time, 
-                                            {'mpfit_details':minimizer_info})
+        return FitResult(data, model, self, d_time, 
+                     {'intervals': intervals, 'mpfit_details':minimizer_info})
 
     def minimize(self, parameters, obj_func):
         nmp_pars = []

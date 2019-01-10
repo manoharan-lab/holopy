@@ -67,7 +67,8 @@ class EmceeStrategy(HoloPyObject):
         lnprobs = emcee_lnprobs_DataArray(sampler)
 
         d_time = time.time() - time_start
-        return SamplingResult(data, model, self, d_time, lnprobs, samples)
+        kwargs = {'lnprobs': lnprobs, 'samples':samples}
+        return SamplingResult(data, model, self, d_time, kwargs)
 
 
 class TemperedStrategy(EmceeStrategy):

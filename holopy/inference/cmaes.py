@@ -85,9 +85,9 @@ class CmaStrategy(HoloPyObject):
                 for best_val, diff, par in zip(best_vals, diffs, parameters)]
         stop = dict(sampler.stop())
         d_time = time.time() - time_start
-        kwargs = {'lnprobs':lnprobs, 'samples':samples,
+        kwargs = {'lnprobs':lnprobs, 'samples':samples, 'intervals': intervals,
                      'stop_condition':stop, 'popsize': popsize}
-        return FitResult(data, model, self, intervals, d_time, kwargs)
+        return FitResult(data, model, self, d_time, kwargs)
 
 
 def run_cma(obj_func, parameters, initial_population, weight_function,

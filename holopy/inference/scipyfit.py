@@ -88,7 +88,8 @@ class LeastSquaresScipyStrategy(HoloPyObject):
                      for err, par in zip(perrors, parameters)]
         # timing decorator...
         d_time = time.time() - time_start
-        return FitResult(data, model, self, intervals, d_time, minimizer_info)
+        kwargs = {'intervals':intervals, 'minimizer_info':minimizer_info}
+        return FitResult(data, model, self, d_time, kwargs)
 
     def minimize(self, parameters, residuals_function):
         initial_parameter_guess = [par.scale(par.guess) for par in parameters]

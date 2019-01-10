@@ -82,6 +82,8 @@ def pad_channel(im, color_axis=illumination, padval=0):
     return clean_concat([im, new_ax], concat_dim)
 
 def pack_attrs(a, do_spacing=False, scaling = None):
+    if len(a.attrs)==0:
+        return a.attrs
     new_attrs = {'name':a.name, attr_coords:{}}
 
     if do_spacing:
@@ -106,6 +108,8 @@ def pack_attrs(a, do_spacing=False, scaling = None):
     return new_attrs
 
 def unpack_attrs(a):
+    if len(a) == 0:
+        return a
     new_attrs={}
     attr_ref=yaml.load(a[attr_coords])
     for attr in dict_without(attr_ref,['spacing','name', '_dummy_channel, scaling']):
