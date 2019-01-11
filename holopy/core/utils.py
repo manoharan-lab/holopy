@@ -23,11 +23,14 @@ Misc utility functions to make coding more convenient
 
 
 import os
+import sys
 import shutil
 import errno
-import numpy as np
 from copy import copy
 import itertools
+
+
+import numpy as np
 import xarray as xr
 import schwimmbad
 
