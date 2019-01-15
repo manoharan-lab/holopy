@@ -59,9 +59,8 @@ class FitResult(HoloPyObject):
         self.model = model
         self.strategy = strategy
         self.time = time
-        for key, val in kwargs.items():
-            setattr(self, key, val)
-        self._kwargs_keys = list(kwargs.keys())
+        self._kwargs_keys = []
+        self.add_attr(**kwargs)
 
     @property
     def guess(self):
@@ -115,6 +114,11 @@ class FitResult(HoloPyObject):
         self._max_lnprob = self.model.lnposterior(self.parameters, self.data)
         self._kwargs_keys.append('_max_lnprob')
         return self.max_lnprob
+
+    def add_attr(self, **kwargs):
+        for key, val in kwargs.items():
+            setattr(self, key, val)
+            self._kwargs_keys.append(key)
 
     @property
     def _source_class(self):
