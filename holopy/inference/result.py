@@ -33,7 +33,7 @@ import h5py
 from holopy.core.metadata import detector_grid, copy_metadata
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.io.io import pack_attrs, unpack_attrs
-from holopy.core.utils import dict_without, ensure_array
+from holopy.core.utils import dict_without, ensure_scalar
 
 
 warn_text = 'Loading a legacy (pre-3.3) HoloPy file. Please \
@@ -261,12 +261,12 @@ class UncertainValue(HoloPyObject):
         The number of sigma the uncertainties represent
     """
     def __init__(self, guess, plus, minus=None, name=None):
-        self.guess = np.asscalar(ensure_array(guess))
-        self.plus = np.asscalar(ensure_array(plus))
+        self.guess = ensure_scalar(guess)
+        self.plus = ensure_scalar(plus)
         if minus is None:
             self.minus = self.plus
         else:
-            self.minus = np.asscalar(ensure_array(minus))
+            self.minus = ensure_scalar(minus)
         self.name = name
 
     def _repr_latex_(self):

@@ -59,6 +59,9 @@ def ensure_listlike(x):
     except TypeError:
         return [x]
 
+def ensure_scalar(x):
+    return ensure_array(x).item()
+
 def mkdir_p(path):
     '''
     Equivalent to mkdir -p at the shell, this function makes a

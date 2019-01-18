@@ -264,7 +264,7 @@ class CenteredScatterer(Scatterer):
         params = _interpret_parameters(self.parameters)
         for key in params.keys():
             if isinstance(getattr(self, key), xr.DataArray):
-                params[key] = np.asscalar(getattr(self, key).sel(**keys))
+                params[key] = getattr(self, key).sel(**keys).item()
             elif isinstance(params[key], dict):
                 for dimkeys in keys.values():
                     params[key] = [params[key][dimkey] 
@@ -318,11 +318,10 @@ def _expand_parameters(pairs, basekey=''):
         elif isinstance(par, dict):
             add_pars(par.items(), '_')
         elif isinstance(par, xr.DataArray):
-            coords = par.coords[par.dims[0]]
-            subkeys = [np.asscalar(coord) for coord in coords]
+            subkeys = [coord.item() for coord in par.coords[par.dims[0]]]
             subvals = [par.loc[subkey] for subkey in subkeys]
             if len(par.dims)==1:
-                subvals = map(np.asscalar, subvals)
+                subvals = [subval.item() for subval in subvals]
             add_pars(zip(subkeys, subvals), '_')
         elif hasattr(par, 'name') and hasattr(par, 'imag'):
             # prior.ComplexPrior

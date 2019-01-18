@@ -90,7 +90,7 @@ def pack_attrs(a, do_spacing=False, scaling = None):
         new_attrs['spacing']=list(get_spacing(a))
 
     if scaling is 'auto':
-        scaling = [np.asscalar(a.min()), np.asscalar(a.max())]
+        scaling = [a.min().item(), a.max().item()]
     if scaling:
         new_attrs['scaling']=list(scaling)
 
@@ -187,7 +187,8 @@ def load(inf, lazy=False):
                     warnings.simplefilter("ignore")
                     im = load_image(inf, meta['spacing'], name = meta['name'], channel='all')
                 if '_dummy_channel' in meta:
-                    im = im.drop(np.asscalar(im.illumination[meta['_dummy_channel']]), illumination)
+                    dummy_channel = im.illumination[meta['_dummy_channel']]
+                    im = im.drop(dummy_channel.item(), illumination)
                 if 'scaling' in meta:
                     smin, smax = meta['scaling']
                     im = (im-im.min())*(smax-smin)/(im.max()-im.min())+smin

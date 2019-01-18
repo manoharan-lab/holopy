@@ -22,7 +22,7 @@ import numpy as np
 import xarray as xr
 
 from holopy.core.metadata import dict_to_array, make_subset_data
-from holopy.core.utils import ensure_array, ensure_listlike
+from holopy.core.utils import ensure_array, ensure_listlike, ensure_scalar
 from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering.errors import (MultisphereFailure,
                                 InvalidScatterer, MissingParameter)
@@ -145,7 +145,7 @@ class BaseModel(HoloPyObject):
         """
         noise_sd = self.find_noise(pars, data)
         N = data.size
-        log_likelihood = np.asscalar(
+        log_likelihood = ensure_scalar(
             -N/2 * np.log(2 * np.pi) -
             N * np.mean(np.log(ensure_array(noise_sd))) -
             (self._residuals(pars, data, noise_sd)**2).sum())
