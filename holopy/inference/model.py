@@ -166,7 +166,7 @@ class LimitOverlaps(HoloPyObject):
 
 
 class AlphaModel(BaseModel):
-    def __init__(self, scatterer, noise_sd=None, alpha=1, medium_index=None,
+    def __init__(self, scatterer, alpha=1, noise_sd=None, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
                  constraints=[]):
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
@@ -234,7 +234,7 @@ class ExactModel(BaseModel):
 
 class PerfectLensModel(BaseModel):
     theory_params = ['lens_angle']
-    def __init__(self, scatterer, noise_sd=None, lens_angle=1.0,
+    def __init__(self, scatterer, lens_angle=1.0, noise_sd=None,
                  medium_index=None, illum_wavelen=None, theory='auto',
                  illum_polarization=None, constraints=[]):
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,

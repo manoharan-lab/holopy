@@ -108,7 +108,7 @@ class Model(HoloPyObject):
             fit_warning('hp.inference.AlphaModel', 'Model')
             if alpha is None:
                 alpha = 1.0
-            model = AlphaModel(scatterer, None, alpha, medium_index,
+            model = AlphaModel(scatterer, alpha, None, medium_index,
                         illum_wavelen, illum_polarization, theory, constraints)
         elif alpha is None:
             fit_warning('hp.inference.ExactModel','Model')
