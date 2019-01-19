@@ -137,7 +137,7 @@ class MieLensCalculator(object):
         # which is more-or-less from the brightfield writeups.
         # return 1j - 0.25 * mielens_field(krho, phi, **kwargs)
         fx, fy = self.calculate_scattered_field(krho, phi)
-        return 1j + fx, fy
+        return -1 + fx, fy
 
     def calculate_total_intensity(self, krho, phi):
         fx, fy = self.calculate_total_field(krho, phi)
@@ -149,8 +149,8 @@ class MieLensCalculator(object):
         i_2 = np.reshape(self._eval_mielens_i_n(krho, n=2), shape)
         c2p = np.cos(2 * phi)
         s2p = np.sin(2 * phi)
-        field_xcomp = 0.25 * (i_0 - i_2 * c2p)
-        field_ycomp = 0.25 * i_2 * s2p
+        field_xcomp = 0.5 * (i_0 + i_2 * c2p)
+        field_ycomp = 0.5 * i_2 * s2p
         return field_xcomp, field_ycomp
 
     def _precompute_scattering_matrices(self):
@@ -201,15 +201,16 @@ class MieLensCalculator(object):
             scatmatrix_values = self._scat_s_values + self._scat_p_values
         elif n == 2:
             ji = j2
-            scatmatrix_values = self._scat_s_values - self._scat_p_values
+            scatmatrix_values = self._scat_p_values - self._scat_s_values
         else:
             raise ValueError('n must be one of {0, 2}')
         # We do the integral with the change of variables x = cos(theta),
         # from cos(lens_angle) to 1.0:
         # Placing things in order [quadrature points, rho-z values]
         rr = krho.reshape(1, -1)
-        integrand = (np.exp(-1j * self.particle_kz * (self._quad_pts - 1)) *
-                     scatmatrix_values * ji(rr * self._sintheta_pts))
+        integrand = (np.exp(1j * self.particle_kz * (1 - self._quad_pts)) *
+                     scatmatrix_values * ji(rr * self._sintheta_pts) *
+                     np.sqrt(self._quad_pts))
         answer_flat = np.sum(integrand * self._quad_wts, axis=0)
         return answer_flat.reshape(krho.shape)
 
