@@ -93,16 +93,16 @@ class MieLens(ScatteringTheory):
 
         # Then we need to do 2 separate modifications to the fields.
         # First, in a lens, the incident field is Gouy phase shifted
-        # to be E0 * 1j, whereas in holopy the field is considered as
+        # to be E0 * -1, whereas in holopy the field is considered as
         # imaged without a phase shift. So since in holopy the incident
-        # field, imaged by the lens, is phase shifted by -pi/2, we need
-        # to phase-shift the scattered fields by -pi /2 as well =
-        # multiply by -1j.
+        # field, imaged by the lens, is phase shifted by -pi, we need
+        # to phase-shift the scattered fields by -pi as well = multiply
+        # by -1.
         # Second, holopy phase-shifts the reference wave by e^{ikz}.
         # For numerical reasons, in the mielens calculation I consider
         # the incident wave fixed and the scattered wave shifted by
-        # e^{-ikz}. So we need to fix this by multiplying by
-        # e^{ikz}. Combined, we multiply by -1j * e^{ikz}:
-        field_xyz *= -1j * np.exp(1j * particle_kz)
+        # e^{ikz}. So we need to fix this by multiplying by e^{ikz}.
+        # Combined, we multiply by -1 * e^{ikz}:
+        field_xyz *= -1 * np.exp(1j * particle_kz)
         return field_xyz
 
