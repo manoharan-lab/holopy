@@ -184,6 +184,7 @@ class TestMieLensCalculator(unittest.TestCase):
         fields_dont_explode = np.all(np.abs(field_x < 2e-4))
         self.assertTrue(fields_dont_explode)
 
+    @attr("slow")
     def test_interpolate_is_same_as_direct_computation(self):
         k = 2 * np.pi / 0.66
 
@@ -300,6 +301,38 @@ class TestJ2(unittest.TestCase):
         self.assertFalse(np.isclose(should_not_be_zero, 0, atol=1e-10).any())
 
 
+class TestCalculation(unittest.TestCase):
+    # We use a weak tolerance
+    _lowna_tols = {'atol': 2e-2, 'rtol': 0}
+    _highna_tols = {'atol': 3e-3, 'rtol': 0}
+
+    def test_energy_is_conserved_at_low_na_pointparticle(self):
+        ratio = get_ratio_of_scattered_powerin_to_scattered_powerout(
+            lens_angle=0.1, index_ratio=1.5, particle_kz=0, size_parameter=0.1)
+        self.assertTrue(np.isclose(ratio, 1.0, **self._lowna_tols))
+
+    def test_energy_is_conserved_at_low_na_largeparticle(self):
+        ratio = get_ratio_of_scattered_powerin_to_scattered_powerout(
+            lens_angle=0.1, index_ratio=1.5, particle_kz=0, size_parameter=40.)
+        self.assertTrue(np.isclose(ratio, 1.0, **self._lowna_tols))
+
+    def test_energy_is_conserved_at_high_na_pointparticle(self):
+        ratio = get_ratio_of_scattered_powerin_to_scattered_powerout(
+            lens_angle=0.9, index_ratio=1.5, particle_kz=0, size_parameter=0.1)
+        self.assertTrue(np.isclose(ratio, 1.0, **self._highna_tols))
+
+    def test_energy_is_conserved_at_high_na_largeparticle(self):
+        ratio = get_ratio_of_scattered_powerin_to_scattered_powerout(
+            lens_angle=0.9, index_ratio=1.5, particle_kz=0, size_parameter=40.)
+        self.assertTrue(np.isclose(ratio, 1.0, **self._highna_tols))
+
+    def test_energy_is_conserved_at_high_na_largeparticle_defocus(self):
+        ratio = get_ratio_of_scattered_powerin_to_scattered_powerout(
+            lens_angle=0.9, index_ratio=1.5, particle_kz=200.,
+            size_parameter=40.)
+        self.assertTrue(np.isclose(ratio, 1.0, **self._highna_tols))
+
+
 def evaluate_scattered_field_in_lens(delta_index=0.1, size_parameter=0.1):
     miecalculator = mielensfunctions.MieLensCalculator(
         particle_kz=10, index_ratio=1.0 + delta_index,
@@ -313,6 +346,71 @@ def evaluate_scattered_field_in_lens(delta_index=0.1, size_parameter=0.1):
 def integrate_like_mielens(function, bounds):
     pts, wts = mielensfunctions.gauss_legendre_pts_wts(bounds[0], bounds[1])
     return (function(pts) * wts).sum()
+
+
+class CheckEnergyIsConserved(object):
+    """Tools for checking that the energy of the scattered beam which
+    enters the entrance pupil is the same as the power incident on the
+    detector.
+
+    For the scattered beam, conservation of energy is equivalent to
+    the statement that the integral
+        .. math ::
+
+            \int_0^\beta \left[ \cos^2 \theta |S_\parallel|^2 +
+                |S_\perpendicular|^2 \right] \sin \theta \, d\theta
+
+    is equal to the integral
+        .. math ::
+
+            \frac 1 2 \int_0^\infinity \left[ |I_0(k\rho)|^2 + |I_2(k\rho)|^2
+                \right] (k\rho) d(k\rho)
+
+    """
+    _npts = 1000
+    def __init__(self, mielenscalculator):
+        self.mielenscalculator = mielenscalculator
+
+    def evaluate_scattered_power_incident_on_pupil(self):
+        parallel = self.mielenscalculator._scat_p_values.squeeze()
+        perpendicular = self.mielenscalculator._scat_s_values.squeeze()
+        cos_theta = self.mielenscalculator._quad_pts.squeeze()
+        wts = self.mielenscalculator._quad_wts.squeeze()
+        integrand = np.abs(parallel)**2 + np.abs(perpendicular)**2
+        # mielenscalculator uses x = cos(theta), so sin(theta) dtheta = dx
+        return (integrand * wts).sum()
+
+    def evaluate_scattered_power_incident_on_detector(self):
+        # We use knowledge from high-order leggauss that quadratically
+        # spaced points near boundaries are good to sample the integrand:
+        t = np.linspace(0, 1, self._npts)
+        # krhomax is the largest stable value, which we use as "infinity":
+        krhomax = 3.9 * self.mielenscalculator.quad_npts
+        krho = krhomax * (2 * t**2 / (1 + t))
+
+        i0 = self.mielenscalculator._eval_mielens_i_n(krho, n=0)
+        i2 = self.mielenscalculator._eval_mielens_i_n(krho, n=2)
+
+        integrand = (np.abs(i0)**2 + np.abs(i2)**2) * krho
+        return 0.5 * np.trapz(integrand, krho)
+
+    def check_if_energy_is_conserved(self):
+        ratio = self.get_ratio_of_powerin_to_powerout()
+        return np.isclose(ratio, 1, atol=1e-3, rtol=0)
+
+    def get_ratio_of_scattered_powerin_to_scattered_powerout(self):
+        power_in = self.evaluate_scattered_power_incident_on_pupil()
+        power_out = self.evaluate_scattered_power_incident_on_detector()
+        return power_in / power_out
+
+
+def get_ratio_of_scattered_powerin_to_scattered_powerout(**kwargs):
+    mielenscalc = mielensfunctions.MieLensCalculator(**kwargs)
+    checker = CheckEnergyIsConserved(mielenscalc)
+    power_in = checker.evaluate_scattered_power_incident_on_pupil()
+    power_out = checker.evaluate_scattered_power_incident_on_detector()
+    return power_in / power_out
+
 
 if __name__ == '__main__':
     unittest.main()
