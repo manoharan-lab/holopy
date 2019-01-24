@@ -36,8 +36,8 @@ class CmaStrategy(HoloPyObject):
         tolerance values to overwrite the cma defaults
     seed: int, optional
         random seed to use
-    parallel: int or float, optional
-        number of threads to use or one of {None, 'all' or 'mpi'}. 
+    parallel: optional
+        number of threads to use or pool object or one of {None, 'all', 'mpi'}.
         Default tries 'mpi' then 'all'.
     """
     def __init__(self, npixels=None, resample_pixels=True,
@@ -109,8 +109,8 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
         tolerance values to overwrite the cma defaults
     seed: int, optional
         random seed to use
-    parallel: int or float, optional
-        number of threads to use or one of {None, 'all' or 'mpi'}. 
+    parallel: optional
+        number of threads to use or pool object or one of {None, 'all', 'mpi'}.
         Default tries 'mpi' then 'all'.
     """
 
@@ -129,19 +129,20 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
     cma_strategy.inject(initial_population, force=True)
     solutions = np.array([[None] * len(parameters)] * popsize)
     func_vals = np.array([0.] * popsize)
+    pool = choose_pool(parallel)
     while not cma_strategy.stop():
         invalid = [True] * popsize
         inf_replace_counter = 0
         while np.sum(invalid) > 0 and inf_replace_counter < 10:
             attempts = cma_strategy.ask(np.sum(invalid))
             solutions[invalid, :] = attempts
-            pool = choose_pool(parallel)
             func_vals[invalid] = list(pool.map(obj_func, attempts))
-            pool.close()
             invalid = ~np.isfinite(func_vals)
             inf_replace_counter += 1 # catches case where all are inf
         cma_strategy.tell(solutions, func_vals)
         cma_strategy.logger.add()
     cma_strategy.logger.load()
     shutil.rmtree(tempdir)
+    if pool is not parallel:
+        pool.close()
     return cma_strategy

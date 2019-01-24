@@ -120,7 +120,8 @@ def sample_emcee(model, data, nwalkers, nsamples, walker_initial_pos,
         sampler.random_state=seed_state
 
     sampler.run_mcmc(walker_initial_pos, nsamples)
-    pool.close()
+    if pool is not parallel:
+        pool.close()
 
     return sampler
 

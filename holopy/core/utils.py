@@ -152,6 +152,8 @@ def choose_pool(parallel):
     """
     This is a remake of schwimmbad.choose_pool with a single argument that has more options.
     """
+    if hasattr(parallel, 'map'):
+        return parallel
     if parallel is None:
         return schwimmbad.SerialPool()
     if parallel is 'mpi':
@@ -170,5 +172,5 @@ def choose_pool(parallel):
             return choose_pool('all')
     if isinstance(parallel, int):
         return schwimmbad.MultiPool(parallel)
-    raise TypeError("Could not interpret 'parallel' argument. Use an integer, 'mpi', 'all', 'auto', or None")
+    raise TypeError("Could not interpret 'parallel' argument. Use an integer, 'mpi', 'all', 'auto', None or pass a pool object with 'map' method.")
 

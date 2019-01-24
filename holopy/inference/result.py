@@ -46,7 +46,7 @@ def get_strategy(strategy):
         # old file
         warn(warn_text)
     index = strategy.find('pixel')
-    if index > -1:
+    if index > -1 and strategy[index-1] != 'n':
         strategy = strategy[:index] + 'n' + strategy[index:]
     index = strategy.find('sample')
     if index > -1:
@@ -58,6 +58,11 @@ class FitResult(HoloPyObject):
         self.data = data
         self.model = model
         self.strategy = strategy
+        try:
+            if hasattr(strategy.parallel, 'map'):
+                self.strategy.parallel = 'external_pool'
+        except AttributeError:
+            pass
         self.time = time
         self._kwargs_keys = []
         self.add_attr(**kwargs)
