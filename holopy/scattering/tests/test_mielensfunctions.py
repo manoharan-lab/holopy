@@ -50,6 +50,15 @@ class TestMieLensCalculator(unittest.TestCase):
         self.assertFalse(any(should_be_false))
 
     @attr("fast")
+    def test_calculation_doesnt_crash_for_large_rho(self):
+        miecalculator = mielensfunctions.MieLensCalculator(
+            particle_kz=10, index_ratio=1.2, size_parameter=10., lens_angle=0.9)
+        krho = np.linspace(1000, 1100, 10)
+        kphi = np.full_like(krho, 0.25 * np.pi)
+        fields = miecalculator.calculate_scattered_field(krho, kphi)
+        self.assertTrue(fields is not None)
+
+    @attr("fast")
     def test_scatteredfield_linear_at_low_contrast(self):
         dn1 = 1e-3
         dn2 = 5e-4
