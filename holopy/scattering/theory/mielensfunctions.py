@@ -351,12 +351,12 @@ class AlBlFunctions(object):
     ..math::
 
         a_l = \frac{\psi_l(x) \psi_l'(nx) -  n \psi_l(nx) \psi_l'(x)}
-                   {\xi_l(x) \psi_l'(nx) - n \psi_l(nx)  \xi_l'(x)},
+                   {\\xi_l(x) \psi_l'(nx) - n \psi_l(nx)  \\xi_l'(x)},
 
         b_l = \frac{\psi_l(nx) \psi_l'(x) - n \psi_l(x) \psi_l'(nx)}
-                   {\psi_l(nx) \xi_l'(x) - n \xi_l(x) \psi_l'(nx)},
+                   {\psi_l(nx) \\xi_l'(x) - n \\xi_l(x) \psi_l'(nx)},
 
-    where :math:`\psi_l` and :math:`\xi_l` are the Riccati-Bessel
+    where :math:`\psi_l` and :math:`\\xi_l` are the Riccati-Bessel
     functions of the first and third kinds, respectively. The
     definitions used here follow those of van der Hulst [1]_, which
     differ from those used in Bohren and Huffman [2]_.
