@@ -114,19 +114,20 @@ class MieLensCalculator(object):
         shape = krho.shape
         if (shape != phi.shape):
             raise ValueError('krho, phi must all be the same shape')
-        # 1. Check for regions where rho is bad and set to 0:
-        rho_too_big = krho > 3.9 * self.quad_npts
-        rho_ok = ~rho_too_big
 
-        # 2. Evaluate scattered fields only at valid rho's:
-        ex_valid, ey_valid = self._calculate_scattered_field(
-            krho[rho_ok], phi[rho_ok])
-
-        # 3. Return
         output_x = np.zeros(shape, dtype='complex')
         output_y = np.zeros(shape, dtype='complex')
-        output_x[rho_ok] = ex_valid
-        output_y[rho_ok] = ey_valid
+
+        # 1. Check for regions where rho is bad and leave as 0:
+        rho_ok = krho < 3.9 * self.quad_npts
+
+        # 2. Evaluate scattered fields only at valid rho's:
+        if rho_ok.any():
+            ex_valid, ey_valid = self._calculate_scattered_field(
+                krho[rho_ok], phi[rho_ok])
+            output_x[rho_ok] = ex_valid
+            output_y[rho_ok] = ey_valid
+
         return output_x, output_y
 
     def calculate_total_field(self, krho, phi):
