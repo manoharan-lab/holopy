@@ -319,6 +319,11 @@ def spherical_h1n(n, z, derivative=False):
     return spherical_jn(n, z, derivative) + 1j * spherical_yn(n, z, derivative)
 
 
+def spherical_h2n(n, z, derivative=False):
+    """Spherical Hankel function H_n(z) or its derivative"""
+    return spherical_jn(n, z, derivative) - 1j * spherical_yn(n, z, derivative)
+
+
 def gauss_legendre_pts_wts(a, b, npts=NPTS):
     """Quadrature points for integration on interval [a, b]"""
     if npts == NPTS:
@@ -336,22 +341,38 @@ def calculate_al_bl(index_ratio, size_parameter, l):
 
 
 class AlBlFunctions(object):
+    """
+    Group of functions for calculating the Mie scattering coefficients,
+    used for expressing the scattered field in terms of vector spherical
+    harmonics.
+
+    The coefficients `a_l`, `b_l` are defined as
+
+    ..math::
+
+        a_l = \frac{\psi_l(x) \psi_l'(nx) -  n \psi_l(nx) \psi_l'(x)}
+                   {\xi_l(x) \psi_l'(nx) - n \psi_l(nx)  \xi_l'(x)},
+
+        b_l = \frac{\psi_l(nx) \psi_l'(x) - n \psi_l(x) \psi_l'(nx)}
+                   {\psi_l(nx) \xi_l'(x) - n \xi_l(x) \psi_l'(nx)},
+
+    where :math:`\psi_l` and :math:`\xi_l` are the Riccati-Bessel
+    functions of the first and third kinds, respectively. The
+    definitions used here follow those of van der Hulst [1]_, which
+    differ from those used in Bohren and Huffman [2]_.
+
+    References
+    ----------
+        .. [1] H. C. van der Hulst, "Light Scattering by Small Particles",
+               Dover (1981), pg 123.
+        .. [2] C. F. Bohren and Donald R. Huffman, "Absorption and
+               Scattering of Light by Small Particles", Wiley (2004),
+               pg 101.
+    """
+
     @staticmethod
     def calculate_al_bl(index_ratio, size_parameter, l):
-        """
-        Mie scattering coefficients for expressing the scattered field in
-        terms of vector spherical harmonics.
-
-        ..math::
-
-            a_l = \frac{n\, \psi_l(nx)\,\psi_l'(x)-\psi_l(x)\,\psi_l'(nx)}
-                       {n\, \psi_l(nx) \,\\xi_l'(x)-\\xi_l(x)\,\psi_l'(nx)},
-
-            b_l = \frac{\psi_l(nx)\,\psi_l'(x)-n\,\psi_l(x)\,\psi_l'(nx)}
-                       {\psi_l(nx)\, \\xi_l'(x)-n\, \\xi_l(x)\,\psi_l'(nx)},
-
-        where :math:`\psi_l` and :math:`\\xi_l` are the Riccati-Bessel
-        functions of the first and third kinds, respectively.
+        """Returns `a_l` and `b_l`; see class docstring.
 
         Parameters
         ----------
@@ -365,6 +386,7 @@ class AlBlFunctions(object):
         Returns
         -------
         a_l, b_l : numpy.ndarray
+
         """
         psi_nx = AlBlFunctions.riccati_psin(
             l, index_ratio * size_parameter)
@@ -377,10 +399,10 @@ class AlBlFunctions(object):
         xi_x = AlBlFunctions.riccati_xin(l, size_parameter)
         dxi_x = AlBlFunctions.riccati_xin(l, size_parameter, derivative=True)
 
-        a = (index_ratio * psi_nx * dpsi_x - psi_x * dpsi_nx) / (
-             index_ratio * psi_nx * dxi_x - xi_x * dpsi_nx)
-        b = (psi_nx * dpsi_x - index_ratio * psi_x * dpsi_nx) / (
-             psi_nx * dxi_x - index_ratio * xi_x * dpsi_nx)
+        a = (dpsi_nx * psi_x - index_ratio * psi_nx * dpsi_x) / (
+             dpsi_nx * xi_x - index_ratio * psi_nx * dxi_x)
+        b = (index_ratio * dpsi_nx * psi_x - psi_nx * dpsi_x) / (
+             index_ratio * dpsi_nx * xi_x - psi_nx * dxi_x)
         return a, b
 
     @staticmethod
@@ -435,10 +457,10 @@ class AlBlFunctions(object):
         xin : ndarray
         """
         if derivative:
-            ricatti = (z * spherical_h1n(order, z, derivative=derivative) +
-                       spherical_h1n(order, z))
+            ricatti = (z * spherical_h2n(order, z, derivative=derivative) +
+                       spherical_h2n(order, z))
         else:
-            ricatti = z * spherical_h1n(order, z)
+            ricatti = z * spherical_h2n(order, z)
         return ricatti
 
 
