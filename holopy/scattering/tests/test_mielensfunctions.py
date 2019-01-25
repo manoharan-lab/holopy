@@ -366,14 +366,16 @@ class CheckEnergyIsConserved(object):
     the statement that the integral
         .. math ::
 
-            \int_0^\beta \left[ \cos^2 \theta |S_\parallel|^2 +
-                |S_\perpendicular|^2 \right] \sin \theta \, d\theta
+            \int_0^\beta
+                \left[ |S_\parallel|^2 + |S_\perpendicular|^2 \right]
+                \sin \theta \, d\theta
 
     is equal to the integral
         .. math ::
 
-            \frac 1 2 \int_0^\infinity \left[ |I_0(k\rho)|^2 + |I_2(k\rho)|^2
-                \right] (k\rho) d(k\rho)
+            \frac 1 2 \int_0^\infinity
+                \left[ |I_0(k\rho)|^2 + |I_2(k\rho)|^2 \right]
+                (k\rho) d(k\rho)
 
     """
     _npts = 1000
