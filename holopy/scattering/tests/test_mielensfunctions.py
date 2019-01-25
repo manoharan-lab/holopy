@@ -59,6 +59,28 @@ class TestMieLensCalculator(unittest.TestCase):
         self.assertTrue(fields is not None)
 
     @attr("fast")
+    def test_central_lobe_is_bright_when_particle_is_above_focus(self):
+        zs = np.linspace(2, 10, 11)
+        k = 2 * np.pi / 0.66
+        # This test only works at low index contrast, when the scattered
+        # beam is everywhere weaker than the unscattered:
+        central_lobes = np.squeeze(
+            [evaluate_intensity_at_rho_zero(k * z, index_ratio=1.05)
+             for z in zs])
+        self.assertTrue(np.all(central_lobes > 1))
+
+    @attr("fast")
+    def test_central_lobe_is_dark_when_particle_is_below_focus(self):
+        zs = np.linspace(-2, -10, 11)
+        k = 2 * np.pi / 0.66
+        # This test only works at low index contrast, when the scattered
+        # beam is everywhere weaker than the unscattered:
+        central_lobes = np.squeeze(
+            [evaluate_intensity_at_rho_zero(k * z, index_ratio=1.05)
+             for z in zs])
+        self.assertTrue(np.all(central_lobes < 1))
+
+    @attr("fast")
     def test_scatteredfield_linear_at_low_contrast(self):
         dn1 = 1e-3
         dn2 = 5e-4
@@ -350,6 +372,14 @@ def evaluate_scattered_field_in_lens(delta_index=0.1, size_parameter=0.1):
     # for phi, we pick an off-axis value where both polarizations are nonzero
     kphi = np.full_like(krho, 0.25 * np.pi)
     return miecalculator.calculate_scattered_field(krho, kphi)  # x,y component
+
+
+def evaluate_intensity_at_rho_zero(kz, index_ratio=1.05):
+    miecalculator = mielensfunctions.MieLensCalculator(
+        particle_kz=kz, index_ratio=index_ratio, size_parameter=10,
+        lens_angle=0.8)
+    krho = np.array([0])
+    return miecalculator.calculate_total_intensity(krho, 0 * krho)
 
 
 def integrate_like_mielens(function, bounds):
