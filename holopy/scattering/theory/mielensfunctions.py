@@ -137,12 +137,22 @@ class MieLensCalculator(object):
         #   E_in = E_0 \hat{x} * 4 pi * (f1 / f2) * e^{ik(f1 + f2)} * i
         # which is more-or-less from the brightfield writeups.
         # return 1j - 0.25 * mielens_field(krho, phi, **kwargs)
-        fx, fy = self.calculate_scattered_field(krho, phi)
-        return -1 + fx, fy
+        scattered_x, scattered_y = self.calculate_scattered_field(krho, phi)
+        incident_x, incident_y = self.calculate_incident_field()
+        return incident_x + scattered_x, incident_y + scattered_y
 
     def calculate_total_intensity(self, krho, phi):
         fx, fy = self.calculate_total_field(krho, phi)
         return np.abs(fx)**2 + np.abs(fy)**2
+
+    def calculate_incident_field(self):
+        """This is here so
+            (i)  Any corrections in the theory to the scattered field
+                 have an easy place to enter, and
+            (ii) Other packages can consistently use the same scattered
+                 field as this package.
+        """
+        return -1, 0
 
     def _calculate_scattered_field(self, krho, phi):
         shape = phi.shape
