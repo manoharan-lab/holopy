@@ -22,28 +22,19 @@ Test the ability of the mielens calculations to interface with holopy.
 """
 
 import os
-import yaml
 import unittest
 
 import numpy as np
-from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
-                           assert_raises, assert_equal, assert_allclose)
 from nose.plugins.attrib import attr
 
-from ..scatterer import Sphere, Spheres, Ellipsoid
+from ..scatterer import Sphere, Spheres
 from ..theory import Mie, MieLens, mielensfunctions
 
-from ..errors import TheoryNotCompatibleError, InvalidScatterer
-from ...core.metadata import (detector_grid, detector_points, to_vector,
-                              sphere_coords, update_metadata)
-from ...core.process import subimage
-from .common import (sphere, xschema, scaling_alpha, yschema, xpolarization,
-                     ypolarization)
-from .common import x, y, z, n, radius, wavelen, index
-from ...core.tests.common import assert_obj_close, verify
-
-from ..calculations import (calc_field, calc_holo, calc_intensity,
-                            calc_scat_matrix, calc_cross_sections)
+from ...core.metadata import detector_grid
+from .common import (
+    sphere, xschema, scaling_alpha, yschema, xpolarization, ypolarization,
+    x, y, z, n, radius, wavelen, index)
+from ..calculations import calc_holo
 
 
 TOLS = {'atol': 1e-13, 'rtol': 1e-13}
@@ -107,6 +98,22 @@ class TestMieLens(unittest.TestCase):
                             **TOLS)
         self.assertTrue(is_ok)
 
+    @attr("fast")
+    def test_central_lobe_is_bright_when_particle_is_above_focus(self):
+        # This test only works at low index contrast, when the scattered
+        # beam is everywhere weaker than the unscattered:
+        zs = np.linspace(2, 10, 11)
+        central_lobes = calculate_central_lobe_at(zs)
+        self.assertTrue(np.all(central_lobes > 1))
+
+    @attr("fast")
+    def test_central_lobe_is_dark_when_particle_is_below_focus(self):
+        # This test only works at low index contrast, when the scattered
+        # beam is everywhere weaker than the unscattered:
+        zs = np.linspace(-2, -10, 11)
+        central_lobes = calculate_central_lobe_at(zs)
+        self.assertTrue(np.all(central_lobes < 1))
+
     @attr('fast')
     def test_mielens_is_close_to_mieonly(self):
         """Tests that a mielens hologram is similar to a mie-only hologram."""
@@ -165,6 +172,23 @@ class TestMieLens(unittest.TestCase):
                          theory=theory)
         self.assertTrue(holo is not None)
         self.assertTrue(holo.values.std() > 0)
+
+
+def calculate_central_lobe_at(zs):
+    illum_wavelength = 0.66  # 660 nm red light
+    k = 2 * np.pi / illum_wavelength
+    detector = detector_grid(4, 2.0)
+
+    central_lobes = []
+    for z in zs:
+        center = (0, 0, z)
+        scatterer = Sphere(n=1.59, r=0.5, center=center)
+        holo = calc_holo(
+            detector, scatterer, illum_wavelen=illum_wavelength,
+            medium_index=1.33, illum_polarization=(1, 0), theory=MieLens())
+        central_lobe = holo.values.squeeze()[0, 0]
+        central_lobes.append(central_lobe)
+    return np.array(central_lobes)
 
 
 if __name__ == '__main__':
