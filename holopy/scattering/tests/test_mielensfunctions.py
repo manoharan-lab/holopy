@@ -52,7 +52,8 @@ class TestMieLensCalculator(unittest.TestCase):
     @attr("fast")
     def test_calculation_doesnt_crash_for_large_rho(self):
         miecalculator = mielensfunctions.MieLensCalculator(
-            particle_kz=10, index_ratio=1.2, size_parameter=10., lens_angle=0.9)
+            particle_kz=10, index_ratio=1.2, size_parameter=10.,
+            lens_angle=0.9)
         krho = np.linspace(1000, 1100, 10)
         kphi = np.full_like(krho, 0.25 * np.pi)
         fields = miecalculator.calculate_scattered_field(krho, kphi)
@@ -210,7 +211,8 @@ class TestMieLensCalculator(unittest.TestCase):
     def test_fields_go_to_zero_at_large_distances(self):
         rho = np.logspace(2.4, 5, 80)
         calculator = mielensfunctions.MieLensCalculator(
-            size_parameter=10, lens_angle=1.0, particle_kz=10., index_ratio=1.1)
+            size_parameter=10, lens_angle=1.0, particle_kz=10.,
+            index_ratio=1.1)
         field_x, field_y = calculator.calculate_scattered_field(rho, 0*rho)
         fields_dont_explode = np.all(np.abs(field_x < 2e-4))
         self.assertTrue(fields_dont_explode)
@@ -249,6 +251,40 @@ class TestMieLensCalculator(unittest.TestCase):
             close_enough_y = np.allclose(fdy, fiy, **MEDTOLS)
             self.assertTrue(close_enough_x)
             self.assertTrue(close_enough_y)
+
+    def test_energy_is_conserved(self):
+
+        def get_excess_power(max_x, npts):
+            """Calculates (total power) - (power at detector)
+
+            This should be _negative_, slightly, as some of the scattered
+            beam does not enter the lens"""
+            t = np.linspace(-max_x, max_x, npts)
+            x = t.reshape(-1, 1)
+            y = t.reshape(1, -1)
+            dt = t[1] - t[0]
+            dA = dt**2
+            rho = np.sqrt(x**2 + y**2)
+            phi = np.arctan2(y, x)
+            k = 2 * np.pi / 0.66 * 1.33
+
+            kwargs = {'particle_kz': 5 * k,
+                      'index_ratio': 1.59 / 1.33,
+                      'size_parameter': k * 0.5,
+                      'lens_angle': 0.8,
+                      }
+            calc = mielensfunctions.MieLensCalculator(**kwargs)
+            hologram = calc.calculate_total_intensity(k*rho, phi)
+            excess_power = dA * (hologram - 1).sum()
+            return excess_power
+
+        excess_power = get_excess_power(10, 101)
+        # Energy is conserved, but some exits the lens. So this should
+        # be slightly _negative_. Unfortunately I don't know exactly how
+        # much... so we just check that it is consistent with what I have
+        # now.
+        ok = (excess_power < 0) and (excess_power > -0.15)
+        self.assertTrue(ok)
 
     # other possible tests:
     # 1. E(x, y) = E(-x, -y)
@@ -409,6 +445,7 @@ class CheckEnergyIsConserved(object):
 
     """
     _npts = 1000
+
     def __init__(self, mielenscalculator):
         self.mielenscalculator = mielenscalculator
 
