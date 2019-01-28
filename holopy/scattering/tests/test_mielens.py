@@ -27,14 +27,14 @@ import unittest
 import numpy as np
 from nose.plugins.attrib import attr
 
-from ..scatterer import Sphere, Spheres
-from ..theory import Mie, MieLens, mielensfunctions
+from holopy.core.metadata import detector_grid
+from holopy.scattering.theory import Mie, MieLens, mielensfunctions
+from holopy.scattering.scatterer import Sphere, Spheres
+from holopy.scattering.calculations import calc_holo
 
-from ...core.metadata import detector_grid
-from .common import (
+from holopy.scattering.tests.common import (
     sphere, xschema, scaling_alpha, yschema, xpolarization, ypolarization,
     x, y, z, n, radius, wavelen, index)
-from ..calculations import calc_holo
 
 
 TOLS = {'atol': 1e-13, 'rtol': 1e-13}
