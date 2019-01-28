@@ -17,8 +17,8 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from ...core import detector_grid, update_metadata
-from ...scattering.scatterer import Sphere
+from holopy.core import detector_grid, update_metadata
+from holopy.scattering.scatterer import Sphere
 
 wavelen = 658e-9
 ypolarization = [0., 1.0] # y-polarized
