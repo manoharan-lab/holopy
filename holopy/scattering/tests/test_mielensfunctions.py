@@ -5,7 +5,7 @@ import numpy as np
 from scipy.special import jn_zeros
 from nose.plugins.attrib import attr
 
-from ..theory import mielensfunctions
+from holopy.scattering.theory import mielensfunctions
 
 
 TOLS = {'atol': 1e-10, 'rtol': 1e-10}
