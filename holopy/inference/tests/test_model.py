@@ -24,9 +24,13 @@ import xarray as xr
 from collections import OrderedDict
 
 from nose.plugins.attrib import attr
+from numpy.testing import assert_raises
+
+from holopy.core import detector_grid, update_metadata
 from holopy.core.tests.common import assert_equal, assert_obj_close
 from holopy.scattering.theory import Mie
 from holopy.scattering.scatterer import Sphere, Spheres
+from holopy.scattering.errors import MissingParameter
 from holopy.core.tests.common import assert_read_matches_write
 from holopy.scattering.calculations import calc_holo
 from holopy.inference import prior, AlphaModel, ExactModel
@@ -104,6 +108,20 @@ def test_pullingoutguess():
     assert_equal(s.r, model.scatterer.guess.r)
     assert_equal(s.center, model.scatterer.guess.center)
 
+def test_find_noise():
+    noise=0.5
+    s = Sphere(n=prior.Uniform(1.5, 1.7), r=2, center=[1,2,3])
+    data_base = detector_grid(10, spacing=0.5)
+    data_noise = update_metadata(data_base, noise_sd=noise)
+    model_u = AlphaModel(s, alpha=prior.Uniform(0.7,0.9))
+    model_g = AlphaModel(s, alpha=prior.Gaussian(0.8, 0.1))
+    pars = {'n':1.6, 'alpha':0.8}
+    assert_equal(model_u._find_noise(pars, data_noise), noise)
+    assert_equal(model_g._find_noise(pars, data_noise), noise)
+    assert_equal(model_u._find_noise(pars, data_base), 1)
+    assert_raises(MissingParameter, model_g._find_noise, pars, data_base)
+    pars.update({'noise_sd':noise})
+    assert_equal(model_g._find_noise(pars, data_base), noise)
 
 def test_io():
     model = ExactModel(Sphere(1), calc_holo)
