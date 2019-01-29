@@ -86,9 +86,13 @@ class BaseModel(HoloPyObject):
 
 
     def lnprior(self, par_vals):
+        try:
+            par_scat = self.scatterer.from_parameters(par_vals)
+        except InvalidScatterer:
+            return -np.inf
+
         for constraint in self.constraints:
-            tocheck = self.scatterer.from_parameters(par_vals)
-            if not constraint.check(tocheck):
+            if not constraint.check(par_scat):
                 return -np.inf
 
         return sum([p.lnprob(par_vals[p.name]) for p in self._parameters])
@@ -272,7 +276,7 @@ class PerfectLensModel(BaseModel):
 # applicable to the inference models. This should be changed later,
 # when the two fitting approaches are unified.
 
-class lnpost_wrapper(HoloPyObject):
+class LnpostWrapper(HoloPyObject):
     def __init__(self, model, data, new_pixels, minus=False):
         self.parameters = model._parameters
         self.data = data
