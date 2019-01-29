@@ -16,17 +16,21 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
-from numpy.testing import assert_allclose, assert_equal
 from nose.plugins.attrib import attr
 import tempfile
 import os
-import xarray as xr
 import shutil
+from multiprocessing.pool import Pool
 
-from ..utils import ensure_array, ensure_listlike, mkdir_p
-from ..math import rotate_points, rotation_matrix
-from .common import assert_obj_close, get_example_data
+import numpy as np
+from numpy.testing import assert_allclose, assert_equal
+import xarray as xr
+from schwimmbad import MultiPool, SerialPool, pool
+
+from holopy.core.utils import (ensure_array, ensure_listlike, 
+                                            mkdir_p, choose_pool)
+from holopy.core.math import rotate_points, rotation_matrix
+from holopy.core.tests.common import assert_obj_close, get_example_data
 
 
 #Test math
@@ -52,7 +56,16 @@ def test_ensure_array():
     len(ensure_array(xr.DataArray([12],dims='a',coords={'a':['b']})))
     len(ensure_array(xr.DataArray([12],dims='a',coords={'a':['b']}).sel(a='b')))
     len(ensure_array(xr.DataArray(12)))
-    
+
+def test_choose_pool():
+    class dummy():
+        def map():
+            return None
+    assert isinstance(choose_pool(None), SerialPool)
+    assert isinstance(choose_pool(2), MultiPool)
+    assert isinstance(choose_pool('all'), MultiPool)
+    assert isinstance(choose_pool('auto'), (pool.BasePool, Pool))
+    assert not isinstance(choose_pool(dummy), (pool.BasePool, Pool))
 
 def test_ensure_listlike():
     assert ensure_listlike(None) == []
