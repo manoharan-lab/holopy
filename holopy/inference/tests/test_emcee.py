@@ -69,9 +69,10 @@ def test_sample_emcee():
 
 def test_EmceeStrategy():
     mod = SimpleModel(prior.Uniform(0, 1))
-    strat = EmceeStrategy(10, None, None, seed=40)
-    r = strat.optimize(mod, data, 500)
+    strat = EmceeStrategy(10, None, None, seed=48)
+    r = strat.optimize(mod, data, 5)
     assert_allclose(r.guess, .5, rtol=.001)
+    r = strat.optimize(mod, data, 5, [[i] for i in range(10)])
 
 class TestSubsetTempering(unittest.TestCase):
     def test_alpha_subset_tempering(self):
