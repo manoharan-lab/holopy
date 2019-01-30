@@ -37,25 +37,13 @@ from holopy.inference import prior, AlphaModel, ExactModel
 
 
 @attr('fast')
-def test_Tying():
-    # tied parameters
-    n1 = prior.Uniform(1.59,1.6, guess=1.59)
-    sc = Spheres(
-        [Sphere(n=n1, r=0.5e-6, center=np.array([10., 10., 20.])),
-         Sphere(n=n1, r=0.5e-6, center=np.array([9., 11., 21.]))])
-    model = AlphaModel(sc, alpha=prior.Uniform(.6, 1, .7))
-    assert_equal(model.parameters['n'].guess, 1.59)
-    assert_equal(len(model.parameters), 2)
-
-
-@attr('fast')
 def test_ComplexPar():
     # complex parameter
     def makeScatterer(n):
         n**2
         return fake_sph
 
-    parm = Sphere(n=prior.ComplexPrior(real=prior.Uniform(1.58,1.59), imag=.001, name='n'))
+    parm = Sphere(n=prior.ComplexPrior(real=prior.Uniform(1.58,1.59), imag=.001))
     model = AlphaModel(parm, alpha=prior.Uniform(.6, 1, .7))
     assert_equal(model.parameters['n.real'].name, 'n.real')
 
