@@ -1,8 +1,31 @@
+# Copyright 2011-2019, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
+#
+# This file is part of HoloPy.
+#
+# HoloPy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HoloPy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
+"""
+Stochastic fitting of models to data
+
+.. moduleauthor:: Solomon Barkley
+"""
 import time
 import os
 import sys
 import tempfile
 import shutil
+import warnings
 
 import numpy as np
 import xarray as xr
@@ -12,7 +35,7 @@ from holopy.core.holopy_object import HoloPyObject
 from holopy.core.metadata import make_subset_data
 from holopy.core.utils import choose_pool
 from holopy.inference import prior
-from holopy.inference.model import lnpost_wrapper
+from holopy.inference.model import LnpostWrapper
 from holopy.inference.result import FitResult, UncertainValue
 
 class CmaStrategy(HoloPyObject):
@@ -51,9 +74,7 @@ class CmaStrategy(HoloPyObject):
         if weight_function is None:
             def weight_function(x, n):
                 return (x + 1) <= (parent_fraction * n)
-            self.weights = weight_function
-        else:
-            self.weights = weight_function
+        self.weights = weight_function
         self.tols = {'maxiter':2000, 'tolx':0.001, 'tolfun':0.1,
                      'tolstagnation':100}
         self.tols.update(tols)
@@ -71,7 +92,7 @@ class CmaStrategy(HoloPyObject):
         if walker_initial_pos is None:
             walker_initial_pos = prior.make_guess(parameters, popsize, 
                                                             seed=self.seed)
-        obj_func = lnpost_wrapper(model, data, self.new_pixels, True)
+        obj_func = LnpostWrapper(model, data, self.new_pixels, True)
         sampler = run_cma(obj_func.evaluate, parameters, walker_initial_pos, 
                             self.weights, self.tols, self.seed, self.parallel)
         xrecent = sampler.logger.data['xrecent']
@@ -118,6 +139,9 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
     stds = [par.sd if isinstance(par, prior.Gaussian) 
                     else par.interval/4 for par in parameters]
     weights = [weight_function(i, popsize) for i in range(popsize)]
+    if weights[-1] > 0:
+        weights[-1] = 0
+        warnings.warn('Setting weight of worst parent to 0')
     tempdir = tempfile.mkdtemp() + '/'
     cmaoptions = {'CMA_stds':stds, 'CMA_recombination_weights':weights,
                   'verb_filenameprefix':tempdir, 'verbose':-3}

@@ -56,7 +56,7 @@ class BaseModel(HoloPyObject):
     def parameters(self):
         return {par.name:par for par in self._parameters}
 
-    def get_parameter(self, name, pars, schema=None):
+    def _get_parameter(self, name, pars, schema=None):
         if name in pars.keys():
             return pars[name]
         elif hasattr(self, name):
@@ -79,13 +79,24 @@ class BaseModel(HoloPyObject):
 
     def _optics_scatterer(self, pars, schema):
         optics_keys = ['medium_index', 'illum_wavelen', 'illum_polarization']
-        optics = {key:self.get_parameter(key, pars, schema)
+        optics = {key:self._get_parameter(key, pars, schema)
                             for key in optics_keys}
         scatterer = self.scatterer.from_parameters(pars)
         return optics, scatterer
 
 
     def lnprior(self, par_vals):
+        """
+        Compute the prior probability of par_vals
+
+        Parameters
+        -----------
+        par_vals: dict(string, float)
+            Dictionary containing values for each parameter
+        Returns
+        -------
+        lnprior: float
+        """
         try:
             par_scat = self.scatterer.from_parameters(par_vals)
         except InvalidScatterer:
@@ -107,6 +118,12 @@ class BaseModel(HoloPyObject):
             Dictionary containing values for each parameter
         data: xarray
             The data to compute posterior against
+        pixels: int(optional)
+            Specify to use a random subset of all pixels in data
+
+        Returns
+        --------
+        lnposterior: float
         """
         lnprior = self.lnprior(par_vals)
         # prior is sometimes used to forbid thing like negative radius
@@ -123,8 +140,8 @@ class BaseModel(HoloPyObject):
     def forward(self, pars, detector):
         raise NotImplementedError("Implement in subclass")
 
-    def find_noise(self, pars, data):
-        noise = dict_to_array(data, self.get_parameter('noise_sd', pars, data))
+    def _find_noise(self, pars, data):
+        noise = dict_to_array(data, self._get_parameter('noise_sd', pars, data))
         if noise is None:
             if np.all([isinstance(par, Uniform) for par in self._parameters]):
                 noise = 1
@@ -146,8 +163,12 @@ class BaseModel(HoloPyObject):
             Dictionary containing values for each parameter
         data: xarray
             The data to compute likelihood against
+
+        Returns
+        --------
+        lnlike: float
         """
-        noise_sd = self.find_noise(pars, data)
+        noise_sd = self._find_noise(pars, data)
         N = data.size
         log_likelihood = ensure_scalar(
             -N/2 * np.log(2 * np.pi) -
@@ -170,6 +191,9 @@ class LimitOverlaps(HoloPyObject):
 
 
 class AlphaModel(BaseModel):
+    """
+    Model of hologram image formation with scaling parameter alpha.
+    """
     def __init__(self, scatterer, alpha=1, noise_sd=None, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
                  constraints=[]):
@@ -180,7 +204,7 @@ class AlphaModel(BaseModel):
     def forward(self, pars, detector):
         """
         Compute a hologram from pars with dimensions and metadata of detector,
-        scaled by alpha.
+        scaled by self.alpha.
 
         Parameters
         -----------
@@ -191,7 +215,7 @@ class AlphaModel(BaseModel):
             dimensions of the resulting hologram. Metadata taken from
             detector if not given explicitly when instantiating self.
         """
-        alpha = self.get_parameter('alpha', pars, detector)
+        alpha = self._get_parameter('alpha', pars, detector)
         optics, scatterer = self._optics_scatterer(pars, detector)
         try:
             return calc_holo(detector, scatterer, theory=self.theory,
@@ -209,6 +233,9 @@ class AlphaModel(BaseModel):
 # For now it would be OK since PerfectLensModel only works with single
 # spheres or superpositions, but I'm going to leave this for later.
 class ExactModel(BaseModel):
+    """
+    Model of arbitrary scattering function given by calc_func.
+    """
     def __init__(self, scatterer, calc_func=calc_holo, noise_sd=None,
                  medium_index=None, illum_wavelen=None,
                  illum_polarization=None, theory='auto', constraints=[]):
@@ -237,6 +264,9 @@ class ExactModel(BaseModel):
 
 
 class PerfectLensModel(BaseModel):
+    """
+    Model of hologram image formation through a high-NA objective.
+    """
     theory_params = ['lens_angle']
     def __init__(self, scatterer, lens_angle=1.0, noise_sd=None,
                  medium_index=None, illum_wavelen=None, theory='auto',
@@ -260,7 +290,7 @@ class PerfectLensModel(BaseModel):
         """
         optics_kwargs, scatterer = self._optics_scatterer(pars, detector)
         # We need the lens parameter(s) for the theory:
-        theory_kwargs = {name:self.get_parameter(name, pars, detector)
+        theory_kwargs = {name:self._get_parameter(name, pars, detector)
                                     for name in self.theory_params}
         # FIXME would be nice to have access to the interpolator kwargs
         theory = MieLens(**theory_kwargs)

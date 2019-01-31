@@ -124,7 +124,7 @@ class Model(HoloPyObject):
         setattr(model, 'residual', residual)
         def get_alpha(pars):
             try:
-                return model.get_parameter('alpha', pars)
+                return model._get_parameter('alpha', pars)
             except MissingParameter:
                 return 1.0
         setattr(model, 'get_alpha', get_alpha)

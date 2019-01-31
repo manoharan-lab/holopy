@@ -30,7 +30,7 @@ import emcee
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.metadata import make_subset_data
 from holopy.core.utils import choose_pool
-from holopy.inference.model import lnpost_wrapper
+from holopy.inference.model import LnpostWrapper
 from holopy.inference.result import SamplingResult, TemperedSamplingResult
 
 from . import prior
@@ -110,7 +110,7 @@ def emcee_lnprobs_DataArray(sampler):
 
 def sample_emcee(model, data, nwalkers, nsamples, walker_initial_pos,
                  parallel='auto', cleanup_threads=True, seed=None, new_pixels = None):
-    obj_func = lnpost_wrapper(model, data, new_pixels)
+    obj_func = LnpostWrapper(model, data, new_pixels)
     pool = choose_pool(parallel)
     sampler = emcee.EnsembleSampler(nwalkers, len(model._parameters), 
                                         obj_func.evaluate, pool=pool)

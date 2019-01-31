@@ -333,7 +333,7 @@ def save_image(filename, im, scaling='auto', depth=8):
     if os.path.splitext(filename)[1] is '':
         filename += '.tif'
     
-    if im.ndim > 2 + hasattr(im,illumination) + hasattr(im, 'z'):
+    if im.ndim > 2 + hasattr(im, illumination) + hasattr(im, 'z'):
         raise BadImage("Cannot interpret multidimensional image")
     else:
         im = im.copy()
@@ -364,18 +364,18 @@ def save_image(filename, im, scaling='auto', depth=8):
 
     if scaling is not None:
         if scaling is 'auto':
-            min = im.min()
-            max = im.max()
+            minval = im.min()
+            maxval = im.max()
         elif len(scaling) == 2:
-            min, max = scaling
-            im = np.minimum(im, max)
-            im = np.maximum(im, min)
+            minval, maxval = scaling
+            im = np.minimum(im, maxval)
+            im = np.maximum(im, minval)
         else:
             raise Error("Invalid image scaling")
-        if min is not None:
-            im = im - min
-        if max is not None:
-            im = im / (max-min)
+        if minval is not None:
+            im = im - minval
+        if maxval is not None:
+            im = im / (maxval-minval)
 
     if depth is not 'float':
         if depth is 8:

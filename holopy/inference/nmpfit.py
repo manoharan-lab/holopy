@@ -111,14 +111,12 @@ class NmpfitStrategy(HoloPyObject):
         if len(parameters) == 0:
             raise MissingParameter('at least one parameter to fit')
 
-        if self.npixels is None:
-            data = flat(data)
-        else:
+        if self.npixels is not None:
             data = make_subset_data(data, pixels = self.npixels, seed=self.seed)
 
         guess_prior = model.lnprior({par.name:par.guess for par in parameters})
         def residual(par_vals):
-            noise = model.find_noise(par_vals, data)
+            noise = model._find_noise(par_vals, data)
             residuals = model._residuals(par_vals, data, noise).flatten()
             prior = np.sqrt(guess_prior - model.lnprior(par_vals))
             residuals = np.append(residuals, prior)

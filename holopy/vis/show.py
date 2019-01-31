@@ -56,7 +56,7 @@ def show(o,color=(.5, .5, .5)):
     else:
         raise VisualizationNotImplemented(o)
 
-def test_disp():
+def test_display():
     #diagnostic test to check matplotlib backend.
     a = np.zeros([100, 100, 3])
     a[25:75,25:75,0] = 1

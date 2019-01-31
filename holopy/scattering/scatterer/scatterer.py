@@ -51,9 +51,6 @@ class Scatterer(HoloPyObject):
             Index of refraction of the scatterer or each domain.
         center : (float, float, float)
             The center of mass of the scatterer. 
-        bounding_box : ((float, float), (float, float), (float, float))
-            Optional. Box containing the scatterer. If a bounding box is not given, the
-            constructor will attempt to determine one.
         """
         if not isinstance(indicators, Indicators):
             indicators = Indicators(indicators)
