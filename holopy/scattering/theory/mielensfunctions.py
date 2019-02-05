@@ -119,14 +119,20 @@ class MieLensCalculator(object):
         output_y = np.zeros(shape, dtype='complex')
 
         # 1. Check for regions where rho is bad and leave as 0:
-        rho_ok = krho < 3.9 * self.quad_npts
+        rho_small = krho < 3.9 * self.quad_npts
+        rho_large = ~rho_small
 
         # 2. Evaluate scattered fields only at valid rho's:
-        if rho_ok.any():
-            ex_valid, ey_valid = self._calculate_scattered_field(
-                krho[rho_ok], phi[rho_ok])
-            output_x[rho_ok] = ex_valid
-            output_y[rho_ok] = ey_valid
+        if rho_small.any():
+            ex_lowrho, ey_lowrho = self._calculate_small_krho_scattered_field(
+                krho[rho_small], phi[rho_small])
+            output_x[rho_small] = ex_lowrho
+            output_y[rho_small] = ey_lowrho
+        if rho_large.any():
+            ex_hirho, ey_hirho = self._calculate_large_krho_scattered_field(
+                krho[rho_large], phi[rho_large])
+            output_x[rho_large] = ex_hirho
+            output_y[rho_large] = ey_hirho
 
         return output_x, output_y
 
@@ -154,7 +160,7 @@ class MieLensCalculator(object):
         """
         return -1, 0
 
-    def _calculate_scattered_field(self, krho, phi):
+    def _calculate_small_krho_scattered_field(self, krho, phi):
         shape = phi.shape
         i_0 = np.reshape(self._eval_mielens_i_n(krho, n=0), shape)
         i_2 = np.reshape(self._eval_mielens_i_n(krho, n=2), shape)
@@ -163,6 +169,11 @@ class MieLensCalculator(object):
         field_xcomp = 0.5 * (i_0 + i_2 * c2p)
         field_ycomp = 0.5 * i_2 * s2p
         return field_xcomp, field_ycomp
+
+    def _calculate_large_krho_scattered_field(self, krho, phi):
+        # For now, just return 0s:
+        zero = np.zeros(krho.shape, dtype='complex')
+        return zero, zero
 
     def _precompute_scattering_matrices(self):
         kwargs = {'index_ratio': self.index_ratio,
@@ -179,7 +190,8 @@ class MieLensCalculator(object):
         """Calculates one of several similar integrals over the lens
         pupil which appear in the Mie + lens calculations
 
-        This should only be called by `self._calculate_scattered_field`
+        This should only be called by
+        `self._calculate_small_krho_scattered_field`
 
         Parameters
         ----------
