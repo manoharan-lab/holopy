@@ -168,8 +168,8 @@ class MieLensCalculator(object):
         kwargs = {'index_ratio': self.index_ratio,
                   'size_parameter': self.size_parameter,
                   }
-        scat_s_evaluator = FarfieldMieEvaluator(s_or_p=1, lazy=True, **kwargs)
-        scat_p_evaluator = FarfieldMieEvaluator(s_or_p=2, lazy=True, **kwargs)
+        scat_s_evaluator = MieScatteringMatrix(s_or_p=1, lazy=True, **kwargs)
+        scat_p_evaluator = MieScatteringMatrix(s_or_p=2, lazy=True, **kwargs)
         self._scat_s_values = np.reshape(
             scat_s_evaluator._eval(self._theta_pts), (-1, 1))
         self._scat_p_values = np.reshape(
@@ -239,14 +239,13 @@ class MieLensCalculator(object):
             raise ValueError("{} must be specified.".format(must_be_specified))
 
 
-class FarfieldMieEvaluator(object):
+class MieScatteringMatrix(object):
     def __init__(self, s_or_p=1, index_ratio=1.1, size_parameter=1.0,
                  max_l=None, npts=None, lazy=False):
-        """Interpolators for some derived Mie scattering functions, as
-        defined in the module docstring.
+        """Calculations of Mie far-field scattering matrices.
 
-        These could be better for large sizes by using asymptotic
-        representations of the scattering field.
+        These work by summing the Mie series naively; for large sizes
+        this could be better by using an asymptotic representation.
 
         Parameters
         ----------
@@ -293,8 +292,7 @@ class FarfieldMieEvaluator(object):
         return 10 * self.max_l
 
     def _eval(self, theta):
-        """Evaluate F_i(theta) the hard way"""
-        ans = np.zeros(theta.size, dtype='float')  # real, not complex
+        """Evaluate S_parallel, perpendicular(theta) directly"""
         # Right now, the pi_l, tau_l functions calculate all values of
         # l at once. So we compute all at once then sum
         pils, tauls = calculate_pil_taul(theta, self.max_l)
