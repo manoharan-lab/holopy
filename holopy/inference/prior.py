@@ -265,11 +265,11 @@ class ComplexPrior(Prior):
 
     def lnprob(self, p):
         try:
-            realprob = real.lnprob(np.real(p))
+            realprob = self.real.lnprob(np.real(p))
         except AttributeError:
             realprob = 0
         try:
-            imagprob = imag.lnprob(np.imag(p))
+            imagprob = self.imag.lnprob(np.imag(p))
         except AttributeError:
             imagprob = 0
         return realprob + imagprob

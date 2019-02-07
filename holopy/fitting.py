@@ -31,6 +31,9 @@ The fitting module is used to:
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 
+The fitting module is deprecated and has been rolled into inference as of
+HoloPy 3.3. This file maintains namespaces and warns users to switch.
+
 """
 import warnings
 import numpy as np

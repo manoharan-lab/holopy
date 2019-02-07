@@ -32,7 +32,6 @@ from holopy.core.metadata import make_subset_data
 from holopy.core.utils import choose_pool
 from holopy.inference.model import LnpostWrapper
 from holopy.inference.result import SamplingResult, TemperedSamplingResult
-
 from . import prior
 
 def sample_one_sigma_gaussian(result):
@@ -70,6 +69,11 @@ class EmceeStrategy(HoloPyObject):
         kwargs = {'lnprobs': lnprobs, 'samples':samples}
         return SamplingResult(data, model, self, d_time, kwargs)
 
+    # deprecated as of 3.3
+    def sample(self, model, data, nsamples=1000, walker_initial_pos=None):
+        from holopy.fitting import fit_warning
+        fit_warning('EmceeStrategy.optimize', 'EmceeStrategy.sample')
+        return self.optimize(model, data, nsamples, walker_initial_pos)
 
 class TemperedStrategy(EmceeStrategy):
     def __init__(self, next_initial_dist=sample_one_sigma_gaussian, nwalkers=100, min_pixels=None, npixels=1000, parallel='auto', stages=3, stage_len=30, seed=None, resample_pixels=False):

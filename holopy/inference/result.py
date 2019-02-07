@@ -34,10 +34,13 @@ from holopy.core.metadata import detector_grid, copy_metadata
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.io.io import pack_attrs, unpack_attrs
 from holopy.core.utils import dict_without, ensure_scalar
+from holopy.scattering.errors import MissingParameter
 
 
 warn_text = 'Loading a legacy (pre-3.3) HoloPy file. Please \
                             save a new copy to ensure future compatibility'
+# anywhere warn_text appears, there's an if-statement that can be removed.
+# it is also used once in hp.core.io.io.unpack_attrs
 
 def get_strategy(strategy):
     try:
@@ -65,7 +68,9 @@ class FitResult(HoloPyObject):
             pass
         self.time = time
         self._kwargs_keys = []
-        self.add_attr(**kwargs)
+        self.add_attr(kwargs)
+        if not (isinstance(self,SamplingResult) or hasattr(self,'intervals')):
+            raise MissingParameter('intervals')
 
     @property
     def guess(self):
@@ -92,7 +97,7 @@ class FitResult(HoloPyObject):
             pass
         if hasattr(self.data, 'original_dims'):
             # dealing with subset data
-            original_dims = yaml.load(self.data.original_dims)
+            original_dims = self.data.original_dims
             # can't currently handle non-0 values of z, as in detector_grid
             x = original_dims['x']
             y = original_dims['y']
@@ -120,7 +125,7 @@ class FitResult(HoloPyObject):
         self._kwargs_keys.append('_max_lnprob')
         return self.max_lnprob
 
-    def add_attr(self, **kwargs):
+    def add_attr(self, kwargs):
         for key, val in kwargs.items():
             setattr(self, key, val)
             self._kwargs_keys.append(key)
@@ -214,13 +219,25 @@ class SamplingResult(FitResult):
             if len(array.chain.coords)==0:
                 array['chain'] = ('chain', array.chain)
                 array.set_index(chain='chain')
-            array.sel(chain = slice(sample_number, None))
+            return array.sel(chain = slice(sample_number, None))
 
         burned_in = copy(self)
-        cut_start(burned_in.samples)
-        cut_start(burned_in.lnprobs)
+        burned_in.samples = cut_start(burned_in.samples)
+        burned_in.lnprobs = cut_start(burned_in.lnprobs)
         burned_in.intervals = burned_in._calc_intervals()
         return burned_in
+
+    # deprecated methods as of 3.3
+    def MAP(self):
+        from holopy.fitting import fit_warning
+        fit_warning('SamplingResult.guess', 'SamplingResult.MAP')
+        return self.guess
+
+    def values(self):
+        from holopy.fitting import fit_warning
+        fit_warning('SamplingResult.intervals', 'SamplingResult.values')
+        return self.intervals
+
 
 GROUPNAME = 'stage_results[{}]'
 class TemperedSamplingResult(SamplingResult):

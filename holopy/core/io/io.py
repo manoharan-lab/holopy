@@ -89,7 +89,7 @@ def pack_attrs(a, do_spacing=False, scaling = None):
         else:
             new_attrs[attr_coords][attr]=False
             if not is_none(val):
-                new_attrs[attr]=val
+                new_attrs[attr] = yaml.dump(val)
     new_attrs[attr_coords]=yaml.dump(new_attrs[attr_coords])
     return new_attrs
 
@@ -104,7 +104,12 @@ def unpack_attrs(a):
         if attr_ref[attr]:
             new_attrs[attr] = xr.DataArray(a[attr], coords=attr_ref[attr],dims=list(attr_ref[attr].keys()))
         elif attr in a:
-            new_attrs[attr] = a[attr]
+            try:
+                new_attrs[attr] = yaml.load(a[attr])
+            except AttributeError:
+                from holopy.inference.result import warn_text
+                warnings.warn(warn_text)
+                new_attrs[attr] = a[attr]
         else:
             new_attrs[attr] = None
     return new_attrs
