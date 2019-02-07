@@ -26,6 +26,7 @@ from warnings import warn
 
 import yaml
 import xarray as xr
+import pandas as pd
 import numpy as np
 import scipy.special
 import h5py
@@ -136,10 +137,11 @@ class FitResult(HoloPyObject):
 
     def _serialization_ds(self):
         ds = xr.Dataset({'data':self.data})
-        ds.data.attrs = pack_attrs(ds.data)
         if 'flat' in ds:
-            ds.rename({'flat': 'point'}, inplace=True)
+            ds.data.attrs['_flat'] = [list(f) for f in ds.data.flat.values]
+            ds = ds.rename({'flat': 'point'})
             ds['point'].values = np.arange(len(ds.point))
+        ds.data.attrs = pack_attrs(ds.data)
         attrs = ['model', 'strategy', 'time', '_source_class']
         def make_yaml(key):
             attr = getattr(self, key)
@@ -168,6 +170,16 @@ class FitResult(HoloPyObject):
     def _unserialize(cls, ds):
         data = ds.data
         data.attrs = unpack_attrs(data.attrs)
+        if '_flat' in data.attrs.keys():
+            flats = np.array(data.attrs['_flat']).T
+            levels = [data.original_dims[key] for key in ['x','y','z']]
+            codes = [[level.index(f) for f in flat]
+                                for level, flat in zip(levels, flats)]
+            flat_index = pd.MultiIndex(levels, codes, names=['x','y','z'])
+            coords = dict_without(dict(data.coords), 'point')
+            coords['flat'] = flat_index
+            data = xr.DataArray(data.values, dims=coords.keys(),
+                                        coords=coords, attrs=data.attrs)
         model = yaml.load(ds.attrs['model'])
         strategy = get_strategy(ds.attrs['strategy'])
         outlist = [data, model, strategy]
