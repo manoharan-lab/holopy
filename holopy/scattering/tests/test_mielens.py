@@ -161,8 +161,8 @@ class TestMieLens(unittest.TestCase):
     def test_mielens_multiple_returns_nonzero(self):
         scatterers = [
             Sphere(n=1.59, r=5e-7, center=(1e-6, -1e-6, 10e-6)),
-            Sphere(n=1.59, r=1e-6, center=[8e-6,5e-6,5e-6]),
-            Sphere(n=1.59+0.0001j, r = 5e-7, center=[5e-6,10e-6,3e-6]),
+            Sphere(n=1.59, r=1e-6, center=[8e-6, 5e-6, 5e-6]),
+            Sphere(n=1.59 + 0.0001j, r=5e-7, center=[5e-6, 10e-6, 3e-6]),
             ]
         sphere_collection = Spheres(scatterers=scatterers)
         theory = MieLens()
