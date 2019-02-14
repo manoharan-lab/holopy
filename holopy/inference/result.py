@@ -62,11 +62,8 @@ class FitResult(HoloPyObject):
         self.data = data
         self.model = model
         self.strategy = strategy
-        try:
-            if hasattr(strategy.parallel, 'map'):
-                self.strategy.parallel = 'external_pool'
-        except AttributeError:
-            pass
+        if hasattr(strategy, 'parallel') and hasattr(strategy.parallel, 'map'):
+            self.strategy.parallel = 'external_pool'
         self.time = time
         self._kwargs_keys = []
         self.add_attr(kwargs)
@@ -176,9 +173,10 @@ class FitResult(HoloPyObject):
             codes = [[level.index(f) for f in flat]
                                 for level, flat in zip(levels, flats)]
             flat_index = pd.MultiIndex(levels, codes, names=['x','y','z'])
-            coords = dict_without(dict(data.coords), 'point')
+            coordnames = list(data.coords).remove('point')
+            coords = {coord: data[coord] for coord in coordnames}
             coords['flat'] = flat_index
-            data = xr.DataArray(data.values, dims=coords.keys(),
+            data = xr.DataArray(data.values, dims=coordnames + ['flat'],
                                         coords=coords, attrs=data.attrs)
         model = yaml.load(ds.attrs['model'])
         strategy = get_strategy(ds.attrs['strategy'])

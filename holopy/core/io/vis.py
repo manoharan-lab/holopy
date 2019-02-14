@@ -19,6 +19,7 @@
 Prepare HoloPy objects for display on screen or write to file.
 
 .. moduleauthor:: Solomon Barkley
+.. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 """
 from warnings import warn
 import sys

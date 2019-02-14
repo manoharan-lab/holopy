@@ -151,13 +151,13 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
     guess = [par.guess for par in parameters]
     cma_strategy = cma.CMAEvolutionStrategy(guess, 1, cmaoptions)
     cma_strategy.inject(initial_population, force=True)
-    solutions = np.array([[None] * len(parameters)] * popsize)
-    func_vals = np.array([0.] * popsize)
+    solutions = np.zeros((popsize, len(parameters)))
+    func_vals = np.zeros(popsize)
     pool = choose_pool(parallel)
     while not cma_strategy.stop():
-        invalid = [True] * popsize
+        invalid = np.ones(popsize, dtype=bool)
         inf_replace_counter = 0
-        while np.sum(invalid) > 0 and inf_replace_counter < 10:
+        while invalid.any() and inf_replace_counter < 10:
             attempts = cma_strategy.ask(np.sum(invalid))
             solutions[invalid, :] = attempts
             func_vals[invalid] = list(pool.map(obj_func, attempts))

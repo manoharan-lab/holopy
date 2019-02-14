@@ -67,18 +67,12 @@ def get_example_data_path(name):
 def get_example_data(name):
     return load(get_example_data_path(name))
 
-def pack_attrs(a, do_spacing=False, scaling = None):
-    if len(a.attrs)==0:
-        return a.attrs
-    new_attrs = {'name':a.name, attr_coords:{}}
-
+def pack_attrs(a, do_spacing=False):
+    new_attrs = {attr_coords:{}}
+    if a.name is not None:
+        new_attrs['name'] = a.name
     if do_spacing:
         new_attrs['spacing']=list(get_spacing(a))
-
-    if scaling is 'auto':
-        scaling = [a.min().item(), a.max().item()]
-    if scaling:
-        new_attrs['scaling']=list(scaling)
 
     for attr, val in a.attrs.items():
         if isinstance(val, xr.DataArray):
@@ -98,8 +92,7 @@ def unpack_attrs(a):
         return a
     new_attrs={}
     attr_ref=yaml.load(a[attr_coords])
-    attrs_to_ignore = [
-                'spacing','name','_dummy_channel','scaling','_image_scaling']
+    attrs_to_ignore = ['spacing', 'name', '_dummy_channel', '_image_scaling']
     for attr in dict_without(attr_ref, attrs_to_ignore):
         if attr_ref[attr]:
             new_attrs[attr] = xr.DataArray(a[attr], coords=attr_ref[attr],dims=list(attr_ref[attr].keys()))
@@ -182,8 +175,8 @@ def load(inf, lazy=False):
                 if '_dummy_channel' in meta:
                     dummy_channel = im.illumination[meta['_dummy_channel']]
                     im = im.drop(dummy_channel.item(), illumination)
-                if 'scaling' in meta:
-                    smin, smax = meta['scaling']
+                if '_image_scaling' in meta:
+                    smin, smax = meta['_image_scaling']
                     im = (im-im.min())*(smax-smin)/(im.max()-im.min())+smin
                 im.attrs = unpack_attrs(meta)
                 return im
@@ -309,7 +302,7 @@ def save_image(filename, im, scaling='auto', depth=8):
         filename in which to save image. If im is an image the
         function should default to the image's name field if no
         filename is specified
-    scaling : 'auto', None, or (None|Int, None|Int)
+    scaling : 'auto', None, or (Int, Int)
         How the image should be scaled for saving. Ignored for float
         output. It defaults to auto, use the full range of the output
         format. Other options are None, meaning no scaling, or a pair
@@ -331,7 +324,7 @@ def save_image(filename, im, scaling='auto', depth=8):
     if os.path.splitext(filename)[1] in tiflist:
         if im.name is None:
             im.name=os.path.splitext(os.path.split(filename)[-1])[0]
-        metadat = pack_attrs(im, do_spacing = True, scaling=scaling)
+        metadat = pack_attrs(im, do_spacing = True)
         # import ifd2 - hidden here since it doesn't play nice in some cases.
         from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
         tiffinfo = ifd2()

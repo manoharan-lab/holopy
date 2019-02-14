@@ -87,7 +87,7 @@ class BaseModel(HoloPyObject):
 
     def lnprior(self, par_vals):
         """
-        Compute the prior probability of par_vals
+        Compute the log-prior probability of par_vals
 
         Parameters
         -----------
@@ -110,7 +110,7 @@ class BaseModel(HoloPyObject):
 
     def lnposterior(self, par_vals, data, pixels=None):
         """
-        Compute the posterior probability of pars given data
+        Compute the log-posterior probability of pars given data
 
         Parameters
         -----------
@@ -155,7 +155,7 @@ class BaseModel(HoloPyObject):
 
     def lnlike(self, pars, data):
         """
-        Compute the likelihood for pars given data
+        Compute the log-likelihood for pars given data
 
         Parameters
         -----------
