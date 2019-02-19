@@ -24,7 +24,7 @@ import xarray as xr
 from holopy.core.metadata import dict_to_array, make_subset_data
 from holopy.core.utils import ensure_array, ensure_listlike, ensure_scalar
 from holopy.core.holopy_object import HoloPyObject
-from holopy.scattering.errors import (MultisphereFailure,
+from holopy.scattering.errors import (MultisphereFailure, TmatrixFailure,
                                 InvalidScatterer, MissingParameter)
 from holopy.scattering.calculations import calc_holo
 from holopy.scattering.theory import MieLens
@@ -220,7 +220,7 @@ class AlphaModel(BaseModel):
         try:
             return calc_holo(detector, scatterer, theory=self.theory,
                              scaling=alpha, **optics)
-        except (MultisphereFailure, InvalidScatterer):
+        except (MultisphereFailure, TmatrixFailure, InvalidScatterer):
             return -np.inf
 
 
