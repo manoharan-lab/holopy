@@ -23,18 +23,20 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 import xarray as xr
-from ..core.holopy_object import SerializableMetaclass
-from ..core.metadata import (vector, illumination, update_metadata, to_vector,
-                             copy_metadata, from_flat, dict_to_array)
-from ..core.utils import dict_without, is_none, ensure_array
-from .scatterer import (Sphere, Spheres, Spheroid, Cylinder,
-                            _expand_parameters, _interpret_parameters)
-from .errors import AutoTheoryFailed, MissingParameter
+from holopy.core.holopy_object import SerializableMetaclass
+from holopy.core.metadata import (
+    vector, illumination, update_metadata, to_vector, copy_metadata,
+    from_flat, dict_to_array)
+from holopy.core.utils import dict_without, is_none, ensure_array
+from holopy.scattering.scatterer import (
+    Sphere, Spheres, Spheroid, Cylinder, _expand_parameters,
+    _interpret_parameters)
+from holopy.scattering.errors import AutoTheoryFailed, MissingParameter
 
 try:
-    from .theory import Mie, Multisphere
-    from .theory import Tmatrix
-    from .theory.dda import DDA
+    from holopy.scattering.theory import Mie, Multisphere
+    from holopy.scattering.theory import Tmatrix
+    from holopy.scattering.theory.dda import DDA
 except:
     pass
 
@@ -177,19 +179,22 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
         Calculated hologram from the given distribution of spheres
     """
 
-    scaling = dict(_expand_parameters({'alpha':scaling}.items()))
+    # Essentially all the time is in theory._calc_field
+    scaling = dict(_expand_parameters({'alpha':scaling}.items()))  # 6 us
     for key in scaling.keys():
         if hasattr(scaling[key],'guess'):
             scaling[key] = scaling[key].guess
-    scaling = _interpret_parameters(scaling)['alpha']
-    scaling = dict_to_array(schema, scaling)
-    theory = interpret_theory(scatterer, theory)
+    scaling = _interpret_parameters(scaling)['alpha']  # 4 us
+    scaling = dict_to_array(schema, scaling)  # 754 ns
+    theory = interpret_theory(scatterer, theory)  # 427 ns
     uschema = prep_schema(schema, medium_index, illum_wavelen,
-                          illum_polarization)
-    scat = theory._calc_field(dict_to_array(schema, scatterer).guess, uschema)
+                          illum_polarization)  # 2.2 ms
+    scat = theory._calc_field(
+        dict_to_array(schema, scatterer).guess,  # 235 us
+        uschema)  #  73 ms
     holo = scattered_field_to_hologram(
-        scat * scaling, uschema.illum_polarization, uschema.normals)
-    return finalize(uschema, holo)
+        scat * scaling, uschema.illum_polarization, uschema.normals)  # 3.89 ms
+    return finalize(uschema, holo)  # 563 us
 
 
 def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None,
