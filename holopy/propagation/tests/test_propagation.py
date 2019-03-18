@@ -21,10 +21,10 @@
 import numpy as np
 from nose.plugins.attrib import attr
 
-from ...core import detector_grid
-from ...scattering import Mie, Sphere, calc_field
-from .. import propagate
-from ...core.tests.common import assert_obj_close, verify, get_example_data
+from holopy.core import detector_grid
+from holopy.scattering import Mie, Sphere, calc_field
+from holopy.propagation import propagate
+from holopy.core.tests.common import assert_obj_close, verify, get_example_data
 
 
 @attr("medium")
