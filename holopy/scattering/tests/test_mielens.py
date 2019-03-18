@@ -125,7 +125,7 @@ class TestMieLens(unittest.TestCase):
             theory=theory_mielens)
         holo_mieonly = calc_holo(
             xschema, sphere, index, wavelen, xpolarization,
-            scaling=scaling_alpha, theory=theory_mieonly)
+            scaling=1.0, theory=theory_mieonly)
 
         # the two arrays should not be equal
         self.assertFalse(np.allclose(holo_mielens, holo_mieonly, **TOLS))
