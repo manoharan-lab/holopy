@@ -27,12 +27,13 @@ import tempfile
 import os
 import shutil
 import copy
-from ..scatterer import Sphere, Spheroid, Cylinder
-from ..errors import TheoryNotCompatibleError, TmatrixFailure, DependencyMissing
+from holopy.scattering.scatterer import Sphere, Spheroid, Cylinder
+from holopy.scattering.errors import (
+    TheoryNotCompatibleError, TmatrixFailure, DependencyMissing)
 
-from .scatteringtheory import ScatteringTheory
+from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 try:
-    from .mie_f import mieangfuncs
+    from holopy.scattering.theory.mie_f import mieangfuncs
 except:
     pass
 
