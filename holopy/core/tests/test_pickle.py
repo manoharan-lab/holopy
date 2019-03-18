@@ -19,6 +19,7 @@
 from nose.plugins.attrib import attr
 
 from .common import assert_pickle_roundtrip, get_example_data
+from holopy.core.tests.common import assert_pickle_roundtrip, get_example_data
 
 @attr("fast")
 def test_image():

@@ -17,12 +17,13 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from numpy.testing import assert_allclose
-from ..process import center_find, subimage, fft, ifft
-from ..metadata import data_grid, detector_grid
-from .common import get_example_data, assert_obj_close
 from scipy import fftpack
 from nose.plugins.attrib import attr
+
+from numpy.testing import assert_allclose
+from holopy.core.process import center_find, subimage, fft, ifft
+from holopy.core.metadata import data_grid, detector_grid
+from holopy.core.tests.common import get_example_data, assert_obj_close
 
 #Test centerfinder
 gold_location = np.array([ 48.5729142,  50.23217416])
