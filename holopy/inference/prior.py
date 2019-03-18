@@ -265,11 +265,11 @@ class ComplexPrior(Prior):
 
     def lnprob(self, p):
         try:
-            realprob = real.lnprob(np.real(p))
+            realprob = self.real.lnprob(np.real(p))
         except AttributeError:
             realprob = 0
         try:
-            imagprob = imag.lnprob(np.imag(p))
+            imagprob = self.imag.lnprob(np.imag(p))
         except AttributeError:
             imagprob = 0
         return realprob + imagprob
@@ -317,6 +317,16 @@ def updated(prior, v, extra_uncertainty=0):
                                name=prior.name)
     else:
         return Gaussian(v.guess, sd, prior.name)
+
+def make_guess(parameters, nguess, scaling=1, seed=None):
+    def sample(prior):
+        raw_sample = prior.sample(size=nguess)
+        scaled_guess = prior.guess + scaling * (raw_sample - prior.guess)
+        return scaled_guess
+
+    if seed is not None:
+        np.random.seed(seed)
+    return np.vstack([sample(p) for p in parameters]).T
 
 def make_center_priors(im, z_range_extents=5, xy_uncertainty_pixels=1, z_range_units=None):
     """

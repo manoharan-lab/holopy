@@ -31,6 +31,9 @@ The fitting module is used to:
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 
+The fitting module is deprecated and has been rolled into inference as of
+HoloPy 3.3. This file maintains namespaces and warns users to switch.
+
 """
 import warnings
 import numpy as np
@@ -108,7 +111,7 @@ class Model(HoloPyObject):
             fit_warning('hp.inference.AlphaModel', 'Model')
             if alpha is None:
                 alpha = 1.0
-            model = AlphaModel(scatterer, None, alpha, medium_index,
+            model = AlphaModel(scatterer, alpha, None, medium_index,
                         illum_wavelen, illum_polarization, theory, constraints)
         elif alpha is None:
             fit_warning('hp.inference.ExactModel','Model')
@@ -124,7 +127,7 @@ class Model(HoloPyObject):
         setattr(model, 'residual', residual)
         def get_alpha(pars):
             try:
-                return model.get_parameter('alpha', pars)
+                return model._get_parameter('alpha', pars)
             except MissingParameter:
                 return 1.0
         setattr(model, 'get_alpha', get_alpha)
@@ -140,8 +143,8 @@ def fit(model, data, minimizer=None, random_subset=None):
     if minimizer is None:
         minimizer = NmpfitStrategy()
     if random_subset is not None:
-        minimizer.random_subset = random_subset
-    return minimizer.fit(model, data)
+        minimizer.npixels = int(random_subset*len(data.x)*len(data.y))
+    return minimizer.optimize(model, data)
 
 class FitResult(HoloPyObject):
     def __new__(self, parameters, scatterer, fitchisq, fitrsq, converged, time, model,

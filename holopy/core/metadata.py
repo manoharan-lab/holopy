@@ -28,7 +28,7 @@ import yaml
 import numpy as np
 import xarray as xr
 
-from .utils import is_none, updated, repeat_sing_dims
+from .utils import is_none, updated, repeat_sing_dims, ensure_array
 from .math import to_spherical, to_cartesian
 
 
@@ -329,7 +329,7 @@ def make_coords(shape, spacing, z=0):
         shape = np.repeat(shape, 2)
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
-    return {'z':np.array([z]), 'x': np.arange(shape[1])*spacing[0], 'y': np.arange(shape[2])*spacing[1]}
+    return {'z':ensure_array(z), 'x': np.arange(shape[1])*spacing[0], 'y': np.arange(shape[2])*spacing[1]}
 
 def clean_concat(arrays, dim):
     attrs = arrays[0].attrs
@@ -374,7 +374,7 @@ def make_subset_data(data, random_subset=None, pixels=None, return_selection=Fal
     subset = flat(data).isel(flat=selection)
     subset = copy_metadata(data, subset, do_coords=False)
 
-    subset.attrs['original_dims'] = yaml.dump({key:data[key].values for key in data.dims})
+    subset.attrs['original_dims'] = {key:data[key].values for key in data.dims}
 
     if return_selection:
         return subset, selection

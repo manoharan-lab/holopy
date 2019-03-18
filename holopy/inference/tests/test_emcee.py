@@ -64,14 +64,15 @@ def test_sample_emcee():
     ndim = 1
     mod = SimpleModel()
     p0 = np.linspace(0, 1, nwalkers*ndim).reshape((nwalkers, ndim))
-    r = sample_emcee(mod, data, nwalkers, 500, p0, threads=None, seed=40)
+    r = sample_emcee(mod, data, nwalkers, 500, p0, parallel=None, seed=40)
     assert_allclose(r.chain[r.lnprobability==r.lnprobability.max()], .5, rtol=.001)
 
 def test_EmceeStrategy():
     mod = SimpleModel(prior.Uniform(0, 1))
-    strat = EmceeStrategy(10, None, None, seed=40)
-    r = strat.sample(mod, data, 500)
+    strat = EmceeStrategy(10, None, None, seed=48)
+    r = strat.optimize(mod, data, 5)
     assert_allclose(r.guess, .5, rtol=.001)
+    r = strat.optimize(mod, data, 5, [[i] for i in range(10)])
 
 class TestSubsetTempering(unittest.TestCase):
     def test_alpha_subset_tempering(self):
@@ -79,10 +80,10 @@ class TestSubsetTempering(unittest.TestCase):
         scat = Sphere(r=0.65e-6, n=1.58, center=[5.5e-6, 5.8e-6, 14e-6])
         mod = AlphaModel(scat, noise_sd=.1, alpha=prior.Gaussian(0.7, 0.1))
         strat = TemperedStrategy(nwalkers=4, stages=1, stage_len=10,
-                                    threads=None, seed=40)
+                                    parallel=None, seed=40)
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            inf = strat.sample(mod, holo, nsamples=10)
+            inf = strat.optimize(mod, holo, nsamples=10)
         assert_obj_close(inf.guess, gold_alpha, rtol=1e-3)
 
     def test_perfectlens_subset_tempering(self):
@@ -91,9 +92,9 @@ class TestSubsetTempering(unittest.TestCase):
         model = PerfectLensModel(
             scatterer, noise_sd=.1, lens_angle=prior.Gaussian(0.7, 0.1))
         strat = TemperedStrategy(nwalkers=4, stages=1, stage_len=10,
-                                    threads=None, seed=40)
+                                    parallel=None, seed=40)
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            inference_result = strat.sample(model, data, nsamples=10)
+            inference_result = strat.optimize(model, data, nsamples=10)
         assert_obj_close(inference_result.guess, gold_lens_angle, rtol=1e-3)
 

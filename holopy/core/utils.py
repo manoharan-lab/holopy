@@ -23,12 +23,15 @@ Misc utility functions to make coding more convenient
 
 
 import os
+import sys
 import shutil
 import errno
-import numpy as np
 from copy import copy
 import itertools
+
+import numpy as np
 import xarray as xr
+import schwimmbad
 
 def ensure_array(x):
     if isinstance(x, xr.DataArray):
@@ -54,6 +57,9 @@ def ensure_listlike(x):
         return x
     except TypeError:
         return [x]
+
+def ensure_scalar(x):
+    return ensure_array(x).item()
 
 def mkdir_p(path):
     '''
@@ -140,4 +146,30 @@ def repeat_sing_dims(indict, keys = 'all'):
     subdict={key:np.repeat(val, maxlen) for key, val in subdict.items() if len(val)==1}
 
     return updated(indict, subdict)
+
+def choose_pool(parallel):
+    """
+    This is a remake of schwimmbad.choose_pool with a single argument that has more options.
+    """
+    if hasattr(parallel, 'map'):
+        return parallel
+    if parallel is None:
+        return schwimmbad.SerialPool()
+    if parallel is 'mpi':
+        pool = schwimmbad.MPIPool()
+        if not pool.is_master():
+            pool.wait()
+            sys.exit(0)
+        return pool
+    if parallel is 'all':
+        threads = os.cpu_count()
+        return choose_pool(threads)
+    if parallel is 'auto':
+        if schwimmbad.MPIPool.enabled():
+            return choose_pool('mpi')
+        else:
+            return choose_pool('all')
+    if isinstance(parallel, int):
+        return schwimmbad.MultiPool(parallel)
+    raise TypeError("Could not interpret 'parallel' argument. Use an integer, 'mpi', 'all', 'auto', None or pass a pool object with 'map' method.")
 

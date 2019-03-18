@@ -124,7 +124,7 @@ class Tmatrix(ScatteringTheory):
         self._run_tmat(temp_dir)
         try:
             tmat_result = np.loadtxt(os.path.join(temp_dir, 'tmatrix_tmp.out'))
-        except FileNotFoundError:
+        except (FileNotFoundError, OSError):
             #No output file
             raise TmatrixFailure(os.path.join(temp_dir, 'log'))
         if len(tmat_result)==0:

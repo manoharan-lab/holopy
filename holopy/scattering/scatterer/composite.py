@@ -97,7 +97,7 @@ class Scatterers(Scatterer):
         return {key:val for key, val in zip(names, pars)}
 
 
-    def from_parameters(self, parameters):
+    def from_parameters(self, parameters, overwrite=False):
         n_scatterers = len(self.scatterers)
         collected = [{} for i in range(n_scatterers)]
         for key, val in parameters.items():
@@ -110,9 +110,9 @@ class Scatterers(Scatterer):
                 # tied parameter - put it in all of them
                 for col in collected:
                     col[key] = val
-        scatterers = [scat.from_parameters(pars)
+        scatterers = [scat.from_parameters(pars, overwrite)
                          for scat, pars in zip(self.scatterers, collected)]
-        return type(self)(scatterers)
+        return type(self)(scatterers, warn=False)
 
     def _prettystr(self, level, indent="  "):
         '''

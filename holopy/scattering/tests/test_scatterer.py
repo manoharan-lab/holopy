@@ -28,10 +28,10 @@ from numpy.testing import assert_equal, assert_raises, assert_allclose
 from nose.plugins.attrib import attr
 
 from ...core import detector_grid
-from .. import Sphere, Scatterer, Ellipsoid, Scatterers, calc_holo
+from .. import Sphere, Spheres, Scatterer, Ellipsoid, Scatterers, calc_holo
 from ..scatterer.ellipsoid import isnumber
 from ..scatterer.scatterer import find_bounds, _expand_parameters, _interpret_parameters
-from holopy.inference.prior import ComplexPrior
+from holopy.inference.prior import ComplexPrior, Uniform
 from ..errors import InvalidScatterer, MissingParameter
 
 
@@ -115,6 +115,16 @@ def test_expand_parameters():
     compressed['e']['e1'] = compressed['e']['e1'].guess
     assert_equal(_interpret_parameters(expanded), compressed)
 
+def test_from_parameters():
+    s_prior = Sphere(n=1.6, r=Uniform(0.5, 0.7), center=[10, 10, 10])
+    s_guess = Sphere(n=1.6, r=0.6, center=[10,10,10])
+    s_new_r = Sphere(n=1.6, r=0.7, center=[10,10,10])
+    s_new_nr= Sphere(n=1.7, r=0.7, center=[10,10,10])
+    pars = {'n':1.7, 'r':0.7}
+    assert_equal(s_prior.from_parameters({}), s_guess)
+    assert_equal(s_prior.from_parameters(pars, overwrite=False), s_new_r)
+    assert_equal(s_prior.from_parameters(pars, overwrite=True), s_new_nr)
+
 @attr('fast')
 def test_Composite_construction():
     # empty composite
@@ -141,6 +151,16 @@ def test_Composite_construction():
 
     # even more levels
     comp3 = Scatterers(scatterers=[comp2, cs])
+
+def test_Composite_tying():
+    # tied parameters
+    n1 = Uniform(1.59,1.6, guess=1.59)
+    sc = Spheres(
+        [Sphere(n=n1, r=Uniform(0.5, 0.7), center=np.array([10., 10., 20.])),
+         Sphere(n=n1, r=Uniform(0.5, 0.7), center=np.array([ 9., 11., 21.]))])
+    assert_equal(len(sc.parameters), 9)
+    assert_equal(sc.parameters['n'].guess, 1.59)
+    assert_equal(sc.parameters['0:r'], sc.parameters['1:r'])
 
 @attr('fast')
 def test_like_me():

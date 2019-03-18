@@ -16,12 +16,12 @@ from holopy.inference.result import FitResult, UncertainValue
 
 class LeastSquaresScipyStrategy(HoloPyObject):
     def __init__(self, ftol=1e-10, xtol=1e-10, gtol=1e-10, max_nfev=None,
-                 random_subset=None):
+                 npixels=None):
         self.ftol = ftol
         self.xtol = xtol
         self.gtol = gtol
         self.max_nfev = max_nfev
-        self.random_subset = random_subset
+        self.npixels = npixels
         self._optimizer_kwargs = {
             'ftol': self.ftol,
             'xtol': self.xtol,
@@ -37,7 +37,7 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         return {par.name: par.unscale(value)
                 for par, value in zip(parameters, values)}
 
-    def fit(self, model, data):
+    def optimize(self, model, data):
         """
         fit a model to some data
 
@@ -61,16 +61,16 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         if len(parameters) == 0:
             raise MissingParameter('at least one parameter to fit')
 
-        if self.random_subset is None:
+        if self.npixels is None:
             data = flat(data)
         else:
-            data = make_subset_data(data, self.random_subset)
+            data = make_subset_data(data, pixels=self.npixels)
         guess_prior = model.lnprior({par.name:par.guess for par in parameters})
 
         def residual(rescaled_values):
             unscaled_values = self.unscale_pars_from_minimizer(
                 parameters, rescaled_values)
-            pars, noise = model._prep_pars(unscaled_values, data)
+            noise = model._find_noise(unscaled_values, data)
             residuals = model._residuals(unscaled_values, data, noise)
             prior = np.sqrt(guess_prior - model.lnprior(unscaled_values))
             np.append(residuals, prior)
@@ -88,7 +88,8 @@ class LeastSquaresScipyStrategy(HoloPyObject):
                      for err, par in zip(perrors, parameters)]
         # timing decorator...
         d_time = time.time() - time_start
-        return FitResult(data, model, self, intervals, d_time, minimizer_info)
+        kwargs = {'intervals':intervals, 'minimizer_info':minimizer_info}
+        return FitResult(data, model, self, d_time, kwargs)
 
     def minimize(self, parameters, residuals_function):
         initial_parameter_guess = [par.scale(par.guess) for par in parameters]

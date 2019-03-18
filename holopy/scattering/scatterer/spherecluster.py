@@ -27,6 +27,8 @@ Defines Spheres, a Scatterers scatterer consisting of Spheres
 
 import numpy as np
 import warnings
+from copy import copy
+from numbers import Number
 
 from .sphere import Sphere
 from .composite import Scatterers
@@ -151,23 +153,25 @@ class RigidCluster(Spheres):
     @property
     def parameters(self):
         def expand(key, par):
-            return{'{0}[{1}]'.format(key,p[0]):p[1] for p in enumerate(par)}
+            return{'{0}.{1}'.format(key,p[0]):p[1] for p in enumerate(par)}
 
         d = self.spheres.parameters
         d.update(expand('translation',self.translation))
         d.update(expand('rotation', self.rotation))
         return d
 
-    def from_parameters(self, parameters, update=False):
-        if update:
-            parameters = updated(self.guess.parameters,parameters)
+    def from_parameters(self, parameters, overwrite=False):
+        parameters = copy(parameters)
+        keys = filter(lambda key : sum([key.startswith(op) for op in ['rotation', 'translation']]), self.parameters)
+        rigid_pars = {key:self.parameters[key] for key in keys}
 
-        rot_keys = ['rotation[{0}]'.format(i) for i in range(3)]
-        trans_keys=['translation[{0}]'.format(i) for i in range(3)]
-        rotation = [parameters[key] for key in rot_keys]
-        translation = [parameters[key] for key in trans_keys]
-        parameters = dict_without(parameters, rot_keys+trans_keys)
+        for key in rigid_pars.keys():
+            if key in parameters.keys():
+                if not isinstance(rigid_pars[key], Number) or overwrite:
+                    rigid_pars[key] = parameters.pop(key)
 
-        spheres = self.spheres.from_parameters(parameters)
+        translation = [rigid_pars['translation.{0}'.format(i)] for i in range(3)]
+        rotation = [rigid_pars['rotation.{0}'.format(i)] for i in range(3)]
+        spheres = self.spheres.from_parameters(parameters, overwrite)
         return spheres.rotated(rotation).translated(translation)
 

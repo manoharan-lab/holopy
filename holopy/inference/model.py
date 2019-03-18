@@ -22,9 +22,9 @@ import numpy as np
 import xarray as xr
 
 from holopy.core.metadata import dict_to_array, make_subset_data
-from holopy.core.utils import ensure_array, ensure_listlike
+from holopy.core.utils import ensure_array, ensure_listlike, ensure_scalar
 from holopy.core.holopy_object import HoloPyObject
-from holopy.scattering.errors import (MultisphereFailure,
+from holopy.scattering.errors import (MultisphereFailure, TmatrixFailure,
                                 InvalidScatterer, MissingParameter)
 from holopy.scattering.calculations import calc_holo
 from holopy.scattering.theory import MieLens
@@ -56,13 +56,13 @@ class BaseModel(HoloPyObject):
     def parameters(self):
         return {par.name:par for par in self._parameters}
 
-    def get_parameter(self, name, pars, schema=None):
+    def _get_parameter(self, name, pars, schema=None):
         if name in pars.keys():
             return pars[name]
         elif hasattr(self, name):
             return getattr(self, name)
         try:
-            getattr(schema, name)
+            return getattr(schema, name)
         except:
             raise MissingParameter(name)
 
@@ -79,23 +79,38 @@ class BaseModel(HoloPyObject):
 
     def _optics_scatterer(self, pars, schema):
         optics_keys = ['medium_index', 'illum_wavelen', 'illum_polarization']
-        optics = {key:self.get_parameter(key, pars, schema)
+        optics = {key:self._get_parameter(key, pars, schema)
                             for key in optics_keys}
         scatterer = self.scatterer.from_parameters(pars)
         return optics, scatterer
 
 
     def lnprior(self, par_vals):
+        """
+        Compute the log-prior probability of par_vals
+
+        Parameters
+        -----------
+        par_vals: dict(string, float)
+            Dictionary containing values for each parameter
+        Returns
+        -------
+        lnprior: float
+        """
+        try:
+            par_scat = self.scatterer.from_parameters(par_vals)
+        except InvalidScatterer:
+            return -np.inf
+
         for constraint in self.constraints:
-            tocheck = self.scatterer.from_parameters(par_vals)
-            if not constraint.check(tocheck):
+            if not constraint.check(par_scat):
                 return -np.inf
 
         return sum([p.lnprob(par_vals[p.name]) for p in self._parameters])
 
     def lnposterior(self, par_vals, data, pixels=None):
         """
-        Compute the posterior probability of pars given data
+        Compute the log-posterior probability of pars given data
 
         Parameters
         -----------
@@ -103,6 +118,12 @@ class BaseModel(HoloPyObject):
             Dictionary containing values for each parameter
         data: xarray
             The data to compute posterior against
+        pixels: int(optional)
+            Specify to use a random subset of all pixels in data
+
+        Returns
+        --------
+        lnposterior: float
         """
         lnprior = self.lnprior(par_vals)
         # prior is sometimes used to forbid thing like negative radius
@@ -119,14 +140,14 @@ class BaseModel(HoloPyObject):
     def forward(self, pars, detector):
         raise NotImplementedError("Implement in subclass")
 
-    def _prep_pars(self, pars, data):
-        noise = dict_to_array(data, self.get_parameter('noise_sd', pars, data))
+    def _find_noise(self, pars, data):
+        noise = dict_to_array(data, self._get_parameter('noise_sd', pars, data))
         if noise is None:
             if np.all([isinstance(par, Uniform) for par in self._parameters]):
                 noise = 1
             else:
                 raise MissingParameter('noise_sd for non-uniform priors')
-        return (pars, noise)
+        return noise
 
     def _residuals(self, pars, data, noise):
         forward_model = self.forward(pars, data)
@@ -134,7 +155,7 @@ class BaseModel(HoloPyObject):
 
     def lnlike(self, pars, data):
         """
-        Compute the likelihood for pars given data
+        Compute the log-likelihood for pars given data
 
         Parameters
         -----------
@@ -142,10 +163,14 @@ class BaseModel(HoloPyObject):
             Dictionary containing values for each parameter
         data: xarray
             The data to compute likelihood against
+
+        Returns
+        --------
+        lnlike: float
         """
-        pars, noise_sd = self._prep_pars(pars, data)
+        noise_sd = self._find_noise(pars, data)
         N = data.size
-        log_likelihood = np.asscalar(
+        log_likelihood = ensure_scalar(
             -N/2 * np.log(2 * np.pi) -
             N * np.mean(np.log(ensure_array(noise_sd))) -
             (self._residuals(pars, data, noise_sd)**2).sum())
@@ -166,7 +191,10 @@ class LimitOverlaps(HoloPyObject):
 
 
 class AlphaModel(BaseModel):
-    def __init__(self, scatterer, noise_sd=None, alpha=1, medium_index=None,
+    """
+    Model of hologram image formation with scaling parameter alpha.
+    """
+    def __init__(self, scatterer, alpha=1, noise_sd=None, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
                  constraints=[]):
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
@@ -176,7 +204,7 @@ class AlphaModel(BaseModel):
     def forward(self, pars, detector):
         """
         Compute a hologram from pars with dimensions and metadata of detector,
-        scaled by alpha.
+        scaled by self.alpha.
 
         Parameters
         -----------
@@ -187,12 +215,12 @@ class AlphaModel(BaseModel):
             dimensions of the resulting hologram. Metadata taken from
             detector if not given explicitly when instantiating self.
         """
-        alpha = self.get_parameter('alpha', pars, detector)
+        alpha = self._get_parameter('alpha', pars, detector)
         optics, scatterer = self._optics_scatterer(pars, detector)
         try:
             return calc_holo(detector, scatterer, theory=self.theory,
                              scaling=alpha, **optics)
-        except (MultisphereFailure, InvalidScatterer):
+        except (MultisphereFailure, TmatrixFailure, InvalidScatterer):
             return -np.inf
 
 
@@ -205,6 +233,9 @@ class AlphaModel(BaseModel):
 # For now it would be OK since PerfectLensModel only works with single
 # spheres or superpositions, but I'm going to leave this for later.
 class ExactModel(BaseModel):
+    """
+    Model of arbitrary scattering function given by calc_func.
+    """
     def __init__(self, scatterer, calc_func=calc_holo, noise_sd=None,
                  medium_index=None, illum_wavelen=None,
                  illum_polarization=None, theory='auto', constraints=[]):
@@ -233,8 +264,11 @@ class ExactModel(BaseModel):
 
 
 class PerfectLensModel(BaseModel):
+    """
+    Model of hologram image formation through a high-NA objective.
+    """
     theory_params = ['lens_angle']
-    def __init__(self, scatterer, noise_sd=None, lens_angle=1.0,
+    def __init__(self, scatterer, lens_angle=1.0, noise_sd=None,
                  medium_index=None, illum_wavelen=None, theory='auto',
                  illum_polarization=None, constraints=[]):
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
@@ -256,7 +290,7 @@ class PerfectLensModel(BaseModel):
         """
         optics_kwargs, scatterer = self._optics_scatterer(pars, detector)
         # We need the lens parameter(s) for the theory:
-        theory_kwargs = {name:self.get_parameter(name, pars, detector)
+        theory_kwargs = {name:self._get_parameter(name, pars, detector)
                                     for name in self.theory_params}
         # FIXME would be nice to have access to the interpolator kwargs
         theory = MieLens(**theory_kwargs)
@@ -271,3 +305,15 @@ class PerfectLensModel(BaseModel):
 # It would be nice if some of the unittests for fitting were also
 # applicable to the inference models. This should be changed later,
 # when the two fitting approaches are unified.
+
+class LnpostWrapper(HoloPyObject):
+    def __init__(self, model, data, new_pixels, minus=False):
+        self.parameters = model._parameters
+        self.data = data
+        self.pixels=new_pixels
+        self.func = model.lnposterior
+        self.prefactor = (-1)**minus
+
+    def evaluate(self, par_vals):
+        pars_dict = {par.name:val for par, val in zip(self.parameters, par_vals)}
+        return self.prefactor * self.func(pars_dict, self.data, self.pixels)

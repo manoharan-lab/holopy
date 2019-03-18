@@ -31,10 +31,12 @@ import numpy as np
 import importlib
 from collections import OrderedDict
 
-from . import serialize
-from ..metadata import data_grid, get_spacing, update_metadata, copy_metadata, to_vector, illumination, clean_concat
-from ..utils import is_none, ensure_array, dict_without
-from ..errors import NoMetadata, BadImage, LoadError
+from holopy.core.io import serialize
+from holopy.core.io.vis import display_image
+from holopy.core.metadata import (data_grid, get_spacing, update_metadata,
+                    copy_metadata, to_vector, illumination, clean_concat)
+from holopy.core.utils import is_none, ensure_array, dict_without
+from holopy.core.errors import NoMetadata, BadImage, LoadError
 
 attr_coords = '_attr_coords'
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
@@ -65,32 +67,12 @@ def get_example_data_path(name):
 def get_example_data(name):
     return load(get_example_data_path(name))
 
-def pad_channel(im, color_axis=illumination, padval=0):
-    new_ax = im.isel(**{color_axis:0}).copy()
-    new_ax[:] = padval
-    if isinstance(im[color_axis].values[0],str):
-        'coords labeled rgb'
-        concat_dim = xr.DataArray(['red','green','blue'], dims=color_axis, name=color_axis)
-        for col in concat_dim:
-            if col.values not in im[color_axis].values:
-                new_ax[color_axis] = col
-                im.attrs['_dummy_channel'] = list(concat_dim).index(col)
-    else:
-        new_ax[color_axis] = np.NaN
-        concat_dim = color_axis
-        im.attrs['_dummy_channel'] = -1
-    return clean_concat([im, new_ax], concat_dim)
-
-def pack_attrs(a, do_spacing=False, scaling = None):
-    new_attrs = {'name':a.name, attr_coords:{}}
-
+def pack_attrs(a, do_spacing=False):
+    new_attrs = {attr_coords:{}}
+    if a.name is not None:
+        new_attrs['name'] = a.name
     if do_spacing:
         new_attrs['spacing']=list(get_spacing(a))
-
-    if scaling is 'auto':
-        scaling = [np.asscalar(a.min()), np.asscalar(a.max())]
-    if scaling:
-        new_attrs['scaling']=list(scaling)
 
     for attr, val in a.attrs.items():
         if isinstance(val, xr.DataArray):
@@ -101,18 +83,26 @@ def pack_attrs(a, do_spacing=False, scaling = None):
         else:
             new_attrs[attr_coords][attr]=False
             if not is_none(val):
-                new_attrs[attr]=val
+                new_attrs[attr] = yaml.dump(val)
     new_attrs[attr_coords]=yaml.dump(new_attrs[attr_coords])
     return new_attrs
 
 def unpack_attrs(a):
+    if len(a) == 0:
+        return a
     new_attrs={}
     attr_ref=yaml.load(a[attr_coords])
-    for attr in dict_without(attr_ref,['spacing','name', '_dummy_channel, scaling']):
+    attrs_to_ignore = ['spacing', 'name', '_dummy_channel', '_image_scaling']
+    for attr in dict_without(attr_ref, attrs_to_ignore):
         if attr_ref[attr]:
             new_attrs[attr] = xr.DataArray(a[attr], coords=attr_ref[attr],dims=list(attr_ref[attr].keys()))
         elif attr in a:
-            new_attrs[attr] = a[attr]
+            try:
+                new_attrs[attr] = yaml.load(a[attr])
+            except AttributeError:
+                from holopy.inference.result import warn_text
+                warnings.warn(warn_text)
+                new_attrs[attr] = a[attr]
         else:
             new_attrs[attr] = None
     return new_attrs
@@ -183,9 +173,10 @@ def load(inf, lazy=False):
                     warnings.simplefilter("ignore")
                     im = load_image(inf, meta['spacing'], name = meta['name'], channel='all')
                 if '_dummy_channel' in meta:
-                    im = im.drop(np.asscalar(im.illumination[meta['_dummy_channel']]), illumination)
-                if 'scaling' in meta:
-                    smin, smax = meta['scaling']
+                    dummy_channel = im.illumination[meta['_dummy_channel']]
+                    im = im.drop(dummy_channel.item(), illumination)
+                if '_image_scaling' in meta:
+                    smin, smax = meta['_image_scaling']
                     im = (im-im.min())*(smax-smin)/(im.max()-im.min())+smin
                 im.attrs = unpack_attrs(meta)
                 return im
@@ -311,7 +302,7 @@ def save_image(filename, im, scaling='auto', depth=8):
         filename in which to save image. If im is an image the
         function should default to the image's name field if no
         filename is specified
-    scaling : 'auto', None, or (None|Int, None|Int)
+    scaling : 'auto', None, or (Int, Int)
         How the image should be scaled for saving. Ignored for float
         output. It defaults to auto, use the full range of the output
         format. Other options are None, meaning no scaling, or a pair
@@ -323,54 +314,24 @@ def save_image(filename, im, scaling='auto', depth=8):
         some kind of scaling.
 
     """
+    im = display_image(im, scaling)
 
     # if we don't have an extension, default to tif
     if os.path.splitext(filename)[1] is '':
         filename += '.tif'
-    
-    if im.ndim > 2 + hasattr(im,illumination) + hasattr(im, 'z'):
-        raise BadImage("Cannot interpret multidimensional image")
-    else:
-        im = im.copy()
-        if isinstance(im, xr.DataArray):
-            if illumination in im.dims and len(im.illumination) == 2:
-                im = pad_channel(im)
-            elif illumination in im.dims and len(im.illumination) > 3:
-                raise BadImage("Too many illumination channels")
-            if 'z' in im.dims:
-                im = im.isel(z=0)
-            if im.ndim == 3:
-                im = im.transpose('x','y','illumination')
 
     metadat=False
-    if os.path.splitext(filename)[1] in tiflist and isinstance(im, xr.DataArray):
+    if os.path.splitext(filename)[1] in tiflist:
         if im.name is None:
             im.name=os.path.splitext(os.path.split(filename)[-1])[0]
-        metadat = pack_attrs(im, do_spacing = True, scaling=scaling)
-        from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2 #hiding this import here since it doesn't play nice in some scenarios
+        metadat = pack_attrs(im, do_spacing = True)
+        # import ifd2 - hidden here since it doesn't play nice in some cases.
+        from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
         tiffinfo = ifd2()
-        tiffinfo[270] = yaml.dump(metadat) #This edits the 'imagedescription' field of the tiff metadata
+        # place metadata in the 'imagedescription' field of the tiff metadata
+        tiffinfo[270] = yaml.dump(metadat)
 
-    if np.iscomplex(im).any():
-        raise BadImage("Cannot interpret image with complex values")
-
-    if isinstance(im, xr.DataArray):
-        im = im.values
-
-    if scaling is not None:
-        if scaling is 'auto':
-            min = im.min()
-            max = im.max()
-        elif len(scaling) == 2:
-            min, max = scaling
-            im = np.minimum(im, max)
-            im = np.maximum(im, min)
-        else:
-            raise Error("Invalid image scaling")
-        if min is not None:
-            im = im - min
-        if max is not None:
-            im = im / (max-min)
+    im = im.values[0]
 
     if depth is not 'float':
         if depth is 8:
