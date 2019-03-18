@@ -179,11 +179,13 @@ class MieLensCalculator(object):
         kwargs = {'index_ratio': self.index_ratio,
                   'size_parameter': self.size_parameter,
                   }
-        scat_s_evaluator = MieScatteringMatrix(s_or_p=1, lazy=True, **kwargs)
-        scat_p_evaluator = MieScatteringMatrix(s_or_p=2, lazy=True, **kwargs)
-        self._scat_s_values = np.reshape(
+        scat_s_evaluator = MieScatteringMatrix(
+            parallel_or_perpendicular='perpendicular', lazy=True, **kwargs)
+        scat_p_evaluator = MieScatteringMatrix(
+            parallel_or_perpendicular='parallel', lazy=True, **kwargs)
+        self._scat_perp_values = np.reshape(
             scat_s_evaluator._eval(self._theta_pts), (-1, 1))
-        self._scat_p_values = np.reshape(
+        self._scat_prll_values = np.reshape(
             scat_p_evaluator._eval(self._theta_pts), (-1, 1))
 
     def _eval_mielens_i_n(self, krho, n=0):
@@ -221,10 +223,10 @@ class MieLensCalculator(object):
     def _direct_eval_mielens_i_n(self, krho, n=0):
         if n == 0:
             ji = j0
-            scatmatrix_values = self._scat_s_values + self._scat_p_values
+            scatmatrix_values = self._scat_perp_values + self._scat_prll_values
         elif n == 2:
             ji = j2
-            scatmatrix_values = self._scat_p_values - self._scat_s_values
+            scatmatrix_values = self._scat_perp_values - self._scat_prll_values
         else:
             raise ValueError('n must be one of {0, 2}')
         # We do the integral with the change of variables x = cos(theta),
@@ -252,8 +254,9 @@ class MieLensCalculator(object):
 
 
 class MieScatteringMatrix(object):
-    def __init__(self, s_or_p=1, index_ratio=1.1, size_parameter=1.0,
-                 max_l=None, npts=None, lazy=False):
+    def __init__(self, parallel_or_perpendicular='perpendicular',
+                 index_ratio=1.1, size_parameter=1.0, max_l=None, npts=None,
+                 lazy=False):
         """Calculations of Mie far-field scattering matrices.
 
         These work by summing the Mie series naively; for large sizes
@@ -261,10 +264,9 @@ class MieScatteringMatrix(object):
 
         Parameters
         ----------
-        s_or_p : {1, 2}
-            Whether to calculate the S or P scattering matrices.
-            i=1 is S / perpendicular / ~sin(phi),
-            i=2 is P / parallel      / ~cos(phi)
+        parallel_or_perpendicular : {'parallel', 'perpendicular'}
+            Whether to calculate the parallel (Pi, ~sin(phi)) or
+            perpendicular (S, ~cos(phi)) scattering matrices.
         index_ratio : float
             Index contrast of the particle.
         size_parameter : float
@@ -275,7 +277,7 @@ class MieScatteringMatrix(object):
             Whether or not to set up the interpolator right away or
             to wait until it is called.
         """
-        self.s_or_p = s_or_p
+        self.parallel_or_perpendicular = parallel_or_perpendicular
         self.index_ratio = index_ratio
         self.size_parameter = size_parameter
         self.max_l = self._default_max_l() if max_l is None else max_l
@@ -313,9 +315,9 @@ class MieScatteringMatrix(object):
         als_bls = [calculate_al_bl(self.index_ratio, self.size_parameter, l)
                    for l in range(1, self.max_l + 1)]
         als, bls = [np.array(i) for i in zip(*als_bls)]
-        if self.s_or_p == 1:
+        if self.parallel_or_perpendicular == 'perpendicular':
             ans = np.sum(coeffs * (bls * tauls + als * pils), axis=1)
-        elif self.s_or_p == 2:
+        elif self.parallel_or_perpendicular == 'parallel':
             ans = np.sum(coeffs * (als * tauls + bls * pils), axis=1)
         if np.isnan(ans).any():
             raise RuntimeError('nan for this value of theta, ka, max_l')
@@ -334,6 +336,9 @@ def j2(x):
     return 2. / clipped * j1(clipped) - j0(clipped)
 
 
+# FIXME h1n, h2n return nan's for negative z, which they get called with
+# when the index ratio is negative... either fix this or ensure that
+# scatterers do not get created with negative indices.
 def spherical_h1n(n, z, derivative=False):
     """Spherical Hankel function H_n(z) or its derivative"""
     return spherical_jn(n, z, derivative) + 1j * spherical_yn(n, z, derivative)

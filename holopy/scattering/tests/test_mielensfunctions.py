@@ -97,6 +97,21 @@ class TestMieLensCalculator(unittest.TestCase):
         self.assertTrue(np.isclose(y_ratio, expected_ratio, **SOFTTOLS))
 
     @attr("fast")
+    def test_xpolarization_is_larger_along_phi_equals_0(self):
+        fieldcalc = mielensfunctions.MieLensCalculator(
+            particle_kz=0.0, index_ratio=1.19, size_parameter=0.1,
+            lens_angle=0.8)
+        krho = np.linspace(0.1, 2, 30)
+        phi_0 = np.zeros(krho.shape)
+        phi_pi4 = phi_0 + np.pi / 4.
+
+        fx_0, fy_0 = fieldcalc.calculate_scattered_field(krho, phi_0)
+        fx_pi4, fy_pi4 = fieldcalc.calculate_scattered_field(krho, phi_pi4)
+
+        is_ok = fx_0.real > fx_pi4.real
+        self.assertTrue(np.all(is_ok))
+
+    @attr("fast")
     def test_fields_are_correct_values(self):
         # Tests fields are correct for a sphere 5 um above the focus
 
@@ -120,24 +135,24 @@ class TestMieLensCalculator(unittest.TestCase):
         field_pi2 = calculator.calculate_scattered_field(k * rho, phi_pi2)
 
         truefield_0 = (
-            np.array([-0.13280951+8.14627106e-02j,
-                      -0.09141112+1.17917888e-01j,
-                      0.08491303+8.39984779e-02j,
-                      0.00872614-9.23456643e-02j,
-                      -0.00824435+6.39179289e-02j,
-                      -0.01382131-3.36867798e-02j,
-                      0.01846656+3.42331341e-03j,
-                      -0.00575098+8.62559833e-03j,
-                      -0.00436734-2.96335185e-03j,
-                      0.0024246 -2.55112245e-03j,
-                      0.00201047+7.78071792e-04j,
-                      -0.00087242+1.24541887e-03j,
-                      -0.00134628-2.32036918e-05j,
-                      0.00020402-7.00926680e-04j,
-                      0.00097511-2.31891822e-04j]),
-            np.array([0.+0.j, -0.+0.j,  0.+0.j,  0.+0.j, -0.+0.j,  0.-0.j,
-                      0.+0.j, -0.+0.j,  0.-0.j,  0.+0.j,  0.+0.j, -0.+0.j,
-                      0.-0.j,  0.+0.j, 0.+0.j]))
+            np.array([-1.32809510e-01+0.08146271j,
+                      -9.06794903e-02+0.1172825j ,
+                      8.21893968e-02+0.08204799j,
+                      7.56371204e-03-0.08694946j,
+                      -6.16821976e-03+0.05753421j,
+                      -1.28205169e-02-0.02865722j,
+                      1.52658533e-02+0.00194537j,
+                      -4.02116676e-03+0.00734771j,
+                      -3.67872355e-03-0.00180371j,
+                      1.60209148e-03-0.00231238j,
+                      1.70980783e-03+0.0002438j ,
+                      -5.04523640e-04+0.00112576j,
+                      -1.11374256e-03+0.00025535j,
+                      4.17810243e-05-0.00059301j,
+                      7.81002777e-04-0.00039032j]),
+            np.array([0.+0.j,  0.+0.j,  0.-0.j, -0.+0.j,  0.+0.j,  0.+0.j,
+                      0.-0.j, 0.+0.j,  0.+0.j, -0.+0.j,  0.-0.j,  0.+0.j,
+                      0.+0.j, -0.+0.j, 0.-0.j]))
 
         truefield_pi4 = (
             np.array([-1.32809510e-01+8.14627106e-02j,
@@ -156,52 +171,52 @@ class TestMieLensCalculator(unittest.TestCase):
                       1.22899446e-04-6.46969142e-04j,
                       8.78058364e-04-3.11103837e-04j]),
             np.array([ 0.00000000e+00+0.00000000e+00j,
-                      -3.65817305e-04+3.17693628e-04j,
-                      1.36181529e-03+9.75243907e-04j,
-                      5.81215242e-04-2.69810296e-03j,
-                      -1.03806451e-03+3.19185972e-03j,
-                      -5.00396567e-04-2.51477939e-03j,
-                      1.60035452e-03+7.38974073e-04j,
-                      -8.64908349e-04+6.38943288e-04j,
-                      -3.44306845e-04-5.79818489e-04j,
-                      4.11255487e-04-1.19369202e-04j,
-                      1.50332293e-04+2.67135310e-04j,
-                      -1.83946348e-04+5.98313492e-05j,
-                      -1.16268243e-04-1.39275966e-04j,
-                      8.11184216e-05-5.39575376e-05j,
-                      9.70555866e-05+7.92120153e-05j]))
+                      3.65817305e-04-3.17693628e-04j,
+                      -1.36181529e-03-9.75243907e-04j,
+                      -5.81215242e-04+2.69810296e-03j,
+                      1.03806451e-03-3.19185972e-03j,
+                      5.00396567e-04+2.51477939e-03j,
+                      -1.60035452e-03-7.38974073e-04j,
+                      8.64908349e-04-6.38943288e-04j,
+                      3.44306845e-04+5.79818489e-04j,
+                      -4.11255487e-04+1.19369202e-04j,
+                      -1.50332293e-04-2.67135310e-04j,
+                      1.83946348e-04-5.98313492e-05j,
+                      1.16268243e-04+1.39275966e-04j,
+                      -8.11184216e-05+5.39575376e-05j,
+                      -9.70555866e-05-7.92120153e-05j]))
 
         truefield_pi2 = (
-            np.array([-1.32809510e-01+0.08146271j,
-                      -9.06794903e-02+0.1172825j,
-                      8.21893968e-02+0.08204799j,
-                      7.56371204e-03-0.08694946j,
-                      -6.16821976e-03+0.05753421j,
-                      -1.28205169e-02-0.02865722j,
-                      1.52658533e-02+0.00194537j,
-                      -4.02116676e-03+0.00734771j,
-                      -3.67872355e-03-0.00180371j,
-                      1.60209148e-03-0.00231238j,
-                      1.70980783e-03+0.0002438j,
-                      -5.04523640e-04+0.00112576j,
-                      -1.11374256e-03+0.00025535j,
-                      4.17810243e-05-0.00059301j,
-                      7.81002777e-04-0.00039032j]),
+            np.array([-0.13280951+8.14627106e-02j,
+                      -0.09141112+1.17917888e-01j,
+                      0.08491303+8.39984779e-02j,
+                      0.00872614-9.23456643e-02j,
+                      -0.00824435+6.39179289e-02j,
+                      -0.01382131-3.36867798e-02j,
+                      0.01846656+3.42331341e-03j,
+                      -0.00575098+8.62559833e-03j,
+                      -0.00436734-2.96335185e-03j,
+                      0.0024246 -2.55112245e-03j,
+                      0.00201047+7.78071792e-04j,
+                      -0.00087242+1.24541887e-03j,
+                      -0.00134628-2.32036918e-05j,
+                      0.00020402-7.00926680e-04j,
+                      0.00097511-2.31891822e-04j]),
             np.array([ 0.00000000e+00+0.00000000e+00j,
-                      -4.47996992e-20+3.89062485e-20j,
-                      1.66774273e-19+1.19432933e-19j,
-                      7.11783386e-20-3.30422315e-19j,
-                      -1.27126238e-19+3.90890079e-19j,
-                      -6.12809053e-20-3.07971653e-19j,
-                      1.95986904e-19+9.04982233e-20j,
-                      -1.05920724e-19+7.82479853e-20j,
-                      -4.21654276e-20-7.10072856e-20j,
-                      5.03642716e-20-1.46185111e-20j,
-                      1.84103962e-20+3.27146402e-20j,
-                      -2.25269306e-20+7.32722703e-21j,
-                      -1.42387532e-20-1.70563866e-20j,
-                      9.93414154e-21-6.60789257e-21j,
-                      1.18858814e-20+9.70067410e-21j]))
+                      4.47996992e-20-3.89062485e-20j,
+                      -1.66774273e-19-1.19432933e-19j,
+                      -7.11783386e-20+3.30422315e-19j,
+                      1.27126238e-19-3.90890079e-19j,
+                      6.12809053e-20+3.07971653e-19j,
+                      -1.95986904e-19-9.04982233e-20j,
+                      1.05920724e-19-7.82479853e-20j,
+                      4.21654276e-20+7.10072856e-20j,
+                      -5.03642716e-20+1.46185111e-20j,
+                      -1.84103962e-20-3.27146402e-20j,
+                      2.25269306e-20-7.32722703e-21j,
+                      1.42387532e-20+1.70563866e-20j,
+                      -9.93414154e-21+6.60789257e-21j,
+                      -1.18858814e-20-9.70067410e-21j]))
 
 
         # compare; medtols b/c fields are only copied to 9 digits
@@ -295,9 +310,10 @@ class TestMieLensCalculator(unittest.TestCase):
 
 class TestMieScatteringMatrix(unittest.TestCase):
     @attr("fast")
-    def test_interpolator_1_accuracy(self):
+    def test_perpendicular_interpolator_accuracy(self):
         theta = np.linspace(0, 1.5, 1000)
-        interpolator = mielensfunctions.MieScatteringMatrix(s_or_p=1)
+        interpolator = mielensfunctions.MieScatteringMatrix(
+            parallel_or_perpendicular='perpendicular')
 
         exact = interpolator._eval(theta)
         approx = interpolator(theta)
@@ -307,9 +323,10 @@ class TestMieScatteringMatrix(unittest.TestCase):
         self.assertTrue(is_ok)
 
     @attr("fast")
-    def test_interpolator_2_accuracy(self):
+    def test_parallel_interpolator_accuracy(self):
         theta = np.linspace(0, 1.5, 1000)
-        interpolator = mielensfunctions.MieScatteringMatrix(s_or_p=2)
+        interpolator = mielensfunctions.MieScatteringMatrix(
+            parallel_or_perpendicular='parallel')
 
         exact = interpolator._eval(theta)
         approx = interpolator(theta)
@@ -321,11 +338,12 @@ class TestMieScatteringMatrix(unittest.TestCase):
     @attr("fast")
     def test_interpolator_maxl_accuracy(self):
         theta = np.linspace(0, 1.5, 1000)
-        interpolator_low_l = mielensfunctions.MieScatteringMatrix(s_or_p=1)
+        interpolator_low_l = mielensfunctions.MieScatteringMatrix(
+            parallel_or_perpendicular='perpendicular')
 
         higher_l = np.ceil(interpolator_low_l.size_parameter * 8).astype('int')
         interpolator_higher_l = mielensfunctions.MieScatteringMatrix(
-            s_or_p=1, max_l=higher_l)
+            parallel_or_perpendicular='perpendicular', max_l=higher_l)
 
         exact = interpolator_low_l._eval(theta)
         approx = interpolator_higher_l._eval(theta)
@@ -452,8 +470,8 @@ class CheckEnergyIsConserved(object):
         self.mielenscalculator = mielenscalculator
 
     def evaluate_scattered_power_incident_on_pupil(self):
-        parallel = self.mielenscalculator._scat_p_values.squeeze()
-        perpendicular = self.mielenscalculator._scat_s_values.squeeze()
+        parallel = self.mielenscalculator._scat_prll_values.squeeze()
+        perpendicular = self.mielenscalculator._scat_perp_values.squeeze()
         cos_theta = self.mielenscalculator._quad_pts.squeeze()
         wts = self.mielenscalculator._quad_wts.squeeze()
         integrand = np.abs(parallel)**2 + np.abs(perpendicular)**2
