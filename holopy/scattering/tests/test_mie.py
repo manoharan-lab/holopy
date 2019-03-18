@@ -42,7 +42,7 @@ from ...core.tests.common import assert_obj_close, verify
 
 from ..calculations import calc_field, calc_holo, calc_intensity, calc_scat_matrix, calc_cross_sections
 
-@attr('fast')
+@attr('medium')
 def test_single_sphere():
     # single sphere hologram (only tests that functions return)
     thry = Mie(False)
@@ -60,7 +60,7 @@ def test_single_sphere():
     # large radius (calculation not attempted because it would take forever
     assert_raises(InvalidScatterer, calc_holo, xschema, Sphere(r=1, n = 1.59, center = (5,5,5)), medium_index=index, illum_wavelen=wavelen)
 
-@attr('fast')
+@attr('medium')
 def test_farfield_holo():
     # Tests that a far field calculation gives a hologram that is
     # different from a full radial dependence calculation, but not too different
@@ -116,7 +116,7 @@ def test_Mie_multiple():
     # should throw exception when fed a ellipsoid
     el = Ellipsoid(n = 1.59, r = (1e-6, 2e-6, 3e-6), center=[8e-6,5e-6,5e-6])
     with assert_raises(TheoryNotCompatibleError) as cm:
-        calc_field(schema, el, index, wavelen, theory=Mie)    
+        calc_field(schema, el, index, wavelen, theory=Mie)
     assert_equal(str(cm.exception), "Mie scattering theory can't handle "
                  "scatterers of type Ellipsoid")
     assert_raises(TheoryNotCompatibleError, calc_field, schema, el, index, wavelen, xpolarization, Mie)
@@ -124,7 +124,7 @@ def test_Mie_multiple():
                   schema, el, index, wavelen, xpolarization, Mie)
     assert_raises(TheoryNotCompatibleError, calc_holo, schema, el, index, wavelen, xpolarization, Mie)
 
-@attr('fast')
+@attr('medium')
 def test_mie_polarization():
 
     # test holograms for orthogonal polarizations; make sure they're
@@ -132,7 +132,7 @@ def test_mie_polarization():
     thry = Mie(False)
     xholo = calc_holo(xschema, sphere, index, wavelen, illum_polarization=xpolarization, scaling=scaling_alpha)
     yholo = calc_holo(yschema, sphere, index, wavelen, illum_polarization=ypolarization, scaling=scaling_alpha)
-    
+
     # the two arrays should not be equal
     try:
         assert_array_almost_equal(xholo, yholo)

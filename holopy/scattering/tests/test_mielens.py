@@ -50,7 +50,7 @@ class TestMieLens(unittest.TestCase):
                          theory=theory)
         self.assertTrue(holo is not None)
 
-    @attr("fast")
+    @attr("medium")
     def test_can_calculate_for_positive_and_negative_z(self):
         theory = MieLens()
         ka = 5.0
@@ -98,7 +98,7 @@ class TestMieLens(unittest.TestCase):
                             **TOLS)
         self.assertTrue(is_ok)
 
-    @attr("fast")
+    @attr("medium")
     def test_central_lobe_is_bright_when_particle_is_above_focus(self):
         # This test only works at low index contrast, when the scattered
         # beam is everywhere weaker than the unscattered:
@@ -106,7 +106,7 @@ class TestMieLens(unittest.TestCase):
         central_lobes = calculate_central_lobe_at(zs)
         self.assertTrue(np.all(central_lobes > 1))
 
-    @attr("fast")
+    @attr("medium")
     def test_central_lobe_is_dark_when_particle_is_below_focus(self):
         # This test only works at low index contrast, when the scattered
         # beam is everywhere weaker than the unscattered:
@@ -114,7 +114,7 @@ class TestMieLens(unittest.TestCase):
         central_lobes = calculate_central_lobe_at(zs)
         self.assertTrue(np.all(central_lobes < 1))
 
-    @attr('fast')
+    @attr('medium')
     def test_mielens_is_close_to_mieonly(self):
         """Tests that a mielens hologram is similar to a mie-only hologram."""
         theory_mielens = MieLens()
@@ -157,7 +157,7 @@ class TestMieLens(unittest.TestCase):
         self.assertTrue(np.isclose(holo_x.max(), holo_y.max(), **MEDTOLS))
         self.assertTrue(np.isclose(holo_x.min(), holo_y.min(), **MEDTOLS))
 
-    @attr('fast')
+    @attr('medium')
     def test_mielens_multiple_returns_nonzero(self):
         scatterers = [
             Sphere(n=1.59, r=5e-7, center=(1e-6, -1e-6, 10e-6)),
