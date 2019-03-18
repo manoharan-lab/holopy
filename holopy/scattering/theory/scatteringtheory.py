@@ -27,19 +27,19 @@ import numpy as np
 import xarray as xr
 from warnings import warn
 from holopy.core.holopy_object import HoloPyObject
-from ..scatterer import Scatterers, Sphere
-from ..errors import TheoryNotCompatibleError, MissingParameter
-from ...core.metadata import (vector, illumination, sphere_coords, primdim,
-                              update_metadata, clean_concat)
-from ...core.utils import dict_without, updated, ensure_array
+from holopy.scattering.scatterer import Scatterers, Sphere
+from holopy.scattering.errors import TheoryNotCompatibleError, MissingParameter
+from holopy.core.metadata import (vector, illumination, sphere_coords,
+                                  primdim, update_metadata, clean_concat)
+from holopy.core.utils import dict_without, updated, ensure_array
 try:
-    from .mie_f import mieangfuncs
+    from holopy.scattering.theory.mie_f import mieangfuncs
 except ImportError:
     pass
 
 
-def wavevec(a):
-        return 2*np.pi/(a.illum_wavelen/a.medium_index)
+def get_wavevec_from(schema):
+    return 2 * np.pi / (schema.illum_wavelen / schema.medium_index)
 
 
 def stack_spherical(a):
@@ -78,41 +78,6 @@ class ScatteringTheory(HoloPyObject):
         e_field : :mod:`.VectorGrid`
             scattered electric field
         """
-        def get_field(s):
-            # FIXME this checks a global value in a loop.
-            if isinstance(scatterer, Sphere) and scatterer.center is None:
-                raise MissingParameter("center")
-            positions = sphere_coords(
-                schema, s.center, wavevec=wavevec(schema))
-            field = np.vstack(
-                self._raw_fields(
-                    stack_spherical(positions),
-                    s,
-                    medium_wavevec=wavevec(schema),
-                    medium_index=schema.medium_index,
-                    illum_polarization=schema.illum_polarization)
-                ).T
-            phase = np.exp(-1j * wavevec(schema) * s.center[2])
-            # TODO: fix and re-enable internal fields
-            # if self._scatterer_overlaps_schema(scatterer, schema):
-            #     inner = scatterer.contains(schema.positions.xyz())
-            #     field[inner] = np.vstack(
-            #         self._raw_internal_fields(positions[inner].T, s,
-            #                                  optics)).T
-            field *= phase
-            dimstr = primdim(positions)
-
-            if isinstance(positions[dimstr], xr.DataArray):
-                coords = {key: (dimstr, val.values)
-                          for key, val in positions[dimstr].coords.items()}
-            else:
-                coords = {key: (dimstr, val) for key, val in positions.items()}
-            coords = updated(coords, {dimstr: positions[dimstr],
-                                      vector: ['x', 'y', 'z']})
-            field = xr.DataArray(field, dims=[dimstr, vector], coords=coords,
-                                 attrs=schema.attrs)
-            return field
-
         if len(ensure_array(schema.illum_wavelen)) > 1:
             field = []
             for illum in schema.illum_wavelen.illumination.values:
@@ -129,18 +94,56 @@ class ScatteringTheory(HoloPyObject):
         else:
             # See if we can handle the scatterer in one step
             if self._can_handle(scatterer):
-                field = get_field(scatterer)
+                field = self._get_field_from(scatterer, schema)
             # FIXME this checks if it is a composite, but does not check
             # if each element of the composite can be handled by the theory.
             elif isinstance(scatterer, Scatterers):
                 # if it is a composite, try superposition
                 scatterers = scatterer.get_component_list()
-                field = get_field(scatterers[0])
+                field = self._get_field_from(scatterers[0], schema)
                 for s in scatterers[1:]:
-                    field += get_field(s)
+                    field += self._get_field_from(s, schema)
             else:
                 raise TheoryNotCompatibleError(self, scatterer)
 
+        return field
+
+    def _get_field_from(self, scatterer, schema):
+        # FIXME this checks a global value in a loop.
+        wavevector = get_wavevec_from(schema)
+        if isinstance(scatterer, Sphere) and scatterer.center is None:
+            raise MissingParameter("center")
+        positions = sphere_coords(
+            schema, scatterer.center, wavevec=wavevector)  # 8.6 ms !!
+        field = np.transpose(
+            self._raw_fields(
+                stack_spherical(positions),
+                scatterer,
+                medium_wavevec=wavevector,
+                medium_index=schema.medium_index,
+                illum_polarization=schema.illum_polarization)
+            )
+        phase = np.exp(-1j * wavevector * scatterer.center[2])
+        # TODO: fix and re-enable internal fields
+        # if self._scatterer_overlaps_schema(scatterer, schema):
+        #     inner = scatterer.contains(schema.positions.xyz())
+        #     field[inner] = np.vstack(
+        #         self._raw_internal_fields(positions[inner].T, s,
+        #                                  optics)).T
+        field *= phase
+        dimstr = primdim(positions)
+
+        # FIXME why is this here? Since ``positions = sphere_coords(...)``
+        # shouldn't ``positions`` always be an xr.DataArray?
+        if isinstance(positions[dimstr], xr.DataArray):
+            coords = {key: (dimstr, val.values)
+                      for key, val in positions[dimstr].coords.items()}
+        else:
+            coords = {key: (dimstr, val) for key, val in positions.items()}
+        coords = updated(coords, {dimstr: positions[dimstr],
+                                  vector: ['x', 'y', 'z']})
+        field = xr.DataArray(field, dims=[dimstr, vector], coords=coords,
+                             attrs=schema.attrs)
         return field
 
     def _calc_cross_sections(self, scatterer, medium_wavevec, medium_index,
@@ -178,7 +181,7 @@ class ScatteringTheory(HoloPyObject):
         positions = sphere_coords(schema, scatterer.center)
         scat_matrs = self._raw_scat_matrs(
             scatterer, stack_spherical(positions),
-            medium_wavevec=wavevec(schema), medium_index=schema.medium_index)
+            medium_wavevec=get_wavevec_from(schema), medium_index=schema.medium_index)
         dimstr = primdim(positions)
 
         for coorstr in dict_without(positions, [dimstr]):
