@@ -25,11 +25,12 @@ import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 from nose.plugins.attrib import attr
 
-from .. import load, save, load_image, save_image
-from ..process import normalize
-from ..metadata import get_spacing
-from ..holopy_object import Serializable
-from .common import (assert_obj_close, assert_read_matches_write, get_example_data)
+from holopy.core import load, save, load_image, save_image
+from holopy.core.process import normalize
+from holopy.core.metadata import get_spacing
+from holopy.core.holopy_object import Serializable
+from holopy.core.tests.common import (
+    assert_obj_close, assert_read_matches_write, get_example_data)
 
 @attr('medium')
 def test_hologram_io():
