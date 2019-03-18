@@ -45,7 +45,7 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_po
 
     Notes
     -----
-    Use of higher-level detector_grid() and detector_points() functions is 
+    Use of higher-level detector_grid() and detector_points() functions is
     recommended.
     """
 
@@ -75,11 +75,11 @@ def detector_grid(shape, spacing, normals = None, name = None, extra_dims=None):
     Parameters
     ----------
     shape : int or list-like (2)
-        If int, detector is a square grid of shape x shape points. 
+        If int, detector is a square grid of shape x shape points.
         If array_like, detector has \ *shape*\ [0] rows and \ *shape*\ [1] columns.
     spacing : int or list-like (2)
         If int, distance between square detector pixels.
-        If array_like, \ *spacing*\ [0] between adjacent rows and \ *spacing*\ [1] 
+        If array_like, \ *spacing*\ [0] between adjacent rows and \ *spacing*\ [1]
         between adjacent columns.
     normals : list-like or None
         If list-like, detector orientation.
@@ -95,9 +95,9 @@ def detector_grid(shape, spacing, normals = None, name = None, extra_dims=None):
 
     Notes
     -----
-    Typically used to define a set of points to represent the pixels of a 
+    Typically used to define a set of points to represent the pixels of a
     digital camera in scattering calculations.
-        
+
     """
     if np.isscalar(shape):
         shape = [shape]*2
@@ -112,7 +112,7 @@ def detector_grid(shape, spacing, normals = None, name = None, extra_dims=None):
 
 def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta = None, phi = None, normals = 'auto', name = None):
     """
-    Returns a one-dimensional set of detector coordinates at which scattering 
+    Returns a one-dimensional set of detector coordinates at which scattering
     calculations are to be done.
 
     Parameters
@@ -120,7 +120,7 @@ def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta =
     coords : dict, optional
         Dictionary of detector coordinates. Default: empty dictionary.
         Typical usage should not pass this argument, giving other parameters
-        (Cartesian `x`, `y`, and `z` or polar `r`, `theta`, and `phi` 
+        (Cartesian `x`, `y`, and `z` or polar `r`, `theta`, and `phi`
         coordinates) instead.
     x, y : int or array_like, optional
         Cartesian x and y coordinates of detectors.
@@ -146,9 +146,9 @@ def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta =
 
     Notes
     -----
-    Specify either the Cartesian or the polar coordinates of your detector. 
+    Specify either the Cartesian or the polar coordinates of your detector.
     This may be helpful for modeling static light scattering calculations.
-    Use detector_grid() to specify coordinates of a grid of pixels (e.g., 
+    Use detector_grid() to specify coordinates of a grid of pixels (e.g.,
     a digital camera.)
 
     """
@@ -158,7 +158,7 @@ def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta =
         keys = ['x', 'y', 'z']
         if not 'z' in coords or is_none(coords['z']):
             coords['z'] = 0
-        
+
     elif 'theta' in coords and 'phi' in coords:
         keys = ['r', 'theta', 'phi']
         if not 'r' in coords or is_none(coords['r']):
@@ -191,7 +191,7 @@ def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization
         Updated detector orientation of the image.
     noise_sd : float
         standard deviation of Gaussian noise in the image.
-   
+
     Returns
     -------
     b : xarray.DataArray
@@ -218,7 +218,7 @@ def copy_metadata(old, data, do_coords=True):
             if np.array_equal(oldval.values, newval.values):
                 return new.rename({newkey: oldkey})
             raise ValueError("Coordinate {} does not appear to have a coresponding coordinate in {}".format(oldkey, new))
-    
+
     new=data.copy()
 
     if hasattr(old, 'attrs') and hasattr(old, 'name') and hasattr(old, 'coords'):
@@ -268,7 +268,10 @@ def from_flat(a):
 
 def sphere_coords(a, origin=(0,0,0), wavevec=1):
     if hasattr(a,'theta') and hasattr(a, 'phi'):
-        out = {'theta': a.theta.values, 'phi': a.phi.values, 'point':a.point.values}
+        out = {'theta': a.theta.values,
+               'phi': a.phi.values,
+               'point': a.point.values,
+               }
         if hasattr(a, 'r') and any(np.isfinite(a.r)):
             out['r'] = a.r.values * wavevec
         return out
@@ -276,12 +279,14 @@ def sphere_coords(a, origin=(0,0,0), wavevec=1):
     else:
         if origin is None:
             raise ValueError('Cannot convert detector to spherical coordinates without an origin')
-        f = flat(a)
-        dimstr = primdim(f)
+        f = flat(a)  # 1.6 ms
+        dimstr = primdim(f)  # 907 ns
+        x = f.x.values - origin[0]  # 0.7 ms, all but 0.01 is from overhead
+        y = f.y.values - origin[1]  # 0.7 ms
         # we define positive z opposite light propagation, so we have to invert
-        x, y, z = f.x.values - origin[0], f.y.values - origin[1], origin[2] - f.z.values
-        out = to_spherical(x,y,z)
-        return updated(out, {'r':out['r'] * wavevec, dimstr:f[dimstr]})
+        z = origin[2] - f.z.values  # 0.7 ms
+        out = to_spherical(x, y, z)  # 3.3 ms
+        return updated(out, {'r':out['r'] * wavevec, dimstr:f[dimstr]})  # 33 us
 
 def get_values(a):
     return getattr(a, 'values', a)
@@ -296,7 +301,7 @@ def primdim(a):
     raise ValueError('Array is not in the form of a 1D list of coordinates')
 
 def default_norms(coords,n):
-    if n is 'auto':    
+    if n is 'auto':
         if 'x' in coords:
             n = (0,0,1)
         elif 'theta' in coords:
