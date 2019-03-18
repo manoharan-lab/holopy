@@ -54,40 +54,58 @@ def test_image_io():
     save_image(filename, holo, scaling=None)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        l = load_image(filename+'.tif', name=holo.name, medium_index=holo.medium_index, spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen, illum_polarization=holo.illum_polarization, normals=holo.normals, noise_sd=holo.noise_sd)
+        l = load_image(
+            filename+'.tif', name=holo.name, medium_index=holo.medium_index,
+            spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen,
+            illum_polarization=holo.illum_polarization, normals=holo.normals,
+            noise_sd=holo.noise_sd)
     assert_obj_close(l, holo)
 
-    ##check saving/loading non-tif
+    # check saving/loading non-tif
     filename = os.path.join(t, 'image0001.bmp')
     save_image(filename, holo, scaling=None)
     # For now we don't support writing metadata to image formats other
     # than tiff, so we have to specify the metadata here
-    l=load_image(filename, name=holo.name, medium_index=holo.medium_index, spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen, illum_polarization=holo.illum_polarization, normals=holo.normals, noise_sd=holo.noise_sd)
-    assert_obj_close(l, holo)    
-
-    #check specify scaling
-    filename = os.path.join(t, 'image0001.tif')
-    save_image(filename, holo, scaling=(0,255))
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        l=load_image(filename, name=holo.name, medium_index=holo.medium_index, spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen, illum_polarization=holo.illum_polarization, normals=holo.normals, noise_sd=holo.noise_sd)
+    l = load_image(
+        filename, name=holo.name, medium_index=holo.medium_index,
+        spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen,
+        illum_polarization=holo.illum_polarization, normals=holo.normals,
+        noise_sd=holo.noise_sd)
     assert_obj_close(l, holo)
 
-    #check auto scaling
+    # check specify scaling
+    filename = os.path.join(t, 'image0001.tif')
+    save_image(filename, holo, scaling=(0, 255))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        l = load_image(
+            filename, name=holo.name, medium_index=holo.medium_index,
+            spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen,
+            illum_polarization=holo.illum_polarization, normals=holo.normals,
+            noise_sd=holo.noise_sd)
+    assert_obj_close(l, holo)
+
+    # check auto scaling
     filename = os.path.join(t, 'image0001.tif')
     save_image(filename, holo, depth='float')
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        l=load_image(filename, name=holo.name, spacing=get_spacing(holo))
-    # skip checking full DataArray attrs because it is akward to keep them through arithmatic. Ideally we would figure out a way to preserve them and switch back to testing fully
-    assert_allclose(l, (holo-holo.min())/(holo.max()-holo.min()))    
+        l = load_image(filename, name=holo.name, spacing=get_spacing(holo))
+    # skip checking full DataArray attrs because it is akward to keep
+    # them through arithmetic. Ideally we would figure out a way to
+    # preserve them and switch back to testing fully
+    assert_allclose(l, (holo-holo.min())/(holo.max()-holo.min()))
 
     # check saving 16 bit
     filename = os.path.join(t, 'image0003')
     save_image(filename, holo, scaling=None, depth=16)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        l = load_image(filename+'.tif', name=holo.name, medium_index=holo.medium_index, spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen, illum_polarization=holo.illum_polarization, normals=holo.normals, noise_sd=holo.noise_sd)
+        l = load_image(
+            filename+'.tif', name=holo.name, medium_index=holo.medium_index,
+            spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen,
+            illum_polarization=holo.illum_polarization, normals=holo.normals,
+            noise_sd=holo.noise_sd)
     assert_obj_close(l, holo)
 
     # test that yaml save works corretly with a string instead of a file
@@ -97,6 +115,7 @@ def test_image_io():
     assert_obj_close(loaded, holo)
     shutil.rmtree(t)
 
+
 # test a number of little prettying up of yaml output that we do for
 # numpy types
 @attr("fast")
@@ -105,7 +124,7 @@ def test_yaml_output():
     a = np.ones(10, 'int')
     assert_equal(yaml.dump(a.std()), '0.0\n...\n')
 
-    assert_equal(yaml.dump(np.dtype('float')),"!dtype 'float64'\n")
+    assert_equal(yaml.dump(np.dtype('float')), "!dtype 'float64'\n")
     assert_equal(yaml.load(yaml.dump(np.dtype('float'))), np.dtype('float64'))
 
     # this should fail on Windows64 because int and long are both
