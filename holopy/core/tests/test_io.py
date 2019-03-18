@@ -96,6 +96,7 @@ def test_image_io():
 
 # test a number of little prettying up of yaml output that we do for
 # numpy types
+@attr("fast")
 def test_yaml_output():
     # test that numpy types get cleaned up into python types for clean printing
     a = np.ones(10, 'int')

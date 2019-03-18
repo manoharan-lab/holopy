@@ -55,6 +55,7 @@ def test_Sphere_construction():
     cs = Sphere(n = (1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6),
                       center = center)
 
+@attr("fast")
 def test_Ellipsoid():
     s = Ellipsoid(n = 1.57, r = (1, 2, 3), center = (3, 2, 1))
     assert_equal(s.n, 1.57)
@@ -180,6 +181,7 @@ def test_translate():
     assert_equal(s.n, s2.n)
     assert_allclose(s2.center, (1, 1, 1))
 
+@attr("fast")
 def test_find_bounds():
     s = Sphere(n = 1.59, r = .5e-6, center = (0, 0, 0))
     assert_allclose(find_bounds(s.indicators.functions[0])[0], np.array([-s.r,s.r]), rtol=0.1)
@@ -188,11 +190,13 @@ def test_find_bounds():
     s = Sphere(n = 1.59, r = .5e6, center = (0, 0, 0))
     assert_allclose(find_bounds(s.indicators.functions[0])[0], np.array([-s.r,s.r]), rtol=0.1)
 
+@attr("fast")
 def test_sphere_nocenter():
     sphere = Sphere(n = 1.59, r = .5)
     schema = detector_grid(spacing=.1, shape=1)
     assert_raises(MissingParameter, calc_holo, schema, sphere, 1.33, .66, [1, 0])
 
+@attr("fast")
 def test_ellipsoid():
     test = Ellipsoid(n = 1.585, r = [.4,0.4,1.5], center = [10,10,20])
     assert_equal(test.voxelate(.4), np.array(

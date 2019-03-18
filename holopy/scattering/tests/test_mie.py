@@ -97,7 +97,7 @@ def test_subimaged():
     assert_obj_close(subimage(h, *sub), hs)
 
 
-@attr('fast')
+@attr('medium')
 def test_Mie_multiple():
     s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
     s2 = Sphere(n = 1.59, r = 1e-6, center=[8e-6,5e-6,5e-6])
@@ -147,8 +147,8 @@ def test_mie_polarization():
     assert_obj_close(xholo.min(), yholo.min())
     return xholo, yholo
 
-@attr('fast')
 
+@attr('medium')
 def test_linearity():
     # look at superposition of scattering from two point particles;
     # make sure that this is sum of holograms from individual point
@@ -189,7 +189,7 @@ def test_linearity():
     # uncomment to debug
     #return holo_1, holo_2, holo_super
 
-@attr('fast')
+@attr('medium')
 def test_nonlinearity():
     # look at superposition of scattering from two large particles;
     # make sure that this is *not equal* to sum of holograms from
@@ -287,6 +287,7 @@ def test_large_sphere():
     hl=calc_holo(sch, s, illum_wavelen=.66, medium_index=1, illum_polarization=(1,0))
     assert_obj_close(np.array(hl[0:2,0:2]),large_sphere_gold)
 
+@attr('fast')
 def test_calc_scat_coeffs():
     sp = Sphere(r=.5, n=1.6, center=(10, 10, 5))
     wavevec = 2* np.pi / (.66/1.33)
@@ -324,6 +325,7 @@ def test_calc_scat_coeffs():
   (1.128893090815587e-21-3.359900431286003e-11j),
   (1.5306616534558257e-24-1.2371991163332706e-12j)]])
 
+@attr("fast")
 def test_raw_fields():
     sp = Sphere(r=.5, n=1.6, center=(10, 10, 5))
     wavelen = .66

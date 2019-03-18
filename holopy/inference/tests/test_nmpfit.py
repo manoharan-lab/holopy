@@ -69,7 +69,7 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
             np.isclose(result.parameters['alpha'], gold_alpha, rtol=0.1))
         self.assertEqual(model, result.model)
 
-    @attr('fast')
+    @attr('medium')
     def test_fit_random_subset(self):
         holo = normalize(get_example_data('image0001'))
         center_guess = [
@@ -151,7 +151,7 @@ def test_fit_mie_par_scatterer():
     assert_read_matches_write(result)
 
 
-@attr('fast')
+@attr('medium')
 def test_fit_random_subset():
     holo = normalize(get_example_data('image0001'))
 
@@ -184,7 +184,7 @@ def test_n():
     assert_allclose(model._residuals({'n' : .5}, holo, 1).sum(), 0)
 
 
-@attr('fast')
+@attr('medium')
 def test_serialization():
     par_s = Sphere(center = (Uniform(0, 1e-5, guess=.567e-5),
                          Uniform(0, 1e-5, .567e-5), Uniform(1e-5, 2e-5)),

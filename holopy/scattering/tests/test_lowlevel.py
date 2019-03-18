@@ -96,7 +96,7 @@ def test_polarization_to_scatt_coords():
     assert_allclose(fortran_result, dot(conversion_mat, test_vect))
 
 
-@attr('medium')
+@attr('fast')
 def test_mie_amplitude_scattering_matrices():
     '''
     Test calculation of Mie amplitude scattering matrix elements.
@@ -183,7 +183,7 @@ def test_scattered_field_from_asm():
     assert_allclose(fortran_test, gold)
 
 
-@attr('medium')
+@attr('fast')
 def test_mie_internal_coeffs():
     if os.name == 'nt':
         raise SkipTest()
@@ -247,7 +247,8 @@ def test_mie_bndy_conds():
 # independent of kr and close to the analytical result.
 
 
-@attr('medium')
+# @attr('fast')
+# FIXME this test prints out a bunch of crap to the terminal!
 def test_mie_multisphere_singlesph():
     '''
     Check that fields from mie_fields and tmatrix_fields are consistent
@@ -330,6 +331,8 @@ def test_dn1_lentz():
         lentz_illconditioned = mieangfuncs.lentz_dn1(z, nstop, 1., eps2)
         assert_allclose(lentz_illconditioned, lentz_start, rtol = 1e-12)
 
+# @attr("fast")
+# FIXME this test prints out a bunch of crap to the terminal!
 def test_asm():
     centers = np.array([[ 0.,  0.,  1.], [ 0.,  0., -1.]])
     m = np.array([ 1.5+0.1j,  1.5+0.1j])

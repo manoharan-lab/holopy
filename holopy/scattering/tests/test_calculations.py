@@ -21,6 +21,7 @@ calc_intensity and calc_holo, based on subclass's calc_field
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
+from nose.plugins.attrib import attr
 
 from .. import Sphere, Spheres, Mie, Multisphere
 from ...core import detector_grid
@@ -39,6 +40,7 @@ def test_calc_holo():
 def test_calc_field():
     field = calc_field(locations, scatterer, medium_index, wavelen, polarization)
 
+@attr("fast")
 def test_calc_cross_section():
     cross = calc_cross_sections(scatterer, medium_index, wavelen, polarization)
 
@@ -48,6 +50,7 @@ def test_calc_intensity():
 def test_calc_scat_matrix():
     matr = calc_scat_matrix(locations, scatterer, medium_index, wavelen)
 
+@attr("fast")
 def test_determine_theory():
     assert_obj_close(determine_theory(Sphere()), Mie())
     assert_obj_close(determine_theory(Spheres([Sphere(), Sphere()])), Multisphere())

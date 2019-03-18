@@ -34,13 +34,15 @@ from holopy.core.tests.common import assert_obj_close, get_example_data
 
 
 #Test math
+@attr("fast")
 def test_rotate_single_point():
     points = np.array([1.,1.,1.])
     assert_allclose(rotate_points(points, np.pi, np.pi, np.pi),
                     np.array([-1.,  1., -1.]), 1e-5)
-    
+
+@attr("fast")
 def test_rotation_matrix_degrees():
-    assert_allclose(rotation_matrix(180., 180., 180., radians = False), 
+    assert_allclose(rotation_matrix(180., 180., 180., radians = False),
                     rotation_matrix(np.pi, np.pi, np.pi))
 
 #test utils
@@ -57,6 +59,7 @@ def test_ensure_array():
     len(ensure_array(xr.DataArray([12],dims='a',coords={'a':['b']}).sel(a='b')))
     len(ensure_array(xr.DataArray(12)))
 
+
 def test_choose_pool():
     class dummy():
         def map():
@@ -67,9 +70,13 @@ def test_choose_pool():
     assert isinstance(choose_pool('auto'), (pool.BasePool, Pool))
     assert not isinstance(choose_pool(dummy), (pool.BasePool, Pool))
 
+
+@attr('fast')
 def test_ensure_listlike():
     assert ensure_listlike(None) == []
 
+
+@attr("fast")
 def test_mkdir_p():
     tempdir = tempfile.mkdtemp()
     mkdir_p(os.path.join(tempdir, 'a', 'b'))

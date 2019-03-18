@@ -33,6 +33,7 @@ def test_FoundLocation():
     assert_allclose(location, gold_location, atol=0.01)
 
 #Test img_proc
+@attr("fast")
 def test_subimage():
     i = detector_grid(shape=(10, 10), spacing=1)
     s = subimage(i, (5,5), 2)
@@ -41,6 +42,7 @@ def test_subimage():
     i2 = data_grid(i, 1)
     s2 = subimage(i2, (5, 5), 2)
 
+@attr("fast")
 def test_subimage_floats():
     i = data_grid(np.zeros((100, 100)), .1)
     s1 = subimage(i, (5.2,5.6), 2)

@@ -21,14 +21,16 @@ calc_intensity and calc_holo, based on subclass's calc_field
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
+from collections import OrderedDict
+
+import numpy as np
+import xarray as xr
+from nose.plugins.attrib import attr
 
 from .. import Sphere, Spheres, calc_holo
 from ...core.metadata import detector_grid, update_metadata, to_vector
 from ...inference import prior
 from ..calculations import prep_schema
-import numpy as np
-import xarray as xr
-from collections import OrderedDict
 from ...core.tests.common import assert_equal, assert_obj_close, assert_allclose
 
 def test_hologram():
@@ -47,6 +49,7 @@ def test_hologram():
     assert_equal(both.values, joined)
 
 
+@attr("fast")
 def test_select():
     s = Sphere(n=xr.DataArray([1.5,1.7],dims='ill',coords={'ill':['r','g']}),center=[0,0,0],r=0.5)
     assert_equal(s.select({'ill':'g'}),Sphere(n=1.7,center=[0,0,0],r=0.5))

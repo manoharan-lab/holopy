@@ -18,6 +18,8 @@
 import numpy as np
 import xarray as xr
 from numpy.testing import assert_allclose, assert_equal
+from nose.plugins.attrib import attr
+
 from ..scatterer import Sphere, Difference
 from ...core import detector_grid, detector_points
 from ..theory import Mie
@@ -28,6 +30,7 @@ from ..theory.scatteringtheory import stack_spherical
 
 # small tests against results from the previous version of holopy
 
+@attr("fast")
 def test_sphere_coords():
     t = detector_grid(shape = (2,2), spacing = .1)
     p = sphere_coords(t, wavevec=2*np.pi*1.33/.66, origin=(0,0,1))
@@ -84,6 +87,7 @@ def test_calc_intensity():
     assert_allclose(i, np.array([[[ 6.30336023],  [5.65995739]],
                                  [[ 5.61505927],  [5.04233591]]]))
 
+@attr("fast")
 def test_csg_construction():
     s = Sphere(n = 1.6, r=.5, center=(0, 0, 0))
     st = s.translated(.4, 0, 0)
