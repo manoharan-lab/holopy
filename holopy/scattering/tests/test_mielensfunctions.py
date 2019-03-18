@@ -393,6 +393,7 @@ class TestCalculation(unittest.TestCase):
     _lowna_tols = {'atol': 2e-2, 'rtol': 0}
     _highna_tols = {'atol': 3e-3, 'rtol': 0}
 
+    @attr("fast")
     def test_energy_is_conserved_at_low_na_pointparticle(self):
         ratio = get_ratio_of_scattered_powerin_to_scattered_powerout(
             lens_angle=0.1, index_ratio=1.5, particle_kz=0, size_parameter=0.1)
@@ -403,6 +404,7 @@ class TestCalculation(unittest.TestCase):
             lens_angle=0.1, index_ratio=1.5, particle_kz=0, size_parameter=40.)
         self.assertTrue(np.isclose(ratio, 1.0, **self._lowna_tols))
 
+    @attr("fast")
     def test_energy_is_conserved_at_high_na_pointparticle(self):
         ratio = get_ratio_of_scattered_powerin_to_scattered_powerout(
             lens_angle=0.9, index_ratio=1.5, particle_kz=0, size_parameter=0.1)

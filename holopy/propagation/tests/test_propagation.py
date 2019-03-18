@@ -19,6 +19,8 @@
 
 
 import numpy as np
+from nose.plugins.attrib import attr
+
 from ...core import detector_grid
 from ...scattering import Mie, Sphere, calc_field
 from .. import propagate
@@ -46,12 +48,14 @@ def test_reconstruction():
     verify(rec, 'recon_multiple')
 
 
+@attr("fast")
 def test_gradient_filter():
     im = get_example_data('image0003')
     rec = propagate(im, [4e-6, 7e-6, 10e-6], gradient_filter=1e-6)
     verify(rec, 'recon_multiple_gradient_filter')
 
 
+@attr("fast")
 def test_propagate_0_distance():
     im = get_example_data('image0003')
     rec = propagate(im, 0)

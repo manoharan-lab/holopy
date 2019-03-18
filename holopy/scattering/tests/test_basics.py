@@ -40,6 +40,7 @@ def test_sphere_coords():
        [ 12.72472076,   0.09966865,   0.        ],
        [ 12.78755927,   0.1404897 ,   0.78539816]]))
 
+@attr("fast")
 def test_calc_field():
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = update_metadata(detector_grid(shape = (2,2), spacing = .1), illum_wavelen = 0.66, medium_index=1.33, illum_polarization = (1,0))
@@ -61,6 +62,7 @@ def test_calc_field():
                                      5.70160960e-02 -2.16272927e-01j]]]), dims=['x', 'y', 'vector'], coords={'x':t.x, 'y': t.y, 'vector': ['x', 'y', 'z']})
     assert abs((f - gold).max()) < 5e-9
 
+@attr("fast")
 def test_detector_points():
     s = Sphere(n=1.59, r=.5, center=(0,0,0))
     medium_index = 1.33; illum_wavelen = 0.660; illum_polarization = (1,0)
@@ -71,6 +73,7 @@ def test_detector_points():
     assert_allclose(field_c, field_p)
 
 
+@attr("fast")
 def test_calc_holo():
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = detector_grid(shape = (2,2), spacing = .1)
@@ -79,6 +82,7 @@ def test_calc_holo():
     assert_allclose(h, np.array([[[ 6.51162661],[  5.67743548]],
                                  [[ 5.63554802],[  4.89856241]]]))
 
+@attr("fast")
 def test_calc_intensity():
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = detector_grid(shape = (2,2), spacing = .1)

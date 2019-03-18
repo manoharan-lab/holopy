@@ -85,7 +85,7 @@ def test_farfield_holo():
                         context="Near and Far field holograms too different")
 
 
-@attr('fast')
+@attr('medium')
 def test_subimaged():
     # make a dummy image so that we can pretend we are working with
     # data we want to subimage
@@ -280,6 +280,7 @@ def test_layered():
     hs = calc_holo(sch, s, index, wavelen, illum_polarization=xpolarization)
     assert_obj_close(hl, hs, rtol=0)
 
+@attr("fast")
 def test_large_sphere():
     large_sphere_gold=[[[0.96371831],[1.04338683]],[[1.04240049],[0.99605225]]]
     s=Sphere(n=1.5, r=5, center=(10,10,10))

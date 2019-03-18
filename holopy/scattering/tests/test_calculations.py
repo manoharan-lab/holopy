@@ -34,6 +34,7 @@ locations = detector_grid(shape=(20, 20), spacing=.1)
 wavelen = 0.66
 polarization=(0, 1)
 
+@attr("fast")
 def test_calc_holo():
     holo = calc_holo(locations, scatterer, medium_index, wavelen, polarization)
 
@@ -47,6 +48,7 @@ def test_calc_cross_section():
 def test_calc_intensity():
     intensity = calc_intensity(locations, scatterer, medium_index, wavelen, polarization)
 
+@attr("fast")
 def test_calc_scat_matrix():
     matr = calc_scat_matrix(locations, scatterer, medium_index, wavelen)
 

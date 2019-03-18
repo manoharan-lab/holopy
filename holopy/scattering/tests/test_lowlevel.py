@@ -301,7 +301,7 @@ def test_dn1_down_recursion():
     assert_allclose(dn1_fortran, dn1_python, rtol = 1e-6)
 
 
-@attr('medium')
+@attr('fast')
 def test_dn1_lentz():
     '''
     Test down recursion beginning with Lentz continued fraction algorithm

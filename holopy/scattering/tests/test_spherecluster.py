@@ -127,6 +127,8 @@ def test_Spheres_rotation():
     assert_almost_equal([0, -1, 0], sc2.scatterers[0].center)
     assert_almost_equal([0, 1, 1], sc2.scatterers[1].center)
 
+
+@attr("fast")
 def test_RigidCluster():
     # test construction
     s1 = Sphere(n = 1, center = (1, 0, 0))

@@ -207,6 +207,7 @@ def test_cross_sections():
     else:
         assert_allclose(xsects[:3], gold_xsects, rtol = 1e-3)
 
+@attr("fast")
 def test_farfield():
     schema = detector_points(theta = np.linspace(0, np.pi/2), phi = np.zeros(50))
     n = 1.59+0.01j

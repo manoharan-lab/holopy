@@ -49,7 +49,6 @@ def test_hologram():
     assert_equal(both.values, joined)
 
 
-@attr("fast")
 def test_select():
     s = Sphere(n=xr.DataArray([1.5,1.7],dims='ill',coords={'ill':['r','g']}),center=[0,0,0],r=0.5)
     assert_equal(s.select({'ill':'g'}),Sphere(n=1.7,center=[0,0,0],r=0.5))
