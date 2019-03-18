@@ -113,7 +113,7 @@ def test_radial_holos():
         raise AssertionError("Holograms computed with and without radial component of scattered electric field are too similar.")
 
 
-@attr('fast')
+@attr('medium')
 def test_invalid():
     sc = Spheres(scatterers=[Sphere(center=[7.1, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07),

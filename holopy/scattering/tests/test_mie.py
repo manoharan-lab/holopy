@@ -42,6 +42,7 @@ from ...core.tests.common import assert_obj_close, verify
 
 from ..calculations import calc_field, calc_holo, calc_intensity, calc_scat_matrix, calc_cross_sections
 
+
 @attr('medium')
 def test_single_sphere():
     # single sphere hologram (only tests that functions return)
@@ -271,6 +272,8 @@ def test_radialEscat():
         raise AssertionError("Holograms w/ and w/o full radial fields" +
                              " are exactly equal")
 
+
+@attr("medium")
 def test_layered():
     l = LayeredSphere(n = (1, 2), t = (1, 1), center = (2, 2, 2))
     s = Sphere(n = (1,2), r = (1, 2), center = (2, 2, 2))

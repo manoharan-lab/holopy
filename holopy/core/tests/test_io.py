@@ -31,11 +31,13 @@ from ..metadata import get_spacing
 from ..holopy_object import Serializable
 from .common import (assert_obj_close, assert_read_matches_write, get_example_data)
 
-@attr('fast')
+@attr('medium')
 def test_hologram_io():
     holo = normalize(get_example_data('image0001'))
     assert_read_matches_write(holo)
 
+
+@attr("medium")
 def test_image_io():
     holo = get_example_data('image0001')
 

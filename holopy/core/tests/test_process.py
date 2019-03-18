@@ -27,6 +27,7 @@ from nose.plugins.attrib import attr
 #Test centerfinder
 gold_location = np.array([ 48.5729142,  50.23217416])
 
+@attr("medium")
 def test_FoundLocation():
     holo = get_example_data('image0001')
     location = center_find(holo, threshold=.25)

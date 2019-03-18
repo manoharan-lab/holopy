@@ -33,6 +33,8 @@ from ...inference import prior
 from ..calculations import prep_schema
 from ...core.tests.common import assert_equal, assert_obj_close, assert_allclose
 
+
+@attr("medium")
 def test_hologram():
     r_sph = Sphere(n = 1.5, r=.5, center=(1,1,1))
     g_sph = Sphere(n = 2, r=.5, center=(1,1,1))
@@ -56,6 +58,8 @@ def test_select():
     ss = Spheres([s, s.translated([1,1,1])])
     assert_equal(ss.select({'ill':'g'}),Spheres([Sphere(n=1.7,center=[0,0,0],r=0.5),Sphere(n=1.7,center=[1,1,1],r=0.5)]))
 
+
+@attr("medium")
 def test_prep_schema():
     sch_f = detector_grid(shape=5,spacing=1)
     sch_x = detector_grid(shape=5,spacing=1,extra_dims={'illumination':['red','green','blue']})

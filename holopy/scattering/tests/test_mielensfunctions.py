@@ -59,7 +59,7 @@ class TestMieLensCalculator(unittest.TestCase):
         fields = miecalculator.calculate_scattered_field(krho, kphi)
         self.assertTrue(fields is not None)
 
-    @attr("fast")
+    @attr("medium")
     def test_central_lobe_is_bright_when_particle_is_above_focus(self):
         zs = np.linspace(2, 10, 11)
         k = 2 * np.pi / 0.66
@@ -70,7 +70,7 @@ class TestMieLensCalculator(unittest.TestCase):
              for z in zs])
         self.assertTrue(np.all(central_lobes > 1))
 
-    @attr("fast")
+    @attr("medium")
     def test_central_lobe_is_dark_when_particle_is_below_focus(self):
         zs = np.linspace(-2, -10, 11)
         k = 2 * np.pi / 0.66
@@ -269,6 +269,7 @@ class TestMieLensCalculator(unittest.TestCase):
             self.assertTrue(close_enough_x)
             self.assertTrue(close_enough_y)
 
+    @attr("medium")
     def test_energy_is_conserved(self):
 
         def get_excess_power(max_x, npts):
@@ -399,6 +400,7 @@ class TestCalculation(unittest.TestCase):
             lens_angle=0.1, index_ratio=1.5, particle_kz=0, size_parameter=0.1)
         self.assertTrue(np.isclose(ratio, 1.0, **self._lowna_tols))
 
+    @attr("medium")
     def test_energy_is_conserved_at_low_na_largeparticle(self):
         ratio = get_ratio_of_scattered_powerin_to_scattered_powerout(
             lens_angle=0.1, index_ratio=1.5, particle_kz=0, size_parameter=40.)
@@ -410,11 +412,13 @@ class TestCalculation(unittest.TestCase):
             lens_angle=0.9, index_ratio=1.5, particle_kz=0, size_parameter=0.1)
         self.assertTrue(np.isclose(ratio, 1.0, **self._highna_tols))
 
+    @attr("medium")
     def test_energy_is_conserved_at_high_na_largeparticle(self):
         ratio = get_ratio_of_scattered_powerin_to_scattered_powerout(
             lens_angle=0.9, index_ratio=1.5, particle_kz=0, size_parameter=40.)
         self.assertTrue(np.isclose(ratio, 1.0, **self._highna_tols))
 
+    @attr("medium")
     def test_energy_is_conserved_at_high_na_largeparticle_defocus(self):
         ratio = get_ratio_of_scattered_powerin_to_scattered_powerout(
             lens_angle=0.9, index_ratio=1.5, particle_kz=200.,

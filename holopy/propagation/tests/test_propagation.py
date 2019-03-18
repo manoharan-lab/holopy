@@ -27,6 +27,7 @@ from .. import propagate
 from ...core.tests.common import assert_obj_close, verify, get_example_data
 
 
+@attr("medium")
 def test_propagate_e_field():
     e = calc_field(detector_grid(100, 0.1),
                    Sphere(1.59, .5, (5, 5, 5)),
@@ -39,6 +40,7 @@ def test_propagate_e_field():
     verify(prop_e, 'propagate_e_field')
 
 
+@attr("medium")
 def test_reconstruction():
     im = get_example_data('image0003')
     rec = propagate(im, 4e-6)
