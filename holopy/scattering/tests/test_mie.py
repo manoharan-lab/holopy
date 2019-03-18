@@ -30,17 +30,21 @@ from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
                            assert_raises, assert_equal, assert_allclose)
 from nose.plugins.attrib import attr
 
-from ..scatterer import Sphere, Spheres, Ellipsoid, LayeredSphere
-from ..theory import Mie
+from holopy.scattering.scatterer import (
+    Sphere, Spheres, Ellipsoid, LayeredSphere)
+from holopy.scattering.theory import Mie
+from holopy.scattering.errors import TheoryNotCompatibleError, InvalidScatterer
+from holopy.core.metadata import (
+    detector_grid, detector_points, to_vector, sphere_coords, update_metadata)
+from holopy.core.process import subimage
+from holopy.scattering.tests.common import (
+    sphere, xschema, scaling_alpha, yschema, xpolarization, ypolarization,
+    x, y, z, n, radius, wavelen, index)
+from holopy.core.tests.common import assert_obj_close, verify
+from holopy.scattering.calculations import (
+    calc_field, calc_holo, calc_intensity, calc_scat_matrix,
+    calc_cross_sections)
 
-from ..errors import TheoryNotCompatibleError, InvalidScatterer
-from ...core.metadata import detector_grid, detector_points, to_vector, sphere_coords, update_metadata
-from ...core.process import subimage
-from .common import sphere, xschema, scaling_alpha, yschema, xpolarization, ypolarization
-from .common import x, y, z, n, radius, wavelen, index
-from ...core.tests.common import assert_obj_close, verify
-
-from ..calculations import calc_field, calc_holo, calc_intensity, calc_scat_matrix, calc_cross_sections
 
 
 @attr('medium')
