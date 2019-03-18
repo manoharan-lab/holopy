@@ -16,19 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
-from nose.plugins.attrib import attr
-import tempfile
 import os
 import shutil
+import tempfile
 from multiprocessing.pool import Pool
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
+from nose.plugins.attrib import attr
 import xarray as xr
 from schwimmbad import MultiPool, SerialPool, pool
 
-from holopy.core.utils import (ensure_array, ensure_listlike, 
-                                            mkdir_p, choose_pool)
+from holopy.core.utils import (
+    ensure_array, ensure_listlike, mkdir_p, choose_pool)
 from holopy.core.math import rotate_points, rotation_matrix
 from holopy.core.tests.common import assert_obj_close, get_example_data
 
@@ -44,6 +44,7 @@ def test_rotate_single_point():
 def test_rotation_matrix_degrees():
     assert_allclose(rotation_matrix(180., 180., 180., radians = False),
                     rotation_matrix(np.pi, np.pi, np.pi))
+
 
 #test utils
 @attr('fast')
