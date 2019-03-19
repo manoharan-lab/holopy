@@ -56,26 +56,32 @@ def convert_ndarray_to_xarray(array, extra_dims=None):
 
 
 class TestDisplayImage(unittest.TestCase):
-    def test_basics(self):
-        # test simplest cases
-        basic = convert_ndarray_to_xarray(ARRAY_3D)
-        assert_obj_close(display_image(basic, scaling=None), basic)
-        assert_obj_close(display_image(basic.transpose(), scaling=None), basic)
+    def test_basic_case_with_real_values(self):
+        xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
+        displayed = display_image(xarray_real, scaling=None)
+        displayed_transposed = display_image(
+            xarray_real.transpose(), scaling=None)
+        assert_obj_close(displayed, xarray_real)
+        assert_obj_close(displayed_transposed, xarray_real)
 
-        # test complex values
-        cplx = basic.copy()+0j
-        cplx[0, 0, :] = cplx[0, 0, :] / np.sqrt(2) * (1 + 1j)
+    def test_basic_case_with_complex_values(self):
+        xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
+        xarray_complex = xarray_real + 0j
+        xarray_complex[0, 0, :] = (
+            xarray_complex[0, 0, :] / np.sqrt(2) * (1 + 1j))  # /= ??
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            assert_obj_close(display_image(cplx, scaling=None), basic)
+            displayed = display_image(xarray_complex, scaling=None)
+            assert_obj_close(displayed, xarray_real)
 
-        # test custom dim names
-        dims = basic.assign_coords(
-            dim1=basic['x'], dim2=basic['y'], dim3=basic['z'])
+    def test_custom_dimension_names(self):
+        xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
+        dims = xarray_real.assign_coords(
+            dim1=xarray_real['x'], dim2=xarray_real['y'], dim3=xarray_real['z'])
         dims = dims.swap_dims({'x': 'dim1', 'y': 'dim2', 'z': 'dim3'})
         dims = display_image(dims, vert_axis='dim1', horiz_axis='dim2',
                              depth_axis='dim3', scaling=None)
-        assert_allclose(dims.values, basic.values)
+        assert_allclose(dims.values, xarray_real.values)
         t5 = ARRAY_5D.transpose([4, 1, 2, 0, 3])
         t5 = convert_ndarray_to_xarray(
             t5, extra_dims={"t": [0, 1, 2], illum: [0, 1, 2]})
@@ -84,22 +90,27 @@ class TestDisplayImage(unittest.TestCase):
             ARRAY_4D, extra_dims={illum: [0, 1, 2]})
         assert_obj_close(t5.values, xr4.values)
 
-    def test_np_arrays(self):
-        # test interpret axes
+    def test_interpet_axes_for_numpy_arrays(self):
         xr2 = convert_ndarray_to_xarray(ARRAY_2D)
-        assert_obj_close(display_image(ARRAY_2D, scaling=None), xr2)
         xr3 = convert_ndarray_to_xarray(ARRAY_3D)
-        assert_obj_close(display_image(ARRAY_3D, scaling=None), xr3)
-        transposed3 = np.transpose(ARRAY_3D, [1, 0, 2])
-        assert_obj_close(display_image(transposed3, scaling=None), xr3)
+        displayed_2d = display_image(ARRAY_2D, scaling=None)
+        displayed_3d = display_image(ARRAY_3D, scaling=None)
+        displayed_transposed = display_image(
+            np.transpose(ARRAY_3D, [1, 0, 2]),
+            scaling=None)
+        assert_obj_close(displayed_2d, xr2)
+        assert_obj_close(display_image(displayed_3d, scaling=None), xr3)
+        assert_obj_close(displayed_transposed, xr3)
 
-        # test specify axes
-        xr3trans = convert_ndarray_to_xarray(transposed3)
+    def test_specify_axes_for_numpy_arrays(self):
+        transposed = np.transpose(ARRAY_3D, [1, 0, 2])
+        displayed_transposed = display_image(transposed, scaling=None)
+        xr_transposed = convert_ndarray_to_xarray(transposed)
         assert_obj_close(
-            display_image(ARRAY_3D, depth_axis=1, scaling=None), xr3trans)
+            display_image(ARRAY_3D, depth_axis=1, scaling=None), xr_transposed)
         assert_obj_close(
             display_image(ARRAY_3D, vert_axis=0, horiz_axis=2, scaling=None),
-            xr3trans)
+            xr_transposed)
 
     def test_excess_dims(self):
         assert_raises(BadImage, display_image, ARRAY_2D[0])
