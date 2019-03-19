@@ -127,20 +127,20 @@ class TestDisplayImage(unittest.TestCase):
         xr6cols = clean_concat([col1, col2], dim=illum)
         assert_raises(BadImage, display_image, xr6cols)
 
-    def test_scaling(self):
-        # test scaling exceeds intensity bounds
-        my_scale = (-5, 100)
-        xr3 = (convert_ndarray_to_xarray(ARRAY_3D)+5)/105
-        disp = display_image(ARRAY_3D, scaling=my_scale)
-        assert_allclose(disp.values, xr3.values)
-        assert_equal(disp.attrs['_image_scaling'], my_scale)
+    def test_scaling_exceeds_intensity_bounds(self):
+        scale = (-5, 100)
+        xr3 = (convert_ndarray_to_xarray(ARRAY_3D) + 5) / 105
+        displayed = display_image(ARRAY_3D, scaling=scale)
+        assert_allclose(displayed.values, xr3.values)
+        assert_equal(displayed.attrs['_image_scaling'], scale)
 
-        # test scaling constricts intensity bounds
+    def test_scaling_constricts_intensity_bounds(self):
+        scale = (-5, 100)
         wide3 = ARRAY_3D.copy()
         wide3[0, 0, 0] = -5
         wide3[-1, -1, -1] = 100
         xr3 = convert_ndarray_to_xarray(ARRAY_3D)/59
-        assert_equal(display_image(wide3).attrs['_image_scaling'], my_scale)
+        assert_equal(display_image(wide3).attrs['_image_scaling'], scale)
         assert_obj_close(display_image(wide3, (0, 59)).values, xr3.values)
 
     def test_colours(self):
