@@ -19,11 +19,12 @@
 import warnings
 import unittest
 import tempfile
+from collections import OrderedDict
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_raises, assert_equal
 
-from holopy.core.metadata import data_grid, clean_concat, illumination as illum
+from holopy.core.metadata import data_grid, clean_concat, illumination as ILLUM
 from holopy.core.io.vis import display_image, show
 from holopy.core.io.io import get_example_data
 from holopy.core.tests.common import assert_obj_close
@@ -46,6 +47,13 @@ plt.ioff()
 
 
 def convert_ndarray_to_xarray(array, extra_dims=None):
+    # FIXME extra_dims needs to be an OrderedDict, since the creation of
+    # an xarray assumes that iteration over extra_dims occurs in the
+    # insertion order.
+    # However FIXME passing ``extra_dims`` as an OrderedDict does not
+    # let the tests pass, as holopy.core.metadata.data_grid and
+    # holopy.core.metadata.make_coords both assume that dicts iterate
+    # in a fixed order.
     if array.ndim > 2:
         z = range(len(array))
     else:
@@ -88,12 +96,13 @@ class TestDisplayImage(unittest.TestCase):
 
     def test_custom_dimension_names_extra_dims(self):
         xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
-        t5 = ARRAY_5D.transpose([4, 1, 2, 0, 3])
-        t5 = convert_ndarray_to_xarray(
-            t5, extra_dims={"t": [0, 1, 2], illum: [0, 1, 2]})
-        t5 = display_image(t5, depth_axis='t', scaling=None)
+        extra_dims = OrderedDict([["t", [0, 1, 2]], [ILLUM, [0, 1, 2]]])
+        xarray_5d = convert_ndarray_to_xarray(
+            ARRAY_5D.transpose([4, 1, 2, 0, 3]),
+            extra_dims=extra_dims)
+        displayed = display_image(xarray_5d, depth_axis='t', scaling=None)
         xr4 = convert_ndarray_to_xarray(
-            ARRAY_4D, extra_dims={illum: [0, 1, 2]})
+            ARRAY_4D, extra_dims={ILLUM: [0, 1, 2]})
         assert_obj_close(t5.values, xr4.values)
 
     def test_interpet_axes_for_numpy_arrays(self):
@@ -123,14 +132,14 @@ class TestDisplayImage(unittest.TestCase):
         assert_raises(BadImage, display_image, ARRAY_4D)
         xr4 = convert_ndarray_to_xarray(ARRAY_4D, extra_dims={'t': [0, 1, 2]})
         assert_raises(BadImage, display_image, xr4)
-        xr5 = convert_ndarray_to_xarray(
-            np.array(ARRAY_5D), extra_dims={illum: [0, 1, 2], 't': [0]})
+        extra_dims = OrderedDict([[ILLUM, [0, 1, 2]], ["t", [0, 1, 2]]])
+        xr5 = convert_ndarray_to_xarray(ARRAY_5D, extra_dims=extra_dims)
         assert_raises(BadImage, display_image, xr5)
         col1 = convert_ndarray_to_xarray(
-            ARRAY_4D, extra_dims={illum: [0, 1, 2]})
+            ARRAY_4D, extra_dims={ILLUM: [0, 1, 2]})
         col2 = convert_ndarray_to_xarray(
-            ARRAY_4D, extra_dims={illum: [3, 4, 5]})
-        xr6cols = clean_concat([col1, col2], dim=illum)
+            ARRAY_4D, extra_dims={ILLUM: [3, 4, 5]})
+        xr6cols = clean_concat([col1, col2], dim=ILLUM)
         assert_raises(BadImage, display_image, xr6cols)
 
     def test_scaling_exceeds_intensity_bounds(self):
@@ -151,34 +160,34 @@ class TestDisplayImage(unittest.TestCase):
 
     def test_flat_colour_dimension(self):
         xr3 = convert_ndarray_to_xarray(
-            ARRAY_4D[:, :, :, 0:1], extra_dims={illum: [0]})
+            ARRAY_4D[:, :, :, 0:1], extra_dims={ILLUM: [0]})
         displayed_xr = display_image(xr3)
         displayed_np = display_image(ARRAY_3D)
         assert_obj_close(displayed_xr, displayed_np)
 
     def test_colour_name_formats(self):
         base = convert_ndarray_to_xarray(
-            ARRAY_4D, extra_dims={illum: ['red', 'green', 'blue']})
+            ARRAY_4D, extra_dims={ILLUM: ['red', 'green', 'blue']})
         cols = [['Red', 'Green', 'Blue'],
                 ['r', 'g', 'b'],
                 [0, 1, 2],
                 ['a', 's', 'd']]
         for collist in cols:
             xr4 = convert_ndarray_to_xarray(
-                ARRAY_4D, extra_dims={illum: collist})
+                ARRAY_4D, extra_dims={ILLUM: collist})
             assert_obj_close(display_image(xr4, scaling=None), base)
 
     def test_colours_in_wrong_order(self):
         base = convert_ndarray_to_xarray(
-            ARRAY_4D, extra_dims={illum: ['red', 'green', 'blue']})
+            ARRAY_4D, extra_dims={ILLUM: ['red', 'green', 'blue']})
         xr4 = convert_ndarray_to_xarray(
             ARRAY_4D[:, :, :, [0, 2, 1]],
-            extra_dims={illum: ['red', 'blue', 'green']})
+            extra_dims={ILLUM: ['red', 'blue', 'green']})
         assert_allclose(display_image(xr4, scaling=None).values, base.values)
 
     def test_missing_colours(self):
         base = convert_ndarray_to_xarray(
-            ARRAY_4D, extra_dims={illum: ['red', 'green', 'blue']})
+            ARRAY_4D, extra_dims={ILLUM: ['red', 'green', 'blue']})
         slices = [[0, 2, 1], [1, 0], [0, 1], [0, 1]]
         possible_valid_colors = [
             ['red', 'blue', 'green'],
@@ -188,7 +197,7 @@ class TestDisplayImage(unittest.TestCase):
         dummy_channel = [None, 2, -1, -1]
         for i, c, d in zip(slices, possible_valid_colors, dummy_channel):
             xr4 = convert_ndarray_to_xarray(
-                ARRAY_4D[:, :, :, i], extra_dims={illum: c})
+                ARRAY_4D[:, :, :, i], extra_dims={ILLUM: c})
             xr4 = display_image(xr4, scaling=None)
             if d is not None:
                 assert_equal(xr4.attrs['_dummy_channel'], d)
