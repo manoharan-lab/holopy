@@ -29,19 +29,23 @@ from holopy.core.io.io import get_example_data
 from holopy.core.tests.common import assert_obj_close
 from holopy.core.errors import BadImage
 
-d2 = np.array([range(i, i+4) for i in range(0,19,4)])
-d3 = np.array([[range(i, i+4) for i in range(j, j+19,4)] for j in [0,20,40]])
-d4 = np.array([[[[c, c+0.5, 0] for c in range(i, i+4)]
-                              for i in range(j, j+19,4)] for j in [0,20,40]])
-d5 = np.array([[[[[c], [c+0.5], [0]] for c in range(i, i+4)] 
-                              for i in range(j, j+19,4)] for j in [0,20,40]])
+
+# Creating some d-dimensional arrays for testing visualization:
+ARRAY_2D = np.arange(20).reshape(5, 4)
+ARRAY_3D = np.arange(60).reshape(3, 5, 4)
+ARRAY_4D = np.transpose(
+    [ARRAY_3D, ARRAY_3D + 0.5, 0 * ARRAY_3D],
+    axes=(1, 2, 3, 0))
+ARRAY_5D = np.reshape(ARRAY_4D, ARRAY_4D.shape + (1,))
+
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import matplotlib.pyplot as plt
 plt.ioff()
 
-def ndarray2xr(array, extra_dims=None):
+
+def convert_ndarray_to_xarray(array, extra_dims=None):
     if array.ndim > 2:
         z = range(len(array))
     else:
@@ -50,102 +54,125 @@ def ndarray2xr(array, extra_dims=None):
     array.attrs['_image_scaling'] = None
     return array
 
+
 class TestDisplayImage(unittest.TestCase):
     def test_basics(self):
         # test simplest cases
-        basic = ndarray2xr(d3)
+        basic = convert_ndarray_to_xarray(ARRAY_3D)
         assert_obj_close(display_image(basic, scaling=None), basic)
         assert_obj_close(display_image(basic.transpose(), scaling=None), basic)
 
         # test complex values
         cplx = basic.copy()+0j
-        cplx[0,0,:] = cplx[0,0,:] / np.sqrt(2) * (1 + 1j)
+        cplx[0, 0, :] = cplx[0, 0, :] / np.sqrt(2) * (1 + 1j)
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             assert_obj_close(display_image(cplx, scaling=None), basic)
 
         # test custom dim names
-        dims = basic.assign_coords(dim1=basic['x'], dim2=basic['y'], dim3=basic['z'])
-        dims = dims.swap_dims({'x':'dim1', 'y':'dim2', 'z':'dim3'})
-        dims = display_image(dims, vert_axis = 'dim1', horiz_axis = 'dim2', 
-                                        depth_axis = 'dim3', scaling=None)
+        dims = basic.assign_coords(
+            dim1=basic['x'], dim2=basic['y'], dim3=basic['z'])
+        dims = dims.swap_dims({'x': 'dim1', 'y': 'dim2', 'z': 'dim3'})
+        dims = display_image(dims, vert_axis='dim1', horiz_axis='dim2',
+                             depth_axis='dim3', scaling=None)
         assert_allclose(dims.values, basic.values)
-        t5 = d5.transpose([4, 1, 2, 0, 3])
-        t5 = ndarray2xr(t5, extra_dims={"t":[0,1,2],illum:[0,1,2]})
+        t5 = ARRAY_5D.transpose([4, 1, 2, 0, 3])
+        t5 = convert_ndarray_to_xarray(
+            t5, extra_dims={"t": [0, 1, 2], illum: [0, 1, 2]})
         t5 = display_image(t5, depth_axis='t', scaling=None)
-        xr4 = ndarray2xr(d4, extra_dims={illum:[0,1,2]})
+        xr4 = convert_ndarray_to_xarray(
+            ARRAY_4D, extra_dims={illum: [0, 1, 2]})
         assert_obj_close(t5.values, xr4.values)
 
     def test_np_arrays(self):
         # test interpret axes
-        xr2 = ndarray2xr(d2)
-        assert_obj_close(display_image(d2, scaling=None), xr2)
-        xr3 = ndarray2xr(d3)
-        assert_obj_close(display_image(d3, scaling=None), xr3)
-        transposed3 = np.transpose(d3, [1, 0, 2])
+        xr2 = convert_ndarray_to_xarray(ARRAY_2D)
+        assert_obj_close(display_image(ARRAY_2D, scaling=None), xr2)
+        xr3 = convert_ndarray_to_xarray(ARRAY_3D)
+        assert_obj_close(display_image(ARRAY_3D, scaling=None), xr3)
+        transposed3 = np.transpose(ARRAY_3D, [1, 0, 2])
         assert_obj_close(display_image(transposed3, scaling=None), xr3)
 
         # test specify axes
-        xr3trans = ndarray2xr(transposed3)
-        assert_obj_close(display_image(d3, depth_axis=1, scaling=None), xr3trans)
-        assert_obj_close(display_image(d3, vert_axis=0, horiz_axis=2, scaling=None), xr3trans)
+        xr3trans = convert_ndarray_to_xarray(transposed3)
+        assert_obj_close(
+            display_image(ARRAY_3D, depth_axis=1, scaling=None), xr3trans)
+        assert_obj_close(
+            display_image(ARRAY_3D, vert_axis=0, horiz_axis=2, scaling=None),
+            xr3trans)
 
     def test_excess_dims(self):
-        assert_raises(BadImage, display_image, d2[0])
-        assert_raises(BadImage, display_image, d4)
-        xr4 = ndarray2xr(d4, extra_dims={'t':[0,1,2]})
+        assert_raises(BadImage, display_image, ARRAY_2D[0])
+        assert_raises(BadImage, display_image, ARRAY_4D)
+        xr4 = convert_ndarray_to_xarray(ARRAY_4D, extra_dims={'t': [0, 1, 2]})
         assert_raises(BadImage, display_image, xr4)
-        xr5 = ndarray2xr(np.array(d5), extra_dims = {illum:[0,1,2], 't':[0]})
+        xr5 = convert_ndarray_to_xarray(
+            np.array(ARRAY_5D), extra_dims={illum: [0, 1, 2], 't': [0]})
         assert_raises(BadImage, display_image, xr5)
-        col1 = ndarray2xr(d4, extra_dims={illum:[0,1,2]})
-        col2 = ndarray2xr(d4, extra_dims={illum:[3,4,5]})
+        col1 = convert_ndarray_to_xarray(
+            ARRAY_4D, extra_dims={illum: [0, 1, 2]})
+        col2 = convert_ndarray_to_xarray(
+            ARRAY_4D, extra_dims={illum: [3, 4, 5]})
         xr6cols = clean_concat([col1, col2], dim=illum)
         assert_raises(BadImage, display_image, xr6cols)
 
     def test_scaling(self):
         # test scaling exceeds intensity bounds
         my_scale = (-5, 100)
-        xr3 = (ndarray2xr(d3)+5)/105
-        disp = display_image(d3, scaling=my_scale)
+        xr3 = (convert_ndarray_to_xarray(ARRAY_3D)+5)/105
+        disp = display_image(ARRAY_3D, scaling=my_scale)
         assert_allclose(disp.values, xr3.values)
         assert_equal(disp.attrs['_image_scaling'], my_scale)
 
         # test scaling constricts intensity bounds
-        wide3 = d3.copy()
+        wide3 = ARRAY_3D.copy()
         wide3[0, 0, 0] = -5
         wide3[-1, -1, -1] = 100
-        xr3 = ndarray2xr(d3)/59
+        xr3 = convert_ndarray_to_xarray(ARRAY_3D)/59
         assert_equal(display_image(wide3).attrs['_image_scaling'], my_scale)
         assert_obj_close(display_image(wide3, (0, 59)).values, xr3.values)
 
     def test_colours(self):
         # test flat colour dim
-        xr3 = ndarray2xr(d4[:,:,:,0:1], extra_dims={illum:[0]})
-        assert_obj_close(display_image(xr3), display_image(d3))
+        xr3 = convert_ndarray_to_xarray(
+            ARRAY_4D[:, :, :, 0:1], extra_dims={illum: [0]})
+        assert_obj_close(display_image(xr3), display_image(ARRAY_3D))
 
         # test colour name formats
-        base = ndarray2xr(d4, extra_dims={illum:['red','green','blue']})
-        cols = [['Red','Green','Blue'],['r','g','b'], [0,1,2], ['a', 's', 'd']]
+        base = convert_ndarray_to_xarray(
+            ARRAY_4D, extra_dims={illum: ['red', 'green', 'blue']})
+        cols = [['Red', 'Green', 'Blue'],
+                ['r', 'g', 'b'],
+                [0, 1, 2],
+                ['a', 's', 'd']]
         for collist in cols:
-            xr4 = ndarray2xr(d4, extra_dims={illum:collist})
+            xr4 = convert_ndarray_to_xarray(
+                ARRAY_4D, extra_dims={illum: collist})
             assert_obj_close(display_image(xr4, scaling=None), base)
 
         # test colours in wrong order
-        xr4 = ndarray2xr(d4[:,:,:,[0,2,1]], 
-                        extra_dims={illum:['red','blue','green']})
+        xr4 = convert_ndarray_to_xarray(
+            ARRAY_4D[:, :, :, [0, 2, 1]],
+            extra_dims={illum: ['red', 'blue', 'green']})
         assert_allclose(display_image(xr4, scaling=None).values, base.values)
 
         # test missing colours
-        slices = [[0,2,1],[1,0],[0,1],[0,1]]
-        cols = [['red','blue','green'],['green','red'],[0,1],['x-pol','y-pol']]
+        slices = [[0, 2, 1], [1, 0], [0, 1], [0, 1]]
+        possible_valid_colors = [
+            ['red', 'blue', 'green'],
+            ['green', 'red'],
+            [0, 1],
+            ['x-pol', 'y-pol']]
         dummy_channel = [None, 2, -1, -1]
-        for i, c, d in zip(slices, cols, dummy_channel):
-            xr4=ndarray2xr(d4[:,:,:,i], extra_dims={illum:c})
+        for i, c, d in zip(slices, possible_valid_colors, dummy_channel):
+            xr4 = convert_ndarray_to_xarray(
+                ARRAY_4D[:, :, :, i], extra_dims={illum: c})
             xr4 = display_image(xr4, scaling=None)
             if d is not None:
                 assert_equal(xr4.attrs['_dummy_channel'], d)
                 del xr4.attrs['_dummy_channel']
             assert_obj_close(xr4, base)
+
 
 def test_show():
     d = get_example_data('image0001')
@@ -153,7 +180,7 @@ def test_show():
         show(d)
     except RuntimeError:
         # this occurs on travis since there is no display
-        raise SkipTest()    
+        raise SkipTest()
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', (DeprecationWarning, UserWarning))
         plt.savefig(tempfile.TemporaryFile(suffix='.pdf'))
