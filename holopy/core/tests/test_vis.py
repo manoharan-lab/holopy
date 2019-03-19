@@ -77,11 +77,17 @@ class TestDisplayImage(unittest.TestCase):
     def test_custom_dimension_names(self):
         xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
         dims = xarray_real.assign_coords(
-            dim1=xarray_real['x'], dim2=xarray_real['y'], dim3=xarray_real['z'])
+            dim1=xarray_real['x'],
+            dim2=xarray_real['y'],
+            dim3=xarray_real['z'])
         dims = dims.swap_dims({'x': 'dim1', 'y': 'dim2', 'z': 'dim3'})
         dims = display_image(dims, vert_axis='dim1', horiz_axis='dim2',
                              depth_axis='dim3', scaling=None)
-        assert_allclose(dims.values, xarray_real.values)
+        is_ok = np.allclose(dims.values, xarray_real.values)
+        self.assertTrue(is_ok)
+
+    def test_custom_dimension_names_extra_dims(self):
+        xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
         t5 = ARRAY_5D.transpose([4, 1, 2, 0, 3])
         t5 = convert_ndarray_to_xarray(
             t5, extra_dims={"t": [0, 1, 2], illum: [0, 1, 2]})
@@ -143,13 +149,14 @@ class TestDisplayImage(unittest.TestCase):
         assert_equal(display_image(wide3).attrs['_image_scaling'], scale)
         assert_obj_close(display_image(wide3, (0, 59)).values, xr3.values)
 
-    def test_colours(self):
-        # test flat colour dim
+    def test_flat_colour_dimension(self):
         xr3 = convert_ndarray_to_xarray(
             ARRAY_4D[:, :, :, 0:1], extra_dims={illum: [0]})
-        assert_obj_close(display_image(xr3), display_image(ARRAY_3D))
+        displayed_xr = display_image(xr3)
+        displayed_np = display_image(ARRAY_3D)
+        assert_obj_close(displayed_xr, displayed_np)
 
-        # test colour name formats
+    def test_colour_name_formats(self):
         base = convert_ndarray_to_xarray(
             ARRAY_4D, extra_dims={illum: ['red', 'green', 'blue']})
         cols = [['Red', 'Green', 'Blue'],
@@ -161,13 +168,17 @@ class TestDisplayImage(unittest.TestCase):
                 ARRAY_4D, extra_dims={illum: collist})
             assert_obj_close(display_image(xr4, scaling=None), base)
 
-        # test colours in wrong order
+    def test_colours_in_wrong_order(self):
+        base = convert_ndarray_to_xarray(
+            ARRAY_4D, extra_dims={illum: ['red', 'green', 'blue']})
         xr4 = convert_ndarray_to_xarray(
             ARRAY_4D[:, :, :, [0, 2, 1]],
             extra_dims={illum: ['red', 'blue', 'green']})
         assert_allclose(display_image(xr4, scaling=None).values, base.values)
 
-        # test missing colours
+    def test_missing_colours(self):
+        base = convert_ndarray_to_xarray(
+            ARRAY_4D, extra_dims={illum: ['red', 'green', 'blue']})
         slices = [[0, 2, 1], [1, 0], [0, 1], [0, 1]]
         possible_valid_colors = [
             ['red', 'blue', 'green'],
@@ -185,13 +196,18 @@ class TestDisplayImage(unittest.TestCase):
             assert_obj_close(xr4, base)
 
 
-def test_show():
-    d = get_example_data('image0001')
-    try:
-        show(d)
-    except RuntimeError:
-        # this occurs on travis since there is no display
-        raise SkipTest()
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', (DeprecationWarning, UserWarning))
-        plt.savefig(tempfile.TemporaryFile(suffix='.pdf'))
+class ShowTest(unittest.TestCase):
+    def test_show(self):
+        d = get_example_data('image0001')
+        try:
+            show(d)
+        except RuntimeError:
+            # this occurs on travis since there is no display
+            raise SkipTest()
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', (DeprecationWarning, UserWarning))
+            plt.savefig(tempfile.TemporaryFile(suffix='.pdf'))
+
+
+if __name__ == '__main__':
+    unittest.main()
