@@ -23,6 +23,7 @@ from collections import OrderedDict
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_raises, assert_equal
+from nose.plugins.attrib import attr
 
 from holopy.core.metadata import data_grid, clean_concat, illumination as ILLUM
 from holopy.core.io.vis import display_image, show
@@ -64,6 +65,7 @@ def convert_ndarray_to_xarray(array, extra_dims=None):
 
 
 class TestDisplayImage(unittest.TestCase):
+    @attr("fast")
     def test_basic_case_with_real_values(self):
         xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
         displayed = display_image(xarray_real, scaling=None)
@@ -72,6 +74,7 @@ class TestDisplayImage(unittest.TestCase):
         assert_obj_close(displayed, xarray_real)
         assert_obj_close(displayed_transposed, xarray_real)
 
+    @attr("fast")
     def test_basic_case_with_complex_values(self):
         xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
         xarray_complex = xarray_real + 0j
@@ -82,6 +85,7 @@ class TestDisplayImage(unittest.TestCase):
             displayed = display_image(xarray_complex, scaling=None)
             assert_obj_close(displayed, xarray_real)
 
+    @attr("fast")
     def test_custom_dimension_names(self):
         xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
         dims = xarray_real.assign_coords(
@@ -94,6 +98,7 @@ class TestDisplayImage(unittest.TestCase):
         is_ok = np.allclose(dims.values, xarray_real.values)
         self.assertTrue(is_ok)
 
+    @attr("fast")
     def test_custom_dimension_names_extra_dims(self):
         xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
         extra_dims = OrderedDict([["t", [0, 1, 2]], [ILLUM, [0, 1, 2]]])
@@ -110,6 +115,7 @@ class TestDisplayImage(unittest.TestCase):
         is_ok = np.all(displayed.values == xarray_4d.values)
         self.assertTrue(is_ok)
 
+    @attr("fast")
     def test_interpet_axes_for_numpy_arrays(self):
         xr2 = convert_ndarray_to_xarray(ARRAY_2D)
         xr3 = convert_ndarray_to_xarray(ARRAY_3D)
@@ -122,6 +128,7 @@ class TestDisplayImage(unittest.TestCase):
         assert_obj_close(display_image(displayed_3d, scaling=None), xr3)
         assert_obj_close(displayed_transposed, xr3)
 
+    @attr("fast")
     def test_specify_axes_for_numpy_arrays(self):
         transposed = np.transpose(ARRAY_3D, [1, 0, 2])
         displayed_transposed = display_image(transposed, scaling=None)
@@ -132,12 +139,15 @@ class TestDisplayImage(unittest.TestCase):
             display_image(ARRAY_3D, vert_axis=0, horiz_axis=2, scaling=None),
             xr_transposed)
 
+    @attr("fast")
     def test_raises_error_if_image_is_1d(self):
         self.assertRaises(BadImage, display_image, ARRAY_2D[0])
 
+    @attr("fast")
     def test_raises_error_if_image_is_4d(self):
         self.assertRaises(BadImage, display_image, ARRAY_4D)
 
+    @attr("fast")
     def test_excess_dims(self):
         # FIXME what are these tests testing for? more specific names
         # would be great.
@@ -155,6 +165,7 @@ class TestDisplayImage(unittest.TestCase):
         xr6cols = clean_concat([col1, col2], dim=ILLUM)
         assert_raises(BadImage, display_image, xr6cols)
 
+    @attr("fast")
     def test_scaling_exceeds_intensity_bounds(self):
         scale = (-5, 100)
         xr3 = (convert_ndarray_to_xarray(ARRAY_3D) + 5) / 105
@@ -162,6 +173,7 @@ class TestDisplayImage(unittest.TestCase):
         assert_allclose(displayed.values, xr3.values)
         assert_equal(displayed.attrs['_image_scaling'], scale)
 
+    @attr("fast")
     def test_scaling_constricts_intensity_bounds(self):
         scale = (-5, 100)
         wide3 = ARRAY_3D.copy()
@@ -171,6 +183,7 @@ class TestDisplayImage(unittest.TestCase):
         assert_equal(display_image(wide3).attrs['_image_scaling'], scale)
         assert_obj_close(display_image(wide3, (0, 59)).values, xr3.values)
 
+    @attr("fast")
     def test_flat_colour_dimension(self):
         xr3 = convert_ndarray_to_xarray(
             ARRAY_4D[:, :, :, 0:1], extra_dims={ILLUM: [0]})
@@ -178,6 +191,7 @@ class TestDisplayImage(unittest.TestCase):
         displayed_np = display_image(ARRAY_3D)
         assert_obj_close(displayed_xr, displayed_np)
 
+    @attr("medium")
     def test_colour_name_formats(self):
         base = convert_ndarray_to_xarray(
             ARRAY_4D, extra_dims={ILLUM: ['red', 'green', 'blue']})
@@ -190,6 +204,7 @@ class TestDisplayImage(unittest.TestCase):
                 ARRAY_4D, extra_dims={ILLUM: collist})
             assert_obj_close(display_image(xr4, scaling=None), base)
 
+    @attr("fast")
     def test_colours_in_wrong_order(self):
         base = convert_ndarray_to_xarray(
             ARRAY_4D, extra_dims={ILLUM: ['red', 'green', 'blue']})
@@ -198,6 +213,7 @@ class TestDisplayImage(unittest.TestCase):
             extra_dims={ILLUM: ['red', 'blue', 'green']})
         assert_allclose(display_image(xr4, scaling=None).values, base.values)
 
+    @attr("medium")
     def test_missing_colours(self):
         base = convert_ndarray_to_xarray(
             ARRAY_4D, extra_dims={ILLUM: ['red', 'green', 'blue']})
@@ -219,6 +235,7 @@ class TestDisplayImage(unittest.TestCase):
 
 
 class ShowTest(unittest.TestCase):
+    @attr("medium")
     def test_show(self):
         d = get_example_data('image0001')
         try:
