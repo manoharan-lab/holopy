@@ -32,20 +32,15 @@ from holopy.inference import prior
 from holopy.inference.model import AlphaModel, BaseModel, PerfectLensModel
 from holopy.inference.emcee import sample_emcee, EmceeStrategy
 
-# GOLD: log(sqrt(0.5/pi))-1/2
-gold_sigma = -1.4189385332
-
-# GOLD: inference result - depends on both seeds
-gold_alpha = np.array([0.650348])
-gold_lens_angle = np.array([0.7197887])
-
 
 @attr("fast")
 def test_BaseModel_lnprior():
     scat = Sphere(r=prior.Gaussian(1, 1), n=prior.Gaussian(1, 1),
                   center=[10, 10, 10])
     mod = BaseModel(scat, noise_sd=0.1)
-    assert_obj_close(mod.lnprior({'n': 0, 'r': 0}), gold_sigma * 2)
+    # Desired: log(sqrt(0.5/pi))-1/2
+    desired_sigma = -1.4189385332
+    assert_obj_close(mod.lnprior({'n': 0, 'r': 0}), desired_sigma * 2)
 
 
 class SimpleModel:
@@ -90,8 +85,10 @@ class TestSubsetTempering(unittest.TestCase):
             nwalkers=4, stages=1, stage_len=10, parallel=None, seed=40)
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            inf = strat.optimize(mod, holo, nsamples=10)
-        assert_obj_close(inf.guess, gold_alpha, rtol=1e-3)
+            inference_result = strat.optimize(mod, holo, nsamples=10)
+        desired_alpha = np.array([0.650348])
+        is_ok = np.allclose(inference_result.guess, desired_alpha, rtol=1e-3)
+        self.assertTrue(is_ok)
 
     @attr("slow")
     def test_perfectlens_subset_tempering(self):
@@ -104,7 +101,10 @@ class TestSubsetTempering(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             inference_result = strat.optimize(model, data, nsamples=10)
-        assert_obj_close(inference_result.guess, gold_lens_angle, rtol=1e-3)
+        desired_lens_angle = np.array([0.7197887])
+        is_ok = np.allclose(
+            inference_result.guess, desired_lens_angle, rtol=1e-3)
+        self.assertTrue(is_ok)
 
 
 if __name__ == '__main__':
