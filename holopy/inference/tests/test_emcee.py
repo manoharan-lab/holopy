@@ -37,7 +37,7 @@ gold_sigma = -1.4189385332
 
 # GOLD: inference result - depends on both seeds
 gold_alpha = np.array([0.650348])
-gold_lens_angle = np.array([0.671084])
+gold_lens_angle = np.array([0.7197887])
 
 
 @attr("fast")
@@ -60,6 +60,7 @@ class SimpleModel:
 data = np.array(.5)
 
 
+@attr("medium")
 def test_sample_emcee():
     nwalkers = 10
     ndim = 1
@@ -70,6 +71,7 @@ def test_sample_emcee():
     assert_allclose(should_be_onehalf, .5, rtol=.001)
 
 
+@attr("fast")
 def test_EmceeStrategy():
     mod = SimpleModel(prior.Uniform(0, 1))
     strat = EmceeStrategy(10, None, None, seed=48)
@@ -79,6 +81,7 @@ def test_EmceeStrategy():
 
 
 class TestSubsetTempering(unittest.TestCase):
+    @attr("slow")
     def test_alpha_subset_tempering(self):
         holo = normalize(get_example_data('image0001'))
         scat = Sphere(r=0.65e-6, n=1.58, center=[5.5e-6, 5.8e-6, 14e-6])
@@ -90,6 +93,7 @@ class TestSubsetTempering(unittest.TestCase):
             inf = strat.optimize(mod, holo, nsamples=10)
         assert_obj_close(inf.guess, gold_alpha, rtol=1e-3)
 
+    @attr("slow")
     def test_perfectlens_subset_tempering(self):
         data = normalize(get_example_data('image0001'))
         scatterer = Sphere(r=0.65e-6, n=1.58, center=[5.5e-6, 5.8e-6, 14e-6])
