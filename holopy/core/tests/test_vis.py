@@ -132,10 +132,15 @@ class TestDisplayImage(unittest.TestCase):
             display_image(ARRAY_3D, vert_axis=0, horiz_axis=2, scaling=None),
             xr_transposed)
 
-    def test_excess_dims(self):
-        assert_raises(BadImage, display_image, ARRAY_2D[0])
-        assert_raises(BadImage, display_image, ARRAY_4D)
+    def test_raises_error_if_image_is_1d(self):
+        self.assertRaises(BadImage, display_image, ARRAY_2D[0])
 
+    def test_raises_error_if_image_is_4d(self):
+        self.assertRaises(BadImage, display_image, ARRAY_4D)
+
+    def test_excess_dims(self):
+        # FIXME what are these tests testing for? more specific names
+        # would be great.
         xr4 = convert_ndarray_to_xarray(ARRAY_4D, extra_dims={'t': [0, 1, 2]})
         assert_raises(BadImage, display_image, xr4)
 
