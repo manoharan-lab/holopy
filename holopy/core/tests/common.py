@@ -26,7 +26,7 @@ from numpy.testing import assert_equal, assert_allclose
 import pickle
 from collections import OrderedDict
 
-from ..io import load, save, get_example_data
+from holopy.core.io import load, save, get_example_data
 
 # tests should fail if they give warnings
 import warnings
