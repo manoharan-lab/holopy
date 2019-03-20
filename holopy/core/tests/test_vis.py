@@ -135,11 +135,14 @@ class TestDisplayImage(unittest.TestCase):
     def test_excess_dims(self):
         assert_raises(BadImage, display_image, ARRAY_2D[0])
         assert_raises(BadImage, display_image, ARRAY_4D)
+
         xr4 = convert_ndarray_to_xarray(ARRAY_4D, extra_dims={'t': [0, 1, 2]})
         assert_raises(BadImage, display_image, xr4)
-        extra_dims = OrderedDict([[ILLUM, [0, 1, 2]], ["t", [0, 1, 2]]])
+
+        extra_dims = OrderedDict([[ILLUM, [0, 1, 2]], ["t", [0]]])
         xr5 = convert_ndarray_to_xarray(ARRAY_5D, extra_dims=extra_dims)
         assert_raises(BadImage, display_image, xr5)
+
         col1 = convert_ndarray_to_xarray(
             ARRAY_4D, extra_dims={ILLUM: [0, 1, 2]})
         col2 = convert_ndarray_to_xarray(
