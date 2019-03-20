@@ -101,9 +101,14 @@ class TestDisplayImage(unittest.TestCase):
             ARRAY_5D.transpose([4, 1, 2, 0, 3]),
             extra_dims=extra_dims)
         displayed = display_image(xarray_5d, depth_axis='t', scaling=None)
-        xr4 = convert_ndarray_to_xarray(
+
+        xarray_4d = convert_ndarray_to_xarray(
             ARRAY_4D, extra_dims={ILLUM: [0, 1, 2]})
-        assert_obj_close(t5.values, xr4.values)
+
+        # There is no arithemtic operations on these, so the numbers
+        # should be exactly the same and not just close:
+        is_ok = np.all(displayed.values == xarray_4d.values)
+        self.assertTrue(is_ok)
 
     def test_interpet_axes_for_numpy_arrays(self):
         xr2 = convert_ndarray_to_xarray(ARRAY_2D)
