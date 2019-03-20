@@ -44,14 +44,14 @@ gold_lens_angle = np.array([0.671084])
 def test_BaseModel_lnprior():
     scat = Sphere(r=prior.Gaussian(1, 1), n=prior.Gaussian(1, 1),
                   center=[10, 10, 10])
-    mod = BaseModel(scat, noise_sd=.1)
-    assert_obj_close(mod.lnprior({'n':0, 'r':0}), gold_sigma * 2)
+    mod = BaseModel(scat, noise_sd=0.1)
+    assert_obj_close(mod.lnprior({'n': 0, 'r': 0}), gold_sigma * 2)
 
 
 class SimpleModel:
-    def __init__(self, x=prior.Uniform(0,1)):
+    def __init__(self, x=prior.Uniform(0, 1)):
         self._parameters = [x]
-        self.parameters = {None:x}
+        self.parameters = {None: x}
 
     def lnposterior(self, par_vals, data, dummy):
         x = par_vals
@@ -59,13 +59,16 @@ class SimpleModel:
 
 data = np.array(.5)
 
+
 def test_sample_emcee():
     nwalkers = 10
     ndim = 1
     mod = SimpleModel()
     p0 = np.linspace(0, 1, nwalkers*ndim).reshape((nwalkers, ndim))
     r = sample_emcee(mod, data, nwalkers, 500, p0, parallel=None, seed=40)
-    assert_allclose(r.chain[r.lnprobability==r.lnprobability.max()], .5, rtol=.001)
+    should_be_onehalf = r.chain[r.lnprobability == r.lnprobability.max()]
+    assert_allclose(should_be_onehalf, .5, rtol=.001)
+
 
 def test_EmceeStrategy():
     mod = SimpleModel(prior.Uniform(0, 1))
@@ -74,13 +77,14 @@ def test_EmceeStrategy():
     assert_allclose(r.guess, .5, rtol=.001)
     r = strat.optimize(mod, data, 5, [[i] for i in range(10)])
 
+
 class TestSubsetTempering(unittest.TestCase):
     def test_alpha_subset_tempering(self):
         holo = normalize(get_example_data('image0001'))
         scat = Sphere(r=0.65e-6, n=1.58, center=[5.5e-6, 5.8e-6, 14e-6])
         mod = AlphaModel(scat, noise_sd=.1, alpha=prior.Gaussian(0.7, 0.1))
-        strat = TemperedStrategy(nwalkers=4, stages=1, stage_len=10,
-                                    parallel=None, seed=40)
+        strat = TemperedStrategy(
+            nwalkers=4, stages=1, stage_len=10, parallel=None, seed=40)
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             inf = strat.optimize(mod, holo, nsamples=10)
@@ -91,10 +95,14 @@ class TestSubsetTempering(unittest.TestCase):
         scatterer = Sphere(r=0.65e-6, n=1.58, center=[5.5e-6, 5.8e-6, 14e-6])
         model = PerfectLensModel(
             scatterer, noise_sd=.1, lens_angle=prior.Gaussian(0.7, 0.1))
-        strat = TemperedStrategy(nwalkers=4, stages=1, stage_len=10,
-                                    parallel=None, seed=40)
+        strat = TemperedStrategy(
+            nwalkers=4, stages=1, stage_len=10, parallel=None, seed=40)
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             inference_result = strat.optimize(model, data, nsamples=10)
         assert_obj_close(inference_result.guess, gold_lens_angle, rtol=1e-3)
+
+
+if __name__ == '__main__':
+    unittest.main()
 
