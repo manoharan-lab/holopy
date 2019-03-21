@@ -137,7 +137,8 @@ def test_DDA_coated():
 def test_Ellipsoid_dda():
     e = Ellipsoid(1.5, r = (.5, .1, .1), center = (1, -1, 10))
     schema = detector_grid(100, .1)
-    h = calc_holo(schema, e, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1,0))
+    h = calc_holo(schema, e, illum_wavelen=.66, medium_index=1.33,
+            illum_polarization = (1,0), theory=DDA(use_indicators=False))
     cmd = DDA()._adda_ellipsoid(e, medium_wavelen=.66, medium_index=1.33, temp_dir='temp_dir')
     assert_equal(cmd, ['-eq_rad', '0.5', '-shape', 'ellipsoid', '0.2', '0.2', '-m', '1.1278195488721805', '0.0', '-orient', '0.0', '0.0', '0.0'])
 

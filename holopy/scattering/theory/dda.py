@@ -77,7 +77,7 @@ class DDA(ScatteringTheory):
     This can in principle handle any scatterer, but in practice it will need
     excessive memory or computation time for particularly large scatterers.
     """
-    def __init__(self, n_cpu = 1, max_dpl_size=None, use_indicators=False, keep_raw_calculations=False,
+    def __init__(self, n_cpu = 1, max_dpl_size=None, use_indicators=True, keep_raw_calculations=False,
             addacmd=[]):
 
         # Check that adda is present and able to run
