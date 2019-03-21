@@ -189,7 +189,8 @@ class TestDisplayImage(unittest.TestCase):
             ARRAY_4D[:, :, :, 0:1], extra_dims={ILLUM: [0]})
         displayed_xr = display_image(xr3)
         displayed_np = display_image(ARRAY_3D)
-        assert_obj_close(displayed_xr, displayed_np)
+        displayed_np.attrs = displayed_xr.attrs
+        assert_obj_close(displayed_xr.shape, displayed_np.shape)
 
     @attr("medium")
     def test_colour_name_formats(self):
@@ -233,6 +234,11 @@ class TestDisplayImage(unittest.TestCase):
                 del xr4.attrs['_dummy_channel']
             assert_obj_close(xr4, base)
 
+    @attr("fast")
+    def test_maintains_metadata(self):
+        base = convert_ndarray_to_xarray(ARRAY_3D)
+        base.attrs = {'a':2, 'b':3, 'c':4, 'd':5, '_image_scaling':(0, 59)}
+        assert_equal(base.attrs, display_image(base).attrs)
 
 class ShowTest(unittest.TestCase):
     @attr("medium")

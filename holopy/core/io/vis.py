@@ -149,7 +149,9 @@ def display_image(im, scaling='auto', vert_axis='x', horiz_axis='y',
             im = im[{'z':0}]
         if im.ndim > 3 + (colour_axis in im.dims):
             raise BadImage("Too many dims on DataArray to output properly.")
+        attrs = im.attrs
     else:
+        attrs = {}
         im = ensure_array(im)
         if im.ndim > 3:
             raise BadImage("Too many dims on ndarray to output properly.")
@@ -185,6 +187,7 @@ def display_image(im, scaling='auto', vert_axis='x', horiz_axis='y',
         im = np.maximum(im, scaling[0])
         im = np.minimum(im, scaling[1])
         im = (im-scaling[0])/(scaling[1]-scaling[0])
+    im.attrs = attrs
     im.attrs['_image_scaling'] = scaling
 
     if colour_axis in im.dims:
