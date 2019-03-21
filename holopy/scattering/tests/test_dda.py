@@ -30,11 +30,12 @@ from nose.plugins.skip import SkipTest
 from subprocess import CalledProcessError
 import os
 
-from ...scattering.errors import DependencyMissing
-from ..scatterer import Sphere, Ellipsoid, Scatterer, JanusSphere_Uniform, Difference
-from .. import Mie, DDA, calc_holo as calc_holo_external
-from ...core import detector_grid, update_metadata
-from ...core.tests.common import verify, assert_obj_close
+from holopy.scattering.errors import DependencyMissing
+from holopy.scattering.scatterer import (Sphere, Ellipsoid, Scatterer,
+                                         JanusSphere_Uniform, Difference)
+from holopy.scattering import Mie, DDA, calc_holo as calc_holo_external
+from holopy.core import detector_grid, update_metadata
+from holopy.core.tests.common import verify, assert_obj_close
 
 # nose setup/teardown methods
 def setup_optics():
@@ -45,16 +46,18 @@ def setup_optics():
     divergence = 0
     pixel_scale = [.1151, .1151]
     index = 1.33
-
-    schema = update_metadata(detector_grid(128, spacing = pixel_scale), illum_wavelen=wavelen, medium_index=index, illum_polarization=polarization)
+    schema = detector_grid(128, spacing = pixel_scale)
+    schema = update_metadata(schema, index, wavelen, polarization)
 
 def teardown_optics():
     global schema
     del schema
 
-def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,**kwargs):
+def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
+              **kwargs):
     try:
-        return calc_holo_external(schema, scatterer, medium_index, illum_wavelen, **kwargs)
+        return calc_holo_external(
+                    schema, scatterer, medium_index, illum_wavelen, **kwargs)
     except DependencyMissing:
         raise SkipTest()
 
@@ -69,9 +72,8 @@ def test_DDA_sphere():
 
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_dda_2_cpu():
-    if os.name == 'nt':
+    if os.name == 'nt': # windows
         raise SkipTest()
-
     sc = Sphere(n=1.59, r=3e-1, center=(1, -1, 30))
     mie_holo = calc_holo(schema, sc, index, wavelen)
     try:
@@ -97,27 +99,20 @@ def test_DDA_indicator():
     n = 1.59
     center = (1, 1, 30)
     r = .3
-
     sc = Sphere(n=n, r=r, center = center)
-
     sphere_holo = calc_holo(schema, sc, index, wavelen, theory=DDA)
-
     s = Scatterer(Sphere(r=r, center = (0, 0, 0)).contains, n, center)
-
     gen_holo = calc_holo(schema, s, index, wavelen, theory=DDA)
-
     assert_allclose(sphere_holo, gen_holo, rtol=2e-3)
 
 @attr('fast')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_voxelated_complex():
     s = Sphere(n = 1.2+2j, r = .2, center = (5,5,5))
-
     sv = Scatterer(s.indicators, s.n, s.center)
-
     schema = detector_grid(50, .1)
-
-    holo_dda = calc_holo(schema, sv, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1, 0), theory=DDA)
+    holo_dda = calc_holo(schema, sv, illum_wavelen=.66, medium_index=1.33,
+                         illum_polarization = (1, 0), theory=DDA)
     verify(holo_dda, 'dda_voxelated_complex', rtol=1e-5)
 
 
@@ -127,10 +122,8 @@ def test_DDA_coated():
     cs = Sphere(
         center=[7.141442573813124, 7.160766866147957, 11.095409800342143],
         n=[(1.27121212428+0j), (1.49+0j)], r=[.1-0.0055, 0.1])
-
     lmie_holo = calc_holo(schema, cs, index, wavelen, theory=Mie)
     dda_holo = calc_holo(schema, cs, index, wavelen, theory=DDA)
-
     assert_allclose(lmie_holo, dda_holo, rtol = 5e-4)
 
 @with_setup(setup=setup_optics, teardown=teardown_optics)
@@ -139,20 +132,23 @@ def test_Ellipsoid_dda():
     schema = detector_grid(100, .1)
     h = calc_holo(schema, e, illum_wavelen=.66, medium_index=1.33,
             illum_polarization = (1,0), theory=DDA(use_indicators=False))
-    cmd = DDA()._adda_ellipsoid(e, medium_wavelen=.66, medium_index=1.33, temp_dir='temp_dir')
-    assert_equal(cmd, ['-eq_rad', '0.5', '-shape', 'ellipsoid', '0.2', '0.2', '-m', '1.1278195488721805', '0.0', '-orient', '0.0', '0.0', '0.0'])
-
-
+    cmd = DDA()._adda_ellipsoid(
+            e, medium_wavelen=.66, medium_index=1.33, temp_dir='temp_dir')
+    cmdlist = ['-eq_rad', '0.5', '-shape', 'ellipsoid', '0.2', '0.2', '-m',
+               '1.1278195488721805', '0.0', '-orient', '0.0', '0.0', '0.0']
+    assert_equal(cmd, cmdlist)
     assert_obj_close(h.max(), 1.3152766077267062)
     assert_obj_close(h.mean(), 0.99876620628942114)
     assert_obj_close(h.std(), 0.06453155384119547)
 
+
 def test_janus():
     schema = detector_grid(60, .1)
-    s = JanusSphere_Uniform(n = [1.34, 2.0], r = [.5, .51], rotation = (0, -np.pi/2, 0),
-                    center = (5, 5, 5))
+    s = JanusSphere_Uniform(n = [1.34, 2.0], r = [.5, .51],
+                            rotation = (0, -np.pi/2, 0), center = (5, 5, 5))
     assert_almost_equal(s.index_at([5,5,5]),1.34)
-    holo = calc_holo(schema, s, illum_wavelen=.66, medium_index=1.33, illum_polarization=(1, 0))
+    holo = calc_holo(schema, s, illum_wavelen=.66, medium_index=1.33,
+                     illum_polarization=(1, 0))
     verify(holo, 'janus_dda')
 
 def test_csg_dda():
@@ -163,6 +159,6 @@ def test_csg_dda():
     h = calc_holo(sch, pacman, 1.33, .66, illum_polarization=(0, 1))
     verify(h, 'dda_csg')
 
-    hr = calc_holo(sch, pacman.rotated(np.pi/2, 0, 0), 1.33, .66, illum_polarization=(0, 1))
     rotated_pac = pacman.rotated(np.pi/2, 0, 0)
+    hr = calc_holo(sch, rotated_pac, 1.33, .66, illum_polarization=(0, 1))
     verify(h/hr, 'dda_csg_rotated_div')
