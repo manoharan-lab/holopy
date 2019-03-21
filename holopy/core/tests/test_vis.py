@@ -66,20 +66,19 @@ def convert_ndarray_to_xarray(array, extra_dims=None):
 
 class TestDisplayImage(unittest.TestCase):
     @attr("fast")
-    def test_basic_case_with_real_values(self):
-        xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
-        displayed = display_image(xarray_real, scaling=None)
+    def test_xarray_dimension_order(self):
+        xarray_grid = convert_ndarray_to_xarray(ARRAY_3D)
+        displayed = display_image(xarray_grid, scaling=None)
         displayed_transposed = display_image(
-            xarray_real.transpose(), scaling=None)
-        assert_obj_close(displayed, xarray_real)
-        assert_obj_close(displayed_transposed, xarray_real)
+            xarray_grid.transpose(), scaling=None)
+        assert_obj_close(displayed, xarray_grid)
+        assert_obj_close(displayed_transposed, xarray_grid)
 
     @attr("fast")
-    def test_basic_case_with_complex_values(self):
+    def test_complex_values_return_magnitude(self):
         xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
         xarray_complex = xarray_real + 0j
-        xarray_complex[0, 0, :] = (
-            xarray_complex[0, 0, :] / np.sqrt(2) * (1 + 1j))  # /= ??
+        xarray_complex[0, 0, :] *= (1 + 1j) / np.sqrt(2)
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             displayed = display_image(xarray_complex, scaling=None)
@@ -99,7 +98,7 @@ class TestDisplayImage(unittest.TestCase):
         self.assertTrue(is_ok)
 
     @attr("fast")
-    def test_custom_dimension_names_extra_dims(self):
+    def test_custom_extra_dimension_name(self):
         xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
         extra_dims = OrderedDict([["t", [0, 1, 2]], [ILLUM, [0, 1, 2]]])
         xarray_5d = convert_ndarray_to_xarray(
@@ -122,10 +121,9 @@ class TestDisplayImage(unittest.TestCase):
         displayed_2d = display_image(ARRAY_2D, scaling=None)
         displayed_3d = display_image(ARRAY_3D, scaling=None)
         displayed_transposed = display_image(
-            np.transpose(ARRAY_3D, [1, 0, 2]),
-            scaling=None)
+            np.transpose(ARRAY_3D, [1, 0, 2]), scaling=None)
         assert_obj_close(displayed_2d, xr2)
-        assert_obj_close(display_image(displayed_3d, scaling=None), xr3)
+        assert_obj_close(displayed_3d, xr3)
         assert_obj_close(displayed_transposed, xr3)
 
     @attr("fast")
@@ -140,24 +138,26 @@ class TestDisplayImage(unittest.TestCase):
             xr_transposed)
 
     @attr("fast")
-    def test_raises_error_if_image_is_1d(self):
+    def test_raises_error_1D_numpy_array(self):
         self.assertRaises(BadImage, display_image, ARRAY_2D[0])
 
     @attr("fast")
-    def test_raises_error_if_image_is_4d(self):
+    def test_raises_error_4D_numpy_array(self):
         self.assertRaises(BadImage, display_image, ARRAY_4D)
 
     @attr("fast")
-    def test_excess_dims(self):
-        # FIXME what are these tests testing for? more specific names
-        # would be great.
+    def test_raises_error_4D_array_no_color_axis(self):
         xr4 = convert_ndarray_to_xarray(ARRAY_4D, extra_dims={'t': [0, 1, 2]})
         assert_raises(BadImage, display_image, xr4)
 
+    @attr("fast")
+    def test_raises_error_5d_xarray(self):
         extra_dims = OrderedDict([[ILLUM, [0, 1, 2]], ["t", [0]]])
         xr5 = convert_ndarray_to_xarray(ARRAY_5D, extra_dims=extra_dims)
         assert_raises(BadImage, display_image, xr5)
 
+    @attr("fast")
+    def test_too_many_color_channels(self):
         col1 = convert_ndarray_to_xarray(
             ARRAY_4D, extra_dims={ILLUM: [0, 1, 2]})
         col2 = convert_ndarray_to_xarray(
@@ -184,7 +184,7 @@ class TestDisplayImage(unittest.TestCase):
         assert_obj_close(display_image(wide3, (0, 59)).values, xr3.values)
 
     @attr("fast")
-    def test_flat_colour_dimension(self):
+    def test_flat_colour_dimension_gives_greyscale(self):
         xr3 = convert_ndarray_to_xarray(
             ARRAY_4D[:, :, :, 0:1], extra_dims={ILLUM: [0]})
         displayed_xr = display_image(xr3)
