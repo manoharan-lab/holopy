@@ -44,7 +44,7 @@ def calc_holo_safe(
 
 
 SCHEMA = update_metadata(
-    detector_grid(shape=200, spacing=0.1),
+    detector_grid(shape=20, spacing=0.1),
     illum_wavelen=.660, medium_index=1.33, illum_polarization=[1, 0])
 
 
@@ -71,7 +71,7 @@ def test_cylinder():
     holo = calc_holo_safe(SCHEMA, s)
     verify(holo, 'tmatrix_cylinder')
 
-
+@attr("slow")
 def test_vs_dda():
     s = Spheroid(
         n=1.5, r=[.4, 1.], rotation=(0, np.pi/2, np.pi/2), center=(5, 5, 50))

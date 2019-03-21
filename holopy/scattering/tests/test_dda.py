@@ -46,7 +46,7 @@ def setup_optics():
     divergence = 0
     pixel_scale = [.1151, .1151]
     index = 1.33
-    schema = detector_grid(128, spacing = pixel_scale)
+    schema = detector_grid(12, spacing = pixel_scale)
     schema = update_metadata(schema, index, wavelen, polarization)
 
 def teardown_optics():
@@ -110,7 +110,7 @@ def test_DDA_indicator():
 def test_voxelated_complex():
     s = Sphere(n = 1.2+2j, r = .2, center = (5,5,5))
     sv = Scatterer(s.indicators, s.n, s.center)
-    schema = detector_grid(50, .1)
+    schema = detector_grid(10, .1)
     holo_dda = calc_holo(schema, sv, illum_wavelen=.66, medium_index=1.33,
                          illum_polarization = (1, 0), theory=DDA)
     verify(holo_dda, 'dda_voxelated_complex', rtol=1e-5)
@@ -129,7 +129,7 @@ def test_DDA_coated():
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_Ellipsoid_dda():
     e = Ellipsoid(1.5, r = (.5, .1, .1), center = (1, -1, 10))
-    schema = detector_grid(100, .1)
+    schema = detector_grid(10, .1)
     h = calc_holo(schema, e, illum_wavelen=.66, medium_index=1.33,
             illum_polarization = (1,0), theory=DDA(use_indicators=False))
     cmd = DDA()._adda_ellipsoid(
@@ -137,13 +137,10 @@ def test_Ellipsoid_dda():
     cmdlist = ['-eq_rad', '0.5', '-shape', 'ellipsoid', '0.2', '0.2', '-m',
                '1.1278195488721805', '0.0', '-orient', '0.0', '0.0', '0.0']
     assert_equal(cmd, cmdlist)
-    assert_obj_close(h.max(), 1.3152766077267062)
-    assert_obj_close(h.mean(), 0.99876620628942114)
-    assert_obj_close(h.std(), 0.06453155384119547)
-
+    verify(h, 'ellipsoid_dda')
 
 def test_janus():
-    schema = detector_grid(60, .1)
+    schema = detector_grid(10, .1)
     s = JanusSphere_Uniform(n = [1.34, 2.0], r = [.5, .51],
                             rotation = (0, -np.pi/2, 0), center = (5, 5, 5))
     assert_almost_equal(s.index_at([5,5,5]),1.34)
