@@ -414,7 +414,7 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
     accumulator['y'] = refimg.y
 
     # calculate average noise from image
-    if noise_sd is None:
+    if noise_sd is None and len(filepath) > 1:
         noise_sd = ensure_array((accumulator.std('images')/accumulator.mean('images')).mean(('x','y','z')))
     accumulator = accumulator.mean('images')
 
