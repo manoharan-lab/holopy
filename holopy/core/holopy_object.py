@@ -29,13 +29,22 @@ analysis procedures.
 import numpy as np
 import yaml
 
+try:
+    FullLoader = yaml.FullLoader
+except AttributeError:
+    # Using pyyaml version < 5, technically unsafe
+    FullLoader = yaml.Loader
+YAMLLOADERS = (FullLoader, yaml.SafeLoader)
+
 # Metaclass black magic to eliminate need for adding yaml_tag lines to classes
 class SerializableMetaclass(yaml.YAMLObjectMetaclass):
     def __init__(cls, name, bases, kwds):
         super(SerializableMetaclass, cls).__init__(name, bases, kwds)
         # Replace the normal yaml constructor with one that uses the class name
         # as the yaml tag.
-        cls.yaml_loader.add_constructor('!{0}'.format(cls.__name__), cls.from_yaml)
+        for loader in YAMLLOADERS:
+            tag = '!{0}'.format(cls.__name__)
+            yaml.add_constructor(tag, cls.from_yaml, Loader=loader)
         cls.yaml_dumper.add_representer(cls, cls.to_yaml)
         if '__init__' in kwds:
             cls._args = kwds['__init__'].__code__.co_varnames[1:]

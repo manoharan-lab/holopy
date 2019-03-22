@@ -32,7 +32,7 @@ import scipy.special
 import h5py
 
 from holopy.core.metadata import detector_grid, copy_metadata
-from holopy.core.holopy_object import HoloPyObject
+from holopy.core.holopy_object import HoloPyObject, FullLoader
 from holopy.core.io.io import pack_attrs, unpack_attrs
 from holopy.core.utils import dict_without, ensure_scalar
 from holopy.scattering.errors import MissingParameter
@@ -45,7 +45,7 @@ warn_text = 'Loading a legacy (pre-3.3) HoloPy file. Please \
 
 def get_strategy(strategy):
     try:
-        return yaml.load(strategy)
+        return yaml.load(strategy, Loader=FullLoader)
     except:
         # old file
         warn(warn_text)
@@ -55,7 +55,7 @@ def get_strategy(strategy):
     index = strategy.find('sample')
     if index > -1:
         strategy = strategy[:index] + 'emcee' + strategy[index+6:]
-    return yaml.load(strategy)
+    return yaml.load(strategy, Loader=FullLoader)
 
 class FitResult(HoloPyObject):
     def __init__(self, data, model, strategy, time, kwargs={}):
@@ -143,7 +143,7 @@ class FitResult(HoloPyObject):
         def make_yaml(key):
             attr = getattr(self, key)
             if isinstance(attr, HoloPyObject):
-                attr = yaml.dump(attr)
+                attr = yaml.dump(attr, default_flow_style=True)
             return str(attr)
         attrs = {str(key): make_yaml(key) for key in attrs}
         xr_kw = {}
@@ -152,7 +152,7 @@ class FitResult(HoloPyObject):
             attr = getattr(self, key)
             kwdict = xr_kw if isinstance(attr, xr.DataArray) else yaml_kw
             kwdict[key] = copy(attr)
-        attrs['_kwargs'] = yaml.dump(yaml_kw)
+        attrs['_kwargs'] = yaml.dump(yaml_kw, default_flow_style=True)
         for key, val in xr_kw.items():
             xr_kw[key].attrs = pack_attrs(val)
         ds = xr.merge([ds, xr_kw])
@@ -178,17 +178,18 @@ class FitResult(HoloPyObject):
             coords['flat'] = flat_index
             data = xr.DataArray(data.values, dims=coordnames + ['flat'],
                                         coords=coords, attrs=data.attrs)
-        model = yaml.load(ds.attrs['model'])
+        model = yaml.load(ds.attrs['model'], Loader=FullLoader)
         strategy = get_strategy(ds.attrs['strategy'])
         outlist = [data, model, strategy]
         try:
-            outlist.append(yaml.load(ds.attrs['time']))
+            outlist.append(yaml.safe_load(ds.attrs['time']))
         except KeyError:
             outlist.append(None)
             warn(warn_text)
-        kwargs = yaml.load(ds.attrs['_kwargs'])
+        kwargs = yaml.safe_load(ds.attrs['_kwargs'])
         try:
-            kwargs['intervals'] = yaml.load(ds.attrs['intervals'])
+            kwargs['intervals'] = yaml.load(ds.attrs['intervals'],
+                                            Loader=FullLoader)
             warn(warn_text)
         except:
             pass

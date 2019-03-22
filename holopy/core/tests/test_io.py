@@ -158,7 +158,7 @@ class test_custom_yaml_output(unittest.TestCase):
         a = np.ones(10, 'int')
         assert_equal(yaml.dump(a.std()), '0.0\n...\n')
         assert_equal(yaml.dump(np.dtype('float')), "!dtype 'float64'\n")
-        assert_equal(yaml.load(yaml.dump(np.dtype('float'))), np.dtype('float64'))
+        assert_equal(yaml.safe_load(yaml.dump(np.dtype('float'))), np.dtype('float64'))
         try:
             assert_equal(yaml.dump(a.max()), '1\n...\n')
         except AssertionError as err:
@@ -175,4 +175,4 @@ class test_custom_yaml_output(unittest.TestCase):
         class S(Serializable):
             def __init__(self, a):
                 self.a = a
-        assert yaml.dump(S('a')) == '!S {a: a}\n'
+        assert yaml.dump(S('a'), default_flow_style=True) == '!S {a: a}\n'

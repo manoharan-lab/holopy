@@ -128,7 +128,7 @@ def test_mie_amplitude_scattering_matrices():
     gold_name = os.path.join(location, 'gold',
                              'gold_mie_scat_matrix')
     with open(gold_name + '.yaml') as gold_file:
-        gold_dict = yaml.load(gold_file)
+        gold_dict = yaml.safe_load(gold_file)
     
     gold = np.array([gold_dict['S11'], gold_dict['pol'],
                      gold_dict['S33'], gold_dict['S34']])

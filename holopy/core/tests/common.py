@@ -127,7 +127,7 @@ def verify(result, name, rtol=1e-7, atol=1e-8):
     gold_dir = os.path.join(location, 'gold')
     gold_name = os.path.join(location, 'gold', 'gold_'+name)
     with open(gold_name+'.yaml') as gold_file:
-        gold_yaml = yaml.load(gold_file)
+        gold_yaml = yaml.safe_load(gold_file)
 
     full = os.path.join(gold_dir, 'full_data', 'gold_full_{0}'.format(name))
     if os.path.exists(full):

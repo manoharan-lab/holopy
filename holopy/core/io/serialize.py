@@ -32,8 +32,9 @@ from yaml.reader import ReaderError
 import inspect
 import types
 
-from ..utils import is_none
-from ..holopy_object import SerializableMetaclass
+from holopy.core.utils import is_none
+from holopy.core.holopy_object import SerializableMetaclass, YAMLLOADERS
+from holopy.core.holopy_object import FullLoader # necessary for pyyaml < 5
 
 def save(outf, obj):
     close = False
@@ -41,16 +42,16 @@ def save(outf, obj):
         outf = open(outf, 'wb')
         close = True
 
-    outf.write(yaml.dump(obj).encode())
+    outf.write(yaml.dump(obj, default_flow_style=True).encode())
     if close:
         outf.close()
 
 def load(inf):
     if isinstance(inf, str):
         with open(inf, mode='rb') as inf:
-            return yaml.load(inf)
+            return yaml.load(inf, Loader=FullLoader)
     else:
-        return yaml.load(inf)
+        return yaml.load(inf, Loader=FullLoader)
 
 def _pickle_method(method):
     func_name = method.__func__.__name__
@@ -99,7 +100,8 @@ def complex_representer(dumper, data):
 yaml.add_representer(np.complex128, complex_representer)
 def complex_constructor(loader, node):
     return complex(node.value)
-yaml.add_constructor('!complex', complex_constructor)
+for loader in YAMLLOADERS:
+    yaml.add_constructor('!complex', complex_constructor, Loader=loader)
 
 def numpy_float_representer(dumper, data):
     return dumper.represent_float(float(data))
@@ -117,7 +119,8 @@ yaml.add_representer(np.dtype, numpy_dtype_representer)
 def numpy_dtype_loader(loader, node):
     name = loader.construct_scalar(node)
     return np.dtype(name)
-yaml.add_constructor('!dtype', numpy_dtype_loader)
+for loader in YAMLLOADERS:
+    yaml.add_constructor('!dtype', numpy_dtype_loader, Loader=loader)
 
 def class_representer(dumper, data):
     return dumper.represent_scalar('!class', "{0}.{1}".format(data.__module__,
@@ -131,14 +134,15 @@ def class_loader(loader, node):
     for t in tok[1:]:
         mod = mod.__getattribute__(t)
     return mod
-yaml.add_constructor('!class', class_loader)
+for loader in YAMLLOADERS:
+    yaml.add_constructor('!class', class_loader, Loader=loader)
 
 def instancemethod_representer(dumper, data):
     func = data.__func__.__name__
     obj = data.__self__
     if isinstance(obj, SerializableMetaclass):
         obj = obj()
-    rep = yaml.dump(obj)
+    rep = yaml.dump(obj, default_flow_style=True)
     # if the obj has arguments, we need to switch it to flow style so that it is
     # emitted properly
     tok = rep.split('\n')
@@ -154,6 +158,7 @@ def instancemethod_constructor(loader, node):
     tok = name.split('of')
     method = tok[0].strip()
     obj = 'dummy: '+ tok[1]
-    obj = yaml.load(obj)['dummy']
+    obj = yaml.safe_load(obj)['dummy']
     return getattr(obj, method)
-yaml.add_constructor('!method', instancemethod_constructor)
+for loader in YAMLLOADERS:
+    yaml.add_constructor('!method', instancemethod_constructor, Loader=loader)
