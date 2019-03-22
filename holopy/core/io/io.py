@@ -166,17 +166,22 @@ def load(inf, lazy=False):
         try:
             with open(inf, 'rb') as imagefile:
                 meta = yaml.load(pilimage.open(imagefile).tag[270][0])
-            if meta['spacing'] is None:
+            try:
+                spacing = meta['spacing']
+                assert spacing is not None
+            except:
                 raise NoMetadata
             else:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    im = load_image(inf, meta['spacing'], name = meta['name'], channel='all')
+                    im = load_image(inf, spacing, name = meta['name'],
+                                    channel='all')
                 if '_dummy_channel' in meta:
-                    dummy_channel = im.illumination[meta['_dummy_channel']]
+                    dummy_channel = yaml.load(meta['_dummy_channel'])
+                    dummy_channel = im.illumination[dummy_channel]
                     im = im.drop(dummy_channel.item(), illumination)
                 if '_image_scaling' in meta:
-                    smin, smax = meta['_image_scaling']
+                    smin, smax = yaml.load(meta['_image_scaling'])
                     im = (im-im.min())*(smax-smin)/(im.max()-im.min())+smin
                 im.attrs = unpack_attrs(meta)
                 return im
@@ -185,7 +190,9 @@ def load(inf, lazy=False):
     else:
         raise NoMetadata
 
-def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, noise_sd=None, channel=None, name=None):
+def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
+               illum_polarization=None, normals=None, noise_sd=None,
+               channel=None, name=None):
     """
     Load data or results
 
@@ -220,10 +227,15 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
     if name is None:
         name = os.path.splitext(os.path.split(inf)[-1])[0]
 
-    with open(inf,'rb') as pi:
-        arr = np.asarray(pilimage.open(pi)).astype('d')
-        if hasattr(pi, 'tag') and isinstance(yaml.load(pi.tag[270][0]), dict):
-            warnings.warn("Metadata detected but ignored. Use hp.load to read it")
+    with open(inf,'rb') as pi_raw:
+        pi = pilimage.open(pi_raw)
+        arr = np.asarray(pi).astype('d')
+        try:
+            if isinstance(yaml.load(pi.tag[270][0]), dict):
+                warnings.warn(
+                    "Metadata detected but ignored. Use hp.load to read it.")
+        except AttributeError:
+            pass
 
     extra_dims = None
     if channel is None:

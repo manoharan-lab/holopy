@@ -27,10 +27,13 @@ import yaml
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 from nose.plugins.attrib import attr
+from PIL import Image as pilimage
+from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 
 from holopy.core import load, save, load_image, save_image
+from holopy.core.errors import NoMetadata
 from holopy.core.process import normalize
-from holopy.core.metadata import get_spacing
+from holopy.core.metadata import get_spacing, copy_metadata
 from holopy.core.holopy_object import Serializable
 from holopy.core.tests.common import (
     assert_obj_close, assert_read_matches_write, get_example_data)
@@ -63,7 +66,7 @@ class test_loading_and_saving(unittest.TestCase):
     def test_image_io(self):
         filename = os.path.join(self.tempdir, 'image0001.tif')
         save_image(filename, self.holo, scaling=None)
-        l = load(filename)
+        l = self.load_image_with_metadata(filename)
         assert_obj_close(l, self.holo)
 
     @attr("fast")
@@ -107,11 +110,46 @@ class test_loading_and_saving(unittest.TestCase):
         assert_obj_close(l, self.holo)
 
     @attr("fast")
-    def test_save_h5(self):
+    def test_save_load_h5(self):
         filename = os.path.join(self.tempdir, 'image0001')
         save(filename, self.holo)
         loaded = load(filename)
         assert_obj_close(loaded, self.holo)
+
+    @attr("fast")
+    def test_load_func_from_save_image_func(self):
+        filename = os.path.join(self.tempdir, 'image0006')
+        save_image(filename, self.holo, scaling=None)
+        loaded = load(filename + '.tif')
+        assert_obj_close(loaded, self.holo)
+
+    @attr("fast")
+    def test_load_func_from_save_image_func_with_scaling(self):
+        filename = os.path.join(self.tempdir, 'image0006')
+        save_image(filename, self.holo, scaling='auto')
+        loaded = load(filename + '.tif')
+        assert_obj_close(np.around(loaded), self.holo)
+
+    @attr("fast")
+    def test_ignoring_metadata_warning(self):
+        filename = os.path.join(self.tempdir, 'image0005')
+        save_image(filename, self.holo)
+        warn_msg = "Metadata detected but ignored. Use hp.load to read it."
+        with self.assertWarns(UserWarning) as cm:
+            load_image(filename + '.tif')
+        self.assertTrue(str(cm.warning) == warn_msg)
+
+    @attr("fast")
+    def test_no_metadata(self):
+        filename = os.path.join(self.tempdir, 'image0007.tif')
+        header = ifd2()
+        header[270] = 'Dummy String'
+        pilimage.fromarray(self.holo.values[0]).save(filename, tiffinfo=header)
+        # load doesn't work
+        self.assertRaises(NoMetadata, load, filename)
+        # load_image does
+        l = load_image(filename, spacing=get_spacing(self.holo))
+        assert_obj_close(l, copy_metadata(l, self.holo))
 
 
 class test_custom_yaml_output(unittest.TestCase):
