@@ -16,11 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
-import yaml
+
 import tempfile
 import os
 import shutil
 import warnings
+import unittest
+
+import yaml
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 from nose.plugins.attrib import attr
@@ -32,116 +35,106 @@ from holopy.core.holopy_object import Serializable
 from holopy.core.tests.common import (
     assert_obj_close, assert_read_matches_write, get_example_data)
 
-@attr('medium')
-def test_hologram_io():
-    holo = normalize(get_example_data('image0001'))
-    assert_read_matches_write(holo)
+
+class test_loading_and_saving(unittest.TestCase):
+    def setUp(self):
+        self.holo = get_example_data('image0001')
+        self.tempdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tempdir)
+
+    def load_image_with_metadata(self, filename):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            loaded = load_image(filename,
+                                name=self.holo.name, medium_index=self.holo.medium_index,
+                                spacing=get_spacing(self.holo),
+                                illum_wavelen=self.holo.illum_wavelen,
+                                illum_polarization=self.holo.illum_polarization,
+                                normals=self.holo.normals, noise_sd=self.holo.noise_sd)
+        return loaded
+
+    @attr('fast')
+    def test_hologram_io(self):
+        assert_read_matches_write(normalize(self.holo))
+
+    @attr("fast")
+    def test_image_io(self):
+        filename = os.path.join(self.tempdir, 'image0001.tif')
+        save_image(filename, self.holo, scaling=None)
+        l = load(filename)
+        assert_obj_close(l, self.holo)
+
+    @attr("fast")
+    def test_default_save_is_tif(self):
+        filename = os.path.join(self.tempdir, 'image0002')
+        save_image(filename, self.holo, scaling=None)
+        l = self.load_image_with_metadata(filename + '.tif')
+        assert_obj_close(l, self.holo)
+
+    @attr("fast")
+    def test_non_tif_image(self):
+        filename = os.path.join(self.tempdir, 'image0001.bmp')
+        save_image(filename, self.holo, scaling=None)
+        l = self.load_image_with_metadata(filename)
+        assert_obj_close(l, self.holo)
+
+    @attr("fast")
+    def test_specify_scaling(self):
+        filename = os.path.join(self.tempdir, 'image0001.tif')
+        save_image(filename, self.holo, scaling=(0, 255))
+        l = self.load_image_with_metadata(filename)
+        assert_obj_close(l, self.holo)
+
+    @attr("fast")
+    def test_auto_scaling(self):
+        filename = os.path.join(self.tempdir, 'image0001.tif')
+        save_image(filename, self.holo, depth='float')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            l = load_image(filename, name=self.holo.name, spacing=get_spacing(self.holo))
+        # skip checking full DataArray attrs because it is akward to keep
+        # them through arithmetic. Ideally we would figure out a way to
+        # preserve them and switch back to testing fully
+        assert_allclose(l, (self.holo-self.holo.min())/(self.holo.max()-self.holo.min()))
+
+    @attr("fast")
+    def test_saving_16_bit(self):
+        filename = os.path.join(self.tempdir, 'image0003')
+        save_image(filename, self.holo, scaling=None, depth=16)
+        l = self.load_image_with_metadata(filename + '.tif')
+        assert_obj_close(l, self.holo)
+
+    @attr("fast")
+    def test_save_h5(self):
+        filename = os.path.join(self.tempdir, 'image0001')
+        save(filename, self.holo)
+        loaded = load(filename)
+        assert_obj_close(loaded, self.holo)
 
 
-@attr("medium")
-def test_image_io():
-    holo = get_example_data('image0001')
+class test_custom_yaml_output(unittest.TestCase):
+    @attr("fast")
+    def test_yaml_output_of_numpy_types(self):
+        a = np.ones(10, 'int')
+        assert_equal(yaml.dump(a.std()), '0.0\n...\n')
+        assert_equal(yaml.dump(np.dtype('float')), "!dtype 'float64'\n")
+        assert_equal(yaml.load(yaml.dump(np.dtype('float'))), np.dtype('float64'))
+        try:
+            assert_equal(yaml.dump(a.max()), '1\n...\n')
+        except AssertionError as err:
+            if err.args[0] == r"""
+    Items are not equal:
+     ACTUAL: '!!python/object/apply:numpy.core.multiarray.scalar [!dtype \'int32\', "\\x01\\0\\0\\0"]\n'
+     DESIRED: '1\n...\n'""":
+                raise AssertionError("You're probably running a 32 bit OS.  Writing and reading files with integers might be buggy on 32 bit OS's. We don't think it will lead to data loss, but we make no guarantees. If you see this on 64 bit operating systems, please let us know by filing a bug.")
+            else:
+                raise err
 
-    t = tempfile.mkdtemp()
-
-    filename = os.path.join(t, 'image0001.tif')
-    save_image(filename, holo, scaling=None)
-    l = load(filename)
-    assert_obj_close(l, holo)
-
-    # check that it defaults to saving as tif
-    filename = os.path.join(t, 'image0002')
-    save_image(filename, holo, scaling=None)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        l = load_image(
-            filename+'.tif', name=holo.name, medium_index=holo.medium_index,
-            spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen,
-            illum_polarization=holo.illum_polarization, normals=holo.normals,
-            noise_sd=holo.noise_sd)
-    assert_obj_close(l, holo)
-
-    # check saving/loading non-tif
-    filename = os.path.join(t, 'image0001.bmp')
-    save_image(filename, holo, scaling=None)
-    # For now we don't support writing metadata to image formats other
-    # than tiff, so we have to specify the metadata here
-    l = load_image(
-        filename, name=holo.name, medium_index=holo.medium_index,
-        spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen,
-        illum_polarization=holo.illum_polarization, normals=holo.normals,
-        noise_sd=holo.noise_sd)
-    assert_obj_close(l, holo)
-
-    # check specify scaling
-    filename = os.path.join(t, 'image0001.tif')
-    save_image(filename, holo, scaling=(0, 255))
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        l = load_image(
-            filename, name=holo.name, medium_index=holo.medium_index,
-            spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen,
-            illum_polarization=holo.illum_polarization, normals=holo.normals,
-            noise_sd=holo.noise_sd)
-    assert_obj_close(l, holo)
-
-    # check auto scaling
-    filename = os.path.join(t, 'image0001.tif')
-    save_image(filename, holo, depth='float')
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        l = load_image(filename, name=holo.name, spacing=get_spacing(holo))
-    # skip checking full DataArray attrs because it is akward to keep
-    # them through arithmetic. Ideally we would figure out a way to
-    # preserve them and switch back to testing fully
-    assert_allclose(l, (holo-holo.min())/(holo.max()-holo.min()))
-
-    # check saving 16 bit
-    filename = os.path.join(t, 'image0003')
-    save_image(filename, holo, scaling=None, depth=16)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        l = load_image(
-            filename+'.tif', name=holo.name, medium_index=holo.medium_index,
-            spacing=get_spacing(holo), illum_wavelen=holo.illum_wavelen,
-            illum_polarization=holo.illum_polarization, normals=holo.normals,
-            noise_sd=holo.noise_sd)
-    assert_obj_close(l, holo)
-
-    # test that yaml save works corretly with a string instead of a file
-    filename = os.path.join(t, 'image0001')
-    save(filename, holo)
-    loaded = load(filename)
-    assert_obj_close(loaded, holo)
-    shutil.rmtree(t)
-
-
-# test a number of little prettying up of yaml output that we do for
-# numpy types
-@attr("fast")
-def test_yaml_output():
-    # test that numpy types get cleaned up into python types for clean printing
-    a = np.ones(10, 'int')
-    assert_equal(yaml.dump(a.std()), '0.0\n...\n')
-
-    assert_equal(yaml.dump(np.dtype('float')), "!dtype 'float64'\n")
-    assert_equal(yaml.load(yaml.dump(np.dtype('float'))), np.dtype('float64'))
-
-    # this should fail on Windows64 because int and long are both
-    # int32
-    try:
-        assert_equal(yaml.dump(a.max()), '1\n...\n')
-    except AssertionError as err:
-        if err.args[0] == r"""
-Items are not equal:
- ACTUAL: '!!python/object/apply:numpy.core.multiarray.scalar [!dtype \'int32\', "\\x01\\0\\0\\0"]\n'
- DESIRED: '1\n...\n'""":
-            raise AssertionError("You're probably running a 32 bit OS.  Writing and reading files with integers migth be buggy on 32 bit OS's, we don't think it will lead to data loss, but we make no guarantees'. If you see this on 64 bit operating systems, please let us know by filing a bug.")
-        else:
-            raise err
-
-    class S(Serializable):
-        def __init__(self, a):
-            self.a = a
-
-    assert yaml.dump(S('a')) == '!S {a: a}\n'
+    @attr("fast")
+    def test_yaml_output_of_serializable(self):
+        class S(Serializable):
+            def __init__(self, a):
+                self.a = a
+        assert yaml.dump(S('a')) == '!S {a: a}\n'
