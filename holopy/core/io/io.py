@@ -233,9 +233,10 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
         pi = pilimage.open(pi_raw)
         arr = np.asarray(pi).astype('d')
         try:
-            if isinstance(yaml.safe_load(pi.tag[270][0]), dict):
-                warnings.warn(
-                    "Metadata detected but ignored. Use hp.load to read it.")
+            if 270 in pi.tag.keys(): 
+                if isinstance(yaml.safe_load(pi.tag[270][0]), dict):
+                    warnings.warn(
+                        "Metadata detected but ignored. Use hp.load to read it.")
         except AttributeError:
             pass
 
