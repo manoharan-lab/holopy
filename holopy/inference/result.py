@@ -186,7 +186,11 @@ class FitResult(HoloPyObject):
         except KeyError:
             outlist.append(None)
             warn(warn_text)
-        kwargs = yaml.safe_load(ds.attrs['_kwargs'])
+        try:
+            kwargs = yaml.safe_load(ds.attrs['_kwargs'])
+        except KeyError:
+            warn(warn_text)
+            kwargs = {}
         try:
             kwargs['intervals'] = yaml.load(ds.attrs['intervals'],
                                             Loader=FullLoader)
@@ -196,7 +200,10 @@ class FitResult(HoloPyObject):
         for key in ['lnprobs', 'samples', '_best_fit']:
             try:
                 kwargs[key] = getattr(ds, key)
-                kwargs[key].attrs = unpack_attrs(kwargs[key].attrs)
+                try:
+                    kwargs[key].attrs = unpack_attrs(kwargs[key].attrs)
+                except KeyError:
+                    warn(warn_text)
             except AttributeError:
                 pass
         outlist.append(kwargs)

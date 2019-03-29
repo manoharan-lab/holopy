@@ -140,8 +140,6 @@ def load(inf, lazy=False):
             if not lazy:
                 ds = ds.load()
 
-
-
             #loaded dataset potential contains multiple DataArrays. We need
             #to find out their names and loop through them to unpack metadata
             data_vars = list(ds.data_vars.keys())
@@ -236,7 +234,7 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
             if isinstance(yaml.safe_load(pi.tag[270][0]), dict):
                 warnings.warn(
                     "Metadata detected but ignored. Use hp.load to read it.")
-        except AttributeError:
+        except AttributeError or KeyError:
             pass
 
     extra_dims = None
