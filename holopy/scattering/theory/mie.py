@@ -181,8 +181,8 @@ class Mie(ScatteringTheory):
         '''
         if (ensure_array(s.r) == 0).any():
             raise InvalidScatterer(s, "Radius is zero")
-        x_arr = ensure_array(medium_wavevec * s.r)
-        m_arr = ensure_array(s.n / medium_index)
+        x_arr = ensure_array(medium_wavevec * ensure_array(s.r))
+        m_arr = ensure_array(ensure_array(s.n) / medium_index)
 
         # Check that the scatterer is in a range we can compute for
         if x_arr.max() > 1e3:
