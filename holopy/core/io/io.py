@@ -234,7 +234,7 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
             if isinstance(yaml.safe_load(pi.tag[270][0]), dict):
                 warnings.warn(
                     "Metadata detected but ignored. Use hp.load to read it.")
-        except AttributeError or KeyError:
+        except (AttributeError, KeyError):
             pass
 
     extra_dims = None
