@@ -20,12 +20,12 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 from holopy.inference.cmaes import run_cma, CmaStrategy
+from holopy.inference.model import BaseModel
 from holopy.inference import prior
 
-class SimpleModel:
+class SimpleModel(BaseModel):
     def __init__(self, x=prior.Uniform(0,1), y=prior.Uniform(0,1)):
         self._parameters = [x,y]
-        self.parameters = {'x':x, 'y':y}
 
     def lnposterior(self, par_vals, data, dummy):
         x = par_vals
