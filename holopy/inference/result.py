@@ -173,7 +173,8 @@ class FitResult(HoloPyObject):
             codes = [[level.index(f) for f in flat]
                                 for level, flat in zip(levels, flats)]
             flat_index = pd.MultiIndex(levels, codes, names=['x','y','z'])
-            coordnames = list(data.coords).remove('point')
+            coordnames = list(data.coords)
+            coordnames.remove('point')
             coords = {coord: data[coord] for coord in coordnames}
             coords['flat'] = flat_index
             data = xr.DataArray(data.values, dims=coordnames + ['flat'],
