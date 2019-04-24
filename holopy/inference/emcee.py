@@ -57,7 +57,7 @@ class EmceeStrategy(HoloPyObject):
         if self.npixels is not None and self.new_pixels is None:
             data = make_subset_data(data, pixels=self.npixels, seed=self.seed)
         if walker_initial_pos is None:
-            walker_initial_pos = prior.make_guess(model._parameters, self.nwalkers, seed=self.seed)
+            walker_initial_pos = model.generate_guess(self.nwalkers, seed=self.seed)
         sampler = sample_emcee(model=model, data=data, nwalkers=self.nwalkers,
                                walker_initial_pos=walker_initial_pos, nsamples=nsamples,
                                parallel=self.parallel, cleanup_threads=self.cleanup_threads, seed=self.seed, new_pixels=self.new_pixels)

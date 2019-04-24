@@ -30,7 +30,7 @@ from holopy.scattering.calculations import calc_holo
 from holopy.scattering.theory import MieLens
 from holopy.scattering.scatterer import (_expand_parameters,
                                          _interpret_parameters)
-from holopy.inference.prior import Prior, Uniform
+from holopy.inference.prior import Prior, Uniform, generate_guess
 
 class BaseModel(HoloPyObject):
     """Model probabilites of observing data
@@ -84,6 +84,8 @@ class BaseModel(HoloPyObject):
         scatterer = self.scatterer.from_parameters(pars)
         return optics, scatterer
 
+    def generate_guess(self, n=1, scaling=1, seed=None):
+        return generate_guess(self._parameters, n, scaling, seed)
 
     def lnprior(self, par_vals):
         """

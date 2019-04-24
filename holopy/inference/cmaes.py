@@ -90,8 +90,7 @@ class CmaStrategy(HoloPyObject):
             numpars = len(parameters)
             popsize = int(2 + numpars + np.sqrt(numpars)) #cma uses 4+3*ln(n)
         if walker_initial_pos is None:
-            walker_initial_pos = prior.make_guess(parameters, popsize, 
-                                                            seed=self.seed)
+            walker_initial_pos = model.generate_guess(popsize, seed=self.seed)
         obj_func = LnpostWrapper(model, data, self.new_pixels, True)
         sampler = run_cma(obj_func.evaluate, parameters, walker_initial_pos, 
                             self.weights, self.tols, self.seed, self.parallel)
@@ -166,7 +165,10 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
         cma_strategy.tell(solutions, func_vals)
         cma_strategy.logger.add()
     cma_strategy.logger.load()
-    shutil.rmtree(tempdir)
+    try:
+        shutil.rmtree(tempdir)
+    except FileNotFoundError:
+        pass
     if pool is not parallel:
         pool.close()
     return cma_strategy
