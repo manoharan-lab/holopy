@@ -57,7 +57,7 @@ def test_ensure_array():
     len(ensure_array([1.0]))
     len(ensure_array(False))
     len(ensure_array(xr.DataArray([12],dims='a',coords={'a':['b']})))
-    len(ensure_array(xr.DataArray([12],dims='a',coords={'a':['b']}).sel(a='b')))
+    len(ensure_array(xr.DataArray([12],dims='a',coords={'a':['b']}).sel(a=['b'])))
     len(ensure_array(xr.DataArray(12)))
 
 

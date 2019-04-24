@@ -39,7 +39,7 @@ def ensure_array(x):
             if len(x.coords)==0:
                 return np.array([x.item()])
             else:
-                return x.expand_dims(x.coords)
+                return x.expand_dims(list(x.coords))
         else:
             return x
     elif np.isscalar(x) or isinstance(x, bool) or (isinstance(x, np.ndarray) and x.shape==()):

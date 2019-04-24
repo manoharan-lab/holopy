@@ -228,7 +228,7 @@ class SamplingResult(FitResult):
                                                     dim=['walker', 'chain'])
         plus = -map_val + self.samples.reduce(np.percentile, q=(100 - P_LOW),
                                                     dim=['walker', 'chain'])
-        return [UncertainValue(map_val.loc[p], plus.loc[p], minus.loc[p], p)
+        return [UncertainValue(map_val.loc[[p]], plus.loc[[p]], minus.loc[[p]], p)
                                         for p in self.samples.parameter.values]
 
     def burn_in(self, sample_number):
