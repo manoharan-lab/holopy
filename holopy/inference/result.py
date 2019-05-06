@@ -55,6 +55,9 @@ def get_strategy(strategy):
     index = strategy.find('sample')
     if index > -1:
         strategy = strategy[:index] + 'emcee' + strategy[index+6:]
+    index = strategy.find('threads')
+    if index > -1:
+        strategy = strategy[:index] + 'parallel' + strategy[index+7]
     return yaml.load(strategy, Loader=FullLoader)
 
 class FitResult(HoloPyObject):
