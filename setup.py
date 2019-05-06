@@ -38,13 +38,13 @@ from numpy.distutils.core import setup, Extension
 
 #setup to make Tmatrix fortran code
 hp_root = os.path.dirname(os.path.realpath(sys.argv[0]))
-tmat_dir = join(hp_root, 'holopy','scattering','theory','tmatrix_f')
-if os.name == 'nt':
-    make=['mingw32-make']
-    tmat_file = 'S.exe'
-else:
-    make=['make']
-    tmat_file = 'S'
+#tmat_dir = join(hp_root, 'holopy','scattering','theory','tmatrix_f')
+# if os.name == 'nt':
+#     make=['mingw32-make']
+#     tmat_file = 'S.exe'
+# else:
+#     make=['make']
+#     tmat_file = 'S'
 
 # this will automatically build the scattering extensions, using the
 # setup.py files located in their subdirectories
@@ -63,7 +63,7 @@ def configuration(parent_package='',top_path=' '):
     config.add_data_files(join(hp_root,'holopy','core','tests','exampledata','*.jpg'))
     config.add_data_files(join(hp_root,'holopy','propagation','tests','gold','full_data','*.h5'))
     config.add_data_files(join(hp_root,'holopy','propagation','tests','gold','*.yaml'))
-    config.add_data_files(join(tmat_dir,tmat_file))
+    #config.add_data_files(join(tmat_dir,tmat_file))
 
     return config
 
@@ -74,10 +74,10 @@ except ImportError:
 
 if __name__ == "__main__":
 
-    if not hasattr(sys, 'real_prefix'):
+    # if not hasattr(sys, 'real_prefix'):
         #we are not in a virtual_env.
         #compile Tmatrix fortran code
-        subprocess.check_call(make, cwd=tmat_dir)
+        # subprocess.check_call(make, cwd=tmat_dir)
 
     requires=[l for l in open(os.path.join(hp_root,"requirements.txt")).readlines() if l[0] != '#']
     setup(configuration=configuration,
