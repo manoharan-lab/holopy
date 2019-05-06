@@ -19,12 +19,14 @@
 Tests non-spherical T-matrix code calculations against Mie code
 
 .. moduleauthor:: Anna Wang <annawang@seas.harvard.edu>
+.. moduleauthor:: Ron Alexander <ralexander@g.harvard.edu>
 '''
 import unittest
 
 from numpy.testing import assert_raises, assert_allclose
 
 import numpy as np
+
 from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
 from holopy.scattering import (
@@ -83,6 +85,7 @@ def calc_holo_safe(
         return holo
     except DependencyMissing:
         raise SkipTest()
+
 
 if __name__ == '__main__':
     unittest.main()
