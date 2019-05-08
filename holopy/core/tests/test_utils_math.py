@@ -65,7 +65,7 @@ def test_choose_pool():
     class dummy():
         def map():
             return None
-    assert isinstance(choose_pool(None), SerialPool)
+    assert not isinstance(choose_pool(None), (pool.BasePool, Pool))
     assert isinstance(choose_pool(2), MultiPool)
     assert isinstance(choose_pool('all'), MultiPool)
     assert isinstance(choose_pool('auto'), (pool.BasePool, Pool))
