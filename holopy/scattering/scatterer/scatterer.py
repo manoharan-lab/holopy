@@ -30,9 +30,10 @@ from numbers import Number
 import numpy as np
 import xarray as xr
 
-from ...core.holopy_object  import HoloPyObject
-from ...core.utils import ensure_array, is_none
-from ..errors import InvalidScatterer, ParameterSpecificationError
+from holopy.core.holopy_object  import HoloPyObject
+from holopy.core.utils import ensure_array, is_none
+from holopy.scattering.errors import (
+    InvalidScatterer, ParameterSpecificationError)
 
 
 class Scatterer(HoloPyObject):
@@ -191,6 +192,7 @@ class Scatterer(HoloPyObject):
     def voxelate_domains(self, spacing):
         return self.in_domain(self._voxel_coords(spacing))
 
+
 class CenteredScatterer(Scatterer):
     def __init__(self, center = None):
         if center is not None and (np.isscalar(center) or len(center) != 3):
@@ -270,6 +272,7 @@ class CenteredScatterer(Scatterer):
                         params[key] = params[key][0]
         return type(self)(**params)
 
+
 def _interpret_parameters(raw_pars):
     out_dict = {}
     subkeys = set([key.split('.',1)[0].split('_',1)[0]
@@ -303,6 +306,7 @@ def _interpret_parameters(raw_pars):
             msg = "Cannot interpret parameter {0}.".format(subkey)
             raise ParameterSpecificationError(msg)
     return out_dict
+
 
 def _expand_parameters(pairs, basekey=''):
     subs = []
@@ -362,12 +366,14 @@ def find_bounds(indicator):
     #something like an oblique ellipsoid doesn't get missed'
     return bounds
 
+
 def bound_union(d1, d2):
     new = [[0, 0],[0, 0],[0, 0]]
     for i in range(3):
         new[i][0] = min(d1[i][0], d2[i][0])
         new[i][1] = max(d1[i][1], d2[i][1])
     return new
+
 
 class Indicators(HoloPyObject):
     """
@@ -393,3 +399,4 @@ class Indicators(HoloPyObject):
 
     def __call__(self, points):
         return [test(points) for test in self.functions]
+
