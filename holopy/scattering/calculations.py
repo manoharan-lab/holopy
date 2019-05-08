@@ -44,19 +44,21 @@ import numpy as np
 from warnings import warn
 
 
-def prep_schema(schema, medium_index, illum_wavelen, illum_polarization):
-    schema = update_metadata(
-        schema, medium_index, illum_wavelen, illum_polarization)
+# Used in scattering.tests.test_2_color,
+# and here in calc_holo, calc_scat_matrix, calc_field
+def prep_schema(detector, medium_index, illum_wavelen, illum_polarization):
+    detector = update_metadata(
+        detector, medium_index, illum_wavelen, illum_polarization)
 
-    if schema.illum_wavelen is None:
+    if detector.illum_wavelen is None:
         raise MissingParameter("wavelength")
-    if schema.medium_index is None:
+    if detector.medium_index is None:
         raise MissingParameter("medium refractive index")
-    if illum_polarization is not False and schema.illum_polarization is None:
+    if illum_polarization is not False and detector.illum_polarization is None:
         raise MissingParameter("polarization")
 
-    illum_wavelen = ensure_array(schema.illum_wavelen)
-    illum_polarization = schema.illum_polarization
+    illum_wavelen = ensure_array(detector.illum_wavelen)
+    illum_polarization = detector.illum_polarization
 
     if len(illum_wavelen) > 1 or ensure_array(illum_polarization).ndim == 2:
         #  multiple illuminations to calculate
@@ -71,7 +73,7 @@ def prep_schema(schema, medium_index, illum_wavelen, illum_polarization):
                     illum_wavelen, dims=illumination,
                     coords={illumination: illum_polarization.illumination})
         else:
-            #  need to interpret illumination from schema.illum_wavelen
+            #  need to interpret illumination from detector.illum_wavelen
             if not isinstance(illum_wavelen, xr.DataArray):
                 illum_wavelen = xr.DataArray(
                     illum_wavelen, dims=illumination,
@@ -79,16 +81,17 @@ def prep_schema(schema, medium_index, illum_wavelen, illum_polarization):
             illum_polarization = xr.broadcast(
                 illum_polarization, illum_wavelen, exclude=[vector])[0]
 
-        if illumination in schema.dims:
-            schema = schema.sel(
-                illumination=schema.illumination[0], drop=True)
-        schema = update_metadata(
-            schema, illum_wavelen=illum_wavelen,
+        if illumination in detector.dims:
+            detector = detector.sel(
+                illumination=detector.illumination[0], drop=True)
+        detector = update_metadata(
+            detector, illum_wavelen=illum_wavelen,
             illum_polarization=illum_polarization)
 
-    return schema
+    return detector
 
 
+# Used here in calc_holo, calc_cross_section, calc_scat_matrix, calc_field
 def interpret_theory(scatterer, theory='auto'):
     if isinstance(theory, str) and theory == 'auto':
         theory = determine_theory(scatterer.guess)
@@ -97,13 +100,19 @@ def interpret_theory(scatterer, theory='auto'):
     return theory
 
 
-def finalize(schema, result):
-    if not hasattr(schema, 'flat'):
+# Used here in calc_intensity calc_holo, calc_scat_matrix, calc_field
+def finalize(detector, result):
+    if not hasattr(detector, 'flat'):
         result = from_flat(result)
-    return copy_metadata(schema, result, do_coords=False)
+    return copy_metadata(detector, result, do_coords=False)
 
 
-def determine_theory(scatterer):
+# Used in inference.model, but commented out
+# Used in scattering.tests.tests_calculations, which just tests this function
+# Used here in interpret_theory
+# FIXME why don't the scatterer objects have a default theory attr, which
+# this just returns?
+def determine_theory(scatterer):  # picks a default theory for a scatterer
     if isinstance(scatterer, Sphere):
         return Mie()
     elif isinstance(scatterer, Spheres):
@@ -121,7 +130,7 @@ def determine_theory(scatterer):
         raise AutoTheoryFailed(scatterer)
 
 
-def calc_intensity(schema, scatterer, medium_index=None, illum_wavelen=None,
+def calc_intensity(detector, scatterer, medium_index=None, illum_wavelen=None,
                    illum_polarization=None, theory='auto'):
     """
     Calculate intensity at a location or set of locations
@@ -145,13 +154,13 @@ def calc_intensity(schema, scatterer, medium_index=None, illum_wavelen=None,
     inten : xarray.DataArray
         scattered intensity
     """
-    field = calc_field(schema, scatterer, medium_index=medium_index,
+    field = calc_field(detector, scatterer, medium_index=medium_index,
                        illum_wavelen=illum_wavelen,
                        illum_polarization=illum_polarization, theory=theory)
-    return finalize(schema, (abs(field*(1-schema.normals))**2).sum(dim=vector))
+    return finalize(detector, (abs(field*(1-detector.normals))**2).sum(dim=vector))
 
 
-def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
+def calc_holo(detector, scatterer, medium_index=None, illum_wavelen=None,
               illum_polarization=None, theory='auto', scaling=1.0):
     """
     Calculate hologram formed by interference between scattered
@@ -159,7 +168,7 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
 
     Parameters
     ----------
-    schema : xarray object
+    detector : xarray object
         The detector points and calculation metadata used to calculate
         the hologram.
     scatterer : :class:`.scatterer` object
@@ -188,12 +197,12 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
         if hasattr(scaling[key], 'guess'):
             scaling[key] = scaling[key].guess
     scaling = _interpret_parameters(scaling)['alpha']  # 4 us
-    scaling = dict_to_array(schema, scaling)  # 754 ns
+    scaling = dict_to_array(detector, scaling)  # 754 ns
     theory = interpret_theory(scatterer, theory)  # 427 ns
-    uschema = prep_schema(schema, medium_index, illum_wavelen,
+    uschema = prep_schema(detector, medium_index, illum_wavelen,
                           illum_polarization)  # 2.2 ms
     scat = theory._calc_field(
-        dict_to_array(schema, scatterer).guess,  # 235 us
+        dict_to_array(detector, scatterer).guess,  # 235 us
         uschema)  # 73 ms
     holo = scattered_field_to_hologram(
         scat * scaling, uschema.illum_polarization, uschema.normals)  # 3.89 ms
@@ -236,7 +245,7 @@ def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None,
     return cross_section
 
 
-def calc_scat_matrix(schema, scatterer, medium_index=None, illum_wavelen=None,
+def calc_scat_matrix(detector, scatterer, medium_index=None, illum_wavelen=None,
                      theory='auto'):
     """
     Compute farfield scattering matrices for scatterer
@@ -264,13 +273,13 @@ def calc_scat_matrix(schema, scatterer, medium_index=None, illum_wavelen=None,
     """
     theory = interpret_theory(scatterer, theory)
     uschema = prep_schema(
-        schema, medium_index=medium_index, illum_wavelen=illum_wavelen,
+        detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=False)
     result = theory._calc_scat_matrix(scatterer.guess, uschema)
     return finalize(uschema, result)
 
 
-def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None,
+def calc_field(detector, scatterer, medium_index=None, illum_wavelen=None,
                illum_polarization=None, theory='auto'):
     """
     Calculate hologram formed by interference between scattered
@@ -298,9 +307,9 @@ def calc_field(schema, scatterer, medium_index=None, illum_wavelen=None,
     """
     theory = interpret_theory(scatterer, theory)
     uschema = prep_schema(
-        schema, medium_index=medium_index, illum_wavelen=illum_wavelen,
+        detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=illum_polarization)
-    result = theory._calc_field(dict_to_array(schema, scatterer).guess,
+    result = theory._calc_field(dict_to_array(detector, scatterer).guess,
                                 uschema)
     return finalize(uschema, result)
 
