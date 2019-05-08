@@ -28,18 +28,11 @@ scattered field.
 
 import numpy as np
 from holopy.core.utils import ensure_array
+from holopy.core.errors import DependencyMissing
 from holopy.scattering.errors import TheoryNotCompatibleError, InvalidScatterer
 from holopy.scattering.scatterer import Sphere, Scatterers
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
-try:
-    from holopy.scattering.theory.mie_f import mieangfuncs, miescatlib
-    from holopy.scattering.theory.mie_f.multilayer_sphere_lib import (
-        scatcoeffs_multi)
-except ImportError:
-    import warnings
-    from holopy.scattering.errors import NoScattering
-    warnings.simplefilter('always', NoScattering)
-    warnings.warn(NoScattering('Mie'))
+from holopy.scattering.theory import mie_f
 
 
 class Mie(ScatteringTheory):
@@ -77,6 +70,13 @@ class Mie(ScatteringTheory):
         self.full_radial_dependence = full_radial_dependence
         self.eps1 = eps1
         self.eps2 = eps2
+        try:
+            mie_f.miescatlib
+        except AttributeError:
+            raise DependencyMissing("Mie theory", "This is probably "
+                                    "due to a problem with compiling Fortran "
+                                    "code, as it should be built with the rest"
+                                    " of HoloPy through f2py.")
         # call base class constructor
         super().__init__()
 
@@ -92,14 +92,14 @@ class Mie(ScatteringTheory):
             scat_coeffs = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
 
             # In the mie solution the amplitude scattering matrix is independent of phi
-            return [mieangfuncs.asm_mie_far(scat_coeffs, theta) for
+            return [mie_f.mieangfuncs.asm_mie_far(scat_coeffs, theta) for
                           r, theta, phi in pos.T]
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
     def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index, illum_polarization):
         scat_coeffs = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
-        return mieangfuncs.mie_fields(positions, scat_coeffs, illum_polarization.values[:2],
+        return mie_f.mieangfuncs.mie_fields(positions, scat_coeffs, illum_polarization.values[:2],
                                       self.compute_escat_radial,
                                       self.full_radial_dependence)
 
@@ -107,7 +107,7 @@ class Mie(ScatteringTheory):
         scat_coeffs = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
         # TODO BUG: this isn't right for layered spheres (and will
         # probably crash)
-        return mieangfuncs.mie_internal_fields(positions, scatterer.n,
+        return mie_f.mieangfuncs.mie_internal_fields(positions, scatterer.n,
                                                scat_coeffs, illum_polarization)
 
 
@@ -147,13 +147,13 @@ class Mie(ScatteringTheory):
                                         "radiometric quantities")
         albl = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
 
-        cscat, cext, cback = miescatlib.cross_sections(albl[0], albl[1]) * \
+        cscat, cext, cback = mie_f.miescatlib.cross_sections(albl[0], albl[1]) * \
             (2. * np.pi / medium_wavevec**2)
 
         cabs = cext - cscat # conservation of energy
 
         asym = 4. * np.pi / (medium_wavevec**2 * cscat) * \
-            miescatlib.asymmetry_parameter(albl[0], albl[1])
+            mie_f.miescatlib.asymmetry_parameter(albl[0], albl[1])
 
         return np.array([cscat, cabs, cext, asym])
 
@@ -192,11 +192,11 @@ class Mie(ScatteringTheory):
         if len(x_arr) == 1 and len(m_arr) == 1:
             # Could just use scatcoeffs_multi here, but jerome is in favor of
             # keeping the simpler single layer code here
-            lmax = miescatlib.nstop(x_arr[0])
-            return  miescatlib.scatcoeffs(m_arr[0], x_arr[0], lmax, self.eps1,
+            lmax = mie_f.miescatlib.nstop(x_arr[0])
+            return  mie_f.miescatlib.scatcoeffs(m_arr[0], x_arr[0], lmax, self.eps1,
                                           self.eps2)
         else:
-            return scatcoeffs_multi(m_arr, x_arr, self.eps1, self.eps2)
+            return mie_f.scatcoeffs_multi(m_arr, x_arr, self.eps1, self.eps2)
 
 
     def _scat_coeffs_internal(self, s, medium_wavevec, medium_index):
@@ -215,7 +215,7 @@ class Mie(ScatteringTheory):
         if len(x_arr) == 1 and len(m_arr) == 1:
             # Could just use scatcoeffs_multi here, but jerome is in favor of
             # keeping the simpler single layer code here
-            lmax = miescatlib.nstop(x_arr[0])
-            return  miescatlib.internal_coeffs(m_arr[0], x_arr[0], lmax)
+            lmax = mie_f.miescatlib.nstop(x_arr[0])
+            return  mie_f.miescatlib.internal_coeffs(m_arr[0], x_arr[0], lmax)
         # else:
 #             return scatcoeffs_multi(m_arr, x_arr)

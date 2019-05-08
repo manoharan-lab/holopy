@@ -33,21 +33,12 @@ from numpy import arctan2, sin, cos
 from warnings import warn
 from scipy.integrate import dblquad
 
+from holopy.core.errors import DependencyMissing
 from holopy.scattering.scatterer import Spheres,Sphere
 from holopy.scattering.errors import (
     TheoryNotCompatibleError, InvalidScatterer, MultisphereFailure)
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
-
-try:
-    from holopy.scattering.theory.mie_f import mieangfuncs
-    from holopy.scattering.theory.mie_f import scsmfo_min
-    from holopy.scattering.theory.mie_f import uts_scsmfo
-except ImportError:
-    import warnings
-    from holopy.scattering.errors import NoScattering
-    warnings.simplefilter('always', NoScattering)
-    warnings.warn(NoScattering('multisphere'))
-
+from holopy.scattering.theory import mie_f
 
 def normalize_polarization(illum_polarization):
     return (illum_polarization / np.sqrt((illum_polarization**2).sum()))[:2]
@@ -133,7 +124,13 @@ class Multisphere(ScatteringTheory):
         self.qeps2 = qeps2
         self.compute_escat_radial = compute_escat_radial
         self.suppress_fortran_output=suppress_fortran_output
-
+        try:
+            from holopy.scattering.theory.mie_f import uts_scsmfo
+        except AttributeError:
+            raise DependencyMissing("Multisphere theory", "This is probably "
+                                    "due to a problem with compiling Fortran "
+                                    "code, as it should be built with the rest"
+                                    " of HoloPy through f2py.")
         # call base class constructor
         super(Multisphere, self).__init__()
 
@@ -189,7 +186,7 @@ class Multisphere(ScatteringTheory):
             devnull = os.open(os.devnull,os.O_WRONLY)
             os.dup2(devnull,1)
 
-        _, lmax, amn0, converged = scsmfo_min.amncalc(
+        _, lmax, amn0, converged = mie_f.scsmfo_min.amncalc(
             1, centers[:,0],  centers[:,1],
             # The fortran code uses oppositely directed z axis (they have laser
             # propagation as positive, we have it negative), so we multiply the
@@ -223,7 +220,7 @@ class Multisphere(ScatteringTheory):
 
     def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index, illum_polarization):
         amn, lmax = self._scsmfo_setup(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index)
-        fields = mieangfuncs.tmatrix_fields(positions, amn, lmax, 0,
+        fields = mie_f.mieangfuncs.tmatrix_fields(positions, amn, lmax, 0,
                                             illum_polarization.values[:2],
                                             self.compute_escat_radial)
         if np.isnan(fields[0][0]):
@@ -328,7 +325,7 @@ class Multisphere(ScatteringTheory):
 
         # define integrand: A^2 sin theta (vector scattering amplitude A)
         def ampsq(theta, phi):
-            einc = mieangfuncs.incfield(*pol, phi = phi)
+            einc = mie_f.mieangfuncs.incfield(*pol, phi = phi)
             asm = _asm_far(theta, phi, amn, lmax)
             ascat_sph = np.dot(asm, einc) # in par/perp basis
             ascatsq = (np.abs(ascat_sph)**2).sum()
@@ -348,7 +345,7 @@ class Multisphere(ScatteringTheory):
 
         # define integrand: A^2 sin theta cos theta
         def costhetawt(theta, phi):
-            einc = mieangfuncs.incfield(*pol, phi = phi)
+            einc = mie_f.mieangfuncs.incfield(*pol, phi = phi)
             asm = _asm_far(theta, phi, amn, lmax)
             ascat_sph = np.dot(asm, einc) # in par/perp basis
             ascatsq = (np.abs(ascat_sph)**2).sum()
@@ -396,7 +393,7 @@ def _asm_far(theta, phi, amn, lmax):
     """
     Calculate far field amplitude scattering matrix for fixed angles
     """
-    asm = np.roll(uts_scsmfo.asm(amn, lmax, theta, phi),
+    asm = np.roll(mie_f.uts_scsmfo.asm(amn, lmax, theta, phi),
                   -1).reshape((2,2)) * -0.5 #correction factor
     return asm
 
