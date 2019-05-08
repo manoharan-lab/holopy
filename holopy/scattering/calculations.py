@@ -159,6 +159,9 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
 
     Parameters
     ----------
+    schema : xarray object
+        The detector points and calculation metadata used to calculate
+        the hologram.
     scatterer : :class:`.scatterer` object
         (possibly composite) scatterer for which to compute scattering
     medium_index : float or complex
@@ -180,9 +183,9 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
     """
 
     # Essentially all the time is in theory._calc_field
-    scaling = dict(_expand_parameters({'alpha':scaling}.items()))  # 6 us
+    scaling = dict(_expand_parameters({'alpha': scaling}.items()))  # 6 us
     for key in scaling.keys():
-        if hasattr(scaling[key],'guess'):
+        if hasattr(scaling[key], 'guess'):
             scaling[key] = scaling[key].guess
     scaling = _interpret_parameters(scaling)['alpha']  # 4 us
     scaling = dict_to_array(schema, scaling)  # 754 ns
@@ -191,7 +194,7 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
                           illum_polarization)  # 2.2 ms
     scat = theory._calc_field(
         dict_to_array(schema, scatterer).guess,  # 235 us
-        uschema)  #  73 ms
+        uschema)  # 73 ms
     holo = scattered_field_to_hologram(
         scat * scaling, uschema.illum_polarization, uschema.normals)  # 3.89 ms
     return finalize(uschema, holo)  # 563 us
@@ -327,3 +330,4 @@ def _field_scalar_shape(e):
     # this is a clever hack with list arithmetic to get [1, 3] or [1,
     # 1, 3] as needed
     return [1]*(e.ndim-1) + [3]
+
