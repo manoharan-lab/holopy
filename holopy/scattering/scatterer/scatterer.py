@@ -30,7 +30,7 @@ from numbers import Number
 import numpy as np
 import xarray as xr
 
-from holopy.core.holopy_object  import HoloPyObject
+from holopy.core.holopy_object import HoloPyObject
 from holopy.core.utils import ensure_array, is_none
 from holopy.scattering.errors import (
     InvalidScatterer, ParameterSpecificationError)
@@ -46,12 +46,12 @@ class Scatterer(HoloPyObject):
         Parameters
         ----------
         indicators : function or list of functions
-            Function or functions returning true for points inside the scatterer (or
-            inside a specific domain) and false outside.
+            Function or functions returning true for points inside the
+            scatterer (or inside a specific domain) and false outside.
         n : complex
             Index of refraction of the scatterer or each domain.
         center : (float, float, float)
-            The center of mass of the scatterer. 
+            The center of mass of the scatterer.
         """
         if not isinstance(indicators, Indicators):
             indicators = Indicators(indicators)
@@ -73,14 +73,15 @@ class Scatterer(HoloPyObject):
         translated : Scatterer
             A copy of this scatterer translated to a new location
         """
-        if is_none(coord2) and len(ensure_array(coord1)==3):
-            #entered translation vector
+        if is_none(coord2) and len(ensure_array(coord1) == 3):
+            # entered translation vector
             trans_coords = ensure_array(coord1)
         elif not is_none(coord2) and not is_none(coord3):
-            #entered 3 coords
+            # entered 3 coords
             trans_coords = np.array([coord1, coord2, coord3])
         else:
-            raise InvalidScatterer(self, "Cannot interpret translation coordinates")
+            raise InvalidScatterer(
+                self, "Cannot interpret translation coordinates")
         new = copy(self)
         new.center = self.center + trans_coords
         return new
@@ -88,7 +89,7 @@ class Scatterer(HoloPyObject):
     def contains(self, points):
         return self.in_domain(points) > 0
 
-    def index_at(self, points, background = 0):
+    def index_at(self, points, background=0):
         domains = self.in_domain(points)
         ns = ensure_array(self.n)
         if np.iscomplex(np.append(self.n, background)).any():
@@ -113,7 +114,6 @@ class Scatterer(HoloPyObject):
         else:
             return self
 
-
     def in_domain(self, points):
         """
         Tell which domain of a scatterer points are in
@@ -129,7 +129,7 @@ class Scatterer(HoloPyObject):
            The domain of each point. Domain 0 means not in the particle
         """
         points = np.array(points)
-        if points.ndim==1:
+        if points.ndim == 1:
             points = points.reshape((1, 3))
         domains = np.zeros(points.shape[:-1], dtype='int')
         # Indicators earlier in the list have priority
@@ -150,9 +150,11 @@ class Scatterer(HoloPyObject):
     @property
     def x(self):
         return self.center[0]
+
     @property
     def y(self):
         return self.center[1]
+
     @property
     def z(self):
         return self.center[2]
@@ -166,9 +168,9 @@ class Scatterer(HoloPyObject):
         if np.isscalar(spacing) or len(spacing) == 1:
             spacing = np.ones(3) * spacing
 
-        grid = np.mgrid[[slice(b[0], b[1], s) for b, s in
-                            zip(self.bounds, spacing)]]
-        return np.concatenate([g[...,np.newaxis] for g in grid], 3)
+        grid = np.mgrid[
+            [slice(b[0], b[1], s) for b, s in zip(self.bounds, spacing)]]
+        return np.concatenate([g[..., np.newaxis] for g in grid], 3)
 
     def voxelate(self, spacing, medium_index=0):
         """
@@ -194,7 +196,7 @@ class Scatterer(HoloPyObject):
 
 
 class CenteredScatterer(Scatterer):
-    def __init__(self, center = None):
+    def __init__(self, center=None):
         if center is not None and (np.isscalar(center) or len(center) != 3):
             raise InvalidScatterer(self,"center specified as {0}, center "
                 "should be specified as (x, y, z)".format(center))
@@ -212,8 +214,9 @@ class CenteredScatterer(Scatterer):
         Returns
         -------
         parameters: dict
-            A dictionary of this scatterer's parameters.  This dict can be
-            passed to Scatterer.from_parameters to make a copy of this scatterer
+            A dictionary of this scatterer's parameters. This dict can be
+            passed to Scatterer.from_parameters to make a copy of this
+            scatterer
         """
         # classes that have anything complicated happening with their variables
         # should override this, but for simple classes the variable self._dict
@@ -230,7 +233,7 @@ class CenteredScatterer(Scatterer):
             Parameters for a scatterer.  This should be of the form returned by
             Scatterer.parameters.
         overwrite: boolean
-            If true, all parameters in self are replaced with parameters. 
+            If true, all parameters in self are replaced with parameters.
             Otherwise only Prior objects are
         Returns
         -------
@@ -266,17 +269,17 @@ class CenteredScatterer(Scatterer):
                 params[key] = getattr(self, key).sel(**keys).item()
             elif isinstance(params[key], dict):
                 for dimkeys in keys.values():
-                    params[key] = [params[key][dimkey] 
-                                for dimkey in ensure_array(dimkeys)]
-                    if len(params[key])==1:
+                    params[key] = [params[key][dimkey]
+                                   for dimkey in ensure_array(dimkeys)]
+                    if len(params[key]) == 1:
                         params[key] = params[key][0]
         return type(self)(**params)
 
 
 def _interpret_parameters(raw_pars):
     out_dict = {}
-    subkeys = set([key.split('.',1)[0].split('_',1)[0]
-                                             for key in raw_pars.keys()])
+    subkeys = set(
+        [key.split('.', 1)[0].split('_', 1)[0] for key in raw_pars.keys()])
     for subkey in subkeys:
         if subkey in raw_pars.keys():
             val = raw_pars[subkey]
@@ -286,8 +289,9 @@ def _interpret_parameters(raw_pars):
         else:
             clip = len(subkey)
             for delimchar in '._':
-                subset = {key[clip+1:]:val for key, val in raw_pars.items() 
-                                        if key.startswith(subkey + delimchar)}
+                subset = {key[clip+1:]: val
+                          for key, val in raw_pars.items()
+                          if key.startswith(subkey + delimchar)}
                 if len(subset)>0:
                     break
             if delimchar is '_':
@@ -297,8 +301,8 @@ def _interpret_parameters(raw_pars):
             elif delimchar is '.':
                 dictform = _interpret_parameters(subset)
                 if '0' in dictform.keys():
-                    out_dict[subkey] = [dictform[str(i)]
-                                             for i in range(len(dictform))]
+                    out_dict[subkey] = [
+                        dictform[str(i)] for i in range(len(dictform))]
                 elif 'real' in dictform.keys():
                     out_dict[subkey] = (1.0 * dictform['real'] +
                                                      1.0j * dictform['imag'])
