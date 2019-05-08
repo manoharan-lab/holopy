@@ -24,7 +24,6 @@ scipy
 pyYaml
 pillow
 h5py
-emcee
 matplotlib
 xarray>=0.10.0
 h5netcdf

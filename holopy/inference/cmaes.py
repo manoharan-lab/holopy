@@ -29,11 +29,11 @@ import warnings
 
 import numpy as np
 import xarray as xr
-import cma
 
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.metadata import make_subset_data
 from holopy.core.utils import choose_pool
+from holopy.core.errors import DependencyMissing
 from holopy.inference import prior
 from holopy.inference.model import LnpostWrapper
 from holopy.inference.result import FitResult, UncertainValue
@@ -133,6 +133,11 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
         number of threads to use or pool object or one of {None, 'all', 'mpi'}.
         Default tries 'mpi' then 'all'.
     """
+    try:
+        import cma
+    except ModuleNotFoundError:
+        raise DependencyMissing('cma',
+            "Install it with \'pip install cma\'.")
 
     popsize = len(initial_population)
     stds = [par.sd if isinstance(par, prior.Gaussian) 

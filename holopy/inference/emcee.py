@@ -25,14 +25,14 @@ import time
 
 import xarray as xr
 import numpy as np
-import emcee
 
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.metadata import make_subset_data
 from holopy.core.utils import choose_pool
+from holopy.core.errors import DependencyMissing
 from holopy.inference.model import LnpostWrapper
 from holopy.inference.result import SamplingResult, TemperedSamplingResult
-from . import prior
+from holopy.inference import prior
 
 def sample_one_sigma_gaussian(result):
     par_ranges = result.intervals
@@ -114,6 +114,12 @@ def emcee_lnprobs_DataArray(sampler):
 
 def sample_emcee(model, data, nwalkers, nsamples, walker_initial_pos,
                  parallel='auto', cleanup_threads=True, seed=None, new_pixels = None):
+    try:
+        import emcee
+    except ModuleNotFoundError:
+        raise DependencyMissing('emcee',
+            "Install it with \'conda install -c conda-forge emcee\'.")
+
     obj_func = LnpostWrapper(model, data, new_pixels)
     pool = choose_pool(parallel)
     sampler = emcee.EnsembleSampler(nwalkers, len(model._parameters), 
