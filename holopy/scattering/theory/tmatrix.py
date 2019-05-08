@@ -28,8 +28,8 @@ import os
 import shutil
 import copy
 from holopy.scattering.scatterer import Sphere, Spheroid, Cylinder
-from holopy.scattering.errors import (
-    TheoryNotCompatibleError, TmatrixFailure, DependencyMissing)
+from holopy.scattering.errors import TheoryNotCompatibleError, TmatrixFailure
+from holopy.core.errors import DependencyMissing
 
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 try:
@@ -65,7 +65,9 @@ class Tmatrix(ScatteringTheory):
         if os.name == 'nt':
             self.tmatrix_executable += '.exe'
         if not os.path.isfile(self.tmatrix_executable):
-            raise DependencyMissing('Tmatrix')
+            raise DependencyMissing('Tmatrix', "Tmatrix code should compile "
+            "with the rest of HoloPy. Check that you can compile fortran code "
+            "from a makefile.")
 
         super().__init__()
 

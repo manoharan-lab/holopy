@@ -17,7 +17,7 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
 Compute holograms using the discrete dipole approximation (DDA).  Currently uses
-ADDA (http://code.google.com/p/a-dda/) to do DDA calculations.
+ADDA (https://github.com/adda-team/adda) to do DDA calculations.
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
@@ -36,11 +36,11 @@ import shutil
 import time
 import warnings
 
-from .scatteringtheory import ScatteringTheory
-
-from ..scatterer import Ellipsoid, Capsule, Cylinder, Bisphere, Sphere, Scatterer, Spheroid
-from ...core.utils import ensure_array
-from ..errors import DependencyMissing
+from holopy.scattering.theory.scatteringtheory import ScatteringTheory
+from holopy.scattering.scatterer import (Ellipsoid, Capsule, Cylinder,
+                                        Bisphere, Sphere, Scatterer, Spheroid)
+from holopy.core.utils import ensure_array
+from holopy.core.errors import DependencyMissing
 
 try:
     from .mie_f import mieangfuncs
@@ -84,7 +84,9 @@ class DDA(ScatteringTheory):
         try:
             subprocess.check_call(['adda', '-V'])
         except (subprocess.CalledProcessError, OSError):
-            raise DependencyMissing('adda')
+            raise DependencyMissing('adda', "adda is not included with HoloPy "
+                "and must be installed separately. You should be able to run "
+                "the command 'adda' from a terminal.")
 
         self.n_cpu = n_cpu
         self.max_dpl_size = max_dpl_size

@@ -38,3 +38,11 @@ class NoMetadata(Exception):
 class CoordSysError(Exception):
     def __str__(self):
         return "Could not interpret your points. Use either Cartesian or spherical coordinates"
+
+class DependencyMissing(Exception):
+    def __init__(self, dependency, message=""):
+        self.dependency = dependency
+        self.message = message
+    def __str__(self):
+        return "Calculation requires {} but it could not be found. {}".format(
+                self.dependency, self.message)

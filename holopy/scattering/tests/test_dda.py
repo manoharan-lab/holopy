@@ -30,7 +30,7 @@ from nose.plugins.skip import SkipTest
 from subprocess import CalledProcessError
 import os
 
-from holopy.scattering.errors import DependencyMissing
+from holopy.core.errors import DependencyMissing
 from holopy.scattering.scatterer import (Sphere, Ellipsoid, Scatterer,
                                          JanusSphere_Uniform, Difference)
 from holopy.scattering import Mie, DDA, calc_holo as calc_holo_external
