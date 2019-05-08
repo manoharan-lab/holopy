@@ -325,9 +325,3 @@ def scattered_field_to_hologram(scat, ref, normals):
 
     return holo
 
-
-def _field_scalar_shape(e):
-    # this is a clever hack with list arithmetic to get [1, 3] or [1,
-    # 1, 3] as needed
-    return [1]*(e.ndim-1) + [3]
-
