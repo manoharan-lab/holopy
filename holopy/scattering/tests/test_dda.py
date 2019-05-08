@@ -32,6 +32,7 @@ import os
 
 from holopy.core.errors import DependencyMissing
 from holopy.scattering.scatterer import (Sphere, Ellipsoid, Scatterer,
+                                         Spheroid, Capsule, Cylinder, Bisphere,
                                          JanusSphere_Uniform, Difference)
 from holopy.scattering import Mie, DDA, calc_holo as calc_holo_external
 from holopy.core import detector_grid, update_metadata
@@ -133,7 +134,7 @@ def test_Ellipsoid_dda():
     try:
         h = calc_holo(schema, e, illum_wavelen=.66, medium_index=1.33,
             illum_polarization = (1,0), theory=DDA(use_indicators=False))
-        cmd = DDA()._adda_ellipsoid(
+        cmd = DDA()._adda_predefined(
             e, medium_wavelen=.66, medium_index=1.33, temp_dir='temp_dir')
         cmdlist = ['-eq_rad', '0.5', '-shape', 'ellipsoid', '0.2', '0.2', '-m',
                '1.1278195488721805', '0.0', '-orient', '0.0', '0.0', '0.0']
@@ -141,6 +142,22 @@ def test_Ellipsoid_dda():
         verify(h, 'ellipsoid_dda')
     except DependencyMissing:
         raise SkipTest()
+
+def test_predefined_scatterers():
+    # note this tests only that the code runs, not that it is correct
+    try:
+        scatterers = [Ellipsoid(n=1.5, r=(0.5, 1, 2), center=(0,0,1)),
+                      Spheroid(n=1.5, r=(0.5, 1), center=(0,0,1)),
+                      Capsule(n=1.5, h=1, d=0.5, center=(0,0,1)),
+                      Cylinder(n=1.5, h=1, d=0.5, center=(0,0,1)),
+                      Bisphere(n=1.5, h=1, d=0.5, center=(0,0,1)),
+                      Sphere(n=1.5, r=1, center=(0,0,1))]
+        detector = detector_grid(5, .1)
+        for s in scatterers:
+            calc_holo(detector, s, illum_wavelen=.66, medium_index=1.33,
+                illum_polarization = (1,0), theory=DDA(use_indicators=False))
+    except DependencyMissing:
+        raise SkipTest
 
 def test_janus():
     schema = detector_grid(10, .1)
