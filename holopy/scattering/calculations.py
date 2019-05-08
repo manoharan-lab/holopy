@@ -27,7 +27,7 @@ from holopy.core.holopy_object import SerializableMetaclass
 from holopy.core.metadata import (
     vector, illumination, update_metadata, to_vector, copy_metadata,
     from_flat, dict_to_array)
-from holopy.core.utils import dict_without, is_none, ensure_array
+from holopy.core.utils import dict_without, ensure_array
 from holopy.scattering.scatterer import (
     Sphere, Spheres, Spheroid, Cylinder, _expand_parameters,
     _interpret_parameters)
@@ -52,7 +52,7 @@ def prep_schema(schema, medium_index, illum_wavelen, illum_polarization):
         raise MissingParameter("wavelength")
     if schema.medium_index is None:
         raise MissingParameter("medium refractive index")
-    if illum_polarization is not False and is_none(schema.illum_polarization):
+    if illum_polarization is not False and schema.illum_polarization is None:
         raise MissingParameter("polarization")
 
     illum_wavelen = ensure_array(schema.illum_wavelen)
