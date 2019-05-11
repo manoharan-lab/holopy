@@ -125,7 +125,7 @@ class Multisphere(ScatteringTheory):
         self.compute_escat_radial = compute_escat_radial
         self.suppress_fortran_output=suppress_fortran_output
         try:
-            from holopy.scattering.theory.mie_f import uts_scsmfo
+            from holopy.scattering.theory.mie_f import uts_scsmfo, scsmfo_min
         except AttributeError:
             raise DependencyMissing("Multisphere theory", "This is probably "
                                     "due to a problem with compiling Fortran "
