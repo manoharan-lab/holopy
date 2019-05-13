@@ -25,14 +25,19 @@ import time
 
 import xarray as xr
 import numpy as np
-import emcee
+try:
+    import emcee
+    _EMCEE_MISSING = False
+except ModuleNotFoundError:
+    _EMCEE_MISSING = True
 
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.metadata import make_subset_data
 from holopy.core.utils import choose_pool
+from holopy.core.errors import DependencyMissing
 from holopy.inference.model import LnpostWrapper
 from holopy.inference.result import SamplingResult, TemperedSamplingResult
-from . import prior
+from holopy.inference import prior
 
 def sample_one_sigma_gaussian(result):
     par_ranges = result.intervals
@@ -57,7 +62,7 @@ class EmceeStrategy(HoloPyObject):
         if self.npixels is not None and self.new_pixels is None:
             data = make_subset_data(data, pixels=self.npixels, seed=self.seed)
         if walker_initial_pos is None:
-            walker_initial_pos = prior.make_guess(model._parameters, self.nwalkers, seed=self.seed)
+            walker_initial_pos = model.generate_guess(self.nwalkers, seed=self.seed)
         sampler = sample_emcee(model=model, data=data, nwalkers=self.nwalkers,
                                walker_initial_pos=walker_initial_pos, nsamples=nsamples,
                                parallel=self.parallel, cleanup_threads=self.cleanup_threads, seed=self.seed, new_pixels=self.new_pixels)
@@ -114,6 +119,10 @@ def emcee_lnprobs_DataArray(sampler):
 
 def sample_emcee(model, data, nwalkers, nsamples, walker_initial_pos,
                  parallel='auto', cleanup_threads=True, seed=None, new_pixels = None):
+    if _EMCEE_MISSING:
+        raise DependencyMissing('emcee',
+            "Install it with \'conda install -c conda-forge emcee\'.")
+
     obj_func = LnpostWrapper(model, data, new_pixels)
     pool = choose_pool(parallel)
     sampler = emcee.EnsembleSampler(nwalkers, len(model._parameters), 

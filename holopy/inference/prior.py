@@ -318,15 +318,15 @@ def updated(prior, v, extra_uncertainty=0):
     else:
         return Gaussian(v.guess, sd, prior.name)
 
-def make_guess(parameters, nguess, scaling=1, seed=None):
-    def sample(prior):
+def generate_guess(parameters, nguess=1, scaling=1, seed=None):
+    def scaled_sample(prior):
         raw_sample = prior.sample(size=nguess)
         scaled_guess = prior.guess + scaling * (raw_sample - prior.guess)
         return scaled_guess
 
     if seed is not None:
         np.random.seed(seed)
-    return np.vstack([sample(p) for p in parameters]).T
+    return np.vstack([scaled_sample(p) for p in parameters]).T
 
 def make_center_priors(im, z_range_extents=5, xy_uncertainty_pixels=1, z_range_units=None):
     """

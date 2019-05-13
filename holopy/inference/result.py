@@ -55,6 +55,9 @@ def get_strategy(strategy):
     index = strategy.find('sample')
     if index > -1:
         strategy = strategy[:index] + 'emcee' + strategy[index+6:]
+    index = strategy.find('threads')
+    if index > -1:
+        strategy = strategy[:index] + 'parallel' + strategy[index+7]
     return yaml.load(strategy, Loader=FullLoader)
 
 class FitResult(HoloPyObject):
@@ -173,7 +176,8 @@ class FitResult(HoloPyObject):
             codes = [[level.index(f) for f in flat]
                                 for level, flat in zip(levels, flats)]
             flat_index = pd.MultiIndex(levels, codes, names=['x','y','z'])
-            coordnames = list(data.coords).remove('point')
+            coordnames = list(data.coords)
+            coordnames.remove('point')
             coords = {coord: data[coord] for coord in coordnames}
             coords['flat'] = flat_index
             data = xr.DataArray(data.values, dims=coordnames + ['flat'],
@@ -228,7 +232,7 @@ class SamplingResult(FitResult):
                                                     dim=['walker', 'chain'])
         plus = -map_val + self.samples.reduce(np.percentile, q=(100 - P_LOW),
                                                     dim=['walker', 'chain'])
-        return [UncertainValue(map_val.loc[p], plus.loc[p], minus.loc[p], p)
+        return [UncertainValue(map_val.loc[[p]], plus.loc[[p]], minus.loc[[p]], p)
                                         for p in self.samples.parameter.values]
 
     def burn_in(self, sample_number):

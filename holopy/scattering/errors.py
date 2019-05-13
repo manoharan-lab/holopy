@@ -25,12 +25,6 @@ other exceptions in other parts of HoloPy to keep things modular.
 
 import warnings
 
-class NoScattering(ImportWarning):
-    def __init__(self, theory):
-        self.theory = theory
-    def __str__(self):
-        return "Could not import "+self.theory+" scattering theory. You will not be able to do scattering calculations but the rest of HoloPy should remain usable. This is probably due to a problem with compiling Fortran code."
-
 class InvalidScatterer(Exception):
     def __init__(self, scatterer, message):
         self.scatterer = scatterer
@@ -80,12 +74,6 @@ class TmatrixFailure(Exception):
         with open(self.logfilestr) as logfile:
             reason=list(logfile)[-1]
         return("Tmatrix calculation failed. This might be because your scatterer's size or aspect ratio is too large for default parameters. \n Tmatrix error message: " + reason + "Full details are available in " + self.logfilestr)
-
-class DependencyMissing(Exception):
-    def __init__(self, dep):
-        self.dep = dep
-    def __str__(self):
-        return("External Dependency: " + self.dep + " could not be found, terminating.")
 
 class AutoTheoryFailed(Exception):
     def __init__(self, scatterer):

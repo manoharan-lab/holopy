@@ -28,18 +28,16 @@ scattered field.
 
 import numpy as np
 from holopy.core.utils import ensure_array
+from holopy.core.errors import DependencyMissing
 from holopy.scattering.errors import TheoryNotCompatibleError, InvalidScatterer
 from holopy.scattering.scatterer import Sphere, Scatterers
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 try:
-    from holopy.scattering.theory.mie_f import mieangfuncs, miescatlib
-    from holopy.scattering.theory.mie_f.multilayer_sphere_lib import (
-        scatcoeffs_multi)
+    from holopy.scattering.theory.mie_f import (mieangfuncs, miescatlib,
+                                                scatcoeffs_multi)
+    _COMPILED_FORTRAN = True
 except ImportError:
-    import warnings
-    from holopy.scattering.errors import NoScattering
-    warnings.simplefilter('always', NoScattering)
-    warnings.warn(NoScattering('Mie'))
+    _COMPILED_FORTRAN = False
 
 
 class Mie(ScatteringTheory):
@@ -77,6 +75,11 @@ class Mie(ScatteringTheory):
         self.full_radial_dependence = full_radial_dependence
         self.eps1 = eps1
         self.eps2 = eps2
+        if not _COMPILED_FORTRAN:
+            raise DependencyMissing("Mie theory", "This is probably "
+                                    "due to a problem with compiling Fortran "
+                                    "code, as it should be built with the rest"
+                                    " of HoloPy through f2py.")
         # call base class constructor
         super().__init__()
 

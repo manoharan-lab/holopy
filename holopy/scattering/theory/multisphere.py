@@ -33,21 +33,17 @@ from numpy import arctan2, sin, cos
 from warnings import warn
 from scipy.integrate import dblquad
 
+from holopy.core.errors import DependencyMissing
 from holopy.scattering.scatterer import Spheres,Sphere
 from holopy.scattering.errors import (
     TheoryNotCompatibleError, InvalidScatterer, MultisphereFailure)
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
-
 try:
-    from holopy.scattering.theory.mie_f import mieangfuncs
-    from holopy.scattering.theory.mie_f import scsmfo_min
-    from holopy.scattering.theory.mie_f import uts_scsmfo
+    from holopy.scattering.theory.mie_f import (uts_scsmfo, scsmfo_min,
+                                                mieangfuncs)
+    _COMPILED_FORTRAN = True
 except ImportError:
-    import warnings
-    from holopy.scattering.errors import NoScattering
-    warnings.simplefilter('always', NoScattering)
-    warnings.warn(NoScattering('multisphere'))
-
+    _COMPILED_FORTRAN = False
 
 def normalize_polarization(illum_polarization):
     return (illum_polarization / np.sqrt((illum_polarization**2).sum()))[:2]
@@ -134,6 +130,11 @@ class Multisphere(ScatteringTheory):
         self.compute_escat_radial = compute_escat_radial
         self.suppress_fortran_output=suppress_fortran_output
 
+        if not _COMPILED_FORTRAN:
+            raise DependencyMissing("Multisphere theory", "This is probably "
+                                    "due to a problem with compiling Fortran "
+                                    "code, as it should be built with the rest"
+                                    " of HoloPy through f2py.")
         # call base class constructor
         super(Multisphere, self).__init__()
 

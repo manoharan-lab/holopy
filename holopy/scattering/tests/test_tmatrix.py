@@ -28,7 +28,7 @@ from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
 from holopy.scattering import (
     Tmatrix, DDA, Sphere, Spheroid, Ellipsoid, Cylinder, calc_holo)
-from holopy.scattering.errors import DependencyMissing
+from holopy.core.errors import DependencyMissing
 from holopy.core import detector_grid, update_metadata
 from holopy.core.tests.common import verify
 

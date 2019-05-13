@@ -20,22 +20,24 @@ Compute holograms using Mishchenko's T-matrix method for axisymmetric scatterers
 
 .. moduleauthor:: Anna Wang <annawang@seas.harvard.edu>
 """
-
-import numpy as np
 import subprocess
 import tempfile
 import os
 import shutil
 import copy
-from holopy.scattering.scatterer import Sphere, Spheroid, Cylinder
-from holopy.scattering.errors import (
-    TheoryNotCompatibleError, TmatrixFailure, DependencyMissing)
+import warnings
 
+import numpy as np
+
+from holopy.scattering.scatterer import Sphere, Spheroid, Cylinder
+from holopy.scattering.errors import TheoryNotCompatibleError, TmatrixFailure
+from holopy.core.errors import DependencyMissing
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 try:
     from holopy.scattering.theory.mie_f import mieangfuncs
+    _NO_MIEANGFUNCS = False
 except:
-    pass
+    _NO_MIEANGFUNCS = True
 
 class Tmatrix(ScatteringTheory):
     """
@@ -65,7 +67,9 @@ class Tmatrix(ScatteringTheory):
         if os.name == 'nt':
             self.tmatrix_executable += '.exe'
         if not os.path.isfile(self.tmatrix_executable):
-            raise DependencyMissing('Tmatrix')
+            raise DependencyMissing('Tmatrix', "Tmatrix code should compile "
+            "with the rest of HoloPy. Check that you can compile fortran code "
+            "from a makefile.")
 
         super().__init__()
 
@@ -154,13 +158,19 @@ class Tmatrix(ScatteringTheory):
 
     def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
-
         if not (np.array(illum_polarization)[:2] == np.array([1,0])).all():
             raise ValueError("Our implementation of Tmatrix scattering can only handle [1,0] polarization. Adjust your reference frame accordingly.")
 
         scat_matr = self._raw_scat_matrs(scatterer, pos, 
                     medium_wavevec=medium_wavevec, medium_index=medium_index)
         fields = np.zeros_like(pos.T, dtype = scat_matr.dtype)
+
+        if _NO_MIEANGFUNCS:
+            warnings.warn("Problem with holopy.scattering.theory.mie_f.mieang"
+                          "funcs. This is probably due to a problem compiling"
+                          "Fortran code. Returning scattering matrices only,"
+                          "not fields. Subsequent calculations will fail.")
+            return scat_matr
 
         for i, point in enumerate(pos.T):
             kr, theta, phi = point

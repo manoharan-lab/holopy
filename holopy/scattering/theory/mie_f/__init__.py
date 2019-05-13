@@ -21,4 +21,5 @@ scattering theory.
 
 .. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 """
-
+from holopy.scattering.theory.mie_f.multilayer_sphere_lib import (
+    scatcoeffs_multi)

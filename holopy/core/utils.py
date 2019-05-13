@@ -31,7 +31,8 @@ import itertools
 
 import numpy as np
 import xarray as xr
-import schwimmbad
+
+from holopy.core.errors import DependencyMissing
 
 def ensure_array(x):
     if isinstance(x, xr.DataArray):
@@ -39,7 +40,7 @@ def ensure_array(x):
             if len(x.coords)==0:
                 return np.array([x.item()])
             else:
-                return x.expand_dims(x.coords)
+                return x.expand_dims(list(x.coords))
         else:
             return x
     elif np.isscalar(x) or isinstance(x, bool) or (isinstance(x, np.ndarray) and x.shape==()):
@@ -154,7 +155,21 @@ def choose_pool(parallel):
     if hasattr(parallel, 'map'):
         return parallel
     if parallel is None:
-        return schwimmbad.SerialPool()
+        class NonePool():
+            def map(self, function, arguments):
+                return map(function, arguments)
+            def close(self):
+                del self
+        return NonePool()
+    try:
+        import schwimmbad
+    except ModuleNotFoundError:
+        raise DependencyMissing('schwimmbad',
+            "To perform inference calculations in parallel, install schwimmbad"
+            " with \'conda install -c conda-forge schwimmbad\' or define your "
+            "Strategy object with a 'parallel' keyword argument that is a "
+            "multiprocessing.Pool object. To run serial calculations instead, "
+            "pass in parallel=None.")
     if parallel is 'mpi':
         pool = schwimmbad.MPIPool()
         if not pool.is_master():

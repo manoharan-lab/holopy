@@ -43,10 +43,9 @@ def test_BaseModel_lnprior():
     assert_obj_close(mod.lnprior({'n': 0, 'r': 0}), desired_sigma * 2)
 
 
-class SimpleModel:
+class SimpleModel(BaseModel):
     def __init__(self, x=prior.Uniform(0, 1)):
         self._parameters = [x]
-        self.parameters = {None: x}
 
     def lnposterior(self, par_vals, data, dummy):
         x = par_vals

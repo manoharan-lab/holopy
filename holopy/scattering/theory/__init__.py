@@ -28,8 +28,8 @@ All theories have a common interface defined by
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
 
-from .mie import Mie
-from .mielens import MieLens
-from .multisphere import Multisphere
-from .dda import DDA
-from .tmatrix import Tmatrix
+from holopy.scattering.theory.mie import Mie
+from holopy.scattering.theory.mielens import MieLens
+from holopy.scattering.theory.multisphere import Multisphere
+from holopy.scattering.theory.dda import DDA
+from holopy.scattering.theory.tmatrix import Tmatrix

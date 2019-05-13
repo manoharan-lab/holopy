@@ -25,6 +25,7 @@ import shutil
 from numpy.testing import assert_equal, assert_allclose
 import pickle
 from collections import OrderedDict
+import xarray as xr
 
 from holopy.core.io import load, save, get_example_data
 
@@ -63,6 +64,12 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
         assert_allclose(actual, desired, rtol = rtol, atol = atol, err_msg=context)
     except (NotImplementedError, TypeError):
         pass
+
+    if (isinstance(desired, xr.DataArray) and isinstance(actual, xr.DataArray)
+            and hasattr(actual, "_indexes")):
+        # as of xarray 0.12.1, saved and reloaded objects do not maintain
+        # the redundant ._indexes attribute
+        desired._indexes = actual._indexes
 
     # if None, let some things that are functially equivalent to None pass
     nonelike = [None, OrderedDict()]

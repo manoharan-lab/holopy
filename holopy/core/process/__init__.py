@@ -27,6 +27,7 @@ reconstructions.
 '''
 
 
-from .img_proc import normalize, detrend, zero_filter, subimage, add_noise, simulate_noise, bg_correct
-from .fourier import fft, ifft
-from .centerfinder import center_find, hough, image_gradient
+from holopy.core.process.img_proc import (normalize, detrend, zero_filter,
+    subimage, add_noise, simulate_noise, bg_correct)
+from holopy.core.process.fourier import fft, ifft
+from holopy.core.process.centerfinder import center_find, hough, image_gradient

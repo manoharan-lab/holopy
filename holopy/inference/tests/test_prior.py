@@ -131,14 +131,14 @@ def test_prior_math():
     with assert_raises(TypeError):
         g*g
 
-def test_make_guess():
+def test_generate_guess():
     gold1 = np.array([[-0.091949, 0.270532], [-1.463350, 0.691041],
         [1.081791, 0.220404], [-0.239325, 0.811950], [-0.491129, 0.010526]])
     gold2 = np.array([[-0.045974, 0.535266], [-0.731675, 0.745520],
         [0.540895, 0.510202], [-0.119662, 0.805975], [-0.245564, 0.405263]])
     pars = [Gaussian(0,1), Uniform(0,1,0.8)]
-    guess1 = prior.make_guess(pars, 5, seed=22)
-    guess2 = prior.make_guess(pars, 5, scaling=0.5, seed=22)
+    guess1 = prior.generate_guess(pars, 5, seed=22)
+    guess2 = prior.generate_guess(pars, 5, scaling=0.5, seed=22)
     assert_allclose(guess1, gold1, atol=1e-5)
     assert_allclose(guess2, gold2, atol=1e-5)
 

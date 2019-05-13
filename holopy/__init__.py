@@ -31,10 +31,10 @@ images and calculations.
 """
 
 
-from . import core, scattering, fitting, inference
-from .core import (load, save, load_image, save_image, show, test_display,
+from holopy import core, scattering, fitting, inference
+from holopy.core import (load, save, load_image, save_image, show, test_display,
                                             detector_grid, detector_points)
-from .propagation import propagate
+from holopy.propagation import propagate
 
 __version__ = '3.3.0'
 __version_info__ = tuple([ int(num) for num in __version__.split('.')])

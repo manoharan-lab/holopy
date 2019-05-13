@@ -57,7 +57,7 @@ def test_ensure_array():
     len(ensure_array([1.0]))
     len(ensure_array(False))
     len(ensure_array(xr.DataArray([12],dims='a',coords={'a':['b']})))
-    len(ensure_array(xr.DataArray([12],dims='a',coords={'a':['b']}).sel(a='b')))
+    len(ensure_array(xr.DataArray([12],dims='a',coords={'a':['b']}).sel(a=['b'])))
     len(ensure_array(xr.DataArray(12)))
 
 
@@ -65,7 +65,7 @@ def test_choose_pool():
     class dummy():
         def map():
             return None
-    assert isinstance(choose_pool(None), SerialPool)
+    assert not isinstance(choose_pool(None), (pool.BasePool, Pool))
     assert isinstance(choose_pool(2), MultiPool)
     assert isinstance(choose_pool('all'), MultiPool)
     assert isinstance(choose_pool('auto'), (pool.BasePool, Pool))

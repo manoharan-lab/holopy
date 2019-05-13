@@ -29,11 +29,16 @@ import warnings
 
 import numpy as np
 import xarray as xr
-import cma
+try:
+    import cma
+    _CMA_MISSING = False
+except ModuleNotFoundError:
+    _CMA_MISSING = True
 
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.metadata import make_subset_data
 from holopy.core.utils import choose_pool
+from holopy.core.errors import DependencyMissing
 from holopy.inference import prior
 from holopy.inference.model import LnpostWrapper
 from holopy.inference.result import FitResult, UncertainValue
@@ -90,8 +95,7 @@ class CmaStrategy(HoloPyObject):
             numpars = len(parameters)
             popsize = int(2 + numpars + np.sqrt(numpars)) #cma uses 4+3*ln(n)
         if walker_initial_pos is None:
-            walker_initial_pos = prior.make_guess(parameters, popsize, 
-                                                            seed=self.seed)
+            walker_initial_pos = model.generate_guess(popsize, seed=self.seed)
         obj_func = LnpostWrapper(model, data, self.new_pixels, True)
         sampler = run_cma(obj_func.evaluate, parameters, walker_initial_pos, 
                             self.weights, self.tols, self.seed, self.parallel)
@@ -134,6 +138,8 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
         number of threads to use or pool object or one of {None, 'all', 'mpi'}.
         Default tries 'mpi' then 'all'.
     """
+    if _CMA_MISSING:
+        raise DependencyMissing('cma', "Install it with \'pip install cma\'.")
 
     popsize = len(initial_population)
     stds = [par.sd if isinstance(par, prior.Gaussian) 
@@ -142,31 +148,32 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
     if weights[-1] > 0:
         weights[-1] = 0
         warnings.warn('Setting weight of worst parent to 0')
-    tempdir = tempfile.mkdtemp() + '/'
-    cmaoptions = {'CMA_stds':stds, 'CMA_recombination_weights':weights,
-                  'verb_filenameprefix':tempdir, 'verbose':-3}
-    cmaoptions.update(tols)
-    if seed is not None:
-        cmaoptions.update({'seed':seed})
-    guess = [par.guess for par in parameters]
-    cma_strategy = cma.CMAEvolutionStrategy(guess, 1, cmaoptions)
-    cma_strategy.inject(initial_population, force=True)
-    solutions = np.zeros((popsize, len(parameters)))
-    func_vals = np.zeros(popsize)
-    pool = choose_pool(parallel)
-    while not cma_strategy.stop():
-        invalid = np.ones(popsize, dtype=bool)
-        inf_replace_counter = 0
-        while invalid.any() and inf_replace_counter < 10:
-            attempts = cma_strategy.ask(np.sum(invalid))
-            solutions[invalid, :] = attempts
-            func_vals[invalid] = list(pool.map(obj_func, attempts))
-            invalid = ~np.isfinite(func_vals)
-            inf_replace_counter += 1 # catches case where all are inf
-        cma_strategy.tell(solutions, func_vals)
-        cma_strategy.logger.add()
-    cma_strategy.logger.load()
-    shutil.rmtree(tempdir)
+    with tempfile.TemporaryDirectory() as tempdir:
+        cmaoptions = {'CMA_stds':stds, 'CMA_recombination_weights':weights,
+                      'verb_filenameprefix':tempdir, 'verbose':-3}
+        cmaoptions.update(tols)
+        if seed is not None:
+            cmaoptions.update({'seed':seed})
+        guess = [par.guess for par in parameters]
+        cma_strategy = cma.CMAEvolutionStrategy(guess, 1, cmaoptions)
+        cma_strategy.inject(initial_population, force=True)
+        solutions = np.zeros((popsize, len(parameters)))
+        func_vals = np.zeros(popsize)
+        pool = choose_pool(parallel)
+        while not cma_strategy.stop():
+            invalid = np.ones(popsize, dtype=bool)
+            inf_replace_counter = 0
+            while invalid.any() and inf_replace_counter < 10:
+                attempts = cma_strategy.ask(np.sum(invalid))
+                solutions[invalid, :] = attempts
+                func_vals[invalid] = list(pool.map(obj_func, attempts))
+                invalid = ~np.isfinite(func_vals)
+                inf_replace_counter += 1 # catches case where all are inf
+            cma_strategy.tell(solutions, func_vals)
+            cma_strategy.logger.add()
+        cma_strategy.logger.load()
+
     if pool is not parallel:
+        # I made pool, responsible for closing it.
         pool.close()
     return cma_strategy
