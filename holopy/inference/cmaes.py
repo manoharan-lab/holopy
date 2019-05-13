@@ -146,34 +146,32 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
     if weights[-1] > 0:
         weights[-1] = 0
         warnings.warn('Setting weight of worst parent to 0')
-    tempdir = tempfile.mkdtemp() + '/'
-    cmaoptions = {'CMA_stds':stds, 'CMA_recombination_weights':weights,
-                  'verb_filenameprefix':tempdir, 'verbose':-3}
-    cmaoptions.update(tols)
-    if seed is not None:
-        cmaoptions.update({'seed':seed})
-    guess = [par.guess for par in parameters]
-    cma_strategy = cma.CMAEvolutionStrategy(guess, 1, cmaoptions)
-    cma_strategy.inject(initial_population, force=True)
-    solutions = np.zeros((popsize, len(parameters)))
-    func_vals = np.zeros(popsize)
-    pool = choose_pool(parallel)
-    while not cma_strategy.stop():
-        invalid = np.ones(popsize, dtype=bool)
-        inf_replace_counter = 0
-        while invalid.any() and inf_replace_counter < 10:
-            attempts = cma_strategy.ask(np.sum(invalid))
-            solutions[invalid, :] = attempts
-            func_vals[invalid] = list(pool.map(obj_func, attempts))
-            invalid = ~np.isfinite(func_vals)
-            inf_replace_counter += 1 # catches case where all are inf
-        cma_strategy.tell(solutions, func_vals)
-        cma_strategy.logger.add()
-    cma_strategy.logger.load()
-    try:
-        shutil.rmtree(tempdir)
-    except FileNotFoundError:
-        pass
+    with tempfile.TemporaryDirectory() as tempdir:
+        cmaoptions = {'CMA_stds':stds, 'CMA_recombination_weights':weights,
+                      'verb_filenameprefix':tempdir, 'verbose':-3}
+        cmaoptions.update(tols)
+        if seed is not None:
+            cmaoptions.update({'seed':seed})
+        guess = [par.guess for par in parameters]
+        cma_strategy = cma.CMAEvolutionStrategy(guess, 1, cmaoptions)
+        cma_strategy.inject(initial_population, force=True)
+        solutions = np.zeros((popsize, len(parameters)))
+        func_vals = np.zeros(popsize)
+        pool = choose_pool(parallel)
+        while not cma_strategy.stop():
+            invalid = np.ones(popsize, dtype=bool)
+            inf_replace_counter = 0
+            while invalid.any() and inf_replace_counter < 10:
+                attempts = cma_strategy.ask(np.sum(invalid))
+                solutions[invalid, :] = attempts
+                func_vals[invalid] = list(pool.map(obj_func, attempts))
+                invalid = ~np.isfinite(func_vals)
+                inf_replace_counter += 1 # catches case where all are inf
+            cma_strategy.tell(solutions, func_vals)
+            cma_strategy.logger.add()
+        cma_strategy.logger.load()
+
     if pool is not parallel:
+        # I made pool, responsible for closing it.
         pool.close()
     return cma_strategy

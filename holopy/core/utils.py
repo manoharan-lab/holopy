@@ -169,7 +169,7 @@ def choose_pool(parallel):
             " with \'conda install -c conda-forge schwimmbad\' or define your "
             "Strategy object with a 'parallel' keyword argument that is a "
             "multiprocessing.Pool object. To run serial calculations instead, "
-            "pass in pallel=None.")
+            "pass in parallel=None.")
     if parallel is 'mpi':
         pool = schwimmbad.MPIPool()
         if not pool.is_master():
