@@ -16,5 +16,5 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
-from .convolution_propagation import propagate
-from .point_source_propagate import ps_propagate
+from holopy.propagation.convolution_propagation import propagate
+from holopy.propagation.point_source_propagate import ps_propagate

@@ -26,15 +26,17 @@ as Clusters.
 '''
 
 
-from .scatterer import (Scatterer, Indicators, _expand_parameters,
-                         _interpret_parameters)
-from .sphere import Sphere, LayeredSphere
-from .composite import Scatterers
-from .spherecluster import Spheres, RigidCluster
-from .janus import JanusSphere_Uniform, JanusSphere_Tapered
-from .spheroid import Spheroid
-from .ellipsoid import Ellipsoid
-from .capsule import Capsule
-from .cylinder import Cylinder
-from .bisphere import Bisphere
-from .csg import Union, Difference, Intersection, CsgScatterer
+from holopy.scattering.scatterer.scatterer import (Scatterer, Indicators,
+    _expand_parameters, _interpret_parameters)
+from holopy.scattering.scatterer.sphere import Sphere, LayeredSphere
+from holopy.scattering.scatterer.composite import Scatterers
+from holopy.scattering.scatterer.spherecluster import Spheres, RigidCluster
+from holopy.scattering.scatterer.janus import (JanusSphere_Uniform,
+                                               JanusSphere_Tapered)
+from holopy.scattering.scatterer.spheroid import Spheroid
+from holopy.scattering.scatterer.ellipsoid import Ellipsoid
+from holopy.scattering.scatterer.capsule import Capsule
+from holopy.scattering.scatterer.cylinder import Cylinder
+from holopy.scattering.scatterer.bisphere import Bisphere
+from holopy.scattering.scatterer.csg import (Union, Difference, Intersection,
+                                             CsgScatterer)
