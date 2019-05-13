@@ -42,11 +42,6 @@ from holopy.scattering.scatterer import (Ellipsoid, Capsule, Cylinder,
 from holopy.core.utils import ensure_array
 from holopy.core.errors import DependencyMissing
 
-try:
-    from .mie_f import mieangfuncs
-except ImportError:
-    pass
-
 class DDA(ScatteringTheory):
     """
     Computes scattering using the the Discrete Dipole Approximation (DDA).

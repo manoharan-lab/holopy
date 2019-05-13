@@ -25,6 +25,11 @@ import time
 
 import xarray as xr
 import numpy as np
+try:
+    import emcee
+    _EMCEE_MISSING = False
+except ModuleNotFoundError:
+    _EMCEE_MISSING = True
 
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.metadata import make_subset_data
@@ -114,9 +119,7 @@ def emcee_lnprobs_DataArray(sampler):
 
 def sample_emcee(model, data, nwalkers, nsamples, walker_initial_pos,
                  parallel='auto', cleanup_threads=True, seed=None, new_pixels = None):
-    try:
-        import emcee
-    except ModuleNotFoundError:
+    if _EMCEE_MISSING:
         raise DependencyMissing('emcee',
             "Install it with \'conda install -c conda-forge emcee\'.")
 

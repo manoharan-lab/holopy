@@ -29,6 +29,11 @@ import warnings
 
 import numpy as np
 import xarray as xr
+try:
+    import cma
+    _CMA_MISSING = False
+except ModuleNotFoundError:
+    _CMA_MISSING = True
 
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.metadata import make_subset_data
@@ -133,11 +138,8 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
         number of threads to use or pool object or one of {None, 'all', 'mpi'}.
         Default tries 'mpi' then 'all'.
     """
-    try:
-        import cma
-    except ModuleNotFoundError:
-        raise DependencyMissing('cma',
-            "Install it with \'pip install cma\'.")
+    if _CMA_MISSING:
+        raise DependencyMissing('cma', "Install it with \'pip install cma\'.")
 
     popsize = len(initial_population)
     stds = [par.sd if isinstance(par, prior.Gaussian) 
