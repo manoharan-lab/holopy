@@ -66,7 +66,7 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
         pass
 
     if (isinstance(desired, xr.DataArray) and isinstance(actual, xr.DataArray)
-       and hasattr(actual, "_indexes")):
+            and hasattr(actual, "_indexes")):
         # as of xarray 0.12.1, saved and reloaded objects do not maintain
         # the redundant ._indexes attribute
         desired._indexes = actual._indexes
