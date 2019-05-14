@@ -62,28 +62,29 @@ def test_calc_scat_matrix():
 
 class TestDetermineTheory(unittest.TestCase):
     @attr("fast")
-    def test_determine_theory_on_sphere(self):
-        default_theory = determine_theory(Sphere())
+    def test_determine_default_theory_for_on_sphere(self):
+        default_theory = determine_default_theory_for(Sphere())
         correct_theory = Mie()
         self.assertTrue(default_theory == correct_theory)
 
     @attr('fast')
-    def test_determine_theory_on_spheres(self):
-        default_theory = determine_theory(Spheres([Sphere(), Sphere()]))
+    def test_determine_default_theory_for_on_spheres(self):
+        default_theory = determine_default_theory_for(
+            Spheres([Sphere(), Sphere()]))
         correct_theory = Multisphere()
         self.assertTrue(default_theory == correct_theory)
 
     @attr('fast')
-    def test_determine_theory_on_spheroid(self):
+    def test_determine_default_theory_for_on_spheroid(self):
         scatterer = Spheroid(n=1.33, r=(1.0, 2.0))
-        default_theory = determine_theory(scatterer)
+        default_theory = determine_default_theory_for(scatterer)
         correct_theory = Tmatrix()
         self.assertTrue(default_theory == correct_theory)
 
     @attr('fast')
-    def test_determine_theory_on_cylinder(self):
+    def test_determine_default_theory_for_on_cylinder(self):
         scatterer = Cylinder(n=1.33, h=2, d=1)
-        default_theory = determine_theory(scatterer)
+        default_theory = determine_default_theory_for(scatterer)
         correct_theory = Tmatrix()
         self.assertTrue(default_theory == correct_theory)
 

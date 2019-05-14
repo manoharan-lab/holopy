@@ -39,6 +39,7 @@ try:
     from holopy.scattering.theory.dda import DDA
 except:
     pass
+    # FIXME why is this a try-pass?
 
 import numpy as np
 from warnings import warn
@@ -94,7 +95,7 @@ def prep_schema(detector, medium_index, illum_wavelen, illum_polarization):
 # Used here in calc_holo, calc_cross_section, calc_scat_matrix, calc_field
 def interpret_theory(scatterer, theory='auto'):
     if isinstance(theory, str) and theory == 'auto':
-        theory = determine_theory(scatterer.guess)
+        theory = determine_default_theory_for(scatterer.guess)
     if isinstance(theory, SerializableMetaclass):
         theory = theory()
     return theory
@@ -110,24 +111,33 @@ def finalize(detector, result):
 # Used in inference.model, but commented out
 # Used in scattering.tests.tests_calculations, which just tests this function
 # Used here in interpret_theory
-# FIXME why don't the scatterer objects have a default theory attr, which
-# this just returns?
-def determine_theory(scatterer):  # picks a default theory for a scatterer
+
+# Some comments on why `determine_default_theory_for` exists, rather than each
+# Scatterer class knowing what a good default theory is.
+# The problem is that the theories (Mie etc) import Sphere to see if
+# the theory can handle the scatterer, in the _can_handle method and
+# others. Worse, since the DDA theory calls an external DDA library
+# with specially-defined DDA objects, the DDA theory has a switch statement
+# for basically every holopy scatterer. So right now the scatterers can't
+# have a default theory and/or valid theory attr, as this causes a dependency
+# loop.
+def determine_default_theory_for(scatterer):
     if isinstance(scatterer, Sphere):
-        return Mie()
+        theory = Mie()
     elif isinstance(scatterer, Spheres):
         if all([np.isscalar(scat.r) for scat in scatterer.scatterers]):
-            return Multisphere()
+            theory = Multisphere()
         else:
             warn("HoloPy's multisphere theory can't handle coated spheres." +
                  "Using Mie theory.")
-            return Mie()
+            theory = Mie()
     elif isinstance(scatterer, Spheroid) or isinstance(scatterer, Cylinder):
-        return Tmatrix()
+        theory = Tmatrix()
     elif DDA()._can_handle(scatterer):
-        return DDA()
+        theory = DDA()
     else:
         raise AutoTheoryFailed(scatterer)
+    return theory
 
 
 def calc_intensity(detector, scatterer, medium_index=None, illum_wavelen=None,
