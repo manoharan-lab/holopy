@@ -101,7 +101,7 @@ def interpret_theory(scatterer, theory='auto'):
     return theory
 
 
-# Used here in calc_intensity calc_holo, calc_scat_matrix, calc_field
+# Used here in calc_intensity, calc_holo, calc_scat_matrix, calc_field
 def finalize(detector, result):
     if not hasattr(detector, 'flat'):
         result = from_flat(result)
@@ -200,22 +200,14 @@ def calc_holo(detector, scatterer, medium_index=None, illum_wavelen=None,
     holo : xarray.DataArray
         Calculated hologram from the given distribution of spheres
     """
-
-    # Essentially all the time is in theory._calc_field
-    scaling = dict(_expand_parameters({'alpha': scaling}.items()))  # 6 us
-    for key in scaling.keys():
-        if hasattr(scaling[key], 'guess'):
-            scaling[key] = scaling[key].guess
-    scaling = _interpret_parameters(scaling)['alpha']  # 4 us
-    scaling = dict_to_array(detector, scaling)  # 754 ns
     theory = interpret_theory(scatterer, theory)  # 427 ns
-    uschema = prep_schema(detector, medium_index, illum_wavelen,
-                          illum_polarization)  # 2.2 ms
-    scat = theory._calc_field(
-        dict_to_array(detector, scatterer).guess,  # 235 us
-        uschema)  # 73 ms
+    uschema = prep_schema(
+        detector, medium_index, illum_wavelen, illum_polarization)  # 2.2 ms
+
+    scattered_field = theory._calc_field(scatterer.guess, uschema)
+    reference_field = uschema.illum_polarization
     holo = scattered_field_to_hologram(
-        scat * scaling, uschema.illum_polarization, uschema.normals)  # 3.89 ms
+        scattered_field * scaling, reference_field, uschema.normals)
     return finalize(uschema, holo)  # 563 us
 
 
@@ -341,6 +333,5 @@ def scattered_field_to_hologram(scat, ref, normals):
         (defaults to z hat, a detector in the x, y plane)
     """
     holo = (np.abs(scat+ref)**2 * (1 - normals)).sum(dim=vector)
-
     return holo
 
