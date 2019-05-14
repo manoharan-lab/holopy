@@ -25,9 +25,6 @@ ADDA (https://github.com/adda-team/adda) to do DDA calculations.
 #(values are too small), so we should probably nondimensionalize before talking
 #to adda.
 
-
-
-import numpy as np
 import subprocess
 import tempfile
 import glob
@@ -36,11 +33,14 @@ import shutil
 import time
 import warnings
 
-from holopy.scattering.theory.scatteringtheory import ScatteringTheory
-from holopy.scattering.scatterer import (Ellipsoid, Capsule, Cylinder,
-                                        Bisphere, Sphere, Scatterer, Spheroid)
+import numpy as np
+
 from holopy.core.utils import ensure_array
-from holopy.core.errors import DependencyMissing
+from holopy.scattering.scatterer import (
+    Ellipsoid, Capsule, Cylinder, Bisphere, Sphere, Scatterer, Spheroid)
+from holopy.scattering.errors import DependencyMissing
+from holopy.scattering.theory.scatteringtheory import ScatteringTheory
+
 
 class DDA(ScatteringTheory):
     """
@@ -72,8 +72,8 @@ class DDA(ScatteringTheory):
     This can in principle handle any scatterer, but in practice it will need
     excessive memory or computation time for particularly large scatterers.
     """
-    def __init__(self, n_cpu = 1, max_dpl_size=None, use_indicators=True, keep_raw_calculations=False,
-            addacmd=[]):
+    def __init__(self, n_cpu = 1, max_dpl_size=None, use_indicators=True,
+                 keep_raw_calculations=False, addacmd=[]):
 
         # Check that adda is present and able to run
         try:
@@ -153,7 +153,8 @@ class DDA(ScatteringTheory):
 
         cmd = []
         cmd.extend(['-shape', 'read', outf.name])
-        cmd.extend(['-dpl', str(self._dpl(medium_wavelen, medium_index, scatterer.n))])
+        cmd.extend(
+            ['-dpl', str(self._dpl(medium_wavelen, medium_index, scatterer.n))])
         cmd.extend(['-m'])
         for n in ns:
             m = n.real/medium_index
@@ -192,13 +193,15 @@ class DDA(ScatteringTheory):
         np.savetxt(outf, angles)
         outf.close()
 
-        self._run_adda(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index, temp_dir=temp_dir)
+        self._run_adda(
+            scatterer, medium_wavevec=medium_wavevec,
+            medium_index=medium_index, temp_dir=temp_dir)
 
         # Go into the results directory, there should only be one run
         result_dir = glob.glob(os.path.join(temp_dir, 'run000*'))[0]
         if self.keep_raw_calculations:
             self._last_result_dir = result_dir
- 
+
         adda_result = np.loadtxt(os.path.join(result_dir, 'ampl_scatgrid'),
                                  skiprows=1)
         # columns in result are
@@ -218,6 +221,8 @@ class DDA(ScatteringTheory):
             shutil.rmtree(temp_dir)
 
         return scat_matr
+
+
 _get_predefined_shape = {
         Ellipsoid: lambda s:(s.r[0], ['ellipsoid'] +
                                         [str(r_i/s.r[0]) for r_i in s.r[1:]]),
@@ -226,3 +231,4 @@ _get_predefined_shape = {
         Cylinder: lambda s: (s.h/2, ['cylinder', str(s.h/s.d)]),
         Bisphere: lambda s: ((s.h+s.d)/2, ['bisphere', str(s.h/s.d)]),
         Sphere: lambda s: (s.r, ['sphere'])}
+
