@@ -91,7 +91,7 @@ class Mie(ScatteringTheory):
         Returns far-field amplitude scattering matrices (with theta and phi
         dependence only) -- assume spherical wave asymptotic r dependence
         '''
-        if isinstance(scatterer, Sphere):
+        if self._can_handle(scatterer):
             scat_coeffs = self._scat_coeffs(
                 scatterer, medium_wavevec, medium_index)
 
@@ -152,7 +152,7 @@ class Mie(ScatteringTheory):
 
         where I_0 is the incident intensity.  See van de Hulst, p. 14.
         """
-        if isinstance(scatterer, Scatterers):
+        if not self._can_handle(scatterer):
             msg = "Use Multisphere to calculate radiometric quantities"
             raise InvalidScatterer(scatterer, msg)
         albl = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
