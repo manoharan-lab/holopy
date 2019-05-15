@@ -38,7 +38,7 @@ import numpy as np
 from holopy.core.utils import ensure_array
 from holopy.scattering.scatterer import (
     Ellipsoid, Capsule, Cylinder, Bisphere, Sphere, Scatterer, Spheroid)
-from holopy.scattering.errors import DependencyMissing
+from holopy.core.errors import DependencyMissing
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 
 
