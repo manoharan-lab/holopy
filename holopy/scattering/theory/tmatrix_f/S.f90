@@ -5,12 +5,12 @@ c parameters:
       parameter(maxnang=100000)
 c variables:
       integer, intent(in) :: nang, np, ndgs
-      real(kind=16), intent(in) :: axi, rat, lam, mri, mrr, eps, 
-     &                             alpha, beta, thet0, phi0
-      real(kind=16), dimension(maxnang), intent(in) :: thet, phi
+      real(kind=8), intent(in) :: lam, mrr, mri, eps
+      real(kind=8), intent(in) :: axi, rat, alpha, beta, thet0, phi0
+      real(kind=8), dimension(maxnang), intent(in) :: thet, phi
       complex(kind=16), dimension(maxnang), intent(out) :: s11, s12 
       complex(kind=16), dimension(maxnang), intent(out) :: s21, s22
-      
+
       if(nang.gt.maxnang)stop'***error: nang > maxnang in s'
 
       do  j=1, nang

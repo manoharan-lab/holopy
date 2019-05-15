@@ -254,13 +254,13 @@ C   ANY DAMAGES THAT MAY RESULT FROM THE USE OF THE PROGRAM.
       SUBROUTINE AMP_SCAT_MATRIX (AXI,RAT,LAM,MRR,MRI,EPS,NP,NDGS,ALPHA,
      &                            BETA,THET0,THET,PHI0,PHI,
      &                            S11,S12,S21,S22) 
-      IMPLICIT REAL(KIND=16) (A-H,O-Z)
+      IMPLICIT REAL(KIND=8) (A-H,O-Z)
       INCLUDE 'amplq.par.f'
-      REAL(KIND=16) AXI, RAT, LAM, MRR, MRI, X(NPNG2) ,W(NPNG2), 
-     &              S(NPNG2), SS(NPNG2), AN(NPN1), R(NPNG2),DR(NPNG2), 
-     &              PPI, PIR, PII, P, EPS, A, DDR(NPNG2), DRR(NPNG2), 
-     &              DRI(NPNG2), ANN(NPN1,NPN1), ALPHA, BETA, THET0, 
-     &              THET, PHI0, PHI
+      REAL(KIND=8) LAM, MRR, MRI, X(NPNG2) ,W(NPNG2), 
+     &             S(NPNG2), SS(NPNG2), AN(NPN1), R(NPNG2),DR(NPNG2), 
+     &             PPI, PIR, PII, P, EPS, A, DDR(NPNG2), DRR(NPNG2), 
+     &             DRI(NPNG2), ANN(NPN1,NPN1)
+      REAL(KIND=8) ALPHA, BETA, THET0, THET, PHI0, PHI, AXI, RAT
       REAL(KIND=8) TR1(NPN2,NPN2),TI1(NPN2,NPN2)
       REAL(KIND=8) XALPHA(300),XBETA(300),WALPHA(300),WBETA(300)
       REAL(KIND=4)
@@ -873,9 +873,9 @@ C                                                                     *
 C**********************************************************************
  
       SUBROUTINE CONST (NGAUSS,NMAX,MMAX,P,X,W,AN,ANN,S,SS,NP,EPS)
-      IMPLICIT REAL(KIND=16) (A-H,O-Z)
+      IMPLICIT REAL(KIND=8) (A-H,O-Z)
       INCLUDE 'amplq.par.f'
-      REAL(KIND=16) X(NPNG2), W(NPNG2), X1(NPNG1), W1(NPNG1),
+      REAL(KIND=8) X(NPNG2), W(NPNG2), X1(NPNG1), W1(NPNG1),
      &              X2(NPNG1), W2(NPNG1),
      &              S(NPNG2), SS(NPNG2),
      &              AN(NPN1), ANN(NPN1,NPN1), DD(NPN1)
@@ -926,8 +926,8 @@ C**********************************************************************
 C***************************************************************
  
       SUBROUTINE QGAUSS ( N,IND1,IND2,Z,W )
-      IMPLICIT REAL(KIND=16) (A-H,P-Z)
-      REAL(KIND=16) Z(N),W(N)
+      IMPLICIT REAL(KIND=8) (A-H,P-Z)
+      REAL(KIND=8) Z(N),W(N)
       A=1Q0
       B=2Q0
       C=3Q0
@@ -1017,8 +1017,8 @@ C**********************************************************************
       SUBROUTINE VARY (LAM,MRR,MRI,A,EPS,NP,NGAUSS,X,P,PPI,PIR,PII,
      &                 R,DR,DDR,DRR,DRI,NMAX)
       INCLUDE 'amplq.par.f'
-      IMPLICIT REAL(KIND=16) (A-H,O-Z)
-      REAL(KIND=16) X(NPNG2),R(NPNG2), DR(NPNG2), MRR, MRI, LAM,
+      IMPLICIT REAL(KIND=8) (A-H,O-Z)
+      REAL(KIND=8) X(NPNG2),R(NPNG2), DR(NPNG2), MRR, MRI, LAM,
      &              Z(NPNG2), ZR(NPNG2), ZI(NPNG2),
      &              J(NPNG2,NPN1), Y(NPNG2,NPN1), JR(NPNG2,NPN1),
      &              JI(NPNG2,NPN1), DJ(NPNG2,NPN1),
@@ -1078,8 +1078,8 @@ C                                                                     *
 C**********************************************************************
  
       SUBROUTINE RSP1 (X,NG,NGAUSS,REV,EPS,NP,R,DR)
-      IMPLICIT REAL(KIND=16) (A-H,O-Z)
-      REAL(KIND=16) X(NG), R(NG), DR(NG)
+      IMPLICIT REAL(KIND=8) (A-H,O-Z)
+      REAL(KIND=8) X(NG), R(NG), DR(NG)
       A=REV*EPS**(1Q0/3Q0)
       AA=A*A
       EE=EPS*EPS
@@ -1111,8 +1111,8 @@ C                                                                     *
 C**********************************************************************
  
       SUBROUTINE RSP2 (X,NG,REV,EPS,N,R,DR)
-      IMPLICIT REAL(KIND=16) (A-H,O-Z)
-      REAL(KIND=16) X(NG),R(NG),DR(NG)
+      IMPLICIT REAL(KIND=8) (A-H,O-Z)
+      REAL(KIND=8) X(NG),R(NG),DR(NG)
       DNP=FLOAT(N)
       DN=DNP*DNP
       DN4=DN*4Q0
@@ -1145,8 +1145,8 @@ C                                                                     *
 C**********************************************************************
  
       SUBROUTINE RSP3 (X,NG,NGAUSS,REV,EPS,R,DR)
-      IMPLICIT REAL(KIND=16) (A-H,O-Z)
-      REAL(KIND=16) X(NG),R(NG),DR(NG)
+      IMPLICIT REAL(KIND=8) (A-H,O-Z)
+      REAL(KIND=8) X(NG),R(NG),DR(NG)
       H=REV*( (2Q0/(3Q0*EPS*EPS))**(1Q0/3Q0) )
       A=H*EPS
       DO 50 I=1,NGAUSS
@@ -1180,8 +1180,8 @@ C**********************************************************************
 
       SUBROUTINE RSP4 (X,NG,REV,R,DR)
       PARAMETER (NC=10)
-      IMPLICIT REAL(KIND=16) (A-H,O-Z)
-      REAL(KIND=16) X(NG),R(NG),DR(NG),C(0:NC)
+      IMPLICIT REAL(KIND=8) (A-H,O-Z)
+      REAL(KIND=8) X(NG),R(NG),DR(NG),C(0:NC)
       COMMON /CDROP/ C,R0V
       R0=REV*R0V
       DO I=1,NG
@@ -1227,8 +1227,8 @@ C**********************************************************************
  
       SUBROUTINE BESS (X,XR,XI,NG,NMAX,NNMAX1,NNMAX2)
       INCLUDE 'amplq.par.f'
-      IMPLICIT REAL(KIND=16) (A-H,O-Z)
-      REAL(KIND=16) X(NG),XR(NG),XI(NG),
+      IMPLICIT REAL(KIND=8) (A-H,O-Z)
+      REAL(KIND=8) X(NG),XR(NG),XI(NG),
      &              J(NPNG2, NPN1), Y(NPNG2, NPN1), JR(NPNG2, NPN1),
      &              JI(NPNG2, NPN1), DJ(NPNG2, NPN1), DY(NPNG2, NPN1),
      &              DJR(NPNG2, NPN1), DJI(NPNG2, NPN1),
@@ -1267,8 +1267,8 @@ C                                                                     *
 C**********************************************************************
  
       SUBROUTINE RJB(X,Y,U,NMAX,NNMAX)
-      IMPLICIT REAL(KIND=16) (A-H,O-Z)
-      REAL(KIND=16) Y(NMAX),U(NMAX),Z(900)
+      IMPLICIT REAL(KIND=8) (A-H,O-Z)
+      REAL(KIND=8) Y(NMAX),U(NMAX),Z(900)
       L=NMAX+NNMAX
       XX=1Q0/X
       Z(L)=1Q0/(FLOAT(2*L+1)*XX)
@@ -1300,8 +1300,8 @@ C                                                                     *
 C**********************************************************************
  
       SUBROUTINE RYB(X,Y,V,NMAX)
-      IMPLICIT REAL(KIND=16) (A-H,O-Z)
-      REAL(KIND=16) Y(NMAX),V(NMAX)
+      IMPLICIT REAL(KIND=8) (A-H,O-Z)
+      REAL(KIND=8) Y(NMAX),V(NMAX)
       C=COS(X)
       S=SIN(X)
       X1=1Q0/X
@@ -1330,9 +1330,9 @@ C**********************************************************************
  
       SUBROUTINE CJB (XR,XI,YR,YI,UR,UI,NMAX,NNMAX)
       INCLUDE 'amplq.par.f'
-      IMPLICIT REAL(KIND=16) (A-H,O-Z)
-      REAL(KIND=16) YR(NMAX),YI(NMAX),UR(NMAX),UI(NMAX)
-      REAL(KIND=16) CYR(NPN1),CYI(NPN1),CZR(5000),CZI(5000),
+      IMPLICIT REAL(KIND=8) (A-H,O-Z)
+      REAL(KIND=8) YR(NMAX),YI(NMAX),UR(NMAX),UI(NMAX)
+      REAL(KIND=8) CYR(NPN1),CYI(NPN1),CZR(5000),CZI(5000),
      *        CUR(NPN1),CUI(NPN1)
       L=NMAX+NNMAX
       XRXI=1Q0/(XR*XR+XI*XI)
@@ -1412,8 +1412,8 @@ C**********************************************************************
       SUBROUTINE TMATR0 (NGAUSS,X,W,AN,ANN,S,SS,PPI,PIR,PII,R,DR,DDR,
      *                  DRR,DRI,NMAX,NCHECK)
       INCLUDE 'amplq.par.f'
-      IMPLICIT REAL(KIND=16) (A-H,O-Z)
-      REAL(KIND=16) X(NPNG2),W(NPNG2),AN(NPN1),S(NPNG2),SS(NPNG2),
+      IMPLICIT REAL(KIND=8) (A-H,O-Z)
+      REAL(KIND=8) X(NPNG2),W(NPNG2),AN(NPN1),S(NPNG2),SS(NPNG2),
      *        R(NPNG2),DR(NPNG2),SIG(NPN2),
      *        J(NPNG2,NPN1),Y(NPNG2,NPN1),
      *        JR(NPNG2,NPN1),JI(NPNG2,NPN1),DJ(NPNG2,NPN1),
@@ -1423,7 +1423,7 @@ C**********************************************************************
      *        DRI(NPNG2),DS(NPNG2),DSS(NPNG2),RR(NPNG2),
      *        DV1(NPN1),DV2(NPN1)
  
-      REAL(KIND=16) R11(NPN1,NPN1),R12(NPN1,NPN1),
+      REAL(KIND=8) R11(NPN1,NPN1),R12(NPN1,NPN1),
      *        R21(NPN1,NPN1),R22(NPN1,NPN1),
      *        I11(NPN1,NPN1),I12(NPN1,NPN1),
      *        I21(NPN1,NPN1),I22(NPN1,NPN1),
@@ -1651,8 +1651,8 @@ C**********************************************************************
       SUBROUTINE TMATR (M,NGAUSS,X,W,AN,ANN,S,SS,PPI,PIR,PII,R,DR,DDR,
      *                  DRR,DRI,NMAX,NCHECK)
       INCLUDE 'amplq.par.f'
-      IMPLICIT REAL (A-H,O-Z)
-      REAL(KIND=16) X(NPNG2),W(NPNG2),AN(NPN1),S(NPNG2),SS(NPNG2),
+      IMPLICIT REAL(KIND=8) (A-H,O-Z)
+      REAL(KIND=8) X(NPNG2),W(NPNG2),AN(NPN1),S(NPNG2),SS(NPNG2),
      *        R(NPNG2),DR(NPNG2),SIG(NPN2),
      *        J(NPNG2,NPN1),Y(NPNG2,NPN1),
      *        JR(NPNG2,NPN1),JI(NPNG2,NPN1),DJ(NPNG2,NPN1),
@@ -1661,7 +1661,7 @@ C**********************************************************************
      *        D1(NPNG2,NPN1),D2(NPNG2,NPN1),
      *        DRI(NPNG2),DS(NPNG2),DSS(NPNG2),RR(NPNG2),
      *        DV1(NPN1),DV2(NPN1)
-      REAL(KIND=16) R11(NPN1,NPN1),R12(NPN1,NPN1),
+      REAL(KIND=8) R11(NPN1,NPN1),R12(NPN1,NPN1),
      *        R21(NPN1,NPN1),R22(NPN1,NPN1),
      *        I11(NPN1,NPN1),I12(NPN1,NPN1),
      *        I21(NPN1,NPN1),I22(NPN1,NPN1),
@@ -1934,8 +1934,8 @@ c     0.LE.x.LE.1
  
       SUBROUTINE VIG (X,NMAX,M,DV1,DV2)
       INCLUDE 'amplq.par.f'
-      IMPLICIT REAL(KIND=16) (A-H,O-Z)
-      REAL(KIND=16) DV1(NPN1), DV2(NPN1)
+      IMPLICIT REAL(KIND=8) (A-H,O-Z)
+      REAL(KIND=8) DV1(NPN1), DV2(NPN1)
       A=1Q0
       QS=SQRT(1Q0-X*X)
       QS1=1Q0/QS
@@ -1993,7 +1993,7 @@ C**********************************************************************
       SUBROUTINE TT(NMAX,NCHECK)
       INCLUDE 'amplq.par.f'
       IMPLICIT REAL(KIND=8) (A-H,O-Z)
-      REAL(KIND=16) F(NPN2,NPN2),B(NPN2),WORK(NPN2),COND,
+      REAL(KIND=8) F(NPN2,NPN2),B(NPN2),WORK(NPN2),COND,
      *       QR(NPN2,NPN2),QI(NPN2,NPN2),
      *       RGQR(NPN2,NPN2),RGQI(NPN2,NPN2),
      *       A(NPN2,NPN2),C(NPN2,NPN2),D(NPN2,NPN2),E(NPN2,NPN2)
@@ -2102,7 +2102,7 @@ C********************************************************************
       PARAMETER (NC=10, NG=60)
       IMPLICIT REAL(KIND=8) (A-H,O-Z)
       REAL(KIND=8) X(NG),W(NG)
-      REAL(KIND=16) C(0:NC),R0V
+      REAL(KIND=8) C(0:NC),R0V
       COMMON /CDROP/ C,R0V
       C(0)=-0.0481 Q0
       C(1)= 0.0359 Q0
