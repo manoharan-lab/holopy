@@ -204,7 +204,8 @@ def calc_holo(detector, scatterer, medium_index=None, illum_wavelen=None,
     uschema = prep_schema(
         detector, medium_index, illum_wavelen, illum_polarization)  # 2.2 ms
 
-    scattered_field = theory._calc_field(scatterer.guess, uschema)
+    scattered_field = theory._calculate_scattered_field(
+        scatterer.guess, uschema)
     reference_field = uschema.illum_polarization
     holo = scattered_field_to_hologram(
         scattered_field * scaling, reference_field, uschema.normals)
@@ -311,8 +312,8 @@ def calc_field(detector, scatterer, medium_index=None, illum_wavelen=None,
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=illum_polarization)
-    result = theory._calc_field(dict_to_array(detector, scatterer).guess,
-                                uschema)
+    result = theory._calculate_scattered_field(
+        dict_to_array(detector, scatterer).guess, uschema)
     return finalize(uschema, result)
 
 
