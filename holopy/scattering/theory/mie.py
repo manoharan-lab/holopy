@@ -62,15 +62,17 @@ class Mie(ScatteringTheory):
     the maximum size parameter x = ka is limited to 1000.
     """
 
-    # don't need to define __init__() because we'll use the base class
-    # constructor
-
-    def __init__(self, compute_escat_radial = True,
-                 full_radial_dependence = True,
-                 eps1 = 1e-2, eps2 = 1e-16):
-        #compute_escat_radial determines if radial components will be calculated
-        #full_radial dependence deermines if the full spherical Hankel function
-        # will be used, or if it will be approximated to be in the far field.
+    def __init__(self, compute_escat_radial=True, full_radial_dependence=True,
+                 eps1=1e-2, eps2=1e-16):
+        """
+        Parameters
+        ----------
+        compute_escat_radial : bool
+            determines if radial components will be calculated
+        full_radial dependence : bool
+            determines if the full spherical Hankel function will be used,
+            or if it will be approximated to be in the far field.
+        """
         self.compute_escat_radial = compute_escat_radial
         self.full_radial_dependence = full_radial_dependence
         self.eps1 = eps1
@@ -80,7 +82,6 @@ class Mie(ScatteringTheory):
                                     "due to a problem with compiling Fortran "
                                     "code, as it should be built with the rest"
                                     " of HoloPy through f2py.")
-        # call base class constructor
         super().__init__()
 
     def _can_handle(self, scatterer):
