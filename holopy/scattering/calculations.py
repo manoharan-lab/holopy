@@ -25,8 +25,7 @@ calc_intensity and calc_holo, based on subclass's calc_field
 import xarray as xr
 from holopy.core.holopy_object import SerializableMetaclass
 from holopy.core.metadata import (
-    vector, illumination, update_metadata, to_vector, copy_metadata,
-    from_flat, dict_to_array)
+    vector, illumination, update_metadata, to_vector, copy_metadata, from_flat)
 from holopy.core.utils import dict_without, ensure_array
 from holopy.scattering.scatterer import (
     Sphere, Spheres, Spheroid, Cylinder, _expand_parameters,
@@ -312,8 +311,7 @@ def calc_field(detector, scatterer, medium_index=None, illum_wavelen=None,
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=illum_polarization)
-    result = theory._calculate_scattered_field(
-        dict_to_array(detector, scatterer).guess, uschema)
+    result = theory._calculate_scattered_field(scatterer.guess, uschema)
     return finalize(uschema, result)
 
 
