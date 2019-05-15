@@ -30,7 +30,7 @@ import numpy as np
 from holopy.core.utils import ensure_array
 from holopy.core.errors import DependencyMissing
 from holopy.scattering.errors import TheoryNotCompatibleError, InvalidScatterer
-from holopy.scattering.scatterer import Sphere, Scatterers
+from holopy.scattering.scatterer import Sphere, Spheres
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 try:
     from holopy.scattering.theory.mie_f import (mieangfuncs, miescatlib,
@@ -153,7 +153,7 @@ class Mie(ScatteringTheory):
 
         where I_0 is the incident intensity.  See van de Hulst, p. 14.
         """
-        if not self._can_handle(scatterer):
+        if isinstance(scatterer, Spheres):
             msg = "Use Multisphere to calculate radiometric quantities"
             raise InvalidScatterer(scatterer, msg)
         albl = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
