@@ -22,7 +22,11 @@ calc_intensity and calc_holo, based on subclass's calc_field
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
+from warnings import warn
+
 import xarray as xr
+import numpy as np
+
 from holopy.core.holopy_object import SerializableMetaclass
 from holopy.core.metadata import (
     vector, illumination, update_metadata, to_vector, copy_metadata, from_flat)
@@ -31,17 +35,9 @@ from holopy.scattering.scatterer import (
     Sphere, Spheres, Spheroid, Cylinder, _expand_parameters,
     _interpret_parameters)
 from holopy.scattering.errors import AutoTheoryFailed, MissingParameter
-
-try:
-    from holopy.scattering.theory import Mie, Multisphere
-    from holopy.scattering.theory import Tmatrix
-    from holopy.scattering.theory.dda import DDA
-except:
-    pass
-    # FIXME why is this a try-pass?
-
-import numpy as np
-from warnings import warn
+from holopy.scattering.theory import Mie, Multisphere
+from holopy.scattering.theory import Tmatrix
+from holopy.scattering.theory.dda import DDA
 
 
 # Used in scattering.tests.test_2_color,
