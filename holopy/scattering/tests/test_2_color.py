@@ -72,6 +72,18 @@ class TestHologramCalculation(object):
             np.array([green_hologram.values])])
         assert_equal(both_hologram.values, joined)
 
+    @attr("fast")
+    def test_calc_holo_with_twocolor_alpha(self):
+        detector = detector_grid(
+            5, 1, extra_dims={'illumination': ['red', 'green']})
+        scatterer = Sphere(
+            r=0.5, n={'red': 1.5, 'green': 1.6}, center=(2, 2, 2))
+        alpha = {'red': 0.8, 'green': 0.9}
+        result = calc_holo(
+            detector, scatterer, scaling=alpha, illum_polarization=(0, 1),
+            illum_wavelen={'red': 0.66, 'green': 0.52}, medium_index=1.33)
+        assert result is not None
+
 
 @attr("fast")
 def test_select():
