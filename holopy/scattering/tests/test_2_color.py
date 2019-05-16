@@ -21,6 +21,7 @@ calc_intensity and calc_holo, based on subclass's calc_field
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
+import unittest
 from collections import OrderedDict
 
 import numpy as np
@@ -35,21 +36,41 @@ from holopy.core.tests.common import (
     assert_equal, assert_obj_close, assert_allclose)
 
 
-@attr("medium")
-def test_hologram():
-    r_sph = Sphere(n = 1.5, r=.5, center=(1,1,1))
-    g_sph = Sphere(n = 2, r=.5, center=(1,1,1))
-    b_sph = Sphere(n = OrderedDict([('red',1.5),('green',2)]), r=.5, center=(1,1,1))
 
-    sch1 = update_metadata(detector_grid(shape=2, spacing=1), illum_polarization=(0,1), medium_index=1.3)
-    sch2 = update_metadata(detector_grid(shape=2,spacing=1,extra_dims={'illumination':['red','green']}),
-                illum_polarization=(0,1),medium_index=1.3)
+class TestHologramCalculation(object):
+    @attr("medium")
+    def test_calc_holo_with_twocolor_index(self):
+        indices = OrderedDict([('red',1.5),('green',2)])
+        radius = 0.5
+        center = (1, 1, 1)
+        illum_wavelen = OrderedDict([('red', 0.66), ('green', 0.52)])
 
-    red = calc_holo(sch1, r_sph, illum_wavelen = .66).values
-    grn = calc_holo(sch1, g_sph, illum_wavelen = .52).values
-    joined = np.concatenate([np.array([red]),np.array([grn])])
-    both = calc_holo(sch2,b_sph, illum_wavelen=OrderedDict([('red',0.66),('green',0.52)]))
-    assert_equal(both.values, joined)
+        sphere_red = Sphere(n=indices['red'], r=radius, center=center)
+        sphere_green = Sphere(n=indices['green'], r=radius, center=center)
+        sphere_both = Sphere(n=indices, r=radius, center=center)
+
+        schema_single_color = update_metadata(
+            detector_grid(shape=2, spacing=1),
+            illum_polarization=(0,1),
+            medium_index=1.3)
+        schema_two_colors = update_metadata(
+            detector_grid(
+                shape=2,spacing=1,extra_dims={'illumination':['red','green']}),
+            illum_polarization=(0,1),
+            medium_index=1.3)
+
+        red_hologram = calc_holo(
+            schema_single_color, sphere_red, illum_wavelen=illum_wavelen['red'])
+        green_hologram = calc_holo(
+            schema_single_color, sphere_green,
+            illum_wavelen=illum_wavelen['green'])
+        both_hologram = calc_holo(
+            schema_two_colors,sphere_both, illum_wavelen=illum_wavelen)
+
+        joined = np.concatenate([
+            np.array([red_hologram.values]),
+            np.array([green_hologram.values])])
+        assert_equal(both_hologram.values, joined)
 
 
 @attr("fast")
@@ -81,4 +102,8 @@ def test_prep_schema():
     assert_obj_close(prep_schema(sch_x,1,wl_d,pol_d),all_in)
     assert_obj_close(prep_schema(sch_x,1,wl_l,pol_d),all_in)
     assert_obj_close(prep_schema(sch_f,1,wl_x,pol_x),all_in)
+
+
+if __name__ == '__main__':
+    unittest.main()
 
