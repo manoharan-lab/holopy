@@ -23,12 +23,14 @@ Defines Sphere, a scattering primitive
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
-import numpy as np
 from copy import copy
 
-from .scatterer import CenteredScatterer, Indicators
-from ..errors import InvalidScatterer
-from ...core.utils import ensure_array, updated
+import numpy as np
+
+from holopy.scattering.scatterer.scatterer import CenteredScatterer, Indicators
+from holopy.scattering.errors import InvalidScatterer
+from holopy.core.utils import ensure_array, updated
+
 
 class Sphere(CenteredScatterer):
     '''
@@ -48,14 +50,14 @@ class Sphere(CenteredScatterer):
 
     '''
 
-    def __init__(self, n = None, r = .5, center = None):
+    def __init__(self, n=None, r=.5, center=None):
         self.n = n
         self.r = r
         super(Sphere, self).__init__(center)
 
         try:
             if np.any(np.array(self.r) < 0):
-                raise InvalidScatterer(self,"radius is negative")
+                raise InvalidScatterer(self, "radius is negative")
         except TypeError:
             # Simplest solution to deal with spheres with a parameter or prior
             # as arguments, just don't check them. It might be worth doing some
@@ -66,7 +68,8 @@ class Sphere(CenteredScatterer):
     @property
     def indicators(self):
         rs = ensure_array(self.r)
-        funcs = [(lambda points, ri=ri: (points**2).sum(-1) < ri**2) for ri in rs]
+        funcs = [
+            (lambda points, ri=ri: (points**2).sum(-1) < ri**2) for ri in rs]
         r = max(rs)
         return Indicators(funcs, [[-r, r], [-r, r], [-r, r]])
 
@@ -93,6 +96,7 @@ class Sphere(CenteredScatterer):
 
         return self.from_parameters(updated(self.parameters, overrides))
 
+
 class LayeredSphere(Sphere):
     """
     Alternative description of a sphere where you specify layer
@@ -107,7 +111,7 @@ class LayeredSphere(Sphere):
     center : length 3 listlike
         specifies coordinates of center of sphere
     """
-    def __init__(self, n = None, t = None, center = None):
+    def __init__(self, n=None, t=None, center=None):
         self.n = ensure_array(n)
         self.t = ensure_array(t)
         self.center = center
@@ -119,3 +123,4 @@ class LayeredSphere(Sphere):
         for i, t in enumerate(self.t[1:]):
             r[i+1] = r[i] + t
         return r
+

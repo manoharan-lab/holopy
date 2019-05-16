@@ -21,14 +21,17 @@ calc_intensity and calc_holo, based on subclass's calc_field
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
+import unittest
+
 from nose.plugins.attrib import attr
 
-from .. import Sphere, Spheres, Mie, Multisphere
-from ...core import detector_grid
-from ...core.tests.common import assert_obj_close
-from ..calculations import *
+from holopy.scattering import (
+    Sphere, Spheres, Mie, Multisphere, Spheroid, Cylinder, Tmatrix)
+from holopy.core import detector_grid
+from holopy.core.tests.common import assert_obj_close
+from holopy.scattering.calculations import *
 
-scatterer = Sphere(n = 1.6, r=.5, center=(5, 5, 5))
+scatterer = Sphere(n=1.6, r=.5, center=(5, 5, 5))
 medium_index = 1.33
 locations = detector_grid(shape=(20, 20), spacing=.1)
 wavelen = 0.66
@@ -38,21 +41,54 @@ polarization=(0, 1)
 def test_calc_holo():
     holo = calc_holo(locations, scatterer, medium_index, wavelen, polarization)
 
+
 def test_calc_field():
     field = calc_field(locations, scatterer, medium_index, wavelen, polarization)
+
 
 @attr("fast")
 def test_calc_cross_section():
     cross = calc_cross_sections(scatterer, medium_index, wavelen, polarization)
 
+
 def test_calc_intensity():
     intensity = calc_intensity(locations, scatterer, medium_index, wavelen, polarization)
+
 
 @attr("fast")
 def test_calc_scat_matrix():
     matr = calc_scat_matrix(locations, scatterer, medium_index, wavelen)
 
-@attr("fast")
-def test_determine_theory():
-    assert_obj_close(determine_theory(Sphere()), Mie())
-    assert_obj_close(determine_theory(Spheres([Sphere(), Sphere()])), Multisphere())
+
+class TestDetermineTheory(unittest.TestCase):
+    @attr("fast")
+    def test_determine_default_theory_for_on_sphere(self):
+        default_theory = determine_default_theory_for(Sphere())
+        correct_theory = Mie()
+        self.assertTrue(default_theory == correct_theory)
+
+    @attr('fast')
+    def test_determine_default_theory_for_on_spheres(self):
+        default_theory = determine_default_theory_for(
+            Spheres([Sphere(), Sphere()]))
+        correct_theory = Multisphere()
+        self.assertTrue(default_theory == correct_theory)
+
+    @attr('fast')
+    def test_determine_default_theory_for_on_spheroid(self):
+        scatterer = Spheroid(n=1.33, r=(1.0, 2.0))
+        default_theory = determine_default_theory_for(scatterer)
+        correct_theory = Tmatrix()
+        self.assertTrue(default_theory == correct_theory)
+
+    @attr('fast')
+    def test_determine_default_theory_for_on_cylinder(self):
+        scatterer = Cylinder(n=1.33, h=2, d=1)
+        default_theory = determine_default_theory_for(scatterer)
+        correct_theory = Tmatrix()
+        self.assertTrue(default_theory == correct_theory)
+
+
+if __name__ == '__main__':
+    unittest.main()
+

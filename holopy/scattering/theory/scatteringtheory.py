@@ -48,6 +48,12 @@ def stack_spherical(a):
     return np.vstack((a['r'], a['theta'], a['phi']))
 
 
+
+# Notes:
+# `sphere_coords` is only called here (and in the tests). Yet is gives
+# multiple outputs. So you can just change the sphere_coords function
+# to return exactly what you need.
+
 class ScatteringTheory(HoloPyObject):
     """
     Defines common interface for all scattering theories.
@@ -66,13 +72,15 @@ class ScatteringTheory(HoloPyObject):
     about matrices.
     """
 
-    def _calc_field(self, scatterer, schema):
+    def _calculate_scattered_field(self, scatterer, schema):
         """
-        Calculate fields.  Implemented in derived classes only.
+        Implemented in derived classes only.
+
         Parameters
         ----------
         scatterer : :mod:`.scatterer` object
             (possibly composite) scatterer for which to compute scattering
+
         Returns
         -------
         e_field : :mod:`.VectorGrid`
@@ -87,7 +95,7 @@ class ScatteringTheory(HoloPyObject):
                         schema.illum_wavelen.sel(illumination=illum).values)[0],
                     illum_polarization=ensure_array(
                         schema.illum_polarization.sel(illumination=illum).values))
-                this_field = self._calc_field(
+                this_field = self._calculate_scattered_field(
                     scatterer.select({illumination: illum}), this_schema)
                 field.append(this_field)
             field = clean_concat(field, dim=schema.illum_wavelen.illumination)
