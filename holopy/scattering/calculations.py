@@ -41,8 +41,6 @@ from holopy.scattering.theory import Tmatrix
 from holopy.scattering.theory.dda import DDA
 
 
-# Used in scattering.tests.test_2_color,
-# and here in calc_holo, calc_scat_matrix, calc_field
 def prep_schema(detector, medium_index, illum_wavelen, illum_polarization):
     detector = update_metadata(
         detector, medium_index, illum_wavelen, illum_polarization)
@@ -88,7 +86,6 @@ def prep_schema(detector, medium_index, illum_wavelen, illum_polarization):
     return detector
 
 
-# Used here in calc_holo, calc_cross_section, calc_scat_matrix, calc_field
 def interpret_theory(scatterer, theory='auto'):
     if isinstance(theory, str) and theory == 'auto':
         theory = determine_default_theory_for(scatterer.guess)
@@ -97,16 +94,11 @@ def interpret_theory(scatterer, theory='auto'):
     return theory
 
 
-# Used here in calc_intensity, calc_holo, calc_scat_matrix, calc_field
 def finalize(detector, result):
     if not hasattr(detector, 'flat'):
         result = from_flat(result)
     return copy_metadata(detector, result, do_coords=False)
 
-
-# Used in inference.model, but commented out
-# Used in scattering.tests.tests_calculations, which just tests this function
-# Used here in interpret_theory
 
 # Some comments on why `determine_default_theory_for` exists, rather than each
 # Scatterer class knowing what a good default theory is.
@@ -196,23 +188,24 @@ def calc_holo(detector, scatterer, medium_index=None, illum_wavelen=None,
     holo : xarray.DataArray
         Calculated hologram from the given distribution of spheres
     """
-    theory = interpret_theory(scatterer, theory)  # 427 ns
+    theory = interpret_theory(scatterer, theory)
     uschema = prep_schema(
-        detector, medium_index, illum_wavelen, illum_polarization)  # 2.2 ms
+        detector, medium_index, illum_wavelen, illum_polarization)
 
-    scaling = dict(_expand_parameters({'alpha':scaling}.items()))  # 6 us
+    # Massage scaling into an xarray with color channels if needed
+    scaling = dict(_expand_parameters({'alpha': scaling}.items()))
     for key in scaling.keys():
-        if hasattr(scaling[key],'guess'):
+        if hasattr(scaling[key], 'guess'):
             scaling[key] = scaling[key].guess
-    scaling = _interpret_parameters(scaling)['alpha']  # 4 us
-    scaling = dict_to_array(detector, scaling)  # 754 ns
+    scaling = _interpret_parameters(scaling)['alpha']
+    scaling = dict_to_array(detector, scaling)
 
     scattered_field = theory._calculate_scattered_field(
         scatterer.guess, uschema)
     reference_field = uschema.illum_polarization
     holo = scattered_field_to_hologram(
         scattered_field * scaling, reference_field, uschema.normals)
-    return finalize(uschema, holo)  # 563 us
+    return finalize(uschema, holo)
 
 
 def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None,
