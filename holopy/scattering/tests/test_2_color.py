@@ -36,7 +36,7 @@ from holopy.core.tests.common import (
     assert_equal, assert_obj_close, assert_allclose)
 
 
-class TestHologramCalculation(object):
+class TestHologramCalculation(unittest.TestCase):
     @attr("medium")
     def test_calc_holo_with_twocolor_index(self):
         indices = OrderedDict([('red',1.5),('green',2)])
