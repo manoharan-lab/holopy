@@ -29,7 +29,8 @@ import numpy as np
 
 from holopy.core.holopy_object import SerializableMetaclass
 from holopy.core.metadata import (
-    vector, illumination, update_metadata, to_vector, copy_metadata, from_flat)
+    vector, illumination, update_metadata, to_vector, copy_metadata, from_flat,
+    dict_to_array)
 from holopy.core.utils import dict_without, ensure_array
 from holopy.scattering.scatterer import (
     Sphere, Spheres, Spheroid, Cylinder, _expand_parameters,
@@ -198,6 +199,13 @@ def calc_holo(detector, scatterer, medium_index=None, illum_wavelen=None,
     theory = interpret_theory(scatterer, theory)  # 427 ns
     uschema = prep_schema(
         detector, medium_index, illum_wavelen, illum_polarization)  # 2.2 ms
+
+    scaling = dict(_expand_parameters({'alpha':scaling}.items()))  # 6 us
+    for key in scaling.keys():
+        if hasattr(scaling[key],'guess'):
+            scaling[key] = scaling[key].guess
+    scaling = _interpret_parameters(scaling)['alpha']  # 4 us
+    scaling = dict_to_array(detector, scaling)  # 754 ns
 
     scattered_field = theory._calculate_scattered_field(
         scatterer.guess, uschema)
