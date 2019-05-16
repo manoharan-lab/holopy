@@ -27,11 +27,12 @@ import numpy as np
 import xarray as xr
 from nose.plugins.attrib import attr
 
-from .. import Sphere, Spheres, calc_holo
-from ...core.metadata import detector_grid, update_metadata, to_vector
-from ...inference import prior
-from ..calculations import prep_schema
-from ...core.tests.common import assert_equal, assert_obj_close, assert_allclose
+from holopy.scattering import Sphere, Spheres, calc_holo
+from holopy.scattering.calculations import prep_schema
+from holopy.core.metadata import detector_grid, update_metadata, to_vector
+from holopy.inference import prior
+from holopy.core.tests.common import (
+    assert_equal, assert_obj_close, assert_allclose)
 
 
 @attr("medium")
@@ -43,7 +44,7 @@ def test_hologram():
     sch1 = update_metadata(detector_grid(shape=2, spacing=1), illum_polarization=(0,1), medium_index=1.3)
     sch2 = update_metadata(detector_grid(shape=2,spacing=1,extra_dims={'illumination':['red','green']}),
                 illum_polarization=(0,1),medium_index=1.3)
-    
+
     red = calc_holo(sch1, r_sph, illum_wavelen = .66).values
     grn = calc_holo(sch1, g_sph, illum_wavelen = .52).values
     joined = np.concatenate([np.array([red]),np.array([grn])])
@@ -51,6 +52,7 @@ def test_hologram():
     assert_equal(both.values, joined)
 
 
+@attr("fast")
 def test_select():
     s = Sphere(n=xr.DataArray([1.5,1.7],dims='ill',coords={'ill':['r','g']}),center=[0,0,0],r=0.5)
     assert_equal(s.select({'ill':'g'}),Sphere(n=1.7,center=[0,0,0],r=0.5))
@@ -63,12 +65,12 @@ def test_select():
 def test_prep_schema():
     sch_f = detector_grid(shape=5,spacing=1)
     sch_x = detector_grid(shape=5,spacing=1,extra_dims={'illumination':['red','green','blue']})
-    
+
     wl_f = 0.5
     wl_l = [0.5,0.6,0.7]
     wl_d = OrderedDict([('red', 0.5), ('green', 0.6), ('blue', 0.7)])
     wl_x = xr.DataArray([0.5,0.6,0.7],dims='illumination',coords={'illumination':['red','green','blue']})
-    
+
     pol_f = (0,1)
     pol_d = OrderedDict([('red', (0,1)), ('green', (1,0)), ('blue', (0.5,0.5))])
 
@@ -79,4 +81,4 @@ def test_prep_schema():
     assert_obj_close(prep_schema(sch_x,1,wl_d,pol_d),all_in)
     assert_obj_close(prep_schema(sch_x,1,wl_l,pol_d),all_in)
     assert_obj_close(prep_schema(sch_f,1,wl_x,pol_x),all_in)
-    
+
