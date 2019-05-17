@@ -26,7 +26,7 @@ Uses superposition to calculate scattering from multiple spheres.
 
 import numpy as np
 
-from holopy.scattering.scatterer import Sphere, Scatterers
+from holopy.scattering.scatterer import Sphere
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 from holopy.scattering.theory.mielensfunctions import MieLensCalculator
 
