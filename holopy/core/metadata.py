@@ -266,28 +266,6 @@ def from_flat(a):
         return a.unstack('flat')
     return a
 
-def sphere_coords(a, origin=(0,0,0), wavevec=1):
-    if hasattr(a,'theta') and hasattr(a, 'phi'):
-        out = {'theta': a.theta.values,
-               'phi': a.phi.values,
-               'point': a.point.values,
-               }
-        if hasattr(a, 'r') and any(np.isfinite(a.r)):
-            out['r'] = a.r.values * wavevec
-        return out
-
-    else:
-        if origin is None:
-            raise ValueError('Cannot convert detector to spherical coordinates without an origin')
-        f = flat(a)  # 1.6 ms
-        dimstr = primdim(f)  # 907 ns
-        x = f.x.values - origin[0]  # 0.7 ms, all but 0.01 is from overhead
-        y = f.y.values - origin[1]  # 0.7 ms
-        # we define positive z opposite light propagation, so we have to invert
-        z = origin[2] - f.z.values  # 0.7 ms
-        out = to_spherical(x, y, z)  # 3.3 ms
-        return updated(out, {'r':out['r'] * wavevec, dimstr:f[dimstr]})  # 33 us
-
 def get_values(a):
     return getattr(a, 'values', a)
 

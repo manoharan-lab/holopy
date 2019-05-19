@@ -23,14 +23,26 @@ calc_intensity and calc_holo, based on subclass's calc_field
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
+# TODO:
+# 1. Make sphere_coords a private class method of ScatteringTheory
+#    This involves moving all the tests over as well.
+# 2. Enforce the sphere_coords to be the correct return type always.
+# 3. Remove the type-checking in ScatteringTheory.
+# 4. Make the private class method of ScatteringTheory a _transform_to_
+#    calculation_coordinates or something, which is sphere_coords for
+#    scattering theory and cylindrical coords for mielens.
+
+from warnings import warn
+
 import numpy as np
 import xarray as xr
-from warnings import warn
+
+from holopy.core.math import to_spherical
 from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering.scatterer import Scatterers, Sphere
 from holopy.scattering.errors import TheoryNotCompatibleError, MissingParameter
-from holopy.core.metadata import (vector, illumination, sphere_coords,
-                                  primdim, update_metadata, clean_concat)
+from holopy.core.metadata import (
+    vector, illumination, flat, primdim, update_metadata, clean_concat)
 from holopy.core.utils import dict_without, updated, ensure_array
 try:
     from holopy.scattering.theory.mie_f import mieangfuncs
@@ -121,7 +133,7 @@ class ScatteringTheory(HoloPyObject):
         wavevector = get_wavevec_from(schema)
         if isinstance(scatterer, Sphere) and scatterer.center is None:
             raise MissingParameter("center")
-        positions = sphere_coords(
+        positions = self.sphere_coords(
             schema, scatterer.center, wavevec=wavevector)  # 8.6 ms !!
         field = np.transpose(
             self._raw_fields(
@@ -186,7 +198,7 @@ class ScatteringTheory(HoloPyObject):
         situations. You only need to instantiate a theory object if it
         has adjustable parameters and you want to use non-default values.
         """
-        positions = sphere_coords(schema, scatterer.center)
+        positions = self.sphere_coords(schema, scatterer.center)
         scat_matrs = self._raw_scat_matrs(
             scatterer, stack_spherical(positions),
             medium_wavevec=get_wavevec_from(schema), medium_index=schema.medium_index)
@@ -217,3 +229,27 @@ class ScatteringTheory(HoloPyObject):
                 kr, phi, scat_matr[i], illum_polarization.values[:2])
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
         return fields.T
+
+    @staticmethod
+    def sphere_coords(a, origin=(0,0,0), wavevec=1):
+        if hasattr(a,'theta') and hasattr(a, 'phi'):
+            out = {'theta': a.theta.values,
+                   'phi': a.phi.values,
+                   'point': a.point.values,
+                   }
+            if hasattr(a, 'r') and any(np.isfinite(a.r)):
+                out['r'] = a.r.values * wavevec
+            return out
+
+        else:
+            if origin is None:
+                raise ValueError('Cannot convert detector to spherical coordinates without an origin')
+            f = flat(a)  # 1.6 ms
+            dimstr = primdim(f)  # 907 ns
+            x = f.x.values - origin[0]  # 0.7 ms, all but 0.01 is from overhead
+            y = f.y.values - origin[1]  # 0.7 ms
+            # we define positive z opposite light propagation, so we have to invert
+            z = origin[2] - f.z.values  # 0.7 ms
+            out = to_spherical(x, y, z)  # 3.3 ms
+            return updated(out, {'r':out['r'] * wavevec, dimstr:f[dimstr]})  # 33 us
+

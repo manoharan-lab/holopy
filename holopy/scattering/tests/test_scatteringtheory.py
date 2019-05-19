@@ -6,8 +6,9 @@ from numpy.testing import assert_allclose, assert_equal
 from nose.plugins.attrib import attr
 
 from holopy.core import detector_grid, detector_points
-from holopy.core.metadata import sphere_coords, update_metadata
-from holopy.scattering.theory.scatteringtheory import stack_spherical
+from holopy.core.metadata import update_metadata
+from holopy.scattering.theory.scatteringtheory import (
+    ScatteringTheory, stack_spherical)
 
 
 
@@ -15,7 +16,7 @@ class TestSphereCoords(unittest.TestCase):
     @attr("fast")
     def test_sphere_coords(self):
         detector = detector_grid(shape=(2, 2), spacing=0.1)
-        spherical = sphere_coords(
+        spherical = ScatteringTheory.sphere_coords(
             detector, wavevec=2*np.pi*1.33/.66, origin=(0, 0, 1))
         pos = stack_spherical(spherical).T
         true_pos = np.array([
