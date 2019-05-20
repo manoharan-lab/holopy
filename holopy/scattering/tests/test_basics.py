@@ -20,13 +20,13 @@ import xarray as xr
 from numpy.testing import assert_allclose, assert_equal
 from nose.plugins.attrib import attr
 
-from ..scatterer import Sphere, Difference
-from ...core import detector_grid, detector_points
-from ..theory import Mie
-from ...core.tests.common import assert_obj_close
-from ...core.metadata import update_metadata
-from ..calculations import calc_intensity, calc_holo, calc_field
-from ..theory.scatteringtheory import stack_spherical
+from holopy.core import detector_grid, detector_points
+from holopy.core.tests.common import assert_obj_close
+from holopy.core.metadata import update_metadata
+from holopy.scattering.scatterer import Sphere, Difference
+from holopy.scattering.theory import Mie
+from holopy.scattering.calculations import calc_intensity, calc_holo, calc_field
+from holopy.scattering.theory.scatteringtheory import stack_spherical
 
 # small tests against results from the previous version of holopy
 
