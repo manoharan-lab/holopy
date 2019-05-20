@@ -106,6 +106,8 @@ class ScatteringTheory(HoloPyObject):
         e_field : :mod:`.VectorGrid`
             scattered electric field
         """
+        if scatterer.center is None:
+            raise MissingParameter("center")
         if len(ensure_array(schema.illum_wavelen)) > 1:
             field = []
             for illum in schema.illum_wavelen.illumination.values:
@@ -137,10 +139,7 @@ class ScatteringTheory(HoloPyObject):
         return field
 
     def _get_field_from(self, scatterer, schema):
-        # FIXME this checks a global value in a loop.
         wavevector = get_wavevec_from(schema)
-        if isinstance(scatterer, Sphere) and scatterer.center is None:
-            raise MissingParameter("center")
         positions = self.sphere_coords(
             schema, scatterer.center, wavevec=wavevector)  # 8.6 ms !!
         scattered_field = np.transpose(
@@ -159,8 +158,8 @@ class ScatteringTheory(HoloPyObject):
         #         self._raw_internal_fields(positions[inner].T, s,
         #                                  optics)).T
         scattered_field *= phase
-        dimstr = primdim(positions)
 
+        dimstr = primdim(positions)
         # FIXME why is this here? Since ``positions = sphere_coords(...)``
         # shouldn't ``positions`` always be an xr.DataArray?
         if isinstance(positions[dimstr], xr.DataArray):
@@ -226,7 +225,6 @@ class ScatteringTheory(HoloPyObject):
 
     def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
-
         scat_matr = self._raw_scat_matrs(
             scatterer, pos, medium_wavevec=medium_wavevec,
             medium_index=medium_index)
@@ -246,6 +244,8 @@ class ScatteringTheory(HoloPyObject):
 
     @staticmethod
     def sphere_coords(a, origin=(0,0,0), wavevec=1):
+        # Inputs: detector, xarray
+        # Outputs: dict of {'r', 'theta', 'phi'}
         if hasattr(a,'theta') and hasattr(a, 'phi'):
             # More-or-less return the current values if the detector points
             # are already in spherical coordinates:
@@ -259,8 +259,6 @@ class ScatteringTheory(HoloPyObject):
 
         else:
             # Transform to spherical coordinates centered around the origin:
-            if origin is None:
-                raise ValueError('Cannot convert detector to spherical coordinates without an origin')
             f = flat(a)  # 1.6 ms
             dimstr = primdim(f)  # 907 ns
             x = f.x.values - origin[0]  # 0.7 ms, all but 0.01 is from overhead
