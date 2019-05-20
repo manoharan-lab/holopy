@@ -29,7 +29,7 @@ import numpy as np
 import xarray as xr
 
 from .utils import is_none, updated, repeat_sing_dims, ensure_array
-from .math import to_spherical, to_cartesian
+from .math import to_cartesian
 
 
 vector = 'vector'
