@@ -24,12 +24,21 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 # TODO:
-# 1. Remove the "wavevec" kwarg from sphere_coords
+# 0. Incorporate _transform_to_desired_coordinates into the functions.
+#    The problem is that the "positions" output from spher_coords or
+#    whatnot gets passed to primdim and used around elsewhere.
+#    You basically have to fix "_get_field_from" and "_calc_scat_matrix"
+# 1. Remove the "wavevec" kwarg from sphere_coords???
 # 2. Enforce the sphere_coords to be the correct return type always.
 # 3. Remove the type-checking in ScatteringTheory.
 # 4. Make the private class method of ScatteringTheory a _transform_to_
 #    calculation_coordinates or something, which is sphere_coords for
 #    scattering theory and cylindrical coords for mielens.
+
+# --- actually I think the best thing to do is force sphere_coords to
+# output a specific data type. You can even move
+# holopy.core.math.to_spherical here if you want since it's only used
+# here, and change what it does.
 
 from warnings import warn
 
@@ -134,7 +143,7 @@ class ScatteringTheory(HoloPyObject):
             raise MissingParameter("center")
         positions = self.sphere_coords(
             schema, scatterer.center, wavevec=wavevector)  # 8.6 ms !!
-        field = np.transpose(
+        scattered_field = np.transpose(
             self._raw_fields(
                 stack_spherical(positions),
                 scatterer,
@@ -149,7 +158,7 @@ class ScatteringTheory(HoloPyObject):
         #     field[inner] = np.vstack(
         #         self._raw_internal_fields(positions[inner].T, s,
         #                                  optics)).T
-        field *= phase
+        scattered_field *= phase
         dimstr = primdim(positions)
 
         # FIXME why is this here? Since ``positions = sphere_coords(...)``
@@ -161,9 +170,10 @@ class ScatteringTheory(HoloPyObject):
             coords = {key: (dimstr, val) for key, val in positions.items()}
         coords = updated(coords, {dimstr: positions[dimstr],
                                   vector: ['x', 'y', 'z']})
-        field = xr.DataArray(field, dims=[dimstr, vector], coords=coords,
-                             attrs=schema.attrs)
-        return field
+        scattered_field = xr.DataArray(
+            scattered_field, dims=[dimstr, vector], coords=coords,
+            attrs=schema.attrs)
+        return scattered_field
 
     def _calc_cross_sections(self, scatterer, medium_wavevec, medium_index,
                              illum_polarization):
@@ -237,6 +247,8 @@ class ScatteringTheory(HoloPyObject):
     @staticmethod
     def sphere_coords(a, origin=(0,0,0), wavevec=1):
         if hasattr(a,'theta') and hasattr(a, 'phi'):
+            # More-or-less return the current values if the detector points
+            # are already in spherical coordinates:
             out = {'theta': a.theta.values,
                    'phi': a.phi.values,
                    'point': a.point.values,
@@ -246,6 +258,7 @@ class ScatteringTheory(HoloPyObject):
             return out
 
         else:
+            # Transform to spherical coordinates centered around the origin:
             if origin is None:
                 raise ValueError('Cannot convert detector to spherical coordinates without an origin')
             f = flat(a)  # 1.6 ms
@@ -255,5 +268,7 @@ class ScatteringTheory(HoloPyObject):
             # we define positive z opposite light propagation, so we have to invert
             z = origin[2] - f.z.values  # 0.7 ms
             out = to_spherical(x, y, z)  # 3.3 ms
-            return updated(out, {'r':out['r'] * wavevec, dimstr:f[dimstr]})  # 33 us
+            out['r'] *= wavevec
+            out[dimstr] = f[dimstr]
+            return out
 
