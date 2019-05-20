@@ -24,8 +24,7 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 # TODO:
-# 1. Make sphere_coords a private class method of ScatteringTheory
-#    This involves moving all the tests over as well.
+# 1. Remove the "wavevec" kwarg from sphere_coords
 # 2. Enforce the sphere_coords to be the correct return type always.
 # 3. Remove the type-checking in ScatteringTheory.
 # 4. Make the private class method of ScatteringTheory a _transform_to_
@@ -229,6 +228,11 @@ class ScatteringTheory(HoloPyObject):
                 kr, phi, scat_matr[i], illum_polarization.values[:2])
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
         return fields.T
+
+    @classmethod
+    def _transform_to_desired_coordinates(cls, detector, origin, wavevec=1):
+        return stack_spherical(
+            cls.sphere_coords(detector, origin, wavevec=wavevec))
 
     @staticmethod
     def sphere_coords(a, origin=(0,0,0), wavevec=1):

@@ -26,6 +26,19 @@ class TestSphereCoords(unittest.TestCase):
             [ 12.78755927,   0.1404897 ,   0.78539816]])
         self.assertTrue(np.allclose(pos, true_pos))
 
+    @attr("fast")
+    def test_transform_to_desired_coordinates(self):
+        detector = detector_grid(shape=(2, 2), spacing=0.1)
+        spherical = ScatteringTheory._transform_to_desired_coordinates(
+            detector, origin=(0, 0, 1), wavevec=2*np.pi*1.33/.66)
+
+        true_pos = np.transpose([
+            [ 12.66157039,   0.        ,   0.        ],
+            [ 12.72472076,   0.09966865,   1.57079633],
+            [ 12.72472076,   0.09966865,   0.        ],
+            [ 12.78755927,   0.1404897 ,   0.78539816]])
+        self.assertTrue(np.allclose(spherical, true_pos))
+
 
 if __name__ == '__main__':
     unittest.main()
