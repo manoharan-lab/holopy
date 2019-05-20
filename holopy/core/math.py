@@ -58,7 +58,7 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
     Returns
     -------
     rot: array(3,3)
-        Rotation matrix. To rotate a column vector x, use np.dot(rot, x.) 
+        Rotation matrix. To rotate a column vector x, use np.dot(rot, x.)
 
     Notes
     -----
@@ -66,9 +66,9 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
     clockwise about the fixed lab z axis, beta clockwise about
     the lab y axis, and by gamma about the lab z axis.  Clockwise is
     defined as viewed from the origin, looking in the positive direction
-    along an axis.  
+    along an axis.
 
-    This breaks compatability with previous conventions, which were adopted for 
+    This breaks compatability with previous conventions, which were adopted for
     compatability with the passive picture used by SCSMFO.
 
     """
@@ -88,6 +88,7 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
                      ca*cb*sg + sa*cg, -sa*cb*sg + ca*cg, sb*sg,
                      -ca*sb, sa*sb, cb]).reshape((3,3)) # row major
 
+
 def to_spherical(x, y, z):
     """
     Return the spherical polar coordinates of a point in Cartesian coordinates.
@@ -105,20 +106,20 @@ def to_spherical(x, y, z):
 
     Notes
     -----
-    theta is the polar angle measured from the z axis with range (0, pi). 
+    theta is the polar angle measured from the z axis with range (0, pi).
     phi is the azimuthal angle with range (0, 2 pi).
 
     """
     r = sqrt(x**2 + y**2 + z**2)
     theta = arctan2(sqrt(x**2 + y**2), z) #this correctly handles x=y=z=0
     phi = arctan2(y, x)
-    phi = phi + 2 * pi * (phi < 0)
+    phi = phi % (2 * pi)
+    return {'r': r, 'theta': theta, 'phi': phi}
 
-    return repeat_sing_dims({'r': r, 'theta': theta, 'phi': phi})
 
 def to_cartesian(r, theta, phi):
     """
-    Returns Cartesian coordinates of a point given in spherical polar 
+    Returns Cartesian coordinates of a point given in spherical polar
     coordinates.
 
     Parameters
@@ -129,7 +130,7 @@ def to_cartesian(r, theta, phi):
     Returns
     -------
     cartesian_coords: dict
-        Dictionary of Cartesian coordinates of point with keys 'x', 'y', 
+        Dictionary of Cartesian coordinates of point with keys 'x', 'y',
         and 'z'.
 
     """
@@ -150,7 +151,7 @@ def cartesian_distance(p1, p2=[0,0,0]):
     Returns
     -------
     dist: float64
-        Cartesian distance between points p1 and p2 
+        Cartesian distance between points p1 and p2
 
     """
     p1 = np.array(p1)
@@ -159,7 +160,7 @@ def cartesian_distance(p1, p2=[0,0,0]):
 
 def chisq(fit, data):
     r"""
-    Calculate per-point value of chi-squared comparing a best-fit model and 
+    Calculate per-point value of chi-squared comparing a best-fit model and
     data.
 
     Parameters
@@ -176,7 +177,7 @@ def chisq(fit, data):
 
     Notes
     -----
-    chi-squared is defined as 
+    chi-squared is defined as
 
     .. math::
         \chi^2 = \frac{1}{N}\sum_{\textrm{points}} (\textrm{fit} - \textrm{data})^2
@@ -204,12 +205,12 @@ def rsq(fit, data):
 
     Notes
     -----
-    R-squared is defined as 
+    R-squared is defined as
 
     .. math::
         R^2 = 1 - \frac{\sum_{\textrm{points}} (\textrm{data} - \textrm{fit})^2}{\sum_{\textrm{points}} (\textrm{data} - \bar{\textrm{data}})^2}
 
-    where :math:`\bar{\textrm{data}}` is the mean value of the data. If the 
+    where :math:`\bar{\textrm{data}}` is the mean value of the data. If the
     model perfectly describes the data, :math:`R^2 = 1`.
     """
     return float(1 - ((data - fit)**2).sum()/((data - data.mean())**2).sum())
