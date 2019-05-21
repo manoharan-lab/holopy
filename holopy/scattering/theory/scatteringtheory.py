@@ -27,7 +27,6 @@ calc_intensity and calc_holo, based on subclass's calc_field
 # 0. Incorporate _transform_to_desired_coordinates into the functions.
 #    The problem is that the "positions" output from spher_coords or
 #    whatnot gets passed to primdim and used around elsewhere.
-#    You basically have to fix "_get_field_from" and "_calc_scat_matrix"
 # 1. Remove the "wavevec" kwarg from sphere_coords???
 # 2. Enforce the sphere_coords to be the correct return type always.
 # 3. Remove the type-checking in ScatteringTheory.
@@ -92,7 +91,7 @@ class ScatteringTheory(HoloPyObject):
     about matrices.
     """
 
-    def _calculate_scattered_field(self, scatterer, schema):
+    def calculate_scattered_field(self, scatterer, schema):
         """
         Implemented in derived classes only.
 
@@ -117,7 +116,7 @@ class ScatteringTheory(HoloPyObject):
                         schema.illum_wavelen.sel(illumination=illum).values)[0],
                     illum_polarization=ensure_array(
                         schema.illum_polarization.sel(illumination=illum).values))
-                this_field = self._calculate_scattered_field(
+                this_field = self.calculate_scattered_field(
                     scatterer.select({illumination: illum}), this_schema)
                 field.append(this_field)
             field = clean_concat(field, dim=schema.illum_wavelen.illumination)
@@ -174,7 +173,7 @@ class ScatteringTheory(HoloPyObject):
             attrs=schema.attrs)
         return scattered_field
 
-    def _calc_cross_sections(self, scatterer, medium_wavevec, medium_index,
+    def calculate_cross_sections(self, scatterer, medium_wavevec, medium_index,
                              illum_polarization):
         raw_sections = self._raw_cross_sections(
             scatterer=scatterer, medium_wavevec=medium_wavevec,
@@ -184,7 +183,7 @@ class ScatteringTheory(HoloPyObject):
                                 ['scattering', 'absorbtion',
                                  'extinction', 'assymetry']})
 
-    def _calc_scat_matrix(self, scatterer, schema):
+    def calculate_scattering_matrix(self, scatterer, schema):
         """
         Compute scattering matrices for scatterer
 

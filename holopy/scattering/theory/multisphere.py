@@ -360,7 +360,8 @@ class Multisphere(ScatteringTheory):
         asym = integral / medium_wavevec**2 # need to divide by cscat
         return asym
 
-    def _calc_cross_sections(self, scatterer, medium_wavevec, medium_index, illum_polarization):
+    def calculate_cross_sections(
+            self, scatterer, medium_wavevec, medium_index, illum_polarization):
         """
         Calculate scattering, absorption, and extinction cross
         sections, and asymmetry parameter for sphere clusters
