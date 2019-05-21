@@ -27,6 +27,8 @@ calc_intensity and calc_holo, based on subclass's calc_field
 # 0. Incorporate _transform_to_desired_coordinates into the functions.
 #    The problem is that the "positions" output from spher_coords or
 #    whatnot gets passed to primdim and used around elsewhere.
+#    You basically have to fix "_get_field_from" and
+#    "calculate_scatterng_matrix"
 # 1. Remove the "wavevec" kwarg from sphere_coords???
 # 2. Enforce the sphere_coords to be the correct return type always.
 # 3. Remove the type-checking in ScatteringTheory.
@@ -107,37 +109,24 @@ class ScatteringTheory(HoloPyObject):
         """
         if scatterer.center is None:
             raise MissingParameter("center")
-        if len(ensure_array(schema.illum_wavelen)) > 1:
-            field = []
-            for illum in schema.illum_wavelen.illumination.values:
-                this_schema = update_metadata(
-                    schema,
-                    illum_wavelen=ensure_array(
-                        schema.illum_wavelen.sel(illumination=illum).values)[0],
-                    illum_polarization=ensure_array(
-                        schema.illum_polarization.sel(illumination=illum).values))
-                this_field = self.calculate_scattered_field(
-                    scatterer.select({illumination: illum}), this_schema)
-                field.append(this_field)
-            field = clean_concat(field, dim=schema.illum_wavelen.illumination)
-        else:
-            # See if we can handle the scatterer in one step
-            if self._can_handle(scatterer):
-                field = self._get_field_from(scatterer, schema)
-            # FIXME this checks if it is a composite, but does not check
-            # if each element of the composite can be handled by the theory.
-            elif isinstance(scatterer, Scatterers):
-                # if it is a composite, try superposition
-                scatterers = scatterer.get_component_list()
-                field = self._get_field_from(scatterers[0], schema)
-                for s in scatterers[1:]:
-                    field += self._get_field_from(s, schema)
-            else:
-                raise TheoryNotCompatibleError(self, scatterer)
-
+        is_multicolor_hologram = len(ensure_array(schema.illum_wavelen)) > 1
+        field = (
+            self._calculate_multiple_color_scattered_field(scatterer, schema)
+            if is_multicolor_hologram else
+            self._calculate_single_color_scattered_field(scatterer, schema))
         return field
 
     def _get_field_from(self, scatterer, schema):
+        """
+        Parameters
+        ----------
+        scatterer
+        schema : xarray
+
+        Returns
+        -------
+        raveled fields, shape (npoints = nx*ny = schema.shape.prod(), 3)
+        """
         wavevector = get_wavevec_from(schema)
         positions = self.sphere_coords(
             schema, scatterer.center, wavevec=wavevector)  # 8.6 ms !!
@@ -164,7 +153,13 @@ class ScatteringTheory(HoloPyObject):
         if isinstance(positions[dimstr], xr.DataArray):
             coords = {key: (dimstr, val.values)
                       for key, val in positions[dimstr].coords.items()}
+            # print(dimstr) 'flat'
         else:
+            # Enters if:
+            # points are in spherical polar coordinates, in which
+            # case they are a numpy.ndarray
+            # Which only happens in a test that tests the detector
+            # grid, not in a use case,
             coords = {key: (dimstr, val) for key, val in positions.items()}
         coords = updated(coords, {dimstr: positions[dimstr],
                                   vector: ['x', 'y', 'z']})
@@ -235,6 +230,37 @@ class ScatteringTheory(HoloPyObject):
                 kr, phi, scat_matr[i], illum_polarization.values[:2])
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
         return fields.T
+
+    def _calculate_multiple_color_scattered_field(self, scatterer, schema):
+        field = []
+        for illum in schema.illum_wavelen.illumination.values:
+            this_schema = update_metadata(
+                schema,
+                illum_wavelen=ensure_array(
+                    schema.illum_wavelen.sel(illumination=illum).values)[0],
+                illum_polarization=ensure_array(
+                    schema.illum_polarization.sel(illumination=illum).values))
+            this_field = self._calculate_single_color_scattered_field(
+                scatterer.select({illumination: illum}), this_schema)
+            field.append(this_field)
+        field = clean_concat(field, dim=schema.illum_wavelen.illumination)
+        return field
+
+    def _calculate_single_color_scattered_field(self, scatterer, schema):
+        # See if we can handle the scatterer in one step
+        if self._can_handle(scatterer):
+            field = self._get_field_from(scatterer, schema)
+        # FIXME this checks if it is a composite, but does not check
+        # if each element of the composite can be handled by the theory.
+        elif isinstance(scatterer, Scatterers):
+            # if it is a composite, try superposition
+            scatterers = scatterer.get_component_list()
+            field = self._get_field_from(scatterers[0], schema)
+            for s in scatterers[1:]:
+                field += self._get_field_from(s, schema)
+        else:
+            raise TheoryNotCompatibleError(self, scatterer)
+        return field
 
     @classmethod
     def _transform_to_desired_coordinates(cls, detector, origin, wavevec=1):
