@@ -69,7 +69,6 @@ def stack_spherical(a):
     return np.vstack((a['r'], a['theta'], a['phi']))
 
 
-
 # Notes:
 # `sphere_coords` is only called here (and in the tests). Yet is gives
 # multiple outputs. So you can just change the sphere_coords function
@@ -247,19 +246,21 @@ class ScatteringTheory(HoloPyObject):
         return field
 
     def _calculate_single_color_scattered_field(self, scatterer, schema):
-        # See if we can handle the scatterer in one step
         if self._can_handle(scatterer):
             field = self._get_field_from(scatterer, schema)
-        # FIXME this checks if it is a composite, but does not check
-        # if each element of the composite can be handled by the theory.
         elif isinstance(scatterer, Scatterers):
-            # if it is a composite, try superposition
-            scatterers = scatterer.get_component_list()
-            field = self._get_field_from(scatterers[0], schema)
-            for s in scatterers[1:]:
-                field += self._get_field_from(s, schema)
+            field = self._calculate_scattered_field_from_superposition(
+                scatterer.get_component_list(), schema)
         else:
             raise TheoryNotCompatibleError(self, scatterer)
+        return field
+
+    def _calculate_scattered_field_from_superposition(
+            self, scatterers, schema):
+        field = self._calculate_single_color_scattered_field(
+            scatterers[0], schema)
+        for s in scatterers[1:]:
+            field += self._calculate_single_color_scattered_field(s, schema)
         return field
 
     @classmethod
