@@ -35,7 +35,7 @@ from holopy.core.errors import DependencyMissing
 from holopy.core import detector_grid, update_metadata
 from holopy.core.tests.common import verify
 
-from holopy.scattering.theory.tmatrix_f.S import s as S
+from holopy.scattering.theory.tmatrix_f.S import ampld
 
 SCHEMA = update_metadata(
     detector_grid(shape=20, spacing=0.1),
@@ -86,20 +86,19 @@ class TestTMatrix(unittest.TestCase):
                   'eps': 0.5,
                   'np': -1,
                   'ndgs': 2,
-                  'alpha': 145,
-                  'beta': 52,
-                  'thet0': 56,
-                  'thet': 65,
-                  'phi0': 114,
-                  'phi': 128,
-                  'nang': 1}
+                  'alpha': 145.,
+                  'beta': 52.,
+                  'thet0': 56.,
+                  'thet': 65.,
+                  'phi0': 114.,
+                  'phi': 128.}
         expected_results = {'s11': -.50941E1 + .24402E2j,
                             's12': -.19425E1 + .19971E1j,
                             's21': -.11521E1 - .30977E1j,
                             's22': -.69323E1 + .24748E2j}
-        s = S(**params)
+        s = ampld(*list(params.values()))
         results = {k: v for k, v in zip(['s11', 's12', 's21', 's22'], s)}
-        ok = [np.allclose(x, y) for x, y in 
+        ok = [np.allclose(x, y, atol=5e-4) for x, y in 
               zip(expected_results.values(), results.values())]
         self.assertTrue(all(ok))
 
@@ -114,26 +113,4 @@ def calc_holo_safe(
 
 
 if __name__ == '__main__':
-#    unittest.main()
-    params = {'axi': 10.0,
-              'rat': 0.1,
-              'lam': 2 * np.pi,
-              'mrr': 1.5,
-              'mri': 0.02,
-              'eps': 0.5,
-              'np': -1,
-              'ndgs': 2,
-              'alpha': 145.,
-              'beta': 52.,
-              'thet0': 56.,
-              'thet': 65.*np.ones(100000),
-              'phi0': 114.,
-              'phi': 128.*np.ones(100000),
-              'nang': 1}
-    expected_results = {'s11': -.50941E1 + .24402E2j,
-                        's12': -.19425E1 + .19971E1j,
-                        's21': -.11521E1 - .30977E1j,
-                        's22': -.69323E1 + .24748E2j}
-
-    s11, s12, s21, s22 = S(*list(params.values()))
-    print("okay")
+    unittest.main()
