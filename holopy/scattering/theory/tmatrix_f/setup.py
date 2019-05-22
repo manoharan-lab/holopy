@@ -8,9 +8,9 @@ def configuration(parent_package='', top_path=None):
         #we are not in a virtual_env. 
         #going to compile fortran code
         config.add_extension('S',
-                         ['S.f90',
-                          'amplq.lp.f',
-                          'lpq.f']
+                         ['S.f',
+                          'ampld.lp.f',
+                          'lpd.f']
                          )
     return config
 
