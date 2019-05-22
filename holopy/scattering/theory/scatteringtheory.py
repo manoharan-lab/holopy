@@ -41,6 +41,18 @@ calc_intensity and calc_holo, based on subclass's calc_field
 # holopy.core.math.to_spherical here if you want since it's only used
 # here, and change what it does.
 
+
+# Some other notes:
+# ``primdim`` is only used here. The entire code is:
+#     if isinstance(a, xr.DataArray):
+#         a = a.dims
+#     if 'flat' in a:
+#         return 'flat'
+#     if 'point' in a:
+#         return 'point'
+#     raise ValueError('Array is not in the form of a 1D list of coordinates')
+# So it just decides if an array is of points or flat.
+
 from warnings import warn
 
 import numpy as np
@@ -121,6 +133,7 @@ class ScatteringTheory(HoloPyObject):
         ----------
         scatterer
         schema : xarray
+            (it's always passed in as an xarray)
 
         Returns
         -------
@@ -145,7 +158,11 @@ class ScatteringTheory(HoloPyObject):
         #         self._raw_internal_fields(positions[inner].T, s,
         #                                  optics)).T
         scattered_field *= phase
+        return self._pack_field_into_xarray(scattered_field, scatterer, schema)
 
+    def _pack_field_into_xarray(self, scattered_field, scatterer, schema):
+        """numpy.ndarray, shape (N, 3) -> xr.DataArray, shape (N, 3)"""
+        positions = self.sphere_coords(schema, scatterer.center)  # 8.6 ms !!
         dimstr = primdim(positions)
         # FIXME why is this here? Since ``positions = sphere_coords(...)``
         # shouldn't ``positions`` always be an xr.DataArray?
