@@ -158,7 +158,7 @@ class ScatteringTheory(HoloPyObject):
         #         self._raw_internal_fields(positions[inner].T, s,
         #                                  optics)).T
         scattered_field *= phase
-        return self._pack_field_into_xarray(scattered_field, scatterer, schema)
+        return scattered_field
 
     def _pack_field_into_xarray(self, scattered_field, scatterer, schema):
         """numpy.ndarray, shape (N, 3) -> xr.DataArray, shape (N, 3)"""
@@ -270,7 +270,7 @@ class ScatteringTheory(HoloPyObject):
                 scatterer.get_component_list(), schema)
         else:
             raise TheoryNotCompatibleError(self, scatterer)
-        return field
+        return self._pack_field_into_xarray(field, scatterer, schema)
 
     def _calculate_scattered_field_from_superposition(
             self, scatterers, schema):

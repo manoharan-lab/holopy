@@ -117,8 +117,7 @@ class TestScatteringTheory(unittest.TestCase):
         from_calc_single = theory._calculate_single_color_scattered_field(
             SPHERE, XSCHEMA)
         from_get_field = theory._get_field_from(SPHERE, XSCHEMA)
-        is_ok = np.allclose(
-            from_get_field.values, from_calc_single.values, **TOLS)
+        is_ok = np.allclose(from_get_field, from_calc_single, **TOLS)
         self.assertTrue(is_ok)
 
     @attr("fast")
@@ -137,7 +136,7 @@ class TestScatteringTheory(unittest.TestCase):
             SPHERES, XSCHEMA)
         components = SPHERES.get_component_list()
         from_get_field = sum([
-            theory._get_field_from(c, XSCHEMA).values for c in components])
+            theory._get_field_from(c, XSCHEMA) for c in components])
 
         is_ok = np.allclose(
             from_get_field, from_calc_single.values, **TOLS)
