@@ -6,7 +6,7 @@ from numpy.testing import assert_allclose, assert_equal
 from nose.plugins.attrib import attr
 
 from holopy.core import detector_grid, detector_points
-from holopy.core.metadata import update_metadata
+from holopy.core.metadata import update_metadata, flat
 from holopy.scattering.theory.scatteringtheory import (
     ScatteringTheory, stack_spherical)
 from holopy.scattering.scatterer import Sphere, Spheres, Ellipsoid
@@ -52,6 +52,42 @@ class TestSphereCoords(unittest.TestCase):
 
 
 class TestScatteringTheory(unittest.TestCase):
+    @attr("fast")
+    def test_calc_field_returns_xarray_of_correct_shape(self):
+        theory = MockTheory()
+        fields = theory.calculate_scattered_field(SPHERE, XSCHEMA)
+        correct_shape = (XSCHEMA.values.size, 3)
+        self.assertTrue(type(fields) is xr.DataArray)
+        self.assertTrue(fields.shape == correct_shape)
+
+    @attr("fast")
+    def test_calc_field_keeps_same_attrs_as_input_schema(self):
+        theory = MockTheory()
+        fields = theory.calculate_scattered_field(SPHERE, XSCHEMA)
+        old_attrs = XSCHEMA.attrs
+        new_attrs = fields.attrs
+        self.assertTrue(old_attrs == new_attrs)
+        self.assertFalse(old_attrs is new_attrs)
+
+    @attr("fast")
+    def test_calc_field_keeps_same_coords_as_flattened_input_schema(self):
+        theory = MockTheory()
+        fields = theory.calculate_scattered_field(SPHERE, XSCHEMA)
+        flat_schema = flat(XSCHEMA)
+        self.assertTrue(np.all(flat_schema.x.shape == fields.x.shape))
+        self.assertTrue(np.all(flat_schema.y.shape == fields.y.shape))
+        self.assertTrue(np.all(flat_schema.z.shape == fields.z.shape))
+
+        self.assertTrue(np.all(flat_schema.x.values == fields.x.values))
+        self.assertTrue(np.all(flat_schema.y.values == fields.y.values))
+        self.assertTrue(np.all(flat_schema.z.values == fields.z.values))
+
+    @attr("fast")
+    def test_calc_field_has_correct_dims(self):
+        theory = MockTheory()
+        fields = theory.calculate_scattered_field(SPHERE, XSCHEMA)
+        self.assertTrue(fields.dims == ('flat', 'vector'))
+
     @attr("fast")
     def test_calc_field_equals_calc_singlecolor_for_single_color(self):
         theory = MockTheory()
@@ -155,6 +191,9 @@ class TestMockTheory(unittest.TestCase):
 
 
 class MockTheory(ScatteringTheory):
+    def __init__(*args, **kwargs):
+        pass  # an init is necessary for the repr
+
     def _can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
 
