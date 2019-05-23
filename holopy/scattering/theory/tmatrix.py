@@ -33,6 +33,7 @@ from holopy.scattering.scatterer import Sphere, Spheroid, Cylinder
 from holopy.scattering.errors import TheoryNotCompatibleError, TmatrixFailure
 from holopy.core.errors import DependencyMissing
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
+from holopy.scattering.theory.tmatrix_f.S import ampld
 try:
     from holopy.scattering.theory.mie_f import mieangfuncs
     _NO_MIEANGFUNCS = False
@@ -85,56 +86,78 @@ class Tmatrix(ScatteringTheory):
         return
 
     def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
-        temp_dir = tempfile.mkdtemp()
+        #temp_dir = tempfile.mkdtemp()
 
         angles = pos.T[:, 1:] * 180/np.pi
-        outf = open(os.path.join(temp_dir, 'tmatrix_tmp.inp'), 'wb')
+        #outf = open(os.path.join(temp_dir, 'tmatrix_tmp.inp'), 'wb')
 
         med_wavelen = 2*np.pi/medium_wavevec
         if isinstance(scatterer, Sphere):
-            rxy = scatterer.r
+            rxy = scatterer.r * 1.000001
             rz = scatterer.r
             iscyl = False
             scatterer = copy.copy(scatterer)
             scatterer.rotation = (0,0,0)
+            ndgs = 5
         elif isinstance(scatterer, Spheroid):
             rxy = scatterer.r[0]
             rz = scatterer.r[1]
             iscyl = False
+            ndgs = 2
         elif isinstance(scatterer, Cylinder):
             rxy = scatterer.d/2
             rz = scatterer.h/2
             iscyl = True
+            ndgs = 5
         else:
             # cleanup and raise error
-            outf.close()
-            shutil.rmtree(temp_dir)
+            # outf.close()
+            # shutil.rmtree(temp_dir)
             raise TheoryNotCompatibleError(self, scatterer)
 
         # write the info into the scattering angles file in the following order:
-        outf.write((str((3/2)**iscyl*(rz*rxy**2)**(1/3.))+'\n').encode('utf-8'))
-        outf.write((str(med_wavelen)+'\n').encode('utf-8'))
-        outf.write((str(scatterer.n.real/medium_index)+'\n').encode('utf-8'))
-        outf.write((str(scatterer.n.imag/medium_index)+'\n').encode('utf-8'))
-        outf.write((str(rxy/rz)+'\n').encode('utf-8'))
-        outf.write((str(scatterer.rotation[2]*180/np.pi)+'\n').encode('utf-8'))
-        outf.write((str(scatterer.rotation[1]*180/np.pi)+'\n').encode('utf-8'))
-        outf.write((str(-1 - iscyl)+'\n').encode('utf-8'))
-        outf.write((str(angles.shape[0])+'\n').encode('utf-8'))
+        # outf.write((str((3/2)**iscyl*(rz*rxy**2)**(1/3.))+'\n').encode('utf-8'))
+        # outf.write((str(med_wavelen)+'\n').encode('utf-8'))
+        # outf.write((str(scatterer.n.real/medium_index)+'\n').encode('utf-8'))
+        # outf.write((str(scatterer.n.imag/medium_index)+'\n').encode('utf-8'))
+        # outf.write((str(rxy/rz)+'\n').encode('utf-8'))
+        # outf.write((str(scatterer.rotation[2]*180/np.pi)+'\n').encode('utf-8'))
+        # outf.write((str(scatterer.rotation[1]*180/np.pi)+'\n').encode('utf-8'))
+        # outf.write((str(-1 - iscyl)+'\n').encode('utf-8'))
+        # outf.write((str(angles.shape[0])+'\n').encode('utf-8'))
+        axi = (3/2)**iscyl*(rz*rxy**2)**(1/3.)
+        rat = 1
+        lam = med_wavelen
+        mrr = scatterer.n.real/medium_index
+        mri = scatterer.n.imag/medium_index
+        eps = rxy/rz
+        NP = -1 - int(iscyl)
+        #ndgs = 5
+        alpha = scatterer.rotation[2] * 180 / np.pi
+        beta = scatterer.rotation[1] * 180 / np.pi
+        thet0 = np.pi/2
+        thet = angles[:, 0]
+        phi0 = np.pi/2
+        phi = angles[:, 1]
+        nang = angles.shape[0]
 
+        args = [axi, rat, lam, mrr, mri, eps, NP, ndgs, alpha, beta, 
+                thet0, thet, phi0, phi, nang]
         # Now write all the angles
-        np.savetxt(outf, angles)
-        outf.close()
+        #np.savetxt(outf, angles)
+        #outf.close()
 
-        self._run_tmat(temp_dir)
-        try:
-            tmat_result = np.loadtxt(os.path.join(temp_dir, 'tmatrix_tmp.out'))
-        except (FileNotFoundError, OSError):
-            #No output file
-            raise TmatrixFailure(os.path.join(temp_dir, 'log'))
-        if len(tmat_result)==0:
-            #Output file is empty
-            raise TmatrixFailure(os.path.join(temp_dir, 'log'))
+        # self._run_tmat(temp_dir)
+        # try:
+        #     tmat_result = np.loadtxt(os.path.join(temp_dir, 'tmatrix_tmp.out'))
+        # except (FileNotFoundError, OSError):
+        #     #No output file
+        #     raise TmatrixFailure(os.path.join(temp_dir, 'log'))
+        # if len(tmat_result)==0:
+        #     #Output file is empty
+        #     raise TmatrixFailure(os.path.join(temp_dir, 'log'))
+
+        s = np.array(list(ampld(*args)))
 
         # columns in result are
         # s11.r s11.i s12.r s12.i s21.r s21.i s22.r s22.i
@@ -145,16 +168,17 @@ class Tmatrix(ScatteringTheory):
         # Combine the real and imaginary components from the file into complex
         # numbers. Then scale by -ki due to Mishchenko's conventions in eq 5. of
         # Mishchenko, Applied Optics (2000).
-        s = tmat_result[:,0::2] + 1.0j*tmat_result[:,1::2]
+        #s = tmat_result[:,0::2] + 1.0j*tmat_result[:,1::2]
         s = s*(-2j*np.pi/med_wavelen)
         # Now arrange them into a scattering matrix, noting that Mishchenko's 
         #basis vectors are different from B/H, so we need to account for that.
-        scat_matr = np.array([[s[:,0], s[:,1]], [-s[:,2], -s[:,3]]]).transpose()
+        return s.reshape(nang, 2, 2)
+        # scat_matr = np.array([[s[:,0], s[:,1]], [-s[:,2], -s[:,3]]]).transpose()
 
-        if self.delete:
-            shutil.rmtree(temp_dir)
+        # # if self.delete:
+        # #     shutil.rmtree(temp_dir)
 
-        return scat_matr
+        # return scat_matr
 
     def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
