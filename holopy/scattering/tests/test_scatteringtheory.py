@@ -83,6 +83,19 @@ class TestScatteringTheory(unittest.TestCase):
         self.assertTrue(np.all(flat_schema.z.values == fields.z.values))
 
     @attr("fast")
+    def test_calc_field_keeps_same_coords_as_flattened_input_for_spheres(self):
+        theory = MockTheory()
+        fields = theory.calculate_scattered_field(SPHERES, XSCHEMA)
+        flat_schema = flat(XSCHEMA)
+        self.assertTrue(np.all(flat_schema.x.shape == fields.x.shape))
+        self.assertTrue(np.all(flat_schema.y.shape == fields.y.shape))
+        self.assertTrue(np.all(flat_schema.z.shape == fields.z.shape))
+
+        self.assertTrue(np.all(flat_schema.x.values == fields.x.values))
+        self.assertTrue(np.all(flat_schema.y.values == fields.y.values))
+        self.assertTrue(np.all(flat_schema.z.values == fields.z.values))
+
+    @attr("fast")
     def test_calc_field_has_correct_dims(self):
         theory = MockTheory()
         fields = theory.calculate_scattered_field(SPHERE, XSCHEMA)
