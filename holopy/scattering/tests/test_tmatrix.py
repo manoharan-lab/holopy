@@ -41,6 +41,10 @@ SCHEMA = update_metadata(
     detector_grid(shape=20, spacing=0.1),
     illum_wavelen=.660, medium_index=1.33, illum_polarization=[1, 0])
 
+TEST_PARAMS = {'axi': 10.0, 'rat': 0.1, 'lam': 2 * np.pi, 'mrr': 1.5,
+               'mri': 0.02, 'eps': 0.5, 'np': -1, 'ndgs': 2, 'alpha': 145.,
+               'beta': 52., 'thet0': 56., 'thet': 65., 'phi0': 114., 
+               'phi': 128., 'nang': 1}
 
 class TestTMatrix(unittest.TestCase):
     @attr('slow')
@@ -78,20 +82,7 @@ class TestTMatrix(unittest.TestCase):
         assert_allclose(dda_holo, tmat_holo, atol=.05)
 
     def test_calc_scattering_matrix(self):
-        params = {'axi': 10.0,
-                  'rat': 0.1,
-                  'lam': 2 * np.pi,
-                  'mrr': 1.5,
-                  'mri': 0.02,
-                  'eps': 0.5,
-                  'np': -1,
-                  'ndgs': 2,
-                  'alpha': 145.,
-                  'beta': 52.,
-                  'thet0': 56.,
-                  'thet': 65.,
-                  'phi0': 114.,
-                  'phi': 128.}
+        params = TEST_PARAMS
         expected_results = {'s11': -.50941E1 + .24402E2j,
                             's12': -.19425E1 + .19971E1j,
                             's21': -.11521E1 - .30977E1j,
@@ -101,6 +92,14 @@ class TestTMatrix(unittest.TestCase):
         ok = [np.allclose(x, y, atol=5e-4) for x, y in 
               zip(expected_results.values(), results.values())]
         self.assertTrue(all(ok))
+
+    def test_calc_scattering_matrix_multiple_angles(self):
+        params = TEST_PARAMS
+        params['thet'] = np.ones(2) * params['thet']
+        params['phi'] = np.ones(2) * params['phi']
+        params['nang'] = 2
+        s = ampld(*list(params.values()))
+        self.assertTrue(len(s[0]) == 2)
 
 def calc_holo_safe(
         schema, scatterer, medium_index=None, illum_wavelen=None, **kwargs):
