@@ -31,6 +31,7 @@ from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
 from holopy.scattering import (
     Tmatrix, DDA, Sphere, Spheroid, Ellipsoid, Cylinder, calc_holo)
+from holopy.scattering.theory import Mie
 from holopy.core.errors import DependencyMissing
 from holopy.core import detector_grid, update_metadata
 from holopy.core.tests.common import verify
@@ -100,6 +101,17 @@ class TestTMatrix(unittest.TestCase):
         params['nang'] = 2
         s = ampld(*list(params.values()))
         self.assertTrue(len(s[0]) == 2)
+
+    def test_scat_matrix_similar_to_mie(self):
+        theory_mie = Mie()
+        theory_tmat = Tmatrix()
+
+        pos = np.zeros([3, 1])
+        s = Sphere(n=1.59, r=0.9, center=(2, 2, 80))
+
+        s_mie = theory_mie._raw_scat_matrs(s, pos, 2*np.pi/.660, 1.33)
+        s_tmat = theory_tmat._raw_scat_matrs(s, pos, 2*np.pi/.660, 1.33)
+        self.assertTrue(np.allclose(s_mie, s_tmat))
 
 def calc_holo_safe(
         schema, scatterer, medium_index=None, illum_wavelen=None, **kwargs):
