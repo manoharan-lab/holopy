@@ -129,18 +129,11 @@ class Tmatrix(ScatteringTheory):
     def _run_tmat(self, args):
         med_wavelen = args[2]
         nang = args[-1]
-        s = np.array(list(ampld(*args)))
-        s = s*(-2j*np.pi/med_wavelen)
-        
-        # FIXME: 
-        # Should these lines be here? This is just copying the deprecated
-        # implementation. If we comment them out, 
-        # test_raw_scat_matrs_similar_to_mie passes
-        s[2,:] = -s[2,:]
-        s[3,:] = -s[3,:]
-
-        # Also, Shapes are wierd in this pacakge. I think this is right
-        return s.T.reshape(nang, 2, 2)
+        s11, s12, s21, s22 = ampld(*args)
+        for s in [s11, s12, s21, s22]:
+            s *= (-2j*np.pi/med_wavelen)
+        scat_matr = np.array([[s11, s12], [s21, s22]]).transpose()
+        return scat_matr
 
     # TODO: remove, deprecated
     def _raw_scat_matrs_deprecated(self, scatterer, pos, medium_wavevec, 
