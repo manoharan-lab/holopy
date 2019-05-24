@@ -33,6 +33,8 @@ import yaml
 
 from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
+
+import holopy as hp
 from holopy.scattering import (
     Tmatrix, DDA, Sphere, Spheroid, Ellipsoid, Cylinder, calc_holo)
 from holopy.scattering.theory import Mie
@@ -142,7 +144,8 @@ def calc_holo_safe(
 
 
 def verify(holo, name):
-    fname = 'gold/gold_' + name + '.yaml'
+    hp_root = hp.__path__[0]
+    fname = hp_root + '/scattering/tests/gold/gold_' + name + '.yaml'
     with open (fname, 'r') as f: 
         test_values = yaml.safe_load(f)
 
