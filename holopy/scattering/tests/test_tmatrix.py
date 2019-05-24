@@ -29,6 +29,8 @@ import numpy as np
 
 import pandas as pd
 
+import yaml
+
 from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
 from holopy.scattering import (
@@ -36,7 +38,6 @@ from holopy.scattering import (
 from holopy.scattering.theory import Mie
 from holopy.core.errors import DependencyMissing
 from holopy.core import detector_grid, update_metadata
-from holopy.core.tests.common import verify
 
 from holopy.scattering.theory.tmatrix_f.S import ampld
 
@@ -63,7 +64,7 @@ class TestTMatrix(unittest.TestCase):
         s = Spheroid(
             n=1.5, r=[.4, 1.], rotation=(0, np.pi/2, np.pi/2), center=(5, 5, 15))
         holo = calc_holo_safe(SCHEMA, s)
-        verify(holo, 'tmatrix_spheroid')
+        self.assertTrue(all(verify(holo, 'tmatrix_spheroid')))
 
 
     @attr("slow")
@@ -71,7 +72,7 @@ class TestTMatrix(unittest.TestCase):
         s = Cylinder(
             n=1.5, d=.8, h=2, rotation=(0, np.pi/2, np.pi/2), center=(5, 5, 15))
         holo = calc_holo_safe(SCHEMA, s)
-        verify(holo, 'tmatrix_cylinder')
+        self.assertTrue(all(verify(holo, 'tmatrix_cylinder')))
 
     @attr("slow")
     def test_vs_dda(self):
@@ -154,6 +155,17 @@ def calc_holo_safe(
     except DependencyMissing:
         raise SkipTest()
 
+
+def verify(holo, name):
+    fname = 'gold/gold_' + name + '.yaml'
+    with open (fname, 'r') as f: 
+        test_values = yaml.safe_load(f)
+
+    min_ok = np.allclose(test_values['min'], np.min(holo.values), rtol=1e-1)
+    max_ok = np.allclose(test_values['max'], np.max(holo.values), rtol=1e-1)
+    mean_ok = np.allclose(test_values['mean'], np.mean(holo.values), rtol=1e-1)
+    std_ok = np.allclose(test_values['std'], np.std(holo.values), rtol=1e-1)
+    return [min_ok, max_ok, mean_ok, std_ok]
 
 if __name__ == '__main__':
     unittest.main()
