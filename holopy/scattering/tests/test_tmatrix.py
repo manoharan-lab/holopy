@@ -105,13 +105,11 @@ class TestTMatrix(unittest.TestCase):
         s = ampld(*list(params.values()))
         self.assertTrue(len(s[0]) == 2)
 
-    @unittest.skip("Bug in implementation?")
-    def test_raw_scat_matrs_similar_to_mie(self):
-        # TODO: This one is failing because the a phase convention or basis is wrong? 
+    def test_raw_scat_matrs_same_as_mie(self):
         theory_mie = Mie()
         theory_tmat = Tmatrix()
 
-        pos = np.zeros([3, 1])
+        pos = np.array([10, 0, 0])[:,None]
         s = Sphere(n=1.59, r=0.9, center=(2, 2, 80))
 
         s_mie = theory_mie._raw_scat_matrs(s, pos, 2*np.pi/.660, 1.33)
@@ -119,7 +117,9 @@ class TestTMatrix(unittest.TestCase):
         self.assertTrue(np.allclose(s_mie, s_tmat))
 
 
+    @unittest.expectedFailure
     def test_raw_scat_matrs_similar_to_deprecated(self):
+        # This one fails because there was a sign error in the scattering matrix
         theory_tmat = Tmatrix()
 
         pos = np.zeros([3, 2])
@@ -131,13 +131,12 @@ class TestTMatrix(unittest.TestCase):
         self.assertTrue(np.allclose(s_tmat, s_tmat_old))
 
 
-    @unittest.skip("Bug in implementation?")
     def test_raw_fields_similar_to_mie(self):
-        # TODO: This one is failing because the a phase convention or basis is wrong? 
+        # TODO: Why does this fail, but test_raw_scat_matrs_same_as_mie passes?
         theory_mie = Mie()
         theory_tmat = Tmatrix()
 
-        pos = np.zeros([3, 1])
+        pos = np.array([10, 0, 0])[:,None]
         s = Sphere(n=1.59, r=0.9, center=(2, 2, 80))
         pol = pd.Series([1, 0])
 
@@ -161,11 +160,12 @@ def verify(holo, name):
     with open (fname, 'r') as f: 
         test_values = yaml.safe_load(f)
 
-    min_ok = np.allclose(test_values['min'], np.min(holo.values), rtol=1e-1)
-    max_ok = np.allclose(test_values['max'], np.max(holo.values), rtol=1e-1)
-    mean_ok = np.allclose(test_values['mean'], np.mean(holo.values), rtol=1e-1)
-    std_ok = np.allclose(test_values['std'], np.std(holo.values), rtol=1e-1)
-    return [min_ok, max_ok, mean_ok, std_ok]
+    min_ok = np.allclose(test_values['min'], np.min(holo.values), rtol=1e-6)
+    max_ok = np.allclose(test_values['max'], np.max(holo.values), rtol=1e-6)
+    mean_ok = np.allclose(test_values['mean'], np.mean(holo.values), rtol=1e-6)
+    std_ok = np.allclose(test_values['std'], np.std(holo.values), rtol=1e-6)
+    return min_ok, max_ok, mean_ok, std_ok
+
 
 if __name__ == '__main__':
     unittest.main()
