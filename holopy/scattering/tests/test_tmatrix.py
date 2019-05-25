@@ -66,7 +66,12 @@ class TestTMatrix(unittest.TestCase):
         s = Spheroid(n=1.5, r=[.4, 1.], 
                      rotation=(0, np.pi/2, np.pi/2), center=(5, 5, 15))
         holo = calc_holo_safe(SCHEMA, s)
-        self.assertTrue(all(verify(holo, 'tmatrix_spheroid')))
+        test_values = _load_verification_data('tmatrix_spheroid')
+        min_ok = np.allclose(test_values['min'], np.min(holo.values), rtol=1e-6)
+        max_ok = np.allclose(test_values['max'], np.max(holo.values), rtol=1e-6)
+        mean_ok = np.allclose(test_values['mean'], np.mean(holo.values), rtol=1e-6)
+        std_ok = np.allclose(test_values['std'], np.std(holo.values), rtol=1e-6)
+        self.assertTrue(all([min_ok, max_ok, mean_ok, std_ok]))
 
 
     @attr("slow")
@@ -74,7 +79,12 @@ class TestTMatrix(unittest.TestCase):
         s = Cylinder(
             n=1.5, d=.8, h=2, rotation=(0, np.pi/2, np.pi/2), center=(5, 5, 15))
         holo = calc_holo_safe(SCHEMA, s)
-        self.assertTrue(all(verify(holo, 'tmatrix_cylinder')))
+        test_values = _load_verification_data('tmatrix_cylinder')
+        min_ok = np.allclose(test_values['min'], np.min(holo.values), rtol=1e-6)
+        max_ok = np.allclose(test_values['max'], np.max(holo.values), rtol=1e-6)
+        mean_ok = np.allclose(test_values['mean'], np.mean(holo.values), rtol=1e-6)
+        std_ok = np.allclose(test_values['std'], np.std(holo.values), rtol=1e-6)
+        self.assertTrue(all([min_ok, max_ok, mean_ok, std_ok]))
 
     @attr("slow")
     def test_vs_dda(self):
@@ -141,19 +151,12 @@ def calc_holo_safe(
     except DependencyMissing:
         raise SkipTest()
 
-
-def verify(holo, name):
+def _load_verification_data(name):
     hp_root = hp.__path__[0]
     fname = hp_root + '/scattering/tests/gold/gold_' + name + '.yaml'
     with open (fname, 'r') as f: 
         test_values = yaml.safe_load(f)
-
-    min_ok = np.allclose(test_values['min'], np.min(holo.values), rtol=1e-6)
-    max_ok = np.allclose(test_values['max'], np.max(holo.values), rtol=1e-6)
-    mean_ok = np.allclose(test_values['mean'], np.mean(holo.values), rtol=1e-6)
-    std_ok = np.allclose(test_values['std'], np.std(holo.values), rtol=1e-6)
-    return min_ok, max_ok, mean_ok, std_ok
-
+    return test_values
 
 if __name__ == '__main__':
     unittest.main()
