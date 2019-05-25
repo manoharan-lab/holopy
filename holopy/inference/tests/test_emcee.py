@@ -33,45 +33,35 @@ from holopy.inference.model import AlphaModel, BaseModel, PerfectLensModel
 from holopy.inference.emcee import sample_emcee, EmceeStrategy
 
 
-@attr("fast")
-def test_BaseModel_lnprior():
-    scat = Sphere(r=prior.Gaussian(1, 1), n=prior.Gaussian(1, 1),
-                  center=[10, 10, 10])
-    mod = BaseModel(scat, noise_sd=0.1)
-    # Desired: log(sqrt(0.5/pi))-1/2
-    desired_sigma = -1.4189385332
-    assert_obj_close(mod.lnprior({'n': 0, 'r': 0}), desired_sigma * 2)
+class testEmcee(unittest.TestCase):
+    @attr("fast")
+    def test_BaseModel_lnprior(self):
+        scat = Sphere(r=prior.Gaussian(1, 1), n=prior.Gaussian(1, 1),
+                      center=[10, 10, 10])
+        mod = BaseModel(scat, noise_sd=0.1)
+        # Desired: log(sqrt(0.5/pi))-1/2
+        desired_sigma = -1.4189385332
+        assert_obj_close(mod.lnprior({'n': 0, 'r': 0}), desired_sigma * 2)
+
+    @attr("medium")
+    def test_sample_emcee(self):
+        data = np.array(.5)
+        nwalkers = 10
+        ndim = 1
+        mod = SimpleModel()
+        p0 = np.linspace(0, 1, nwalkers*ndim).reshape((nwalkers, ndim))
+        r = sample_emcee(mod, data, nwalkers, 500, p0, parallel=None, seed=40)
+        should_be_onehalf = r.chain[r.lnprobability == r.lnprobability.max()]
+        assert_allclose(should_be_onehalf, .5, rtol=.001)
 
 
-class SimpleModel(BaseModel):
-    def __init__(self, x=prior.Uniform(0, 1)):
-        self._parameters = [x]
-
-    def lnposterior(self, par_vals, data, dummy):
-        x = par_vals
-        return -((x[None]-data)**2).sum()
-
-data = np.array(.5)
-
-
-@attr("medium")
-def test_sample_emcee():
-    nwalkers = 10
-    ndim = 1
-    mod = SimpleModel()
-    p0 = np.linspace(0, 1, nwalkers*ndim).reshape((nwalkers, ndim))
-    r = sample_emcee(mod, data, nwalkers, 500, p0, parallel=None, seed=40)
-    should_be_onehalf = r.chain[r.lnprobability == r.lnprobability.max()]
-    assert_allclose(should_be_onehalf, .5, rtol=.001)
-
-
-@attr("fast")
-def test_EmceeStrategy():
-    mod = SimpleModel(prior.Uniform(0, 1))
-    strat = EmceeStrategy(10, None, None, seed=48)
-    r = strat.optimize(mod, data, 5)
-    assert_allclose(r.guess, .5, rtol=.001)
-    r = strat.optimize(mod, data, 5, [[i] for i in range(10)])
+    @attr("fast")
+    def test_EmceeStrategy(self):
+        data = np.array(.5)
+        mod = SimpleModel(prior.Uniform(0, 1))
+        strat = EmceeStrategy(10, None, None, seed=48)
+        r = strat.optimize(mod, data, 5)
+        assert_allclose(r.guess, .5, rtol=.001)
 
 
 class TestSubsetTempering(unittest.TestCase):
@@ -106,6 +96,14 @@ class TestSubsetTempering(unittest.TestCase):
         self.assertTrue(is_ok)
 
 
+class SimpleModel(BaseModel):
+    def __init__(self, x=prior.Uniform(0, 1)):
+        self._parameters = [x]
+
+    def lnposterior(self, par_vals, data, dummy):
+        x = par_vals
+        return -((x[None]-data)**2).sum()
+
+
 if __name__ == '__main__':
     unittest.main()
-
