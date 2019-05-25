@@ -120,8 +120,7 @@ class TestTMatrix(unittest.TestCase):
 
 
     def test_raw_fields_similar_to_mie(self):
-        # TODO: Why does this fail, but test_raw_scat_matrs_same_as_mie passes?
-        theory_mie = Mie()
+        theory_mie = Mie(False, False)
         theory_tmat = Tmatrix()
 
         pos = np.array([10, 0, 0])[:,None]
