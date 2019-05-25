@@ -57,6 +57,9 @@ class Tmatrix(ScatteringTheory):
     Does not handle near fields.  This introduces ~5% error at 10 microns.
 
     """
+    def __init__(self):
+        super().__init__()
+
     def _can_handle(self, scatterer):
         return isinstance(scatterer, Sphere) or isinstance(scatterer, Cylinder) \
             or isinstance(scatterer, Spheroid)
