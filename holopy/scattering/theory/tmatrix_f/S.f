@@ -33,15 +33,22 @@ c parameters:
       integer, parameter :: dp = selected_real_kind(15, 307)
 c variables:
       integer, intent(in) :: np, ndgs, nang
+      integer :: maxi
       real(kind=dp), intent(in) :: lam, mrr, mri, eps
       real(kind=dp), intent(in) :: axi, rat, alpha, beta, thet0, phi0
       real(kind=dp), dimension(nang),intent(in) :: thet, phi
       complex(kind=dp), dimension(nang),intent(out) :: s11,s12,s21,s22
 
-      do j=1, nang
-         call amp_scat_matrix (axi,rat,lam,mrr,mri,eps,np,ndgs,alpha,
-     &                         beta,thet0,thet(j),phi0,phi(j),
-     &                         s11(j),s12(j),s21(j),s22(j))
-      end do
+C Call amp_scat_matrix on the first angle to calc the T-matrix
+      call amp_scat_matrix (axi,rat,lam,mrr,mri,eps,np,ndgs,alpha,
+     &                      beta,thet0,thet(1),phi0,phi(1),
+     &                      s11(1),s12(1),s21(1),s22(1),maxi)
+C loop over the rest of the angles. T-matrix is a global (common)
+      if (nang > 1) then
+         do j=2, nang
+            call ampl (maxi,lam,thet0,thet(j),phi0,phi(j),alpha,beta,
+     &                 s11(j),s12(j),s21(j),s22(j))
+         end do
+      end if
       return
       end
