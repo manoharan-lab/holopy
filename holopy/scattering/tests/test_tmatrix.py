@@ -47,12 +47,55 @@ SCHEMA = update_metadata(
     detector_grid(shape=20, spacing=0.1),
     illum_wavelen=.660, medium_index=1.33, illum_polarization=[1, 0])
 
-TEST_PARAMS = {'axi': 10.0, 'rat': 0.1, 'lam': 2 * np.pi, 'mrr': 1.5,
+MISHCHENKO_PARAMS = {'axi': 10.0, 'rat': 0.1, 'lam': 2 * np.pi, 'mrr': 1.5,
                'mri': 0.02, 'eps': 0.5, 'np': -1, 'ndgs': 2, 'alpha': 145.,
                'beta': 52., 'thet0': 56., 'thet': 65., 'phi0': 114., 
                'phi': 128., 'nang': 1}
 
 class TestTMatrix(unittest.TestCase):
+    def test_calc_scattering_matrix(self):
+        """
+        The original [ampld.lpd.f]
+        (https://www.giss.nasa.gov/staff/mmishchenko/t_matrix.html) begins with
+        this preamble:
+        ------------------------------------------------------------------------
+        This test result was calculated by the code in its
+        curent setting.
+
+        ICHOICE=1  NCHECK=1
+        RAT= .963711
+        PROLATE SPHEROIDS, A/B=   .5000000
+        LAM=  6.283185   MRR= .1500D+01   MRI= .2000D-01
+        ACCURACY OF COMPUTATIONS DDELT =  .10D-02
+        EQUAL-SURFACE-AREA-SPHERE RADIUS= 10.0000
+        thet0= 56.00  thet= 65.00  phi0=114.00  phi=128.00  alpha=145.00  beta= 52.00
+        AMPLITUDE MATRIX
+        S11=-.50941D+01 + i* .24402D+02
+        S12=-.19425D+01 + i* .19971D+01
+        S21=-.11521D+01 + i*-.30977D+01
+        S22=-.69323D+01 + i* .24748D+02
+        PHASE MATRIX
+          650.3172  -17.9846   10.0498  -12.7580
+          -21.1462  631.6322 -127.3059   87.2144
+            6.8322  132.6131  635.2767  -34.7730
+           -9.6629  -78.1229   51.4094  643.1738
+         time =     .03 min
+        ------------------------------------------------------------------------
+        Here, we implement this test. For the amplitude scattering matrix. We,
+        could, in principle, also calculate and test the phase matrix but this is
+        currently not implemented.
+        """
+        params = MISHCHENKO_PARAMS
+        expected_results = {'s11': -.50941E1 + .24402E2j,
+                            's12': -.19425E1 + .19971E1j,
+                            's21': -.11521E1 - .30977E1j,
+                            's22': -.69323E1 + .24748E2j}
+        s = ampld(*list(params.values()))
+        results = {k: v for k, v in zip(['s11', 's12', 's21', 's22'], s)}
+        ok = [np.allclose(x, y, atol=5e-4) for x, y in 
+              zip(expected_results.values(), results.values())]
+        self.assertTrue(all(ok))
+
     @attr('slow')
     def test_sphere(self):
         s = Sphere(n=1.59, r=0.9, center=(2, 2, 80))
@@ -97,20 +140,9 @@ class TestTMatrix(unittest.TestCase):
         tmat_holo = calc_holo_safe(SCHEMA, s, theory=Tmatrix)
         assert_allclose(dda_holo, tmat_holo, atol=.05)
 
-    def test_calc_scattering_matrix(self):
-        params = TEST_PARAMS
-        expected_results = {'s11': -.50941E1 + .24402E2j,
-                            's12': -.19425E1 + .19971E1j,
-                            's21': -.11521E1 - .30977E1j,
-                            's22': -.69323E1 + .24748E2j}
-        s = ampld(*list(params.values()))
-        results = {k: v for k, v in zip(['s11', 's12', 's21', 's22'], s)}
-        ok = [np.allclose(x, y, atol=5e-4) for x, y in 
-              zip(expected_results.values(), results.values())]
-        self.assertTrue(all(ok))
 
     def test_calc_scattering_matrix_multiple_angles(self):
-        params = TEST_PARAMS
+        params = MISHCHENKO_PARAMS
         params['thet'] = np.ones(2) * params['thet']
         params['phi'] = np.ones(2) * params['phi']
         params['nang'] = 2

@@ -45,13 +45,6 @@ class Tmatrix(ScatteringTheory):
     cylinders and spheroids. Calculations for particles that are very 
     large or have high aspect ratios may not converge.
 
-
-    Attributes
-    ----------
-    delete : bool (optional)
-        If true (default), delete the temporary directory where we store the
-        input and output file for the fortran executable
-
     Notes
     -----
     Does not handle near fields.  This introduces ~5% error at 10 microns.
