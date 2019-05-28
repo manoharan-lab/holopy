@@ -1,3 +1,15 @@
+C***********************************************************************
+C   This code has been modified by Ron Alexander 
+C   <ralexander@g.harvard.edu> in the following ways: 
+C.  1. The main function is now a subroutine that returns the scattering
+C      matrix                                                        
+C   2. The subroutine also returns the number of iterations needed to
+C      acheieve  convergence
+C   2. The Phase matrix part of the calculation is removed.
+C   3. All print and write statements are disabled
+C   Permission from Michael Mishchenko in permissions.txt.
+C   Michael Mishchenko's original comments:
+C***********************************************************************
 C   New release including the LAPACK matrix inversion procedure.
 C   We thank Cory Davis (University of Edinburgh) for pointing
 C   out the possibility of replacing the proprietary NAG matrix
