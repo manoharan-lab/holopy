@@ -73,9 +73,9 @@ class Prior(HoloPyObject):
 
 class Uniform(Prior):
     def __init__(self, lower_bound, upper_bound, guess=None, name=None):
-        if lower_bound > upper_bound:
+        if lower_bound >= upper_bound:
             raise ParameterSpecificationError(
-                    "Lower bound {} is greater than upper bound {}".format(
+                    "Lower bound {} is not less than upper bound {}".format(
                     lower_bound, upper_bound))
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
