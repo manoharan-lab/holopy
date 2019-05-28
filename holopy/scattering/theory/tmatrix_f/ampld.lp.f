@@ -4,7 +4,7 @@ C   <ralexander@g.harvard.edu> in the following ways:
 C.  1. The main function is now a subroutine that returns the scattering
 C      matrix                                                        
 C   2. The subroutine also returns the number of iterations needed to
-C      acheieve  convergence
+C      achieve convergence
 C   2. The Phase matrix part of the calculation is removed.
 C   3. All print and write statements are disabled
 C   Permission from Michael Mishchenko in permissions.txt.
