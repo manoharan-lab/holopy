@@ -220,7 +220,7 @@ class BoundedGaussian(Gaussian):
         return BoundedGaussian(self.mu+value, self.sd, self.lower_bound+value, self.upper_bound+value, self.name)
 
     def __multiply__(self, value):
-        return BoundedGaussian(self.mu*value, self.sd*value, self.lower_bound*value, self.upper_bount*value, self.name)
+        return BoundedGaussian(self.mu*value, self.sd*value, self.lower_bound*value, self.upper_bound*value, self.name)
 
     def __neg__(self):
         return BoundedGaussian(-self.mu, self.sd, -self.upper_bound, -self.lower_bound, self.name)

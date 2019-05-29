@@ -19,13 +19,9 @@
 Compute holograms using Mishchenko's T-matrix method for axisymmetric scatterers.  Currently uses
 
 .. moduleauthor:: Anna Wang <annawang@seas.harvard.edu>
+.. moduleauthor:: Ron Alexander <ralex0@users.noreply.github.com>
 """
-import subprocess
-import tempfile
-import os
-import shutil
 import copy
-import warnings
 
 import numpy as np
 
@@ -33,6 +29,7 @@ from holopy.scattering.scatterer import Sphere, Spheroid, Cylinder
 from holopy.scattering.errors import TheoryNotCompatibleError, TmatrixFailure
 from holopy.core.errors import DependencyMissing
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
+from holopy.scattering.theory.tmatrix_f.S import ampld
 try:
     from holopy.scattering.theory.mie_f import mieangfuncs
     _NO_MIEANGFUNCS = False
@@ -48,47 +45,26 @@ class Tmatrix(ScatteringTheory):
     cylinders and spheroids. Calculations for particles that are very 
     large or have high aspect ratios may not converge.
 
-
-    Attributes
-    ----------
-    delete : bool (optional)
-        If true (default), delete the temporary directory where we store the
-        input and output file for the fortran executable
-
     Notes
     -----
     Does not handle near fields.  This introduces ~5% error at 10 microns.
 
     """
-    def __init__(self, delete=True):
-        self.delete = delete
-        path, _ = os.path.split(os.path.abspath(__file__))
-        self.tmatrix_executable = os.path.join(path, 'tmatrix_f', 'S')
-        if os.name == 'nt':
-            self.tmatrix_executable += '.exe'
-        if not os.path.isfile(self.tmatrix_executable):
-            raise DependencyMissing('Tmatrix', "Tmatrix code should compile "
-            "with the rest of HoloPy. Check that you can compile fortran code "
-            "from a makefile.")
-
+    def __init__(self):
         super().__init__()
 
     def _can_handle(self, scatterer):
         return isinstance(scatterer, Sphere) or isinstance(scatterer, Cylinder) \
             or isinstance(scatterer, Spheroid)
 
-    def _run_tmat(self, temp_dir):
-        # must give full path to executable even when specifying cwd keyword.
-        # we'll run the executable from its location in the package tree
-        subprocess.check_call(self.tmatrix_executable, cwd=temp_dir)
-        # can replace the above with subprocess run in python 3.5 and higher
-        return
-
+    # FIXME why is S (scatterer, pos, ...) but fields are (pos, scatterer, ...)?
     def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
-        temp_dir = tempfile.mkdtemp()
+        args = self._parse_args(scatterer, pos, medium_wavevec, medium_index)
+        s = self._run_tmat(args)
+        return s
 
+    def _parse_args(self, scatterer, pos, medium_wavevec, medium_index):
         angles = pos.T[:, 1:] * 180/np.pi
-        outf = open(os.path.join(temp_dir, 'tmatrix_tmp.inp'), 'wb')
 
         med_wavelen = 2*np.pi/medium_wavevec
         if isinstance(scatterer, Sphere):
@@ -106,55 +82,38 @@ class Tmatrix(ScatteringTheory):
             rz = scatterer.h/2
             iscyl = True
         else:
-            # cleanup and raise error
-            outf.close()
-            shutil.rmtree(temp_dir)
             raise TheoryNotCompatibleError(self, scatterer)
 
-        # write the info into the scattering angles file in the following order:
-        outf.write((str((3/2)**iscyl*(rz*rxy**2)**(1/3.))+'\n').encode('utf-8'))
-        outf.write((str(med_wavelen)+'\n').encode('utf-8'))
-        outf.write((str(scatterer.n.real/medium_index)+'\n').encode('utf-8'))
-        outf.write((str(scatterer.n.imag/medium_index)+'\n').encode('utf-8'))
-        outf.write((str(rxy/rz)+'\n').encode('utf-8'))
-        outf.write((str(scatterer.rotation[2]*180/np.pi)+'\n').encode('utf-8'))
-        outf.write((str(scatterer.rotation[1]*180/np.pi)+'\n').encode('utf-8'))
-        outf.write((str(-1 - iscyl)+'\n').encode('utf-8'))
-        outf.write((str(angles.shape[0])+'\n').encode('utf-8'))
+        axi = (3/2)**iscyl*(rz*rxy**2)**(1/3.)
+        rat = 1
+        lam = med_wavelen
+        mrr = scatterer.n.real/medium_index
+        mri = scatterer.n.imag/medium_index
+        eps = rxy/rz
+        NP = -1 - int(iscyl)
+        ndgs = 5
+        alpha = scatterer.rotation[2] * 180 / np.pi
+        beta = scatterer.rotation[1] * 180 / np.pi
+        thet0 = 0
+        thet = angles[:, 0]
+        phi0 = 0
+        phi = angles[:, 1]
+        nang = angles.shape[0]
 
-        # Now write all the angles
-        np.savetxt(outf, angles)
-        outf.close()
+        args = [axi, rat, lam, mrr, mri, eps, NP, ndgs, alpha, beta, 
+                thet0, thet, phi0, phi, nang]
 
-        self._run_tmat(temp_dir)
-        try:
-            tmat_result = np.loadtxt(os.path.join(temp_dir, 'tmatrix_tmp.out'))
-        except (FileNotFoundError, OSError):
-            #No output file
-            raise TmatrixFailure(os.path.join(temp_dir, 'log'))
-        if len(tmat_result)==0:
-            #Output file is empty
-            raise TmatrixFailure(os.path.join(temp_dir, 'log'))
+        return args
 
-        # columns in result are
-        # s11.r s11.i s12.r s12.i s21.r s21.i s22.r s22.i
-        # should be
-        # s11 s12
-        # s21 s22
-
-        # Combine the real and imaginary components from the file into complex
-        # numbers. Then scale by -ki due to Mishchenko's conventions in eq 5. of
-        # Mishchenko, Applied Optics (2000).
-        s = tmat_result[:,0::2] + 1.0j*tmat_result[:,1::2]
-        s = s*(-2j*np.pi/med_wavelen)
-        # Now arrange them into a scattering matrix, noting that Mishchenko's 
-        #basis vectors are different from B/H, so we need to account for that.
-        scat_matr = np.array([[s[:,0], s[:,1]], [-s[:,2], -s[:,3]]]).transpose()
-
-        if self.delete:
-            shutil.rmtree(temp_dir)
-
+    def _run_tmat(self, args):
+        med_wavelen = args[2]
+        nang = args[-1]
+        s11, s12, s21, s22 = ampld(*args)
+        for s in [s11, s12, s21, s22]:
+            s *= (-2j*np.pi/med_wavelen)
+        scat_matr = np.array([[s11, s12], [s21, s22]]).transpose()
         return scat_matr
+
 
     def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
                     illum_polarization):

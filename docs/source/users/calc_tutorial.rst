@@ -220,12 +220,12 @@ Note that the hologram image is elongated in the horizontal direction since the 
 ..  testcode::
     :hide:
 
-    print(holo[0,0].values)
+    print(np.isclose(holo[0,0].values, 0.97450458))
 
 ..  testoutput::
     :hide:
 
-    [0.97450458]
+    [ True]
 
 .. image:: ../images/calc_cylinder.png
    :scale: 300 %
