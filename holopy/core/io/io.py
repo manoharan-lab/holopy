@@ -25,7 +25,6 @@ import os
 import glob
 import yaml
 import warnings
-from scipy.misc import fromimage
 from PIL import Image as pilimage
 import xarray as xr
 import numpy as np
@@ -217,7 +216,7 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
         name = os.path.splitext(os.path.split(inf)[-1])[0]
 
     with open(inf,'rb') as pi:
-        arr = fromimage(pilimage.open(pi)).astype('d')
+        arr = np.asarray(pilimage.open(pi)).astype('d')
         if hasattr(pi, 'tag') and isinstance(yaml.load(pi.tag[270][0]), dict):
             warnings.warn("Metadata detected but ignored. Use hp.load to read it")
 
