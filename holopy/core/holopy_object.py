@@ -39,7 +39,7 @@ YAMLLOADERS = (FullLoader, yaml.SafeLoader)
 # Metaclass black magic to eliminate need for adding yaml_tag lines to classes
 class SerializableMetaclass(yaml.YAMLObjectMetaclass):
     def __init__(cls, name, bases, kwds):
-        super(SerializableMetaclass, cls).__init__(name, bases, kwds)
+        super().__init__(name, bases, kwds)
         # Replace the normal yaml constructor with one that uses the class name
         # as the yaml tag.
         for loader in YAMLLOADERS:

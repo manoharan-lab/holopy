@@ -200,20 +200,20 @@ class BoundedGaussian(Gaussian):
 
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
-        super(BoundedGaussian, self).__init__(mu, sd, name)
+        super().__init__(mu, sd, name)
 
     def lnprob(self, p):
         if np.any(p < self.lower_bound) or np.any(p > self.upper_bound):
             return -np.inf
         else:
-            return super(BoundedGaussian, self).lnprob(p)
+            return super().lnprob(p)
 
     def sample(self, size=None):
-        val = super(BoundedGaussian, self).sample(size)
+        val = super().sample(size)
         out = True
         while np.any(out):
             out = np.where(np.logical_or(val < self.lower_bound, val > self.upper_bound))
-            val[out] = super(BoundedGaussian, self).sample(len(out[0]))
+            val[out] = super().sample(len(out[0]))
         return val
 
     def __addadd__(self, value):
