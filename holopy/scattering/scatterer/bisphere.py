@@ -56,4 +56,4 @@ class Bisphere(CenteredScatterer):
                                            "specified as (alpha, beta, gamma)"
                                            "".format(rotation))
         self.rotation = rotation
-        super(Bisphere, self).__init__(center)
+        super().__init__(center)

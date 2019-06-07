@@ -74,7 +74,7 @@ class Ellipsoid(CenteredScatterer):
                                            "specified as (alpha, beta, gamma)"
                                            "".format(rotation))
         self.rotation = rotation
-        super(Ellipsoid, self).__init__(center)
+        super().__init__(center)
 
     @property
     def indicators(self):
