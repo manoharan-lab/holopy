@@ -410,8 +410,9 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
         spacing = get_spacing(refimg)
 
     # read colour channels from refimg
-    if channel is None and illumination in refimg.dims:
+    if channel is None and refimg is not None and illumination in refimg.dims:
         channel = [i for i, col in enumerate(['red','green','blue']) if col in refimg[illumination].values]
+
     accumulator = clean_concat([load_image(image, spacing, channel=channel) for image in filepath],'images')
 
     if np.isscalar(spacing):
@@ -425,10 +426,13 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
     accumulator['x'] = refimg.x
     accumulator['y'] = refimg.y
 
+    # calculate the average
+    mean = accumulator.mean('images')
+
     # calculate average noise from image
     if noise_sd is None and len(filepath) > 1:
-        noise_sd = ensure_array((accumulator.std('images')/accumulator.mean('images')).mean(('x','y','z')))
-    accumulator = accumulator.mean('images')
+        noise_sd = ensure_array((accumulator.std('images')/mean).mean(('x','y','z')))
+    accumulator = mean
 
     # copy metadata from refimg
     if not is_none(refimg):
