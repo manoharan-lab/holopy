@@ -156,12 +156,12 @@ def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta =
     coords = updated(coords, updatelist)
     if 'x' in coords and 'y' in coords:
         keys = ['x', 'y', 'z']
-        if not 'z' in coords or coords['z'] is None:
+        if coords.get('z') is None:
             coords['z'] = 0
 
     elif 'theta' in coords and 'phi' in coords:
         keys = ['r', 'theta', 'phi']
-        if not 'r' in coords or coords['r'] is None:
+        if coords.get('r') is None:
             coords['r'] = np.inf
     else:
         raise CoordSysError()
