@@ -58,7 +58,7 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_po
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
     if np.isscalar(z) and (len(arr) > 1 or arr.ndim==2):
-        arr=np.array([arr])
+        arr = np.expand_dims(arr, axis=0)
     coords = make_coords(arr.shape, spacing, z)
     if is_none(extra_dims):
         extra_dims={}
