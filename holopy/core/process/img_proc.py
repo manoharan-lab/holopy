@@ -27,7 +27,6 @@ or detrending
 
 from ..errors import BadImage
 from ..metadata import copy_metadata, update_metadata, detector_grid, get_spacing, get_values
-from ..utils import is_none
 from scipy.signal import detrend as dt
 from scipy import fftpack
 from scipy.ndimage import gaussian_filter
@@ -226,7 +225,7 @@ def bg_correct(raw, bg, df=None):
        A copy of the background divided input image with None values of noise_sd updated to match bg.
 
     """
-    if is_none(df):
+    if df is None:
         df = raw.copy()
         df[:] = 0
 

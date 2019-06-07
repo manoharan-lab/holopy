@@ -35,7 +35,7 @@ from holopy.core.io import serialize
 from holopy.core.io.vis import display_image
 from holopy.core.metadata import (data_grid, get_spacing, update_metadata,
                     copy_metadata, to_vector, illumination, clean_concat)
-from holopy.core.utils import is_none, ensure_array, dict_without
+from holopy.core.utils import ensure_array, dict_without
 from holopy.core.errors import NoMetadata, BadImage, LoadError
 from holopy.core.holopy_object import FullLoader# compatibility with pyyaml < 5
 
@@ -83,7 +83,7 @@ def pack_attrs(a, do_spacing=False):
             new_attrs[attr]=list(ensure_array(val.values))
         else:
             new_attrs[attr_coords][attr]=False
-            if not is_none(val):
+            if val is not None:
                 new_attrs[attr] = yaml.dump(val)
     new_attrs[attr_coords] = yaml.dump(new_attrs[attr_coords],
                                        default_flow_style=True)
@@ -261,7 +261,7 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
                 if channel.max() <=2:
                     channel = [['red','green','blue'][c] for c in channel]
                 extra_dims = {illumination: channel}
-                if not is_none(illum_wavelen) and not isinstance(illum_wavelen,dict) and len(ensure_array(illum_wavelen)) == len(channel):
+                if illum_wavelen is not None and not isinstance(illum_wavelen,dict) and len(ensure_array(illum_wavelen)) == len(channel):
                     illum_wavelen = xr.DataArray(ensure_array(illum_wavelen), dims=illumination, coords=extra_dims)
                 if not isinstance(illum_polarization, dict) and np.array(illum_polarization).ndim == 2:
                     pol_index = xr.DataArray(channel, dims=illumination, name=illumination)
@@ -406,7 +406,7 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
         raise LoadError(filepath, "No images found")
 
     # read spacing from refimg if none provided
-    if is_none(spacing):
+    if spacing is None:
         spacing = get_spacing(refimg)
 
     # read colour channels from refimg
@@ -431,7 +431,7 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
     accumulator = accumulator.mean('images')
 
     # copy metadata from refimg
-    if not is_none(refimg):
+    if refimg is not None:
         accumulator = copy_metadata(refimg, accumulator, do_coords=False)
 
     # overwrite metadata from refimg with provided values

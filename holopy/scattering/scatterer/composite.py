@@ -31,7 +31,7 @@ import numpy as np
 
 from . import Scatterer
 from ...core.math import rotate_points
-from ...core.utils import is_none, ensure_array
+from ...core.utils import ensure_array
 
 class Scatterers(Scatterer):
     '''
@@ -148,10 +148,10 @@ class Scatterers(Scatterer):
         translated : Scatterer
             A copy of this scatterer translated to a new location
         """
-        if is_none(coord2) and len(ensure_array(coord1)==3):
+        if coord2 is None and len(ensure_array(coord1)==3):
             #entered translation vector
             trans_coords = ensure_array(coord1)
-        elif not is_none(coord2) and not is_none(coord3):
+        elif coord2 is not None and coord3 is not None:
             #entered 3 coords
             trans_coords = np.array([coord1, coord2, coord3])
         else:
@@ -164,10 +164,10 @@ class Scatterers(Scatterer):
 
     def rotated(self, ang1, ang2=None, ang3=None):
 
-        if is_none(ang2) and len(ensure_array(ang1)==3):
+        if ang2 is None and len(ensure_array(ang1)==3):
             #entered rotation angle tuple
             alpha, beta, gamma = ang1
-        elif not is_none(ang2) and not is_none(ang3):
+        elif ang2 is not None and ang3 is not None:
             #entered 3 angles
             alpha=ang1; beta=ang2; gamma=ang3
         else:
