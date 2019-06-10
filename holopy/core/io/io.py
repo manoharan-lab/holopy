@@ -35,7 +35,7 @@ from holopy.core.io import serialize
 from holopy.core.io.vis import display_image
 from holopy.core.metadata import (data_grid, get_spacing, update_metadata,
                     copy_metadata, to_vector, illumination, clean_concat)
-from holopy.core.utils import is_none, ensure_array, dict_without
+from holopy.core.utils import ensure_array, dict_without
 from holopy.core.errors import NoMetadata, BadImage, LoadError
 from holopy.core.holopy_object import FullLoader# compatibility with pyyaml < 5
 
@@ -83,7 +83,7 @@ def pack_attrs(a, do_spacing=False):
             new_attrs[attr]=list(ensure_array(val.values))
         else:
             new_attrs[attr_coords][attr]=False
-            if not is_none(val):
+            if val is not None:
                 new_attrs[attr] = yaml.dump(val)
     new_attrs[attr_coords] = yaml.dump(new_attrs[attr_coords],
                                        default_flow_style=True)
@@ -261,7 +261,7 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
                 if channel.max() <=2:
                     channel = [['red','green','blue'][c] for c in channel]
                 extra_dims = {illumination: channel}
-                if not is_none(illum_wavelen) and not isinstance(illum_wavelen,dict) and len(ensure_array(illum_wavelen)) == len(channel):
+                if illum_wavelen is not None and not isinstance(illum_wavelen,dict) and len(ensure_array(illum_wavelen)) == len(channel):
                     illum_wavelen = xr.DataArray(ensure_array(illum_wavelen), dims=illumination, coords=extra_dims)
                 if not isinstance(illum_polarization, dict) and np.array(illum_polarization).ndim == 2:
                     pol_index = xr.DataArray(channel, dims=illumination, name=illumination)
@@ -406,32 +406,37 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
         raise LoadError(filepath, "No images found")
 
     # read spacing from refimg if none provided
-    if is_none(spacing):
+    if spacing is None:
         spacing = get_spacing(refimg)
 
     # read colour channels from refimg
-    if channel is None and illumination in refimg.dims:
+    if channel is None and refimg is not None and illumination in refimg.dims:
         channel = [i for i, col in enumerate(['red','green','blue']) if col in refimg[illumination].values]
+
     accumulator = clean_concat([load_image(image, spacing, channel=channel) for image in filepath],'images')
 
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
 
     # crop according to refimg dimensions
-    def extent(i):
-        name = ['x','y'][i]
-        return np.around(refimg[name].values/spacing[i]).astype('int')
-    accumulator = accumulator.isel(x=extent(0), y=extent(1))
-    accumulator['x'] = refimg.x
-    accumulator['y'] = refimg.y
+    if refimg is not None:
+        def extent(i):
+            name = ['x','y'][i]
+            return np.around(refimg[name].values/spacing[i]).astype('int')
+        accumulator = accumulator.isel(x=extent(0), y=extent(1))
+        accumulator['x'] = refimg.x
+        accumulator['y'] = refimg.y
+
+    # calculate the average
+    mean = accumulator.mean('images')
 
     # calculate average noise from image
     if noise_sd is None and len(filepath) > 1:
-        noise_sd = ensure_array((accumulator.std('images')/accumulator.mean('images')).mean(('x','y','z')))
-    accumulator = accumulator.mean('images')
+        noise_sd = ensure_array((accumulator.std('images')/mean).mean(('x','y','z')))
+    accumulator = mean
 
     # copy metadata from refimg
-    if not is_none(refimg):
+    if refimg is not None:
         accumulator = copy_metadata(refimg, accumulator, do_coords=False)
 
     # overwrite metadata from refimg with provided values

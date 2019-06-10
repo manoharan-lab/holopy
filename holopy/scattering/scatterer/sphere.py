@@ -53,7 +53,7 @@ class Sphere(CenteredScatterer):
     def __init__(self, n=None, r=.5, center=None):
         self.n = n
         self.r = r
-        super(Sphere, self).__init__(center)
+        super().__init__(center)
 
         try:
             if np.any(np.array(self.r) < 0):
@@ -88,7 +88,7 @@ class Sphere(CenteredScatterer):
 
     def like_me(self, **overrides):
         if 'center' in overrides:
-            return super(Sphere, self).like_me(**overrides)
+            return super().like_me(**overrides)
         for i, coord in enumerate(('x', 'y', 'z')):
             if coord in overrides:
                 overrides['center[{}]'.format(i)] = overrides[coord]

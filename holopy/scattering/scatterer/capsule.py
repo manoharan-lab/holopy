@@ -62,7 +62,7 @@ class Capsule(CenteredScatterer):
                                            "specified as (alpha, beta, gamma)"
                                            "".format(rotation))
         self.rotation = rotation
-        super(Capsule, self).__init__(center)
+        super().__init__(center)
 
     @property
     def indicators(self):

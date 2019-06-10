@@ -99,21 +99,6 @@ def dict_without(d, keys):
             pass
     return d
 
-def is_none(o):
-    """
-    Check if something is None.
-
-    This can't be done with a simple is check anymore because numpy decided that
-    array is None should do an element wise comparison.
-
-    Parameters
-    ----------
-    o : object
-        Anything you want to see if is None
-    """
-
-    return isinstance(o, type(None))
-
 def updated(d, update={}, filter_none=True, **kwargs):
     """Return a dictionary updated with keys from update
 
@@ -187,4 +172,3 @@ def choose_pool(parallel):
     if isinstance(parallel, int):
         return schwimmbad.MultiPool(parallel)
     raise TypeError("Could not interpret 'parallel' argument. Use an integer, 'mpi', 'all', 'auto', None or pass a pool object with 'map' method.")
-
