@@ -419,12 +419,13 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
         spacing = np.repeat(spacing, 2)
 
     # crop according to refimg dimensions
-    def extent(i):
-        name = ['x','y'][i]
-        return np.around(refimg[name].values/spacing[i]).astype('int')
-    accumulator = accumulator.isel(x=extent(0), y=extent(1))
-    accumulator['x'] = refimg.x
-    accumulator['y'] = refimg.y
+    if refimg is not None:
+        def extent(i):
+            name = ['x','y'][i]
+            return np.around(refimg[name].values/spacing[i]).astype('int')
+        accumulator = accumulator.isel(x=extent(0), y=extent(1))
+        accumulator['x'] = refimg.x
+        accumulator['y'] = refimg.y
 
     # calculate the average
     mean = accumulator.mean('images')
