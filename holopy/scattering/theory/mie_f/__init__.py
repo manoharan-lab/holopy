@@ -1,4 +1,4 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
 # Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 #
 # This file is part of HoloPy.
@@ -19,6 +19,7 @@
 Fortran extension module for calculating cluster holograms using tmatrix
 scattering theory.
 
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 """
-
+from holopy.scattering.theory.mie_f.multilayer_sphere_lib import (
+    scatcoeffs_multi)

@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -18,21 +18,41 @@
 """
 Base class for scattering theories.  Implements python-based
 calc_intensity and calc_holo, based on subclass's calc_field
-
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
 import numpy as np
+import xarray as xr
 from warnings import warn
-from ...core.marray import Image, VectorGrid, VectorSchema, dict_without, make_vector_schema
-from holopy.core.helpers import is_none
-from ...core import Optics
-from ...core.holopy_object import HoloPyObject
-from ..binding_method import binding, finish_binding
-from ..scatterer import Sphere, Scatterers
-from ..errors import NoCenter, NoPolarization, TheoryNotCompatibleError
+from holopy.core.holopy_object import HoloPyObject
+from holopy.scattering.scatterer import Scatterers, Sphere
+from holopy.scattering.errors import TheoryNotCompatibleError, MissingParameter
+from holopy.core.metadata import (vector, illumination, sphere_coords,
+                                  primdim, update_metadata, clean_concat)
+from holopy.core.utils import dict_without, updated, ensure_array
+try:
+    from holopy.scattering.theory.mie_f import mieangfuncs
+except ImportError:
+    pass
+
+
+def get_wavevec_from(schema):
+    return 2 * np.pi / (schema.illum_wavelen / schema.medium_index)
+
+
+def stack_spherical(a):
+    if 'r' not in a:
+        a['r'] = [np.inf] * len(a['theta'])
+    return np.vstack((a['r'], a['theta'], a['phi']))
+
+
+
+# Notes:
+# `sphere_coords` is only called here (and in the tests). Yet is gives
+# multiple outputs. So you can just change the sphere_coords function
+# to return exactly what you need.
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -40,27 +60,21 @@ class ScatteringTheory(HoloPyObject):
 
     Notes
     -----
-    A subclasses that do the work of computing scattering should do it by
-    implementing a _calc_field(self, scatterer, schema) function that returns a
-    VectorGrid electric field.
-
-    ScatteringTheory uses pseudo classmethods which when called on a
-    ScatteringTheory class are in fact called on a default instantiation
-    (no parameters given to the constructor).  If you manually instantiate a
-    ScatteringTheory Object then it's calc_* methods refer to itself.
+    A subclasses that do the work of computing scattering should do it
+    by implementing _raw_fields and/or _raw_scat_matrs and (optionally)
+    _raw_cross_sections. _raw_cross_sections is needed only for
+    calc_cross_sections. Either of _raw_fields or _raw_scat_matrs will
+    give you calc_holo, calc_field, and calc_intensity. Obviously
+    calc_scat_matrix will only work if you implement _raw_cross_sections.
+    So the simplest thing is to just implement _raw_scat_matrs. You only
+    need to do _raw_fields there is a way to compute it more efficently
+    and you care about that speed, or if it is easier and you don't care
+    about matrices.
     """
 
-    def __init__(self):
-        # If the user instantiates a theory, we need to replace the classmethods
-        # that instantiate an object with normal methods that reference the
-        # theory object
-        finish_binding(self)
-
-    @classmethod
-    @binding
-    def calc_field(cls_self, scatterer, schema, scaling = 1.0):
+    def _calculate_scattered_field(self, scatterer, schema):
         """
-        Calculate fields.  Implemented in derived classes only.
+        Implemented in derived classes only.
 
         Parameters
         ----------
@@ -71,131 +85,88 @@ class ScatteringTheory(HoloPyObject):
         -------
         e_field : :mod:`.VectorGrid`
             scattered electric field
-
-
-        Notes
-        -----
-        calc_* functions can be called on either a theory class or a theory
-        object.  If called on a theory class, they use a default theory object
-        which is correct for the vast majority of situations.  You only need to
-        instantiate a theory object if it has adjustable parameters and you want
-        to use non-default values.
         """
-        fields = cls_self._calc_field(scatterer, schema) * scaling
-        fields.get_metadata_from(schema)
-        return fields
-
-
-    @classmethod
-    @binding
-    def calc_intensity(cls_self, scatterer, schema, scaling = 1.0):
-        """
-        Calculate intensity at focal plane (z=0)
-
-        Parameters
-        ----------
-        scatterer : :mod:`.scatterer` object
-            (possibly composite) scatterer for which to compute scattering
-
-        Returns
-        -------
-        inten : :mod:`.Image`
-            scattered intensity
-
-        Notes
-        -----
-        calc_* functions can be called on either a theory class or a theory
-        object.  If called on a theory class, they use a default theory object
-        which is correct for the vast majority of situations.  You only need to
-        instantiate a theory object if it has adjustable parameters and you want
-        to use non-default values.
-
-        Total scattered intensity only takes into account the x- and
-        y-components of the E-field.  The z-component is ignored
-        because the detector's pixels should be sensitive to the z
-        component of the Poynting vector, E x B, and the z component
-        of E x B cannot depend on Ez.
-        """
-        field = cls_self.calc_field(scatterer, schema = schema, scaling = scaling)
-        normal = np.array([0, 0, 1])
-        normal = normal.reshape(_field_scalar_shape(field))
-        return (abs(field*(1-normal))**2).sum(-1)
-
-
-    @classmethod
-    @binding
-    def calc_holo(cls_self, scatterer, schema, scaling=1.0):
-        """
-        Calculate hologram formed by interference between scattered
-        fields and a reference wave
-
-        Parameters
-        ----------
-        scatterer : :mod:`.scatterer` object
-            (possibly composite) scatterer for which to compute scattering
-        scaling : scaling value (alpha) for intensity of reference wave
-
-        Returns
-        -------
-        holo : :class:`.Image` object
-            Calculated hologram from the given distribution of spheres
-
-        Notes
-        -----
-        calc_* functions can be called on either a theory class or a theory
-        object.  If called on a theory class, they use a default theory object
-        which is correct for the vast majority of situations.  You only need to
-        instantiate a theory object if it has adjustable parameters and you want
-        to use non-default values.
-        """
-
-        if isinstance(scatterer, Sphere) and is_none(scatterer.center):
-            raise NoCenter("Center is required for hologram calculation of a sphere")
+        if len(ensure_array(schema.illum_wavelen)) > 1:
+            field = []
+            for illum in schema.illum_wavelen.illumination.values:
+                this_schema = update_metadata(
+                    schema,
+                    illum_wavelen=ensure_array(
+                        schema.illum_wavelen.sel(illumination=illum).values)[0],
+                    illum_polarization=ensure_array(
+                        schema.illum_polarization.sel(illumination=illum).values))
+                this_field = self._calculate_scattered_field(
+                    scatterer.select({illumination: illum}), this_schema)
+                field.append(this_field)
+            field = clean_concat(field, dim=schema.illum_wavelen.illumination)
         else:
-            pass
+            # See if we can handle the scatterer in one step
+            if self._can_handle(scatterer):
+                field = self._get_field_from(scatterer, schema)
+            # FIXME this checks if it is a composite, but does not check
+            # if each element of the composite can be handled by the theory.
+            elif isinstance(scatterer, Scatterers):
+                # if it is a composite, try superposition
+                scatterers = scatterer.get_component_list()
+                field = self._get_field_from(scatterers[0], schema)
+                for s in scatterers[1:]:
+                    field += self._get_field_from(s, schema)
+            else:
+                raise TheoryNotCompatibleError(self, scatterer)
 
-        if schema.optics.polarization.shape == (2,):
-            pass
+        return field
+
+    def _get_field_from(self, scatterer, schema):
+        # FIXME this checks a global value in a loop.
+        wavevector = get_wavevec_from(schema)
+        if isinstance(scatterer, Sphere) and scatterer.center is None:
+            raise MissingParameter("center")
+        positions = sphere_coords(
+            schema, scatterer.center, wavevec=wavevector)  # 8.6 ms !!
+        field = np.transpose(
+            self._raw_fields(
+                stack_spherical(positions),
+                scatterer,
+                medium_wavevec=wavevector,
+                medium_index=schema.medium_index,
+                illum_polarization=schema.illum_polarization)
+            )
+        phase = np.exp(-1j * wavevector * scatterer.center[2])
+        # TODO: fix and re-enable internal fields
+        # if self._scatterer_overlaps_schema(scatterer, schema):
+        #     inner = scatterer.contains(schema.positions.xyz())
+        #     field[inner] = np.vstack(
+        #         self._raw_internal_fields(positions[inner].T, s,
+        #                                  optics)).T
+        field *= phase
+        dimstr = primdim(positions)
+
+        # FIXME why is this here? Since ``positions = sphere_coords(...)``
+        # shouldn't ``positions`` always be an xr.DataArray?
+        if isinstance(positions[dimstr], xr.DataArray):
+            coords = {key: (dimstr, val.values)
+                      for key, val in positions[dimstr].coords.items()}
         else:
-            raise NoPolarization("Polarization is required for hologram calculation")
+            coords = {key: (dimstr, val) for key, val in positions.items()}
+        coords = updated(coords, {dimstr: positions[dimstr],
+                                  vector: ['x', 'y', 'z']})
+        field = xr.DataArray(field, dims=[dimstr, vector], coords=coords,
+                             attrs=schema.attrs)
+        return field
 
-        scat = cls_self.calc_field(scatterer, schema = schema, scaling = scaling)
-        return scattered_field_to_hologram(scat, schema.optics)
+    def _calc_cross_sections(self, scatterer, medium_wavevec, medium_index,
+                             illum_polarization):
+        raw_sections = self._raw_cross_sections(
+            scatterer=scatterer, medium_wavevec=medium_wavevec,
+            medium_index=medium_index, illum_polarization=illum_polarization)
+        return xr.DataArray(raw_sections, dims=['cross_section'],
+                            coords={'cross_section':
+                                ['scattering', 'absorbtion',
+                                 'extinction', 'assymetry']})
 
-    @classmethod
-    @binding
-    def calc_cross_sections(cls_self, scatterer, optics):
+    def _calc_scat_matrix(self, scatterer, schema):
         """
-        Calculate scattering, absorption, and extinction
-        cross sections, and asymmetry parameter <cos \theta>.
-        To be implemented by derived classes.
-
-        Parameters
-        ----------
-        scatterer : :mod:`.scatterer` object
-            (possibly composite) scatterer for which to compute scattering
-
-        Returns
-        -------
-        cross_sections : array (4)
-            Dimensional scattering, absorption, and extinction
-            cross sections, and <cos theta>
-
-        Notes
-        -----
-        calc_* functions can be called on either a theory class or a theory
-        object.  If called on a theory class, they use a default theory object
-        which is correct for the vast majority of situations.  You only need to
-        instantiate a theory object if it has adjustable parameters and you want
-        to use non-default values.
-        """
-        return cls_self._calc_cross_sections(scatterer, optics)
-
-    @classmethod
-    @binding
-    def calc_scat_matrix(cls_self, scatterer, schema):
-        """
-        Compute scattering matricies for scatterer
+        Compute scattering matrices for scatterer
 
         Parameters
         ----------
@@ -205,137 +176,44 @@ class ScatteringTheory(HoloPyObject):
         Returns
         -------
         scat_matr : :mod:`.Marray`
-            Scattering matricies at specified positions
+            Scattering matrices at specified positions
 
         Notes
         -----
-        calc_* functions can be called on either a theory class or a theory
-        object.  If called on a theory class, they use a default theory object
-        which is correct for the vast majority of situations.  You only need to
-        instantiate a theory object if it has adjustable parameters and you want
-        to use non-default values.
+        calc_* functions can be called on either a theory class or a
+        theory object. If called on a theory class, they use a default
+        theory object which is correct for the vast majority of
+        situations. You only need to instantiate a theory object if it
+        has adjustable parameters and you want to use non-default values.
         """
+        positions = sphere_coords(schema, scatterer.center)
+        scat_matrs = self._raw_scat_matrs(
+            scatterer, stack_spherical(positions),
+            medium_wavevec=get_wavevec_from(schema), medium_index=schema.medium_index)
+        dimstr = primdim(positions)
 
-        return cls_self._calc_scat_matrix(scatterer, schema)
+        for coorstr in dict_without(positions, [dimstr]):
+            positions[coorstr] = (dimstr, positions[coorstr])
 
-    def _finalize_fields(self, z, fields, schema):
-        # expects fields as an Nx3 ndarray
-        phase = np.exp(-1j*np.pi*2*z / schema.optics.med_wavelen)
-        schema = make_vector_schema(schema)
-        result = schema.interpret_1d(fields)
-        return result * phase
+        dims = ['Epar', 'Eperp']
+        dims = [dimstr] + dims
+        positions['Epar'] = ['S2', 'S3']
+        positions['Eperp'] = ['S4', 'S1']
 
+        return xr.DataArray(scat_matrs, dims=dims, coords=positions,
+                            attrs=schema.attrs)
 
-# Subclass of scattering theory, overrides functions that depend on array
-# ordering and handles the tranposes for sending values to/from fortran
-class FortranTheory(ScatteringTheory):
-    def _calc_field(self, scatterer, schema):
-        def get_field(s):
-            positions = schema.positions.kr_theta_phi(s.center, schema.optics)
-            field = np.vstack(self._raw_fields(positions.T, s, schema.optics)).T
-            phase = np.exp(-1j*np.pi*2*s.center[2] / schema.optics.med_wavelen)
-            if self._scatterer_overlaps_schema(scatterer, schema):
-                inner = scatterer.contains(schema.positions.xyz())
-                field[inner] = np.vstack(
-                    self._raw_internal_fields(positions[inner].T, s,
-                                              schema.optics)).T
-            field *= phase
-            return make_vector_schema(schema).interpret_1d(field)
+    def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
+                    illum_polarization):
 
+        scat_matr = self._raw_scat_matrs(
+            scatterer, pos, medium_wavevec=medium_wavevec,
+            medium_index=medium_index)
 
-        # See if we can handle the scatterer in one step
-        if self._can_handle(scatterer):
-            field = get_field(scatterer)
-        elif isinstance(scatterer, Scatterers):
-        # if it is a composite, try superposition
-            scatterers = scatterer.get_component_list()
-            field = get_field(scatterers[0])
-            for s in scatterers[1:]:
-                field += get_field(s)
-        else:
-            raise TheoryNotCompatibleError(self, scatterer)
-
-        return field
-        # TODO: fix internal field and re-enable this
-#        return self._set_internal_fields(field, scatterer)
-
-
-    def _scatterer_overlaps_schema(self, scatterer, schema):
-        if hasattr(schema, 'center'):
-            center_to_center = scatterer.center - schema.center
-            unit_vector = center_to_center - abs(center_to_center).sum()
-            return schema.contains(scatterer.center - unit_vector)
-        else:
-            return scatterer.contains(schema.positions.xyz()).any()
-
-    def _set_internal_fields(self, fields, scatterer):
-        center_to_center = scatterer.center - fields.center
-        unit_vector = center_to_center - abs(center_to_center).sum()
-        if fields.contains(scatterer.center - unit_vector):
-            warn("Fields inside your Sphere(s) set to 0 because {0} Theory "
-                 " does not yet support calculating internal fields".format(
-                     self.__class__.__name__))
-
-            origin = fields.origin
-            extent = fields.extent
-            shape = fields.shape
-            def points(i):
-                return enumerate(np.linspace(origin[i], origin[0]+extent[i], shape[i]))
-            # TODO: may be missing hitting a point or two because of
-            # integer truncation, see about fixing that
-
-
-            # TODO: vectorize or otherwise speed this up
-            if len(shape) == 2:
-                for i, x in points(0):
-                    for j, y in points(1):
-                        if scatterer.contains((x, y, fields.center[2])):
-                            fields[i, j] = 0
-
-            else:
-                for i, x in points(0):
-                    for j, y in points(1):
-                        for k, z in points(2):
-                            if scatterer.contains((x, y, z)):
-                                fields[i, j, k] = 0
-        return fields
-
-def _field_scalar_shape(e):
-    # this is a clever hack with list arithmetic to get [1, 3] or [1,
-    # 1, 3] as needed
-    return [1]*(e.ndim-1) + [3]
-
-# this is pulled out separate from the calc_holo method because occasionally you
-# want to turn prepared  e_fields into holograms directly
-def scattered_field_to_hologram(scat, ref, detector_normal = (0, 0, 1)):
-    """
-    Calculate a hologram from an E-field
-
-    Parameters
-    ----------
-    scat : :class:`.VectorGrid`
-        The scattered (object) field
-    ref : :class:`.VectorGrid` or :class:`.Optics`
-        The reference field, it can also be inferred from polarization of an
-        Optics object
-    detector_normal : (float, float, float)
-        Vector normal to the detector the hologram should be measured at
-        (defaults to z hat, a detector in the x, y plane)
-    """
-    shape = _field_scalar_shape(scat)
-    if isinstance(ref, Optics):
-        # add the z component to polarization and adjust the shape so that it is
-        # broadcast correctly
-        ref = VectorGrid(np.append(ref.polarization, 0).reshape(shape))
-    detector_normal = np.array(detector_normal).reshape(shape)
-
-    holo = Image((np.abs(scat+ref)**2 * (1 - detector_normal)).sum(axis=-1),
-                 **dict_without(scat._dict, ['dtype', 'components']))
-
-    return holo
-
-class InvalidElectricFieldComputation(Exception):
-    def __init__(self, reason):
-        self.reason = reason
-    def __str__(self):
-        return "Invalid Electric Computation: " + self.reason
+        fields = np.zeros_like(pos.T, dtype=np.array(scat_matr).dtype)
+        for i, point in enumerate(pos.T):
+            kr, theta, phi = point
+            escat_sph = mieangfuncs.calc_scat_field(
+                kr, phi, scat_matr[i], illum_polarization.values[:2])
+            fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
+        return fields.T

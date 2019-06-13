@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -23,10 +23,11 @@ reconstructions.
 .. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Tom G. Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 '''
-from __future__ import division
 
-from .enhance import normalize, detrend, zero_filter
-from .centerfinder import center_find
-from simulate_noise import add_noise
+
+from holopy.core.process.img_proc import (normalize, detrend, zero_filter,
+    subimage, add_noise, simulate_noise, bg_correct)
+from holopy.core.process.fourier import fft, ifft
+from holopy.core.process.centerfinder import center_find, hough, image_gradient

@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -15,106 +15,29 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-"""
-Misc utility functions to make coding more convenient
 
-.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-"""
-from __future__ import division
-
-import scipy.fftpack as fftpack
-from numpy import sin, cos
 import numpy as np
-from .marray import arr_like, Marray
-
-
-def fft(a, overwrite=False, shift=True):
-    """
-    More convenient Fast Fourier Transform
-
-    An easier to use fft function, it will pick the correct fft to do
-    based on the shape of the Marray, and do the fftshift for you.  This
-    is intended for working with images, and thus for dimensions
-    greater than 2 does slicewise transforms of each "image" in a
-    multidimensional stack
-
-    Parameters
-    ----------
-    a : ndarray
-       The array to transform
-    overwrite : bool
-       Allow this function to overwrite the Marry you pass in.  This
-       may improve performance slightly.  Default is not to overwrite
-    shift : bool
-       Whether to preform an fftshift on the Marry to give low
-       frequences near the center as you probably expect.  Default is
-       to do the fftshift.
-
-    Returns
-    -------
-    fta : ndarray
-       The fourier transform of `a`
-    """
-    if a.ndim is 1:
-        if shift:
-            res = fftpack.fftshift(fftpack.fft(a, overwrite_x=overwrite))
-        else:
-            res = fftpack.fft(a, overwrite_x=overwrite)
-    else:
-        if shift:
-            res = fftpack.fftshift(fftpack.fft2(a, axes=[0, 1],
-                                                 overwrite_x=overwrite),
-                                    axes=[0,1])
-        else:
-            res = fftpack.fft2(a, axes=[0, 1], overwrite_x=overwrite)
-    if isinstance(a, Marray):
-        res = arr_like(res, a)
-    return res
-
-
-def ifft(a, overwrite=False, shift=True):
-    """
-    More convenient Inverse Fast Fourier Transform
-
-    An easier to use ifft function, it will pick the correct ifft to
-    do based on the shape of the Marry, and do the fftshift for you.
-    This is indendended for working with images, and thus for
-    dimensions greater than 2 does slicewise transforms of each
-    "image" in a multidimensional stack
-
-    Parameters
-    ----------
-    a : ndarray
-       The array to transform
-    overwrite : bool
-       Allow this function to overwrite the Marry you pass in.  This
-       may improve performance slightly.  Default is not to overwrite
-    shift : bool
-       Whether to preform an fftshift on the Marry to give low
-       frequences near the center as you probably expect.  Default is to
-       do the fftshift.
-
-    Returns
-    -------
-    ifta : ndarray
-       The inverse fourier transform of `a`
-    """
-    if a.ndim is 1:
-        if shift:
-            res = fftpack.ifft(fftpack.fftshift(a, overwrite_x=overwrite))
-        else:
-            res = fftpack.ifft(a, overwrite_x=overwrite)
-    else:
-        if shift:
-            res = fftpack.ifft2(fftpack.fftshift(a, axes=[0,1]), axes=[0, 1],
-                                 overwrite_x=overwrite)
-        else:
-            res = fftpack.ifft2(a, overwrite_x=overwrite)
-    if isinstance(a, Marray):
-        res = arr_like(res, a)
-    return res
+from numpy import sin, cos, arccos, arctan2, sqrt, pi
+from .utils import repeat_sing_dims
 
 def rotate_points(points, theta, phi, psi):
+    """
+    Rotate an array of points about Euler angles in a z, y, z convention.
+
+    Parameters
+    ----------
+    points: array-like (n,3)
+        Set of points to be rotated
+    theta, phi, psi: float
+        Euler rotation angles in z, y, z convention. These are *not* the
+        same as angles in spherical coordinates.
+
+    Returns
+    -------
+    rotated_points: array(n,3)
+        Points rotated by Euler angles
+
+    """
     points = np.array(points)
     rot = rotation_matrix(theta, phi, psi)
     if points.ndim == 1:
@@ -150,9 +73,9 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
 
     """
     if not radians:
-        alpha *= np.pi/180.
-        beta *= np.pi/180.
-        gamma *= np.pi/180.
+        alpha *= pi/180.
+        beta *= pi/180.
+        gamma *= pi/180.
 
     ca = cos(alpha)
     sa = sin(alpha)
@@ -165,7 +88,57 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
                      ca*cb*sg + sa*cg, -sa*cb*sg + ca*cg, sb*sg,
                      -ca*sb, sa*sb, cb]).reshape((3,3)) # row major
 
-def cartesian_distance(p1, p2):
+def to_spherical(x, y, z):
+    """
+    Return the spherical polar coordinates of a point in Cartesian coordinates.
+
+    Parameters
+    ----------
+    x, y, z: float
+        Cartesian coordinates of point
+
+    Returns
+    -------
+    spherical_coords: dict
+        Dictionary of spherical polar coordinates (r, theta, phi) of point
+        with keys 'r', 'theta', 'phi'.
+
+    Notes
+    -----
+    theta is the polar angle measured from the z axis with range (0, pi). 
+    phi is the azimuthal angle with range (0, 2 pi).
+
+    """
+    r = sqrt(x**2 + y**2 + z**2)
+    theta = arctan2(sqrt(x**2 + y**2), z) #this correctly handles x=y=z=0
+    phi = arctan2(y, x)
+    phi = phi + 2 * pi * (phi < 0)
+
+    return repeat_sing_dims({'r': r, 'theta': theta, 'phi': phi})
+
+def to_cartesian(r, theta, phi):
+    """
+    Returns Cartesian coordinates of a point given in spherical polar 
+    coordinates.
+
+    Parameters
+    ----------
+    r, theta, phi: float
+        Spherical polar coordinates of point.
+
+    Returns
+    -------
+    cartesian_coords: dict
+        Dictionary of Cartesian coordinates of point with keys 'x', 'y', 
+        and 'z'.
+
+    """
+    x = r * sin(theta) * cos(phi)
+    y = r * sin(theta) * sin(phi)
+    z = r * cos(theta)
+    return repeat_sing_dims({'x': x, 'y': y, 'z': z})
+
+def cartesian_distance(p1, p2=[0,0,0]):
     """
     Return the Cartesian distance between points p1 and p2.
 
@@ -183,3 +156,62 @@ def cartesian_distance(p1, p2):
     p1 = np.array(p1)
     p2 = np.array(p2)
     return np.sqrt(np.sum((p1-p2)**2))
+
+def chisq(fit, data):
+    r"""
+    Calculate per-point value of chi-squared comparing a best-fit model and 
+    data.
+
+    Parameters
+    ----------
+    fit : array_like
+        Values of best-fit model to be compared to data
+    data : array_like
+        Data values to be compared to model
+
+    Returns
+    -------
+    chisq : float
+        Chi-squared per point
+
+    Notes
+    -----
+    chi-squared is defined as 
+
+    .. math::
+        \chi^2 = \frac{1}{N}\sum_{\textrm{points}} (\textrm{fit} - \textrm{data})^2
+
+    where :math:`N` is the number of data points.
+    """
+    return float((((fit-data))**2).sum() / fit.size)
+
+def rsq(fit, data):
+    r"""
+    Calculate correlation coeffiction R-squared comparing a best-fit model
+    and data.
+
+    Parameters
+    ----------
+    fit : array_like
+        Values of best-fit model to be compared to data
+    data : array_like
+        Data values to be compared to model
+
+    Returns
+    -------
+    rsq : float
+        Correlation coefficient R-squared.
+
+    Notes
+    -----
+    R-squared is defined as 
+
+    .. math::
+        R^2 = 1 - \frac{\sum_{\textrm{points}} (\textrm{data} - \textrm{fit})^2}{\sum_{\textrm{points}} (\textrm{data} - \bar{\textrm{data}})^2}
+
+    where :math:`\bar{\textrm{data}}` is the mean value of the data. If the 
+    model perfectly describes the data, :math:`R^2 = 1`.
+    """
+    return float(1 - ((data - fit)**2).sum()/((data - data.mean())**2).sum())
+
+

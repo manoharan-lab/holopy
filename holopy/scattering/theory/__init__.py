@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -21,28 +21,15 @@ Theories to compute scattering from objects.
 All theories have a common interface defined by
 :class:`holopy.scattering.theory.scatteringtheory.ScatteringTheory`.
 
-
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 .. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
-from __future__ import division
 
-try:
-    from mie import Mie
-    from multisphere import Multisphere
-except ImportError:
-    import warnings
-    warnings.warn("""
-Could not import scattering.  You will not be able to do scattering
-calculations, but the rest of holopy sould remain usable.
-
-This is probably due to your not having properly compiled versions holopy's
-fortran bits.  """)
-
-try:
-    from dda import DDA
-except ImportError:
-    pass
+from holopy.scattering.theory.mie import Mie
+from holopy.scattering.theory.mielens import MieLens
+from holopy.scattering.theory.multisphere import Multisphere
+from holopy.scattering.theory.dda import DDA
+from holopy.scattering.theory.tmatrix import Tmatrix

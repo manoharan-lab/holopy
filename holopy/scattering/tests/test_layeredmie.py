@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -21,20 +21,18 @@ Test fortran-based multilayered Mie calculations and python interface.
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
-from __future__ import division
+
 
 import numpy as np
-from numpy import sqrt
 from numpy.testing import assert_allclose
 import yaml
 import os
-from ...core import Optics, ImageSchema
-from .common import verify
-from ..theory import Mie
-from ..theory.mie_f import multilayer_sphere_lib, miescatlib
-from ..scatterer import Sphere
-
 from nose.plugins.attrib import attr
+
+from ...core import detector_grid
+from ...core.tests.common import verify
+from ..theory.mie_f import multilayer_sphere_lib, miescatlib
+from .. import Sphere, calc_holo, Mie
 
 @attr('medium')
 def test_Shell():
@@ -42,12 +40,10 @@ def test_Shell():
               n=[(1.27121212428+0j), (1.49+0j)], r=[0.960957713253-0.0055,
                                                     0.960957713253])
 
-    optics = Optics(wavelen=0.658, index=1.36, polarization=[1.0, 0.0])
-
-    t = ImageSchema(200, .071333, optics = optics)
+    t = detector_grid(200, .071333)
 
     thry = Mie(False)
-    h = thry.calc_holo(s, t, scaling = 0.4826042444701572)
+    h = calc_holo(t,s, 1.36, .658, illum_polarization=(1, 0), theory=thry, scaling = 0.4826042444701572)
 
     verify(h, 'shell')
 
@@ -85,12 +81,13 @@ def test_sooty_particles():
     x_sm = np.arange(1, n_layers + 1) * x_L / n_layers
     beta = (m_abs**2 - m_med**2) / (m_abs**2 + 2. * m_med**2)
     f = 4./3. * (x_sm / x_L) * f_v
-    m_sm = m_med * sqrt(1. + 3. * f * beta / (1. - f * beta))
+    m_sm = m_med * np.sqrt(1. + 3. * f * beta / (1. - f * beta))
 
     location = os.path.split(os.path.abspath(__file__))[0]
     gold_name = os.path.join(location, 'gold',
                              'gold_multilayer')
-    gold = np.array(yaml.load(file(gold_name + '.yaml')))
+    with open(gold_name + '.yaml') as gold_file:
+        gold = np.array(yaml.safe_load(gold_file))
 
     assert_allclose(efficiencies_from_scat_units(m_ac, x_ac), gold[0],
                     rtol = 1e-3)

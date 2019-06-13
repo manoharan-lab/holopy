@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -17,31 +17,12 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """Loading, saving, and basic processing of data.
 
-holopy.core contains code to load images and holopy yamls into
-:mod:`.marray` objects. It also contains the machinery for saving
-all HoloPy objects as holopy yaml files. Finally, it provides some
-basic mathematical operations, mostly as higher level wrappers around
-numpy or scipy routines.
-
-Main use cases are
-
-1. Image or other data file + metadata => :class:`.Image` or other
-   :class:`.Marray` object
-
-2. Raw :class:`.Image` + processing => processed :class:`.Image` object
-
-3. Any :class:`.HoloPyObject` from calculations or processing => achival
-   yaml text or text/binary result
-
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 
 """
 
-from marray import (Marray, Image, Schema, ImageSchema, Volume,
-                    VolumeSchema, VectorGrid, VectorGridSchema,
-                    subimage)
-from metadata import Optics, Grid, Angles, UnevenGrid
-from io import load, load_image, save
-import process
-import helpers
+from holopy.core.metadata import (detector_grid, detector_points,
+                                  update_metadata, copy_metadata)
+from holopy.core.io import (load, load_image, save, save_image,
+                            show, test_display)

@@ -1,4 +1,4 @@
-.. _loading:
+.. _load_tutorial:
 
 Loading Data
 ============
@@ -7,7 +7,7 @@ HoloPy can work with any kind of image data, but we use it for digital
 holograms, so our tutorials will focus mostly on hologram data.
 
 Loading and viewing a hologram
-------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We include a couple of example holograms with HoloPy. Lets start by
 loading and viewing one of them
@@ -15,86 +15,184 @@ loading and viewing one of them
 .. plot:: pyplots/show_example_holo.py
    :include-source:
 
-But you probably want to look at your data not ours. If you have an
-``image.tif`` in your current directory, you can do::
+.. testcode::
+    :hide:
 
-  import holopy as hp
-  holo = hp.load('image.tif')
-  hp.show(holo)
+    import holopy as hp
+    from holopy.core.io import get_example_data_path
+    imagepath = get_example_data_path('image01.jpg')
 
-HoloPy can import many different image formats, including TIFF files,
-numpy data format files, and any image format that can be handled by
-the `Python Imaging Library
-<http://www.pythonware.com/products/pil/>`_. 
+The first few lines just specify where to look for an image. 
+The most important line actually loads the image so that you can work with it: 
 
-If you are able to take an image with the same optical setup but
-without the object of interest, removing that background can usually
-improve the image a lot.  Suppose the background image is saved as
-``bg.tif``. Then you can divide it out by::
+..  testcode::
+    
+    raw_holo = hp.load_image(imagepath, spacing = 0.0851)
 
-  bg = hp.load('bg.tif')
-  holo = holo / bg
+HoloPy can import any image format that can be handled by `Pillow
+<http://pillow.readthedocs.io/en/3.3.x/handbook/image-file-formats.html>`_.
+ 
+The spacing argument tells holopy about the scale of your image. Here, we had 
+previously measured that each pixel is a square with side length 0.0851 microns.
+In general, you should specify ``spacing`` as the distance between adjacent pixel centres.
+You can also load an image without specifying a spacing value if you just want
+to look at it, but most holopy calculations will give erroneous results on such an image. 
 
-where the original image has been replaced with one with the
-background removed. This usually does a fairly good job of correcting
-for nonuniform illumination, dust elsewhere in the optics, and things
-of that sort.
+The final line simply displays the loaded image on your screen 
+with the built-in HoloPy :func:`.show` function. If you don't see anything, you may need to set your matplotlib backend.
+Refer to :ref:`usage` for instructions. 
 
-.. note ::
-   
-  If you know numpy, our :class:`.Image` is a `numpy
-  <http://docs.scipy.org/doc/numpy/reference/arrays.html>`_ array
-  subclass, so you can use all the math numpy provides.  For
-  example::
+Correcting Noisy Images
+~~~~~~~~~~~~~~~~~~~~~~~
 
-    import scipy.ndimage
-    import scipy.fftpack
-    filtered_image = scipy.ndimage.uniform_filter(holo, [10,10])
-    ffted_image = scipy.fftpack.fft2(holo)
+The raw hologram has some non-uniform illumination and an artifact in the 
+upper right hand corner from dust somewhere in the optics. These types of  
+things can be removed if you are able to take a background image with the same optical setup but
+without the object of interest. Dividing the raw hologram by the background using :func:`.bg_correct` 
+can usually improve the image a lot.
+
+..  testcode::
+
+    from holopy.core.process import bg_correct
+    bgpath = get_example_data_path('bg01.jpg')
+    bg = hp.load_image(bgpath, spacing = 0.0851)
+    holo = bg_correct(raw_holo, bg)
+    hp.show(holo)
+
+..  plot:: pyplots/show_bg_holo.py
+
+Often, it is beneficial to record multiple background images. In this case,
+we want an average image to pass into :func:`.bg_correct` as our background. 
+
+..  testcode::
+     
+    bgpath = get_example_data_path(['bg01.jpg', 'bg02.jpg', 'bg03.jpg'])
+    bg = hp.core.io.load_average(bgpath, refimg = raw_holo)
+    holo = bg_correct(raw_holo, bg)
+    hp.show(holo)
+
+Here, we have used :func:`.load_average` to construct an average of the three background
+images specified in ``bgpath``. The ``refimg`` argument allows us to specify a reference
+image that is used to provide spacing and other metadata to the new, averaged image. 
+
+If you are worried about stray light in your optical train, you should 
+also capture a dark-field image of your sample, recorded with no laser illumination.
+A dark-field image is specified as an optional third argument to :func:`.bg_correct`.
+
+..  testcode::
+
+    dfpath = get_example_data_path('df01.jpg')
+    df = hp.load_image(dfpath, spacing = 0.0851)
+    holo = bg_correct(raw_holo, bg, df)
+    hp.show(holo)
+
+..  testcode::
+    :hide:
+    
+    print(holo.values[0,0,0])
+
+..  testoutput::
+    :hide:
+    
+    0.9196428571428571
+
+Some convenient tools for manipulating image data are included within HoloPy. See the :ref:`tools` page for details.
 
 .. _metadata:
 
 Telling HoloPy about your Experimental Setup
---------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Simply loading a TIFF won't help you analyze your data, since the
-image file generally won't tell you where the camera is with respect
-to the light source or how the images were recorded. This additional
-information is referred to as :dfn:`metadata`, which must be
-included when you do actual calculations on your data.
+Recorded holograms are a product of the specific experimental setup that produced them.
+The image only makes sense when considered with information about the experimental 
+conditions in mind. When you load an image, you have the option to specify some of this
+information in the form of :dfn:`metadata` that is associated with the image. In fact, we 
+already saw an example of this when we specified image spacing earlier. The sample in our
+image was immersed in water, which has a refractive index of 1.33. It was illuminated by
+a red laser with wavelength of 660 nm and polarization in the x-direction. We can tell
+HoloPy all of this information when loading the image:
 
-In order to be able to do calculations with your data, you will need
-to specify this metadata when you load your image::
+..  testcode::
 
-   import holopy as hp
-   optics = hp.core.Optics(wavelen=.660, index=1.33, 
-                           polarization=[1.0, 0.0])
-   holo = hp.load('image.tif', spacing = .1,  optics = optics)
+    raw_holo = hp.load_image(imagepath, spacing=0.0851, medium_index=1.33, illum_wavelen=0.660, illum_polarization=(1,0))
 
-Above, we have created an instance of the :class:`.Optics` metadata
-class for incident light at 660 nm (.66 micron) (in vacuum)
-propagating in a medium with refractive index 1.33, and with a
-polarization in the x-direction. The pixel spacing of the image is 100
-nm (.1 micron).  You can simulate the effect of adding an objective
-lens in the optical path simply by reducing the specified spacing by
-the magnification factor of the objective::
-  
-  magnification = 40
-  holo = hp.load('image.tif', spacing = 4.0/magnification,  
-                 optics = optics)
-  
+
+You can then view these metadata values as attributes of ``raw_holo``, as in ``raw_holo.medium_index``.
+However, you must use a special function :func:`.update_metadata` to edit them. If we forgot to 
+specify metadata when loading the image, we can use :func:`.update_metadata` to add it later:
+
+..  testcode::
+
+    holo = hp.core.update_metadata(holo, medium_index=1.33, illum_wavelen=0.660, illum_polarization=(1,0))
 
 .. note::
+    Spacing and wavelength must both be written in the same units - microns in the example
+    above. Holopy has no built-in length scale and requires only that you be consistent. 
+    For example, we could have specified both parameters in terms of nanometers or meters instead.
 
-    HoloPy uses the given wavelength and medium refractive
-    index to calculate the wavelength in the medium, which
-    is available as: ::
+..  testcode::
+    :hide:
+    
+    print(holo.medium_index-holo.illum_wavelen)
+    print(raw_holo.medium_index-raw_holo.illum_wavelen)
 
-        optics.med_wavelen
-        0.49624060150375937
+..  testoutput::
+    :hide:
+    
+    0.67
+    0.67
 
-You may have noticed that the very first example loaded a ``.yaml``
-file instead of a tiff image. HoloPy's native data format is ``.yaml``
-files which can store all of our metadata. So in that example, we
-provide the metadata in the file. For more information about loading
-and saving HoloPy ``.yaml`` files see :ref:`yaml_ref`.
+HoloPy images are stored as `xarray DataArray <http://xarray.pydata.org/en/stable/data-structures.html>`_ objects.
+xarray is a powerful tool that makes it easy to keep track of metadata and extra image dimensions, distinguishing between
+a time slice and a volume slice, for example. While you do not need any knowledge of xarray to use HoloPy, some
+familiarity will make certain tasks easier. This is especially true if you want to directly manipulate data
+before or after applying HoloPy's built-in functions.
+
+Saving and Reloading Holograms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Once you have background-divided a hologram and associated it with metadata, you might
+want to save it so that you can skip those steps next time you are working with the 
+same image::
+    
+    hp.save('outfilename', holo)
+
+saves your processed image to a compact HDF5 file. In fact, you can use :func:`.save` 
+on any holopy object. To reload your same hologram with metadata you would write::
+
+    holo = hp.load('outfilename')
+
+If you would like to save your hologram to an image format for easy visualization, use::
+
+    hp.save_image('outfilename', holo)
+
+Additional options of :func:`.save_image` allow you to control how image intensity is scaled. 
+Images saved as .tif (the default) will still contain metadata, which will be retrieved if
+you reload with :func:`.load`, but not :func:`.load_image`
+
+..  note::
+
+    Although HoloPy stores metadata even when writing to .tif image files, it is still recommended that 
+    holograms be saved in HDF5 format using :func:`.save`. Floating point intensity values are rounded 
+    to 8-bit integers when using :func:`.save_image`, resulting in information loss.
+
+
+Non-Square Pixels
+~~~~~~~~~~~~~~~~~
+
+The holograms above make use of several default assumptions. When you load an image like:
+
+..  testcode::  
+
+    raw_holo = hp.load_image(imagepath, spacing = 0.0851)
+
+you are making HoloPy assume a square array of evenly spaced grid
+points. If your pixels are not square, you can provide pixel spacing values in each direction: 
+
+..  testcode::
+
+  raw_holo = hp.load_image(imagepath, spacing = (0.0851, 0.0426))
+
+Most displays will default to displaying square pixels but if you 
+use HoloPy's built-in :func:`.show` function to display the image, your hologram will display
+with pixels of the correct aspect ratio.

@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -15,7 +15,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-
 '''
 Defines Scatterers, a scatterer that consists of other scatterers,
 including scattering primitives (e.g. Sphere) or other Scatterers
@@ -23,15 +22,16 @@ scatterers (e.g. two trimers).
 
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 '''
-from __future__ import division
+
 
 from copy import copy
+from numbers import Number
 
 import numpy as np
 
-
 from . import Scatterer
 from ...core.math import rotate_points
+from ...core.utils import ensure_array
 
 class Scatterers(Scatterer):
     '''
@@ -76,40 +76,43 @@ class Scatterers(Scatterer):
 
     @property
     def parameters(self):
-        d = {}
+        pars = []
+        names = []
         for i, scatterer in enumerate(self.scatterers):
-            for key, par in scatterer.parameters.iteritems():
-                d['{0}:{1}.{2}'.format(i, scatterer.__class__.__name__, key)] = par
-        return dict(sorted(d.items(), key = lambda t: t[0]))
+            for key, par in scatterer.parameters.items():
+                for index, par_check in enumerate(pars + [None]):
+                    # can't simply check par in parameters because then two
+                    # priors defined separately, but identically will match
+                    # whereas this way they are counted as separate objects.
+                    if par is par_check and not isinstance(par, Number):
+                        # par is a prior and already exists in pars
+                        break
+                if par_check is None:
+                    # loop finished - par is not tied.
+                    names.append('{0}:{1}'.format(i,key))
+                    pars.append(par)
+                else:
+                    # loop encountered a break - parameter is tied
+                    names[index] = key
+        return {key:val for key, val in zip(names, pars)}
 
-    @classmethod
-    def from_parameters(cls, parameters):
-        n_scatterers = len(set([p.split(':')[0] for p in parameters.keys()]))
+
+    def from_parameters(self, parameters, overwrite=False):
+        n_scatterers = len(self.scatterers)
         collected = [{} for i in range(n_scatterers)]
-        types = [None] * n_scatterers
-        for key, val in parameters.iteritems():
-            n, spec = key.split(':', 1)
-            n = int(n)
-            scat_type, par = spec.split('.', 1)
-
-            collected[n][par] = val
-            if types[n]:
-                assert types[n] == scat_type
+        for key, val in parameters.items():
+            parts = key.split(':', 1)
+            if len(parts)==2:
+                n = int(parts[0])
+                par = parts[1]
+                collected[n][par] = val
             else:
-                types[n] = scat_type
-
-        scatterers = []
-        # pull in the scatterer package, this lets us grab scatterers by class
-        # name
-        # we have to do it here rather than at the top of the file because we
-        # cannot import scatterer until it is done importing, which will not
-        # happen until import of composite finishes.
-        from .. import scatterer
-        for i, scat_type in enumerate(types):
-            scatterers.append(getattr(scatterer,
-                              scat_type).from_parameters(collected[i]))
-
-        return cls(scatterers)
+                # tied parameter - put it in all of them
+                for col in collected:
+                    col[key] = val
+        scatterers = [scat.from_parameters(pars, overwrite)
+                         for scat, pars in zip(self.scatterers, collected)]
+        return type(self)(scatterers, warn=False)
 
     def _prettystr(self, level, indent="  "):
         '''
@@ -131,13 +134,45 @@ class Scatterers(Scatterer):
         return self._prettystr(0)
 
 
-    def translated(self, x, y, z):
-        trans = [s.translated(x, y, z) for s in self.scatterers]
+    def translated(self, coord1, coord2=None, coord3=None):
+        """
+        Make a copy of this scatterer translated to a new location
+
+        Parameters
+        ----------
+        x, y, z : float
+            Value of the translation along each axis
+
+        Returns
+        -------
+        translated : Scatterer
+            A copy of this scatterer translated to a new location
+        """
+        if coord2 is None and len(ensure_array(coord1)==3):
+            #entered translation vector
+            trans_coords = ensure_array(coord1)
+        elif coord2 is not None and coord3 is not None:
+            #entered 3 coords
+            trans_coords = np.array([coord1, coord2, coord3])
+        else:
+            raise InvalidScatterer(self, "Cannot interpret translation coordinates")
+
+        trans = [s.translated(trans_coords) for s in self.scatterers]
         new = copy(self)
         new.scatterers = trans
         return new
 
-    def rotated(self, alpha, beta, gamma):
+    def rotated(self, ang1, ang2=None, ang3=None):
+
+        if ang2 is None and len(ensure_array(ang1)==3):
+            #entered rotation angle tuple
+            alpha, beta, gamma = ang1
+        elif ang2 is not None and ang3 is not None:
+            #entered 3 angles
+            alpha=ang1; beta=ang2; gamma=ang3
+        else:
+            raise InvalidScatterer(self, "Cannot interpret rotation coordinates")
+
         centers = np.array([s.center for s in self.scatterers])
         com = centers.mean(0)
 
@@ -171,3 +206,8 @@ class Scatterers(Scatterer):
             return self.scatterers[self.in_domain(point)[0]].index_at(point)
         except TypeError:
             return None
+
+    def select(self, keys):
+        new = copy(self)
+        new.scatterers = [s.select(keys) for s in self.scatterers]
+        return new

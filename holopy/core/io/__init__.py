@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -15,5 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-from io import load, load_image, save, get_example_data, get_example_data_path, average_images
-from image_file_io import save_image, load_image
+from holopy.core.io.io import (load, load_image, save, save_image,
+    get_example_data, get_example_data_path, load_average)
+from holopy.core.io.vis import (show, test_display, display_image,
+                                show_scatterer_slices)

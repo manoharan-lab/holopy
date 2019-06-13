@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -31,20 +31,36 @@ sphere," Applied Optics 42, 1710-1720, (1993).
 '''
 
 import numpy as np
-import miescatlib
-from ...errors import ModelInputError
-
 from numpy import exp, sin, cos, real, imag
-from mie_specfuncs import Qratio, log_der_13, riccati_psi_xi
+
+from ...errors import InvalidScatterer
+
+try:
+    from . import miescatlib
+    from .mie_specfuncs import Qratio, log_der_13, riccati_psi_xi
+except ImportError:
+    pass
 
 def scatcoeffs_multi(marray, xarray, eps1 = 1e-3, eps2 = 1e-16):
     '''
     Calculate scattered field expansion coefficients (in the Mie formalism)
-    for a particle with an arbitrary number of layers.
+    for a particle with an arbitrary number of spherically symmetric layers.
 
-    Inputs:
-    marray: numpy array of layer indices, innermost first
-    xarray: numpy array of layer size parameters (k * radius), innermost first
+    Parameters
+    ----------
+    marray : array_like, complex128
+        array of layer indices, innermost first
+    xarray : array_like, real 
+        array of layer size parameters (k * outer radius), innermost first
+    eps1 : float, optional
+        underflow criterion for Lentz continued fraction for Dn1
+    eps2 : float, optional
+        convergence criterion for Lentz continued fraction for Dn1
+
+    Returns
+    -------
+    scat_coeffs : ndarray (complex)
+        Scattering coefficients
     '''
     # ensure correct data types
     marray = np.array(marray, dtype = 'complex128')
@@ -52,7 +68,8 @@ def scatcoeffs_multi(marray, xarray, eps1 = 1e-3, eps2 = 1e-16):
 
     # sanity check: marray and xarray must be same size
     if marray.size != xarray.size:
-        raise ModelInputError('Arrays of layer indices and size parameters must be the same length!')
+        from ...scatterer.sphere import Sphere
+        raise InvalidScatterer(Sphere(),'Arrays of layer indices and size parameters must be the same length!')
 
     # need number of layers L
     nlayers = marray.size

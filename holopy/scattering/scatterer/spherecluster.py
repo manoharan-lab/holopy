@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -23,15 +23,18 @@ Defines Spheres, a Scatterers scatterer consisting of Spheres
 '''
 # COVERAGE: I think all uncovered code is either unreachable or due likely to be
 # refactored away
-from __future__ import division
+
 
 import numpy as np
 import warnings
+from copy import copy
+from numbers import Number
 
 from .sphere import Sphere
 from .composite import Scatterers
-from ..errors import OverlapWarning, ScattererDefinitionError
+from ..errors import OverlapWarning, InvalidScatterer
 from ...core.math import cartesian_distance, rotate_points
+from ...core.utils import ensure_array, dict_without
 
 # default to always warning the user about overlaps.  This can be overriden by
 # calling this function again with a different action.
@@ -51,16 +54,20 @@ class Spheres(Scatterers):
     '''
 
     def __init__(self, scatterers, warn=True):
-        # make sure all components are spheres
-        for s in scatterers:
-            if not isinstance(s, Sphere):
-                raise ScattererDefinitionError(
-                    "Spheres expects all component " +
-                    "scatterers to be Spheres.\n" +
-                    repr(s) + " is not a Sphere", self)
-        self.scatterers = scatterers
+        if isinstance(scatterers, Sphere):
+            #only one sphere and it's not in a list
+            self.scatterers = [scatterers]
+        else:
+            # make sure all components are spheres
+            for s in scatterers:
+                if not isinstance(s, Sphere):
+                    raise InvalidScatterer(self,
+                        "Spheres expects all component " +
+                        "scatterers to be Spheres.\n" +
+                        repr(s) + " is not a Sphere")
+            self.scatterers = scatterers
 
-        if self.overlaps:
+        if self.overlaps and warn:
             warnings.warn(OverlapWarning(self, self.overlaps))
 
     @property
@@ -91,10 +98,10 @@ class Spheres(Scatterers):
 
     def add(self, scatterer):
         if not isinstance(scatterer, Sphere):
-            raise ScattererDefinitionError(
+            raise InvalidScatterer(self,
                 "Spheres expects all component " +
                 "scatterers to be Spheres.\n" +
-                repr(scatterer) + " is not a Sphere", self)
+                repr(scatterer) + " is not a Sphere")
         self.scatterers.append(scatterer)
 
     @property
@@ -126,18 +133,45 @@ class Spheres(Scatterers):
     def center(self):
         return self.centers.mean(0)
 
-# TODO: Move this code out of scatterer? It sort of has more to do with how
-# clusters move than pure geometry
+class RigidCluster(Spheres):
 
-# (VNM) as a way of generating a new Spheres, rotate is fine.  But
-# it should become a method (and override Scatterer.rotate()) rather
-# than a function.  I would propose moving this to Scatterers, where it
-# can be made more general and inheritable.
+    def __init__(self, spheres, translation=(0,0,0), rotation=(0,0,0)):
+        if isinstance(spheres, Spheres):
+            self.spheres = spheres
+        else:
+            raise InvalidScatterer(self, "RigidCluster only accepts a scatterer of class Spheres.")
+        if not (len(ensure_array(translation))==3 and len(ensure_array(rotation))==3):
+            raise ValueError('translation and rotation must be listlike of len 3')
+        else:
+            self.translation=translation
+            self.rotation=rotation
 
-def rotate(cluster, theta, phi, psi):
-    com = cluster.centers.mean(0)
+    @property
+    def scatterers(self):
+        return self.spheres.rotated(self.rotation).translated(self.translation).scatterers
 
-    return Spheres([Sphere(n=s.n, r=s.r, center =
-                                 com+rotate_points(s.center-com, theta,
-                                                   phi, psi)) for s in
-                          cluster.scatterers])
+    @property
+    def parameters(self):
+        def expand(key, par):
+            return{'{0}.{1}'.format(key,p[0]):p[1] for p in enumerate(par)}
+
+        d = self.spheres.parameters
+        d.update(expand('translation',self.translation))
+        d.update(expand('rotation', self.rotation))
+        return d
+
+    def from_parameters(self, parameters, overwrite=False):
+        parameters = copy(parameters)
+        keys = filter(lambda key : sum([key.startswith(op) for op in ['rotation', 'translation']]), self.parameters)
+        rigid_pars = {key:self.parameters[key] for key in keys}
+
+        for key in rigid_pars.keys():
+            if key in parameters.keys():
+                if not isinstance(rigid_pars[key], Number) or overwrite:
+                    rigid_pars[key] = parameters.pop(key)
+
+        translation = [rigid_pars['translation.{0}'.format(i)] for i in range(3)]
+        rotation = [rigid_pars['rotation.{0}'.format(i)] for i in range(3)]
+        spheres = self.spheres.from_parameters(parameters, overwrite)
+        return spheres.rotated(rotation).translated(translation)
+

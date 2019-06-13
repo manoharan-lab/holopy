@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -31,26 +31,23 @@ of those fail, failures in these low-level tests will help pin
 down the problem.
 
 
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 '''
 
-from __future__ import division
+
 
 import os
 import yaml
-from nose.tools import assert_raises
 from numpy.testing import assert_allclose
 import numpy as np
 from numpy import sqrt, dot, pi, conj, real, imag, exp
-from nose.tools import with_setup
 from nose.plugins.attrib import attr
+from nose.plugins.skip import SkipTest
+from scipy.special import spherical_jn, spherical_yn
 
 from ..theory.mie_f import mieangfuncs, miescatlib, multilayer_sphere_lib, \
     scsmfo_min, mie_specfuncs
-
-from holopy.scattering.theory.multisphere import _asm_far
-
-from scipy.special import spherical_jn, spherical_yn
+from ..theory.multisphere import _asm_far
 
 # basic defs
 kr = 10.
@@ -99,7 +96,7 @@ def test_polarization_to_scatt_coords():
     assert_allclose(fortran_result, dot(conversion_mat, test_vect))
 
 
-@attr('medium')
+@attr('fast')
 def test_mie_amplitude_scattering_matrices():
     '''
     Test calculation of Mie amplitude scattering matrix elements.
@@ -130,7 +127,9 @@ def test_mie_amplitude_scattering_matrices():
     location = os.path.split(os.path.abspath(__file__))[0]
     gold_name = os.path.join(location, 'gold',
                              'gold_mie_scat_matrix')
-    gold_dict = yaml.load(file(gold_name + '.yaml'))
+    with open(gold_name + '.yaml') as gold_file:
+        gold_dict = yaml.safe_load(gold_file)
+    
     gold = np.array([gold_dict['S11'], gold_dict['pol'],
                      gold_dict['S33'], gold_dict['S34']])
 
@@ -184,8 +183,11 @@ def test_scattered_field_from_asm():
     assert_allclose(fortran_test, gold)
 
 
-@attr('medium')
+@attr('fast')
 def test_mie_internal_coeffs():
+    if os.name == 'nt':
+        raise SkipTest()
+
     m = 1.5 + 0.1j
     x = 50.
     n_stop = miescatlib.nstop(x)
@@ -245,7 +247,8 @@ def test_mie_bndy_conds():
 # independent of kr and close to the analytical result.
 
 
-@attr('medium')
+# @attr('fast')
+# FIXME this test prints out a bunch of crap to the terminal!
 def test_mie_multisphere_singlesph():
     '''
     Check that fields from mie_fields and tmatrix_fields are consistent
@@ -298,7 +301,7 @@ def test_dn1_down_recursion():
     assert_allclose(dn1_fortran, dn1_python, rtol = 1e-6)
 
 
-@attr('medium')
+@attr('fast')
 def test_dn1_lentz():
     '''
     Test down recursion beginning with Lentz continued fraction algorithm
@@ -328,6 +331,8 @@ def test_dn1_lentz():
         lentz_illconditioned = mieangfuncs.lentz_dn1(z, nstop, 1., eps2)
         assert_allclose(lentz_illconditioned, lentz_start, rtol = 1e-12)
 
+# @attr("fast")
+# FIXME this test prints out a bunch of crap to the terminal!
 def test_asm():
     centers = np.array([[ 0.,  0.,  1.], [ 0.,  0., -1.]])
     m = np.array([ 1.5+0.1j,  1.5+0.1j])

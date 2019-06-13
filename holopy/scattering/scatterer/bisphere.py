@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -21,12 +21,12 @@ Defines cylinder scatterers.
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
-from __future__ import division
+
 
 import numpy as np
 
 from .scatterer import CenteredScatterer, Indicators
-from ..errors import ScattererDefinitionError
+from ..errors import InvalidScatterer
 
 class Bisphere(CenteredScatterer):
     """
@@ -41,7 +41,7 @@ class Bisphere(CenteredScatterer):
     center : 3-tuple, list or numpy array
         specifies coordinates of center of the scatterer
     rotation : 3-tuple, list or numpy.array
-        specifies the Euler angles (alpha, beta, gamma) in degrees 
+        specifies the Euler angles (alpha, beta, gamma) in radians 
         defined in a-dda manual section 8.1
     """
 
@@ -51,9 +51,9 @@ class Bisphere(CenteredScatterer):
         self.h = h
 
         if np.isscalar(rotation) or len(rotation) != 3:
-            raise ScattererDefinitionError("rotation specified as {0}; "
+            raise InvalidScatterer(self,"rotation specified as {0}; "
                                            "rotation should be "
                                            "specified as (alpha, beta, gamma)"
-                                           "".format(rotation), self)
+                                           "".format(rotation))
         self.rotation = rotation
-        super(Bisphere, self).__init__(center)
+        super().__init__(center)

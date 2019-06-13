@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -23,7 +23,7 @@ light scattering, fitting scattering models to data, and visualizing
 images and calculations.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
 .. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
@@ -31,12 +31,10 @@ images and calculations.
 """
 
 
-import core
-from .core import load, save
-import scattering
-import fitting
-from propagation import propagate
-from vis import show
+from holopy import core, scattering, fitting, inference
+from holopy.core import (load, save, load_image, save_image, show, test_display,
+                                            detector_grid, detector_points)
+from holopy.propagation import propagate
 
-__version__ = '2.0.0'
+__version__ = '3.3.0'
 __version_info__ = tuple([ int(num) for num in __version__.split('.')])

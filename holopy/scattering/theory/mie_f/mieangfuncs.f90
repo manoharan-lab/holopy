@@ -1,4 +1,4 @@
-! Copyright 2013, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
+! Copyright 2013-2016, Vinothan N. Manoharan, Thomas G. Dimiduk, Rebecca
 ! W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
 !
 ! This file is part of HoloPy.

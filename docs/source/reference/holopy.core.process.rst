@@ -1,23 +1,34 @@
-process Package
-===============
+holopy.core.process package
+===========================
 
-:mod:`process` Package
-----------------------
+Module contents
+---------------
 
 .. automodule:: holopy.core.process
     :members:
+    :undoc-members:
     :show-inheritance:
 
-:mod:`centerfinder` Module
---------------------------
+holopy.core.process.centerfinder module
+---------------------------------------
 
 .. automodule:: holopy.core.process.centerfinder
     :members:
+    :undoc-members:
     :show-inheritance:
 
-:mod:`enhance` Module
----------------------
+holopy.core.process.fourier module
+----------------------------------
 
-.. automodule:: holopy.core.process.enhance
+.. automodule:: holopy.core.process.fourier
     :members:
+    :undoc-members:
+    :show-inheritance:
+
+holopy.core.process.img_proc module
+-----------------------------------
+
+.. automodule:: holopy.core.process.img_proc
+    :members:
+    :undoc-members:
     :show-inheritance:

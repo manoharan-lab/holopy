@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -33,54 +33,13 @@ F. C. Cheong, B. Sun, R. Dreyfus, J. Amato-Grill, K. Xiao, L. Dixon
 video microscopy, Optics Express 17, 13071-13079 (2009).
 
 .. moduleauthor:: Rebecca W. Perry <rperry@seas.harvard.edu>
-.. moduleauthor:: Jerome Fung <fung@physics.harvard.edu>
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 """
 
-from __future__ import division
-
 import numpy as np
-from .enhance import normalize
-from holopy.core.marray import subimage
-from scipy import ndimage
-
-def centered_subimage(image, shape, threshold=.5, blursize=3):
-    """
-    Cut out a region of an image centered around an automatically detected particle
-
-    Parameters
-    ----------
-    image : ndarray or Image
-        The source image to cut from
-    shape : int or (int, int)
-        The desired subimage shape
-    threshold : float (optional)
-        fraction of the maximum gradient below which all
-        other gradients will be ignored (range 0-.99)
-    blursize : float (optional)
-        radius (in pixels) of the Gaussian filter that
-        is applied prior to Hough transform
-
-    Returns
-    -------
-    res : ndarray
-        row(s) and column(s) of center(s)
-
-    Notes
-    -----
-    See further description in center_find docstring.
-    """
-    # TODO: add centers option? maybe do something like center the cut
-    # on the com, probably warn if any centers are out of the cut
-
-    if image.ndim < 3:
-        center = center_find(image, threshold=threshold, blursize=blursize)
-        return subimage(image, center, shape)
-    else:
-        n_frames = image.shape[2]
-        result = np.zeros(shape + (n_frames,))
-        for frame in range(n_frames):
-            center = center_find(image[...,frame], threshold=threshold, blursize=blursize)
-            result[..., frame] = subimage
+from .img_proc import normalize
+from scipy.ndimage import sobel, filters
+from copy import copy
 
 def center_find(image, centers=1, threshold=.5, blursize=3.):
     """
@@ -126,9 +85,13 @@ def center_find(image, centers=1, threshold=.5, blursize=3.):
     contribute to finding the centers and the code will take a little
     bit longer.
     """
+    image=copy(image)
     if blursize>0:
-        image = ndimage.filters.gaussian_filter(image,blursize)
+        image.values = filters.gaussian_filter(image.values,blursize)
     col_deriv, row_deriv = image_gradient(image)
+    while col_deriv.ndim > 2:
+        col_deriv = col_deriv[:,:,0]
+        row_deriv = row_deriv[:,:,0]
     res = hough(col_deriv, row_deriv, centers, threshold)
     if centers==1:
         res = res[0]
@@ -154,9 +117,9 @@ def image_gradient(image):
         y-components of intensity gradient
     """
     image = normalize(image)
-    grad_col = ndimage.sobel(image, axis=0)
-    grad_row = -ndimage.sobel(image, axis=1)
-    return grad_col.astype(float), grad_row.astype(float)
+    grad_col = sobel(image, axis=image.dims.index('x'))
+    grad_row = -sobel(image, axis=image.dims.index('y'))
+    return np.squeeze(grad_col.astype(float)), np.squeeze(grad_row.astype(float))
 
 
 def hough(col_deriv, row_deriv, centers=1, threshold=.25):

@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -21,16 +21,28 @@ Error classes used in holopy
 
 .. moduleauthor :: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
-from __future__ import division
+
 
 
 class LoadError(Exception):
     def __init__(self, filename, message):
-        self.filename = filename
-        super(LoadError, self).__init__("Error loading file " + self.filename + ": " + self.message)
+        super().__init__("Error loading file %r: %s" % (filename, message))
 
 class BadImage(Exception):
     pass
 
-class UnspecifiedPosition(Exception):
-        pass
+class NoMetadata(Exception):
+    def __str__(self):
+        return "File without metadata detected. To load raw images, use hp.load_image()"
+
+class CoordSysError(Exception):
+    def __str__(self):
+        return "Could not interpret your points. Use either Cartesian or spherical coordinates"
+
+class DependencyMissing(Exception):
+    def __init__(self, dependency, message=""):
+        self.dependency = dependency
+        self.message = message
+    def __str__(self):
+        return "Calculation requires {} but it could not be found. {}".format(
+                self.dependency, self.message)

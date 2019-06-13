@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -32,10 +32,10 @@ from copy import copy
 
 class CsgScatterer(Scatterer):
     def __init__(self, s1, s2):
-        # For now we just treat s1's location as the location of the composite.
+        # For now we just treat s1's center as the center of the composite.
         # This is probably not the best way to do it, but it is simple to
         # implement for now.
-        self.location = s1.location
+        self.center = s1.center
         self.s1 = s1
         self.s2 = s2
         if s1.num_domains > 1 or s2.num_domains > 1:
@@ -53,7 +53,7 @@ class CsgScatterer(Scatterer):
 
     def rotated(self, alpha, beta, gamma):
         centers = np.array([s.center for s in (self.s1, self.s2)])
-        new_centers = self.location + rotate_points(centers - self.location, alpha, beta, gamma)
+        new_centers = self.center + rotate_points(centers - self.center, alpha, beta, gamma)
 
         s1, s2 = [s.translated(*(c-n)).rotated(alpha, beta, gamma) for s, c, n
                   in zip((self.s1, self.s2), centers, new_centers)]

@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -15,36 +15,33 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import division
 
-import numpy as np
 import tempfile
 import os
 import types
 import inspect
 import yaml
 import shutil
-from numpy.testing import assert_equal, assert_almost_equal
+from numpy.testing import assert_equal, assert_allclose
 import pickle
-import cPickle
+from collections import OrderedDict
+import xarray as xr
 
-
-from .. import load, save
-from ..io import get_example_data, get_example_data_path
+from holopy.core.io import load, save, get_example_data
 
 # tests should fail if they give warnings
 import warnings
 warnings.simplefilter("error")
 
-
-from numpy.testing import assert_allclose
-
 def assert_read_matches_write(o):
-    tempf = tempfile.NamedTemporaryFile()
-    save(tempf, o)
-    tempf.flush()
-    tempf.seek(0)
-    loaded = load(tempf)
+    with tempfile.NamedTemporaryFile(suffix='.h5') as tempf:
+        save(tempf.name, o)
+        loaded = load(tempf.name)
+    # For now our code for writing xarrays to hdf5 ends up with them picking up
+    # a name attribute that their predecessor may not have, so correct for that
+    # if it is true.
+    if hasattr(loaded, 'name') and o.name is None:
+        loaded.name = None
     assert_obj_close(o, loaded)
 
 def assert_pickle_roundtrip(o, cPickle_only=False):
@@ -54,7 +51,7 @@ def assert_pickle_roundtrip(o, cPickle_only=False):
     # and test both in all cases
     if not cPickle_only:
         assert_obj_close(o, pickle.loads(pickle.dumps(o)))
-    assert_obj_close(o, cPickle.loads(cPickle.dumps(o)))
+    assert_obj_close(o, pickle.loads(pickle.dumps(o)))
 
 
 
@@ -68,21 +65,37 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
     except (NotImplementedError, TypeError):
         pass
 
+    if (isinstance(desired, xr.DataArray) and isinstance(actual, xr.DataArray)
+            and hasattr(actual, "_indexes")):
+        # as of xarray 0.12.1, saved and reloaded objects do not maintain
+        # the redundant ._indexes attribute
+        desired._indexes = actual._indexes
+
+    # if None, let some things that are functially equivalent to None pass
+    nonelike = [None, OrderedDict()]
+    if actual is None or desired is None:
+        if actual in nonelike and desired in nonelike:
+            return
+
     if isinstance(actual, dict) and isinstance(desired, dict):
-        for key, val in actual.iteritems():
-            assert_obj_close(actual[key], desired[key], context = '{0}[{1}]'.format(context, key),
-                             rtol = rtol, atol = atol)
+        for key, val in actual.items():
+            if key in ['_id', '_encoding', '_coords']:
+                # these are implementation specific dict keys that we
+                # shouldn't expect to be identical, so ignore them
+                continue
+            assert_obj_close(actual[key], desired[key], rtol=rtol, atol=atol,
+                             context='{0}[{1}]'.format(context, key))
     elif hasattr(actual, '_dict') and hasattr(desired, '_dict'):
         assert_obj_close(actual._dict, desired._dict, rtol=rtol, atol=atol,
                          context = "{0}._dict".format(context))
     elif isinstance(actual, (list, tuple)):
         assert_equal(len(actual), len(desired), err_msg=context)
         for i, item in enumerate(actual):
-            assert_obj_close(actual[i], desired[i], context = '{0}[{1}]'.format(context, i),
-                             rtol = rtol, atol = atol)
+            assert_obj_close(actual[i], desired[i], rtol=rtol, atol=atol,
+                             context = '{0}[{1}]'.format(context, i))
     elif isinstance(actual, types.MethodType):
         assert_method_equal(actual, desired, context)
-    elif hasattr(actual, '__dict__'):
+    elif hasattr(actual, '__dict__') and hasattr(desired, '__dict__'):
         assert_obj_close(actual.__dict__, desired.__dict__, rtol = rtol,
                          atol = atol, context = context + '.__dict__')
     else:
@@ -93,18 +106,18 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
 
 def assert_method_equal(actual, desired, context):
     # Check that the functions are the same
-    assert_equal(actual.im_func.func_name, desired.im_func.func_name, err_msg=context)
+    assert_equal(actual.__func__.__name__, desired.__func__.__name__, err_msg=context)
 
     # check that the objects are the same
 
     # We want to treat Mie.calc_holo and Mie().calc_holo as equal, this code
     # here instantiates a class if possible so these match
-    act_obj = actual.im_self
+    act_obj = actual.__self__
     try:
         act_obj = act_obj()
     except TypeError:
         pass
-    des_obj = desired.im_self
+    des_obj = desired.__self__
     try:
         des_obj = des_obj()
     except TypeError:
@@ -120,18 +133,25 @@ def verify(result, name, rtol=1e-7, atol=1e-8):
     location =  os.path.split(filename)[0]
     gold_dir = os.path.join(location, 'gold')
     gold_name = os.path.join(location, 'gold', 'gold_'+name)
-    gold_yaml = yaml.load(file(gold_name+'.yaml'))
+    with open(gold_name+'.yaml') as gold_file:
+        gold_yaml = yaml.safe_load(gold_file)
 
-    full = os.path.join(gold_dir, 'full_data', 'gold_full_{0}.yaml'.format(name))
+    full = os.path.join(gold_dir, 'full_data', 'gold_full_{0}'.format(name))
     if os.path.exists(full):
-        assert_obj_close(result, load(full), rtol)
-
+        try:
+            assert_obj_close(result, load(full), rtol)
+        except OSError:
+            # This will happen if you don't have git lfs installed and we
+            # attempt to open the placeholder file. In that case we just test
+            # the summary data, same as if the full data isn't present.
+            pass
 
     if isinstance(result, dict):
         assert_obj_close(result, gold_yaml, rtol, atol)
     else:
-        for key, val in gold_yaml.iteritems():
-            assert_almost_equal(getattr(result, key)(), val, decimal=int(-np.log10(rtol)))
+        for key, val in gold_yaml.items():
+            assert_obj_close(getattr(result, key)(), val, rtol, atol)
+
 
 # TODO: update me
 def make_golds(result, name, moveto=None):
@@ -170,7 +190,7 @@ def make_golds(result, name, moveto=None):
         shutil.move(simple_checks, gold_dir)
         shutil.move(gold_name, full_dir)
     else:
-        print('move {0} to the gold/ directory, and {1} to the gold/full_data/ '
+        print(('move {0} to the gold/ directory, and {1} to the gold/full_data/ '
               'directory to regold your local test.  You should also see about '
               'getting the full data somewhere useful for fetching by '
-              'others'.format(simple_checks, gold_name))
+              'others'.format(simple_checks, gold_name)))

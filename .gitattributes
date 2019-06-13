@@ -1,0 +1,2 @@
+holopy/scattering/tests/gold/full_data/*.h5 filter=lfs diff=lfs merge=lfs -text
+holopy/propagation/tests/gold/full_data/*.h5 filter=lfs diff=lfs merge=lfs -text

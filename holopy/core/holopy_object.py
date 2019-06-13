@@ -1,5 +1,5 @@
-# Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -29,23 +29,31 @@ analysis procedures.
 import numpy as np
 import yaml
 
+try:
+    FullLoader = yaml.FullLoader
+except AttributeError:
+    # Using pyyaml version < 5, technically unsafe
+    FullLoader = yaml.Loader
+YAMLLOADERS = (FullLoader, yaml.SafeLoader)
+
 # Metaclass black magic to eliminate need for adding yaml_tag lines to classes
 class SerializableMetaclass(yaml.YAMLObjectMetaclass):
     def __init__(cls, name, bases, kwds):
-        super(SerializableMetaclass, cls).__init__(name, bases, kwds)
+        super().__init__(name, bases, kwds)
         # Replace the normal yaml constructor with one that uses the class name
         # as the yaml tag.
-        cls.yaml_loader.add_constructor('!{0}'.format(cls.__name__), cls.from_yaml)
+        for loader in YAMLLOADERS:
+            tag = '!{0}'.format(cls.__name__)
+            yaml.add_constructor(tag, cls.from_yaml, Loader=loader)
         cls.yaml_dumper.add_representer(cls, cls.to_yaml)
         if '__init__' in kwds:
-            cls._args = kwds['__init__'].func_code.co_varnames[1:]
+            cls._args = kwds['__init__'].__code__.co_varnames[1:]
 
 
-class Serializable(yaml.YAMLObject):
+class Serializable(yaml.YAMLObject, metaclass=SerializableMetaclass):
     """
     Base class for any object that wants a nice clean yaml output
     """
-    __metaclass__ = SerializableMetaclass
 
     @classmethod
     def to_yaml(cls, dumper, data):
@@ -66,6 +74,7 @@ class HoloPyObject(Serializable):
 
     def _iteritems(self):
         for var in self._args:
+
             if getattr(self, var, None) is not None:
                 item = getattr(self, var)
                 if isinstance(item, np.ndarray) and item.ndim == 1:
@@ -90,10 +99,15 @@ class HoloPyObject(Serializable):
         return self.__repr__()
 
     def __eq__(self, other):
-        # Note, this is possibly a slightly weak form of equality, but well behaved holopy objects are equal if their _dict's are equal
-        return self._dict == other._dict
+        if hasattr(other, '_dict'):
+            # Note, this is possibly a slightly weak form of equality, but well behaved holopy objects are equal if their _dict's are equal
+            return self._dict == other._dict
+        else:
+            return False
 
-    def like_me(self, **kwargs):
+    def like_me(self, filter_none=True, **kwargs):
+        if filter_none:
+            kwargs={key: val for key, val in kwargs.items() if val is not None}
         return self.__class__(**dict(self._dict, **kwargs))
 
 
