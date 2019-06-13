@@ -38,11 +38,11 @@ except:
 
 class Tmatrix(ScatteringTheory):
     """
-    Computes scattering using the axisymmetric T-matrix solution 
+    Computes scattering using the axisymmetric T-matrix solution
     by Mishchenko with extended precision.
 
-    It can calculate scattering from axisymmetric scatterers such as 
-    cylinders and spheroids. Calculations for particles that are very 
+    It can calculate scattering from axisymmetric scatterers such as
+    cylinders and spheroids. Calculations for particles that are very
     large or have high aspect ratios may not converge.
 
     Notes
@@ -64,6 +64,12 @@ class Tmatrix(ScatteringTheory):
         return s
 
     def _parse_args(self, scatterer, pos, medium_wavevec, medium_index):
+        """Parses inputs into form usable by tmatrix_f. The definitions of
+        the aruguments can be found in "Scattering, Absorbtion, and Emission of
+        Light by Small Particles" by Mishchenko, Travis and Lacis in Chapter 5.
+
+        The incident polarization is set to (1, 0)
+        """
         angles = pos.T[:, 1:] * 180/np.pi
 
         med_wavelen = 2*np.pi/medium_wavevec
@@ -94,13 +100,15 @@ class Tmatrix(ScatteringTheory):
         ndgs = 5
         alpha = scatterer.rotation[2] * 180 / np.pi
         beta = scatterer.rotation[1] * 180 / np.pi
+
+        # FIXME: Why does the incident polarization have to be set to  (1, 0)?
         thet0 = 0
         thet = angles[:, 0]
         phi0 = 0
         phi = angles[:, 1]
         nang = angles.shape[0]
 
-        args = [axi, rat, lam, mrr, mri, eps, NP, ndgs, alpha, beta, 
+        args = [axi, rat, lam, mrr, mri, eps, NP, ndgs, alpha, beta,
                 thet0, thet, phi0, phi, nang]
 
         return args
@@ -120,7 +128,7 @@ class Tmatrix(ScatteringTheory):
         if not (np.array(illum_polarization)[:2] == np.array([1,0])).all():
             raise ValueError("Our implementation of Tmatrix scattering can only handle [1,0] polarization. Adjust your reference frame accordingly.")
 
-        scat_matr = self._raw_scat_matrs(scatterer, pos, 
+        scat_matr = self._raw_scat_matrs(scatterer, pos,
                     medium_wavevec=medium_wavevec, medium_index=medium_index)
         fields = np.zeros_like(pos.T, dtype = scat_matr.dtype)
 
@@ -136,7 +144,7 @@ class Tmatrix(ScatteringTheory):
             # TODO: figure out why postfactor is needed -- it is not used in dda.py
             postfactor = np.array([[np.cos(phi),np.sin(phi)],
                                    [-np.sin(phi),np.cos(phi)]])
-            escat_sph = mieangfuncs.calc_scat_field(kr, phi, 
+            escat_sph = mieangfuncs.calc_scat_field(kr, phi,
                                     np.dot(scat_matr[i],postfactor), [1,0])
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
         return fields.T
