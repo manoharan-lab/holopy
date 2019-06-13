@@ -178,9 +178,3 @@ class test_custom_yaml_output(unittest.TestCase):
                 self.a = a
         assert yaml.dump(S('a'), default_flow_style=True) == '!S {a: a}\n'
 
-class TestLoadMieLensData(unittest.TestCase):
-    def test_load_image0000(self):
-        imagepath = hp.core.io.get_example_data_path('ps_image_B0000.tif')
-        metadata  = {'spacing': 0.1755, 'medium_index': 1.33, 'illum_wavelen': 0.66, 'illum_polarization': (1,0)}
-        raw_holo = hp.load_image(imagepath, **metadata)
-        assert True
