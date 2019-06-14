@@ -33,12 +33,17 @@ from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 import holopy as hp
 from holopy.core import load, save, load_image, save_image
 from holopy.core.errors import NoMetadata
+from holopy.core.io import load_average, get_example_data_path
 from holopy.core.process import normalize
 from holopy.core.metadata import get_spacing, copy_metadata
 from holopy.core.holopy_object import Serializable
 from holopy.core.tests.common import (
     assert_obj_close, assert_read_matches_write, get_example_data)
 
+import memory_profiler
+
+IMAGE01_METADATA = {'spacing': 0.0851, 'medium_index': 1.33,
+                    'illum_wavelen': 0.66, 'illum_polarization':  (1,0)}
 
 class test_loading_and_saving(unittest.TestCase):
     def setUp(self):
@@ -178,3 +183,26 @@ class test_custom_yaml_output(unittest.TestCase):
                 self.a = a
         assert yaml.dump(S('a'), default_flow_style=True) == '!S {a: a}\n'
 
+
+class TestMemoryUsage(unittest.TestCase):
+    def test_load_average_doesnt_use_excess_mem(self):
+        refimg = _load_raw_example_data()
+        paths = get_example_data_path(['bg01.jpg', 'bg02.jpg', 'bg03.jpg'])
+        usage = memory_profiler.memory_usage((load_average, (paths, refimg,)),
+                                             interval=1e-5)
+        peak_usage = np.ptp(usage)
+        images = _load_example_data_backgrounds()
+        expected_usage = sum([im.nbytes / 1e6 for im in images]) # Size in MB
+        self.assertTrue(peak_usage < expected_usage * 1.1)
+
+
+def _load_raw_example_data():
+    imagepath = get_example_data_path('image01.jpg')
+    return load_image(imagepath, **IMAGE01_METADATA)
+
+def _load_example_data_backgrounds():
+    bgpath = get_example_data_path(['bg01.jpg', 'bg02.jpg', 'bg03.jpg'])
+    return [load_image(path, **IMAGE01_METADATA) for path in bgpath]
+
+if __name__ == '__main__':
+    unittest.main()
