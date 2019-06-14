@@ -413,31 +413,65 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
     if channel is None and refimg is not None and illumination in refimg.dims:
         channel = [i for i, col in enumerate(['red','green','blue']) if col in refimg[illumination].values]
 
-    accumulator = clean_concat([load_image(image, spacing, channel=channel) for image in filepath],'images')
-
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
+
+    # calculate the average
+    accumulator = Accumulator()
+    for path in filepath:
+        accumulator.push(load_image(path, spacing, channel=channel))
+    mean_image = accumulator.mean()
+
+    # calculate average noise from image
+    if noise_sd is None and len(filepath) > 1:
+        noise_sd = ensure_array(accumulator.std())
 
     # crop according to refimg dimensions
     if refimg is not None:
         def extent(i):
             name = ['x','y'][i]
             return np.around(refimg[name].values/spacing[i]).astype('int')
-        accumulator = accumulator.isel(x=extent(0), y=extent(1))
-        accumulator['x'] = refimg.x
-        accumulator['y'] = refimg.y
-
-    # calculate the average
-    mean = accumulator.mean('images')
-
-    # calculate average noise from image
-    if noise_sd is None and len(filepath) > 1:
-        noise_sd = ensure_array((accumulator.std('images')/mean).mean(('x','y','z')))
-    accumulator = mean
+        mean_image = mean_image.isel(x=extent(0), y=extent(1))
+        mean_image['x'] = refimg.x
+        mean_image['y'] = refimg.y
 
     # copy metadata from refimg
     if refimg is not None:
-        accumulator = copy_metadata(refimg, accumulator, do_coords=False)
+        mean_image = copy_metadata(refimg, mean_image, do_coords=False)
 
     # overwrite metadata from refimg with provided values
-    return update_metadata(accumulator, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)
+    return update_metadata(mean_image, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)
+
+class Accumulator:
+    def __init__(self):
+        self.n = 0
+        self.old_mean = None
+        self.new_mean = None
+        self.old_s = None
+        self.new_s = None
+
+    def clear(self):
+        self.n = 0
+
+    def push(self, x):
+        self.n += 1
+
+        if self.n == 1:
+            self.old_m = self.new_m = x
+            self.old_s = x*0
+        else:
+            self.new_m = self.old_m + (x - self.old_m) / self.n
+            self.new_s = self.old_s + (x - self.old_m) * (x - self.new_m)
+
+            self.old_m = self.new_m
+            self.old_s = self.new_s
+
+    def mean(self):
+        return self.new_m if self.n else 0.0
+
+    def variance(self):
+        v = self.new_s / (self.n - 1) if self.n > 1 else 0.0
+        return np.mean(v.values)
+
+    def std(self):
+        return np.sqrt(self.variance())
