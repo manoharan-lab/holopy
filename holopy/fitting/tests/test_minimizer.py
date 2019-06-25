@@ -99,4 +99,4 @@ def test_iter_limit():
     model = Model(par_s, calc_holo, 1.33, .66, illum_polarization=(1, 0), alpha = Parameter(.6, [.1, 1]))
     warnings.simplefilter("always")
     result = fit(model, holo, minimizer = Nmpfit(maxiter=2))
-    assert_obj_close(gold_fit_dict,result.parameters,rtol=1e-6)
+    assert_obj_close(gold_fit_dict,result.parameters,rtol=1e-5)
