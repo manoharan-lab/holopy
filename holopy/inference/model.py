@@ -57,8 +57,11 @@ class BaseModel(HoloPyObject):
         return {par.name:par for par in self._parameters}
 
     def _get_parameter(self, name, pars, schema=None):
+        interpreted_pars = _interpret_parameters(pars)
         if name in pars.keys():
             return pars[name]
+        elif name in interpreted_pars.keys():
+            return interpreted_pars[name]
         elif hasattr(self, name):
             return getattr(self, name)
         try:
