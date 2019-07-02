@@ -45,7 +45,7 @@ class BaseModel(HoloPyObject):
         self.constraints = ensure_listlike(constraints)
         self._parameters = []
         self._use_parameters(scatterer.parameters, False)
-        if not np.isscalar(noise_sd):
+        if not (np.isscalar(noise_sd) or isinstance(noise_sd, (Prior, dict))):
             noise_sd = ensure_array(noise_sd)
         self._use_parameters({'medium_index': medium_index,
                              'illum_wavelen':illum_wavelen,
