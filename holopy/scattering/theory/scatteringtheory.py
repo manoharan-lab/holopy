@@ -127,6 +127,39 @@ class ScatteringTheory(HoloPyObject):
             self._calculate_single_color_scattered_field(scatterer, schema))
         return field
 
+    def _calculate_multiple_color_scattered_field(self, scatterer, schema):
+        field = []
+        for illum in schema.illum_wavelen.illumination.values:
+            this_schema = update_metadata(
+                schema,
+                illum_wavelen=ensure_array(
+                    schema.illum_wavelen.sel(illumination=illum).values)[0],
+                illum_polarization=ensure_array(
+                    schema.illum_polarization.sel(illumination=illum).values))
+            this_field = self._calculate_single_color_scattered_field(
+                scatterer.select({illumination: illum}), this_schema)
+            field.append(this_field)
+        field = clean_concat(field, dim=schema.illum_wavelen.illumination)
+        return field
+
+    def _calculate_scattered_field_from_superposition(
+            self, scatterers, schema):
+        field = self._calculate_single_color_scattered_field(
+            scatterers[0], schema)
+        for s in scatterers[1:]:
+            field += self._calculate_single_color_scattered_field(s, schema)
+        return field
+
+    def _calculate_single_color_scattered_field(self, scatterer, schema):
+        if self._can_handle(scatterer):
+            field = self._get_field_from(scatterer, schema)
+        elif isinstance(scatterer, Scatterers):
+            field = self._calculate_scattered_field_from_superposition(
+                scatterer.get_component_list(), schema)
+        else:
+            raise TheoryNotCompatibleError(self, scatterer)
+        return self._pack_field_into_xarray(field, scatterer, schema)
+
     def _get_field_from(self, scatterer, schema):
         """
         Parameters
@@ -151,12 +184,6 @@ class ScatteringTheory(HoloPyObject):
                 illum_polarization=schema.illum_polarization)
             )
         phase = np.exp(-1j * wavevector * scatterer.center[2])
-        # TODO: fix and re-enable internal fields
-        # if self._scatterer_overlaps_schema(scatterer, schema):
-        #     inner = scatterer.contains(schema.positions.xyz())
-        #     field[inner] = np.vstack(
-        #         self._raw_internal_fields(positions[inner].T, s,
-        #                                  optics)).T
         scattered_field *= phase
         return scattered_field
 
@@ -246,39 +273,6 @@ class ScatteringTheory(HoloPyObject):
                 kr, phi, scat_matr[i], illum_polarization.values[:2])
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
         return fields.T
-
-    def _calculate_multiple_color_scattered_field(self, scatterer, schema):
-        field = []
-        for illum in schema.illum_wavelen.illumination.values:
-            this_schema = update_metadata(
-                schema,
-                illum_wavelen=ensure_array(
-                    schema.illum_wavelen.sel(illumination=illum).values)[0],
-                illum_polarization=ensure_array(
-                    schema.illum_polarization.sel(illumination=illum).values))
-            this_field = self._calculate_single_color_scattered_field(
-                scatterer.select({illumination: illum}), this_schema)
-            field.append(this_field)
-        field = clean_concat(field, dim=schema.illum_wavelen.illumination)
-        return field
-
-    def _calculate_single_color_scattered_field(self, scatterer, schema):
-        if self._can_handle(scatterer):
-            field = self._get_field_from(scatterer, schema)
-        elif isinstance(scatterer, Scatterers):
-            field = self._calculate_scattered_field_from_superposition(
-                scatterer.get_component_list(), schema)
-        else:
-            raise TheoryNotCompatibleError(self, scatterer)
-        return self._pack_field_into_xarray(field, scatterer, schema)
-
-    def _calculate_scattered_field_from_superposition(
-            self, scatterers, schema):
-        field = self._calculate_single_color_scattered_field(
-            scatterers[0], schema)
-        for s in scatterers[1:]:
-            field += self._calculate_single_color_scattered_field(s, schema)
-        return field
 
     @classmethod
     def _transform_to_desired_coordinates(cls, detector, origin, wavevec=1):
