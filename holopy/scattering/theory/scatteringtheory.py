@@ -189,23 +189,17 @@ class ScatteringTheory(HoloPyObject):
 
     def _pack_field_into_xarray(self, scattered_field, scatterer, schema):
         """numpy.ndarray, shape (N, 3) -> xr.DataArray, shape (N, 3)"""
-        positions = self.sphere_coords(schema, scatterer.center)  # 8.6 ms !!
-        dimstr = primdim(positions)
-        # FIXME why is this here? Since ``positions = sphere_coords(...)``
-        # shouldn't ``positions`` always be an xr.DataArray?
-        if isinstance(positions[dimstr], xr.DataArray):
-            coords = {key: (dimstr, val.values)
-                      for key, val in positions[dimstr].coords.items()}
-            # print(dimstr) 'flat'
-        else:
-            # Enters if:
-            # points are in spherical polar coordinates, in which
-            # case they are a numpy.ndarray
-            # Which only happens in a test that tests the detector
-            # grid, not in a use case,
-            coords = {key: (dimstr, val) for key, val in positions.items()}
-        coords = updated(coords, {dimstr: positions[dimstr],
-                                  vector: ['x', 'y', 'z']})
+        flattened_schema = flat(schema)  # now either point or flat
+        if 'flat' in flattened_schema.dims:
+            dimstr = 'flat'
+        elif 'point' in flattened_schema.dims:
+            dimstr = 'point'
+        coords = {
+            key: (dimstr, val.values)
+            for key, val in flattened_schema[dimstr].coords.items()}
+
+        coords.update(
+            {dimstr: flattened_schema[dimstr], vector: ['x', 'y', 'z']})
         scattered_field = xr.DataArray(
             scattered_field, dims=[dimstr, vector], coords=coords,
             attrs=schema.attrs)
