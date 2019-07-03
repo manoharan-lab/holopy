@@ -56,12 +56,23 @@ def test_calc_field():
 @attr("fast")
 def test_detector_points():
     s = Sphere(n=1.59, r=.5, center=(0,0,0))
-    medium_index = 1.33; illum_wavelen = 0.660; illum_polarization = (1,0)
-    points_c = detector_points(x = [1,0,-1,0], y = [0,1,0,-1], z = 1)
-    points_p = detector_points(theta = 3*np.pi/4, phi = [0,np.pi/2,np.pi,3*np.pi/2,], r=np.sqrt(2))
-    field_c = calc_field(points_c, s, medium_index, illum_wavelen, illum_polarization)
-    field_p = calc_field(points_p, s, medium_index, illum_wavelen, illum_polarization)
-    assert_allclose(field_c, field_p)
+    medium_index = 1.33
+    illum_wavelen = 0.660
+    illum_polarization = (1, 0)
+
+    points_cartesian = detector_points(
+        x=[1, 0, -1, 0],
+        y=[0, 1, 0, -1],
+        z=1)
+    points_spherical = detector_points(
+        theta=3*np.pi/4,
+        phi=[0, np.pi/2, np.pi, 3*np.pi/2],
+        r=np.sqrt(2))
+    field_cartesian = calc_field(
+        points_cartesian, s, medium_index, illum_wavelen, illum_polarization)
+    field_spherical = calc_field(
+        points_spherical, s, medium_index, illum_wavelen, illum_polarization)
+    assert_allclose(field_cartesian, field_spherical)
 
 
 @attr("fast")
