@@ -158,7 +158,7 @@ class ScatteringTheory(HoloPyObject):
                 scatterer.get_component_list(), schema)
         else:
             raise TheoryNotCompatibleError(self, scatterer)
-        return self._pack_field_into_xarray(field, scatterer, schema)
+        return self._pack_field_into_xarray(field, schema)
 
     def _get_field_from(self, scatterer, schema):
         """
@@ -187,8 +187,11 @@ class ScatteringTheory(HoloPyObject):
         scattered_field *= phase
         return scattered_field
 
-    def _pack_field_into_xarray(self, scattered_field, scatterer, schema):
-        """numpy.ndarray, shape (N, 3) -> xr.DataArray, shape (N, 3)"""
+    def _pack_field_into_xarray(self, scattered_field, schema):
+        """Packs the numpy.ndarray, shape (N, 3) ``scattered_field`` into
+        an xr.DataArray, shape (N, 3). This function needs to pack the
+        fields [flat or point, vector], with the coordinates the
+        same as that of the schema."""
         flattened_schema = flat(schema)  # now either point or flat
         if 'flat' in flattened_schema.dims:
             dimstr = 'flat'
