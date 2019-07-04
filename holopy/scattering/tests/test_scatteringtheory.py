@@ -142,6 +142,36 @@ class TestScatteringTheory(unittest.TestCase):
             from_get_field, from_calc_single.values, **TOLS)
         self.assertTrue(is_ok)
 
+    @attr("fast")
+    def test_pack_field_into_xarray_returns_correct_dims(self):
+        theory = MockTheory()
+        scattered_field = theory._get_field_from(SPHERE, XSCHEMA)
+        packed_field = theory._pack_field_into_xarray(
+            scattered_field, XSCHEMA)
+
+        has_flat_or_point = packed_field.dims[0] in {'flat', 'point'}
+        second_dimension_is_vector = packed_field.dims[1] == 'vector'
+
+        self.assertTrue(has_flat_or_point and second_dimension_is_vector)
+
+    @attr("fast")
+    def test_pack_field_into_xarray_returns_correct_coords(self):
+        theory = MockTheory()
+        scattered_field = theory._get_field_from(SPHERE, XSCHEMA)
+        packed_field = theory._pack_field_into_xarray(
+            scattered_field, XSCHEMA)
+
+        x_ok = np.all(
+            np.unique(packed_field.x.values) ==
+            np.unique(XSCHEMA.x.values))
+        y_ok = np.all(
+            np.unique(packed_field.y.values) ==
+            np.unique(XSCHEMA.y.values))
+        z_ok = np.all(
+            np.unique(packed_field.z.values) ==
+            np.unique(XSCHEMA.z.values))
+        self.assertTrue(x_ok and y_ok and z_ok)
+
 
 class TestMockTheory(unittest.TestCase):
     @attr("fast")
