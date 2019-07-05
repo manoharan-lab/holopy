@@ -24,8 +24,8 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 # TODO:
-# 0. (necessary to remove sphere_coords): Write a pack_into_xarray
-#    for calculate_scattering_matrix
+# 0. (necessary to remove sphere_coords): TDD the
+#    _pack_scattering_matrix_into_xarray.
 # 1. Remove sphere_coords. It's only used in get-field-from and
 #    calculate_scattering_matrix. Use transform_to_desired... instead
 # 2. Once sphere_coords is removed and everything is in the same format,
@@ -193,6 +193,22 @@ class ScatteringTheory(HoloPyObject):
             attrs=schema.attrs)
         return scattered_field
 
+    def _pack_scattering_matrix_into_xarray(
+            self, scat_matrs, scatterer, schema):
+        positions = self.sphere_coords(schema, scatterer.center)
+        point_or_flat = self._is_detector_view_point_or_flat(positions)
+
+        for coorstr in dict_without(positions, [point_or_flat]):
+            positions[coorstr] = (point_or_flat, positions[coorstr])
+
+        dims = ['Epar', 'Eperp']
+        dims = [point_or_flat] + dims
+        positions['Epar'] = ['S2', 'S3']
+        positions['Eperp'] = ['S4', 'S1']
+
+        return xr.DataArray(scat_matrs, dims=dims, coords=positions,
+                            attrs=schema.attrs)
+
     def calculate_cross_sections(
             self, scatterer, medium_wavevec, medium_index, illum_polarization):
         raw_sections = self._raw_cross_sections(
@@ -231,20 +247,8 @@ class ScatteringTheory(HoloPyObject):
             scatterer, positions,
             medium_wavevec=get_wavevec_from(schema),
             medium_index=schema.medium_index)
-
-        positions = self.sphere_coords(schema, scatterer.center)
-        point_or_flat = self._is_detector_view_point_or_flat(positions)
-
-        for coorstr in dict_without(positions, [point_or_flat]):
-            positions[coorstr] = (point_or_flat, positions[coorstr])
-
-        dims = ['Epar', 'Eperp']
-        dims = [point_or_flat] + dims
-        positions['Epar'] = ['S2', 'S3']
-        positions['Eperp'] = ['S4', 'S1']
-
-        return xr.DataArray(scat_matrs, dims=dims, coords=positions,
-                            attrs=schema.attrs)
+        return self._pack_scattering_matrix_into_xarray(
+            scat_matrs, scatterer, schema)
 
     def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
