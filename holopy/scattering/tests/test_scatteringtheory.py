@@ -172,6 +172,23 @@ class TestScatteringTheory(unittest.TestCase):
             np.unique(XSCHEMA.z.values))
         self.assertTrue(x_ok and y_ok and z_ok)
 
+    @attr("fast")
+    def test_is_detector_view_point_or_flat_when_neither(self):
+        theory = MockTheory()
+        self.assertRaises(
+            ValueError,
+            theory._is_detector_view_point_or_flat,
+            XSCHEMA)
+
+    @attr("fast")
+    def test_is_detector_view_point_or_flat_when_flat(self):
+        theory = MockTheory()
+        flattened = flat(XSCHEMA)
+        point_or_flat = theory._is_detector_view_point_or_flat(flattened)
+        self.assertTrue(point_or_flat == 'flat')
+
+    # FIXME add a test for ^ when point!
+
 
 class TestMockTheory(unittest.TestCase):
     @attr("fast")

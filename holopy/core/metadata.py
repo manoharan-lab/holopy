@@ -269,14 +269,6 @@ def from_flat(a):
 def get_values(a):
     return getattr(a, 'values', a)
 
-def primdim(a):
-    if isinstance(a, xr.DataArray):
-        a = a.dims
-    if 'flat' in a:
-        return 'flat'
-    if 'point' in a:
-        return 'point'
-    raise ValueError('Array is not in the form of a 1D list of coordinates')
 
 def default_norms(coords,n):
     if n is 'auto':

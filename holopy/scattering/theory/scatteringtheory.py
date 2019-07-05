@@ -24,34 +24,21 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 # TODO:
-# 0. Incorporate _transform_to_desired_coordinates into the functions.
-#    The problem is that the "positions" output from spher_coords or
-#    whatnot gets passed to primdim and used around elsewhere.
-#    You basically have to fix "_get_field_from" and
-#    "calculate_scatterng_matrix"
-# 1. Remove the "wavevec" kwarg from sphere_coords???
-# 2. Enforce the sphere_coords to be the correct return type always.
+# 0. (necessary to remove sphere_coords): Write a pack_into_xarray
+#    for calculate_scattering_matrix
+# 1. Remove sphere_coords. It's only used in get-field-from and
+#    calculate_scattering_matrix. Use transform_to_desired... instead
+# 2. Once sphere_coords is removed and everything is in the same format,
+#    you can remove the type checking from is_detector_view_point_or_flat
 # 3. Remove the type-checking in ScatteringTheory.
-# 4. Make the private class method of ScatteringTheory a _transform_to_
-#    calculation_coordinates or something, which is sphere_coords for
-#    scattering theory and cylindrical coords for mielens.
+# 4. Make the private class method _transform_to_desired_coordinates
+#    cylindrical coords for mielens.
 
 # --- actually I think the best thing to do is force sphere_coords to
 # output a specific data type. You can even move
 # holopy.core.math.to_spherical here if you want since it's only used
 # here, and change what it does.
 
-
-# Some other notes:
-# ``primdim`` is only used here. The entire code is:
-#     if isinstance(a, xr.DataArray):
-#         a = a.dims
-#     if 'flat' in a:
-#         return 'flat'
-#     if 'point' in a:
-#         return 'point'
-#     raise ValueError('Array is not in the form of a 1D list of coordinates')
-# So it just decides if an array is of points or flat.
 
 from warnings import warn
 
@@ -63,7 +50,7 @@ from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering.scatterer import Scatterers, Sphere
 from holopy.scattering.errors import TheoryNotCompatibleError, MissingParameter
 from holopy.core.metadata import (
-    vector, illumination, flat, primdim, update_metadata, clean_concat)
+    vector, illumination, flat, update_metadata, clean_concat)
 from holopy.core.utils import dict_without, updated, ensure_array
 try:
     from holopy.scattering.theory.mie_f import mieangfuncs
@@ -173,11 +160,11 @@ class ScatteringTheory(HoloPyObject):
         raveled fields, shape (npoints = nx*ny = schema.shape.prod(), 3)
         """
         wavevector = get_wavevec_from(schema)
-        positions = self.sphere_coords(
-            schema, scatterer.center, wavevec=wavevector)  # 8.6 ms !!
+        positions = self._transform_to_desired_coordinates(
+            schema, scatterer.center, wavevec=wavevector)
         scattered_field = np.transpose(
             self._raw_fields(
-                stack_spherical(positions),
+                positions,
                 scatterer,
                 medium_wavevec=wavevector,
                 medium_index=schema.medium_index,
@@ -193,23 +180,21 @@ class ScatteringTheory(HoloPyObject):
         fields [flat or point, vector], with the coordinates the
         same as that of the schema."""
         flattened_schema = flat(schema)  # now either point or flat
-        if 'flat' in flattened_schema.dims:
-            dimstr = 'flat'
-        elif 'point' in flattened_schema.dims:
-            dimstr = 'point'
+        point_or_flat = self._is_detector_view_point_or_flat(flattened_schema)
         coords = {
-            key: (dimstr, val.values)
-            for key, val in flattened_schema[dimstr].coords.items()}
+            key: (point_or_flat, val.values)
+            for key, val in flattened_schema[point_or_flat].coords.items()}
 
         coords.update(
-            {dimstr: flattened_schema[dimstr], vector: ['x', 'y', 'z']})
+            {point_or_flat: flattened_schema[point_or_flat],
+             vector: ['x', 'y', 'z']})
         scattered_field = xr.DataArray(
-            scattered_field, dims=[dimstr, vector], coords=coords,
+            scattered_field, dims=[point_or_flat, vector], coords=coords,
             attrs=schema.attrs)
         return scattered_field
 
-    def calculate_cross_sections(self, scatterer, medium_wavevec, medium_index,
-                             illum_polarization):
+    def calculate_cross_sections(
+            self, scatterer, medium_wavevec, medium_index, illum_polarization):
         raw_sections = self._raw_cross_sections(
             scatterer=scatterer, medium_wavevec=medium_wavevec,
             medium_index=medium_index, illum_polarization=illum_polarization)
@@ -240,17 +225,21 @@ class ScatteringTheory(HoloPyObject):
         situations. You only need to instantiate a theory object if it
         has adjustable parameters and you want to use non-default values.
         """
-        positions = self.sphere_coords(schema, scatterer.center)
+        positions = self._transform_to_desired_coordinates(
+            schema, scatterer.center)
         scat_matrs = self._raw_scat_matrs(
-            scatterer, stack_spherical(positions),
-            medium_wavevec=get_wavevec_from(schema), medium_index=schema.medium_index)
-        dimstr = primdim(positions)
+            scatterer, positions,
+            medium_wavevec=get_wavevec_from(schema),
+            medium_index=schema.medium_index)
 
-        for coorstr in dict_without(positions, [dimstr]):
-            positions[coorstr] = (dimstr, positions[coorstr])
+        positions = self.sphere_coords(schema, scatterer.center)
+        point_or_flat = self._is_detector_view_point_or_flat(positions)
+
+        for coorstr in dict_without(positions, [point_or_flat]):
+            positions[coorstr] = (point_or_flat, positions[coorstr])
 
         dims = ['Epar', 'Eperp']
-        dims = [dimstr] + dims
+        dims = [point_or_flat] + dims
         positions['Epar'] = ['S2', 'S3']
         positions['Eperp'] = ['S4', 'S1']
 
@@ -276,8 +265,23 @@ class ScatteringTheory(HoloPyObject):
         return stack_spherical(
             cls.sphere_coords(detector, origin, wavevec=wavevec))
 
-    @staticmethod
-    def sphere_coords(a, origin=(0,0,0), wavevec=1):
+    @classmethod
+    def _is_detector_view_point_or_flat(cls, detector_view):
+        detector_dims = (
+            detector_view.dims if isinstance(detector_view, xr.DataArray)
+            else detector_view)
+        if 'flat' in detector_dims:
+            point_or_flat = 'flat'
+        elif 'point' in detector_dims:
+            point_or_flat = 'point'
+        else:
+            msg = ("xarray `detector_view` is not in the form of a 1D list " +
+                   "of coordinates. Call ``flat`` first.")
+            raise ValueError(msg)
+        return point_or_flat
+
+    @classmethod
+    def sphere_coords(cls, a, origin=(0,0,0), wavevec=1):
         # Inputs: detector, xarray
         # Outputs: dict of {'r', 'theta', 'phi'}
         if hasattr(a,'theta') and hasattr(a, 'phi'):
@@ -294,13 +298,13 @@ class ScatteringTheory(HoloPyObject):
         else:
             # Transform to spherical coordinates centered around the origin:
             f = flat(a)  # 1.6 ms
-            dimstr = primdim(f)  # 907 ns
+            point_or_flat = cls._is_detector_view_point_or_flat(f)
             x = f.x.values - origin[0]  # 0.7 ms, all but 0.01 is from overhead
             y = f.y.values - origin[1]  # 0.7 ms
             # we define positive z opposite light propagation, so we have to invert
             z = origin[2] - f.z.values  # 0.7 ms
             out = to_spherical(x, y, z)  # 3.3 ms
             out['r'] *= wavevec
-            out[dimstr] = f[dimstr]
+            out[point_or_flat] = f[point_or_flat]
             return out
 
