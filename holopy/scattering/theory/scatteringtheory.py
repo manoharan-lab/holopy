@@ -194,20 +194,23 @@ class ScatteringTheory(HoloPyObject):
         return scattered_field
 
     def _pack_scattering_matrix_into_xarray(
-            self, scat_matrs, scatterer, schema):
-        positions = self.sphere_coords(schema, scatterer.center)
-        point_or_flat = self._is_detector_view_point_or_flat(positions)
+            self, scat_matrs, r_theta_phi, schema):
+        flattened_schema = flat(schema)
+        point_or_flat = self._is_detector_view_point_or_flat(flattened_schema)
+        dims = [point_or_flat, 'Epar', 'Eperp']
 
-        for coorstr in dict_without(positions, [point_or_flat]):
-            positions[coorstr] = (point_or_flat, positions[coorstr])
+        coords = {point_or_flat: flattened_schema.coords[point_or_flat]}
+        coords.update({
+            'r': (point_or_flat, r_theta_phi[ 0]),
+            'theta': (point_or_flat, r_theta_phi[ 1]),
+            'phi': (point_or_flat, r_theta_phi[ 2]),
+            'Epar': ['S2', 'S3'],
+            'Eperp': ['S4', 'S1'],
+            })
 
-        dims = ['Epar', 'Eperp']
-        dims = [point_or_flat] + dims
-        positions['Epar'] = ['S2', 'S3']
-        positions['Eperp'] = ['S4', 'S1']
-
-        return xr.DataArray(scat_matrs, dims=dims, coords=positions,
-                            attrs=schema.attrs)
+        packed = xr.DataArray(
+            scat_matrs, dims=dims, coords=coords, attrs=schema.attrs)
+        return packed
 
     def calculate_cross_sections(
             self, scatterer, medium_wavevec, medium_index, illum_polarization):
@@ -244,11 +247,10 @@ class ScatteringTheory(HoloPyObject):
         positions = self._transform_to_desired_coordinates(
             schema, scatterer.center)
         scat_matrs = self._raw_scat_matrs(
-            scatterer, positions,
-            medium_wavevec=get_wavevec_from(schema),
+            scatterer, positions, medium_wavevec=get_wavevec_from(schema),
             medium_index=schema.medium_index)
         return self._pack_scattering_matrix_into_xarray(
-            scat_matrs, scatterer, schema)
+            scat_matrs, positions, schema)
 
     def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
@@ -285,23 +287,23 @@ class ScatteringTheory(HoloPyObject):
         return point_or_flat
 
     @classmethod
-    def sphere_coords(cls, a, origin=(0,0,0), wavevec=1):
+    def sphere_coords(cls, detector, origin=(0,0,0), wavevec=1):
         # Inputs: detector, xarray
         # Outputs: dict of {'r', 'theta', 'phi'}
-        if hasattr(a,'theta') and hasattr(a, 'phi'):
+        if hasattr(detector,'theta') and hasattr(detector, 'phi'):
             # More-or-less return the current values if the detector points
             # are already in spherical coordinates:
-            out = {'theta': a.theta.values,
-                   'phi': a.phi.values,
-                   'point': a.point.values,
+            out = {'theta': detector.theta.values,
+                   'phi': detector.phi.values,
+                   'point': detector.point.values,
                    }
-            if hasattr(a, 'r') and any(np.isfinite(a.r)):
-                out['r'] = a.r.values * wavevec
+            if hasattr(detector, 'r') and any(np.isfinite(detector.r)):
+                out['r'] = detector.r.values * wavevec
             return out
 
         else:
             # Transform to spherical coordinates centered around the origin:
-            f = flat(a)  # 1.6 ms
+            f = flat(detector)  # 1.6 ms
             point_or_flat = cls._is_detector_view_point_or_flat(f)
             x = f.x.values - origin[0]  # 0.7 ms, all but 0.01 is from overhead
             y = f.y.values - origin[1]  # 0.7 ms

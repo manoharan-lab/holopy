@@ -221,7 +221,7 @@ class TestScatteringTheory(unittest.TestCase):
         self.assertTrue(np.all(eperp_coords == np.array(['S4', 'S1'])))
 
     @attr("fast")
-    def test_calculate_scattering_matrix_has_correct_coordinates(self):
+    def test_calculate_scattering_matrix_has_correct_spherical_coords(self):
         theory = Mie()
         scat_matrs = theory.calculate_scattering_matrix(SPHERE, SCAT_SCHEMA)
         true_r = np.array([
@@ -248,6 +248,27 @@ class TestScatteringTheory(unittest.TestCase):
         self.assertTrue(np.allclose(true_r, packed_r, **MEDTOLS))
         self.assertTrue(np.allclose(true_theta, packed_theta, **MEDTOLS))
         self.assertTrue(np.allclose(true_phi, packed_phi, **MEDTOLS))
+
+    @attr("fast")
+    def test_calculate_scattering_matrix_has_correct_cartesian_coords(self):
+        theory = Mie()
+        scat_matrs = theory.calculate_scattering_matrix(SPHERE, SCAT_SCHEMA)
+        true_x = np.array([
+            0. , 0. , 0. , 0. , 0. , 0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2,
+            0.2, 0.2, 0.3, 0.3, 0.3, 0.3, 0.3, 0.4, 0.4, 0.4, 0.4, 0.4])
+        true_y = np.array([
+            0. , 0.1, 0.2, 0.3, 0.4, 0. , 0.1, 0.2, 0.3, 0.4, 0. , 0.1,
+            0.2, 0.3, 0.4, 0. , 0.1, 0.2, 0.3, 0.4, 0. , 0.1, 0.2, 0.3, 0.4])
+        true_z = np.array([
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0])
+        packed_x = scat_matrs.coords['x'].values
+        packed_y = scat_matrs.coords['y'].values
+        packed_z = scat_matrs.coords['z'].values
+        self.assertTrue(np.allclose(true_x, packed_x, **MEDTOLS))
+        self.assertTrue(np.allclose(true_y, packed_y, **MEDTOLS))
+        self.assertTrue(np.allclose(true_z, packed_z, **MEDTOLS))
+
 
 
 class TestMockTheory(unittest.TestCase):
