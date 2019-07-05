@@ -9,8 +9,10 @@ from holopy.core import detector_grid, detector_points
 from holopy.core.metadata import update_metadata, flat
 from holopy.scattering.theory.scatteringtheory import (
     ScatteringTheory, stack_spherical)
+from holopy.scattering.theory import Mie
 from holopy.scattering.scatterer import Sphere, Spheres, Ellipsoid
 from holopy.scattering.errors import TheoryNotCompatibleError
+from holopy.scattering.calculations import prep_schema
 from holopy.scattering.tests.common import xschema as XSCHEMA
 
 
@@ -21,6 +23,12 @@ SPHERES = Spheres([
     ])
 ELLIPSOID = Ellipsoid(n=1.5, r=(0.5, 0.5, 1.2), center=(0, 0, 2))
 TOLS = {'atol': 1e-14, 'rtol': 1e-14}
+MEDTOLS = {'atol': 1e-7, 'rtol': 1e-7}
+
+
+SCAT_SCHEMA = prep_schema(
+    detector_grid(shape=(5, 5), spacing=.1),
+    medium_index=1.33, illum_wavelen=0.66, illum_polarization=False)
 
 
 class TestSphereCoords(unittest.TestCase):
@@ -197,6 +205,49 @@ class TestScatteringTheory(unittest.TestCase):
         point_or_flat = theory._is_detector_view_point_or_flat(point_view)
         self.assertTrue(point_or_flat == 'point')
 
+    @attr("fast")
+    def test_calculate_scattering_matrix_has_correct_dims(self):
+        theory = Mie()
+        scat_matrs = theory.calculate_scattering_matrix(SPHERE, SCAT_SCHEMA)
+        self.assertTrue(scat_matrs.dims == ('flat', 'Epar', 'Eperp'))
+
+    @attr("fast")
+    def test_calculate_scattering_matrix_has_correct_s1s2s3s4_labels(self):
+        theory = Mie()
+        scat_matrs = theory.calculate_scattering_matrix(SPHERE, SCAT_SCHEMA)
+        epar_coords = scat_matrs.coords['Epar'].values
+        eperp_coords = scat_matrs.coords['Eperp'].values
+        self.assertTrue(np.all(epar_coords == np.array(['S2', 'S3'])))
+        self.assertTrue(np.all(eperp_coords == np.array(['S4', 'S1'])))
+
+    @attr("fast")
+    def test_calculate_scattering_matrix_has_correct_coordinates(self):
+        theory = Mie()
+        scat_matrs = theory.calculate_scattering_matrix(SPHERE, SCAT_SCHEMA)
+        true_r = np.array([
+            2.        , 2.00249844, 2.00997512, 2.02237484, 2.03960781,
+            2.00249844, 2.00499377, 2.01246118, 2.02484567, 2.04205779,
+            2.00997512, 2.01246118, 2.01990099, 2.03224014, 2.04939015,
+            2.02237484, 2.02484567, 2.03224014, 2.04450483, 2.06155281,
+            2.03960781, 2.04205779, 2.04939015, 2.06155281, 2.07846097])
+        true_theta = np.array([
+            0.        , 0.0499584 , 0.09966865, 0.14888995, 0.19739556,
+            0.0499584 , 0.07059318, 0.11134101, 0.15681569, 0.20330703,
+            0.09966865, 0.11134101, 0.1404897 , 0.17836178, 0.21998798,
+            0.14888995, 0.15681569, 0.17836178, 0.2090333 , 0.24497866,
+            0.19739556, 0.20330703, 0.21998798, 0.24497866, 0.2756428 ])
+        true_phi = np.array([
+            0.        , 1.57079633, 1.57079633, 1.57079633, 1.57079633,
+            0.        , 0.78539816, 1.10714872, 1.24904577, 1.32581766,
+            0.        , 0.46364761, 0.78539816, 0.98279372, 1.10714872,
+            0.        , 0.32175055, 0.5880026 , 0.78539816, 0.92729522,
+            0.        , 0.24497866, 0.46364761, 0.64350111, 0.78539816])
+        packed_r = scat_matrs.coords['r'].values
+        packed_theta = scat_matrs.coords['theta'].values
+        packed_phi = scat_matrs.coords['phi'].values
+        self.assertTrue(np.allclose(true_r, packed_r, **MEDTOLS))
+        self.assertTrue(np.allclose(true_theta, packed_theta, **MEDTOLS))
+        self.assertTrue(np.allclose(true_phi, packed_phi, **MEDTOLS))
 
 
 class TestMockTheory(unittest.TestCase):
