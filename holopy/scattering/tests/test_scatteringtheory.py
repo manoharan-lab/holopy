@@ -187,7 +187,16 @@ class TestScatteringTheory(unittest.TestCase):
         point_or_flat = theory._is_detector_view_point_or_flat(flattened)
         self.assertTrue(point_or_flat == 'flat')
 
-    # FIXME add a test for ^ when point!
+    @attr("fast")
+    def test_is_detector_view_point_or_flat_when_point(self):
+        theory = MockTheory()
+        point_view = detector_points(
+            theta=3 * np.pi / 4,
+            phi = np.arange(4) * np.pi / 2,
+            r = np.sqrt(2))
+        point_or_flat = theory._is_detector_view_point_or_flat(point_view)
+        self.assertTrue(point_or_flat == 'point')
+
 
 
 class TestMockTheory(unittest.TestCase):
