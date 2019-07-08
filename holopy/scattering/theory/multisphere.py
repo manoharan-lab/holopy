@@ -136,7 +136,7 @@ class Multisphere(ScatteringTheory):
                                     "code, as it should be built with the rest"
                                     " of HoloPy through f2py.")
         # call base class constructor
-        super(Multisphere, self).__init__()
+        super().__init__()
 
     def _can_handle(self, scatterer):
         return (isinstance(scatterer, Spheres) or isinstance(scatterer, Sphere))

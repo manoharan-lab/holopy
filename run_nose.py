@@ -16,9 +16,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
+from shutil import copyfile
 from subprocess import call
 import sys
 import multiprocessing
+
+import IPython
+import matplotlib as mpl
 
 t = ['nosetests', '-a', '!slow']
 
@@ -33,6 +37,15 @@ print((' '.join(t)))
 returncode = call(t)
 if returncode is not 0:
     sys.exit(returncode)
+
+# Copy module from ipython to build docs
+ipython_directory = IPython.__path__
+matplotlib_directory = mpl.__path__
+
+src_file = ipython_directory[0] + '/sphinxext/ipython_directive.py'
+dst_file = matplotlib_directory[0] + '/sphinxext/only_directives.py'
+
+copyfile(src_file, dst_file)
 
 doctest = ['sphinx-build', '-b', 'doctest', './docs/source', './docs/build']
 print((' '.join(doctest)))

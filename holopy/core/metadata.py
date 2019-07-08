@@ -28,7 +28,7 @@ import yaml
 import numpy as np
 import xarray as xr
 
-from .utils import is_none, updated, repeat_sing_dims, ensure_array
+from .utils import updated, repeat_sing_dims, ensure_array
 from .math import to_cartesian
 
 
@@ -58,9 +58,9 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None, illum_po
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
     if np.isscalar(z) and (len(arr) > 1 or arr.ndim==2):
-        arr=np.array([arr])
+        arr = np.expand_dims(arr, axis=0)
     coords = make_coords(arr.shape, spacing, z)
-    if is_none(extra_dims):
+    if extra_dims is None:
         extra_dims={}
     else:
         coords.update(extra_dims)
@@ -156,12 +156,12 @@ def detector_points(coords = {}, x = None, y = None, z = None, r = None, theta =
     coords = updated(coords, updatelist)
     if 'x' in coords and 'y' in coords:
         keys = ['x', 'y', 'z']
-        if not 'z' in coords or is_none(coords['z']):
+        if coords.get('z') is None:
             coords['z'] = 0
 
     elif 'theta' in coords and 'phi' in coords:
         keys = ['r', 'theta', 'phi']
-        if not 'r' in coords or is_none(coords['r']):
+        if coords.get('r') is None:
             coords['r'] = np.inf
     else:
         raise CoordSysError()
@@ -206,7 +206,7 @@ def update_metadata(a, medium_index=None, illum_wavelen=None, illum_polarization
         if not hasattr(b, attr):
             b.attrs[attr] = None
 
-    if is_none(b.normals):
+    if b.normals is None:
         b.attrs['normals'] = default_norms(b.coords, 'auto')
 
     return b

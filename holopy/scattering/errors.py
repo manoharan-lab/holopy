@@ -28,7 +28,7 @@ import warnings
 class InvalidScatterer(Exception):
     def __init__(self, scatterer, message):
         self.scatterer = scatterer
-        super(InvalidScatterer, self).__init__(
+        super().__init__(
             "Invalid scatterer of type " +
             self.scatterer.__class__.__name__ +
             ".\n" + message)
@@ -51,7 +51,7 @@ class TheoryNotCompatibleError(Exception):
                     self.scatterer.__class__.__name__)
         if reason is not None:
             message += " because: " + message
-        super(TheoryNotCompatibleError, self).__init__(message)
+        super().__init__(message)
 
 class MissingParameter(Exception):
     def __init__(self, parameter_name):

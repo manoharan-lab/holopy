@@ -203,7 +203,7 @@ try:
 
 ..  testcode::
 
-    strat = TemperedStrategy(nwalkers=10, max_pixels=100)
+    strat = TemperedStrategy(nwalkers=10, npixels=100)
     result = strat.sample(model, data_holo, nsamples=100) 
 
 This code should run very quickly, but its results cannot be trusted for any
@@ -214,7 +214,7 @@ each generation. ``samples`` describes how many generations of scatterers to
 produce. Together, they define how many scatterering calculations must be
 performed. For the values chosen in the fast code, a Monte Carlo steady state
 will not yet have been achieved, so the resulting posterior distribution is not
-very meaningful. ``max_pixels`` describes the maximum number of pixels compared
+very meaningful. ``npixels`` describes the maximum number of pixels compared
 between the experimental holgoram and the test holograms. It turns out that
 holograms contain a lot of redundant information owing to their symmetry, so a
 subset of pixels can be analyzed without loss of accuracy. However, 100 pixels
@@ -225,7 +225,7 @@ You can get a quick look at our obtained best fit values and the resulting holog
 ..  testcode::
 
     fit_vals = result.values()
-    fit_holo = result.best_fit()
+    fit_holo = result.best_fit
 
 ``result.values()`` gives you the maximum a posteriori probability (MAP) value as
 well as one-sigma credibility intervals (or you can request any other sigma with

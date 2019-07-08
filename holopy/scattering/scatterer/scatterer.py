@@ -31,7 +31,7 @@ import numpy as np
 import xarray as xr
 
 from holopy.core.holopy_object import HoloPyObject
-from holopy.core.utils import ensure_array, is_none
+from holopy.core.utils import ensure_array
 from holopy.scattering.errors import (
     InvalidScatterer, ParameterSpecificationError)
 
@@ -73,10 +73,10 @@ class Scatterer(HoloPyObject):
         translated : Scatterer
             A copy of this scatterer translated to a new location
         """
-        if is_none(coord2) and len(ensure_array(coord1) == 3):
+        if coord2 is None and len(ensure_array(coord1) == 3):
             # entered translation vector
             trans_coords = ensure_array(coord1)
-        elif not is_none(coord2) and not is_none(coord3):
+        elif coord2 is not None and coord3 is not None:
             # entered 3 coords
             trans_coords = np.array([coord1, coord2, coord3])
         else:
@@ -403,4 +403,3 @@ class Indicators(HoloPyObject):
 
     def __call__(self, points):
         return [test(points) for test in self.functions]
-

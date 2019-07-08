@@ -32,7 +32,6 @@ from yaml.reader import ReaderError
 import inspect
 import types
 
-from holopy.core.utils import is_none
 from holopy.core.holopy_object import SerializableMetaclass, YAMLLOADERS
 from holopy.core.holopy_object import FullLoader # necessary for pyyaml < 5
 
@@ -74,7 +73,7 @@ copyreg.pickle(types.MethodType, _pickle_method, _unpickle_method)
 def ignore_aliases(data):
     try:
         # numpy arrays no longer want to be compared to None, so instead check for a none by looking for if it is an instance of NoneType
-        if is_none(data) or data is ():
+        if data is None or data is ():
             return True
         if isinstance(data, (str, bool, int, float)):
             return True

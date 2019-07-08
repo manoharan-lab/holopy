@@ -81,4 +81,5 @@ def test_iter_limit():
     model = AlphaModel(par_s, medium_index=1.33, illum_wavelen=.66, illum_polarization=(1, 0), alpha = prior.Uniform(.1, 1, .6))
     warnings.simplefilter("always")
     result = Nmpfit(maxiter=2).optimize(model, holo)
-    assert_obj_close(gold_fit_dict,result.parameters,rtol=1e-6)
+    assert_obj_close(gold_fit_dict,result.parameters,rtol=1e-5)
+
