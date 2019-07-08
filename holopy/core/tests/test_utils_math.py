@@ -69,6 +69,13 @@ class TestCoordinateTransformations(unittest.TestCase):
         self.assertTrue(phi_is_close)
 
     @attr("fast")
+    def test_transform_cartesian_to_spherical_at_origin(self):
+        xyz_0 = np.zeros((3, 1))
+        rtp = transform_cartesian_to_spherical(xyz_0)
+        xyz_1 = transform_spherical_to_cartesian(rtp)
+        self.assertTrue(np.allclose(xyz_0, xyz_1, **TOLS))
+
+    @attr("fast")
     def test_transform_spherical_to_cartesian(self):
         # check that spherical_to_cartesian is the inverse of cartesian_to_sph
         np.random.seed(12)
@@ -128,6 +135,7 @@ class TestCoordinateTransformations(unittest.TestCase):
         for initial, final, correct_method in desired:
             self.assertTrue(
                 find_transformation_function(initial, final) is correct_method)
+
 
 #Test math
 @attr("fast")

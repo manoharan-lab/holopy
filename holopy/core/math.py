@@ -94,7 +94,7 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
 def transform_cartesian_to_spherical(x_y_z):
     x, y, z = x_y_z
     r = np.linalg.norm(x_y_z, axis=0)
-    theta = np.arccos(z/r)
+    theta = np.arctan2(np.sqrt(x**2 + y**2), z)
     phi = np.arctan2(y, x) % (2*np.pi)
     return np.array([r, theta, phi])
 
