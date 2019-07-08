@@ -341,8 +341,11 @@ def test_raw_fields():
     pol = to_vector((0, 1))
     sch = detector_grid(3, .1)
     wavevec=2*np.pi/(wavelen/index)
-    pos = Mie.sphere_coords(sch, (10, 10, 5), wavevec=wavevec)
-    rf = Mie()._raw_fields(np.vstack((pos['r'], pos['theta'], pos['phi'])), sp, medium_wavevec=wavevec, medium_index=index, illum_polarization=pol)
+    pos = Mie._transform_to_desired_coordinates(
+        sch, (10, 10, 5), wavevec=wavevec)
+    rf = Mie()._raw_fields(
+        pos, sp, medium_wavevec=wavevec, medium_index=index,
+        illum_polarization=pol)
     assert_allclose(rf, [[(0.0015606995428858754-0.0019143174710834162j),
   (-0.0003949071974815011-0.0024154494284017187j),
   (-0.002044525390662322-0.001302770747742109j),

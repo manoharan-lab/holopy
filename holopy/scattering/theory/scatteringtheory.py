@@ -24,20 +24,11 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 
 # TODO:
-# 0. (necessary to remove sphere_coords): TDD the
-#    _pack_scattering_matrix_into_xarray.
-# 1. Remove sphere_coords. It's only used in get-field-from and
-#    calculate_scattering_matrix. Use transform_to_desired... instead
 # 2. Once sphere_coords is removed and everything is in the same format,
 #    you can remove the type checking from is_detector_view_point_or_flat
 # 3. Remove the type-checking in ScatteringTheory.
 # 4. Make the private class method _transform_to_desired_coordinates
 #    cylindrical coords for mielens.
-
-# --- actually I think the best thing to do is force sphere_coords to
-# output a specific data type. You can even move
-# holopy.core.math.to_spherical here if you want since it's only used
-# here, and change what it does.
 
 
 from warnings import warn
@@ -45,7 +36,7 @@ from warnings import warn
 import numpy as np
 import xarray as xr
 
-from holopy.core.math import to_spherical
+from holopy.core.math import find_transformation_function  # to_spherical
 from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering.scatterer import Scatterers, Sphere
 from holopy.scattering.errors import TheoryNotCompatibleError, MissingParameter
@@ -61,17 +52,6 @@ except ImportError:
 def get_wavevec_from(schema):
     return 2 * np.pi / (schema.illum_wavelen / schema.medium_index)
 
-
-def stack_spherical(a):
-    if 'r' not in a:
-        a['r'] = [np.inf] * len(a['theta'])
-    return np.vstack((a['r'], a['theta'], a['phi']))
-
-
-# Notes:
-# `sphere_coords` is only called here (and in the tests). Yet is gives
-# multiple outputs. So you can just change the sphere_coords function
-# to return exactly what you need.
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -90,6 +70,7 @@ class ScatteringTheory(HoloPyObject):
     and you care about that speed, or if it is easier and you don't care
     about matrices.
     """
+    desired_coordinate_system = 'spherical'
 
     def calculate_scattered_field(self, scatterer, schema):
         """
@@ -267,11 +248,6 @@ class ScatteringTheory(HoloPyObject):
         return fields.T
 
     @classmethod
-    def _transform_to_desired_coordinates(cls, detector, origin, wavevec=1):
-        return stack_spherical(
-            cls.sphere_coords(detector, origin, wavevec=wavevec))
-
-    @classmethod
     def _is_detector_view_point_or_flat(cls, detector_view):
         detector_dims = (
             detector_view.dims if isinstance(detector_view, xr.DataArray)
@@ -287,30 +263,26 @@ class ScatteringTheory(HoloPyObject):
         return point_or_flat
 
     @classmethod
-    def sphere_coords(cls, detector, origin=(0,0,0), wavevec=1):
-        # Inputs: detector, xarray
-        # Outputs: dict of {'r', 'theta', 'phi'}
-        if hasattr(detector,'theta') and hasattr(detector, 'phi'):
-            # More-or-less return the current values if the detector points
-            # are already in spherical coordinates:
-            out = {'theta': detector.theta.values,
-                   'phi': detector.phi.values,
-                   'point': detector.point.values,
-                   }
-            if hasattr(detector, 'r') and any(np.isfinite(detector.r)):
-                out['r'] = detector.r.values * wavevec
-            return out
-
+    def _transform_to_desired_coordinates(cls, detector, origin, wavevec=1):
+        if hasattr(detector, 'theta') and hasattr(detector, 'phi'):
+            original_coordinate_system = 'spherical'
+            original_coordinate_values = [
+                (detector.r.values * wavevec if hasattr(detector, 'r')
+                    else np.full(detector.theta.values.shape, np.inf)),
+                detector.theta.values,
+                detector.phi.values,
+                ]
         else:
-            # Transform to spherical coordinates centered around the origin:
+            original_coordinate_system = 'cartesian'
             f = flat(detector)  # 1.6 ms
-            point_or_flat = cls._is_detector_view_point_or_flat(f)
-            x = f.x.values - origin[0]  # 0.7 ms, all but 0.01 is from overhead
-            y = f.y.values - origin[1]  # 0.7 ms
-            # we define positive z opposite light propagation, so we have to invert
-            z = origin[2] - f.z.values  # 0.7 ms
-            out = to_spherical(x, y, z)  # 3.3 ms
-            out['r'] *= wavevec
-            out[point_or_flat] = f[point_or_flat]
-            return out
+            original_coordinate_values = [
+                wavevec * (f.x.values - origin[0]),
+                wavevec * (f.y.values - origin[1]),
+                wavevec * (origin[2] - f.z.values),
+                # z is defined opposite light propagation, so we invert
+                ]
+        method = find_transformation_function(
+            original_coordinate_system,
+            cls.desired_coordinate_system)
+        return method(original_coordinate_values)
 

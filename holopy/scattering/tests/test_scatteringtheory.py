@@ -7,8 +7,7 @@ from nose.plugins.attrib import attr
 
 from holopy.core import detector_grid, detector_points
 from holopy.core.metadata import update_metadata, flat
-from holopy.scattering.theory.scatteringtheory import (
-    ScatteringTheory, stack_spherical)
+from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 from holopy.scattering.theory import Mie
 from holopy.scattering.scatterer import Sphere, Spheres, Ellipsoid
 from holopy.scattering.errors import TheoryNotCompatibleError
@@ -31,32 +30,18 @@ SCAT_SCHEMA = prep_schema(
     medium_index=1.33, illum_wavelen=0.66, illum_polarization=False)
 
 
-class TestSphereCoords(unittest.TestCase):
-    @attr("fast")
-    def test_sphere_coords(self):
-        detector = detector_grid(shape=(2, 2), spacing=0.1)
-        spherical = ScatteringTheory.sphere_coords(
-            detector, wavevec=2*np.pi*1.33/.66, origin=(0, 0, 1))
-        pos = stack_spherical(spherical).T
-        true_pos = np.array([
-            [ 12.66157039,   0.        ,   0.        ],
-            [ 12.72472076,   0.09966865,   1.57079633],
-            [ 12.72472076,   0.09966865,   0.        ],
-            [ 12.78755927,   0.1404897 ,   0.78539816]])
-        self.assertTrue(np.allclose(pos, true_pos))
-
+class TestTransformToDesiredCoords(unittest.TestCase):
     @attr("fast")
     def test_transform_to_desired_coordinates(self):
         detector = detector_grid(shape=(2, 2), spacing=0.1)
-        spherical = ScatteringTheory._transform_to_desired_coordinates(
+        pos = ScatteringTheory._transform_to_desired_coordinates(
             detector, origin=(0, 0, 1), wavevec=2*np.pi*1.33/.66)
-
         true_pos = np.transpose([
             [ 12.66157039,   0.        ,   0.        ],
             [ 12.72472076,   0.09966865,   1.57079633],
             [ 12.72472076,   0.09966865,   0.        ],
             [ 12.78755927,   0.1404897 ,   0.78539816]])
-        self.assertTrue(np.allclose(spherical, true_pos))
+        self.assertTrue(np.allclose(pos, true_pos))
 
 
 class TestScatteringTheory(unittest.TestCase):
@@ -269,6 +254,10 @@ class TestScatteringTheory(unittest.TestCase):
         self.assertTrue(np.allclose(true_y, packed_y, **MEDTOLS))
         self.assertTrue(np.allclose(true_z, packed_z, **MEDTOLS))
 
+    @attr('fast')
+    def test_default_desired_coordinate_system_is_spherical(self):
+        for cls in [ScatteringTheory, Mie, MockTheory]:
+            self.assertTrue(cls.desired_coordinate_system == 'spherical')
 
 
 class TestMockTheory(unittest.TestCase):

@@ -121,7 +121,7 @@ def transform_cylindrical_to_cartesian(rho_phi_z):
     return np.array([x, y, z])
 
 
-def keep_in_same_coordinates(coords): return coords
+def keep_in_same_coordinates(coords): return np.array(coords)
 
 
 _transformation_lut = {

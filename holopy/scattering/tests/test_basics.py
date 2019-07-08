@@ -26,7 +26,6 @@ from holopy.core.metadata import update_metadata
 from holopy.scattering.scatterer import Sphere, Difference
 from holopy.scattering.theory import Mie
 from holopy.scattering.calculations import calc_intensity, calc_holo, calc_field
-from holopy.scattering.theory.scatteringtheory import stack_spherical
 
 # small tests against results from the previous version of holopy
 
