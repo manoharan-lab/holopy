@@ -32,6 +32,8 @@ from holopy.scattering.theory.mielensfunctions import MieLensCalculator
 
 
 class MieLens(ScatteringTheory):
+    desired_coordinate_system = 'cylindrical'
+
     def __init__(self, lens_angle=1.0, calculator_accuracy_kwargs={}):
         super(MieLens, self).__init__()
         self.lens_angle = lens_angle
@@ -58,10 +60,7 @@ class MieLens(ScatteringTheory):
         index_ratio = scatterer.n / medium_index
         size_parameter = medium_wavevec * scatterer.r
 
-        r, theta, phi = positions
-        z = r * np.cos(theta)
-        rho = r * np.sin(theta)
-
+        rho, phi, z = positions
         pol_angle = np.arctan2(
             illum_polarization.values[1], illum_polarization.values[0])
         phi += pol_angle

@@ -50,6 +50,10 @@ class TestMieLens(unittest.TestCase):
                          theory=theory)
         self.assertTrue(holo is not None)
 
+    @attr("fast")
+    def test_desired_coordinate_system_is_cylindrical(self):
+        self.assertTrue(MieLens.desired_coordinate_system == 'cylindrical')
+
     @attr("medium")
     def test_can_calculate_for_positive_and_negative_z(self):
         theory = MieLens()
