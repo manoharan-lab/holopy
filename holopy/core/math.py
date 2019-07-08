@@ -121,16 +121,22 @@ def transform_cylindrical_to_cartesian(rho_phi_z):
     return np.array([x, y, z])
 
 
+def keep_in_same_coordinates(coords): return coords
+
+
 _transformation_lut = {
     'cartesian': {
         'spherical': transform_cartesian_to_spherical,
         'cylindrical': transform_cartesian_to_cylindrical,
+        'cartesian': keep_in_same_coordinates,
         },
     'spherical': {
         'cartesian': transform_spherical_to_cartesian,
+        'spherical': keep_in_same_coordinates,
         },
     'cylindrical': {
         'cartesian': transform_cylindrical_to_cartesian,
+        'cylindrical': keep_in_same_coordinates,
         },
     }
 def find_transformation_function(initial_coordinates, desired_coordinates):

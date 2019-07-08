@@ -33,7 +33,8 @@ from holopy.core.utils import (
 from holopy.core.math import (
     rotate_points, rotation_matrix, transform_cartesian_to_spherical,
     transform_spherical_to_cartesian, transform_cartesian_to_cylindrical,
-    transform_cylindrical_to_cartesian, find_transformation_function)
+    transform_cylindrical_to_cartesian, find_transformation_function,
+    keep_in_same_coordinates)
 from holopy.core.tests.common import assert_obj_close, get_example_data
 
 
@@ -136,6 +137,20 @@ class TestCoordinateTransformations(unittest.TestCase):
             self.assertTrue(
                 find_transformation_function(initial, final) is correct_method)
 
+    @attr("fast")
+    def test_keep_in_same_coordinates(self):
+        np.random.seed(12)
+        xyz = np.random.randn(3, 10)
+        the_same = keep_in_same_coordinates(xyz)
+        self.assertTrue(np.allclose(xyz, the_same, **TOLS))
+
+    @attr("fast")
+    def test_find_transformation_function_when_same(self):
+        np.random.seed(12)
+        xyz = np.random.randn(3, 10)
+        for which in ['cartesian', 'spherical', 'cylindrical']:
+            method = find_transformation_function(which, which)
+            self.assertTrue(np.allclose(xyz, method(xyz), **TOLS))
 
 #Test math
 @attr("fast")
@@ -143,6 +158,7 @@ def test_rotate_single_point():
     points = np.array([1.,1.,1.])
     assert_allclose(rotate_points(points, np.pi, np.pi, np.pi),
                     np.array([-1.,  1., -1.]), 1e-5)
+
 
 @attr("fast")
 def test_rotation_matrix_degrees():
