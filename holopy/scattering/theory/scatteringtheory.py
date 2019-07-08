@@ -21,28 +21,21 @@ calc_intensity and calc_holo, based on subclass's calc_field
 .. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
+.. moduleauthor:: Brian Leahy <bleahy@g.harvard.edu>
 """
-
-# TODO:
-# 2. Once sphere_coords is removed and everything is in the same format,
-#    you can remove the type checking from is_detector_view_point_or_flat
-# 3. Remove the type-checking in ScatteringTheory.
-# 4. Make the private class method _transform_to_desired_coordinates
-#    cylindrical coords for mielens.
-
 
 from warnings import warn
 
 import numpy as np
 import xarray as xr
 
-from holopy.core.math import find_transformation_function  # to_spherical
+from holopy.core.math import find_transformation_function
 from holopy.core.holopy_object import HoloPyObject
-from holopy.scattering.scatterer import Scatterers, Sphere
+from holopy.scattering.scatterer import Scatterers
 from holopy.scattering.errors import TheoryNotCompatibleError, MissingParameter
 from holopy.core.metadata import (
     vector, illumination, flat, update_metadata, clean_concat)
-from holopy.core.utils import dict_without, updated, ensure_array
+from holopy.core.utils import ensure_array
 try:
     from holopy.scattering.theory.mie_f import mieangfuncs
 except ImportError:
@@ -94,6 +87,46 @@ class ScatteringTheory(HoloPyObject):
             if is_multicolor_hologram else
             self._calculate_single_color_scattered_field(scatterer, schema))
         return field
+
+    def calculate_cross_sections(
+            self, scatterer, medium_wavevec, medium_index, illum_polarization):
+        raw_sections = self._raw_cross_sections(
+            scatterer=scatterer, medium_wavevec=medium_wavevec,
+            medium_index=medium_index, illum_polarization=illum_polarization)
+        return xr.DataArray(raw_sections, dims=['cross_section'],
+                            coords={'cross_section':
+                                ['scattering', 'absorbtion',
+                                 'extinction', 'assymetry']})
+
+    def calculate_scattering_matrix(self, scatterer, schema):
+        """
+        Compute scattering matrices for scatterer
+
+        Parameters
+        ----------
+        scatterer : :mod:`holopy.scattering.scatterer` object
+            (possibly composite) scatterer for which to compute scattering
+
+        Returns
+        -------
+        scat_matr : :mod:`.Marray`
+            Scattering matrices at specified positions
+
+        Notes
+        -----
+        calc_* functions can be called on either a theory class or a
+        theory object. If called on a theory class, they use a default
+        theory object which is correct for the vast majority of
+        situations. You only need to instantiate a theory object if it
+        has adjustable parameters and you want to use non-default values.
+        """
+        positions = self._transform_to_desired_coordinates(
+            schema, scatterer.center)
+        scat_matrs = self._raw_scat_matrs(
+            scatterer, positions, medium_wavevec=get_wavevec_from(schema),
+            medium_index=schema.medium_index)
+        return self._pack_scattering_matrix_into_xarray(
+            scat_matrs, positions, schema)
 
     def _calculate_multiple_color_scattered_field(self, scatterer, schema):
         field = []
@@ -193,46 +226,6 @@ class ScatteringTheory(HoloPyObject):
             scat_matrs, dims=dims, coords=coords, attrs=schema.attrs)
         return packed
 
-    def calculate_cross_sections(
-            self, scatterer, medium_wavevec, medium_index, illum_polarization):
-        raw_sections = self._raw_cross_sections(
-            scatterer=scatterer, medium_wavevec=medium_wavevec,
-            medium_index=medium_index, illum_polarization=illum_polarization)
-        return xr.DataArray(raw_sections, dims=['cross_section'],
-                            coords={'cross_section':
-                                ['scattering', 'absorbtion',
-                                 'extinction', 'assymetry']})
-
-    def calculate_scattering_matrix(self, scatterer, schema):
-        """
-        Compute scattering matrices for scatterer
-
-        Parameters
-        ----------
-        scatterer : :mod:`holopy.scattering.scatterer` object
-            (possibly composite) scatterer for which to compute scattering
-
-        Returns
-        -------
-        scat_matr : :mod:`.Marray`
-            Scattering matrices at specified positions
-
-        Notes
-        -----
-        calc_* functions can be called on either a theory class or a
-        theory object. If called on a theory class, they use a default
-        theory object which is correct for the vast majority of
-        situations. You only need to instantiate a theory object if it
-        has adjustable parameters and you want to use non-default values.
-        """
-        positions = self._transform_to_desired_coordinates(
-            schema, scatterer.center)
-        scat_matrs = self._raw_scat_matrs(
-            scatterer, positions, medium_wavevec=get_wavevec_from(schema),
-            medium_index=schema.medium_index)
-        return self._pack_scattering_matrix_into_xarray(
-            scat_matrs, positions, schema)
-
     def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
         scat_matr = self._raw_scat_matrs(
@@ -249,9 +242,7 @@ class ScatteringTheory(HoloPyObject):
 
     @classmethod
     def _is_detector_view_point_or_flat(cls, detector_view):
-        detector_dims = (
-            detector_view.dims if isinstance(detector_view, xr.DataArray)
-            else detector_view)
+        detector_dims = detector_view.dims
         if 'flat' in detector_dims:
             point_or_flat = 'flat'
         elif 'point' in detector_dims:
