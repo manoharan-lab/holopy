@@ -18,7 +18,8 @@
 
 import numpy as np
 from numpy import sin, cos, arccos, arctan2, sqrt, pi
-from .utils import repeat_sing_dims
+from holopy.core.utils import repeat_sing_dims
+
 
 def rotate_points(points, theta, phi, psi):
     """
@@ -43,6 +44,7 @@ def rotate_points(points, theta, phi, psi):
     if points.ndim == 1:
         return np.dot(rot, points)
     return np.array([np.dot(rot, c) for c in points])
+
 
 def rotation_matrix(alpha, beta, gamma, radians = True):
     """
@@ -139,6 +141,7 @@ def to_cartesian(r, theta, phi):
     z = r * cos(theta)
     return repeat_sing_dims({'x': x, 'y': y, 'z': z})
 
+
 def cartesian_distance(p1, p2=[0,0,0]):
     """
     Return the Cartesian distance between points p1 and p2.
@@ -157,6 +160,7 @@ def cartesian_distance(p1, p2=[0,0,0]):
     p1 = np.array(p1)
     p2 = np.array(p2)
     return np.sqrt(np.sum((p1-p2)**2))
+
 
 def chisq(fit, data):
     r"""
@@ -186,6 +190,7 @@ def chisq(fit, data):
     """
     return float((((fit-data))**2).sum() / fit.size)
 
+
 def rsq(fit, data):
     r"""
     Calculate correlation coeffiction R-squared comparing a best-fit model
@@ -214,5 +219,4 @@ def rsq(fit, data):
     model perfectly describes the data, :math:`R^2 = 1`.
     """
     return float(1 - ((data - fit)**2).sum()/((data - data.mean())**2).sum())
-
 
