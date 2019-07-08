@@ -18,6 +18,7 @@
 
 import os
 import shutil
+import unittest
 import tempfile
 from multiprocessing.pool import Pool
 
@@ -29,9 +30,104 @@ from schwimmbad import MultiPool, SerialPool, pool
 
 from holopy.core.utils import (
     ensure_array, ensure_listlike, mkdir_p, choose_pool)
-from holopy.core.math import rotate_points, rotation_matrix
+from holopy.core.math import (
+    rotate_points, rotation_matrix, transform_cartesian_to_spherical,
+    transform_spherical_to_cartesian, transform_cartesian_to_cylindrical,
+    transform_cylindrical_to_cartesian, find_transformation_function)
 from holopy.core.tests.common import assert_obj_close, get_example_data
 
+
+TOLS = {'atol': 1e-14, 'rtol': 1e-14}
+
+class TestCoordinateTransformations(unittest.TestCase):
+    @attr("fast")
+    def test_transform_cartesian_to_spherical_returns_correct_shape(self):
+        np.random.seed(12)
+        xyz = np.random.randn(3, 10)
+        rtp = transform_cartesian_to_spherical(xyz)
+        self.assertTrue(rtp.shape == xyz.shape)
+
+    @attr("fast")
+    def test_transform_cartesian_to_spherical(self):
+        np.random.seed(12)
+        xyz = np.random.randn(3, 10)
+        rtp = transform_cartesian_to_spherical(xyz)
+        r_is_close = np.allclose(
+            rtp[0],
+            np.sqrt(np.sum(xyz**2, axis=0)),
+            **TOLS)
+        theta_is_close = np.allclose(
+            rtp[1],
+            np.arccos(xyz[2] / np.linalg.norm(xyz, axis=0)),
+            **TOLS)
+        phi_is_close = np.allclose(
+            rtp[2],
+            np.arctan2(xyz[1], xyz[0]) % (2 * np.pi),
+            **TOLS)
+        self.assertTrue(r_is_close)
+        self.assertTrue(theta_is_close)
+        self.assertTrue(phi_is_close)
+
+    @attr("fast")
+    def test_transform_spherical_to_cartesian(self):
+        # check that spherical_to_cartesian is the inverse of cartesian_to_sph
+        np.random.seed(12)
+        xyz_0 = np.random.randn(3, 10)
+        rtp = transform_cartesian_to_spherical(xyz_0)
+        xyz_1 = transform_spherical_to_cartesian(rtp)
+        self.assertTrue(np.allclose(xyz_0, xyz_1, **TOLS))
+
+    @attr("fast")
+    def test_transform_cartesian_to_cylindrical_returns_correct_shape(self):
+        np.random.seed(12)
+        xyz = np.random.randn(3, 10)
+        rpz = transform_cartesian_to_cylindrical(xyz)
+        self.assertTrue(rpz.shape == xyz.shape)
+
+    @attr("fast")
+    def test_transform_cartesian_to_cylindrical(self):
+        np.random.seed(12)
+        xyz = np.random.randn(3, 10)
+        rpz = transform_cartesian_to_cylindrical(xyz)
+        r_is_close = np.allclose(
+            rpz[0],
+            np.sqrt(xyz[0]**2 + xyz[1]**2),
+            **TOLS)
+        phi_is_close = np.allclose(rpz[1], np.arctan2(xyz[1], xyz[0]), **TOLS)
+        z_is_close = np.allclose(xyz[2], rpz[2])
+        self.assertTrue(r_is_close)
+        self.assertTrue(phi_is_close)
+        self.assertTrue(z_is_close)
+
+    @attr("fast")
+    def test_transform_cylindrical_to_cartesian(self):
+        # check cylindrical_to_cartesian is the inverse of cartesian_to_cyl
+        np.random.seed(12)
+        xyz_0 = np.random.randn(3, 10)
+        rpz = transform_cartesian_to_cylindrical(xyz_0)
+        xyz_1 = transform_cylindrical_to_cartesian(rpz)
+        self.assertTrue(np.allclose(xyz_0, xyz_1, **TOLS))
+
+    @attr("fast")
+    def test_find_transformation_function_returns_helpful_error(self):
+        # This test will have to be changed if someone implements
+        # spherical bipolar coordinates.
+        self.assertRaises(
+            NotImplementedError,
+            find_transformation_function,
+            'cartesian', 'spherical_bipolar')
+
+    @attr("fast")
+    def test_find_transformation_function(self):
+        desired = [
+            ('cartesian', 'spherical', transform_cartesian_to_spherical),
+            ('cartesian', 'cylindrical', transform_cartesian_to_cylindrical),
+            ('spherical', 'cartesian', transform_spherical_to_cartesian),
+            ('cylindrical', 'cartesian', transform_cylindrical_to_cartesian),
+            ]
+        for initial, final, correct_method in desired:
+            self.assertTrue(
+                find_transformation_function(initial, final) is correct_method)
 
 #Test math
 @attr("fast")

@@ -91,54 +91,65 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
                      -ca*sb, sa*sb, cb]).reshape((3,3)) # row major
 
 
+def transform_cartesian_to_spherical(x_y_z):
+    x, y, z = x_y_z
+    r = np.linalg.norm(x_y_z, axis=0)
+    theta = np.arccos(z/r)
+    phi = np.arctan2(y, x) % (2*np.pi)
+    return np.array([r, theta, phi])
+
+
+def transform_spherical_to_cartesian(r_theta_phi):
+    r, theta, phi = r_theta_phi
+    x = r * np.cos(phi) * np.sin(theta)
+    y = r * np.sin(phi) * np.sin(theta)
+    z = r * np.cos(theta)
+    return np.array([x, y, z])
+
+
+def transform_cartesian_to_cylindrical(x_y_z):
+    x, y, z = x_y_z
+    rho = np.sqrt(x**2 + y**2)
+    phi = np.arctan2(y, x)
+    return np.array([rho, phi, z])
+
+
+def transform_cylindrical_to_cartesian(rho_phi_z):
+    rho, phi, z = rho_phi_z
+    x = rho * np.cos(phi)
+    y = rho * np.sin(phi)
+    return np.array([x, y, z])
+
+
+_transformation_lut = {
+    'cartesian': {
+        'spherical': transform_cartesian_to_spherical,
+        'cylindrical': transform_cartesian_to_cylindrical,
+        },
+    'spherical': {
+        'cartesian': transform_spherical_to_cartesian,
+        },
+    'cylindrical': {
+        'cartesian': transform_cylindrical_to_cartesian,
+        },
+    }
+def find_transformation_function(initial_coordinates, desired_coordinates):
+    try:
+        method = _transformation_lut[initial_coordinates][desired_coordinates]
+    except KeyError:
+        msg = "Transformation from {} to {} not implemented.".format(
+            initial_coordinates, desired_coordinates)
+        raise NotImplementedError(msg)
+    return method
+
+
 def to_spherical(x, y, z):
-    """
-    Return the spherical polar coordinates of a point in Cartesian coordinates.
-
-    Parameters
-    ----------
-    x, y, z: float
-        Cartesian coordinates of point
-
-    Returns
-    -------
-    spherical_coords: dict
-        Dictionary of spherical polar coordinates (r, theta, phi) of point
-        with keys 'r', 'theta', 'phi'.
-
-    Notes
-    -----
-    theta is the polar angle measured from the z axis with range (0, pi).
-    phi is the azimuthal angle with range (0, 2 pi).
-
-    """
-    r = sqrt(x**2 + y**2 + z**2)
-    theta = arctan2(sqrt(x**2 + y**2), z) #this correctly handles x=y=z=0
-    phi = arctan2(y, x)
-    phi = phi % (2 * pi)
+    r, theta, phi = transform_cartesian_to_spherical([x, y, z])
     return {'r': r, 'theta': theta, 'phi': phi}
 
 
 def to_cartesian(r, theta, phi):
-    """
-    Returns Cartesian coordinates of a point given in spherical polar
-    coordinates.
-
-    Parameters
-    ----------
-    r, theta, phi: float
-        Spherical polar coordinates of point.
-
-    Returns
-    -------
-    cartesian_coords: dict
-        Dictionary of Cartesian coordinates of point with keys 'x', 'y',
-        and 'z'.
-
-    """
-    x = r * sin(theta) * cos(phi)
-    y = r * sin(theta) * sin(phi)
-    z = r * cos(theta)
+    x, y, z = transform_spherical_to_cartesian([r, theta, phi])
     return repeat_sing_dims({'x': x, 'y': y, 'z': z})
 
 
