@@ -370,3 +370,20 @@ def test_raw_fields():
   (0.003816460764514863-0.0015982360934887314j),
   (0.0012772696647997395-0.0039342215472070105j),
   (-0.0021320123934202356-0.0035427449839031066j)]])
+
+
+@attr('medium')
+def test_j0_roots():
+    # Checks for misbehavior when j_0(x) = 0
+    eps = 1e-12
+    d = detector_grid(shape=8, spacing=1)
+    d = update_metadata(d,illum_wavelen=1, medium_index=1,
+                                illum_polarization=(1,0))
+
+    s_exact = Sphere(r=1,n=1.1,center=(4,4,5)) # causes kr = 0 near center
+    s_close = Sphere(r=1,n=1.1,center=(4,4,5-eps))
+
+    h_exact = calc_field(d,s_exact)
+    h_close = calc_field(d,s_close)
+
+    np.testing.assert_allclose(h_exact, h_close)

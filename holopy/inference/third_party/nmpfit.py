@@ -656,7 +656,6 @@ import types
 #     **********
 
 from holopy.core.holopy_object import Serializable
-from holopy.core.utils import is_none
 
 class mpfit(Serializable):
     def __init__(self, fcn, xall=None, functkw={}, parinfo=None,
@@ -1019,7 +1018,7 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
         limited = self.parinfo(parinfo, 'limited', default=[0,0], n=npar)
         limits = self.parinfo(parinfo, 'limits', default=[0.,0.], n=npar)
 
-        if (not is_none(limited)) and (not is_none(limits)):
+        if (limited is not None) and (limits is not None):
             ## Error checking on limits in parinfo
             wh = numpy.nonzero((limited[:,0] & (xall < limits[:,0])) |
                                                                     (limited[:,1] & (xall > limits[:,1])))
@@ -1123,7 +1122,7 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
                                                     epsfcn=epsfcn,
                                                     autoderivative=autoderivative, dstep=dstep,
                                                     functkw=functkw, ifree=ifree, xall=self.params)
-            if (is_none(fjac)):
+            if (fjac is None):
                 self.errmsg = 'WARNING: premature termination by FDJAC2'
                 return
 
@@ -1389,7 +1388,7 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
         self.perror = None
         ## (very carefully) set the covariance matrix COVAR
         if ((self.status > 0) and (nocovar==0) and (n != None)
-                                                and (not is_none(fjac)) and (not is_none(ipvt))):
+                                                and (fjac is not None) and (ipvt is not None)):
             sz = numpy.shape(fjac)
             if ((n > 0) and (sz[0] >= n) and (sz[1] >= n)
                             and (len(ipvt) >= n)):
@@ -1543,9 +1542,9 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
         if (self.debug): print('Entering fdjac2...')
         machep = self.machar.machep
         if epsfcn == None:  epsfcn = machep
-        if is_none(xall):    xall = x
-        if is_none(ifree):   ifree = numpy.arange(len(xall))
-        if is_none(step):    step = x * 0.
+        if xall is None:    xall = x
+        if ifree is None:   ifree = numpy.arange(len(xall))
+        if step is None:    step = x * 0.
         nall = len(xall)
 
         eps = numpy.sqrt(max([epsfcn, machep]))
@@ -1579,7 +1578,7 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
         h = eps * abs(x)
 
         ## if STEP is given, use that
-        if not is_none(step):
+        if step is not None:
             stepi = numpy.take(step, ifree)
             wh = (numpy.nonzero(stepi > 0) )[0]
             if (len(wh) > 0): numpy.put(h, wh, numpy.take(stepi, wh))
@@ -2273,7 +2272,7 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
             print('ERROR: r must be a square matrix')
             return(-1)
 
-        if (is_none(ipvt)): ipvt = numpy.arange(n)
+        if (ipvt is None): ipvt = numpy.arange(n)
         r = rr.copy()
         r.shape = [n,n]
 
