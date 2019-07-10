@@ -30,6 +30,17 @@ SCAT_SCHEMA = prep_schema(
     medium_index=1.33, illum_wavelen=0.66, illum_polarization=False)
 
 
+class MockTheory(ScatteringTheory):
+    def __init__(*args, **kwargs):
+        pass  # an init is necessary for the repr
+
+    def _can_handle(self, scatterer):
+        return isinstance(scatterer, Sphere)
+
+    def _raw_fields(self, positions, *args, **kwargs):
+        return np.ones(positions.shape, dtype='complex128')
+
+
 class TestTransformToDesiredCoords(unittest.TestCase):
     @attr("fast")
     def test_transform_to_desired_coordinates(self):
@@ -317,17 +328,6 @@ class TestMockTheory(unittest.TestCase):
             illum_polarization)
 
         self.assertTrue(fields.dtype.name == 'complex128')
-
-
-class MockTheory(ScatteringTheory):
-    def __init__(*args, **kwargs):
-        pass  # an init is necessary for the repr
-
-    def _can_handle(self, scatterer):
-        return isinstance(scatterer, Sphere)
-
-    def _raw_fields(self, positions, *args, **kwargs):
-        return np.ones(positions.shape, dtype='complex128')
 
 
 if __name__ == '__main__':
