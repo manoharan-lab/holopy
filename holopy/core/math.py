@@ -110,7 +110,7 @@ def transform_spherical_to_cartesian(r_theta_phi):
 def transform_cartesian_to_cylindrical(x_y_z):
     x, y, z = x_y_z
     rho = np.sqrt(x**2 + y**2)
-    phi = np.arctan2(y, x)
+    phi = np.arctan2(y, x) % (2*np.pi)
     return np.array([rho, phi, z])
 
 
@@ -119,6 +119,20 @@ def transform_cylindrical_to_cartesian(rho_phi_z):
     x = rho * np.cos(phi)
     y = rho * np.sin(phi)
     return np.array([x, y, z])
+
+
+def transform_cylindrical_to_spherical(rho_phi_z):
+    rho, phi, z = rho_phi_z
+    r = np.sqrt(rho**2 + z**2)
+    theta = np.arctan2(rho, z)
+    return np.array([r, theta, phi])
+
+
+def transform_spherical_to_cylindrical(r_theta_phi):
+    r, theta, phi = r_theta_phi
+    rho = r * np.sin(theta)
+    z = r * np.cos(theta)
+    return np.array([rho, phi, z])
 
 
 def keep_in_same_coordinates(coords): return np.array(coords)

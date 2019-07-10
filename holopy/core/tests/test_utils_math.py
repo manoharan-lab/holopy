@@ -33,7 +33,8 @@ from holopy.core.utils import (
 from holopy.core.math import (
     rotate_points, rotation_matrix, transform_cartesian_to_spherical,
     transform_spherical_to_cartesian, transform_cartesian_to_cylindrical,
-    transform_cylindrical_to_cartesian, find_transformation_function,
+    transform_cylindrical_to_cartesian, transform_cylindrical_to_spherical,
+    transform_spherical_to_cylindrical, find_transformation_function,
     keep_in_same_coordinates)
 from holopy.core.tests.common import assert_obj_close, get_example_data
 
@@ -70,6 +71,14 @@ class TestCoordinateTransformations(unittest.TestCase):
         self.assertTrue(phi_is_close)
 
     @attr("fast")
+    def test_transform_cartesian_to_spherical_returns_phi_on_0_2pi(self):
+        np.random.seed(12)
+        xyz = np.random.randn(3, 10)
+        rtp = transform_cartesian_to_spherical(xyz)
+        phi = rtp[2]
+        self.assertTrue(np.all(phi > 0))
+
+    @attr("fast")
     def test_transform_cartesian_to_spherical_at_origin(self):
         xyz_0 = np.zeros((3, 1))
         rtp = transform_cartesian_to_spherical(xyz_0)
@@ -101,11 +110,21 @@ class TestCoordinateTransformations(unittest.TestCase):
             rpz[0],
             np.sqrt(xyz[0]**2 + xyz[1]**2),
             **TOLS)
-        phi_is_close = np.allclose(rpz[1], np.arctan2(xyz[1], xyz[0]), **TOLS)
+        phi_is_close = np.allclose(
+            rpz[1], np.arctan2(xyz[1], xyz[0]) % (2 * np.pi),
+            **TOLS)
         z_is_close = np.allclose(xyz[2], rpz[2])
         self.assertTrue(r_is_close)
         self.assertTrue(phi_is_close)
         self.assertTrue(z_is_close)
+
+    @attr("fast")
+    def test_transform_cartesian_to_cylindrical_returns_phi_on_0_2pi(self):
+        np.random.seed(12)
+        xyz = np.random.randn(3, 10)
+        rpz = transform_cartesian_to_cylindrical(xyz)
+        phi = rpz[1]
+        self.assertTrue(np.all(phi > 0))
 
     @attr("fast")
     def test_transform_cylindrical_to_cartesian(self):
@@ -115,6 +134,30 @@ class TestCoordinateTransformations(unittest.TestCase):
         rpz = transform_cartesian_to_cylindrical(xyz_0)
         xyz_1 = transform_cylindrical_to_cartesian(rpz)
         self.assertTrue(np.allclose(xyz_0, xyz_1, **TOLS))
+
+    @attr("fast")
+    def test_transform_cylindrical_to_spherical(self):
+        # Uses the pre-existing cartesian to cylindrical & spherical functions
+        np.random.seed(12)
+        xyz = np.random.randn(3, 20)
+
+        rho_phi_z = transform_cartesian_to_cylindrical(xyz)
+        r_theta_phi_true = transform_cartesian_to_spherical(xyz)
+        r_theta_phi_check = transform_cylindrical_to_spherical(rho_phi_z)
+        is_ok = np.allclose(r_theta_phi_true, r_theta_phi_check, **TOLS)
+        self.assertTrue(is_ok)
+
+    @attr("fast")
+    def test_transform_spherical_to_cylindrical(self):
+        # Uses the pre-existing cartesian to cylindrical & spherical functions
+        np.random.seed(12)
+        xyz = np.random.randn(3, 20)
+
+        r_theta_phi = transform_cartesian_to_spherical(xyz)
+        rho_phi_z_true = transform_cartesian_to_cylindrical(xyz)
+        rho_phi_z_check = transform_spherical_to_cylindrical(r_theta_phi)
+        is_ok = np.allclose(rho_phi_z_true, rho_phi_z_check, **TOLS)
+        self.assertTrue(is_ok)
 
     @attr("fast")
     def test_find_transformation_function_returns_helpful_error(self):
@@ -151,6 +194,7 @@ class TestCoordinateTransformations(unittest.TestCase):
         for which in ['cartesian', 'spherical', 'cylindrical']:
             method = find_transformation_function(which, which)
             self.assertTrue(np.allclose(xyz, method(xyz), **TOLS))
+
 
 #Test math
 @attr("fast")
