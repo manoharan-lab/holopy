@@ -156,7 +156,7 @@ list of refractive indices and outer radii corresponding to the layers
 ..  testoutput::
     :hide:
 
-    0.9750608553730731
+    0.97506085...
 
 If you prefer thinking in terms of the thickness of subsequent layers, instead
 of their distance from the center, you can use :class:`.LayeredSphere` to achieve
@@ -298,7 +298,7 @@ calling the :func:`.calc_holo` function:
 ..  testoutput::
     :hide:
 
-    1.0480235432374045
+    1.04802354...
 
 Similarly, HoloPy calculates scattering from cylindrical or spheroidal particles by using T-matrix code from `Michael Mishchenko <https://www.giss.nasa.gov/staff/mmishchenko/t_matrix.html>`_, but these scatterer types are not compatible with Mie theory.
 
