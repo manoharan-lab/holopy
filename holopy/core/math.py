@@ -146,11 +146,13 @@ _transformation_lut = {
         },
     'spherical': {
         'cartesian': transform_spherical_to_cartesian,
+        'cylindrical': transform_spherical_to_cylindrical,
         'spherical': keep_in_same_coordinates,
         },
     'cylindrical': {
         'cartesian': transform_cylindrical_to_cartesian,
         'cylindrical': keep_in_same_coordinates,
+        'spherical': transform_cylindrical_to_spherical,
         },
     }
 def find_transformation_function(initial_coordinates, desired_coordinates):

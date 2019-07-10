@@ -175,6 +175,8 @@ class TestCoordinateTransformations(unittest.TestCase):
             ('cartesian', 'cylindrical', transform_cartesian_to_cylindrical),
             ('spherical', 'cartesian', transform_spherical_to_cartesian),
             ('cylindrical', 'cartesian', transform_cylindrical_to_cartesian),
+            ('spherical', 'cylindrical', transform_spherical_to_cylindrical),
+            ('cylindrical', 'spherical', transform_cylindrical_to_spherical),
             ]
         for initial, final, correct_method in desired:
             self.assertTrue(
