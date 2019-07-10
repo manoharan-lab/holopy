@@ -139,11 +139,11 @@ Coated Spheres
 
 HoloPy can also calculate holograms from coated (or multilayered) spheres.
 Constructing a coated sphere differs only in specifying a
-list of refractive indices and outer radii corresponding to the layers 
+list of refractive indices and outer radii corresponding to the layers
 (starting from the core and working outwards).
 
 ..  testcode::
-    
+
     coated_sphere = Sphere(center=(2.5, 5, 5), n=(1.59, 1.42), r=(0.3, 0.6))
     holo = calc_holo(exp_img, coated_sphere)
     hp.show(holo)
@@ -157,13 +157,13 @@ list of refractive indices and outer radii corresponding to the layers
     :hide:
 
     0.9750608553730731
-    
+
 If you prefer thinking in terms of the thickness of subsequent layers, instead
 of their distance from the center, you can use :class:`.LayeredSphere` to achieve
 the same result:
 
 ..  testcode::
-    
+
     from holopy.scattering import LayeredSphere
     coated_sphere = LayeredSphere(center=(2.5, 5, 5), n=(1.59, 1.42), t=(0.3, 0.3))
 
@@ -171,7 +171,7 @@ Collection of Spheres
 ---------------------
 
 If we want to calculate a hologram from a collection of spheres, we must
-first define the spheres individually, and then combine them into a 
+first define the spheres individually, and then combine them into a
 :class:`.Spheres` object:
 
 ..  testcode::
@@ -204,9 +204,9 @@ sphere objects and passing a longer list of spheres to the
 Non-spherical Objects
 ---------------------
 
-To define a non-spherical scatterer, use :class:`.Spheroid` or :class:`.Cylinder` objects. These axisymmetric scatterers are defined by two dimensions, and can describe scatterers that are elongated or squashed along one direction. 
+To define a non-spherical scatterer, use :class:`.Spheroid` or :class:`.Cylinder` objects. These axisymmetric scatterers are defined by two dimensions, and can describe scatterers that are elongated or squashed along one direction.
 By default, these objects are aligned with the z-axis, but they can be rotated into any orientation by passing a set of Euler angles to the ``rotation`` argument when defining the scatterer. See :ref:`rotations` for information on how these angles are defined.
-As an example, here is a hologram produced by a cylinder aligned with the vertical axis (``x-axis`` according to the HoloPy :ref:`coordinate_system`). 
+As an example, here is a hologram produced by a cylinder aligned with the vertical axis (``x-axis`` according to the HoloPy :ref:`coordinate_system`).
 Note that the hologram image is elongated in the horizontal direction since the sides of the cylinder scatter light more than the ends.
 
 ..  testcode::
@@ -245,7 +245,7 @@ Multi-channel Holograms
 
 Sometimes a hologram may include data from multiple illumination sources,
 such as two separate wavelengths of incident light. In this case, the extra
-arguments can be passed in as a dictionary object, with keys corresponding to 
+arguments can be passed in as a dictionary object, with keys corresponding to
 dimension names in the image. You can also use a multi-channel experimental image
 in place of calling :func:`.detector_grid`.
 
@@ -265,39 +265,39 @@ in place of calling :func:`.detector_grid`.
 Scattering Theories in HoloPy
 -----------------------------
 
-HoloPy contains a number of scattering theories to model the scattering 
+HoloPy contains a number of scattering theories to model the scattering
 from different kinds of scatterers. By default, scattering from single
 spheres is calculated using Mie theory, which is the exact solution
 to Maxwell's equations for the scattered field from a spherical
 particle, originally derived by Gustav Mie and (independently) by
-Ludvig Lorenz in the early 1900s. 
+Ludvig Lorenz in the early 1900s.
 
-A scatterer composed of multiple spheres can exhibit multiple scattering 
+A scatterer composed of multiple spheres can exhibit multiple scattering
 and coupling of the near-fields of neighbouring particles. Mie theory doesn't include
 these effects, so :class:`.Spheres` objects are by default calculated using the
-SCSMFO package from `Daniel Mackowski <http://www.eng.auburn.edu/~dmckwski/>`_. 
+SCSMFO package from `Daniel Mackowski <http://www.eng.auburn.edu/~dmckwski/>`_.
 This calculation uses T-matrix methods to give the exact solution to Maxwell's equation
-for the scattering from an arbitrary arrangement of non-overlapping spheres. 
+for the scattering from an arbitrary arrangement of non-overlapping spheres.
 
-Sometimes you might want to calculate scattering from multiple spheres 
+Sometimes you might want to calculate scattering from multiple spheres
 using Mie theory if you are worried about computation time or if you are
 using multi-layered spheres (HoloPy's implementation of the multisphere theory
 can't currently handle coated spheres). You can specify Mie theory manually when
 calling the :func:`.calc_holo` function:
 
 ..  testcode::
-    
+
     from holopy.scattering import Mie
     holo = calc_holo(exp_img, collection, theory = Mie)
 
 ..  testcode::
     :hide:
-    
+
     print(holo[0,0,0].values)
-    
+
 ..  testoutput::
     :hide:
-    
+
     1.0480235432374045
 
 Similarly, HoloPy calculates scattering from cylindrical or spheroidal particles by using T-matrix code from `Michael Mishchenko <https://www.giss.nasa.gov/staff/mmishchenko/t_matrix.html>`_, but these scatterer types are not compatible with Mie theory.
@@ -319,9 +319,9 @@ at many points. If you only need to calculate values at a few points, or if your
 points of interest are not arranged in a 2D grid, you can use
 :func:`.detector_points`, which accepts either a dictionary of coordinates or
 indvidual coordinate dimensions:
-    
+
 ..  testcode::
-    
+
     x = [0, 1, 0, 1, 2]
     y = [0, 0, 1, 1, 1]
     z = -1
@@ -331,12 +331,12 @@ indvidual coordinate dimensions:
 
 ..  testcode::
     :hide:
-    
+
     print(detector[0].values)
 
 ..  testoutput::
     :hide:
-    
+
     0.0
 
 The coordinates for :func:`.detector_points` can be specified in terms of either
@@ -345,7 +345,7 @@ Cartesian or spherical coordinates. If spherical coordinates are used, the
 interpreted as being relative to the scatterer.
 
 
-Static light scattering calculations 
+Static light scattering calculations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Scattering Matrices
@@ -364,14 +364,14 @@ work with amplitude scattering matrices that are angle-dependent. (See
 
     import numpy as np
     from holopy.scattering import calc_scat_matrix
-    
+
     detector = hp.detector_points(theta = np.linspace(0, np.pi, 100), phi = 0)
     distant_sphere = Sphere(r=0.5, n=1.59)
     matr = calc_scat_matrix(detector, distant_sphere, medium_index, illum_wavelen)
-    
+
 ..  testcode::
     :hide:
-    
+
     print(matr[0,0,0].values)
 
 ..  testoutput::
@@ -380,11 +380,11 @@ work with amplitude scattering matrices that are angle-dependent. (See
     (24.656950420047853-19.765527788603396j)
 
 Here we omit specifying the location (center) of the scatterer. This is
-only valid when you're calculating a far-field quantity. Similarly, note 
-that our detector, defined from a :func:`.detector_points` function, 
-includes information about direction but not distance. It is typical 
+only valid when you're calculating a far-field quantity. Similarly, note
+that our detector, defined from a :func:`.detector_points` function,
+includes information about direction but not distance. It is typical
 to look at scattering matrices on a semilog plot. You can make one as follows:
-    
+
 ..  testcode::
 
     import matplotlib.pyplot as plt
@@ -395,8 +395,8 @@ to look at scattering matrices on a semilog plot. You can make one as follows:
 
 .. plot:: pyplots/calc_scat_matr.py
 
-You are usually interested in the intensities of the scattered fields, which are 
-proportional to the modulus squared of the amplitude scattering matrix. The 
+You are usually interested in the intensities of the scattered fields, which are
+proportional to the modulus squared of the amplitude scattering matrix. The
 diagonal elements give the intensities for the incident light and the scattered light
 both polarized parallel and perpendicular to the scattering plane, respectively.
 
@@ -413,7 +413,7 @@ omit the ``detector`` argument entirely:
 
     from holopy.scattering import calc_cross_sections
     x_sec = calc_cross_sections(distant_sphere, medium_index, illum_wavelen, illum_polarization)
-    
+
 ..  testcode::
     :hide:
 
