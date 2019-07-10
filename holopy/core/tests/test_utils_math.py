@@ -197,6 +197,33 @@ class TestCoordinateTransformations(unittest.TestCase):
             method = find_transformation_function(which, which)
             self.assertTrue(np.allclose(xyz, method(xyz), **TOLS))
 
+    @attr("fast")
+    def test_coordinate_transformations_work_when_z_is_a_scalar(self):
+        # This just tests that the transformations work, not that they
+        # are in the shape (N, 3), as some of the calculations prefer
+        # to leave z as a scalar if it starts as one (e.g. mielens)
+        np.random.seed(12)
+        x, y = np.random.randn(2, 10)
+        z = np.random.randn()
+
+        rho = np.sqrt(x**2 + y**2)
+        phi = np.arctan2(y, x)
+
+        versions_to_check = [
+            ('cartesian', 'spherical', [x, y, z]),
+            ('cartesian', 'cylindrical', [x, y, z]),
+            ('cylindrical', 'cartesian', [rho, phi, z]),
+            ('cylindrical', 'spherical', [rho, phi, z]),
+            ]
+        for *version_to_check, coords in versions_to_check:
+            method = find_transformation_function(*version_to_check)
+            try:
+                result = method(coords)
+            except:
+                msg = '_to_'.join(version_to_check) + ' failed'
+                self.assertTrue(False, msg=msg)
+        pass
+
 
 #Test math
 @attr("fast")
