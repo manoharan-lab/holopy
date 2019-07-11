@@ -120,7 +120,7 @@ def test_Sphere_parameters():
 def test_expand_parameters():
     f = xr.DataArray([[11,12,13],[14,15,16]],dims=['d2','d3'],coords={'d3':['H','He','Li'],'d2':['Left','Right']})
     compressed = {'a':0, 'b':[0.5, 1, 2], 'c':{'c1':3, 'c2':4}, 'd':ComplexPrior(5, 6), 'e':{'e1':ComplexPrior(7, 8), 'e2':[9,10]},'f':f}
-    expanded = {'a': 0, 'b.0':0.5, 'b.1':1, 'b.2':2, 'c_c1':3, 'c_c2':4, 'd.real':5, 'd.imag':6, 'e_e1.real':7, 'e_e1.imag':8, 'e_e2.0':9, 'e_e2.1':10, 'f_Left_H':11, 'f_Left_He':12, 'f_Left_Li':13, 'f_Right_H':14, 'f_Right_He':15, 'f_Right_Li':16}
+    expanded = {'a': 0, 'b.0':0.5, 'b.1':1, 'b.2':2, 'c:c1':3, 'c:c2':4, 'd.real':5, 'd.imag':6, 'e:e1.real':7, 'e:e1.imag':8, 'e:e2.0':9, 'e:e2.1':10, 'f:Left:H':11, 'f:Left:He':12, 'f:Left:Li':13, 'f:Right:H':14, 'f:Right:He':15, 'f:Right:Li':16}
     assert_equal(dict(_expand_parameters(compressed.items())), expanded)
 
     compressed['f'] = {'Left': {'H': 11, 'He': 12, 'Li': 13}, 'Right': {'H': 14, 'He': 15, 'Li': 16}}

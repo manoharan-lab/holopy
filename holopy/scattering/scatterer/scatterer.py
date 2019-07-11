@@ -279,7 +279,7 @@ class CenteredScatterer(Scatterer):
 def _interpret_parameters(raw_pars):
     out_dict = {}
     subkeys = set(
-        [key.split('.', 1)[0].split('_', 1)[0] for key in raw_pars.keys()])
+        [key.split('.', 1)[0].split(':', 1)[0] for key in raw_pars.keys()])
     for subkey in subkeys:
         if subkey in raw_pars.keys():
             val = raw_pars[subkey]
@@ -288,13 +288,13 @@ def _interpret_parameters(raw_pars):
             out_dict[subkey] = val
         else:
             clip = len(subkey)
-            for delimchar in '._':
+            for delimchar in '.:':
                 subset = {key[clip+1:]: val
                           for key, val in raw_pars.items()
                           if key.startswith(subkey + delimchar)}
                 if len(subset)>0:
                     break
-            if delimchar is '_':
+            if delimchar is ':':
                 # dict or xarray, but we don't know dim names
                 # so we always return dict
                 out_dict[subkey] = _interpret_parameters(subset)
@@ -327,13 +327,13 @@ def _expand_parameters(pairs, basekey=''):
         if isinstance(par, (list, tuple, np.ndarray)):
             add_pars(enumerate(par), '.')
         elif isinstance(par, dict):
-            add_pars(par.items(), '_')
+            add_pars(par.items(), ':')
         elif isinstance(par, xr.DataArray):
             subkeys = [coord.item() for coord in par.coords[par.dims[0]]]
             subvals = [par.loc[subkey] for subkey in subkeys]
             if len(par.dims)==1:
                 subvals = [subval.item() for subval in subvals]
-            add_pars(zip(subkeys, subvals), '_')
+            add_pars(zip(subkeys, subvals), ':')
         elif hasattr(par, 'name') and hasattr(par, 'imag'):
             # prior.ComplexPrior
             add_pars(zip(['real', 'imag'], [par.real, par.imag]), '.')
