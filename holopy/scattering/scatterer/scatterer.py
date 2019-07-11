@@ -301,11 +301,17 @@ def _interpret_parameters(raw_pars):
             elif delimchar is '.':
                 dictform = _interpret_parameters(subset)
                 if '0' in dictform.keys():
+                    # this might fail if called on model.parameters created
+                    # from a scatterer containing an array with some fixed,
+                    # and some varying parameters, e.g. hold x,y fit z only.
                     out_dict[subkey] = [
                         dictform[str(i)] for i in range(len(dictform))]
-                elif 'real' in dictform.keys():
+                elif set(dictform.keys()) == {'real', 'imag'}:
                     out_dict[subkey] = (1.0 * dictform['real'] +
                                                      1.0j * dictform['imag'])
+                else:
+                    # not array or complex, just return as dict
+                    out_dict[subkey] = dictform
         if subkey not in out_dict.keys():
             msg = "Cannot interpret parameter {0}.".format(subkey)
             raise ParameterSpecificationError(msg)
