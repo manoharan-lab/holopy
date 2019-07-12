@@ -30,6 +30,7 @@ from holopy.core import detector_grid, update_metadata
 from holopy.core.tests.common import assert_equal, assert_obj_close
 from holopy.scattering.theory import Mie
 from holopy.scattering.scatterer import Sphere, Spheres
+from holopy.scattering.scatterer.scatterer import _interpret_parameters
 from holopy.scattering.errors import MissingParameter
 from holopy.core.tests.common import assert_read_matches_write
 from holopy.scattering.calculations import calc_holo
@@ -46,6 +47,8 @@ def test_ComplexPar():
     parm = Sphere(n=prior.ComplexPrior(real=prior.Uniform(1.58,1.59), imag=.001))
     model = AlphaModel(parm, alpha=prior.Uniform(.6, 1, .7))
     assert_equal(model.parameters['n.real'].name, 'n.real')
+    interpreted_pars = {'alpha':.7, 'n':{'real':1.585}}
+    assert_equal(_interpret_parameters(model.parameters), interpreted_pars)
 
 def test_multidim():
     par_s = Sphere(

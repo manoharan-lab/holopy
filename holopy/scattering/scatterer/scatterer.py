@@ -277,6 +277,7 @@ class CenteredScatterer(Scatterer):
 
 
 def _interpret_parameters(raw_pars):
+# doesn't really have anything to do with scatterer - shouldn't be in this file
     out_dict = {}
     subkeys = set(
         [key.split('.', 1)[0].split(':', 1)[0] for key in raw_pars.keys()])
@@ -319,6 +320,7 @@ def _interpret_parameters(raw_pars):
 
 
 def _expand_parameters(pairs, basekey=''):
+# doesn't really have anything to do with scatterer - shouldn't be in this file
     subs = []
     for subkey, par in pairs:
         key = basekey + str(subkey)
