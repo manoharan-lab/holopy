@@ -23,7 +23,7 @@ Example Reconstruction
 .. plot:: pyplots/basic_ps_recon.py
    :include-source:
 
-We'll examine each bsection of code in turn. The first block:
+We'll examine each section of code in turn. The first block:
 
 ..  testcode::
 

@@ -59,7 +59,7 @@ class CmaStrategy(HoloPyObject):
         Fraction of each generation to use to construct the next generation. 
         Takes symbol \mu in cma literature
     weight_function: function, optional
-        takes arguments i, popsize with i in range(popsize); returns weight of i
+        takes arguments (i, popsize), i in range(popsize); returns weight of i
     tols: dict, optional
         tolerance values to overwrite the cma defaults
     seed: int, optional
@@ -129,7 +129,7 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
     initial_population: array
         starting population with shape = (popsize, len(parameters))
     weight_function: function
-        takes arguments i, popsize with i in range(popsize); returns weight of i
+        takes arguments (i, popsize), i in range(popsize); returns weight of i
     tols: dict, optional
         tolerance values to overwrite the cma defaults
     seed: int, optional

@@ -6,7 +6,7 @@ Reconstructing Data (Numerical Propagation)
 A hologram contains information about the electric field amplitude and phase at the detector plane.
 Shining light back through a hologram allows reconstruction of the electric field at points upstream of the detector plane.
 HoloPy performs this function mathematically by numerically propagating a hologram (or electric field) to another position in space.
-This allows you to reconstruct 3D sample volumes from 2D images. The light source is assumed to be collimated. 
+This allows you to reconstruct 3D sample volumes from 2D images. The light source is assumed to be collimated here, but HoloPy see also :ref:`ps_recon_tutorial`.
 
 Example Reconstruction
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -74,9 +74,7 @@ You can display the reconstruction with :func:`.show`::
   hp.show(rec_vol)
 
 Pressing the left and right arrow keys steps through volumes slices -
-propagation to different z-planes. (Don't use the down arrow key; it will mess
-up the stepping due to a peculiarity of Matplotlib. If this happens, close your
-plot window and show it again. Sorry.). If the left and right arrow keys don't
+propagation to different z-planes. If the left and right arrow keys don't
 do anything, you might need to set your matplotlib backend. Refer to
 :ref:`usage` for instructions.
 
@@ -122,7 +120,7 @@ cascaded free space propagation is particularly useful when the reconstructions 
 fine features or when propagating over large distances. For further details, refer to 
 `Kreis 2002 <http://dx.doi.org/10.1117/1.1489678>`_.
 
-To implement cascaded free space propagation in HoloPy, simply pass a ``cfsp`` argument
+To implement cascaded free space propagation in HoloPy, pass a ``cfsp`` argument
 into :func:`.propagate` indicating how many times the hologram should be iteratively
 propagated. For example, to propagate in three steps over each distance, we write:
 
