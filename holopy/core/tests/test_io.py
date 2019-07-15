@@ -252,7 +252,12 @@ class TestAccumulator(unittest.TestCase):
         self.assertTrue(accumulator.cv() is None)
 
     def test_calculate_hologram_noise_sd(self):
-        pass
+        accumulator = Accumulator()
+        refimg = _load_raw_example_data()
+        paths = get_example_data_path(['bg01.jpg', 'bg02.jpg', 'bg03.jpg'])
+        bg = load_average(paths, refimg)
+        # This value is from the legacy version of load_average
+        self.assertTrue(np.allclose(bg.noise_sd, 0.00709834))
 
 
 def _load_raw_example_data():
