@@ -42,7 +42,7 @@ from holopy.inference import prior
 def sample_one_sigma_gaussian(result):
     par_ranges = result.intervals
     new_pars = [prior.updated(result.model.parameters[p.name], p) for p in par_ranges]
-    return np.vstack([p.sample(size=result.strategy.nwalkers)] for p in new_pars).T
+    return np.vstack([[p.sample(size=result.strategy.nwalkers)] for p in new_pars]).T
 
 
 class EmceeStrategy(HoloPyObject):

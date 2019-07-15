@@ -35,7 +35,7 @@ from holopy.core import load, save, load_image, save_image
 from holopy.core.errors import NoMetadata
 from holopy.core.process import normalize
 from holopy.core.metadata import get_spacing, copy_metadata
-from holopy.core.holopy_object import Serializable
+from holopy.core.holopy_object import HoloPyObject
 from holopy.core.tests.common import (
     assert_obj_close, assert_read_matches_write, get_example_data)
 
@@ -173,10 +173,15 @@ class test_custom_yaml_output(unittest.TestCase):
 
     @attr("fast")
     def test_yaml_output_of_serializable(self):
-        class S(Serializable):
-            def __init__(self, a):
+        class S(HoloPyObject):
+            def __init__(self, a, b, c=3):
                 self.a = a
-        assert yaml.dump(S('a'), default_flow_style=True) == '!S {a: a}\n'
+                self.b = b
+                self.c = c
+        instantiated = S(1, None)
+        setattr(instantiated, 'd', 'e')
+        # only a & c appear because b is None, d is not in __init__ signature
+        assert yaml.dump(instantiated) == '!S\na: 1\nc: 3\n'
 
 class TestLoadMieLensData(unittest.TestCase):
     def test_load_image0000(self):
