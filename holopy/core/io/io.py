@@ -444,25 +444,27 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
 
 class Accumulator:
     def __init__(self):
-        self.n = 0
-        self.m = None
-        self.s = None
+        self._n = 0
+        self._running_mean = None
+        self._running_s = None
 
     def push(self, x):
         self.n += 1
 
         if self.n == 1:
-            self.m = x
-            self.s = x*0
+            self._running_mean = x
+            self._running_var = x * 0
         else:
-            self.s += (x - self.m) * (x - (self.m + (x - self.m) / self.n))
-            self.m += (x - self.m) / self.n
+            self._running_var += ((x - self._running_mean) *
+                                  (x - (self._running_mean +
+                                        (x - self._running_mean) / self.n)))
+            self._running_mean += (x - self._running_mean) / self.n
 
     def mean(self):
-        return self.m if self.n else 0.0
+        return self._running_mean if self._running_mean else 0.0
 
     def variance(self):
-        v = self.s / (self.n - 1) if self.n > 1 else 0.0
+        v = self._running_var / (self.n - 1) if self.n > 1 else 0.0
         return np.mean(v.values.ravel())
 
     def std(self):
