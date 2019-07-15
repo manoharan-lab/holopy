@@ -34,6 +34,7 @@ import holopy as hp
 from holopy.core import load, save, load_image, save_image
 from holopy.core.errors import NoMetadata
 from holopy.core.io import load_average, get_example_data_path
+from holopy.core.io.io import Accumulator
 from holopy.core.process import normalize
 from holopy.core.metadata import get_spacing, copy_metadata
 from holopy.core.holopy_object import Serializable
@@ -194,6 +195,64 @@ class TestMemoryUsage(unittest.TestCase):
         images = _load_example_data_backgrounds()
         expected_usage = sum([im.nbytes / 1e6 for im in images]) # Size in MB
         self.assertTrue(peak_usage < expected_usage * 1.1)
+
+
+class TestAccumulator(unittest.TestCase):
+    def test_push(self):
+        accumulator = Accumulator()
+        data  = np.arange(10)
+        for point in data: accumulator.push(point)
+        self.assertTrue(accumulator._n == 10)
+
+    def test_push_hologram(self):
+        accumulator = Accumulator()
+        data = _load_example_data_backgrounds()
+        for holo in data: accumulator.push(holo)
+        self.assertTrue(accumulator._n == 3)
+
+    def test_mean(self):
+        accumulator = Accumulator()
+        data = np.arange(10)
+        for point in data: accumulator.push(point)
+        self.assertTrue(accumulator.mean() == np.mean(data))
+
+    def test_mean_hologram_value(self):
+        accumulator = Accumulator()
+        data = _load_example_data_backgrounds()
+        for holo in data: accumulator.push(holo)
+        numpy_mean = np.mean([holo.values for holo in data], axis=0)
+        self.assertTrue(np.allclose(numpy_mean, accumulator.mean().values))
+
+    def test_mean_hologram_type(self):
+        import xarray
+        expected_type = xarray.core.dataarray.DataArray
+        accumulator = Accumulator()
+        data = _load_example_data_backgrounds()
+        for holo in data: accumulator.push(holo)
+        self.assertTrue(isinstance(accumulator.mean(), expected_type))
+
+    def test_std(self):
+        accumulator = Accumulator()
+        data = np.arange(10)
+        for point in data: accumulator.push(point)
+        self.assertTrue(accumulator._std() == np.std(data))
+
+    def test_std_no_data(self):
+        accumulator = Accumulator()
+        self.assertTrue(accumulator._std() is None)
+
+    def test_cv(self):
+        accumulator = Accumulator()
+        data = np.arange(10)
+        for point in data: accumulator.push(point)
+        self.assertTrue(accumulator.cv() == np.std(data) / np.mean(data))
+
+    def test_cv_no_data(self):
+        accumulator = Accumulator()
+        self.assertTrue(accumulator.cv() is None)
+
+    def test_calculate_hologram_noise_sd(self):
+        pass
 
 
 def _load_raw_example_data():

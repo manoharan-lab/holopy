@@ -20,6 +20,7 @@ Common entry point for holopy io.  Dispatches to the correct load/save
 functions.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.havard.edu>
+.. moduleauthor:: Ron Alexander <ralexander@g.harvard.edu>
 """
 import os
 import glob
@@ -34,7 +35,7 @@ from collections import OrderedDict
 from holopy.core.io import serialize
 from holopy.core.io.vis import display_image
 from holopy.core.metadata import (data_grid, get_spacing, update_metadata,
-                    copy_metadata, to_vector, illumination, clean_concat)
+                    copy_metadata, to_vector, illumination)
 from holopy.core.utils import ensure_array, dict_without
 from holopy.core.errors import NoMetadata, BadImage, LoadError
 from holopy.core.holopy_object import FullLoader# compatibility with pyyaml < 5
@@ -424,7 +425,7 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
 
     # calculate average noise from image
     if noise_sd is None and len(filepath) > 1:
-        noise_sd = ensure_array(accumulator.std() / accumulator.mean())
+        noise_sd = ensure_array(accumulator.cv())
 
     # crop according to refimg dimensions
     if refimg is not None:
@@ -442,30 +443,40 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
     # overwrite metadata from refimg with provided values
     return update_metadata(mean_image, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)
 
+
 class Accumulator:
+    """Calculates average and coefficient of variance for numerical data in
+    one pass using Welford's algorithim.
+    """
     def __init__(self):
         self._n = 0
         self._running_mean = None
-        self._running_s = None
+        self._running_var = None
 
     def push(self, x):
-        self.n += 1
+        self._n += 1
 
-        if self.n == 1:
-            self._running_mean = x
-            self._running_var = x * 0
+        if self._n == 1:
+            self._running_var = x * 0.0
+            self._running_mean = self._running_var + x
         else:
             self._running_var += ((x - self._running_mean) *
-                                  (x - (self._running_mean +
-                                        (x - self._running_mean) / self.n)))
-            self._running_mean += (x - self._running_mean) / self.n
+             ((x - (self._running_mean + (x - self._running_mean) / self._n))))
+            self._running_mean += (x - self._running_mean) / self._n
 
     def mean(self):
-        return self._running_mean if self._running_mean else 0.0
+        return self._running_mean if self._running_mean is not None else 0.0
 
-    def variance(self):
-        v = self._running_var / (self.n - 1) if self.n > 1 else 0.0
-        return np.mean(v.values.ravel())
+    def cv(self):
+        """ The coefficient of variation
+        """
+        if self._n == 0:
+            return None
+        else:
+            return np.mean(np.array(self._std() / self.mean()))
 
-    def std(self):
-        return np.sqrt(self.variance())
+    def _std(self):
+        if self._n == 0:
+            return None
+        else:
+            return np.sqrt(self._running_var / (self._n))
