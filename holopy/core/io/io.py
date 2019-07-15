@@ -424,7 +424,7 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
 
     # calculate average noise from image
     if noise_sd is None and len(filepath) > 1:
-        noise_sd = ensure_array(accumulator.std())
+        noise_sd = ensure_array(accumulator.std() / accumulator.mean())
 
     # crop according to refimg dimensions
     if refimg is not None:
