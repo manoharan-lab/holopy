@@ -29,7 +29,11 @@ from holopy.scattering.scatterer import Sphere, Spheroid, Cylinder
 from holopy.scattering.errors import TheoryNotCompatibleError, TmatrixFailure
 from holopy.core.errors import DependencyMissing
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
-from holopy.scattering.theory.tmatrix_f.S import ampld
+try:
+    from holopy.scattering.theory.tmatrix_f.S import ampld
+    COMPILED_TMATRIX_FORTRAN = True
+except:
+    COMPILED_TMATRIX_FORTRAN = False
 try:
     from holopy.scattering.theory.mie_f import mieangfuncs
     _NO_MIEANGFUNCS = False
@@ -51,6 +55,11 @@ class Tmatrix(ScatteringTheory):
 
     """
     def __init__(self):
+        if not COMPILED_TMATRIX_FORTRAN:
+            raise DependencyMissing("T-matrix theory", "This is probably "
+                                    "due to a problem with compiling Fortran "
+                                    "code, as it should be built with the rest"
+                                    " of HoloPy through f2py.")
         super().__init__()
 
     def _can_handle(self, scatterer):
