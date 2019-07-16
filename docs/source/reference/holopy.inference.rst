@@ -1,45 +1,67 @@
 holopy.inference package
 ========================
 
-Module contents
----------------
-
 .. automodule:: holopy.inference
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-holopy.inference.noise_model module
------------------------------------
+Submodules
+----------
 
-.. automodule:: holopy.inference.noise_model
-    :members:
-    :undoc-members:
-    :show-inheritance:
+holopy.inference.cmaes module
+-----------------------------
+
+.. automodule:: holopy.inference.cmaes
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+holopy.inference.emcee module
+-----------------------------
+
+.. automodule:: holopy.inference.emcee
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+holopy.inference.model module
+-----------------------------
+
+.. automodule:: holopy.inference.model
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+holopy.inference.nmpfit module
+------------------------------
+
+.. automodule:: holopy.inference.nmpfit
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 holopy.inference.prior module
 -----------------------------
 
 .. automodule:: holopy.inference.prior
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 holopy.inference.result module
 ------------------------------
 
 .. automodule:: holopy.inference.result
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-holopy.inference.sample module
-------------------------------
+holopy.inference.scipyfit module
+--------------------------------
 
-.. automodule:: holopy.inference.sample
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
+.. automodule:: holopy.inference.scipyfit
+   :members:
+   :undoc-members:
+   :show-inheritance:
 

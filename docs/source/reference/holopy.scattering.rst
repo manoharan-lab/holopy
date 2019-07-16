@@ -1,37 +1,27 @@
 holopy.scattering package
 =========================
 
+.. automodule:: holopy.scattering
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
 .. toctree::
 
-    holopy.scattering.scatterer
-    holopy.scattering.theory
+   holopy.scattering.scatterer
+   holopy.scattering.theory
 
-Module contents
----------------
-
-.. automodule:: holopy.scattering
-    :members:
-    :undoc-members:
-    :show-inheritance:
+Submodules
+----------
 
 holopy.scattering.calculations module
 -------------------------------------
 
 .. automodule:: holopy.scattering.calculations
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-holopy.scattering.geometry module
----------------------------------
-
-.. automodule:: holopy.scattering.geometry
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
