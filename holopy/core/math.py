@@ -165,11 +165,6 @@ def find_transformation_function(initial_coordinates, desired_coordinates):
     return method
 
 
-def to_spherical(x, y, z):
-    r, theta, phi = transform_cartesian_to_spherical([x, y, z])
-    return {'r': r, 'theta': theta, 'phi': phi}
-
-
 def to_cartesian(r, theta, phi):
     x, y, z = transform_spherical_to_cartesian([r, theta, phi])
     return repeat_sing_dims({'x': x, 'y': y, 'z': z})
