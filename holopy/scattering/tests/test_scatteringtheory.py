@@ -31,6 +31,7 @@ SCAT_SCHEMA = prep_schema(
 
 
 class MockTheory(ScatteringTheory):
+    """Minimally-functional daughter of ScatteringTheory for fast tests."""
     def __init__(*args, **kwargs):
         pass  # an init is necessary for the repr
 
