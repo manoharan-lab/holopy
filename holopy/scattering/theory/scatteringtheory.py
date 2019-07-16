@@ -21,17 +21,21 @@ calc_intensity and calc_holo, based on subclass's calc_field
 .. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
+.. moduleauthor:: Brian Leahy <bleahy@g.harvard.edu>
 """
+
+from warnings import warn
 
 import numpy as np
 import xarray as xr
-from warnings import warn
+
+from holopy.core.math import find_transformation_function
 from holopy.core.holopy_object import HoloPyObject
-from holopy.scattering.scatterer import Scatterers, Sphere
+from holopy.scattering.scatterer import Scatterers
 from holopy.scattering.errors import TheoryNotCompatibleError, MissingParameter
-from holopy.core.metadata import (vector, illumination, sphere_coords,
-                                  primdim, update_metadata, clean_concat)
-from holopy.core.utils import dict_without, updated, ensure_array
+from holopy.core.metadata import (
+    vector, illumination, flat, update_metadata, clean_concat)
+from holopy.core.utils import ensure_array
 try:
     from holopy.scattering.theory.mie_f import mieangfuncs
 except ImportError:
@@ -41,18 +45,6 @@ except ImportError:
 def get_wavevec_from(schema):
     return 2 * np.pi / (schema.illum_wavelen / schema.medium_index)
 
-
-def stack_spherical(a):
-    if 'r' not in a:
-        a['r'] = [np.inf] * len(a['theta'])
-    return np.vstack((a['r'], a['theta'], a['phi']))
-
-
-
-# Notes:
-# `sphere_coords` is only called here (and in the tests). Yet is gives
-# multiple outputs. So you can just change the sphere_coords function
-# to return exactly what you need.
 
 class ScatteringTheory(HoloPyObject):
     """
@@ -71,8 +63,9 @@ class ScatteringTheory(HoloPyObject):
     and you care about that speed, or if it is easier and you don't care
     about matrices.
     """
+    desired_coordinate_system = 'spherical'
 
-    def _calculate_scattered_field(self, scatterer, schema):
+    def calculate_scattered_field(self, scatterer, schema):
         """
         Implemented in derived classes only.
 
@@ -86,76 +79,17 @@ class ScatteringTheory(HoloPyObject):
         e_field : :mod:`.VectorGrid`
             scattered electric field
         """
-        if len(ensure_array(schema.illum_wavelen)) > 1:
-            field = []
-            for illum in schema.illum_wavelen.illumination.values:
-                this_schema = update_metadata(
-                    schema,
-                    illum_wavelen=ensure_array(
-                        schema.illum_wavelen.sel(illumination=illum).values)[0],
-                    illum_polarization=ensure_array(
-                        schema.illum_polarization.sel(illumination=illum).values))
-                this_field = self._calculate_scattered_field(
-                    scatterer.select({illumination: illum}), this_schema)
-                field.append(this_field)
-            field = clean_concat(field, dim=schema.illum_wavelen.illumination)
-        else:
-            # See if we can handle the scatterer in one step
-            if self._can_handle(scatterer):
-                field = self._get_field_from(scatterer, schema)
-            # FIXME this checks if it is a composite, but does not check
-            # if each element of the composite can be handled by the theory.
-            elif isinstance(scatterer, Scatterers):
-                # if it is a composite, try superposition
-                scatterers = scatterer.get_component_list()
-                field = self._get_field_from(scatterers[0], schema)
-                for s in scatterers[1:]:
-                    field += self._get_field_from(s, schema)
-            else:
-                raise TheoryNotCompatibleError(self, scatterer)
-
-        return field
-
-    def _get_field_from(self, scatterer, schema):
-        # FIXME this checks a global value in a loop.
-        wavevector = get_wavevec_from(schema)
-        if isinstance(scatterer, Sphere) and scatterer.center is None:
+        if scatterer.center is None:
             raise MissingParameter("center")
-        positions = sphere_coords(
-            schema, scatterer.center, wavevec=wavevector)  # 8.6 ms !!
-        field = np.transpose(
-            self._raw_fields(
-                stack_spherical(positions),
-                scatterer,
-                medium_wavevec=wavevector,
-                medium_index=schema.medium_index,
-                illum_polarization=schema.illum_polarization)
-            )
-        phase = np.exp(-1j * wavevector * scatterer.center[2])
-        # TODO: fix and re-enable internal fields
-        # if self._scatterer_overlaps_schema(scatterer, schema):
-        #     inner = scatterer.contains(schema.positions.xyz())
-        #     field[inner] = np.vstack(
-        #         self._raw_internal_fields(positions[inner].T, s,
-        #                                  optics)).T
-        field *= phase
-        dimstr = primdim(positions)
-
-        # FIXME why is this here? Since ``positions = sphere_coords(...)``
-        # shouldn't ``positions`` always be an xr.DataArray?
-        if isinstance(positions[dimstr], xr.DataArray):
-            coords = {key: (dimstr, val.values)
-                      for key, val in positions[dimstr].coords.items()}
-        else:
-            coords = {key: (dimstr, val) for key, val in positions.items()}
-        coords = updated(coords, {dimstr: positions[dimstr],
-                                  vector: ['x', 'y', 'z']})
-        field = xr.DataArray(field, dims=[dimstr, vector], coords=coords,
-                             attrs=schema.attrs)
+        is_multicolor_hologram = len(ensure_array(schema.illum_wavelen)) > 1
+        field = (
+            self._calculate_multiple_color_scattered_field(scatterer, schema)
+            if is_multicolor_hologram else
+            self._calculate_single_color_scattered_field(scatterer, schema))
         return field
 
-    def _calc_cross_sections(self, scatterer, medium_wavevec, medium_index,
-                             illum_polarization):
+    def calculate_cross_sections(
+            self, scatterer, medium_wavevec, medium_index, illum_polarization):
         raw_sections = self._raw_cross_sections(
             scatterer=scatterer, medium_wavevec=medium_wavevec,
             medium_index=medium_index, illum_polarization=illum_polarization)
@@ -164,7 +98,7 @@ class ScatteringTheory(HoloPyObject):
                                 ['scattering', 'absorbtion',
                                  'extinction', 'assymetry']})
 
-    def _calc_scat_matrix(self, scatterer, schema):
+    def calculate_scattering_matrix(self, scatterer, schema):
         """
         Compute scattering matrices for scatterer
 
@@ -186,26 +120,114 @@ class ScatteringTheory(HoloPyObject):
         situations. You only need to instantiate a theory object if it
         has adjustable parameters and you want to use non-default values.
         """
-        positions = sphere_coords(schema, scatterer.center)
+        positions = self._transform_to_desired_coordinates(
+            schema, scatterer.center)
         scat_matrs = self._raw_scat_matrs(
-            scatterer, stack_spherical(positions),
-            medium_wavevec=get_wavevec_from(schema), medium_index=schema.medium_index)
-        dimstr = primdim(positions)
+            scatterer, positions, medium_wavevec=get_wavevec_from(schema),
+            medium_index=schema.medium_index)
+        return self._pack_scattering_matrix_into_xarray(
+            scat_matrs, positions, schema)
 
-        for coorstr in dict_without(positions, [dimstr]):
-            positions[coorstr] = (dimstr, positions[coorstr])
+    def _calculate_multiple_color_scattered_field(self, scatterer, schema):
+        field = []
+        for illum in schema.illum_wavelen.illumination.values:
+            this_schema = update_metadata(
+                schema,
+                illum_wavelen=ensure_array(
+                    schema.illum_wavelen.sel(illumination=illum).values)[0],
+                illum_polarization=ensure_array(
+                    schema.illum_polarization.sel(illumination=illum).values))
+            this_field = self._calculate_single_color_scattered_field(
+                scatterer.select({illumination: illum}), this_schema)
+            field.append(this_field)
+        field = clean_concat(field, dim=schema.illum_wavelen.illumination)
+        return field
 
-        dims = ['Epar', 'Eperp']
-        dims = [dimstr] + dims
-        positions['Epar'] = ['S2', 'S3']
-        positions['Eperp'] = ['S4', 'S1']
+    def _calculate_scattered_field_from_superposition(
+            self, scatterers, schema):
+        field = self._calculate_single_color_scattered_field(
+            scatterers[0], schema)
+        for s in scatterers[1:]:
+            field += self._calculate_single_color_scattered_field(s, schema)
+        return field
 
-        return xr.DataArray(scat_matrs, dims=dims, coords=positions,
-                            attrs=schema.attrs)
+    def _calculate_single_color_scattered_field(self, scatterer, schema):
+        if self._can_handle(scatterer):
+            field = self._get_field_from(scatterer, schema)
+        elif isinstance(scatterer, Scatterers):
+            field = self._calculate_scattered_field_from_superposition(
+                scatterer.get_component_list(), schema)
+        else:
+            raise TheoryNotCompatibleError(self, scatterer)
+        return self._pack_field_into_xarray(field, schema)
+
+    def _get_field_from(self, scatterer, schema):
+        """
+        Parameters
+        ----------
+        scatterer
+        schema : xarray
+            (it's always passed in as an xarray)
+
+        Returns
+        -------
+        raveled fields, shape (npoints = nx*ny = schema.shape.prod(), 3)
+        """
+        wavevector = get_wavevec_from(schema)
+        positions = self._transform_to_desired_coordinates(
+            schema, scatterer.center, wavevec=wavevector)
+        scattered_field = np.transpose(
+            self._raw_fields(
+                positions,
+                scatterer,
+                medium_wavevec=wavevector,
+                medium_index=schema.medium_index,
+                illum_polarization=schema.illum_polarization)
+            )
+        phase = np.exp(-1j * wavevector * scatterer.center[2])
+        scattered_field *= phase
+        return scattered_field
+
+    def _pack_field_into_xarray(self, scattered_field, schema):
+        """Packs the numpy.ndarray, shape (N, 3) ``scattered_field`` into
+        an xr.DataArray, shape (N, 3). This function needs to pack the
+        fields [flat or point, vector], with the coordinates the
+        same as that of the schema."""
+        flattened_schema = flat(schema)  # now either point or flat
+        point_or_flat = self._is_detector_view_point_or_flat(flattened_schema)
+        coords = {
+            key: (point_or_flat, val.values)
+            for key, val in flattened_schema[point_or_flat].coords.items()}
+
+        coords.update(
+            {point_or_flat: flattened_schema[point_or_flat],
+             vector: ['x', 'y', 'z']})
+        scattered_field = xr.DataArray(
+            scattered_field, dims=[point_or_flat, vector], coords=coords,
+            attrs=schema.attrs)
+        return scattered_field
+
+    def _pack_scattering_matrix_into_xarray(
+            self, scat_matrs, r_theta_phi, schema):
+        flattened_schema = flat(schema)
+        point_or_flat = self._is_detector_view_point_or_flat(flattened_schema)
+        dims = [point_or_flat, 'Epar', 'Eperp']
+
+        coords = {point_or_flat: flattened_schema.coords[point_or_flat]}
+        coords.update({
+            'r': (point_or_flat, r_theta_phi[ 0]),
+            'theta': (point_or_flat, r_theta_phi[ 1]),
+            'phi': (point_or_flat, r_theta_phi[ 2]),
+            'Epar': ['S2', 'S3'],
+            'Eperp': ['S4', 'S1'],
+            })
+
+        packed = xr.DataArray(
+            scat_matrs, dims=dims, coords=coords, attrs=schema.attrs)
+        return packed
 
     def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
-
         scat_matr = self._raw_scat_matrs(
             scatterer, pos, medium_wavevec=medium_wavevec,
             medium_index=medium_index)
@@ -217,3 +239,41 @@ class ScatteringTheory(HoloPyObject):
                 kr, phi, scat_matr[i], illum_polarization.values[:2])
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
         return fields.T
+
+    @classmethod
+    def _is_detector_view_point_or_flat(cls, detector_view):
+        detector_dims = detector_view.dims
+        if 'flat' in detector_dims:
+            point_or_flat = 'flat'
+        elif 'point' in detector_dims:
+            point_or_flat = 'point'
+        else:
+            msg = ("xarray `detector_view` is not in the form of a 1D list " +
+                   "of coordinates. Call ``flat`` first.")
+            raise ValueError(msg)
+        return point_or_flat
+
+    @classmethod
+    def _transform_to_desired_coordinates(cls, detector, origin, wavevec=1):
+        if hasattr(detector, 'theta') and hasattr(detector, 'phi'):
+            original_coordinate_system = 'spherical'
+            original_coordinate_values = [
+                (detector.r.values * wavevec if hasattr(detector, 'r')
+                    else np.full(detector.theta.values.shape, np.inf)),
+                detector.theta.values,
+                detector.phi.values,
+                ]
+        else:
+            original_coordinate_system = 'cartesian'
+            f = flat(detector)  # 1.6 ms
+            original_coordinate_values = [
+                wavevec * (f.x.values - origin[0]),
+                wavevec * (f.y.values - origin[1]),
+                wavevec * (origin[2] - f.z.values),
+                # z is defined opposite light propagation, so we invert
+                ]
+        method = find_transformation_function(
+            original_coordinate_system,
+            cls.desired_coordinate_system)
+        return method(original_coordinate_values)
+

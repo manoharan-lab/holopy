@@ -200,7 +200,7 @@ def calc_holo(detector, scatterer, medium_index=None, illum_wavelen=None,
     scaling = _interpret_parameters(scaling)['alpha']
     scaling = dict_to_array(detector, scaling)
 
-    scattered_field = theory._calculate_scattered_field(
+    scattered_field = theory.calculate_scattered_field(
         scatterer.guess, uschema)
     reference_field = uschema.illum_polarization
     holo = scattered_field_to_hologram(
@@ -236,7 +236,7 @@ def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None,
         cross sections, and <cos theta>
     """
     theory = interpret_theory(scatterer, theory)
-    cross_section = theory._calc_cross_sections(
+    cross_section = theory.calculate_cross_sections(
         scatterer=scatterer.guess,
         medium_wavevec=2*np.pi/(illum_wavelen/medium_index),
         medium_index=medium_index,
@@ -274,7 +274,7 @@ def calc_scat_matrix(detector, scatterer, medium_index=None, illum_wavelen=None,
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=False)
-    result = theory._calc_scat_matrix(scatterer.guess, uschema)
+    result = theory.calculate_scattering_matrix(scatterer.guess, uschema)
     return finalize(uschema, result)
 
 
@@ -308,7 +308,7 @@ def calc_field(detector, scatterer, medium_index=None, illum_wavelen=None,
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=illum_polarization)
-    result = theory._calculate_scattered_field(scatterer.guess, uschema)
+    result = theory.calculate_scattered_field(scatterer.guess, uschema)
     return finalize(uschema, result)
 
 
