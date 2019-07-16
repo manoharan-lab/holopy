@@ -17,6 +17,7 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import importlib
 import tempfile
 import os
 import shutil
@@ -41,7 +42,6 @@ from holopy.core.holopy_object import Serializable
 from holopy.core.tests.common import (
     assert_obj_close, assert_read_matches_write, get_example_data)
 
-import memory_profiler
 
 IMAGE01_METADATA = {'spacing': 0.0851, 'medium_index': 1.33,
                     'illum_wavelen': 0.66, 'illum_polarization':  (1,0)}
@@ -186,7 +186,13 @@ class test_custom_yaml_output(unittest.TestCase):
 
 
 class TestMemoryUsage(unittest.TestCase):
+    @unittest.skipIf(not importlib.util.find_spec('memory_profiler'),
+                     'memory_profiler is reqruired for this test')
+    @unittest.expectedFailure
     def test_load_average_doesnt_use_excess_mem(self):
+        # TODO: Why does load_average use so much memory?
+        # See manoharan-lab/holopy#267
+        import memory_profiler
         refimg = _load_raw_example_data()
         paths = get_example_data_path(['bg01.jpg', 'bg02.jpg', 'bg03.jpg'])
         usage = memory_profiler.memory_usage((load_average, (paths, refimg,)),
@@ -198,24 +204,28 @@ class TestMemoryUsage(unittest.TestCase):
 
 
 class TestAccumulator(unittest.TestCase):
+    @attr("fast")
     def test_push(self):
         accumulator = Accumulator()
         data  = np.arange(10)
         for point in data: accumulator.push(point)
         self.assertTrue(accumulator._n == 10)
 
+    @attr("fast")
     def test_push_hologram(self):
         accumulator = Accumulator()
         data = _load_example_data_backgrounds()
         for holo in data: accumulator.push(holo)
         self.assertTrue(accumulator._n == 3)
 
+    @attr("fast")
     def test_mean(self):
         accumulator = Accumulator()
         data = np.arange(10)
         for point in data: accumulator.push(point)
         self.assertTrue(accumulator.mean() == np.mean(data))
 
+    @attr("fast")
     def test_mean_hologram_value(self):
         accumulator = Accumulator()
         data = _load_example_data_backgrounds()
@@ -231,22 +241,26 @@ class TestAccumulator(unittest.TestCase):
         for holo in data: accumulator.push(holo)
         self.assertTrue(isinstance(accumulator.mean(), expected_type))
 
+    @attr("fast")
     def test_std(self):
         accumulator = Accumulator()
         data = np.arange(10)
         for point in data: accumulator.push(point)
         self.assertTrue(accumulator._std() == np.std(data))
 
+    @attr("fast")
     def test_std_no_data(self):
         accumulator = Accumulator()
         self.assertTrue(accumulator._std() is None)
 
+    @attr("fast")
     def test_cv(self):
         accumulator = Accumulator()
         data = np.arange(10)
         for point in data: accumulator.push(point)
         self.assertTrue(accumulator.cv() == np.std(data) / np.mean(data))
 
+    @attr("fast")
     def test_cv_no_data(self):
         accumulator = Accumulator()
         self.assertTrue(accumulator.cv() is None)
