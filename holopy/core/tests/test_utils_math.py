@@ -29,7 +29,8 @@ import xarray as xr
 from schwimmbad import MultiPool, SerialPool, pool
 
 from holopy.core.utils import (
-    ensure_array, ensure_listlike, mkdir_p, choose_pool)
+    ensure_array, ensure_listlike, ensure_scalar,
+    mkdir_p, dict_without, updated, choose_pool)
 from holopy.core.math import (
     rotate_points, rotation_matrix, transform_cartesian_to_spherical,
     transform_spherical_to_cartesian, transform_cartesian_to_cylindrical,
@@ -281,11 +282,17 @@ def test_choose_pool():
     assert isinstance(choose_pool('auto'), (pool.BasePool, Pool))
     assert not isinstance(choose_pool(dummy), (pool.BasePool, Pool))
 
-
 @attr('fast')
 def test_ensure_listlike():
     assert ensure_listlike(None) == []
+    assert ensure_listlike(1) == [1]
+    assert ensure_listlike([1]) == [1]
 
+@attr('fast')
+def test_ensure_scalar():
+    assert ensure_scalar(1) == 1
+    assert ensure_scalar(np.array(1)) == 1
+    assert ensure_scalar(np.array([1])) == 1
 
 @attr("fast")
 def test_mkdir_p():
@@ -293,3 +300,38 @@ def test_mkdir_p():
     mkdir_p(os.path.join(tempdir, 'a', 'b'))
     mkdir_p(os.path.join(tempdir, 'a', 'b'))
     shutil.rmtree(tempdir)
+
+
+class TestDictionaryUtils(unittest.TestCase):
+    input_dict = {'a':1, 'b':2, 'c':3, 'd':4}
+    update_dict = {'c':5, 'd':None, 'e':6}
+
+    @attr("fast")
+    def test_dict_without(self):
+        output_dict = dict_without(self.input_dict, ['a','d','e'])
+        self.assertTrue(self.input_dict == {'a':1, 'b':2, 'c':3, 'd':4})
+        self.assertTrue(output_dict == {'b':2, 'c':3})
+
+    @attr("fast")
+    def test_updated_basic(self):
+        output_dict = updated(self.input_dict, self.update_dict)
+        self.assertTrue(self.input_dict == {'a':1, 'b':2, 'c':3, 'd':4})
+        self.assertTrue(output_dict == {'a':1, 'b':2, 'c':5, 'd':4, 'e':6})
+
+    @attr("fast")
+    def test_updated_keep_None(self):
+        output_dict = updated(self.input_dict, self.update_dict, False)
+        self.assertTrue(self.input_dict == {'a':1, 'b':2, 'c':3, 'd':4})
+        self.assertTrue(output_dict == {'a':1, 'b':2, 'c':5, 'd':None, 'e':6})
+
+    @attr("fast")
+    def test_updated_from_kw(self):
+        output_dict = updated(self.input_dict, b=7, c=None, e=8)
+        self.assertTrue(self.input_dict == {'a':1, 'b':2, 'c':3, 'd':4})
+        self.assertTrue(output_dict == {'a':1, 'b':7, 'c':3, 'd':4, 'e':8})
+
+    @attr("fast")
+    def test_kw_takes_priority(self):
+        output_dict = updated(self.input_dict, self.update_dict, b=7, e=8)
+        self.assertTrue(self.input_dict == {'a':1, 'b':2, 'c':3, 'd':4})
+        self.assertTrue(output_dict == {'a':1, 'b':7, 'c':5, 'd':4, 'e':8})
