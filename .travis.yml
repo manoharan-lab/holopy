@@ -4,7 +4,7 @@ python:
   - 3.6
 
 env:
-  - DEPS="scipy pyyaml pillow pandas h5py sphinx matplotlib nose emcee schwimmbad ipython"
+  - DEPS="scipy pyyaml pillow pandas h5py sphinx matplotlib nose emcee schwimmbad"
 
 branches:
   except:
