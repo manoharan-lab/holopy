@@ -410,7 +410,7 @@ class TestGaussQuad(unittest.TestCase):
         self.assertTrue(np.isclose(should_be_two, 2.0, **TOLS))
 
 
-class TestJ2(unittest.TestCase):
+class TestMiscMath(unittest.TestCase):
     @attr("fast")
     def test_fastj2_zeros(self):
         j2_zeros = jn_zeros(2, 50)
@@ -424,6 +424,20 @@ class TestJ2(unittest.TestCase):
         # only share the zero at z=0, which is not for j0
         should_not_be_zero = mielensfunctions.j2(j0_zeros)
         self.assertFalse(np.isclose(should_not_be_zero, 0, atol=1e-10).any())
+
+    @attr("fast")
+    def test_guass_legendre_pts_wts_n10(self):
+        p10, w10 = mielensfunctions.gauss_legendre_pts_wts(0, 1, npts=10)
+        quad_10 = np.sum(np.cos(p10) * w10)
+        truth = np.sin(1) - np.sin(0)
+        self.assertTrue(np.isclose(quad_10, truth, **TOLS))
+
+    @attr("fast")
+    def test_guass_legendre_pts_wts_ndefault(self):
+        p100, w100 = mielensfunctions.gauss_legendre_pts_wts(0, 1)
+        quad_100 = np.sum(np.cos(p100) * w100)
+        truth = np.sin(1) - np.sin(0)
+        self.assertTrue(np.isclose(quad_100, truth, **TOLS))
 
 
 class TestCalculation(unittest.TestCase):
