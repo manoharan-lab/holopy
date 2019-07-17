@@ -439,6 +439,26 @@ class TestMiscMath(unittest.TestCase):
         truth = np.sin(1) - np.sin(0)
         self.assertTrue(np.isclose(quad_100, truth, **TOLS))
 
+    @attr("fast")
+    def test_spherical_hankel_1(self):
+        # uses tests for the exact forms, taken from
+        # mathworld.wolfram.com/SphericalHankelFunctionoftheFirstKind.html
+        np.random.seed(10)
+        z = np.random.rand(10) * 10
+        calculated = mielensfunctions.spherical_h1n(1, z, derivative=False)
+        truth = -np.exp(1j*z) * (z + 1j) / z**2  # from wolfram
+        self.assertTrue(np.allclose(truth, calculated, **TOLS))
+
+    @attr("fast")
+    def test_spherical_hankel_2(self):
+        # uses tests for the exact forms, taken from
+        # mathworld.wolfram.com/SphericalHankelFunctionoftheSecondKind.html
+        np.random.seed(10)
+        z = np.random.rand(10) * 10
+        calculated = mielensfunctions.spherical_h2n(1, z, derivative=False)
+        truth = -np.exp(-1j*z) * (z - 1j) / z**2  # from wolfram
+        self.assertTrue(np.allclose(truth, calculated, **TOLS))
+
 
 class TestCalculation(unittest.TestCase):
     # We use a weak tolerance
