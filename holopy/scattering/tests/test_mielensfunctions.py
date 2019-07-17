@@ -338,6 +338,16 @@ class TestMieScatteringMatrix(unittest.TestCase):
         self.assertRaises(RuntimeError, interpolator._eval, theta)
 
     @attr("fast")
+    def test_lazy_eval_sets_up_interpolator(self):
+        theta = np.linspace(0, 1.5, 10)
+        interpolator = mielensfunctions.MieScatteringMatrix(
+            parallel_or_perpendicular='perpendicular', lazy=True)
+        assert (interpolator._interp is None)
+
+        approx = interpolator(theta)
+        self.assertTrue(interpolator._interp is not None)
+
+    @attr("fast")
     def test_perpendicular_interpolator_accuracy(self):
         theta = np.linspace(0, 1.5, 1000)
         interpolator = mielensfunctions.MieScatteringMatrix(
