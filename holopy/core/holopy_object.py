@@ -46,8 +46,6 @@ class SerializableMetaclass(yaml.YAMLObjectMetaclass):
             tag = '!{0}'.format(cls.__name__)
             yaml.add_constructor(tag, cls.from_yaml, Loader=loader)
         cls.yaml_dumper.add_representer(cls, cls.to_yaml)
-        if '__init__' in kwds:
-            cls._args = kwds['__init__'].__code__.co_varnames[1:]
 
 
 class Serializable(yaml.YAMLObject, metaclass=SerializableMetaclass):
@@ -73,8 +71,7 @@ class HoloPyObject(Serializable):
         return dict(self._iteritems())
 
     def _iteritems(self):
-        for var in self._args:
-
+        for var in self.__init__.__code__.co_varnames[1:]:
             if getattr(self, var, None) is not None:
                 item = getattr(self, var)
                 if isinstance(item, np.ndarray) and item.ndim == 1:
@@ -83,8 +80,15 @@ class HoloPyObject(Serializable):
 
     @classmethod
     def to_yaml(cls, dumper, data):
-        return ordered_dump(dumper, '!{0}'.format(data.__class__.__name__), data)
-
+        tag = '!{0}'.format(data.__class__.__name__)
+        value = []
+        # heavily inspired by the source of PyYAML's represent_mapping
+        node = yaml.nodes.MappingNode(tag, value)
+        for key, item in data._iteritems():
+            node_key = dumper.represent_data(key)
+            node_value = dumper.represent_data(item)
+            value.append((node_key, node_value))
+        return node
 
     @classmethod
     def from_yaml(cls, loader, node):
@@ -109,15 +113,3 @@ class HoloPyObject(Serializable):
         if filter_none:
             kwargs={key: val for key, val in kwargs.items() if val is not None}
         return self.__class__(**dict(self._dict, **kwargs))
-
-
-# ordered_dump code is heavily inspired by the source of PyYAML's represent_mapping
-def ordered_dump(dumper, tag, data):
-    value = []
-    node = yaml.nodes.MappingNode(tag, value)
-    for key, item in data._iteritems():
-        node_key = dumper.represent_data(key)
-        node_value = dumper.represent_data(item)
-        value.append((node_key, node_value))
-
-    return node

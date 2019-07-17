@@ -38,6 +38,7 @@ def test_uniform():
     assert_equal(u.guess, 1.5)
     assert_equal(u.interval, 1)
     assert_raises(ParameterSpecificationError, Uniform, 4, 6, 7)
+    assert_raises(ParameterSpecificationError, Uniform, 4, 4)
 
 def test_improper_guess():
     improper1 = Uniform(-2, np.inf)

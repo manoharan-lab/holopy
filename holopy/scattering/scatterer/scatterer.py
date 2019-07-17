@@ -277,9 +277,10 @@ class CenteredScatterer(Scatterer):
 
 
 def _interpret_parameters(raw_pars):
+# doesn't really have anything to do with scatterer - shouldn't be in this file
     out_dict = {}
     subkeys = set(
-        [key.split('.', 1)[0].split('_', 1)[0] for key in raw_pars.keys()])
+        [key.split('.', 1)[0].split(':', 1)[0] for key in raw_pars.keys()])
     for subkey in subkeys:
         if subkey in raw_pars.keys():
             val = raw_pars[subkey]
@@ -288,24 +289,30 @@ def _interpret_parameters(raw_pars):
             out_dict[subkey] = val
         else:
             clip = len(subkey)
-            for delimchar in '._':
+            for delimchar in '.:':
                 subset = {key[clip+1:]: val
                           for key, val in raw_pars.items()
                           if key.startswith(subkey + delimchar)}
                 if len(subset)>0:
                     break
-            if delimchar is '_':
+            if delimchar is ':':
                 # dict or xarray, but we don't know dim names
                 # so we always return dict
                 out_dict[subkey] = _interpret_parameters(subset)
             elif delimchar is '.':
                 dictform = _interpret_parameters(subset)
                 if '0' in dictform.keys():
+                    # this might fail if called on model.parameters created
+                    # from a scatterer containing an array with some fixed,
+                    # and some varying parameters, e.g. hold x,y fit z only.
                     out_dict[subkey] = [
                         dictform[str(i)] for i in range(len(dictform))]
-                elif 'real' in dictform.keys():
+                elif set(dictform.keys()) == {'real', 'imag'}:
                     out_dict[subkey] = (1.0 * dictform['real'] +
                                                      1.0j * dictform['imag'])
+                else:
+                    # not array or complex, just return as dict
+                    out_dict[subkey] = dictform
         if subkey not in out_dict.keys():
             msg = "Cannot interpret parameter {0}.".format(subkey)
             raise ParameterSpecificationError(msg)
@@ -313,6 +320,7 @@ def _interpret_parameters(raw_pars):
 
 
 def _expand_parameters(pairs, basekey=''):
+# doesn't really have anything to do with scatterer - shouldn't be in this file
     subs = []
     for subkey, par in pairs:
         key = basekey + str(subkey)
@@ -321,13 +329,13 @@ def _expand_parameters(pairs, basekey=''):
         if isinstance(par, (list, tuple, np.ndarray)):
             add_pars(enumerate(par), '.')
         elif isinstance(par, dict):
-            add_pars(par.items(), '_')
+            add_pars(par.items(), ':')
         elif isinstance(par, xr.DataArray):
             subkeys = [coord.item() for coord in par.coords[par.dims[0]]]
             subvals = [par.loc[subkey] for subkey in subkeys]
             if len(par.dims)==1:
                 subvals = [subval.item() for subval in subvals]
-            add_pars(zip(subkeys, subvals), '_')
+            add_pars(zip(subkeys, subvals), ':')
         elif hasattr(par, 'name') and hasattr(par, 'imag'):
             # prior.ComplexPrior
             add_pars(zip(['real', 'imag'], [par.real, par.imag]), '.')
