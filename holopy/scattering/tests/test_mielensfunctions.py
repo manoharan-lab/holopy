@@ -43,6 +43,17 @@ class TestMieLensCalculator(unittest.TestCase):
         dum = create_calculator(**kwargs)
 
     @attr("fast")
+    def test_raises_error_when_inputs_mismatched_size(self):
+        miecalculator = mielensfunctions.MieLensCalculator(
+            particle_kz=10, index_ratio=1.2, size_parameter=10.0,
+            lens_angle=0.9)
+        krho = np.linspace(0, 30, 300)
+        phi = np.full(krho.size - 4, 0.25 * np.pi)
+        self.assertRaises(
+            ValueError, miecalculator.calculate_scattered_field,
+            krho, phi)
+
+    @attr("fast")
     def test_fields_nonzero(self):
         field1_x, field1_y = evaluate_scattered_field_in_lens()
         should_be_nonzero = [np.linalg.norm(f) for f in [field1_x, field1_y]]
