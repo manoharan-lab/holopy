@@ -35,20 +35,21 @@ import xarray as xr
 from holopy.core.errors import DependencyMissing
 
 def ensure_array(x):
-    if isinstance(x, xr.DataArray):
-        if x.shape==():
-            if len(x.coords)==0:
-                return np.array([x.item()])
-            else:
-                return x.expand_dims(list(x.coords))
-        else:
-            return x
-    elif np.isscalar(x) or isinstance(x, bool) or (isinstance(x, np.ndarray) and x.shape==()):
-        return np.array([x])
-    elif x is None:
+    '''
+    if x is None, returns None. Otherwise, gives x in a form so that each of:
+    `len(x)`, `x[0]`, `x+2` will not fail.
+    '''
+    if x is None:
         return None
-    else:
-        return np.array(x)
+    elif not isinstance(x, xr.DataArray):
+        x = np.array(x)
+    if x.shape == ():
+        # len() and indexing will fail. Need to expand to 1-D
+        if isinstance(x, xr.DataArray) and len(x.coords)>0:
+            x = x.expand_dims(list(x.coords))
+        else:
+            x = np.array([x])
+    return x
 
 def ensure_listlike(x):
     if x is None:

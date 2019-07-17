@@ -238,20 +238,37 @@ def test_rotation_matrix_degrees():
     assert_allclose(rotation_matrix(180., 180., 180., radians = False),
                     rotation_matrix(np.pi, np.pi, np.pi))
 
-
 #test utils
-@attr('fast')
-def test_ensure_array():
-    assert_equal(ensure_array(1.0), np.array([1.0]))
-    assert_equal(ensure_array([1.0]), np.array([1.0]))
-    assert_equal(ensure_array(np.array([1.0])), np.array([1.0]))
-    len(ensure_array(1.0))
-    len(ensure_array(np.array(1.0)))
-    len(ensure_array([1.0]))
-    len(ensure_array(False))
-    len(ensure_array(xr.DataArray([12],dims='a',coords={'a':['b']})))
-    len(ensure_array(xr.DataArray([12],dims='a',coords={'a':['b']}).sel(a=['b'])))
-    len(ensure_array(xr.DataArray(12)))
+
+class TestEnsureArray(unittest.TestCase):
+    np_array = np.array([1])
+    xr_array = xr.DataArray([2], dims='a', coords={'a':['b']})
+
+    @attr("fast")
+    def test_None_is_unchanged(self):
+        self.assertTrue(ensure_array(None) is None)
+
+    @attr("fast")
+    def test_xarray_is_unchanged(self):
+        self.assertTrue(self.xr_array.equals(ensure_array(self.xr_array)))
+
+    @attr("fast")
+    def test_listlike(self):
+        self.assertTrue(ensure_array([1]) == self.np_array)
+        self.assertTrue(ensure_array((1)) == self.np_array)
+        self.assertTrue(ensure_array(np.array([1])) == self.np_array)
+
+    @attr("fast")
+    def test_xarrays_without_coords(self):
+        self.assertTrue(ensure_array(xr.DataArray(1)) == self.np_array)
+        self.assertTrue(ensure_array(xr.DataArray([1])) == self.np_array)
+
+    @attr("fast")
+    def test_zero_d_objects(self):
+        self.assertTrue(ensure_array(1) == self.np_array)
+        self.assertTrue(ensure_array(np.array(1)) == self.np_array)
+        zero_d_xarray = xr.DataArray(2, coords={'a':'b'})
+        self.assertTrue(self.xr_array.equals(ensure_array(zero_d_xarray)))
 
 
 def test_choose_pool():
