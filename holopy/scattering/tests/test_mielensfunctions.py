@@ -331,6 +331,13 @@ class TestMieLensCalculator(unittest.TestCase):
 
 class TestMieScatteringMatrix(unittest.TestCase):
     @attr("fast")
+    def test_raises_error_on_nans(self):
+        theta = np.array([np.nan])
+        interpolator = mielensfunctions.MieScatteringMatrix(
+            parallel_or_perpendicular='perpendicular')
+        self.assertRaises(RuntimeError, interpolator._eval, theta)
+
+    @attr("fast")
     def test_perpendicular_interpolator_accuracy(self):
         theta = np.linspace(0, 1.5, 1000)
         interpolator = mielensfunctions.MieScatteringMatrix(
