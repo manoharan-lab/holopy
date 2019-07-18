@@ -20,13 +20,13 @@ import os
 import shutil
 import unittest
 import tempfile
-from multiprocessing.pool import Pool
+import multiprocessing as mp
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 from nose.plugins.attrib import attr
 import xarray as xr
-from schwimmbad import MultiPool, SerialPool, pool
+from schwimmbad import MultiPool, pool, MPIPool
 
 from holopy.core.utils import (
     ensure_array, ensure_listlike, ensure_scalar, mkdir_p, dict_without,
@@ -272,16 +272,6 @@ class TestEnsureArray(unittest.TestCase):
         self.assertTrue(self.xr_array.equals(ensure_array(zero_d_xarray)))
 
 
-def test_choose_pool():
-    class dummy():
-        def map():
-            return None
-    assert not isinstance(choose_pool(None), (pool.BasePool, Pool))
-    assert isinstance(choose_pool(2), MultiPool)
-    assert isinstance(choose_pool('all'), MultiPool)
-    assert isinstance(choose_pool('auto'), (pool.BasePool, Pool))
-    assert not isinstance(choose_pool(dummy), (pool.BasePool, Pool))
-
 class TestListUtils(unittest.TestCase):
     @attr('fast')
     def test_ensure_listlike(self):
@@ -364,3 +354,52 @@ class TestRepeatSingDims(unittest.TestCase):
     def test_nothing_to_repeat(self):
         repeated = repeat_sing_dims(self.input_dict, ['x', 'y'])
         self.assertTrue(repeated == self.input_dict)
+
+class TestChoosePool(unittest.TestCase):
+    @attr("fast")
+    def test_custom_pool(self):
+        class DummyPool():
+            def __init__(self, index_val):
+                self.index_val = index_val
+            def map():
+                return None
+        custom_pool = DummyPool(17)
+        chosen_pool = choose_pool(custom_pool)
+        self.assertTrue(choose_pool(custom_pool) is custom_pool)
+
+    @attr("fast")
+    def test_multiprocessing_pool(self):
+        mp_pool = mp.pool.Pool(5)
+        self.assertTrue(choose_pool(mp_pool) is mp_pool)
+
+    @attr("fast")
+    def test_nonepool(self):
+        none_pool = choose_pool(None)
+        self.assertFalse(isinstance(none_pool, (pool.BasePool, mp.pool.Pool)))
+        self.assertTrue(list(none_pool.map(len, [[0,1,2],'asdf'])) == [3, 4])
+        self.assertTrue(hasattr(none_pool, "close"))
+
+    @attr("fast")
+    def test_counting_all_cores(self):
+        all_pool = choose_pool('all')
+        self.assertTrue(isinstance(all_pool, MultiPool))
+        self.assertTrue(all_pool._processes == mp.cpu_count())
+
+    @attr("fast")
+    def test_schwimmbad_multipool(self):
+        multi_pool = choose_pool(5)
+        self.assertTrue(isinstance(multi_pool, MultiPool))
+        self.assertTrue(multi_pool._processes == 5)
+
+    @attr("fast")
+    def test_MPI(self):
+        if MPIPool.enabled():
+            mpi_pool = choose_pool('mpi')
+            self.assertTrue(isinstance(mpi_pool, MPIPool))
+        else:
+            self.assertRaises(ValueError, choose_pool, 'mpi')
+
+    @attr("fast")
+    def test_auto(self):
+        auto_pool = choose_pool('auto')
+        self.assertTrue(isinstance(auto_pool, (pool.BasePool, mp.pool.Pool)))
