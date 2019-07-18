@@ -31,6 +31,11 @@ import itertools
 
 import numpy as np
 import xarray as xr
+try:
+    import schwimmbad
+    NO_SCHWIMMBAD = False
+except ModuleNotFoundError:
+    NO_SCHWIMMBAD = True
 
 from holopy.core.errors import DependencyMissing
 
@@ -118,7 +123,6 @@ def updated(d, update={}, filter_none=True, **kwargs):
     for key, val in itertools.chain(update.items(), kwargs.items()):
         if val is not None or filter_none is False:
             d[key] = val
-
     return d
 
 def repeat_sing_dims(indict, keys = 'all'):
@@ -138,38 +142,46 @@ def choose_pool(parallel):
     """
     This is a remake of schwimmbad.choose_pool with a single argument that has more options.
     """
+    # TODO: This function should be refactored as a factory class with methods
+    #       to enable more thorough testing of imports, MPI behaviour, etc.
     if hasattr(parallel, 'map'):
-        return parallel
-    if parallel is None:
-        class NonePool():
-            def map(self, function, arguments):
-                return map(function, arguments)
-            def close(self):
-                del self
-        return NonePool()
-    try:
-        import schwimmbad
-    except ModuleNotFoundError:
+        # user-defined pool
+        pool = parallel
+    elif parallel is None:
+        # serial calculation - define dummy pool
+        pool = NonePool()
+    elif NO_SCHWIMMBAD:
         raise DependencyMissing('schwimmbad',
             "To perform inference calculations in parallel, install schwimmbad"
             " with \'conda install -c conda-forge schwimmbad\' or define your "
             "Strategy object with a 'parallel' keyword argument that is a "
             "multiprocessing.Pool object. To run serial calculations instead, "
             "pass in parallel=None.")
-    if parallel is 'mpi':
+    elif isinstance(parallel, int):
+        pool = schwimmbad.MultiPool(parallel)
+    elif parallel is 'all':
+        threads = os.cpu_count()
+        pool = choose_pool(threads)
+    elif parallel is 'mpi':
         pool = schwimmbad.MPIPool()
+        # need to kill all non-master instances of currently running script
         if not pool.is_master():
             pool.wait()
             sys.exit(0)
-        return pool
-    if parallel is 'all':
-        threads = os.cpu_count()
-        return choose_pool(threads)
-    if parallel is 'auto':
+    elif parallel is 'auto':
+        # try mpi, otherwise go for multiprocessing
         if schwimmbad.MPIPool.enabled():
-            return choose_pool('mpi')
+            pool = choose_pool('mpi')
         else:
-            return choose_pool('all')
-    if isinstance(parallel, int):
-        return schwimmbad.MultiPool(parallel)
-    raise TypeError("Could not interpret 'parallel' argument. Use an integer, 'mpi', 'all', 'auto', None or pass a pool object with 'map' method.")
+            pool = choose_pool('all')
+    else:
+        raise TypeError("Could not interpret 'parallel' argument. Use an "
+                        "integer, 'mpi', 'all', 'auto', None or pass a pool "
+                        "object with 'map' method.")
+    return pool
+
+class NonePool():
+    def map(self, function, arguments):
+        return map(function, arguments)
+    def close(self):
+        pass
