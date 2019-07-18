@@ -23,7 +23,7 @@ import tempfile
 import multiprocessing as mp
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose
 from nose.plugins.attrib import attr
 import xarray as xr
 from schwimmbad import MultiPool, pool, MPIPool
@@ -41,6 +41,13 @@ from holopy.core.tests.common import assert_obj_close, get_example_data
 
 
 TOLS = {'atol': 1e-14, 'rtol': 1e-14}
+
+class DummyPool():
+    def __init__(self, index_val):
+        self.index_val = index_val
+    def map():
+        return None
+
 
 class TestCoordinateTransformations(unittest.TestCase):
     @attr("fast")
@@ -255,19 +262,19 @@ class TestEnsureArray(unittest.TestCase):
 
     @attr("fast")
     def test_listlike(self):
-        self.assertTrue(ensure_array([1]) == self.np_array)
-        self.assertTrue(ensure_array((1)) == self.np_array)
-        self.assertTrue(ensure_array(np.array([1])) == self.np_array)
+        self.assertEqual(ensure_array([1]), self.np_array)
+        self.assertEqual(ensure_array((1)), self.np_array)
+        self.assertEqual(ensure_array(np.array([1])), self.np_array)
 
     @attr("fast")
     def test_xarrays_without_coords(self):
-        self.assertTrue(ensure_array(xr.DataArray(1)) == self.np_array)
-        self.assertTrue(ensure_array(xr.DataArray([1])) == self.np_array)
+        self.assertEqual(ensure_array(xr.DataArray(1)), self.np_array)
+        self.assertEqual(ensure_array(xr.DataArray([1])), self.np_array)
 
     @attr("fast")
     def test_zero_d_objects(self):
-        self.assertTrue(ensure_array(1) == self.np_array)
-        self.assertTrue(ensure_array(np.array(1)) == self.np_array)
+        self.assertEqual(ensure_array(1), self.np_array)
+        self.assertEqual(ensure_array(np.array(1)), self.np_array)
         zero_d_xarray = xr.DataArray(2, coords={'a':'b'})
         self.assertTrue(self.xr_array.equals(ensure_array(zero_d_xarray)))
 
@@ -275,15 +282,15 @@ class TestEnsureArray(unittest.TestCase):
 class TestListUtils(unittest.TestCase):
     @attr('fast')
     def test_ensure_listlike(self):
-        self.assertTrue(ensure_listlike(None) == [])
-        self.assertTrue(ensure_listlike(1) == [1])
-        self.assertTrue(ensure_listlike([1]) == [1])
+        self.assertEqual(ensure_listlike(None), [])
+        self.assertEqual(ensure_listlike(1), [1])
+        self.assertEqual(ensure_listlike([1]), [1])
 
     @attr('fast')
     def test_ensure_scalar(self):
-        self.assertTrue(ensure_scalar(1) == 1)
-        self.assertTrue(ensure_scalar(np.array(1)) == 1)
-        self.assertTrue(ensure_scalar(np.array([1])) == 1)
+        self.assertEqual(ensure_scalar(1), 1)
+        self.assertEqual(ensure_scalar(np.array(1)), 1)
+        self.assertEqual(ensure_scalar(np.array([1])), 1)
 
 @attr("fast")
 def test_mkdir_p():
@@ -300,32 +307,32 @@ class TestDictionaryUtils(unittest.TestCase):
     @attr("fast")
     def test_dict_without(self):
         output_dict = dict_without(self.input_dict, ['a','d','e'])
-        self.assertTrue(self.input_dict == {'a':1, 'b':2, 'c':3, 'd':4})
-        self.assertTrue(output_dict == {'b':2, 'c':3})
+        self.assertEqual(self.input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
+        self.assertEqual(output_dict, {'b':2, 'c':3})
 
     @attr("fast")
     def test_updated_basic(self):
         output_dict = updated(self.input_dict, self.update_dict)
-        self.assertTrue(self.input_dict == {'a':1, 'b':2, 'c':3, 'd':4})
-        self.assertTrue(output_dict == {'a':1, 'b':2, 'c':5, 'd':4, 'e':6})
+        self.assertEqual(self.input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
+        self.assertEqual(output_dict, {'a':1, 'b':2, 'c':5, 'd':4, 'e':6})
 
     @attr("fast")
     def test_updated_keep_None(self):
         output_dict = updated(self.input_dict, self.update_dict, False)
-        self.assertTrue(self.input_dict == {'a':1, 'b':2, 'c':3, 'd':4})
-        self.assertTrue(output_dict == {'a':1, 'b':2, 'c':5, 'd':None, 'e':6})
+        self.assertEqual(self.input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
+        self.assertEqual(output_dict, {'a':1, 'b':2, 'c':5, 'd':None, 'e':6})
 
     @attr("fast")
     def test_updated_from_kw(self):
         output_dict = updated(self.input_dict, b=7, c=None, e=8)
-        self.assertTrue(self.input_dict == {'a':1, 'b':2, 'c':3, 'd':4})
-        self.assertTrue(output_dict == {'a':1, 'b':7, 'c':3, 'd':4, 'e':8})
+        self.assertEqual(self.input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
+        self.assertEqual(output_dict, {'a':1, 'b':7, 'c':3, 'd':4, 'e':8})
 
     @attr("fast")
     def test_kw_takes_priority(self):
         output_dict = updated(self.input_dict, self.update_dict, b=7, e=8)
-        self.assertTrue(self.input_dict == {'a':1, 'b':2, 'c':3, 'd':4})
-        self.assertTrue(output_dict == {'a':1, 'b':7, 'c':5, 'd':4, 'e':8})
+        self.assertEqual(self.input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
+        self.assertEqual(output_dict, {'a':1, 'b':7, 'c':5, 'd':4, 'e':8})
 
 
 class TestRepeatSingDims(unittest.TestCase):
@@ -337,32 +344,28 @@ class TestRepeatSingDims(unittest.TestCase):
     def test_all_keys(self):
         output_dict = {'x':np.array([0, 0, 0]), 'y':np.array([1, 1, 1]),
                       'z':[0, 1, 2]}
-        assert_equal(repeat_sing_dims(self.input_dict), output_dict)
+        np.testing.assert_equal(repeat_sing_dims(self.input_dict), output_dict)
 
     @attr("fast")
     def test_input_isnt_modified(self):
         repeat_sing_dims(self.input_dict)
-        self.assertTrue(self.input_dict == {'x':[0], 'y':[1], 'z':[0,1,2]})
+        self.assertEqual(self.input_dict, {'x':[0], 'y':[1], 'z':[0,1,2]})
 
     @attr("fast")
     def test_repeat_some_keys(self):
         output_dict ={'x':np.array([0,0,0]), 'y':[1], 'z':[0, 1, 2]}
         repeated = repeat_sing_dims(self.input_dict, ['x', 'z'])
-        assert_equal(repeated, output_dict)
+        np.testing.assert_equal(repeated, output_dict)
 
     @attr("fast")
     def test_nothing_to_repeat(self):
         repeated = repeat_sing_dims(self.input_dict, ['x', 'y'])
-        self.assertTrue(repeated == self.input_dict)
+        self.assertEqual(repeated, self.input_dict)
+
 
 class TestChoosePool(unittest.TestCase):
     @attr("fast")
     def test_custom_pool(self):
-        class DummyPool():
-            def __init__(self, index_val):
-                self.index_val = index_val
-            def map():
-                return None
         custom_pool = DummyPool(17)
         chosen_pool = choose_pool(custom_pool)
         self.assertTrue(choose_pool(custom_pool) is custom_pool)
@@ -376,20 +379,20 @@ class TestChoosePool(unittest.TestCase):
     def test_nonepool(self):
         none_pool = choose_pool(None)
         self.assertFalse(isinstance(none_pool, (pool.BasePool, mp.pool.Pool)))
-        self.assertTrue(list(none_pool.map(len, [[0,1,2],'asdf'])) == [3, 4])
+        self.assertEqual(list(none_pool.map(len, [[0,1,2],'asdf'])), [3, 4])
         self.assertTrue(hasattr(none_pool, "close"))
 
     @attr("fast")
     def test_counting_all_cores(self):
         all_pool = choose_pool('all')
         self.assertTrue(isinstance(all_pool, MultiPool))
-        self.assertTrue(all_pool._processes == mp.cpu_count())
+        self.assertEqual(all_pool._processes, mp.cpu_count())
 
     @attr("fast")
     def test_schwimmbad_multipool(self):
         multi_pool = choose_pool(5)
         self.assertTrue(isinstance(multi_pool, MultiPool))
-        self.assertTrue(multi_pool._processes == 5)
+        self.assertEqual(multi_pool._processes, 5)
 
     @attr("fast")
     def test_MPI(self):
