@@ -29,8 +29,8 @@ import xarray as xr
 from schwimmbad import MultiPool, SerialPool, pool
 
 from holopy.core.utils import (
-    ensure_array, ensure_listlike, ensure_scalar,
-    mkdir_p, dict_without, updated, choose_pool)
+    ensure_array, ensure_listlike, ensure_scalar, mkdir_p, dict_without,
+    updated, repeat_sing_dims, choose_pool)
 from holopy.core.math import (
     rotate_points, rotation_matrix, transform_cartesian_to_spherical,
     transform_spherical_to_cartesian, transform_cartesian_to_cylindrical,
@@ -282,17 +282,18 @@ def test_choose_pool():
     assert isinstance(choose_pool('auto'), (pool.BasePool, Pool))
     assert not isinstance(choose_pool(dummy), (pool.BasePool, Pool))
 
-@attr('fast')
-def test_ensure_listlike():
-    assert ensure_listlike(None) == []
-    assert ensure_listlike(1) == [1]
-    assert ensure_listlike([1]) == [1]
+class TestListUtils(unittest.TestCase):
+    @attr('fast')
+    def test_ensure_listlike(self):
+        self.assertTrue(ensure_listlike(None) == [])
+        self.assertTrue(ensure_listlike(1) == [1])
+        self.assertTrue(ensure_listlike([1]) == [1])
 
-@attr('fast')
-def test_ensure_scalar():
-    assert ensure_scalar(1) == 1
-    assert ensure_scalar(np.array(1)) == 1
-    assert ensure_scalar(np.array([1])) == 1
+    @attr('fast')
+    def test_ensure_scalar(self):
+        self.assertTrue(ensure_scalar(1) == 1)
+        self.assertTrue(ensure_scalar(np.array(1)) == 1)
+        self.assertTrue(ensure_scalar(np.array([1])) == 1)
 
 @attr("fast")
 def test_mkdir_p():
@@ -335,3 +336,31 @@ class TestDictionaryUtils(unittest.TestCase):
         output_dict = updated(self.input_dict, self.update_dict, b=7, e=8)
         self.assertTrue(self.input_dict == {'a':1, 'b':2, 'c':3, 'd':4})
         self.assertTrue(output_dict == {'a':1, 'b':7, 'c':5, 'd':4, 'e':8})
+
+
+class TestRepeatSingDims(unittest.TestCase):
+    input_dict = {'x':[0], 'y':[1], 'z':[0,1,2]}
+    # these tests compare dictionaries containing numpy arrays
+    # using np.testing.assert_equal to avoid errors.
+
+    @attr("fast")
+    def test_all_keys(self):
+        output_dict = {'x':np.array([0, 0, 0]), 'y':np.array([1, 1, 1]),
+                      'z':[0, 1, 2]}
+        assert_equal(repeat_sing_dims(self.input_dict), output_dict)
+
+    @attr("fast")
+    def test_input_isnt_modified(self):
+        repeat_sing_dims(self.input_dict)
+        self.assertTrue(self.input_dict == {'x':[0], 'y':[1], 'z':[0,1,2]})
+
+    @attr("fast")
+    def test_repeat_some_keys(self):
+        output_dict ={'x':np.array([0,0,0]), 'y':[1], 'z':[0, 1, 2]}
+        repeated = repeat_sing_dims(self.input_dict, ['x', 'z'])
+        assert_equal(repeated, output_dict)
+
+    @attr("fast")
+    def test_nothing_to_repeat(self):
+        repeated = repeat_sing_dims(self.input_dict, ['x', 'y'])
+        self.assertTrue(repeated == self.input_dict)
