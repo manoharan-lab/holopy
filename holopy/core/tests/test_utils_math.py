@@ -249,34 +249,33 @@ def test_rotation_matrix_degrees():
 #test utils
 
 class TestEnsureArray(unittest.TestCase):
-    np_array = np.array([1])
-    xr_array = xr.DataArray([2], dims='a', coords={'a':['b']})
-
     @attr("fast")
     def test_None_is_unchanged(self):
         self.assertTrue(ensure_array(None) is None)
 
     @attr("fast")
     def test_xarray_is_unchanged(self):
-        self.assertTrue(self.xr_array.equals(ensure_array(self.xr_array)))
+        xr_array = xr.DataArray([2], dims='a', coords={'a':['b']})
+        self.assertTrue(xr_array.equals(ensure_array(xr_array)))
 
     @attr("fast")
     def test_listlike(self):
-        self.assertEqual(ensure_array([1]), self.np_array)
-        self.assertEqual(ensure_array((1)), self.np_array)
-        self.assertEqual(ensure_array(np.array([1])), self.np_array)
+        self.assertEqual(ensure_array([1]), np.array([1]))
+        self.assertEqual(ensure_array((1)), np.array([1]))
+        self.assertEqual(ensure_array(np.array([1])), np.array([1]))
 
     @attr("fast")
     def test_xarrays_without_coords(self):
-        self.assertEqual(ensure_array(xr.DataArray(1)), self.np_array)
-        self.assertEqual(ensure_array(xr.DataArray([1])), self.np_array)
+        self.assertEqual(ensure_array(xr.DataArray(1)), np.array([1]))
+        self.assertEqual(ensure_array(xr.DataArray([1])), np.array([1]))
 
     @attr("fast")
     def test_zero_d_objects(self):
-        self.assertEqual(ensure_array(1), self.np_array)
-        self.assertEqual(ensure_array(np.array(1)), self.np_array)
+        self.assertEqual(ensure_array(1), np.array([1]))
+        self.assertEqual(ensure_array(np.array(1)), np.array([1]))
         zero_d_xarray = xr.DataArray(2, coords={'a':'b'})
-        self.assertTrue(self.xr_array.equals(ensure_array(zero_d_xarray)))
+        xr_array = xr.DataArray([2], dims='a', coords={'a':['b']})
+        self.assertTrue(xr_array.equals(ensure_array(zero_d_xarray)))
 
 
 class TestListUtils(unittest.TestCase):
@@ -301,66 +300,73 @@ def test_mkdir_p():
 
 
 class TestDictionaryUtils(unittest.TestCase):
-    input_dict = {'a':1, 'b':2, 'c':3, 'd':4}
-    update_dict = {'c':5, 'd':None, 'e':6}
-
     @attr("fast")
     def test_dict_without(self):
-        output_dict = dict_without(self.input_dict, ['a','d','e'])
-        self.assertEqual(self.input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
+        input_dict = {'a':1, 'b':2, 'c':3, 'd':4}
+        output_dict = dict_without(input_dict, ['a','d','e'])
+        self.assertEqual(input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
         self.assertEqual(output_dict, {'b':2, 'c':3})
 
     @attr("fast")
     def test_updated_basic(self):
-        output_dict = updated(self.input_dict, self.update_dict)
-        self.assertEqual(self.input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
+        input_dict = {'a':1, 'b':2, 'c':3, 'd':4}
+        update_dict = {'c':5, 'd':None, 'e':6}
+        output_dict = updated(input_dict, update_dict)
+        self.assertEqual(input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
         self.assertEqual(output_dict, {'a':1, 'b':2, 'c':5, 'd':4, 'e':6})
 
     @attr("fast")
     def test_updated_keep_None(self):
-        output_dict = updated(self.input_dict, self.update_dict, False)
-        self.assertEqual(self.input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
+        input_dict = {'a':1, 'b':2, 'c':3, 'd':4}
+        update_dict = {'c':5, 'd':None, 'e':6}
+        output_dict = updated(input_dict, update_dict, False)
+        self.assertEqual(input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
         self.assertEqual(output_dict, {'a':1, 'b':2, 'c':5, 'd':None, 'e':6})
 
     @attr("fast")
     def test_updated_from_kw(self):
-        output_dict = updated(self.input_dict, b=7, c=None, e=8)
-        self.assertEqual(self.input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
+        input_dict = {'a':1, 'b':2, 'c':3, 'd':4}
+        output_dict = updated(input_dict, b=7, c=None, e=8)
+        self.assertEqual(input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
         self.assertEqual(output_dict, {'a':1, 'b':7, 'c':3, 'd':4, 'e':8})
 
     @attr("fast")
     def test_kw_takes_priority(self):
-        output_dict = updated(self.input_dict, self.update_dict, b=7, e=8)
-        self.assertEqual(self.input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
+        input_dict = {'a':1, 'b':2, 'c':3, 'd':4}
+        update_dict = {'c':5, 'd':None, 'e':6}
+        output_dict = updated(input_dict, update_dict, b=7, e=8)
+        self.assertEqual(input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
         self.assertEqual(output_dict, {'a':1, 'b':7, 'c':5, 'd':4, 'e':8})
 
 
 class TestRepeatSingDims(unittest.TestCase):
-    input_dict = {'x':[0], 'y':[1], 'z':[0,1,2]}
     # these tests compare dictionaries containing numpy arrays
     # using np.testing.assert_equal to avoid errors.
-
     @attr("fast")
     def test_all_keys(self):
+        input_dict = {'x':[0], 'y':[1], 'z':[0,1,2]}
         output_dict = {'x':np.array([0, 0, 0]), 'y':np.array([1, 1, 1]),
                       'z':[0, 1, 2]}
-        np.testing.assert_equal(repeat_sing_dims(self.input_dict), output_dict)
+        np.testing.assert_equal(repeat_sing_dims(input_dict), output_dict)
 
     @attr("fast")
     def test_input_isnt_modified(self):
-        repeat_sing_dims(self.input_dict)
-        self.assertEqual(self.input_dict, {'x':[0], 'y':[1], 'z':[0,1,2]})
+        input_dict = {'x':[0], 'y':[1], 'z':[0,1,2]}
+        repeat_sing_dims(input_dict)
+        self.assertEqual(input_dict, {'x':[0], 'y':[1], 'z':[0,1,2]})
 
     @attr("fast")
     def test_repeat_some_keys(self):
+        input_dict = {'x':[0], 'y':[1], 'z':[0,1,2]}
         output_dict ={'x':np.array([0,0,0]), 'y':[1], 'z':[0, 1, 2]}
-        repeated = repeat_sing_dims(self.input_dict, ['x', 'z'])
+        repeated = repeat_sing_dims(input_dict, ['x', 'z'])
         np.testing.assert_equal(repeated, output_dict)
 
     @attr("fast")
     def test_nothing_to_repeat(self):
-        repeated = repeat_sing_dims(self.input_dict, ['x', 'y'])
-        self.assertEqual(repeated, self.input_dict)
+        input_dict = {'x':[0], 'y':[1], 'z':[0,1,2]}
+        repeated = repeat_sing_dims(input_dict, ['x', 'y'])
+        self.assertEqual(repeated, input_dict)
 
 
 class TestChoosePool(unittest.TestCase):
