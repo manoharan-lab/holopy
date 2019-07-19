@@ -343,8 +343,11 @@ class TestMieScatteringMatrix(unittest.TestCase):
         interpolator = mielensfunctions.MieScatteringMatrix(
             parallel_or_perpendicular='perpendicular', lazy=True)
         assert (interpolator._interp is None)
-
         approx = interpolator(theta)
+
+        other = mielensfunctions.MieScatteringMatrix(
+            parallel_or_perpendicular='perpendicular', lazy=False)
+        self.assertEqual(type(interpolator._interp), type(other._interp))
         self.assertTrue(interpolator._interp is not None)
 
     @attr("fast")
