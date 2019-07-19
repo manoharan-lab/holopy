@@ -54,7 +54,7 @@ class TestMieLensCalculator(unittest.TestCase):
             krho, phi)
 
     @attr("fast")
-    def test_raises_error_integral_is_not_i1_or_i2(self):
+    def test_raises_error_integral_is_not_i0_or_i2(self):
         miecalculator = mielensfunctions.MieLensCalculator(
             particle_kz=10, index_ratio=1.2, size_parameter=10.0,
             lens_angle=0.9)
