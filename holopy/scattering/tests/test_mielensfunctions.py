@@ -426,7 +426,14 @@ class TestMiscMath(unittest.TestCase):
         self.assertFalse(np.isclose(should_not_be_zero, 0, atol=1e-10).any())
 
     @attr("fast")
-    def test_guass_legendre_pts_wts_n10(self):
+    def test_guass_legendre_pts_wts_n10_uses_10_points(self):
+        npts = 10
+        p10, w10 = mielensfunctions.gauss_legendre_pts_wts(0, 1, npts=npts)
+        self.assertEqual(p10.size, npts)
+        self.assertEqual(w10.size, npts)
+
+    @attr("fast")
+    def test_guass_legendre_pts_wts_n10_gives_correct_value(self):
         p10, w10 = mielensfunctions.gauss_legendre_pts_wts(0, 1, npts=10)
         quad_10 = np.sum(np.cos(p10) * w10)
         truth = np.sin(1) - np.sin(0)
