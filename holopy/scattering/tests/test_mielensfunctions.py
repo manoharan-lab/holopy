@@ -43,6 +43,26 @@ class TestMieLensCalculator(unittest.TestCase):
         dum = create_calculator(**kwargs)
 
     @attr("fast")
+    def test_raises_error_when_inputs_mismatched_size(self):
+        miecalculator = mielensfunctions.MieLensCalculator(
+            particle_kz=10, index_ratio=1.2, size_parameter=10.0,
+            lens_angle=0.9)
+        krho = np.linspace(0, 30, 300)
+        phi = np.full(krho.size - 4, 0.25 * np.pi)
+        self.assertRaises(
+            ValueError, miecalculator.calculate_scattered_field,
+            krho, phi)
+
+    @attr("fast")
+    def test_raises_error_integral_is_not_i0_or_i2(self):
+        miecalculator = mielensfunctions.MieLensCalculator(
+            particle_kz=10, index_ratio=1.2, size_parameter=10.0,
+            lens_angle=0.9)
+        krho = np.linspace(0, 30, 300)
+        self.assertRaises(
+            ValueError, miecalculator._eval_mielens_i_n, krho, n=1)
+
+    @attr("fast")
     def test_fields_nonzero(self):
         field1_x, field1_y = evaluate_scattered_field_in_lens()
         should_be_nonzero = [np.linalg.norm(f) for f in [field1_x, field1_y]]
@@ -311,6 +331,26 @@ class TestMieLensCalculator(unittest.TestCase):
 
 class TestMieScatteringMatrix(unittest.TestCase):
     @attr("fast")
+    def test_raises_error_on_nans(self):
+        theta = np.array([np.nan])
+        interpolator = mielensfunctions.MieScatteringMatrix(
+            parallel_or_perpendicular='perpendicular')
+        self.assertRaises(RuntimeError, interpolator._eval, theta)
+
+    @attr("fast")
+    def test_lazy_eval_sets_up_interpolator(self):
+        theta = np.linspace(0, 1.5, 10)
+        interpolator = mielensfunctions.MieScatteringMatrix(
+            parallel_or_perpendicular='perpendicular', lazy=True)
+        assert (interpolator._interp is None)
+        approx = interpolator(theta)
+
+        other = mielensfunctions.MieScatteringMatrix(
+            parallel_or_perpendicular='perpendicular', lazy=False)
+        self.assertEqual(type(interpolator._interp), type(other._interp))
+        self.assertTrue(interpolator._interp is not None)
+
+    @attr("fast")
     def test_perpendicular_interpolator_accuracy(self):
         theta = np.linspace(0, 1.5, 1000)
         interpolator = mielensfunctions.MieScatteringMatrix(
@@ -373,7 +413,7 @@ class TestGaussQuad(unittest.TestCase):
         self.assertTrue(np.isclose(should_be_two, 2.0, **TOLS))
 
 
-class TestJ2(unittest.TestCase):
+class TestMiscMath(unittest.TestCase):
     @attr("fast")
     def test_fastj2_zeros(self):
         j2_zeros = jn_zeros(2, 50)
@@ -387,6 +427,47 @@ class TestJ2(unittest.TestCase):
         # only share the zero at z=0, which is not for j0
         should_not_be_zero = mielensfunctions.j2(j0_zeros)
         self.assertFalse(np.isclose(should_not_be_zero, 0, atol=1e-10).any())
+
+    @attr("fast")
+    def test_guass_legendre_pts_wts_n10_uses_10_points(self):
+        npts = 10
+        p10, w10 = mielensfunctions.gauss_legendre_pts_wts(0, 1, npts=npts)
+        self.assertEqual(p10.size, npts)
+        self.assertEqual(w10.size, npts)
+
+    @attr("fast")
+    def test_guass_legendre_pts_wts_n10_gives_correct_value(self):
+        p10, w10 = mielensfunctions.gauss_legendre_pts_wts(0, 1, npts=10)
+        quad_10 = np.sum(np.cos(p10) * w10)
+        truth = np.sin(1) - np.sin(0)
+        self.assertTrue(np.isclose(quad_10, truth, **TOLS))
+
+    @attr("fast")
+    def test_guass_legendre_pts_wts_ndefault(self):
+        p100, w100 = mielensfunctions.gauss_legendre_pts_wts(0, 1)
+        quad_100 = np.sum(np.cos(p100) * w100)
+        truth = np.sin(1) - np.sin(0)
+        self.assertTrue(np.isclose(quad_100, truth, **TOLS))
+
+    @attr("fast")
+    def test_spherical_hankel_1(self):
+        # uses tests for the exact forms, taken from
+        # mathworld.wolfram.com/SphericalHankelFunctionoftheFirstKind.html
+        np.random.seed(10)
+        z = np.random.rand(10) * 10
+        calculated = mielensfunctions.spherical_h1n(1, z, derivative=False)
+        truth = -np.exp(1j*z) * (z + 1j) / z**2  # from wolfram
+        self.assertTrue(np.allclose(truth, calculated, **TOLS))
+
+    @attr("fast")
+    def test_spherical_hankel_2(self):
+        # uses tests for the exact forms, taken from
+        # mathworld.wolfram.com/SphericalHankelFunctionoftheSecondKind.html
+        np.random.seed(10)
+        z = np.random.rand(10) * 10
+        calculated = mielensfunctions.spherical_h2n(1, z, derivative=False)
+        truth = -np.exp(-1j*z) * (z - 1j) / z**2  # from wolfram
+        self.assertTrue(np.allclose(truth, calculated, **TOLS))
 
 
 class TestCalculation(unittest.TestCase):
