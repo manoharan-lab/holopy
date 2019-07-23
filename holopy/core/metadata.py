@@ -36,42 +36,9 @@ vector = 'vector'
 illumination = 'illumination'
 
 
-def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None,
-              illum_polarization=None, normals=None, noise_sd=None,
-              name=None, extra_dims=None, z=0):
-    """
-    Create a set of detector points along with other experimental metadata.
-
-    Returns
-    -------
-    DataArray object
-
-    Notes
-    -----
-    Use of higher-level detector_grid() and detector_points() functions is
-    recommended.
-    """
-
-    if spacing is None:
-        spacing = 1
-        warn("No pixel spacing provided. Setting spacing to 1, but any"
-             "subsequent calculations will be wrong.")
-    if name is None:
-        name = 'data'
-
-    if np.isscalar(spacing):
-        spacing = np.repeat(spacing, 2)
-    if np.isscalar(z) and (len(arr) > 1 or arr.ndim == 2):
-        arr = np.expand_dims(arr, axis=0)
-    coords = make_coords(arr.shape, spacing, z)
-    if extra_dims is None:
-        extra_dims = {}
-    else:
-        coords.update(extra_dims)
-    dims = ['z', 'x', 'y'] + list(extra_dims.keys())
-    out = xr.DataArray(arr, dims=dims,  coords=coords, name=name)
-    return update_metadata(out, medium_index, illum_wavelen,
-                           illum_polarization, normals, noise_sd)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#               Methods part of the Holopy API
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 def detector_grid(shape, spacing, normals=None, name=None, extra_dims=None):
@@ -188,6 +155,20 @@ def detector_points(coords={}, x=None, y=None, z=None, r=None, theta=None,
                         coords=coords, attrs=attrs, name=name)
 
 
+def clean_concat(arrays, dim):
+    attrs = arrays[0].attrs
+    arrays = [
+        array.assign_attrs(
+            **{attr: None
+               for attr in array.attrs
+               if isinstance(array.attrs[attr], xr.DataArray)}
+            )
+        for array in arrays]
+    arrays = xr.concat(arrays, dim)
+    arrays.attrs = attrs
+    return arrays.transpose(*np.roll(arrays.dims, -1))
+
+
 def update_metadata(a, medium_index=None, illum_wavelen=None,
                     illum_polarization=None, normals=None, noise_sd=None):
     """Returns a copy of an image with updated metadata in its 'attrs' field.
@@ -233,6 +214,27 @@ def update_metadata(a, medium_index=None, illum_wavelen=None,
     return b
 
 
+def get_spacing(im):
+    xspacing = np.diff(im.x)
+    yspacing = np.diff(im.y)
+    if not (np.allclose(xspacing[0], xspacing) and
+            np.allclose(yspacing[0], yspacing)):
+        msg = "array has nonuniform spacing, can't determine a single spacing"
+        raise ValueError(msg)
+    return np.array((xspacing[0], yspacing[0]))
+
+
+def get_extents(im):
+    def get_extent(d):
+        if len(im[d]) < 2:
+            return 0
+        # Add one extra spacing since the xarray coords are right edge only,
+        # but we actually want right edge of first pixel to left edge of last
+        # pixel
+        return float(im[d][-1] - im[d][0] + np.diff(im[d]).mean())
+    return {d: get_extent(d) for d in ['x', 'y', 'z'] if d in im.dims}
+
+
 def copy_metadata(old, data, do_coords=True):
 
     def find_and_rename(oldkey, oldval):
@@ -263,6 +265,73 @@ def copy_metadata(old, data, do_coords=True):
                 if key not in new.coords:
                     new = find_and_rename(key, val)
     return new
+
+
+def make_subset_data(data, random_subset=None, pixels=None,
+                     return_selection=False, seed=None):
+    if random_subset is None and pixels is None:
+        return data
+    if random_subset is not None and pixels is not None:
+        raise ValueError("You can only specify one of pixels or random_subset")
+    if seed is not None:
+        np.random.seed(seed)
+    tot_pix = len(data.x)*len(data.y)
+    if pixels is not None:
+        n_sel = pixels
+    else:
+        n_sel = int(np.ceil(tot_pix*random_subset))
+    selection = np.random.choice(tot_pix, n_sel, replace=False)
+    subset = flat(data).isel(flat=selection)
+    subset = copy_metadata(data, subset, do_coords=False)
+
+    subset.attrs['original_dims'] = {key: data[key].values for key in data.dims}
+
+    if return_selection:
+        return subset, selection
+    else:
+        return subset
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#             Methods not part of the Holopy API
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None,
+              illum_polarization=None, normals=None, noise_sd=None,
+              name=None, extra_dims=None, z=0):
+    """
+    Create a set of detector points along with other experimental metadata.
+
+    Returns
+    -------
+    DataArray object
+
+    Notes
+    -----
+    Use of higher-level detector_grid() and detector_points() functions is
+    recommended.
+    """
+
+    if spacing is None:
+        spacing = 1
+        warn("No pixel spacing provided. Setting spacing to 1, but any"
+             "subsequent calculations will be wrong.")
+    if name is None:
+        name = 'data'
+
+    if np.isscalar(spacing):
+        spacing = np.repeat(spacing, 2)
+    if np.isscalar(z) and (len(arr) > 1 or arr.ndim == 2):
+        arr = np.expand_dims(arr, axis=0)
+    coords = make_coords(arr.shape, spacing, z)
+    if extra_dims is None:
+        extra_dims = {}
+    else:
+        coords.update(extra_dims)
+    dims = ['z', 'x', 'y'] + list(extra_dims.keys())
+    out = xr.DataArray(arr, dims=dims,  coords=coords, name=name)
+    return update_metadata(out, medium_index, illum_wavelen,
+                           illum_polarization, normals, noise_sd)
 
 
 def to_vector(c):
@@ -316,27 +385,6 @@ def default_norms(coords, n):
     return to_vector(n)
 
 
-def get_spacing(im):
-    xspacing = np.diff(im.x)
-    yspacing = np.diff(im.y)
-    if not (np.allclose(xspacing[0], xspacing) and
-            np.allclose(yspacing[0], yspacing)):
-        msg = "array has nonuniform spacing, can't determine a single spacing"
-        raise ValueError(msg)
-    return np.array((xspacing[0], yspacing[0]))
-
-
-def get_extents(im):
-    def get_extent(d):
-        if len(im[d]) < 2:
-            return 0
-        # Add one extra spacing since the xarray coords are right edge only,
-        # but we actually want right edge of first pixel to left edge of last
-        # pixel
-        return float(im[d][-1] - im[d][0] + np.diff(im[d]).mean())
-    return {d: get_extent(d) for d in ['x', 'y', 'z'] if d in im.dims}
-
-
 def make_coords(shape, spacing, z=0):
     if np.isscalar(shape):
         shape = np.repeat(shape, 2)
@@ -348,20 +396,6 @@ def make_coords(shape, spacing, z=0):
         'y': np.arange(shape[2]) * spacing[1],
         }
     return to_return
-
-
-def clean_concat(arrays, dim):
-    attrs = arrays[0].attrs
-    arrays = [
-        array.assign_attrs(
-            **{attr: None
-               for attr in array.attrs
-               if isinstance(array.attrs[attr], xr.DataArray)}
-            )
-        for array in arrays]
-    arrays = xr.concat(arrays, dim)
-    arrays.attrs = attrs
-    return arrays.transpose(*np.roll(arrays.dims, -1))
 
 
 def dict_to_array(schema, inval):
@@ -389,29 +423,4 @@ def dict_to_array(schema, inval):
         return inval.from_parameters(pars)
     else:
         return inval
-
-
-def make_subset_data(data, random_subset=None, pixels=None,
-                     return_selection=False, seed=None):
-    if random_subset is None and pixels is None:
-        return data
-    if random_subset is not None and pixels is not None:
-        raise ValueError("You can only specify one of pixels or random_subset")
-    if seed is not None:
-        np.random.seed(seed)
-    tot_pix = len(data.x)*len(data.y)
-    if pixels is not None:
-        n_sel = pixels
-    else:
-        n_sel = int(np.ceil(tot_pix*random_subset))
-    selection = np.random.choice(tot_pix, n_sel, replace=False)
-    subset = flat(data).isel(flat=selection)
-    subset = copy_metadata(data, subset, do_coords=False)
-
-    subset.attrs['original_dims'] = {key: data[key].values for key in data.dims}
-
-    if return_selection:
-        return subset, selection
-    else:
-        return subset
 
