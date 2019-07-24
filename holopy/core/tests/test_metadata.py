@@ -45,6 +45,59 @@ class TestGetSpacing(unittest.TestCase):
         self.assertEqual(spacing[1], true_spacing)
 
 
+class TestGetExtents(unittest.TestCase):
+    @attr('fast')
+    def test_returns_empty_when_dims_is_point(self):
+        # FIXME is this the desired behavior, to return {}?
+        x = np.linspace(0, 1, 11)
+        y = np.linspace(0, 1, 11)
+        points = detector_points(x=x, y=y)
+
+        extents = get_extents(points)
+        self.assertEqual(extents, {})
+
+    @attr('fast')
+    def test_on_detector_grid_when_spacing_is_isotropic(self):
+        shape = (10, 12)  # (x, y)
+        spacing = 0.1
+        true_extents = {
+            'x': shape[0] * spacing, 'y': shape[1] * spacing, 'z': 0}
+        detector = detector_grid(shape, spacing)
+        extents = get_extents(detector)
+        self.assertEqual(extents, true_extents)
+
+    @attr('fast')
+    def test_on_detector_grid_when_spacing_is_anisotropic(self):
+        shape = (10, 12)  # (x, y)
+        spacing = (0.1, 0.2)
+        true_extents = {
+            'x': shape[0] * spacing[0], 'y': shape[1] * spacing[1], 'z': 0}
+        detector = detector_grid(shape, spacing)
+        extents = get_extents(detector)
+        self.assertEqual(extents, true_extents)
+
+    @attr('fast')
+    def test_on_detector_grid_when_spacing_is_0(self):
+        shape = (10, 12)  # (x, y)
+        spacing = 0.0
+        true_extents = {'x': 0, 'y': 0, 'z': 0}
+        detector = detector_grid(shape, spacing)
+        extents = get_extents(detector)
+        self.assertEqual(extents, true_extents)
+
+    @attr('fast')
+    def test_on_detector_grid_when_size_is_1(self):
+        shape = (1, 1)
+        spacing = 0.1
+        true_extents = {'x': 0, 'y': 0, 'z': 0}
+        detector = detector_grid(shape, spacing)
+        extents = get_extents(detector)
+        self.assertEqual(extents, true_extents)
+
+    # FIXME the current get_extents does not work for a nonuniform spacing
+    # there should be a failing test like this:
+
+
 if __name__ == '__main__':
     unittest.main()
 
