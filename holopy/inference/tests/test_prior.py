@@ -17,38 +17,118 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-
+import unittest
 
 from numpy.testing import assert_raises, assert_equal, assert_allclose
 import numpy as np
+from nose.plugins.attrib import attr
 
-from holopy.inference.prior import Gaussian, Uniform
+from holopy.inference.prior import Prior, Gaussian, Uniform
 from holopy.inference import prior
 from holopy.inference.result import UncertainValue
 from holopy.core.tests.common import assert_obj_close
 from holopy.scattering.errors import ParameterSpecificationError
-#GOLD:log(sqrt(0.5/pi))-1/2
-gold_sigma=-1.4189385332
 
-def test_uniform():
-    u = Uniform(1, 2)
-    assert_equal(u.lnprob(1.4), 0)
-    assert_equal(u.lnprob(0.9), -np.inf)
-    assert_equal(u.lnprob(4), -np.inf)
-    assert_equal(u.guess, 1.5)
-    assert_equal(u.interval, 1)
-    assert_raises(ParameterSpecificationError, Uniform, 4, 6, 7)
-    assert_raises(ParameterSpecificationError, Uniform, 4, 4)
+GOLD_SIGMA = -1.4189385332 #log(sqrt(0.5/pi))-1/2
 
-def test_improper_guess():
-    improper1 = Uniform(-2, np.inf)
-    assert_equal(improper1.guess, -2)
-    improper2 = Uniform(-2, np.inf, -1)
-    assert_equal(improper2.guess, -1)
-    improper3 = Uniform(-np.inf, -2)
-    assert_equal(improper3.guess,-2)
-    improper4 = Uniform(-np.inf, np.inf)
-    assert_equal(improper4.guess, 0)
+class TestBasics(unittest.TestCase):
+    @attr("fast")
+    def test_cannot_instantiate_baseclass(self):
+        self.assertRaises(NotImplementedError, Prior)
+
+class TestUniform(unittest.TestCase):
+    @attr("fast")
+    def test_construction(self):
+        parameters = {'lower_bound':1, 'upper_bound':3, 'guess':2, 'name':'a'}
+        u = Uniform(*parameters.values())
+        for key, val in parameters.items():
+            self.assertEqual(getattr(u, key), val)
+
+    @attr("fast")
+    def test_upper_bound_larger_than_lower_bound(self):
+        self.assertRaises(ParameterSpecificationError, Uniform, 1, 0)
+        self.assertRaises(ParameterSpecificationError, Uniform, 1, 1)
+
+    @attr("fast")
+    def test_guess_must_be_in_interval(self):
+        self.assertRaises(ParameterSpecificationError, Uniform, 0, 1, 2)
+        self.assertRaises(ParameterSpecificationError, Uniform, 0, 1, -1)
+
+    @attr("fast")
+    def test_interval_calculation(self):
+        bounds = np.random.rand(2) + np.array([0,1])
+        u = Uniform(*bounds)
+        self.assertEqual(u.interval, np.diff(bounds))
+
+    @attr("fast")
+    def test_interval_is_property(self):
+        bounds = np.random.rand(2) + np.array([0,1])
+        u = Uniform(*bounds)
+        self.assertRaises(AttributeError, setattr, u, 'interval', 2)
+
+    @attr("fast")
+    def test_prob(self):
+        bounds = np.random.rand(2) + np.array([0,1])
+        u = Uniform(*bounds)
+        self.assertEqual(u.prob(0), 0)
+        self.assertEqual(u.prob(2), 0)
+        self.assertEqual(u.prob(1), 1/np.diff(bounds))
+
+    @attr("fast")
+    def test_lnprob(self):
+        bounds = np.random.rand(2) + np.array([0,1])
+        u = Uniform(*bounds)
+        self.assertEqual(u.lnprob(0), -np.inf)
+        self.assertEqual(u.lnprob(2), -np.inf)
+        self.assertTrue(np.allclose(u.lnprob(1), -np.log(np.diff(bounds))))
+
+    @attr("fast")
+    def test_sample_shape(self):
+        n_samples = 7
+        bounds = np.random.rand(2) + np.array([0,1])
+        u = Uniform(*bounds)
+        samples = u.sample(n_samples)
+        self.assertEqual(samples.shape, np.array(n_samples))
+        self.assertTrue(np.all(samples > bounds[0]))
+        self.assertTrue(np.all(samples < bounds[1]))
+
+    @attr("medium")
+    def test_sample_distribution(self):
+        n_samples = 100000
+        n_quantiles = 10
+        bounds = np.random.rand(2) + np.array([0,1])
+        u = Uniform(*bounds)
+        samples = u.sample(n_samples)
+        quantiles = np.quantile(samples, np.linspace(0, 1, n_quantiles))
+        calc_quantiles = np.linspace(*bounds, n_quantiles)
+        self.assertTrue(np.allclose(quantiles, calc_quantiles, atol=0.01))
+
+    @attr("fast")
+    def test_auto_guess(self):
+        bounds = np.random.rand(2) + np.array([0,1])
+        u = Uniform(*bounds)
+        self.assertEqual(u.guess, np.mean(bounds))
+
+    @attr("fast")
+    def test_auto_guess_improper(self):
+        bound = np.random.rand()
+        u = Uniform(bound, np.inf)
+        self.assertEqual(u.guess, bound)
+        u = Uniform(-np.inf, bound)
+        self.assertEqual(u.guess, bound)
+        u = Uniform(-np.inf, np.inf)
+        self.assertEqual(u.guess, 0)
+        u = Uniform(-np.inf, np.inf, bound)
+        self.assertEqual(u.guess, bound)
+
+    @attr("fast")
+    def test_improper_prob(self):
+        bound = np.random.rand()
+        u = Uniform(-np.inf, bound)
+        self.assertEqual(u.interval, np.inf)
+        self.assertEqual(u.prob(bound-1), 0)
+        self.assertEqual(u.lnprob(bound-1), -1e6)
+
 
 def test_bounded_gaussian():
     g = prior.BoundedGaussian(1, 1, 0, 2)

@@ -28,6 +28,10 @@ from holopy.scattering.errors import ParameterSpecificationError
 EPS = 1e-6
 
 class Prior(HoloPyObject):
+
+    def __init__(self):
+        raise NotImplementedError("Use subclass with a defined probability"
+                                  "distribution method prob and/or lnprob.")
     def __add__(self, value):
         if isinstance(value, Number):
             return self.__addadd__(value)
