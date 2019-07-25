@@ -1,4 +1,5 @@
 import unittest
+from collections import OrderedDict
 
 import numpy as np
 from nose.plugins.attrib import attr
@@ -56,6 +57,34 @@ class TestDetectorGrid(unittest.TestCase):
         name = 'this-is-a-name'
         detector = detector_grid(10, 0.1, name=name)
         self.assertEqual(detector.name, name)
+
+    @attr("fast")
+    def test_extra_dims_when_ordereddict(self):
+        shape = (2, 2)
+        extra_dims_sizes = (1, 2, 3, 4, 5, 6, 7, 8)  # ends up as 1.3 MB
+        extra_dims_names = 'abcdefgh'
+        extra_dims = OrderedDict()
+        for k, v in zip(extra_dims_names, extra_dims_sizes):
+            extra_dims.update({k: np.arange(v)})
+
+        detector = detector_grid(shape, 0.1, extra_dims=extra_dims)
+        true_shape = (1,) + shape + extra_dims_sizes
+        detector_shape = detector.values.shape
+        self.assertEqual(true_shape, detector_shape)
+
+    @attr("fast")
+    def test_extra_dims_when_dict(self):
+        shape = (2, 2)
+        extra_dims_sizes = (1, 2, 3, 4, 5, 6, 7, 8)  # ends up as 1.3 MB
+        extra_dims_names = 'abcdefgh'
+        extra_dims = dict()
+        for k, v in zip(extra_dims_names, extra_dims_sizes):
+            extra_dims.update({k: np.arange(v)})
+
+        detector = detector_grid(shape, 0.1, extra_dims=extra_dims)
+        true_shape = (1,) + shape + extra_dims_sizes
+        detector_shape = detector.values.shape
+        self.assertEqual(true_shape, detector_shape)
 
 
 class TestGetSpacing(unittest.TestCase):
