@@ -8,6 +8,56 @@ from holopy.core.metadata import (
     get_spacing, get_extents, copy_metadata, make_subset_data)
 
 
+TOLS = {'atol': 1e-10, 'rtol': 1e-10}
+
+# TODO: test that:
+# update_metadata raises an error when things are not the correct shape
+#       (e.g. normals have 11 elements for a 10x10 detector)
+# FIXME questions:
+# data_grid, detector_grid, etc don't allow passing normals for each point.
+#       is that behavior correct?
+
+
+class TestDetectorGrid(unittest.TestCase):
+    @attr("fast")
+    def test_pads_shape_with_leading_1(self):
+        spacing = 0.1
+        shape = (9, 12)
+        detector = detector_grid(shape, spacing)
+        self.assertEqual(len(detector.values.shape), 3)
+        self.assertEqual(detector.values.shape[0], 1)
+
+    @attr("fast")
+    def test_returned_shape_is_correct(self):
+        spacing = 0.1
+        shape = (9, 12)
+        true_shape = (1,) + shape
+        detector = detector_grid(shape, spacing)
+        self.assertEqual(detector.values.shape, true_shape)
+
+    @attr("fast")
+    def test_normals_default_to_001(self):
+        detector = detector_grid(10, 0.1)  # default normals
+        default_normals = np.array([0, 0, 1.0])
+        detector_normals = detector.normals.values
+        self.assertTrue(np.allclose(detector_normals, default_normals, **TOLS))
+
+    @attr("fast")
+    def test_normals_are_stored_when_passed_as_scalar(self):
+        normals = np.array([0.5, 0, 0.5])
+        normals /= np.linalg.norm(normals)
+
+        detector = detector_grid(10, 0.1, normals=normals.copy())
+        detector_normals = detector.normals.values
+        self.assertTrue(np.allclose(detector_normals, normals, **TOLS))
+
+    @attr("fast")
+    def test_name_is_stored(self):
+        name = 'this-is-a-name'
+        detector = detector_grid(10, 0.1, name=name)
+        self.assertEqual(detector.name, name)
+
+
 class TestGetSpacing(unittest.TestCase):
     @attr("fast")
     def test_raises_error_when_xspacing_is_unequal(self):
