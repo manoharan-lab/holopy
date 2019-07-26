@@ -74,6 +74,8 @@ class TestDetectorGrid(unittest.TestCase):
 
     @attr("fast")
     def test_extra_dims_when_dict(self):
+        # Test that extra_dims behaves correctly when dicts are not ordered,
+        # in lower versions of Python
         shape = (2, 2)
         extra_dims_sizes = (1, 2, 3, 4, 5, 6, 7, 8)  # ends up as 1.3 MB
         extra_dims_names = 'abcdefgh'
@@ -82,9 +84,13 @@ class TestDetectorGrid(unittest.TestCase):
             extra_dims.update({k: np.arange(v)})
 
         detector = detector_grid(shape, 0.1, extra_dims=extra_dims)
-        true_shape = (1,) + shape + extra_dims_sizes
-        detector_shape = detector.values.shape
-        self.assertEqual(true_shape, detector_shape)
+        # Then, rather than check that the order is the same, we want
+        # to check that (i) all keys are present, and (ii) each key has
+        # the correct value, which we check by the shapes being equal:
+        for key, value in extra_dims.items():
+            self.assertIn(key, detector.coords)
+            detector_coord_value = detector.coords[key].values
+            self.assertEqual(value.shape, detector.coords[key].values.shape)
 
 
 class TestGetSpacing(unittest.TestCase):
