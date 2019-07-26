@@ -19,6 +19,7 @@
 import numpy as np
 from numpy import random
 from numbers import Number
+from scipy import stats
 
 from holopy.core.metadata import get_extents, get_spacing
 from holopy.core.process import center_find
@@ -149,7 +150,6 @@ class Gaussian(Prior):
         if sd <= 0:
             raise ParameterSpecificationError(
                     "Specified sd of {} is not greater than 0".format(sd))
-        self.sdsq = sd**2
         self.name=name
         self._lnprob_normalization = -np.log(self.sd * np.sqrt(2*np.pi))
 
@@ -158,8 +158,12 @@ class Gaussian(Prior):
         else:  # values near 0
             self.scale_factor = self.sd
 
+    @property
+    def variance(self):
+        return self.sd**2
+
     def lnprob(self, p):
-        return self._lnprob_normalization - (p-self.mu)**2/(2*self.sdsq)
+        return self._lnprob_normalization - (p-self.mu)**2/(2*self.variance)
         # Turns out scipy.stats is noticably slower than doing it ourselves
         #return stats.norm.logpdf(p, self.mu, self.sd)
 
@@ -197,20 +201,26 @@ class BoundedGaussian(Gaussian):
     # Note: this is not normalized
     def __init__(self, mu, sd, lower_bound=-np.inf, upper_bound=np.inf, name=None):
 
-        if lower_bound > upper_bound:
-            raise ParameterSpecificationError("Lower bound {} is greater than upper bound {}".format(lower_bound, upper_bound))
-        if mu < lower_bound or mu > upper_bound:
-            raise ParameterSpecificationError("Gaussian mean {} is not between bounds {} and {}.".format(mu, lower_bound, upper_bound))
+        if mu < lower_bound or mu > upper_bound or lower_bound == upper_bound:
+            raise ParameterSpecificationError(
+                "Lower bound {} must be less than mean {}. Upper bound {} must"
+                " be greater than mean.")
 
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         super().__init__(mu, sd, name)
 
     def lnprob(self, p):
-        if np.any(p < self.lower_bound) or np.any(p > self.upper_bound):
+        if p < self.lower_bound or p > self.upper_bound:
             return -np.inf
         else:
             return super().lnprob(p)
+
+    def prob(self, p):
+        if p < self.lower_bound or p > self.upper_bound:
+            return 0
+        else:
+            return super().prob(p)
 
     def sample(self, size=None):
         val = super().sample(size)

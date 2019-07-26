@@ -23,7 +23,7 @@ from numpy.testing import assert_raises, assert_equal, assert_allclose
 import numpy as np
 from nose.plugins.attrib import attr
 
-from holopy.inference.prior import Prior, Gaussian, Uniform
+from holopy.inference.prior import Prior, Gaussian, Uniform, BoundedGaussian
 from holopy.inference import prior
 from holopy.inference.result import UncertainValue
 from holopy.core.tests.common import assert_obj_close
@@ -41,6 +41,7 @@ class TestUniform(unittest.TestCase):
     def test_construction(self):
         parameters = {'lower_bound':1, 'upper_bound':3, 'guess':2, 'name':'a'}
         u = Uniform(*parameters.values())
+        self.assertTrue(isinstance(u, Prior))
         for key, val in parameters.items():
             self.assertEqual(getattr(u, key), val)
 
@@ -130,23 +131,110 @@ class TestUniform(unittest.TestCase):
         self.assertEqual(u.lnprob(bound-1), -1e6)
 
 
-def test_bounded_gaussian():
-    g = prior.BoundedGaussian(1, 1, 0, 2)
-    assert_equal(g.lnprob(-1), -np.inf)
-    assert_equal(g.lnprob(3), -np.inf)
-    assert_equal(g.guess, 1)
+class TestGaussian(unittest.TestCase):
+    @attr("fast")
+    def test_construction(self):
+        parameters = {'mu':1, 'sd':3, 'name':'a'}
+        g = Gaussian(*parameters.values())
+        self.assertTrue(isinstance(g, Prior))
+        for key, val in parameters.items():
+            self.assertEqual(getattr(g, key), val)
 
-def test_gaussian():
-    g = Gaussian(1, 1)
-    assert_equal(g.guess, 1)
-    assert_obj_close(g.lnprob(0),gold_sigma)
+    @attr("fast")
+    def test_sd_is_positive(self):
+        self.assertRaises(ParameterSpecificationError, Gaussian, 1, 0)
+        self.assertRaises(ParameterSpecificationError, Gaussian, 1, -1)
+
+    @attr("fast")
+    def test_variance(self):
+        sd = np.random.rand()
+        g = Gaussian(0, sd)
+        self.assertEqual(g.variance, sd**2)
+        self.assertRaises(AttributeError, setattr, g, 'variance', 2) #property
+
+    @attr("fast")
+    def test_guess(self):
+        mean = np.random.rand()
+        g = Gaussian(mean, 1)
+        self.assertEqual(g.guess, mean)
+        self.assertRaises(AttributeError, setattr, g, 'guess', 2) #property
+
+    @attr("fast")
+    def test_prob(self):
+        mean, sd = np.random.rand(2)
+        g = Gaussian(mean, sd)
+        self.assertEqual(g.prob(mean), 1/np.sqrt(2*np.pi*sd**2))
+        self.assertTrue(np.allclose(g.prob(mean+sd), np.exp(-1/2)/np.sqrt(2*np.pi*sd**2)))
+
+    @attr("fast")
+    def test_lnprob(self):
+        g = Gaussian(0, 1)
+        self.assertTrue(np.allclose(g.lnprob(1), GOLD_SIGMA))
+        g = Gaussian(0, 2)
+        self.assertTrue(np.allclose(g.lnprob(2), GOLD_SIGMA - np.log(2)))
+
+    @attr("medium")
+    def test_sample(self):
+        n_samples = 10000
+        mean, sd = np.random.rand(2)
+        g = Gaussian(mean, sd)
+        samples = g.sample(n_samples)
+        self.assertTrue(np.allclose(mean, samples.mean(), atol=0.01))
+        self.assertTrue(np.allclose(sd, samples.std(ddof=1), atol=0.01))
+
+
+class TestBoundedGaussian(unittest.TestCase):
+    @attr("fast")
+    def test_construction(self):
+        parameters = {'mu':1, 'sd':3,
+                      'lower_bound':0, 'upper_bound':2, 'name':'a'}
+        bg = BoundedGaussian(*parameters.values())
+        self.assertTrue(isinstance(bg, Gaussian))
+        for key, val in parameters.items():
+            self.assertEqual(getattr(bg, key), val)
+
+    @attr("fast")
+    def test_bound_constraints(self):
+        for bounds in [(-1, 0), (2, 3), (1,1)]:
+            self.assertRaises(
+                ParameterSpecificationError, BoundedGaussian, 1, 1, *bounds)
+
+    @attr("fast")
+    def test_lnprob(self):
+        mean, sd = np.random.rand(2)
+        g = Gaussian(mean, sd)
+        bg = BoundedGaussian(mean, sd, -1, 2)
+        self.assertEqual(bg.lnprob(1), g.lnprob(1))
+        self.assertEqual(bg.lnprob(-1), g.lnprob(-1))
+        self.assertEqual(bg.lnprob(2), g.lnprob(2))
+        self.assertEqual(bg.lnprob(-2), -np.inf)
+        self.assertEqual(bg.lnprob(3), -np.inf)
+
+    @attr("fast")
+    def test_prob(self):
+        mean, sd = np.random.rand(2)
+        g = Gaussian(mean, sd)
+        bg = BoundedGaussian(mean, sd, -1, 2)
+        self.assertEqual(bg.prob(1), g.prob(1))
+        self.assertEqual(bg.prob(-1), g.prob(-1))
+        self.assertEqual(bg.prob(2), g.prob(2))
+        self.assertEqual(bg.prob(-2), 0)
+        self.assertEqual(bg.prob(3), 0)
+
+    @attr("fast")
+    def test_sample(self):
+        n_samples = 10
+        bound = 0.1
+        bg = BoundedGaussian(0, 1, -bound, bound)
+        samples = bg.sample(n_samples)
+        self.assertTrue(np.all(samples > -bound) and np.all(samples < bound))
 
 def test_complex_prior():
     p1 = prior.ComplexPrior(Uniform(0,2), Gaussian(2,1))
     assert_obj_close(p1.real, Uniform(0,2))
     assert_obj_close(p1.imag, Gaussian(2,1))
     assert_equal(p1.guess, 1+2j)
-    assert_obj_close(p1.lnprob(0.5+1j), gold_sigma - np.log(2))
+    assert_obj_close(p1.lnprob(0.5+1j), GOLD_SIGMA - np.log(2))
     p2 = prior.ComplexPrior(1, Gaussian(2,1))
     assert_equal(p2.guess, 1+2j)
     p3 = prior.ComplexPrior(Uniform(0,2), 2)
@@ -171,7 +259,7 @@ def test_updated():
     d=UncertainValue(1,0.5,1)
     u=prior.updated(p,d)
     assert_equal(u.guess,1)
-    assert_obj_close(u.lnprob(0),gold_sigma)
+    assert_obj_close(u.lnprob(0), GOLD_SIGMA)
 
 def test_prior_math():
     u = Uniform(1,2)
