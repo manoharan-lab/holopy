@@ -419,6 +419,54 @@ class TestGetExtents(unittest.TestCase):
     # there should be a failing test like this:
 
 
+class TestMakeSubsetData(unittest.TestCase):
+    # to test:
+    # pixels, seed
+    # Not used:
+    #   random_subset
+    #   return_selection
+    @attr("fast")
+    def test_returns_data_when_nothing_passed(self):
+        data = make_data()
+        subset = make_subset_data(data)
+        self.assertTrue(data is subset)
+
+    @attr("fast")
+    def test_returns_correct_number_of_pixels(self):
+        data = make_data()
+        number_of_pixels_to_select = 3
+        subset = make_subset_data(data, pixels=number_of_pixels_to_select)
+        self.assertEqual(subset.size, number_of_pixels_to_select)
+
+    @attr("fast")
+    def test_returns_elements_of_data(self):
+        data = make_data()
+        number_of_pixels_to_select = 3
+        subset = make_subset_data(data, pixels=number_of_pixels_to_select)
+        for datum in subset.values:
+            self.assertIn(datum, data.values.ravel())
+
+    @attr('fast')
+    def test_seed_returns_same_data(self):
+        data = make_data()
+        number_of_pixels_to_select = data.size // 2
+        seed = 243
+        subset1 = make_subset_data(
+            data, pixels=number_of_pixels_to_select, seed=seed)
+        subset2 = make_subset_data(
+            data, pixels=number_of_pixels_to_select, seed=seed)
+        self.assertTrue(np.all(subset1.values == subset2.values))
+
+
+def make_data():
+    np.random.seed(1)
+    shape = (5, 5)
+    data_values = np.random.randn(*shape)
+    data = detector_grid(shape, 0.1)
+    data.values[:] = data_values
+    return data
+
+
 if __name__ == '__main__':
     unittest.main()
 
