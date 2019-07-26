@@ -11,6 +11,12 @@ from holopy.core.errors import CoordSysError
 
 
 TOLS = {'atol': 1e-10, 'rtol': 1e-10}
+METADATA_VALUES = {
+    'medium_index': 1.234,
+    'illum_wavelen': 0.567,
+    'illum_polarization': (1, 0),
+    'noise_sd': 0.89,
+    }
 
 # TODO: test that:
 # update_metadata raises an error when things are not the correct shape
@@ -419,6 +425,55 @@ class TestGetExtents(unittest.TestCase):
     # there should be a failing test like this:
 
 
+class TestCopyMetadata(unittest.TestCase):
+    @attr('fast')
+    def test_copies_metadata_keys(self):
+        metadata = make_metadata()
+        data = make_data()
+        copied = copy_metadata(metadata, data)
+        for key in METADATA_VALUES.keys():
+            self.assertIn(key, copied.attrs)
+            self.assertTrue(hasattr(copied, key))
+
+    @attr('fast')
+    def test_copies_metadata_values(self):
+        metadata = make_metadata()
+        data = make_data()
+        copied = copy_metadata(metadata, data)
+        # we check illum_polarization separately:
+        illum_polarization = METADATA_VALUES['illum_polarization']
+        self.assertTrue(
+            np.all(illum_polarization == copied.illum_polarization.values[:2]))
+        # Then we check the rest:
+        for key, value in METADATA_VALUES.items():
+            if key != 'illum_polarization':
+                self.assertEqual(value, getattr(copied, key))
+
+    @attr('fast')
+    def test_copies_coords(self):
+        metadata = make_metadata()
+        data = make_data()
+        copied = copy_metadata(metadata, data)
+        for coordinate in data.coords.keys():
+            old_coords = data.coords[coordinate].values
+            copied_coords = copied.coords[coordinate].values
+            self.assertTrue(np.all(old_coords == copied_coords))
+
+    @attr('fast')
+    def test_copies_name(self):
+        metadata = make_metadata()
+        data = make_data()
+        copied = copy_metadata(metadata, data)
+        self.assertEqual(metadata.name, copied.name)
+
+    @attr('fast')
+    def test_does_not_change_data(self):
+        metadata = make_metadata()
+        data = make_data()
+        copied = copy_metadata(metadata, data)
+        self.assertTrue(np.all(data.values == copied.values))
+
+
 class TestMakeSubsetData(unittest.TestCase):
     # to test:
     # pixels, seed
@@ -465,6 +520,11 @@ def make_data():
     data = detector_grid(shape, 0.1)
     data.values[:] = data_values
     return data
+
+
+def make_metadata():
+    detector = detector_grid(7, 0.1, name='metadata')
+    return update_metadata(detector, **METADATA_VALUES)
 
 
 if __name__ == '__main__':
