@@ -21,6 +21,7 @@ import shutil
 import unittest
 import tempfile
 import multiprocessing as mp
+from importlib.util import find_spec
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -403,9 +404,14 @@ class TestChoosePool(unittest.TestCase):
     @attr("fast")
     def test_MPI(self):
         if MPIPool.enabled():
+            # mpi should work
             mpi_pool = choose_pool('mpi')
             self.assertTrue(isinstance(mpi_pool, MPIPool))
+        elif find_spec('mpi4py') is None:
+            # mpi4py not installed
+            self.assertRaises(ImportError, choose_pool, 'mpi')
         else:
+            # mpi4py installed but only one process available
             self.assertRaises(ValueError, choose_pool, 'mpi')
 
     @attr("fast")
