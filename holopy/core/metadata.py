@@ -30,6 +30,7 @@ import xarray as xr
 
 from holopy.core.utils import updated, repeat_sing_dims, ensure_array
 from holopy.core.math import to_cartesian
+from holopy.core.errors import CoordSysError
 
 
 vector = 'vector'

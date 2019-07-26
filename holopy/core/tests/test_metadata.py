@@ -96,8 +96,6 @@ class TestDetectorGrid(unittest.TestCase):
 
 class TestDetectorPoints(unittest.TestCase):
     @attr("fast")
-    # FIXME
-    @unittest.skip("This test needs to be fixed in holopy")
     def test_raises_error_when_no_coordinates_passed(self):
         self.assertRaises(CoordSysError, detector_points)
 
