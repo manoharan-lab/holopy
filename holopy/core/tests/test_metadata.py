@@ -7,6 +7,7 @@ from nose.plugins.attrib import attr
 from holopy.core.metadata import (
     detector_grid, detector_points, clean_concat, update_metadata,
     get_spacing, get_extents, copy_metadata, make_subset_data)
+from holopy.core.errors import CoordSysError
 
 
 TOLS = {'atol': 1e-10, 'rtol': 1e-10}
@@ -91,6 +92,199 @@ class TestDetectorGrid(unittest.TestCase):
             self.assertIn(key, detector.coords)
             detector_coord_value = detector.coords[key].values
             self.assertEqual(value.shape, detector.coords[key].values.shape)
+
+
+class TestDetectorPoints(unittest.TestCase):
+    @attr("fast")
+    # FIXME
+    @unittest.skip("This test needs to be fixed in holopy")
+    def test_raises_error_when_no_coordinates_passed(self):
+        self.assertRaises(CoordSysError, detector_points)
+
+    # xyz tests:
+
+    @attr("fast")
+    def test_stores_xyz_as_correct_shape_when_xyz_passed(self):
+        np.random.seed(70)
+        npts = 21
+        x = np.random.randn(npts)
+        y = np.random.randn(npts)
+        z = np.random.randn(npts)
+
+        points = detector_points(x=x, y=y, z=z)
+        self.assertEqual(points.x.size, npts)
+        self.assertEqual(points.y.size, npts)
+        self.assertEqual(points.z.size, npts)
+
+    @attr("fast")
+    def test_stores_xyz_correct_values_when_xyz_passed(self):
+        np.random.seed(70)
+        npts = 21
+        x = np.random.randn(npts)
+        y = np.random.randn(npts)
+        z = np.random.randn(npts)
+
+        points = detector_points(x=x, y=y, z=z)
+
+        self.assertTrue(np.allclose(points.x, x, **TOLS))
+        self.assertTrue(np.allclose(points.y, y, **TOLS))
+        self.assertTrue(np.allclose(points.z, z, **TOLS))
+
+    @attr("fast")
+    def test_stores_z_as_array_when_scalar_z_passed(self):
+        np.random.seed(70)
+        npts = 21
+        x = np.random.randn(npts)
+        y = np.random.randn(npts)
+        # Then we pick a scalar z:
+        z = np.random.randn(1).squeeze()
+
+        points = detector_points(x=x, y=y, z=z)
+
+        self.assertTrue(np.allclose(points.z, z, **TOLS))
+        self.assertEqual(points.z.size, npts)
+
+    @attr("fast")
+    def test_z_defaults_to_zero_when_xy_passed(self):
+        np.random.seed(70)
+        npts = 21
+        x = np.random.randn(npts)
+        y = np.random.randn(npts)
+        points = detector_points(x=x, y=y)
+
+        self.assertTrue(np.allclose(points.z, 0, **TOLS))
+
+    # r, theta, phi tests:
+
+    @attr("fast")
+    def test_stores_rthetaphi_as_correct_shape_when_rthetaphi_passed(self):
+        np.random.seed(70)
+        npts = 21
+        r = np.random.randn(npts)
+        theta = np.random.randn(npts) % np.pi
+        phi = np.random.randn(npts) % (2 * np.pi)
+
+        points = detector_points(r=r, theta=theta, phi=phi)
+        self.assertEqual(points.r.size, npts)
+        self.assertEqual(points.theta.size, npts)
+        self.assertEqual(points.phi.size, npts)
+
+    @attr("fast")
+    def test_stores_rthetaphi_correct_values_when_rthetaphi_passed(self):
+        np.random.seed(70)
+        npts = 21
+        r = np.random.randn(npts)
+        theta = np.random.randn(npts) % np.pi
+        phi = np.random.randn(npts) % (2 * np.pi)
+
+        points = detector_points(r=r, theta=theta, phi=phi)
+        self.assertTrue(np.allclose(points.r, r, **TOLS))
+        self.assertTrue(np.allclose(points.theta, theta, **TOLS))
+        self.assertTrue(np.allclose(points.phi, phi, **TOLS))
+
+    @attr("fast")
+    def test_stores_r_as_array_when_scalar_r_passed(self):
+        np.random.seed(70)
+        npts = 21
+        theta = np.random.randn(npts) % np.pi
+        phi = np.random.randn(npts) % (2 * np.pi)
+        # Then we pick a scalar r:
+        r = np.random.randn(1).squeeze()
+
+        points = detector_points(r=r, theta=theta, phi=phi)
+
+        self.assertTrue(np.allclose(points.r, r, **TOLS))
+        self.assertEqual(points.r.size, npts)
+
+    @attr("fast")
+    def test_r_defaults_to_inf_when_thetaphi_passed(self):
+        np.random.seed(70)
+        npts = 21
+        theta = np.random.randn(npts) % np.pi
+        phi = np.random.randn(npts) % (2 * np.pi)
+
+        points = detector_points(theta=theta, phi=phi)
+
+        self.assertTrue(np.all(np.isinf(points.r)))
+        self.assertEqual(points.r.size, npts)
+
+    # Other tests:
+    @attr("fast")
+    def test_data_is_stored_as_zeros_of_corect_size(self):
+        npts = 23
+        x, y, z = np.random.randn(3, npts)
+        points = detector_points(x=x, y=y, z=z)
+        self.assertEqual(points.size, npts)
+        self.assertTrue(np.allclose(points.values, 0, **TOLS))
+
+    @attr("fast")
+    def test_name_defaults_to_data(self):
+        x, y, z = np.random.randn(3, 10)
+        points = detector_points(x=x, y=y, z=z)
+        self.assertEqual(points.name, 'data')
+
+    @attr("fast")
+    def test_name_is_stored(self):
+        x, y, z = np.random.randn(3, 10)
+        name = 'this-is-a-test'
+        points = detector_points(x=x, y=y, z=z, name=name)
+        self.assertEqual(points.name, name)
+
+    # FIXME no checks for normal default values
+
+    @attr("fast")
+    def test_has_attribute_normals(self):
+        x, y, z = np.random.randn(3, 10)
+        points = detector_points(x=x, y=y, z=z)
+        self.assertTrue(hasattr(points, 'normals'))
+
+    @attr("fast")
+    def test_default_normals_are_shape_3xN_for_spherical_coords(self):
+        npts = 13
+        r, theta, phi = np.random.randn(3, npts)
+        points = detector_points(r=r, theta=theta, phi=phi)
+        self.assertEqual(points.normals.values.shape, (3, npts))
+
+    @attr("fast")
+    @unittest.skip("Fails, not sure if test is wrong or code")
+    def test_3xN_normals_are_stored_for_spherical_coords(self):
+        npts = 13
+        r, theta, phi = np.random.randn(3, npts)
+        normals = np.random.randn(3, npts)
+        points = detector_points(r=r, theta=theta, phi=phi, normals=normals)
+        self.assertEqual(points.normals.values.shape, (3, npts))
+        self.assertTrue(np.allclose(points.normals.values, normals, **TOLS))
+
+    @attr("fast")
+    def test_default_normals_are_shape_3_for_cartesian_coords(self):
+        npts = 13
+        x, y, z= np.random.randn(3, npts)
+        points = detector_points(x=x, y=y, z=z)
+        self.assertEqual(points.normals.values.shape, (3,))
+
+    @attr("fast")
+    def test_3x1_normals_are_stored_for_cartesian_coords(self):
+        npts = 13
+        x, y = np.random.randn(2, npts)
+        normals = np.random.randn(3)
+        normals /= np.linalg.norm(normals)
+        points = detector_points(x=x, y=y, normals=normals)
+        self.assertEqual(points.normals.values.shape, (3,))
+        self.assertTrue(np.allclose(points.normals.values, normals, **TOLS))
+
+    @attr("fast")
+    def test_3x1_normals_are_normalized(self):
+        npts = 13
+        x, y = np.random.randn(2, npts)
+        raw_normals = np.random.randn(3)
+        points = detector_points(x=x, y=y, normals=raw_normals)
+        normals = raw_normals / np.linalg.norm(raw_normals)
+        # They should be different from the raw, unnormmalized normals:
+        self.assertFalse(
+            np.allclose(points.normals.values, raw_normals, **TOLS))
+        # but the same as the normalized ones:
+        self.assertTrue(
+            np.allclose(points.normals.values, normals, **TOLS))
 
 
 class TestGetSpacing(unittest.TestCase):
