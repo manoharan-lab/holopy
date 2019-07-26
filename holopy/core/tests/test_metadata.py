@@ -285,6 +285,50 @@ class TestDetectorPoints(unittest.TestCase):
             np.allclose(points.normals.values, normals, **TOLS))
 
 
+class TestUpdateMetadata(unittest.TestCase):
+    @attr("fast")
+    def test_does_update_medium_index(self):
+        detector = detector_grid(3, 0.1)
+
+        np.random.seed(10)
+        medium_index = 1 + np.random.rand()
+        updated_detector = update_metadata(detector, medium_index=medium_index)
+        self.assertEqual(updated_detector.medium_index, medium_index)
+
+    @attr("fast")
+    def test_does_update_illum_wavelength(self):
+        detector = detector_grid(3, 0.1)
+
+        np.random.seed(11)
+        illum_wavelen = np.random.rand()
+        updated_detector = update_metadata(
+            detector, illum_wavelen=illum_wavelen)
+        self.assertEqual(updated_detector.illum_wavelen, illum_wavelen)
+
+    @attr("fast")
+    def test_does_update_illum_polarization(self):
+        detector = detector_grid(3, 0.1)
+        np.random.seed(12)
+        illum_polarization = np.random.randn(2)
+        illum_polarization /= np.linalg.norm(illum_polarization)
+        updated_detector = update_metadata(
+            detector, illum_polarization=illum_polarization)
+        is_ok = np.allclose(
+            updated_detector.illum_polarization.values[:2],
+            illum_polarization, **TOLS)
+        self.assertTrue(is_ok)
+
+    @attr("fast")
+    def test_does_update_noise_sd(self):
+        detector = detector_grid(3, 0.1)
+        np.random.seed(13)
+        noise_sd = np.random.rand()
+        updated_detector = update_metadata(detector, noise_sd=noise_sd)
+        self.assertEqual(updated_detector.noise_sd, noise_sd)
+
+    # FIXME add a test for normals....
+
+
 class TestGetSpacing(unittest.TestCase):
     @attr("fast")
     def test_raises_error_when_xspacing_is_unequal(self):
