@@ -273,6 +273,11 @@ class TestAccumulator(unittest.TestCase):
         # This value is from the legacy version of load_average
         self.assertTrue(np.allclose(bg.noise_sd, 0.00709834))
 
+    def test_2_colour_noise_sd(self):
+        image = load_average('exampledata/2_wl_bg/', image_glob='*.jpg', spacing=1, channel=[0,1])
+        gold_noise = [0.06864433355667054, 0.04913377621162473]
+        noise = [image.noise_sd.loc[colour].item() for colour in ['green', 'red']]
+        self.assertTrue(np.allclose(gold_noise, calculated_noise))
 
 def _load_raw_example_data():
     imagepath = get_example_data_path('image01.jpg')
@@ -283,4 +288,6 @@ def _load_example_data_backgrounds():
     return [load_image(path, **IMAGE01_METADATA) for path in bgpath]
 
 if __name__ == '__main__':
-    unittest.main()
+    image = load_average('exampledata/2_wl_bg/', image_glob='*.jpg', spacing=1, channel=[0,1])
+    gold_noise = [0.06864433355667054, 0.04913377621162473]
+    noise = [image.noise_sd.loc[colour].item() for colour in ['green', 'red']]
