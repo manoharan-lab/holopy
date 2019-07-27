@@ -10,13 +10,14 @@ from holopy.core.metadata import (
 from holopy.core.errors import CoordSysError
 
 
-TOLS = {'atol': 1e-10, 'rtol': 1e-10}
+TOLS = {'atol': 1e-15, 'rtol': 1e-15}
 METADATA_VALUES = {
     'medium_index': 1.234,
     'illum_wavelen': 0.567,
     'illum_polarization': (1, 0),
     'noise_sd': 0.89,
     }
+
 
 # TODO: test that:
 # update_metadata raises an error when things are not the correct shape
@@ -130,9 +131,9 @@ class TestDetectorPoints(unittest.TestCase):
 
         points = detector_points(x=x, y=y, z=z)
 
-        self.assertTrue(np.allclose(points.x, x, **TOLS))
-        self.assertTrue(np.allclose(points.y, y, **TOLS))
-        self.assertTrue(np.allclose(points.z, z, **TOLS))
+        self.assertTrue(np.all(points.x == x))
+        self.assertTrue(np.all(points.y == y))
+        self.assertTrue(np.all(points.z == z))
 
     @attr("fast")
     def test_stores_z_as_array_when_scalar_z_passed(self):
@@ -145,7 +146,7 @@ class TestDetectorPoints(unittest.TestCase):
 
         points = detector_points(x=x, y=y, z=z)
 
-        self.assertTrue(np.allclose(points.z, z, **TOLS))
+        self.assertTrue(np.all(points.z == z))
         self.assertEqual(points.z.size, npts)
 
     @attr("fast")
@@ -156,7 +157,7 @@ class TestDetectorPoints(unittest.TestCase):
         y = np.random.randn(npts)
         points = detector_points(x=x, y=y)
 
-        self.assertTrue(np.allclose(points.z, 0, **TOLS))
+        self.assertTrue(np.all(points.z == 0))
 
     # r, theta, phi tests:
 
@@ -182,9 +183,9 @@ class TestDetectorPoints(unittest.TestCase):
         phi = np.random.randn(npts) % (2 * np.pi)
 
         points = detector_points(r=r, theta=theta, phi=phi)
-        self.assertTrue(np.allclose(points.r, r, **TOLS))
-        self.assertTrue(np.allclose(points.theta, theta, **TOLS))
-        self.assertTrue(np.allclose(points.phi, phi, **TOLS))
+        self.assertTrue(np.all(points.r == r))
+        self.assertTrue(np.all(points.theta == theta))
+        self.assertTrue(np.all(points.phi == phi))
 
     @attr("fast")
     def test_stores_r_as_array_when_scalar_r_passed(self):
@@ -197,7 +198,7 @@ class TestDetectorPoints(unittest.TestCase):
 
         points = detector_points(r=r, theta=theta, phi=phi)
 
-        self.assertTrue(np.allclose(points.r, r, **TOLS))
+        self.assertTrue(np.all(points.r == r))
         self.assertEqual(points.r.size, npts)
 
     @attr("fast")
@@ -219,7 +220,7 @@ class TestDetectorPoints(unittest.TestCase):
         x, y, z = np.random.randn(3, npts)
         points = detector_points(x=x, y=y, z=z)
         self.assertEqual(points.size, npts)
-        self.assertTrue(np.allclose(points.values, 0, **TOLS))
+        self.assertTrue(np.all(points.values == 0))
 
     @attr("fast")
     def test_name_defaults_to_data(self):
@@ -365,9 +366,9 @@ class TestUpdateMetadata(unittest.TestCase):
         illum_polarization /= np.linalg.norm(illum_polarization)
         updated_detector = update_metadata(
             detector, illum_polarization=illum_polarization)
-        is_ok = np.allclose(
-            updated_detector.illum_polarization.values[:2],
-            illum_polarization, **TOLS)
+        is_ok = np.all(
+            updated_detector.illum_polarization.values[:2] ==
+            illum_polarization)
         self.assertTrue(is_ok)
 
     @attr("fast")
