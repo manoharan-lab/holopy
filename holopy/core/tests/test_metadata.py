@@ -291,6 +291,52 @@ class TestDetectorPoints(unittest.TestCase):
             np.allclose(points.normals.values, normals, **TOLS))
 
 
+class TestCleanConcat(unittest.TestCase):
+    @attr("fast")
+    def test_concatenates_data(self):
+        data1 = make_data(seed=1)
+        data2 = make_data(seed=2)
+
+        concatenated = clean_concat([data1, data2], 'point')
+        self.assertEqual(concatenated.shape, data1.shape + (2,))
+
+    @attr("fast")
+    def test_preserves_data_order(self):
+        data1 = make_data(seed=1)
+        data2 = make_data(seed=2)
+        data = [data1, data2]
+
+        concatenated = clean_concat(data, 'point')
+        self.assertTrue(np.all(concatenated.values[..., 0] == data[0].values))
+        self.assertTrue(np.all(concatenated.values[..., 1] == data[1].values))
+
+    @attr("fast")
+    def test_preserves_metadata_keys(self):
+        data1 = update_metadata(make_data(seed=1), **METADATA_VALUES)
+        data2 = update_metadata(make_data(seed=2), **METADATA_VALUES)
+        data = [data1, data2]
+
+        concatenated = clean_concat(data, 'point')
+        for key in METADATA_VALUES.keys():
+            self.assertIn(key, concatenated.attrs)
+            self.assertTrue(hasattr(concatenated, key))
+
+    @attr("fast")
+    def test_preserves_metadata_values(self):
+        data1 = update_metadata(make_data(seed=1), **METADATA_VALUES)
+        data2 = update_metadata(make_data(seed=2), **METADATA_VALUES)
+        data = [data1, data2]
+
+        concatenated = clean_concat(data, 'point')
+        for key, value in METADATA_VALUES.items():
+            if key != 'illum_polarization':
+                self.assertEqual(getattr(concatenated, key), value)
+        polarization_ok = np.all(
+            concatenated.illum_polarization[:2] ==
+            METADATA_VALUES['illum_polarization'])
+        self.assertTrue(polarization_ok)
+
+
 class TestUpdateMetadata(unittest.TestCase):
     @attr("fast")
     def test_does_update_medium_index(self):
@@ -513,8 +559,8 @@ class TestMakeSubsetData(unittest.TestCase):
         self.assertTrue(np.all(subset1.values == subset2.values))
 
 
-def make_data():
-    np.random.seed(1)
+def make_data(seed=1):
+    np.random.seed(seed)
     shape = (5, 5)
     data_values = np.random.randn(*shape)
     data = detector_grid(shape, 0.1)
