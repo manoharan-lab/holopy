@@ -411,6 +411,7 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
         spacing = get_spacing(refimg)
 
     # read colour channels from refimg
+    channel_dict = {'0': 'red', '1': 'green', '2': 'blue'}
     if channel is None and refimg is not None and illumination in refimg.dims:
         channel = [i for i, col in enumerate(['red','green','blue']) if col in refimg[illumination].values]
 
@@ -425,7 +426,12 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
 
     # calculate average noise from image
     if noise_sd is None and len(filepath) > 1:
-        noise_sd = ensure_array(accumulator.cv())
+        if channel:
+            noise_sd = xr.DataArray(accumulator.cv(),
+                                    [[channel_dict[str(ch)] for ch in channel]],
+                                    ['illumination'])
+        else:
+            noise_sd = ensure_array(accumulator.cv())
 
     # crop according to refimg dimensions
     if refimg is not None:
@@ -473,7 +479,11 @@ class Accumulator:
         if self._n == 0:
             return None
         else:
-            return np.mean(np.array(self._std() / self.mean()))
+            try: # If data is a multicolor hologram, average over first 3 dims
+                return np.mean(np.array(self._std() / self.mean()),
+                               axis=(0, 1, 2))
+            except IndexError:
+                return np.mean(np.array(self._std() / self.mean()))
 
     def _std(self):
         if self._n == 0:
