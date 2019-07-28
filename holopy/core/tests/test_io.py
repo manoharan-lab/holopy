@@ -274,8 +274,9 @@ class TestAccumulator(unittest.TestCase):
         self.assertTrue(np.allclose(bg.noise_sd, 0.00709834))
 
     def test_2_colour_noise_sd(self):
-        image = load_average('exampledata/2_wl_bg/', image_glob='*.jpg',
-                             spacing=1, channel=[0,1])
+        paths = get_example_data_path(['2colourbg0.jpg', '2colourbg1.jpg',
+                                       '2colourbg2.jpg', '2colourbg3.jpg'])
+        image = load_average(paths, spacing=1, channel=[0,1])
         gold_noise = [0.06864433355667054, 0.04913377621162473]
         noise = [image.noise_sd.loc[colour].item() for colour in ['green', 'red']]
         self.assertTrue(np.allclose(gold_noise, noise))
