@@ -23,7 +23,8 @@ from numpy.testing import assert_raises, assert_equal, assert_allclose
 import numpy as np
 from nose.plugins.attrib import attr
 
-from holopy.inference.prior import Prior, Gaussian, Uniform, BoundedGaussian
+from holopy.inference.prior import (
+    Prior, Gaussian, Uniform, BoundedGaussian, ComplexPrior)
 from holopy.inference import prior
 from holopy.inference.result import UncertainValue
 from holopy.core.tests.common import assert_obj_close
@@ -150,14 +151,14 @@ class TestGaussian(unittest.TestCase):
         sd = np.random.rand()
         g = Gaussian(0, sd)
         self.assertEqual(g.variance, sd**2)
-        self.assertRaises(AttributeError, setattr, g, 'variance', 2) #property
+        self.assertRaises(AttributeError, setattr, g, 'variance', 2) # property
 
     @attr("fast")
     def test_guess(self):
         mean = np.random.rand()
         g = Gaussian(mean, 1)
         self.assertEqual(g.guess, mean)
-        self.assertRaises(AttributeError, setattr, g, 'guess', 2) #property
+        self.assertRaises(AttributeError, setattr, g, 'guess', 2) # property
 
     @attr("fast")
     def test_prob(self):
@@ -229,16 +230,107 @@ class TestBoundedGaussian(unittest.TestCase):
         samples = bg.sample(n_samples)
         self.assertTrue(np.all(samples > -bound) and np.all(samples < bound))
 
-def test_complex_prior():
-    p1 = prior.ComplexPrior(Uniform(0,2), Gaussian(2,1))
-    assert_obj_close(p1.real, Uniform(0,2))
-    assert_obj_close(p1.imag, Gaussian(2,1))
-    assert_equal(p1.guess, 1+2j)
-    assert_obj_close(p1.lnprob(0.5+1j), GOLD_SIGMA - np.log(2))
-    p2 = prior.ComplexPrior(1, Gaussian(2,1))
-    assert_equal(p2.guess, 1+2j)
-    p3 = prior.ComplexPrior(Uniform(0,2), 2)
-    assert_equal(p3.guess, 1+2j)
+
+class TestComplexPrior(unittest.TestCase):
+    @attr("fast")
+    def test_construction(self):
+        parameters = {'real':Uniform(1, 2), 'imag':3, 'name':'a'}
+        cp = ComplexPrior(*parameters.values())
+        self.assertTrue(isinstance(cp, Prior))
+        for key, val in parameters.items():
+            self.assertEqual(getattr(cp, key), val)
+
+    @attr("fast")
+    def test_guess_2_priors(self):
+        real = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        imag = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        cp = ComplexPrior(real, imag)
+        self.assertEqual(cp.guess, real.guess + 1.0j * imag.guess)
+
+    @attr("fast")
+    def test_guess_fixed_imag(self):
+        real = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        imag = np.random.rand()
+        cp = ComplexPrior(real, imag)
+        self.assertEqual(cp.guess, real.guess + 1.0j * imag)
+
+    @attr("fast")
+    def test_guess_fixed_real(self):
+        real = np.random.rand()
+        imag = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        cp = ComplexPrior(real, imag)
+        self.assertEqual(cp.guess, real + 1.0j * imag.guess)
+
+    @attr("fast")
+    def test_lnprob_2_priors(self):
+        real = Uniform(*np.random.rand(2) + np.array([0,1]))
+        imag = Uniform(*np.random.rand(2) + np.array([0,1]))
+        cp = ComplexPrior(real, imag)
+        self.assertEqual(cp.lnprob(1), -np.inf)
+        self.assertEqual(cp.lnprob(1.0j), -np.inf)
+        self.assertEqual(cp.lnprob(1 + 1.0j), real.lnprob(1) + imag.lnprob(1))
+
+    @attr("fast")
+    def test_lnprob_fixed_imag(self):
+        real = Uniform(*np.random.rand(2) + np.array([0,1]))
+        imag = np.random.rand()
+        cp = ComplexPrior(real, imag)
+        self.assertEqual(cp.lnprob(1), real.lnprob(1))
+        self.assertEqual(cp.lnprob(1.0j), -np.inf)
+        self.assertEqual(cp.lnprob(1 + 1.0j), real.lnprob(1))
+
+    @attr("fast")
+    def test_lnprob_fixed_real(self):
+        real = np.random.rand()
+        imag = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        cp = ComplexPrior(real, imag)
+        self.assertEqual(cp.lnprob(1), -np.inf)
+        self.assertEqual(cp.lnprob(1.0j), imag.lnprob(1))
+        self.assertEqual(cp.lnprob(1 + 1.0j), imag.lnprob(1))
+
+    @attr("fast")
+    def test_prob_2_priors(self):
+        real = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        imag = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        cp = ComplexPrior(real, imag)
+        self.assertEqual(cp.prob(1), 0)
+        self.assertEqual(cp.prob(1.0j), 0)
+        self.assertEqual(cp.prob(1 + 1.0j), real.prob(1) * imag.prob(1))
+
+    @attr("fast")
+    def test_sample_2_priors(self):
+        n_samples = 10
+        real = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        imag = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        cp = ComplexPrior(real, imag)
+        samples = cp.sample(n_samples)
+        self.assertTrue(np.all(samples.real < real.upper_bound))
+        self.assertTrue(np.all(samples.real > real.lower_bound))
+        self.assertTrue(np.all(samples.imag < imag.upper_bound))
+        self.assertTrue(np.all(samples.imag > imag.lower_bound))
+
+
+    @attr("fast")
+    def test_sample_fixed_real(self):
+        n_samples = 10
+        real = np.random.rand()
+        imag = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        cp = ComplexPrior(real, imag)
+        samples = cp.sample(n_samples)
+        self.assertTrue(np.all(samples.real == real))
+        self.assertTrue(np.all(samples.imag < imag.upper_bound))
+        self.assertTrue(np.all(samples.imag > imag.lower_bound))
+
+    @attr("fast")
+    def test_sample_fixed_imag(self):
+        n_samples = 10
+        real = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        imag = np.random.rand()
+        cp = ComplexPrior(real, imag)
+        samples = cp.sample(n_samples)
+        self.assertTrue(np.all(samples.real < real.upper_bound))
+        self.assertTrue(np.all(samples.real > real.lower_bound))
+        self.assertTrue(np.all(samples.imag == imag))
 
 def test_scale_factor():
     p1 = Gaussian(3, 1)

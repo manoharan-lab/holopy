@@ -305,8 +305,9 @@ class ComplexPrior(Prior):
         return ComplexPrior(real, imag, self.name)
 
     def __multiply__(self, value):
-        # This doesn't work for complex "value"
-        return ComplexPrior(self.real * value, self.imag * value, self.name)
+        real = self.real * value.real - self.imag * value.imag
+        imag = self.real * value.imag + self.imag * value.real
+        return ComplexPrior(real, imag, self.name)
 
     def __neg__(self):
         return ComplexPrior(-self.real, -self.imag, self.name)
