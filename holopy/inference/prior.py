@@ -18,7 +18,7 @@
 
 import numpy as np
 from numpy import random
-from numbers import Number
+from numbers import Number, Real
 from scipy import stats
 
 from holopy.core.metadata import get_extents, get_spacing
@@ -42,13 +42,13 @@ class Prior(HoloPyObject):
             raise TypeError("Cannot add prior to objects of type {}".format(type(value)))
 
     def __mul__(self, value):
-        if isinstance(value, Number):
+        if isinstance(value, Real):
             if value > 0:
                 return self.__multiply__(value)
             elif value < 0:
                 return -self.__multiply__(-value)
             else:
-                TypeError("Cannot multiply a prior by 0")
+                raise TypeError("Cannot multiply a prior by 0")
         elif isinstance(value, np.ndarray):
             return np.array([self * val for val in value])
         else:
@@ -135,13 +135,16 @@ class Uniform(Prior):
         return random.uniform(self.lower_bound, self.upper_bound, size)
 
     def __addadd__(self, value):
-        return Uniform(self.lower_bound+value, self.upper_bound+value, self.name)
+        return Uniform(self.lower_bound+value, self.upper_bound+value,
+                       self.guess+value, name=self.name)
 
     def __multiply__(self, value):
-        return Uniform(self.lower_bound*value, self.upper_bound*value, self.name)
+        return Uniform(self.lower_bound*value, self.upper_bound*value,
+                       self.guess*value, self.name)
 
     def __neg__(self):
-        return Uniform(-self.upper_bound, -self.lower_bound)
+        return Uniform(-self.upper_bound, -self.lower_bound, -self.guess,
+                       self.name)
 
 class Gaussian(Prior):
     def __init__(self, mu, sd, name=None):
@@ -226,18 +229,23 @@ class BoundedGaussian(Gaussian):
         val = super().sample(size)
         out = True
         while np.any(out):
-            out = np.where(np.logical_or(val < self.lower_bound, val > self.upper_bound))
+            out = np.logical_or(val < self.lower_bound, val > self.upper_bound)
+            out = np.where(out)
             val[out] = super().sample(len(out[0]))
         return val
 
     def __addadd__(self, value):
-        return BoundedGaussian(self.mu+value, self.sd, self.lower_bound+value, self.upper_bound+value, self.name)
+        return BoundedGaussian(self.mu+value, self.sd, self.lower_bound+value,
+                               self.upper_bound+value, self.name)
 
     def __multiply__(self, value):
-        return BoundedGaussian(self.mu*value, self.sd*value, self.lower_bound*value, self.upper_bound*value, self.name)
+        return BoundedGaussian(self.mu*value, self.sd*value,
+                               self.lower_bound*value, self.upper_bound*value,
+                               self.name)
 
     def __neg__(self):
-        return BoundedGaussian(-self.mu, self.sd, -self.upper_bound, -self.lower_bound, self.name)
+        return BoundedGaussian(-self.mu, self.sd, -self.upper_bound,
+                               -self.lower_bound, self.name)
 
 
 class ComplexPrior(Prior):
@@ -299,15 +307,20 @@ class ComplexPrior(Prior):
                 return val
         return get_val(self.real) + 1.0j * get_val(self.imag)
 
+    def __add__(self, value):
+        if isinstance(self, ComplexPrior) and isinstance(value, ComplexPrior):
+            return self.__addadd__(value)
+        else:
+            return super().__add__(value)
+
     def __addadd__(self, value):
         real = self.real + np.real(value)
         imag = self.imag + np.imag(value)
         return ComplexPrior(real, imag, self.name)
 
     def __multiply__(self, value):
-        real = self.real * value.real - self.imag * value.imag
-        imag = self.real * value.imag + self.imag * value.real
-        return ComplexPrior(real, imag, self.name)
+        # doesn't work for complex 'value' but they are caught in Prior.__mul__
+        return ComplexPrior(self.real * value, self.imag * value, self.name)
 
     def __neg__(self):
         return ComplexPrior(-self.real, -self.imag, self.name)

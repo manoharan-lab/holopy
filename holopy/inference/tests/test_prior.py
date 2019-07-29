@@ -23,10 +23,10 @@ from numpy.testing import assert_raises, assert_equal, assert_allclose
 import numpy as np
 from nose.plugins.attrib import attr
 
-from holopy.inference.prior import (
-    Prior, Gaussian, Uniform, BoundedGaussian, ComplexPrior)
-from holopy.inference import prior
+from holopy.inference.prior import (Prior, Gaussian, Uniform, BoundedGaussian,
+    ComplexPrior, make_center_priors, updated, generate_guess)
 from holopy.inference.result import UncertainValue
+from holopy.core.metadata import data_grid
 from holopy.core.tests.common import assert_obj_close
 from holopy.scattering.errors import ParameterSpecificationError
 
@@ -164,7 +164,7 @@ class TestGaussian(unittest.TestCase):
     def test_prob(self):
         mean, sd = np.random.rand(2)
         g = Gaussian(mean, sd)
-        self.assertEqual(g.prob(mean), 1/np.sqrt(2*np.pi*sd**2))
+        self.assertTrue(np.allclose(g.prob(mean), 1/np.sqrt(2*np.pi*sd**2)))
         self.assertTrue(np.allclose(g.prob(mean+sd), np.exp(-1/2)/np.sqrt(2*np.pi*sd**2)))
 
     @attr("fast")
@@ -347,50 +347,126 @@ def test_scale_factor():
     assert_equal(p2.unscale(5), 10)
 
 def test_updated():
-    p=prior.BoundedGaussian(1,2,-1,2)    
+    p=BoundedGaussian(1,2,-1,2)
     d=UncertainValue(1,0.5,1)
-    u=prior.updated(p,d)
+    u=updated(p,d)
     assert_equal(u.guess,1)
     assert_obj_close(u.lnprob(0), GOLD_SIGMA)
 
-def test_prior_math():
-    u = Uniform(1,2)
-    g = Gaussian(1,2)
-    b = prior.BoundedGaussian(1,2,0,3)
+class TestPriorMath(unittest.TestCase):
+    @property
+    def u(self):
+        return Uniform(1, 2)
+    @property
+    def g(self):
+        return Gaussian(1, 2)
+    @property
+    def b(self):
+        return BoundedGaussian(1, 2, 0, 3)
+    @property
+    def c(self):
+        return ComplexPrior(self.u, self.g)
 
-    assert_equal(u+1, Uniform(2,3))
-    assert_equal(1+u, Uniform(2,3))
-    assert_equal(-u, Uniform(-2,-1))
-    assert_equal(1-u, Uniform(-1,0))
-    assert_equal(u-1, Uniform(0,1))
-    assert_equal(2*u, Uniform(2,4))
-    assert_equal(u*2, Uniform(2,4))
-    assert_equal(u/2, Uniform(0.5,1))
-    assert_equal(-1*u, Uniform(-2,-1))
-    assert_equal(u*(-1), Uniform(-2,-1))
+    @attr("fast")
+    def test_my_properties(self):
+        self.assertEqual(self.u, Uniform(1, 2))
+        self.assertEqual(self.g, Gaussian(1, 2))
+        self.assertEqual(self.b, BoundedGaussian(1, 2, 0, 3))
+        self.assertEqual(self.c, ComplexPrior(self.u, self.g))
 
-    assert_equal(g+1., Gaussian(2,2.))
-    assert_equal(-g, Gaussian(-1,2))
-    assert_equal(b+1., prior.BoundedGaussian(2.,2,1.,4.))
-    assert_equal(-b, prior.BoundedGaussian(-1,2,-3,0))
-    assert_equal(2*g, Gaussian(2,4))
-    assert_equal(g*2, Gaussian(2,4))
-    assert_equal(g/2, Gaussian(0.5,1))
-    assert_equal(-1*g, Gaussian(-1,2))
-    assert_equal(g*(-1), Gaussian(-1,2))
+    @attr("fast")
+    def test_no_zero_multiplication(self):
+        with self.assertRaises(TypeError):
+            self.u * 0
 
-    assert_equal(g+g, Gaussian(2,np.sqrt(8)))
-    assert_equal(g+np.array([0,1]),np.array([Gaussian(1,2), Gaussian(2,2)]))
-    assert_equal(g*np.array([1,2]),np.array([Gaussian(1,2), Gaussian(2,4)]))
+    @attr("fast")
+    def test_name_is_preserved(self):
+        name = 'dummy_name'
+        u = Uniform(0, 1, name=name)
+        self.assertEqual((u + 1).name, name)
+        self.assertEqual((u * 2).name, name)
+        self.assertEqual((-u).name, name)
 
-    with assert_raises(TypeError):
-        u+u
-    with assert_raises(TypeError):
-        g+b
-    with assert_raises(TypeError):
-        g+[0,1]
-    with assert_raises(TypeError):
-        g*g
+    @attr("fast")
+    def test_guess_is_adjusted(self):
+        u = Uniform(0, 1, 1)
+        self.assertEqual((u + 1).guess, 2)
+        self.assertEqual((u * 2).guess, 2)
+        self.assertEqual((-u).guess, -1)
+
+    @attr("fast")
+    def test_uniform_addition(self):
+        self.assertEqual(self.u + 1, Uniform(2, 3))
+        self.assertEqual(1 + self.u, Uniform(2, 3))
+        self.assertEqual(-self.u, Uniform(-2, -1))
+        self.assertEqual(1 - self.u, Uniform(-1, 0))
+        self.assertEqual(self.u - 1, Uniform(0, 1))
+
+    @attr("fast")
+    def test_uniform_multiplication(self):
+        self.assertEqual(2 * self.u, Uniform(2, 4))
+        self.assertEqual(self.u * 2, Uniform(2, 4))
+        self.assertEqual(self.u / 2, Uniform(0.5, 1))
+        self.assertEqual(-1 * self.u, Uniform(-2, -1))
+        self.assertEqual(self.u * (-1), Uniform(-2, -1))
+
+    @attr("fast")
+    def test_gaussian_constant_addition(self):
+        self.assertEqual(self.g + 1., Gaussian(2, 2.))
+        self.assertEqual(-self.g, Gaussian(-1, 2))
+
+    @attr("fast")
+    def test_gaussian_multiplication(self):
+        self.assertEqual(2 * self.g, Gaussian(2, 4))
+        self.assertEqual(self.g * 2, Gaussian(2, 4))
+        self.assertEqual(self.g / 2, Gaussian(0.5, 1))
+        self.assertEqual(-1 * self.g, Gaussian(-1, 2))
+        self.assertEqual(self.g * (-1), Gaussian(-1, 2))
+
+    @attr("fast")
+    def test_adding_2_gaussians(self):
+        self.assertEqual(self.g + self.g, Gaussian(2, np.sqrt(8)))
+        diff_name_sum = Gaussian(1, 2, 'a') + Gaussian(1, 2, 'b')
+        self.assertEqual(diff_name_sum.name, 'GaussianSum')
+
+    @attr("fast")
+    def test_bounded_gaussian(self):
+        self.assertEqual(self.b + 1., BoundedGaussian(2., 2, 1., 4.))
+        self.assertEqual(-self.b, BoundedGaussian(-1, 2, -3, 0))
+        self.assertEqual(2 * self.b, BoundedGaussian(2, 4, 0, 6))
+
+    @attr("fast")
+    def test_complex_prior(self):
+        self.assertEqual(self.c + 2 + 1j, ComplexPrior(self.u + 2, self.g + 1))
+        self.assertEqual(self.c + 2, ComplexPrior(self.u+2, self.g))
+        self.assertEqual(self.c * 2, ComplexPrior(self.u * 2, self.g *2))
+        self.assertEqual(-self.c, ComplexPrior(-self.u, -self.g))
+        cp = ComplexPrior(2, self.g)
+        self.assertEqual(self.c + cp, ComplexPrior(self.u+2, self.g + self.g))
+
+    @attr("fast")
+    def test_prior_array_math(self):
+        expected_sum = np.array([Gaussian(1, 2), Gaussian(2, 2)])
+        expected_product = np.array([Gaussian(1, 2), Gaussian(2, 4)])
+        self.assertTrue(np.all(self.g + np.array([0, 1]) == expected_sum))
+        self.assertTrue(np.all(self.g * np.array([1, 2]) == expected_product))
+
+    @attr("fast")
+    def test_invalid_math(self):
+        with self.assertRaises(TypeError):
+            self.u + self.u
+        with self.assertRaises(TypeError):
+            self.g + self.b
+        with self.assertRaises(TypeError):
+            self.g + [0,1]
+        with self.assertRaises(TypeError):
+            self.c + self.u
+        with self.assertRaises(TypeError):
+            self.c + self.g
+        with self.assertRaises(TypeError):
+            self.c * (1 + 1j)
+        with self.assertRaises(TypeError):
+            self.g * self.g
 
 def test_generate_guess():
     gold1 = np.array([[-0.091949, 0.270532], [-1.463350, 0.691041],
@@ -398,8 +474,40 @@ def test_generate_guess():
     gold2 = np.array([[-0.045974, 0.535266], [-0.731675, 0.745520],
         [0.540895, 0.510202], [-0.119662, 0.805975], [-0.245564, 0.405263]])
     pars = [Gaussian(0,1), Uniform(0,1,0.8)]
-    guess1 = prior.generate_guess(pars, 5, seed=22)
-    guess2 = prior.generate_guess(pars, 5, scaling=0.5, seed=22)
+    guess1 = generate_guess(pars, 5, seed=22)
+    guess2 = generate_guess(pars, 5, scaling=0.5, seed=22)
     assert_allclose(guess1, gold1, atol=1e-5)
     assert_allclose(guess2, gold2, atol=1e-5)
 
+class TestMakeCenterPriors(unittest.TestCase):
+    @property
+    def image(self):
+        img = np.zeros([4,4])
+        img[:3, 1:] = np.pad(np.zeros([1,1]), 1, 'constant', constant_values=1)
+        return data_grid(img, spacing=2)
+
+    @attr("fast")
+    def test_my_image(self):
+        self.assertTrue(np.allclose(self.image.values, np.array(
+            [[0,1,1,1],[0,1,0,1],[0,1,1,1],[0,0,0,0]])))
+
+    @attr("fast")
+    def test_basic(self):
+        expected = [Gaussian(0, 2), Gaussian(2, 2), Uniform(0, 40)]
+        evaluated = make_center_priors(self.image)
+        self.assertEqual(evaluated, expected)
+
+    def test_z_range_extents(self):
+        expected = [Gaussian(0, 2), Gaussian(2, 2), Uniform(0, 16)]
+        evaluated = make_center_priors(self.image, z_range_extents = 2)
+        self.assertEqual(evaluated, expected)
+
+    def test_xy_uncertainty(self):
+        expected = [Gaussian(0, 4), Gaussian(2, 4), Uniform(0, 40)]
+        evaluated = make_center_priors(self.image, xy_uncertainty_pixels = 2)
+        self.assertEqual(evaluated, expected)
+
+    def test_z_range_units(self):
+        expected = [Gaussian(0, 2), Gaussian(2, 2), Uniform(2, 10)]
+        evaluated = make_center_priors(self.image, z_range_units=(2, 10))
+        self.assertEqual(evaluated, expected)
