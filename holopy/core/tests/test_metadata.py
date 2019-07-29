@@ -559,6 +559,34 @@ class TestMakeSubsetData(unittest.TestCase):
             data, pixels=number_of_pixels_to_select, seed=seed)
         self.assertTrue(np.all(subset1.values == subset2.values))
 
+    @attr('fast')
+    def test_returns_correct_xy_coords(self):
+        data = make_data()
+        number_of_pixels_to_select = 3
+        subset = make_subset_data(data, pixels=number_of_pixels_to_select)
+
+        data_xy_indices = [
+            np.nonzero(data.values == from_subset)[1:]  # index[0] is z
+            for from_subset in subset.values]
+        for subset_index, data_xy_index in enumerate(data_xy_indices):
+            coords_from_subset = [
+                subset.coords[k].values[subset_index]
+                for k in 'xy']
+            coords_from_data = [
+                data.coords[k].values[data_xy_index[which].squeeze()]
+                for which, k in enumerate('xy')]
+            self.assertEqual(coords_from_subset, coords_from_data)
+
+    @attr('fast')
+    def test_returns_correct_z_coords(self):
+        data = make_data()
+        number_of_pixels_to_select = 3
+        subset = make_subset_data(data, pixels=number_of_pixels_to_select)
+
+        subset_z_coords = subset.coords['z'].values
+        data_z_coords = data.coords['z'].values
+        self.assertTrue(np.all(subset_z_coords == data_z_coords))
+
 
 def make_data(seed=1):
     np.random.seed(seed)
