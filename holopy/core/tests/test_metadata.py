@@ -251,7 +251,7 @@ class TestDetectorPoints(unittest.TestCase):
         self.assertEqual(points.normals.values.shape, (3, npts))
 
     @attr("fast")
-    @unittest.skip("Fails, not sure if test is wrong or code")
+    @unittest.skip("Fails. Not sure if test is wrong or code")
     def test_3xN_normals_are_stored_for_spherical_coords(self):
         npts = 13
         r, theta, phi = np.random.randn(3, npts)
@@ -379,7 +379,66 @@ class TestUpdateMetadata(unittest.TestCase):
         updated_detector = update_metadata(detector, noise_sd=noise_sd)
         self.assertEqual(updated_detector.noise_sd, noise_sd)
 
-    # FIXME add a test for normals....
+    @attr("fast")
+    def test_does_update_normals(self):
+        detector = detector_grid(3, 0.1)
+        np.random.seed(13)
+        normals = np.random.randn(3)
+        normals /= np.linalg.norm(normals)
+        updated_detector = update_metadata(detector, normals=normals)
+        self.assertTrue(np.all(updated_detector.normals.values == normals))
+
+    @attr("fast")
+    @unittest.skip("Fails")
+    def test_does_update_normals_for_points(self):
+        npts = 12
+        x = np.random.randn(npts)
+        y = np.random.randn(npts)
+        z = np.random.randn(npts)
+        points = detector_points(x=x, y=y, z=z)
+
+        np.random.seed(13)
+        normals = np.random.randn(3, npts)
+        normals /= np.linalg.norm(normals, axis=0).reshape(1, -1)
+        test = update_metadata(points, normals=normals)
+        self.assertTrue(np.all(test.normals.values == normals))
+
+    @attr("fast")
+    def test_raises_error_when_normals_are_incorrect_shape_for_grid(self):
+        detector = detector_grid(3, 0.1)
+        np.random.seed(13)
+        normals = np.random.randn(4)
+        normals /= np.linalg.norm(normals)
+        self.assertRaises(
+            ValueError, update_metadata, detector, normals=normals)
+
+    @attr("fast")
+    def test_raises_error_when_normals_are_transposed_for_points(self):
+        npts = 12
+        x = np.random.randn(npts)
+        y = np.random.randn(npts)
+        z = np.random.randn(npts)
+        points = detector_points(x=x, y=y, z=z)
+
+        np.random.seed(13)
+        normals = np.random.randn(npts, 3)
+        normals /= np.linalg.norm(normals, axis=1).reshape(-1, 1)
+        self.assertRaises(
+            ValueError, update_metadata, points, normals=normals)
+
+    @attr("fast")
+    def test_raises_error_when_normals_are_incorrect_shape_for_points(self):
+        npts = 12
+        x = np.random.randn(npts)
+        y = np.random.randn(npts)
+        z = np.random.randn(npts)
+        points = detector_points(x=x, y=y, z=z)
+
+        np.random.seed(13)
+        normals = np.random.randn(3, npts + 1)
+        normals /= np.linalg.norm(normals, axis=0).reshape(1, -1)
+        self.assertRaises(
+            ValueError, update_metadata, points, normals=normals)
 
 
 class TestGetSpacing(unittest.TestCase):
@@ -469,7 +528,7 @@ class TestGetExtents(unittest.TestCase):
         self.assertEqual(extents, true_extents)
 
     # FIXME the current get_extents does not work for a nonuniform spacing
-    # there should be a failing test like this:
+    # there should be a failing test:
 
 
 class TestCopyMetadata(unittest.TestCase):
