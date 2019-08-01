@@ -19,9 +19,6 @@ METADATA_VALUES = {
     }
 
 
-# TODO: test that:
-# update_metadata raises an error when things are not the correct shape
-#       (e.g. normals have 11 elements for a 10x10 detector)
 # FIXME questions:
 # data_grid, detector_grid, etc don't allow passing normals for each point.
 #       is that behavior correct?
@@ -526,9 +523,6 @@ class TestGetExtents(unittest.TestCase):
         detector = detector_grid(shape, spacing)
         extents = get_extents(detector)
         self.assertEqual(extents, true_extents)
-
-    # FIXME the current get_extents does not work for a nonuniform spacing
-    # there should be a failing test:
 
 
 class TestCopyMetadata(unittest.TestCase):
