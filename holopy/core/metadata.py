@@ -132,6 +132,8 @@ def detector_points(coords={}, x=None, y=None, z=None, r=None, theta=None,
     a digital camera.)
 
     """
+    if normals is not 'auto':
+        raise ValueError('Non-default normals not supported.')
     updatelist = {'x': x, 'y': y, 'z': z, 'r': r, 'theta': theta, 'phi': phi}
     coords = updated(coords, updatelist)
     if 'x' in coords and 'y' in coords:

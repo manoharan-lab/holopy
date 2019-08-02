@@ -19,11 +19,6 @@ METADATA_VALUES = {
     }
 
 
-# FIXME questions:
-# data_grid, detector_grid, etc don't allow passing normals for each point.
-#       is that behavior correct?
-
-
 class TestDetectorGrid(unittest.TestCase):
     @attr("fast")
     def test_pads_shape_with_leading_1(self):
@@ -232,8 +227,6 @@ class TestDetectorPoints(unittest.TestCase):
         points = detector_points(x=x, y=y, z=z, name=name)
         self.assertEqual(points.name, name)
 
-    # FIXME no checks for normal default values
-
     @attr("fast")
     def test_has_attribute_normals(self):
         x, y, z = np.random.randn(3, 10)
@@ -248,45 +241,20 @@ class TestDetectorPoints(unittest.TestCase):
         self.assertEqual(points.normals.values.shape, (3, npts))
 
     @attr("fast")
-    @unittest.skip("Fails. Not sure if test is wrong or code")
-    def test_3xN_normals_are_stored_for_spherical_coords(self):
+    def test_non_default_normals_not_supported(self):
         npts = 13
         r, theta, phi = np.random.randn(3, npts)
         normals = np.random.randn(3, npts)
-        points = detector_points(r=r, theta=theta, phi=phi, normals=normals)
-        self.assertEqual(points.normals.values.shape, (3, npts))
-        self.assertTrue(np.allclose(points.normals.values, normals, **TOLS))
+        self.assertRaisesRegex(
+            ValueError, 'Non-default normals not supported.',
+            detector_points, r=r, theta=theta, phi=phi, normals=normals)
 
     @attr("fast")
     def test_default_normals_are_shape_3_for_cartesian_coords(self):
         npts = 13
-        x, y, z= np.random.randn(3, npts)
+        x, y, z = np.random.randn(3, npts)
         points = detector_points(x=x, y=y, z=z)
         self.assertEqual(points.normals.values.shape, (3,))
-
-    @attr("fast")
-    def test_3x1_normals_are_stored_for_cartesian_coords(self):
-        npts = 13
-        x, y = np.random.randn(2, npts)
-        normals = np.random.randn(3)
-        normals /= np.linalg.norm(normals)
-        points = detector_points(x=x, y=y, normals=normals)
-        self.assertEqual(points.normals.values.shape, (3,))
-        self.assertTrue(np.allclose(points.normals.values, normals, **TOLS))
-
-    @attr("fast")
-    def test_3x1_normals_are_normalized(self):
-        npts = 13
-        x, y = np.random.randn(2, npts)
-        raw_normals = np.random.randn(3)
-        points = detector_points(x=x, y=y, normals=raw_normals)
-        normals = raw_normals / np.linalg.norm(raw_normals)
-        # They should be different from the raw, unnormmalized normals:
-        self.assertFalse(
-            np.allclose(points.normals.values, raw_normals, **TOLS))
-        # but the same as the normalized ones:
-        self.assertTrue(
-            np.allclose(points.normals.values, normals, **TOLS))
 
 
 class TestCleanConcat(unittest.TestCase):
