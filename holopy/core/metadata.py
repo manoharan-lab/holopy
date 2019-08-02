@@ -197,7 +197,8 @@ def update_metadata(a, medium_index=None, illum_wavelen=None,
         copy of input image with updated metadata. The 'normals' field
         is not allowed to be empty.
     """
-
+    if normals is not None and np.shape(normals) != (3,):
+        raise ValueError("``normals`` must be a vector of shape (3,)")
     attrlist = {'medium_index': medium_index,
                 'illum_wavelen': dict_to_array(a, illum_wavelen),
                 'illum_polarization': dict_to_array(
