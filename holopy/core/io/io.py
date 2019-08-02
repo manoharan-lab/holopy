@@ -20,6 +20,7 @@ Common entry point for holopy io.  Dispatches to the correct load/save
 functions.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.havard.edu>
+.. moduleauthor:: Ron Alexander <ralexander@g.harvard.edu>
 """
 import os
 import glob
@@ -34,7 +35,7 @@ from collections import OrderedDict
 from holopy.core.io import serialize
 from holopy.core.io.vis import display_image
 from holopy.core.metadata import (data_grid, get_spacing, update_metadata,
-                    copy_metadata, to_vector, illumination, clean_concat)
+                    copy_metadata, to_vector, illumination)
 from holopy.core.utils import ensure_array, dict_without
 from holopy.core.errors import NoMetadata, BadImage, LoadError
 from holopy.core.holopy_object import FullLoader# compatibility with pyyaml < 5
@@ -410,34 +411,82 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
         spacing = get_spacing(refimg)
 
     # read colour channels from refimg
+    channel_dict = {'0': 'red', '1': 'green', '2': 'blue'}
     if channel is None and refimg is not None and illumination in refimg.dims:
         channel = [i for i, col in enumerate(['red','green','blue']) if col in refimg[illumination].values]
 
-    accumulator = clean_concat([load_image(image, spacing, channel=channel) for image in filepath],'images')
-
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
+
+    # calculate the average
+    accumulator = Accumulator()
+    for path in filepath:
+        accumulator.push(load_image(path, spacing, channel=channel))
+    mean_image = accumulator.mean()
+
+    # calculate average noise from image
+    if noise_sd is None and len(filepath) > 1:
+        if channel:
+            noise_sd = xr.DataArray(accumulator.cv(),
+                                    [[channel_dict[str(ch)] for ch in channel]],
+                                    ['illumination'])
+        else:
+            noise_sd = ensure_array(accumulator.cv())
 
     # crop according to refimg dimensions
     if refimg is not None:
         def extent(i):
             name = ['x','y'][i]
             return np.around(refimg[name].values/spacing[i]).astype('int')
-        accumulator = accumulator.isel(x=extent(0), y=extent(1))
-        accumulator['x'] = refimg.x
-        accumulator['y'] = refimg.y
-
-    # calculate the average
-    mean = accumulator.mean('images')
-
-    # calculate average noise from image
-    if noise_sd is None and len(filepath) > 1:
-        noise_sd = ensure_array((accumulator.std('images')/mean).mean(('x','y','z')))
-    accumulator = mean
+        mean_image = mean_image.isel(x=extent(0), y=extent(1))
+        mean_image['x'] = refimg.x
+        mean_image['y'] = refimg.y
 
     # copy metadata from refimg
     if refimg is not None:
-        accumulator = copy_metadata(refimg, accumulator, do_coords=False)
+        mean_image = copy_metadata(refimg, mean_image, do_coords=False)
 
     # overwrite metadata from refimg with provided values
-    return update_metadata(accumulator, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)
+    return update_metadata(mean_image, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)
+
+
+class Accumulator:
+    """Calculates average and coefficient of variance for numerical data in
+    one pass using Welford's algorithim.
+    """
+    def __init__(self):
+        self._n = 0
+        self._running_mean = None
+        self._running_var = None
+
+    def push(self, x):
+        self._n += 1
+
+        if self._n == 1:
+            self._running_var = x * 0.0
+            self._running_mean = self._running_var + x
+        else:
+            self._running_var += ((x - self._running_mean) *
+             ((x - (self._running_mean + (x - self._running_mean) / self._n))))
+            self._running_mean += (x - self._running_mean) / self._n
+
+    def mean(self):
+        return self._running_mean if self._running_mean is not None else 0.0
+
+    def cv(self):
+        """ The coefficient of variation
+        """
+        if self._n == 0:
+            return None
+        else:
+            try: # If data is a multicolor hologram, average over first 3 dims
+                return np.mean(np.array(self._std() / self.mean()),
+                               axis=(0, 1, 2))
+            except IndexError:
+                return np.mean(np.array(self._std() / self.mean()))
+
+    def _std(self):
+        if self._n == 0:
+            return None
+        else:
+            return np.sqrt(self._running_var / (self._n))

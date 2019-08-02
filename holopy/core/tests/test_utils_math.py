@@ -20,16 +20,17 @@ import os
 import shutil
 import unittest
 import tempfile
-from multiprocessing.pool import Pool
+import multiprocessing as mp
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose
 from nose.plugins.attrib import attr
 import xarray as xr
-from schwimmbad import MultiPool, SerialPool, pool
+from schwimmbad import MultiPool, pool, MPIPool
 
 from holopy.core.utils import (
-    ensure_array, ensure_listlike, mkdir_p, choose_pool)
+    ensure_array, ensure_listlike, ensure_scalar, mkdir_p, dict_without,
+    updated, repeat_sing_dims, choose_pool)
 from holopy.core.math import (
     rotate_points, rotation_matrix, transform_cartesian_to_spherical,
     transform_spherical_to_cartesian, transform_cartesian_to_cylindrical,
@@ -40,6 +41,13 @@ from holopy.core.tests.common import assert_obj_close, get_example_data
 
 
 TOLS = {'atol': 1e-14, 'rtol': 1e-14}
+
+class DummyPool():
+    def __init__(self, index_val):
+        self.index_val = index_val
+    def map():
+        return None
+
 
 class TestCoordinateTransformations(unittest.TestCase):
     @attr("fast")
@@ -238,37 +246,50 @@ def test_rotation_matrix_degrees():
     assert_allclose(rotation_matrix(180., 180., 180., radians = False),
                     rotation_matrix(np.pi, np.pi, np.pi))
 
-
 #test utils
-@attr('fast')
-def test_ensure_array():
-    assert_equal(ensure_array(1.0), np.array([1.0]))
-    assert_equal(ensure_array([1.0]), np.array([1.0]))
-    assert_equal(ensure_array(np.array([1.0])), np.array([1.0]))
-    len(ensure_array(1.0))
-    len(ensure_array(np.array(1.0)))
-    len(ensure_array([1.0]))
-    len(ensure_array(False))
-    len(ensure_array(xr.DataArray([12],dims='a',coords={'a':['b']})))
-    len(ensure_array(xr.DataArray([12],dims='a',coords={'a':['b']}).sel(a=['b'])))
-    len(ensure_array(xr.DataArray(12)))
+
+class TestEnsureArray(unittest.TestCase):
+    @attr("fast")
+    def test_None_is_unchanged(self):
+        self.assertTrue(ensure_array(None) is None)
+
+    @attr("fast")
+    def test_xarray_is_unchanged(self):
+        xr_array = xr.DataArray([2], dims='a', coords={'a':['b']})
+        self.assertTrue(xr_array.equals(ensure_array(xr_array)))
+
+    @attr("fast")
+    def test_listlike(self):
+        self.assertEqual(ensure_array([1]), np.array([1]))
+        self.assertEqual(ensure_array((1)), np.array([1]))
+        self.assertEqual(ensure_array(np.array([1])), np.array([1]))
+
+    @attr("fast")
+    def test_xarrays_without_coords(self):
+        self.assertEqual(ensure_array(xr.DataArray(1)), np.array([1]))
+        self.assertEqual(ensure_array(xr.DataArray([1])), np.array([1]))
+
+    @attr("fast")
+    def test_zero_d_objects(self):
+        self.assertEqual(ensure_array(1), np.array([1]))
+        self.assertEqual(ensure_array(np.array(1)), np.array([1]))
+        zero_d_xarray = xr.DataArray(2, coords={'a':'b'})
+        xr_array = xr.DataArray([2], dims='a', coords={'a':['b']})
+        self.assertTrue(xr_array.equals(ensure_array(zero_d_xarray)))
 
 
-def test_choose_pool():
-    class dummy():
-        def map():
-            return None
-    assert not isinstance(choose_pool(None), (pool.BasePool, Pool))
-    assert isinstance(choose_pool(2), MultiPool)
-    assert isinstance(choose_pool('all'), MultiPool)
-    assert isinstance(choose_pool('auto'), (pool.BasePool, Pool))
-    assert not isinstance(choose_pool(dummy), (pool.BasePool, Pool))
+class TestListUtils(unittest.TestCase):
+    @attr('fast')
+    def test_ensure_listlike(self):
+        self.assertEqual(ensure_listlike(None), [])
+        self.assertEqual(ensure_listlike(1), [1])
+        self.assertEqual(ensure_listlike([1]), [1])
 
-
-@attr('fast')
-def test_ensure_listlike():
-    assert ensure_listlike(None) == []
-
+    @attr('fast')
+    def test_ensure_scalar(self):
+        self.assertEqual(ensure_scalar(1), 1)
+        self.assertEqual(ensure_scalar(np.array(1)), 1)
+        self.assertEqual(ensure_scalar(np.array([1])), 1)
 
 @attr("fast")
 def test_mkdir_p():
@@ -276,3 +297,118 @@ def test_mkdir_p():
     mkdir_p(os.path.join(tempdir, 'a', 'b'))
     mkdir_p(os.path.join(tempdir, 'a', 'b'))
     shutil.rmtree(tempdir)
+
+
+class TestDictionaryUtils(unittest.TestCase):
+    @attr("fast")
+    def test_dict_without(self):
+        input_dict = {'a':1, 'b':2, 'c':3, 'd':4}
+        output_dict = dict_without(input_dict, ['a','d','e'])
+        self.assertEqual(input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
+        self.assertEqual(output_dict, {'b':2, 'c':3})
+
+    @attr("fast")
+    def test_updated_basic(self):
+        input_dict = {'a':1, 'b':2, 'c':3, 'd':4}
+        update_dict = {'c':5, 'd':None, 'e':6}
+        output_dict = updated(input_dict, update_dict)
+        self.assertEqual(input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
+        self.assertEqual(output_dict, {'a':1, 'b':2, 'c':5, 'd':4, 'e':6})
+
+    @attr("fast")
+    def test_updated_keep_None(self):
+        input_dict = {'a':1, 'b':2, 'c':3, 'd':4}
+        update_dict = {'c':5, 'd':None, 'e':6}
+        output_dict = updated(input_dict, update_dict, False)
+        self.assertEqual(input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
+        self.assertEqual(output_dict, {'a':1, 'b':2, 'c':5, 'd':None, 'e':6})
+
+    @attr("fast")
+    def test_updated_from_kw(self):
+        input_dict = {'a':1, 'b':2, 'c':3, 'd':4}
+        output_dict = updated(input_dict, b=7, c=None, e=8)
+        self.assertEqual(input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
+        self.assertEqual(output_dict, {'a':1, 'b':7, 'c':3, 'd':4, 'e':8})
+
+    @attr("fast")
+    def test_kw_takes_priority(self):
+        input_dict = {'a':1, 'b':2, 'c':3, 'd':4}
+        update_dict = {'c':5, 'd':None, 'e':6}
+        output_dict = updated(input_dict, update_dict, b=7, e=8)
+        self.assertEqual(input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
+        self.assertEqual(output_dict, {'a':1, 'b':7, 'c':5, 'd':4, 'e':8})
+
+
+class TestRepeatSingDims(unittest.TestCase):
+    # these tests compare dictionaries containing numpy arrays
+    # using np.testing.assert_equal to avoid errors.
+    @attr("fast")
+    def test_all_keys(self):
+        input_dict = {'x':[0], 'y':[1], 'z':[0,1,2]}
+        output_dict = {'x':np.array([0, 0, 0]), 'y':np.array([1, 1, 1]),
+                      'z':[0, 1, 2]}
+        np.testing.assert_equal(repeat_sing_dims(input_dict), output_dict)
+
+    @attr("fast")
+    def test_input_isnt_modified(self):
+        input_dict = {'x':[0], 'y':[1], 'z':[0,1,2]}
+        repeat_sing_dims(input_dict)
+        self.assertEqual(input_dict, {'x':[0], 'y':[1], 'z':[0,1,2]})
+
+    @attr("fast")
+    def test_repeat_some_keys(self):
+        input_dict = {'x':[0], 'y':[1], 'z':[0,1,2]}
+        output_dict ={'x':np.array([0,0,0]), 'y':[1], 'z':[0, 1, 2]}
+        repeated = repeat_sing_dims(input_dict, ['x', 'z'])
+        np.testing.assert_equal(repeated, output_dict)
+
+    @attr("fast")
+    def test_nothing_to_repeat(self):
+        input_dict = {'x':[0], 'y':[1], 'z':[0,1,2]}
+        repeated = repeat_sing_dims(input_dict, ['x', 'y'])
+        self.assertEqual(repeated, input_dict)
+
+
+class TestChoosePool(unittest.TestCase):
+    @attr("fast")
+    def test_custom_pool(self):
+        custom_pool = DummyPool(17)
+        chosen_pool = choose_pool(custom_pool)
+        self.assertTrue(choose_pool(custom_pool) is custom_pool)
+
+    @attr("fast")
+    def test_multiprocessing_pool(self):
+        mp_pool = mp.pool.Pool(5)
+        self.assertTrue(choose_pool(mp_pool) is mp_pool)
+
+    @attr("fast")
+    def test_nonepool(self):
+        none_pool = choose_pool(None)
+        self.assertFalse(isinstance(none_pool, (pool.BasePool, mp.pool.Pool)))
+        self.assertEqual(list(none_pool.map(len, [[0,1,2],'asdf'])), [3, 4])
+        self.assertTrue(hasattr(none_pool, "close"))
+
+    @attr("fast")
+    def test_counting_all_cores(self):
+        all_pool = choose_pool('all')
+        self.assertTrue(isinstance(all_pool, MultiPool))
+        self.assertEqual(all_pool._processes, mp.cpu_count())
+
+    @attr("fast")
+    def test_schwimmbad_multipool(self):
+        multi_pool = choose_pool(5)
+        self.assertTrue(isinstance(multi_pool, MultiPool))
+        self.assertEqual(multi_pool._processes, 5)
+
+    @attr("fast")
+    def test_MPI(self):
+        if MPIPool.enabled():
+            mpi_pool = choose_pool('mpi')
+            self.assertTrue(isinstance(mpi_pool, MPIPool))
+        else:
+            self.assertRaises(ValueError, choose_pool, 'mpi')
+
+    @attr("fast")
+    def test_auto(self):
+        auto_pool = choose_pool('auto')
+        self.assertTrue(isinstance(auto_pool, (pool.BasePool, mp.pool.Pool)))

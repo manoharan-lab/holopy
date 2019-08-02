@@ -42,6 +42,23 @@ class MockTheory(ScatteringTheory):
         return np.ones(positions.shape, dtype='complex128')
 
 
+class MockScatteringMatrixBasedTheory(ScatteringTheory):
+    """Minimally-functional daughter of ScatteringTheory which
+    uses the scattering matrix pathway, for fast tests.
+    Smells like a Rayleigh scatterer, just for fun. But it's not"""
+    def __init__(*args, **kwargs):
+        pass  # an init is necessary for the repr
+
+    def _can_handle(self, scatterer):
+        return isinstance(scatterer, Sphere)
+
+    def _raw_scat_matrs(self, scatterer, positions, *args, **kwargs):
+        strength = scatterer.n * scatterer.r
+        scattering_matrix = np.array(
+            [np.eye(2) for _ in range(positions.shape[1])])
+        return strength * scattering_matrix.astype('complex128')
+
+
 class TestTransformToDesiredCoords(unittest.TestCase):
     @attr("fast")
     def test_transform_to_desired_coordinates(self):
@@ -271,6 +288,24 @@ class TestScatteringTheory(unittest.TestCase):
         for cls in [ScatteringTheory, Mie, MockTheory]:
             self.assertTrue(cls.desired_coordinate_system == 'spherical')
 
+    @attr("fast")
+    def test_scattering_matrix_pathway_returns_correct_type(self):
+        theory = MockScatteringMatrixBasedTheory()
+        fields = theory.calculate_scattered_field(SPHERE, XSCHEMA)
+        correct_shape = (XSCHEMA.values.size, 3)
+        self.assertTrue(type(fields) is xr.DataArray)
+        self.assertTrue(fields.shape == correct_shape)
+
+    @attr("fast")
+    def test_scattering_matrix_pathway_returns_linear_in_scatmatrs(self):
+        theory = MockScatteringMatrixBasedTheory()
+        sphere01 = Sphere(n=1.5, r=1.0, center=(0, 0, 2))
+        sphere02 = Sphere(n=1.5, r=2.0, center=(0, 0, 2))
+        fields01 = theory.calculate_scattered_field(sphere01, XSCHEMA)
+        fields02 = theory.calculate_scattered_field(sphere02, XSCHEMA)
+        self.assertTrue(
+            np.allclose(fields02.values, 2 * fields01.values, **TOLS))
+
 
 class TestMockTheory(unittest.TestCase):
     @attr("fast")
@@ -329,6 +364,48 @@ class TestMockTheory(unittest.TestCase):
             illum_polarization)
 
         self.assertTrue(fields.dtype.name == 'complex128')
+
+
+class TestMockScatteringMatrixBasedTheory(unittest.TestCase):
+    @attr("fast")
+    def test_creation(self):
+        theory = MockScatteringMatrixBasedTheory()
+        self.assertTrue(theory is not None)
+
+    @attr("fast")
+    def test_can_handle_sphere(self):
+        theory = MockScatteringMatrixBasedTheory()
+        self.assertTrue(theory._can_handle(SPHERE))
+
+    @attr("fast")
+    def test_cannot_handle_spheres(self):
+        theory = MockScatteringMatrixBasedTheory()
+        self.assertFalse(theory._can_handle(SPHERES))
+
+    @attr("fast")
+    def test_raw_scat_matrs_returns_correct_shape(self):
+        theory = MockScatteringMatrixBasedTheory()
+        positions = np.random.randn(3, 65)
+        scattering_matrices = theory._raw_scat_matrs(SPHERE, positions)
+        self.assertTrue(scattering_matrices.shape == (positions.shape[1], 2, 2))
+
+    @attr("fast")
+    def test_raw_scat_matrs_returns_eyes(self):
+        theory = MockScatteringMatrixBasedTheory()
+        positions = np.random.randn(3, 65)
+        scattering_matrices = theory._raw_scat_matrs(SPHERE, positions)
+        eye = np.eye(2)
+        each_is_eye = [
+            np.isclose(np.diag(m).std(), 0, **TOLS)
+            for m in scattering_matrices]
+        self.assertTrue(all(each_is_eye))
+
+    @attr("fast")
+    def test_raw_fields_returns_dtype_complex(self):
+        theory = MockScatteringMatrixBasedTheory()
+        positions = np.random.randn(3, 65)
+        scattering_matrices = theory._raw_scat_matrs(SPHERE, positions)
+        self.assertTrue(scattering_matrices.dtype.name == 'complex128')
 
 
 if __name__ == '__main__':
