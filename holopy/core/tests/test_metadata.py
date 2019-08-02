@@ -431,13 +431,13 @@ class TestGetSpacing(unittest.TestCase):
 class TestGetExtents(unittest.TestCase):
     @attr('fast')
     def test_returns_empty_when_dims_is_point(self):
-        # FIXME is this the desired behavior, to return {}?
         x = np.linspace(0, 1, 11)
         y = np.linspace(0, 1, 11)
         points = detector_points(x=x, y=y)
 
-        extents = get_extents(points)
-        self.assertEqual(extents, {})
+        msg = "Cannot get extent for detector_points"
+        self.assertRaisesRegex(
+            ValueError, msg, get_extents, points)
 
     @attr('fast')
     def test_on_detector_grid_when_spacing_is_isotropic(self):

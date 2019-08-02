@@ -229,6 +229,8 @@ def get_spacing(im):
 
 
 def get_extents(im):
+    if np.ndim(im) == 1:
+        raise ValueError("Cannot get extent for detector_points")
     def get_extent(d):
         if len(im[d]) < 2:
             return 0
