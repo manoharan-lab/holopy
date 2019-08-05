@@ -19,7 +19,8 @@
 
 import unittest
 
-from numpy.testing import assert_raises, assert_equal, assert_allclose
+from scipy.stats import kstest
+from numpy.testing import assert_equal, assert_allclose
 import numpy as np
 from nose.plugins.attrib import attr
 
@@ -27,20 +28,24 @@ from holopy.inference.prior import (Prior, Gaussian, Uniform, BoundedGaussian,
     ComplexPrior, make_center_priors, updated, generate_guess)
 from holopy.inference.result import UncertainValue
 from holopy.core.metadata import data_grid
-from holopy.core.tests.common import assert_obj_close
 from holopy.scattering.errors import ParameterSpecificationError
 
-GOLD_SIGMA = -1.4189385332 #log(sqrt(0.5/pi))-1/2
+GOLD_SIGMA = -1.4189385332  # log(sqrt(0.5/pi))-1/2
+
 
 class TestBasics(unittest.TestCase):
     @attr("fast")
     def test_cannot_instantiate_baseclass(self):
         self.assertRaises(NotImplementedError, Prior)
 
+
 class TestUniform(unittest.TestCase):
     @attr("fast")
     def test_construction(self):
-        parameters = {'lower_bound':1, 'upper_bound':3, 'guess':2, 'name':'a'}
+        parameters = {'lower_bound': 1,
+                      'upper_bound': 3,
+                      'guess': 2,
+                      'name': 'a'}
         u = Uniform(*parameters.values())
         self.assertTrue(isinstance(u, Prior))
         for key, val in parameters.items():
@@ -58,27 +63,27 @@ class TestUniform(unittest.TestCase):
 
     @attr("fast")
     def test_interval_calculation(self):
-        bounds = np.random.rand(2) + np.array([0,1])
+        bounds = np.random.rand(2) + np.array([0, 1])
         u = Uniform(*bounds)
         self.assertEqual(u.interval, np.diff(bounds))
 
     @attr("fast")
     def test_interval_is_property(self):
-        bounds = np.random.rand(2) + np.array([0,1])
+        bounds = np.random.rand(2) + np.array([0, 1])
         u = Uniform(*bounds)
         self.assertRaises(AttributeError, setattr, u, 'interval', 2)
 
     @attr("fast")
     def test_prob(self):
-        bounds = np.random.rand(2) + np.array([0,1])
+        bounds = np.random.rand(2) + np.array([0, 1])
         u = Uniform(*bounds)
         self.assertEqual(u.prob(0), 0)
         self.assertEqual(u.prob(2), 0)
-        self.assertEqual(u.prob(1), 1/np.diff(bounds))
+        self.assertAlmostEqual(u.prob(1), 1/np.diff(bounds))
 
     @attr("fast")
     def test_lnprob(self):
-        bounds = np.random.rand(2) + np.array([0,1])
+        bounds = np.random.rand(2) + np.array([0, 1])
         u = Uniform(*bounds)
         self.assertEqual(u.lnprob(0), -np.inf)
         self.assertEqual(u.lnprob(2), -np.inf)
@@ -87,7 +92,7 @@ class TestUniform(unittest.TestCase):
     @attr("fast")
     def test_sample_shape(self):
         n_samples = 7
-        bounds = np.random.rand(2) + np.array([0,1])
+        bounds = np.random.rand(2) + np.array([0, 1])
         u = Uniform(*bounds)
         samples = u.sample(n_samples)
         self.assertEqual(samples.shape, np.array(n_samples))
@@ -96,18 +101,17 @@ class TestUniform(unittest.TestCase):
 
     @attr("medium")
     def test_sample_distribution(self):
-        n_samples = 100000
-        n_quantiles = 10
-        bounds = np.random.rand(2) + np.array([0,1])
+        n_samples = 1000
+        np.random.seed(805)
+        bounds = np.random.rand(2) + np.array([0, 1])
         u = Uniform(*bounds)
         samples = u.sample(n_samples)
-        quantiles = np.quantile(samples, np.linspace(0, 1, n_quantiles))
-        calc_quantiles = np.linspace(*bounds, n_quantiles)
-        self.assertTrue(np.allclose(quantiles, calc_quantiles, atol=0.01))
+        p_val = kstest(samples, 'uniform', (bounds[0], np.diff(bounds)))[1]
+        self.assertTrue(p_val > 0.05)
 
     @attr("fast")
     def test_auto_guess(self):
-        bounds = np.random.rand(2) + np.array([0,1])
+        bounds = np.random.rand(2) + np.array([0, 1])
         u = Uniform(*bounds)
         self.assertEqual(u.guess, np.mean(bounds))
 
@@ -135,7 +139,7 @@ class TestUniform(unittest.TestCase):
 class TestGaussian(unittest.TestCase):
     @attr("fast")
     def test_construction(self):
-        parameters = {'mu':1, 'sd':3, 'name':'a'}
+        parameters = {'mu': 1, 'sd': 3, 'name': 'a'}
         g = Gaussian(*parameters.values())
         self.assertTrue(isinstance(g, Prior))
         for key, val in parameters.items():
@@ -158,14 +162,16 @@ class TestGaussian(unittest.TestCase):
         mean = np.random.rand()
         g = Gaussian(mean, 1)
         self.assertEqual(g.guess, mean)
-        self.assertRaises(AttributeError, setattr, g, 'guess', 2) # property
+        self.assertRaises(AttributeError, setattr, g, 'guess', 2)  # property
 
     @attr("fast")
     def test_prob(self):
+        np.random.seed(992)
         mean, sd = np.random.rand(2)
         g = Gaussian(mean, sd)
-        self.assertTrue(np.allclose(g.prob(mean), 1/np.sqrt(2*np.pi*sd**2)))
-        self.assertTrue(np.allclose(g.prob(mean+sd), np.exp(-1/2)/np.sqrt(2*np.pi*sd**2)))
+        norm = 1/np.sqrt(2 * np.pi * sd**2)
+        self.assertTrue(np.allclose(g.prob(mean), norm))
+        self.assertTrue(np.allclose(g.prob(mean+sd), np.exp(-1/2) * norm))
 
     @attr("fast")
     def test_lnprob(self):
@@ -177,18 +183,20 @@ class TestGaussian(unittest.TestCase):
     @attr("medium")
     def test_sample(self):
         n_samples = 10000
+        np.random.seed(37)
         mean, sd = np.random.rand(2)
         g = Gaussian(mean, sd)
         samples = g.sample(n_samples)
-        self.assertTrue(np.allclose(mean, samples.mean(), atol=0.01))
+        mean_sd = sd/np.sqrt(n_samples)  # by central limit theorem
+        self.assertTrue(np.allclose(mean, samples.mean(), atol=3*mean_sd))
         self.assertTrue(np.allclose(sd, samples.std(ddof=1), atol=0.01))
 
 
 class TestBoundedGaussian(unittest.TestCase):
     @attr("fast")
     def test_construction(self):
-        parameters = {'mu':1, 'sd':3,
-                      'lower_bound':0, 'upper_bound':2, 'name':'a'}
+        parameters = {'mu': 1, 'sd': 3,
+                      'lower_bound': 0, 'upper_bound': 2, 'name': 'a'}
         bg = BoundedGaussian(*parameters.values())
         self.assertTrue(isinstance(bg, Gaussian))
         for key, val in parameters.items():
@@ -196,7 +204,7 @@ class TestBoundedGaussian(unittest.TestCase):
 
     @attr("fast")
     def test_bound_constraints(self):
-        for bounds in [(-1, 0), (2, 3), (1,1)]:
+        for bounds in [(-1, 0), (2, 3), (1, 1)]:
             self.assertRaises(
                 ParameterSpecificationError, BoundedGaussian, 1, 1, *bounds)
 
@@ -234,7 +242,7 @@ class TestBoundedGaussian(unittest.TestCase):
 class TestComplexPrior(unittest.TestCase):
     @attr("fast")
     def test_construction(self):
-        parameters = {'real':Uniform(1, 2), 'imag':3, 'name':'a'}
+        parameters = {'real': Uniform(1, 2), 'imag': 3, 'name': 'a'}
         cp = ComplexPrior(*parameters.values())
         self.assertTrue(isinstance(cp, Prior))
         for key, val in parameters.items():
@@ -242,14 +250,14 @@ class TestComplexPrior(unittest.TestCase):
 
     @attr("fast")
     def test_guess_2_priors(self):
-        real = Uniform(*(np.random.rand(2) + np.array([0,1])))
-        imag = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        real = Uniform(*(np.random.rand(2) + np.array([0, 1])))
+        imag = Uniform(*(np.random.rand(2) + np.array([0, 1])))
         cp = ComplexPrior(real, imag)
         self.assertEqual(cp.guess, real.guess + 1.0j * imag.guess)
 
     @attr("fast")
     def test_guess_fixed_imag(self):
-        real = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        real = Uniform(*(np.random.rand(2) + np.array([0, 1])))
         imag = np.random.rand()
         cp = ComplexPrior(real, imag)
         self.assertEqual(cp.guess, real.guess + 1.0j * imag)
@@ -257,14 +265,14 @@ class TestComplexPrior(unittest.TestCase):
     @attr("fast")
     def test_guess_fixed_real(self):
         real = np.random.rand()
-        imag = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        imag = Uniform(*(np.random.rand(2) + np.array([0, 1])))
         cp = ComplexPrior(real, imag)
         self.assertEqual(cp.guess, real + 1.0j * imag.guess)
 
     @attr("fast")
     def test_lnprob_2_priors(self):
-        real = Uniform(*np.random.rand(2) + np.array([0,1]))
-        imag = Uniform(*np.random.rand(2) + np.array([0,1]))
+        real = Uniform(*np.random.rand(2) + np.array([0, 1]))
+        imag = Uniform(*np.random.rand(2) + np.array([0, 1]))
         cp = ComplexPrior(real, imag)
         self.assertEqual(cp.lnprob(1), -np.inf)
         self.assertEqual(cp.lnprob(1.0j), -np.inf)
@@ -272,7 +280,7 @@ class TestComplexPrior(unittest.TestCase):
 
     @attr("fast")
     def test_lnprob_fixed_imag(self):
-        real = Uniform(*np.random.rand(2) + np.array([0,1]))
+        real = Uniform(*np.random.rand(2) + np.array([0, 1]))
         imag = np.random.rand()
         cp = ComplexPrior(real, imag)
         self.assertEqual(cp.lnprob(1), real.lnprob(1))
@@ -282,7 +290,7 @@ class TestComplexPrior(unittest.TestCase):
     @attr("fast")
     def test_lnprob_fixed_real(self):
         real = np.random.rand()
-        imag = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        imag = Uniform(*(np.random.rand(2) + np.array([0, 1])))
         cp = ComplexPrior(real, imag)
         self.assertEqual(cp.lnprob(1), -np.inf)
         self.assertEqual(cp.lnprob(1.0j), imag.lnprob(1))
@@ -290,18 +298,18 @@ class TestComplexPrior(unittest.TestCase):
 
     @attr("fast")
     def test_prob_2_priors(self):
-        real = Uniform(*(np.random.rand(2) + np.array([0,1])))
-        imag = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        real = Uniform(*(np.random.rand(2) + np.array([0, 1])))
+        imag = Uniform(*(np.random.rand(2) + np.array([0, 1])))
         cp = ComplexPrior(real, imag)
         self.assertEqual(cp.prob(1), 0)
         self.assertEqual(cp.prob(1.0j), 0)
-        self.assertEqual(cp.prob(1 + 1.0j), real.prob(1) * imag.prob(1))
+        self.assertAlmostEqual(cp.prob(1 + 1.0j), real.prob(1) * imag.prob(1))
 
     @attr("fast")
     def test_sample_2_priors(self):
         n_samples = 10
-        real = Uniform(*(np.random.rand(2) + np.array([0,1])))
-        imag = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        real = Uniform(*(np.random.rand(2) + np.array([0, 1])))
+        imag = Uniform(*(np.random.rand(2) + np.array([0, 1])))
         cp = ComplexPrior(real, imag)
         samples = cp.sample(n_samples)
         self.assertTrue(np.all(samples.real < real.upper_bound))
@@ -309,12 +317,11 @@ class TestComplexPrior(unittest.TestCase):
         self.assertTrue(np.all(samples.imag < imag.upper_bound))
         self.assertTrue(np.all(samples.imag > imag.lower_bound))
 
-
     @attr("fast")
     def test_sample_fixed_real(self):
         n_samples = 10
         real = np.random.rand()
-        imag = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        imag = Uniform(*(np.random.rand(2) + np.array([0, 1])))
         cp = ComplexPrior(real, imag)
         samples = cp.sample(n_samples)
         self.assertTrue(np.all(samples.real == real))
@@ -324,13 +331,14 @@ class TestComplexPrior(unittest.TestCase):
     @attr("fast")
     def test_sample_fixed_imag(self):
         n_samples = 10
-        real = Uniform(*(np.random.rand(2) + np.array([0,1])))
+        real = Uniform(*(np.random.rand(2) + np.array([0, 1])))
         imag = np.random.rand()
         cp = ComplexPrior(real, imag)
         samples = cp.sample(n_samples)
         self.assertTrue(np.all(samples.real < real.upper_bound))
         self.assertTrue(np.all(samples.real > real.lower_bound))
         self.assertTrue(np.all(samples.imag == imag))
+
 
 def test_scale_factor():
     p1 = Gaussian(3, 1)
@@ -346,12 +354,14 @@ def test_scale_factor():
     assert_equal(p2.scale(10), 5)
     assert_equal(p2.unscale(5), 10)
 
+
 def test_updated():
-    p=BoundedGaussian(1,2,-1,2)
-    d=UncertainValue(1,0.5,1)
-    u=updated(p,d)
-    assert_equal(u.guess,1)
-    assert_obj_close(u.lnprob(0), GOLD_SIGMA)
+    p = BoundedGaussian(1, 2, -1, 2)
+    d = UncertainValue(1, 0.5, 1)
+    u = updated(p, d)
+    assert_equal(u.guess, 1)
+    assert_allclose(u.lnprob(0), GOLD_SIGMA)
+
 
 class TestPriorMath(unittest.TestCase):
     @property
@@ -438,8 +448,8 @@ class TestPriorMath(unittest.TestCase):
     @attr("fast")
     def test_complex_prior(self):
         self.assertEqual(self.c + 2 + 1j, ComplexPrior(self.u + 2, self.g + 1))
-        self.assertEqual(self.c + 2, ComplexPrior(self.u+2, self.g))
-        self.assertEqual(self.c * 2, ComplexPrior(self.u * 2, self.g *2))
+        self.assertEqual(self.c + 2, ComplexPrior(self.u + 2, self.g))
+        self.assertEqual(self.c * 2, ComplexPrior(self.u * 2, self.g * 2))
         self.assertEqual(-self.c, ComplexPrior(-self.u, -self.g))
         cp = ComplexPrior(2, self.g)
         self.assertEqual(self.c + cp, ComplexPrior(self.u+2, self.g + self.g))
@@ -458,7 +468,7 @@ class TestPriorMath(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.g + self.b
         with self.assertRaises(TypeError):
-            self.g + [0,1]
+            self.g + [0, 1]
         with self.assertRaises(TypeError):
             self.c + self.u
         with self.assertRaises(TypeError):
@@ -468,28 +478,30 @@ class TestPriorMath(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.g * self.g
 
+
 def test_generate_guess():
     gold1 = np.array([[-0.091949, 0.270532], [-1.463350, 0.691041],
         [1.081791, 0.220404], [-0.239325, 0.811950], [-0.491129, 0.010526]])
     gold2 = np.array([[-0.045974, 0.535266], [-0.731675, 0.745520],
         [0.540895, 0.510202], [-0.119662, 0.805975], [-0.245564, 0.405263]])
-    pars = [Gaussian(0,1), Uniform(0,1,0.8)]
+    pars = [Gaussian(0, 1), Uniform(0, 1, 0.8)]
     guess1 = generate_guess(pars, 5, seed=22)
     guess2 = generate_guess(pars, 5, scaling=0.5, seed=22)
     assert_allclose(guess1, gold1, atol=1e-5)
     assert_allclose(guess2, gold2, atol=1e-5)
 
+
 class TestMakeCenterPriors(unittest.TestCase):
     @property
     def image(self):
-        img = np.zeros([4,4])
+        img = np.zeros([4, 4])
         img[:3, 1:] = np.pad(np.zeros([1,1]), 1, 'constant', constant_values=1)
         return data_grid(img, spacing=2)
 
     @attr("fast")
     def test_my_image(self):
         self.assertTrue(np.allclose(self.image.values, np.array(
-            [[0,1,1,1],[0,1,0,1],[0,1,1,1],[0,0,0,0]])))
+            [[0, 1, 1, 1], [0, 1, 0, 1], [0, 1, 1, 1], [0, 0, 0, 0]])))
 
     @attr("fast")
     def test_basic(self):
@@ -499,15 +511,20 @@ class TestMakeCenterPriors(unittest.TestCase):
 
     def test_z_range_extents(self):
         expected = [Gaussian(0, 2), Gaussian(2, 2), Uniform(0, 16)]
-        evaluated = make_center_priors(self.image, z_range_extents = 2)
+        evaluated = make_center_priors(self.image, z_range_extents=2)
         self.assertEqual(evaluated, expected)
 
     def test_xy_uncertainty(self):
         expected = [Gaussian(0, 4), Gaussian(2, 4), Uniform(0, 40)]
-        evaluated = make_center_priors(self.image, xy_uncertainty_pixels = 2)
+        evaluated = make_center_priors(self.image, xy_uncertainty_pixels=2)
         self.assertEqual(evaluated, expected)
 
     def test_z_range_units(self):
         expected = [Gaussian(0, 2), Gaussian(2, 2), Uniform(2, 10)]
         evaluated = make_center_priors(self.image, z_range_units=(2, 10))
         self.assertEqual(evaluated, expected)
+
+
+if __name__ == '__main__':
+    unittest.main()
+
