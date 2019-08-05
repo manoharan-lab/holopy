@@ -547,7 +547,7 @@ class TestMakeSubsetData(unittest.TestCase):
         self.assertEqual(subset.size, number_of_pixels_to_select)
 
     @attr("fast")
-    @unittes.skip("subset_data fails for detector_points")  # FIXME
+    @unittest.skip("subset_data fails for detector_points")  # FIXME
     def test_returns_correct_number_of_pixels_on_detector_points(self):
         points = make_points()
         number_of_pixels_to_select = 3
