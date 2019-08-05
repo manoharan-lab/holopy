@@ -159,6 +159,18 @@ def detector_points(coords={}, x=None, y=None, z=None, r=None, theta=None,
 
 
 def clean_concat(arrays, dim):
+    """Concatenate a list of xr.DataArray objects along a specified dimension,
+    keeping the metadata of the first array.
+
+    Parameters
+    ----------
+    arrays : list of ``xr.xarray``
+    dim : valid dimension (string)
+
+    Returns
+    -------
+    xarray
+    """
     attrs = arrays[0].attrs
     arrays = [
         array.assign_attrs(
