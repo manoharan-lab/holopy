@@ -246,9 +246,9 @@ def get_extents(im):
     def get_extent(d):
         if len(im[d]) < 2:
             return 0
-        # Add one extra spacing since the xarray coords are right edge only,
-        # but we actually want right edge of first pixel to left edge of last
-        # pixel
+        # Add one extra spacing since xarray coords are taken to be at
+        # pixel centers, but we actually want right edge of first pixel
+        # to left edge of last pixel
         return float(im[d][-1] - im[d][0] + np.diff(im[d]).mean())
     return {d: get_extent(d) for d in ['x', 'y', 'z'] if d in im.dims}
 
