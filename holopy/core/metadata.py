@@ -293,7 +293,7 @@ def make_subset_data(data, random_subset=None, pixels=None,
         raise ValueError("You can only specify one of pixels or random_subset")
     if seed is not None:
         np.random.seed(seed)
-    tot_pix = len(data.x)*len(data.y)
+    tot_pix = len(data.x) * len(data.y)
     if pixels is not None:
         n_sel = pixels
     else:

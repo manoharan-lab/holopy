@@ -547,6 +547,14 @@ class TestMakeSubsetData(unittest.TestCase):
         self.assertEqual(subset.size, number_of_pixels_to_select)
 
     @attr("fast")
+    @unittes.skip("subset_data fails for detector_points")  # FIXME
+    def test_returns_correct_number_of_pixels_on_detector_points(self):
+        points = make_points()
+        number_of_pixels_to_select = 3
+        subset = make_subset_data(points, pixels=number_of_pixels_to_select)
+        self.assertEqual(subset.size, number_of_pixels_to_select)
+
+    @attr("fast")
     def test_returns_elements_of_data(self):
         data = make_data()
         number_of_pixels_to_select = 3
@@ -601,6 +609,19 @@ def make_data(seed=1):
     data = detector_grid(shape, 0.1)
     data.values[:] = data_values
     return data
+
+
+def make_points(seed=1):
+    np.random.seed(seed)
+    npts = 21
+    x = np.random.randn(npts)
+    y = np.random.randn(npts)
+    z = np.random.randn(npts)
+
+    points = detector_points(x=x, y=y, z=z)
+    data_values = np.random.randn(npts)
+    points.values[:] = data_values
+    return points
 
 
 def make_metadata():
