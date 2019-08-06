@@ -17,6 +17,7 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import importlib
 import tempfile
 import os
 import shutil
@@ -33,12 +34,17 @@ from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 import holopy as hp
 from holopy.core import load, save, load_image, save_image
 from holopy.core.errors import NoMetadata
+from holopy.core.io import load_average, get_example_data_path
+from holopy.core.io.io import Accumulator
 from holopy.core.process import normalize
 from holopy.core.metadata import get_spacing, copy_metadata
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.tests.common import (
     assert_obj_close, assert_read_matches_write, get_example_data)
 
+
+IMAGE01_METADATA = {'spacing': 0.0851, 'medium_index': 1.33,
+                    'illum_wavelen': 0.66, 'illum_polarization':  (1,0)}
 
 class test_loading_and_saving(unittest.TestCase):
     def setUp(self):
@@ -183,9 +189,110 @@ class test_custom_yaml_output(unittest.TestCase):
         # only a & c appear because b is None, d is not in __init__ signature
         assert yaml.dump(instantiated) == '!S\na: 1\nc: 3\n'
 
-class TestLoadMieLensData(unittest.TestCase):
-    def test_load_image0000(self):
-        imagepath = hp.core.io.get_example_data_path('ps_image_B0000.tif')
-        metadata  = {'spacing': 0.1755, 'medium_index': 1.33, 'illum_wavelen': 0.66, 'illum_polarization': (1,0)}
-        raw_holo = hp.load_image(imagepath, **metadata)
-        assert True
+
+class TestMemoryUsage(unittest.TestCase):
+    @unittest.skipIf(not importlib.util.find_spec('memory_profiler'),
+                     'memory_profiler is reqruired for this test')
+    @unittest.expectedFailure
+    def test_load_average_doesnt_use_excess_mem(self):
+        # TODO: Why does load_average use so much memory?
+        # See manoharan-lab/holopy#267
+        import memory_profiler
+        refimg = _load_raw_example_data()
+        paths = get_example_data_path(['bg01.jpg', 'bg02.jpg', 'bg03.jpg'])
+        usage = memory_profiler.memory_usage((load_average, (paths, refimg,)),
+                                             interval=1e-5)
+        peak_usage = np.ptp(usage)
+        images = _load_example_data_backgrounds()
+        expected_usage = sum([im.nbytes / 1e6 for im in images]) # Size in MB
+        self.assertTrue(peak_usage < expected_usage * 1.1)
+
+
+class TestAccumulator(unittest.TestCase):
+    @attr("fast")
+    def test_push(self):
+        accumulator = Accumulator()
+        data  = np.arange(10)
+        for point in data: accumulator.push(point)
+        self.assertTrue(accumulator._n == 10)
+
+    @attr("fast")
+    def test_push_hologram(self):
+        accumulator = Accumulator()
+        data = _load_example_data_backgrounds()
+        for holo in data: accumulator.push(holo)
+        self.assertTrue(accumulator._n == 3)
+
+    @attr("fast")
+    def test_mean(self):
+        accumulator = Accumulator()
+        data = np.arange(10)
+        for point in data: accumulator.push(point)
+        self.assertTrue(accumulator.mean() == np.mean(data))
+
+    @attr("fast")
+    def test_mean_hologram_value(self):
+        accumulator = Accumulator()
+        data = _load_example_data_backgrounds()
+        for holo in data: accumulator.push(holo)
+        numpy_mean = np.mean([holo.values for holo in data], axis=0)
+        self.assertTrue(np.allclose(numpy_mean, accumulator.mean().values))
+
+    def test_mean_hologram_type(self):
+        import xarray
+        expected_type = xarray.core.dataarray.DataArray
+        accumulator = Accumulator()
+        data = _load_example_data_backgrounds()
+        for holo in data: accumulator.push(holo)
+        self.assertTrue(isinstance(accumulator.mean(), expected_type))
+
+    @attr("fast")
+    def test_std(self):
+        accumulator = Accumulator()
+        data = np.arange(10)
+        for point in data: accumulator.push(point)
+        self.assertTrue(accumulator._std() == np.std(data))
+
+    @attr("fast")
+    def test_std_no_data(self):
+        accumulator = Accumulator()
+        self.assertTrue(accumulator._std() is None)
+
+    @attr("fast")
+    def test_cv(self):
+        accumulator = Accumulator()
+        data = np.arange(10)
+        for point in data: accumulator.push(point)
+        self.assertTrue(accumulator.cv() == np.std(data) / np.mean(data))
+
+    @attr("fast")
+    def test_cv_no_data(self):
+        accumulator = Accumulator()
+        self.assertTrue(accumulator.cv() is None)
+
+    def test_calculate_hologram_noise_sd(self):
+        accumulator = Accumulator()
+        refimg = _load_raw_example_data()
+        paths = get_example_data_path(['bg01.jpg', 'bg02.jpg', 'bg03.jpg'])
+        bg = load_average(paths, refimg)
+        # This value is from the legacy version of load_average
+        self.assertTrue(np.allclose(bg.noise_sd, 0.00709834))
+
+    def test_2_colour_noise_sd(self):
+        paths = get_example_data_path(['2colourbg0.jpg', '2colourbg1.jpg',
+                                       '2colourbg2.jpg', '2colourbg3.jpg'])
+        image = load_average(paths, spacing=1, channel=[0,1])
+        gold_noise = [0.06864433355667054, 0.04913377621162473]
+        noise = [image.noise_sd.loc[colour].item() for colour in ['green', 'red']]
+        self.assertTrue(np.allclose(gold_noise, noise))
+
+def _load_raw_example_data():
+    imagepath = get_example_data_path('image01.jpg')
+    return load_image(imagepath, **IMAGE01_METADATA)
+
+def _load_example_data_backgrounds():
+    bgpath = get_example_data_path(['bg01.jpg', 'bg02.jpg', 'bg03.jpg'])
+    return [load_image(path, **IMAGE01_METADATA) for path in bgpath]
+
+if __name__ == '__main__':
+    unittest.main()
