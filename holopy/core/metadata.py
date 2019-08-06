@@ -282,20 +282,13 @@ def copy_metadata(old, data, do_coords=True):
     return new
 
 
-def make_subset_data(data, random_subset=None, pixels=None,
-                     return_selection=False, seed=None):
-    if random_subset is None and pixels is None:
+def make_subset_data(data, pixels=None, return_selection=False, seed=None):
+    if pixels is None:
         return data
-    if random_subset is not None and pixels is not None:
-        raise ValueError("You can only specify one of pixels or random_subset")
     if seed is not None:
         np.random.seed(seed)
     tot_pix = len(data.x) * len(data.y)
-    if pixels is not None:
-        n_sel = pixels
-    else:
-        n_sel = int(np.ceil(tot_pix*random_subset))
-    selection = np.random.choice(tot_pix, n_sel, replace=False)
+    selection = np.random.choice(tot_pix, pixels, replace=False)
     subset = flat(data).isel(flat=selection)
     subset = copy_metadata(data, subset, do_coords=False)
 
