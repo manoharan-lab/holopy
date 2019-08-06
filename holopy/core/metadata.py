@@ -265,10 +265,7 @@ def copy_metadata(old, data, do_coords=True):
 
     new = data.copy()
 
-    old_is_xarray = (
-        hasattr(old, 'attrs') and
-        hasattr(old, 'name') and
-        hasattr(old, 'coords'))
+    old_is_xarray = isinstance(old, xr.DataArray)
     if old_is_xarray:
         if not hasattr(new, 'coords'):
             # new is a numpy array, not xarray
