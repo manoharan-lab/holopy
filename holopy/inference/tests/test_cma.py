@@ -20,10 +20,10 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 from holopy.inference.cmaes import run_cma, CmaStrategy
-from holopy.inference.model import BaseModel
+from holopy.inference.model import Model
 from holopy.inference import prior
 
-class SimpleModel(BaseModel):
+class SimpleModel(Model):
     def __init__(self, x=prior.Uniform(0,1), y=prior.Uniform(0,1)):
         self._parameters = [x,y]
 

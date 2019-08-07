@@ -32,7 +32,7 @@ from holopy.scattering.scatterer import (_expand_parameters,
                                          _interpret_parameters)
 from holopy.inference.prior import Prior, Uniform, generate_guess
 
-class BaseModel(HoloPyObject):
+class Model(HoloPyObject):
     """Model probabilites of observing data
 
     Compute probabilities that observed data could be explained by a set of
@@ -195,7 +195,7 @@ class LimitOverlaps(HoloPyObject):
         return s.largest_overlap() <= ((np.min(s.r) * 2) * self.fraction)
 
 
-class AlphaModel(BaseModel):
+class AlphaModel(Model):
     """
     Model of hologram image formation with scaling parameter alpha.
     """
@@ -237,7 +237,7 @@ class AlphaModel(BaseModel):
 # pass MieLens as a theory
 # For now it would be OK since PerfectLensModel only works with single
 # spheres or superpositions, but I'm going to leave this for later.
-class ExactModel(BaseModel):
+class ExactModel(Model):
     """
     Model of arbitrary scattering function given by calc_func.
     """
@@ -268,7 +268,7 @@ class ExactModel(BaseModel):
             return -np.inf
 
 
-class PerfectLensModel(BaseModel):
+class PerfectLensModel(Model):
     """
     Model of hologram image formation through a high-NA objective.
     """

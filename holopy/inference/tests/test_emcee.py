@@ -29,7 +29,7 @@ from holopy.core.process import normalize
 from holopy.core.tests.common import assert_obj_close, get_example_data
 from holopy.scattering import Sphere, Mie
 from holopy.inference import prior
-from holopy.inference.model import AlphaModel, BaseModel, PerfectLensModel
+from holopy.inference.model import AlphaModel, Model, PerfectLensModel
 from holopy.inference.emcee import sample_emcee, EmceeStrategy
 
 
@@ -38,7 +38,7 @@ class testEmcee(unittest.TestCase):
     def test_BaseModel_lnprior(self):
         scat = Sphere(r=prior.Gaussian(1, 1), n=prior.Gaussian(1, 1),
                       center=[10, 10, 10])
-        mod = BaseModel(scat, noise_sd=0.1)
+        mod = Model(scat, noise_sd=0.1)
         # Desired: log(sqrt(0.5/pi))-1/2
         desired_sigma = -1.4189385332
         assert_obj_close(mod.lnprior({'n': 0, 'r': 0}), desired_sigma * 2)
@@ -96,7 +96,7 @@ class TestSubsetTempering(unittest.TestCase):
         self.assertTrue(is_ok)
 
 
-class SimpleModel(BaseModel):
+class SimpleModel(Model):
     def __init__(self, x=prior.Uniform(0, 1)):
         self._parameters = [x]
 
