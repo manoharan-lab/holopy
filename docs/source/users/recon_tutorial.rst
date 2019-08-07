@@ -49,12 +49,14 @@ The actual propagation is accomplished with :func:`.propagate`:
 ..  testcode::
     :hide:
     
-    print(rec_vol.values[0,0,0])
+    print(rec_vol.values[0,0,0].real)
+    print(rec_vol.values[0,0,0].imag)
 
 ..  testoutput::
     :hide:
 
-    (0.9196428571428571+0j)
+    0.9196428571...
+    0
 
 
 Here, HoloPy has projected the hologram image through space to each of the distances contained in ``zstack`` by using the metadata that we 
@@ -133,9 +135,11 @@ propagated. For example, to propagate in three steps over each distance, we writ
 ..  testcode::
     :hide:
 
-    print(rec_vol.values[0,0,0])
+    print(rec_vol.values[0,0,0].real)
+    print(rec_vol.values[0,0,0].imag)
 
 ..  testoutput::
     :hide:
 
-    (0.9196428571428571+0j)
+    0.91964285714...
+    0
