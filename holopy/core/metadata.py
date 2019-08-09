@@ -358,8 +358,8 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None,
 
     Notes
     -----
-    Use of higher-level detector_grid() and detector_points() functions is
-    recommended.
+    Use the higher-level detector_grid() and detector_points() functions.
+    This should be viewed as a factory method.
     """
 
     if spacing is None:
