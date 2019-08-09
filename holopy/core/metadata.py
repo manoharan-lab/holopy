@@ -230,9 +230,10 @@ def update_metadata(a, medium_index=None, illum_wavelen=None,
     return b
 
 
-def get_spacing(im):
-    xspacing = np.diff(im.x)
-    yspacing = np.diff(im.y)
+def get_spacing(detector_grid):
+    """Find the (x, y) spacing for a ```detector_grid```."""
+    xspacing = np.diff(detector_grid.x)
+    yspacing = np.diff(detector_grid.y)
     if not (np.allclose(xspacing[0], xspacing) and
             np.allclose(yspacing[0], yspacing)):
         msg = "array has nonuniform spacing, can't determine a single spacing"
@@ -240,20 +241,39 @@ def get_spacing(im):
     return np.array((xspacing[0], yspacing[0]))
 
 
-def get_extents(im):
-    if np.ndim(im) == 1:
+def get_extents(detector_grid):
+    """Find the x, y, z extent of a ```detector_grid```, as a dict."""
+    if np.ndim(detector_grid) == 1:
         raise ValueError("Cannot get extent for detector_points")
     def get_extent(d):
-        if len(im[d]) < 2:
+        if len(detector_grid[d]) < 2:
             return 0
         # Add one extra spacing since xarray coords are taken to be at
         # pixel centers, but we actually want right edge of first pixel
         # to left edge of last pixel
-        return float(im[d][-1] - im[d][0] + np.diff(im[d]).mean())
-    return {d: get_extent(d) for d in ['x', 'y', 'z'] if d in im.dims}
+        return float(
+            detector_grid[d][-1] - detector_grid[d][0] +
+            np.diff(detector_grid[d]).mean())
+    return {d: get_extent(d)
+            for d in ['x', 'y', 'z'] if d in detector_grid.dims}
 
 
 def copy_metadata(old, data, do_coords=True):
+    """
+    Create a new `xarray` with data from one input and metadata from another.
+
+    Parameters
+    ----------
+    old : `xr.DataArray`
+        The xarray to copy the metadata from.
+    data : `xr.DataArray`
+        The xarray to copy the data from.
+    do_coords : bool, optional
+        Whether or not to copy the coordinates. Default is True
+
+    Returns
+    `xr.DataArray`
+    """
 
     def find_and_rename(oldkey, oldval):
         for newkey, newval in new.coords.items():
@@ -283,6 +303,26 @@ def copy_metadata(old, data, do_coords=True):
 
 
 def make_subset_data(data, pixels=None, return_selection=False, seed=None):
+    """Sub-sample a data for faster inference.
+
+    Parameters
+    ----------
+    data : `xr.DataArray`
+        The data to subsample
+    pixels : int, optional
+        The number of pixels to subsample. Defaults to the entire image.
+    return_selection : bool, optional
+        Whether to return the pixel indices which were sampled.
+        Default is False
+    seed : int or None, optional
+        If not None, the seed to seed the random number generator with.
+
+    Returns
+    -------
+    subset : `xr.DataArray`
+
+    [selection : np.ndarray, dtype int]
+    """
     if pixels is None:
         return data
     if seed is not None:
