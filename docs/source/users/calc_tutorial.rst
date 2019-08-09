@@ -22,7 +22,7 @@ plane wave scattering from a microsphere.
    :scale: 300 %
    :alt: Calculated hologram of a single sphere.
 
-We'll examine each section of code in turn.  The first few lines :
+(You may need to call `matplotlib.pyplot.show()` if you can't see the hologram after running this code.) We'll examine each section of code in turn.  The first few lines :
 
 ..  testcode::
 
