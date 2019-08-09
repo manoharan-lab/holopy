@@ -30,6 +30,7 @@ EPS = 1e-6
 
 
 class Prior(HoloPyObject):
+    """Base class for Bayesian priors in holopy."""
 
     def __init__(self):
         raise NotImplementedError("Use subclass with a defined probability"
@@ -83,6 +84,19 @@ class Prior(HoloPyObject):
 
 class Uniform(Prior):
     def __init__(self, lower_bound, upper_bound, guess=None, name=None):
+        """
+        Uniform prior.
+
+        Parameters
+        ----------
+        lower_bouund, upper_bound : float
+        guess : float or None, optional
+            The value to take as an initial guess from the prior. If
+            guess is None, defaults to the midpoint of the prior for
+            most cases.
+        name : string or None, optional
+            The name of the parameter.
+        """
         if lower_bound >= upper_bound:
             raise ParameterSpecificationError(
                     "Lower bound {} is not less than upper bound {}".format(
@@ -154,6 +168,16 @@ class Uniform(Prior):
 
 class Gaussian(Prior):
     def __init__(self, mu, sd, name=None):
+        """
+        Gaussian prior.
+
+        Parameters
+        ----------
+        mu, sd : float
+            The mean and standard deviation of the Gaussian.
+        name : string or None, optional
+            The name of the parameter.
+        """
         self.mu = mu
         self.sd = sd
         if sd <= 0:
@@ -211,7 +235,20 @@ class Gaussian(Prior):
 
 class BoundedGaussian(Gaussian):
     # Note: this is not normalized
-    def __init__(self, mu, sd, lower_bound=-np.inf, upper_bound=np.inf, name=None):
+    def __init__(self, mu, sd, lower_bound=-np.inf, upper_bound=np.inf,
+                 name=None):
+        """
+        Gaussian prior restricted to an interval
+
+        Parameters
+        ----------
+        mu, sd : float
+            The mean and standard deviation of the Gaussian.
+        lower_bouund, upper_bound : float, optional
+            Defaults to +- infinity.
+        name : string or None, optional
+            The name of the parameter.
+        """
 
         if mu < lower_bound or mu > upper_bound or lower_bound == upper_bound:
             raise ParameterSpecificationError(
