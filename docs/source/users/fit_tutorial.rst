@@ -21,7 +21,7 @@ in the tutorial on :ref:`load_tutorial`.
     from holopy.core.io import get_example_data_path, load_average
     from holopy.core.process import bg_correct, subimage, normalize
     from holopy.scattering import Sphere, Spheres, calc_holo
-    from holopy.inference import (find_MAP, prior, ExactModel, CmaStrategy)
+    from holopy.inference import (fit, sample, prior, ExactModel, CmaStrategy)
 
     # load an image
     imagepath = get_example_data_path('image01.jpg')
@@ -56,15 +56,13 @@ its radius, but hold its refractive index fixed.
 
 ..  testcode::
 
-    fit_result = find_MAP(data_holo, guess_sphere, parameters=['x', 'y', 'z', 'r'])
+    fit_result = fit(data_holo, guess_sphere, parameters=['x', 'y', 'z', 'r'])
     
-The :func:`.find_MAP` function automatically runs :func:`.calc_holo` on many
+The :func:`.fit` function automatically runs :func:`.calc_holo` on many
 different sets of parameter values to find the combination that gives the best
-match to the experimental ``data_holo``, called the
-*maximum a-posteriori probability* or MAP values of the fitting parameters. We
-get back a :class:`.FitResult` object that knows how to summarize the results
-of the fitting calculation in various ways, and can be saved to a file with
-``hp.save`` :
+match to the experimental ``data_holo``. We get back a :class:`.FitResult`
+object that knows how to summarize the results of the fitting calculation in
+various ways, and can be saved to a file with ``hp.save`` :
 
 ..  testcode::
 
@@ -97,11 +95,11 @@ we can set bounds on the coordinate parameters and and use a Gaussian prior
     z = prior.Uniform(10, 20)
     par_sphere = Sphere(n=1.58, r=prior.Gaussian(0.5, 0.05), center=[x, y, z])
     model = ExactModel(scatterer=par_sphere, calc_func=calc_holo)
-    fit_result = find_MAP(data_holo, model)
+    fit_result = fit(data_holo, model)
 
 Here we have used an :class:`.ExactModel` which takes a function ``calc_func``
-to apply on the scatterer (we have used :func:`.calc_holo` here).
-The :class:`.ExactModel` is the default for :func:`.find_MAP` but HoloPy also
+to apply on the :class:`.Scatterer` (we have used :func:`.calc_holo` here).
+The :class:`.ExactModel` is the default for :func:`.fit` but HoloPy also
 includes :class:`.AlphaModel` and :class:`.PerfectLensModel`, which describe
 specific models of hologram image formation. They take additional parameters
 that allow for a more sophisticated calculation than a basic call to
@@ -123,7 +121,7 @@ such as specifying a complex refractive index :
 
     n = prior.ComplexPrior(real=prior.Gaussian(1.58, 0.02), imag=1e-4)
 
-When this is used to define a :class:`.Sphere`, :func:`.find_MAP` will fit to
+When this is used to define a :class:`.Sphere`, :func:`.fit` will fit to
 the real part of index of refraction while holding the imaginary part fixed.
 You could fit it as well by specifying a :class:`.Prior` for ``imag``.
 
@@ -155,12 +153,12 @@ approach and formalism used by HoloPy are described in more detail in
 see [Gregory2005]_.
 
 A sampling calculation uses the same model and data as the fitting calculation
-in the preceding section, but we replace the function :func:`.find_MAP` with
-:func:`.sample_posterior` instead. Note that this calculation without further
+in the preceding section, but we replace the function :func:`.fit` with
+:func:`.sample` instead. Note that this calculation without further
 modifications might take an unreasonably long time! There are some tips on how
 to speed up the calculation further down on this page.
 
-The :func:`.sample_posterior` calculation returns a :class:`.SamplingResult`
+The :func:`.sample` calculation returns a :class:`.SamplingResult`
 object, which is similar to the :class:`.FitResult` returned by
 :func:`.point_estimate`, but with some additional features. We can access the
 sampled parameter values and calculated log-probabilities with
@@ -177,56 +175,56 @@ an initial guess.
 
 Customizing the algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-The :func:`.find_MAP` and :func:`sample_posterior` functions follow algorithms
-that determine which sets of parameter values to simulate and compare to the
-experimental data. You can specify a different algorithm by passing a
-*strategy* keyword into either function. Options for :func:`.find_MAP`
-currently include the default Levenberg-Marquardt (``strategy="nmpfit"``), as
-well as cma-es (``strategy="cma"``) and scipy least squares
-(``strategy="scipy lsq"``). Options for :func:`.sample_posterior` include the
-default without tempering (``strategy="emcee"``) or tempering by changing the
-number of pixels evaluated (``strategy="subset tempering"``) or Monte Carlo
-temperature (``strategy="parallel tempering"``) [not currently implemented].
+The :func:`.fit` and :func:`sample` functions follow algorithms that determine
+which sets of parameter values to simulate and compare to the experimental
+data. You can specify a different algorithm by passing a *strategy* keyword
+into either function. Options for :func:`.fit` currently include the default
+Levenberg-Marquardt (``strategy="nmpfit"``), as well as cma-es
+(``strategy="cma"``) and scipy least squares (``strategy="scipy lsq"``).
+Options for :func:`.sample` include the default without tempering
+(``strategy="emcee"``) or tempering by changing the number of pixels evaluated (``strategy="subset tempering"``) or Monte Carlo temperature
+(``strategy="parallel tempering"``) [not currently implemented].
 
 Each of these algorithms runs with a set of default values, but these may need
 to be adjusted for your particular situation. For example, you may want to set
 a random seed, control parallel computations, customize an initial guess, or
 specify hyperparameters of the algorithm. To use non-default settings, you must
-define an :class:`.InferenceStrategy` object for the algorithm you would like
-to use. You can save the strategy to a file for use in future calculations or
-modify it in place during an interactive session.
+define an :class:`.FittingStrategy` or :class:`.SamplingStrategy`object for
+the algorithm you would like to use. You can save the strategy to a file for
+use in future calculations or modify it in place during an interactive session.
 
 ..  testcode::
 
     cma_fit_strategy = CmaStrategy(popsize=15, parallel=None)
     cma_fit_strategy.seed = 1234
     hp.save('cma_strategy_file.h5', cma_fit_strategy)
-    strategy_result = cma_fit_strategy.find_MAP(data_holo, model)
+    strategy_result = model.fit(data_holo, cma_fit_strategy)
     
-Running the :meth:`.CmaStrategy.find_MAP` method is the same as calling
-:func:`.find_MAP`, but with the option to customize how the algorithm runs. In
-the example above, we have adjusted the ``popsize`` hyperparameter of the
-cma-es algorithm, prevented the calculation from running as a paralell
-computation, and set a random seed for reproducibility. The calculation returns
-a :class:`.FitResult` object, just like a direct call to :func:`.find_MAP`.
+Running the :meth:`.Model.fit` method is the same as calling
+:func:`.fit`, but with the option to customize how the algorithm runs through
+the :class:`.FittingStrategy` object. In the example above, we have adjusted
+the ``popsize`` hyperparameter of the cma-es algorithm, prevented the
+calculation from running as a paralell computation, and set a random seed for
+reproducibility. The calculation returns a :class:`.FitResult` object, just
+like a direct call to :func:`.fit`.
 
-Similarly, we can customize a MCMC computation to sample a posterior by
-instantiating an appropriate class and calling its ``sample_posterior`` method.
-Here we perform a MCMC calculation that uses only 500 pixels in the image and
-runs for 2000 samples. We set the initial walker distribution to be one tenth
-of the prior width.
+Similarly, we can customize a MCMC computation to sample a posterior by calling
+:meth:`.Model.sample` with an :class:`.SamplingStrategy` object. Here we
+perform a MCMC calculation that uses only 500 pixels in the image and runs for
+2000 samples. We set the initial walker distribution to be one tenth of the
+prior width.
 
 ..  testcode::
 
         emcee_strategy = EmceeStrategy(npixels=500, nsamples=2000)
         emcee_strategy.initial_distribution_scaling = 0.1
         hp.save('emcee_strategy_file.h5', emcee_strategy)
-        emcee_result = emcee_strategy.sample_posterior(data_holo, model)
+        emcee_result = model.sample(data_holo, emcee_strategy)
 
 Random Subset Fitting
 ---------------------
-In the most recent example, we only evaluated the holograms at the locations of
-only 500 pixels in the experimental image. This is because a hologram usually
+In the most recent example, we evaluated the holograms at the locations of only
+500 pixels in the experimental image. This is because a hologram usually
 contains far more information than is needed to estimate your parameters of
 interest. Because of this, you can often get a significantly faster fit with
 little or no loss in accuracy by fitting to only a random fraction of the
