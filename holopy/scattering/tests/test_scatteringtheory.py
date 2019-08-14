@@ -104,7 +104,7 @@ class TestScatteringTheory(unittest.TestCase):
         self.assertTrue(np.all(flat_schema.y.values == fields.y.values))
         self.assertTrue(np.all(flat_schema.z.values == fields.z.values))
 
-    @attr("fast")
+    @attr("medium")  # FIXME why is this slow?
     def test_calc_field_keeps_same_coords_as_flattened_input_for_spheres(self):
         theory = MockTheory()
         fields = theory.calculate_scattered_field(SPHERES, XSCHEMA)
@@ -133,7 +133,7 @@ class TestScatteringTheory(unittest.TestCase):
             from_calc_scat.values, from_calc_single.values, **TOLS)
         self.assertTrue(is_ok)
 
-    @attr("fast")
+    @attr("medium")  # FIXME why is this slow?
     def test_calc_singlecolor_equals_get_field_from_for_sphere(self):
         theory = MockTheory()
         from_calc_single = theory._calculate_single_color_scattered_field(
@@ -288,7 +288,7 @@ class TestScatteringTheory(unittest.TestCase):
         for cls in [ScatteringTheory, Mie, MockTheory]:
             self.assertTrue(cls.desired_coordinate_system == 'spherical')
 
-    @attr("fast")
+    @attr("medium")  # FIXME why is this slow?
     def test_scattering_matrix_pathway_returns_correct_type(self):
         theory = MockScatteringMatrixBasedTheory()
         fields = theory.calculate_scattered_field(SPHERE, XSCHEMA)
@@ -296,7 +296,7 @@ class TestScatteringTheory(unittest.TestCase):
         self.assertTrue(type(fields) is xr.DataArray)
         self.assertTrue(fields.shape == correct_shape)
 
-    @attr("fast")
+    @attr("medium")  # FIXME why is this slow?
     def test_scattering_matrix_pathway_returns_linear_in_scatmatrs(self):
         theory = MockScatteringMatrixBasedTheory()
         sphere01 = Sphere(n=1.5, r=1.0, center=(0, 0, 2))
