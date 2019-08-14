@@ -48,9 +48,9 @@ class Spheres(Scatterers):
     ----------
     spheres : list of Spheres
         Spheres which will make up the cluster
-    ties : dict
+    ties : dict or None (optional)
        dict indicating tied parameters of the form {'r': '0:r', '1:r'} to tie
-       refractive index of first 2 scatterers.
+       refractive index of first 2 spheres
     warn : bool
        if True, overlapping spheres raise warnings.
 
@@ -58,7 +58,7 @@ class Spheres(Scatterers):
     -----
     '''
 
-    def __init__(self, scatterers, ties={}, warn=True):
+    def __init__(self, scatterers, ties=None, warn=True):
         scatterers = ensure_listlike(scatterers)
         for s in ensure_listlike(scatterers):
             if not isinstance(s, Sphere):
@@ -67,6 +67,7 @@ class Spheres(Scatterers):
                         "scatterers to be Spheres.\n" +
                         repr(s) + " is not a Sphere")
         super().__init__(scatterers, ties)
+
 
         if self.overlaps and warn:
             warnings.warn(OverlapWarning(self, self.overlaps))

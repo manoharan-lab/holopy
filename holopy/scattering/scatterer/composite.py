@@ -24,15 +24,14 @@ scatterers (e.g. two trimers).
 '''
 
 
-import warnings
 from copy import copy
 from numbers import Number
 
 import numpy as np
 
-from . import Scatterer
-from ...core.math import rotate_points
-from ...core.utils import ensure_array
+from holopy.scattering.scatterer.scatterer import Scatterer
+from holopy.core.math import rotate_points
+from holopy.core.utils import ensure_array, dict_without
 
 
 class Scatterers(Scatterer):
@@ -45,7 +44,7 @@ class Scatterers(Scatterer):
     ----------
     scatterers : list
        List of scatterers that make up this object
-    ties : dict
+    ties : dict or None (optional)
        dict indicating tied parameters of the form {'r': '0:r', '1:r'} to tie
        refractive index of first 2 scatterers
 
@@ -61,20 +60,20 @@ class Scatterers(Scatterer):
     # http://stackoverflow.com/questions/1175110/python-classes-for-simple-gtd-app
     # for a python example
 
-    def __init__(self, scatterers=None, ties={}):
+    def __init__(self, scatterers=None, ties=None):
+        if ties is None:
+            ties = {}
         self.ties = ties
-        self.scatterers = []
-        self._init = True  # ignore incomplete parameters when checking ties
-        if scatterers is not None:
-            for scatterer in scatterers:
-                self.add(scatterer)
-        self._init = False
+        if scatterers is None:
+            scatterers = []
+        self.scatterers = scatterers
+        self.update_ties()
 
     def add(self, scatterer):
-        self.ties = self.find_ties(scatterer)
         self.scatterers.append(scatterer)
+        self.update_ties()
 
-    def __get_item__(self, key):
+    def __getitem__(self, key):
         return self.scatterers[key]
 
     def get_component_list(self):
@@ -86,27 +85,25 @@ class Scatterers(Scatterer):
                 components.append(s)
         return components
 
-    def find_ties(self, scatterer):
-        ties = copy(self.ties)
-        reference_parameters = self.parameters.items()
-        for key, par in scatterer.parameters.items():
-            fullkeyname = '{0}:{1}'.format(len(self.scatterers), key)
-            if fullkeyname not in sum(ties.values(), []):
+    def update_ties(self):
+        for fullkey, par in self.raw_parameters.items():
+            if fullkey not in sum(self.ties.values(), []):
                 # not already in the list of ties, so check if it should be
-                for ref_key, ref_par in reference_parameters:
+                reference_parameters = dict_without(self.parameters, fullkey)
+                for ref_key, ref_par in reference_parameters.items():
                     # can't simply check par in parameters because then two
                     # priors defined separately, but identically will match
                     # whereas this way they are counted as separate objects.
                     if par is ref_par and not isinstance(par, Number):
-                        if ref_key in ties.keys():
-                            ties[ref_key].append(fullkeyname)
+                        if ref_key in self.ties.keys():
+                            self.ties[ref_key].append(fullkey)
                         else:
-                            if key not in self.ties.keys():
-                                ties[key] = [ref_key, fullkeyname]
+                            subkey = fullkey.split(':', 1)[1]
+                            if subkey not in self.ties.keys():
+                                self.ties[subkey] = [ref_key, fullkey]
                             else:
-                                ties[fullkeyname] = [ref_key, fullkeyname]
+                                self.ties[fullkey] = [ref_key, fullkey]
                         break
-        return ties
 
     @property
     def raw_parameters(self):
@@ -121,19 +118,13 @@ class Scatterers(Scatterer):
     def parameters(self):
         parameters = self.raw_parameters
         for tied_name, raw_names in self.ties.items():
-            try:
-                tied_val = parameters[raw_names[0]]
-            except KeyError:
-                if self._init:
-                    tied_val = None
-                pass  # will be caught in loop
             for raw_name in raw_names:
                 if raw_name not in parameters.keys():
-                    if not self._init:
-                        msg = 'Tied parameter {} not present in raw \
+                    msg = 'Tied parameter {} not present in raw \
                            parameters {}.'.format(raw_name, parameters.keys())
-                        warnings.warn(msg)
-                    continue
+                    raise ValueError(msg)
+            tied_val = parameters[raw_names[0]]
+            for raw_name in raw_names:
                 if not parameters[raw_name] == tied_val:
                     msg = 'Tied parameters {} and {} are not equal.'.format(
                             parameters[raw_name], tied_val)
