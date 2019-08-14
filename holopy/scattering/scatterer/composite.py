@@ -24,6 +24,7 @@ scatterers (e.g. two trimers).
 '''
 
 
+import warnings
 from copy import copy
 from numbers import Number
 
@@ -33,6 +34,7 @@ from . import Scatterer
 from ...core.math import rotate_points
 from ...core.utils import ensure_array
 
+
 class Scatterers(Scatterer):
     '''
     Contains optical and geometrical properties of a a composite
@@ -41,8 +43,11 @@ class Scatterers(Scatterer):
 
     Attributes
     ----------
-    scatterers: list
+    scatterers : list
        List of scatterers that make up this object
+    ties : dict
+       dict indicating tied parameters of the form {'r': '0:r', '1:r'} to tie
+       refractive index of first 2 scatterers
 
     Notes
     -----
@@ -56,14 +61,21 @@ class Scatterers(Scatterer):
     # http://stackoverflow.com/questions/1175110/python-classes-for-simple-gtd-app
     # for a python example
 
-    def __init__(self, scatterers=None):
-        if scatterers is None:
-            self.scatterers = []
-        else:
-            self.scatterers = scatterers
+    def __init__(self, scatterers=None, ties={}):
+        self.ties = ties
+        self.scatterers = []
+        self._init = True  # ignore incomplete parameters when checking ties
+        if scatterers is not None:
+            for scatterer in scatterers:
+                self.add(scatterer)
+        self._init = False
 
     def add(self, scatterer):
+        self.ties = self.find_ties(scatterer)
         self.scatterers.append(scatterer)
+
+    def __get_item__(self, key):
+        return self.scatterers[key]
 
     def get_component_list(self):
         components = []
@@ -74,45 +86,79 @@ class Scatterers(Scatterer):
                 components.append(s)
         return components
 
-    @property
-    def parameters(self):
-        pars = []
-        names = []
-        for i, scatterer in enumerate(self.scatterers):
-            for key, par in scatterer.parameters.items():
-                for index, par_check in enumerate(pars + [None]):
+    def find_ties(self, scatterer):
+        ties = copy(self.ties)
+        reference_parameters = self.parameters.items()
+        for key, par in scatterer.parameters.items():
+            fullkeyname = '{0}:{1}'.format(len(self.scatterers), key)
+            if fullkeyname not in sum(ties.values(), []):
+                # not already in the list of ties, so check if it should be
+                for ref_key, ref_par in reference_parameters:
                     # can't simply check par in parameters because then two
                     # priors defined separately, but identically will match
                     # whereas this way they are counted as separate objects.
-                    if par is par_check and not isinstance(par, Number):
-                        # par is a prior and already exists in pars
+                    if par is ref_par and not isinstance(par, Number):
+                        if ref_key in ties.keys():
+                            ties[ref_key].append(fullkeyname)
+                        else:
+                            if key not in self.ties.keys():
+                                ties[key] = [ref_key, fullkeyname]
+                            else:
+                                ties[fullkeyname] = [ref_key, fullkeyname]
                         break
-                if par_check is None:
-                    # loop finished - par is not tied.
-                    names.append('{0}:{1}'.format(i,key))
-                    pars.append(par)
-                else:
-                    # loop encountered a break - parameter is tied
-                    names[index] = key
-        return {key:val for key, val in zip(names, pars)}
+        return ties
 
+    @property
+    def raw_parameters(self):
+        parameters = {}
+        for i, scatterer in enumerate(self.scatterers):
+            single_scatterer_parameters = {'{0}:{1}'.format(i, key): val
+                            for key, val in scatterer.parameters.items()}
+            parameters.update(single_scatterer_parameters)
+        return parameters
+
+    @property
+    def parameters(self):
+        parameters = self.raw_parameters
+        for tied_name, raw_names in self.ties.items():
+            try:
+                tied_val = parameters[raw_names[0]]
+            except KeyError:
+                if self._init:
+                    tied_val = None
+                pass  # will be caught in loop
+            for raw_name in raw_names:
+                if raw_name not in parameters.keys():
+                    if not self._init:
+                        msg = 'Tied parameter {} not present in raw \
+                           parameters {}.'.format(raw_name, parameters.keys())
+                        warnings.warn(msg)
+                    continue
+                if not parameters[raw_name] == tied_val:
+                    msg = 'Tied parameters {} and {} are not equal.'.format(
+                            parameters[raw_name], tied_val)
+                    raise ValueError(msg)
+                del parameters[raw_name]
+            parameters[tied_name] = tied_val
+        return parameters
 
     def from_parameters(self, parameters, overwrite=False):
         n_scatterers = len(self.scatterers)
+        for tied_name, raw_names in self.ties.items():
+            if tied_name in parameters:
+                for raw_name in raw_names:
+                    parameters[raw_name] = parameters[tied_name]
+                del parameters[tied_name]
         collected = [{} for i in range(n_scatterers)]
         for key, val in parameters.items():
             parts = key.split(':', 1)
-            if len(parts)==2:
+            if len(parts) == 2:
                 n = int(parts[0])
                 par = parts[1]
                 collected[n][par] = val
-            else:
-                # tied parameter - put it in all of them
-                for col in collected:
-                    col[key] = val
         scatterers = [scat.from_parameters(pars, overwrite)
                          for scat, pars in zip(self.scatterers, collected)]
-        return type(self)(scatterers, warn=False)
+        return type(self)(scatterers, ties=self.ties)
 
     def _prettystr(self, level, indent="  "):
         '''
