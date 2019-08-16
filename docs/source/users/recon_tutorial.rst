@@ -6,7 +6,7 @@ Reconstructing Data (Numerical Propagation)
 A hologram contains information about the electric field amplitude and phase at the detector plane.
 Shining light back through a hologram allows reconstruction of the electric field at points upstream of the detector plane.
 HoloPy performs this function mathematically by numerically propagating a hologram (or electric field) to another position in space.
-This allows you to reconstruct 3D sample volumes from 2D images. The light source is assumed to be collimated. 
+This allows you to reconstruct 3D sample volumes from 2D images. The light source is assumed to be collimated.
 
 Example Reconstruction
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -26,7 +26,7 @@ We'll examine each section of code in turn. The first block:
 loads the relevant modules from HoloPy and NumPy. The second block:
 
 ..  testcode::
-    
+
     imagepath = get_example_data_path('image01.jpg')
     raw_holo = hp.load_image(imagepath, spacing = 0.0851, medium_index = 1.33, illum_wavelen = 0.66)
     bgpath = get_example_data_path(['bg01.jpg','bg02.jpg','bg03.jpg'])
@@ -36,9 +36,9 @@ loads the relevant modules from HoloPy and NumPy. The second block:
 reads in a hologram and divides it by a corresponding background image.
 If this is unfamiliar to you, please review the :ref:`load_tutorial` tutorial.
 
-Next, we use numpy's linspace to define a set of distances between the image plane and the reconstruction plane at 2-micron intervals to 
+Next, we use numpy's linspace to define a set of distances between the image plane and the reconstruction plane at 2-micron intervals to
 propagate our image to. You can also propagate to a single distance
-or to a set of distances obtained in some other fashion. 
+or to a set of distances obtained in some other fashion.
 The actual propagation is accomplished with :func:`.propagate`:
 
 ..  testcode::
@@ -48,7 +48,7 @@ The actual propagation is accomplished with :func:`.propagate`:
 
 ..  testcode::
     :hide:
-    
+
     print(rec_vol.values[0,0,0].real)
     print(rec_vol.values[0,0,0].imag)
 
@@ -56,10 +56,10 @@ The actual propagation is accomplished with :func:`.propagate`:
     :hide:
 
     0.9196428571...
-    0
+    0.0
 
 
-Here, HoloPy has projected the hologram image through space to each of the distances contained in ``zstack`` by using the metadata that we 
+Here, HoloPy has projected the hologram image through space to each of the distances contained in ``zstack`` by using the metadata that we
 specified when loading the image. If we forgot to load optical metadata with the image,
 we can explicitly indicate the parameters for propagation to obtain an identical object:
 
@@ -72,7 +72,7 @@ Visualizing Reconstructions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can display the reconstruction with :func:`.show`::
-  
+
   hp.show(rec_vol)
 
 Pressing the left and right arrow keys steps through volumes slices -
@@ -96,7 +96,7 @@ work better if you use steps that are an integer number of wavelengths in
 medium:
 
 ..  testcode::
-    
+
   med_wavelen = holo.illum_wavelen / holo.medium_index
   rec_vol = hp.propagate(holo, zstack*med_wavelen)
   hp.show(rec_vol.imag)
@@ -108,7 +108,7 @@ medium:
 
 ..  testoutput::
     :hide:
-    
+
     0.0
 
 
@@ -119,9 +119,9 @@ HoloPy calculates reconstructions by performing a convolution of the hologram wi
 the reference wave over the distance to be propagated.
 By default, HoloPy calculates a single transfer function to perform the convolution
 over the specified distance. However, a better reconstruction can sometimes be
-obtained by iteratively propagating the hologram over short distances. This 
+obtained by iteratively propagating the hologram over short distances. This
 cascaded free space propagation is particularly useful when the reconstructions have
-fine features or when propagating over large distances. For further details, refer to 
+fine features or when propagating over large distances. For further details, refer to
 `Kreis 2002 <http://dx.doi.org/10.1117/1.1489678>`_.
 
 To implement cascaded free space propagation in HoloPy, simply pass a ``cfsp`` argument
@@ -129,7 +129,7 @@ into :func:`.propagate` indicating how many times the hologram should be iterati
 propagated. For example, to propagate in three steps over each distance, we write:
 
 ..  testcode::
-    
+
     rec_vol = hp.propagate(holo, zstack, cfsp = 3)
 
 ..  testcode::
@@ -142,4 +142,4 @@ propagated. For example, to propagate in three steps over each distance, we writ
     :hide:
 
     0.91964285714...
-    0
+    0.0
