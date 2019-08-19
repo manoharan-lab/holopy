@@ -50,7 +50,7 @@ class Spheres(Scatterers):
         Spheres which will make up the cluster
     ties : dict or None (optional)
        dict indicating tied parameters of the form {'r': '0:r', '1:r'} to tie
-       refractive index of first 2 spheres
+       radius of first 2 spheres
     warn : bool
        if True, overlapping spheres raise warnings.
 
