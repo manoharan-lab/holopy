@@ -93,7 +93,7 @@ class Uniform(Prior):
         guess : float or None, optional
             The value to take as an initial guess from the prior. If
             guess is None, defaults to the midpoint of the prior for
-            most cases.
+            proper priors.
         name : string or None, optional
             The name of the parameter.
         """
@@ -237,8 +237,10 @@ class BoundedGaussian(Gaussian):
     # Note: this is not normalized
     def __init__(self, mu, sd, lower_bound=-np.inf, upper_bound=np.inf,
                  name=None):
-        """
-        Gaussian prior restricted to an interval
+        """Gaussian prior restricted to an interval.
+
+        Note that the `prob` and `lnprob` methods return a value proportional
+        to the probability only, and not the actual probability.
 
         Parameters
         ----------
@@ -260,12 +262,18 @@ class BoundedGaussian(Gaussian):
         super().__init__(mu, sd, name)
 
     def lnprob(self, p):
+        """Note that this does not return the actual log-probability, but
+        a value proportional to it.
+        """
         if p < self.lower_bound or p > self.upper_bound:
             return -np.inf
         else:
             return super().lnprob(p)
 
     def prob(self, p):
+        """Note that this does not return the actual probability, but
+        a value proportional to it.
+        """
         if p < self.lower_bound or p > self.upper_bound:
             return 0
         else:
