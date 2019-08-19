@@ -152,7 +152,7 @@ the center prior will be::
 ..  testoutput::
     :hide:
 
-    Gaussian(mu=24.186546323529495, sd=0.08510000000000062)
+    Gaussian(mu=24.186546323..., sd=0.0851000...)
 
 Likelihood
 ----------

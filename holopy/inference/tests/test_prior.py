@@ -18,6 +18,7 @@
 
 
 import unittest
+from collections import OrderedDict
 
 from scipy.stats import kstest
 from numpy.testing import assert_equal, assert_allclose
@@ -41,11 +42,12 @@ class TestBasics(unittest.TestCase):
 
 class TestUniform(unittest.TestCase):
     @attr("fast")
-    def test_construction(self):
-        parameters = {'lower_bound': 1,
-                      'upper_bound': 3,
-                      'guess': 2,
-                      'name': 'a'}
+    def test_construction_when_relying_argument_order(self):
+        parameters = OrderedDict([
+            ('lower_bound', 1),
+            ('upper_bound', 3),
+            ('guess', 2),
+            ('name', 'a')])
         u = Uniform(*parameters.values())
         self.assertTrue(isinstance(u, Prior))
         for key, val in parameters.items():
@@ -140,7 +142,7 @@ class TestGaussian(unittest.TestCase):
     @attr("fast")
     def test_construction(self):
         parameters = {'mu': 1, 'sd': 3, 'name': 'a'}
-        g = Gaussian(*parameters.values())
+        g = Gaussian(**parameters)
         self.assertTrue(isinstance(g, Prior))
         for key, val in parameters.items():
             self.assertEqual(getattr(g, key), val)
@@ -197,7 +199,7 @@ class TestBoundedGaussian(unittest.TestCase):
     def test_construction(self):
         parameters = {'mu': 1, 'sd': 3,
                       'lower_bound': 0, 'upper_bound': 2, 'name': 'a'}
-        bg = BoundedGaussian(*parameters.values())
+        bg = BoundedGaussian(**parameters)
         self.assertTrue(isinstance(bg, Gaussian))
         for key, val in parameters.items():
             self.assertEqual(getattr(bg, key), val)
@@ -243,7 +245,7 @@ class TestComplexPrior(unittest.TestCase):
     @attr("fast")
     def test_construction(self):
         parameters = {'real': Uniform(1, 2), 'imag': 3, 'name': 'a'}
-        cp = ComplexPrior(*parameters.values())
+        cp = ComplexPrior(**parameters)
         self.assertTrue(isinstance(cp, Prior))
         for key, val in parameters.items():
             self.assertEqual(getattr(cp, key), val)

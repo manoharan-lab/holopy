@@ -131,10 +131,13 @@ def determine_default_theory_for(scatterer):
 def calc_intensity(detector, scatterer, medium_index=None, illum_wavelen=None,
                    illum_polarization=None, theory='auto'):
     """
-    Calculate intensity at a location or set of locations
+    Calculate intensity from the scattered field at a set of locations
 
     Parameters
     ----------
+    detector : xarray object
+        The detector points and calculation metadata used to calculate
+        the intensity.
     scatterer : :class:`.scatterer` object
         (possibly composite) scatterer for which to compute scattering
     medium_index : float or complex
@@ -251,6 +254,9 @@ def calc_scat_matrix(detector, scatterer, medium_index=None, illum_wavelen=None,
 
     Parameters
     ----------
+    detector : xarray object
+        The detector points and calculation metadata used to calculate
+        the scattering matrices.
     scatterer : :class:`holopy.scattering.scatterer` object
         (possibly composite) scatterer for which to compute scattering
     medium_index : float or complex
@@ -281,11 +287,14 @@ def calc_scat_matrix(detector, scatterer, medium_index=None, illum_wavelen=None,
 def calc_field(detector, scatterer, medium_index=None, illum_wavelen=None,
                illum_polarization=None, theory='auto'):
     """
-    Calculate hologram formed by interference between scattered
-    fields and a reference wave
+    Calculate the scattered fields from a scatterer illuminated by
+    a reference wave.
 
     Parameters
     ----------
+    detector : xarray object
+        The detector points and calculation metadata used to calculate
+        the scattered fields.
     scatterer : :class:`.scatterer` object
         (possibly composite) scatterer for which to compute scattering
     medium_index : float or complex
