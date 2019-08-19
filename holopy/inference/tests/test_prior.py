@@ -18,6 +18,7 @@
 
 
 import unittest
+from collections import OrderedDict
 
 from scipy.stats import kstest
 from numpy.testing import assert_equal, assert_allclose
@@ -41,12 +42,13 @@ class TestBasics(unittest.TestCase):
 
 class TestUniform(unittest.TestCase):
     @attr("fast")
-    def test_construction(self):
-        parameters = {'lower_bound': 1,
-                      'upper_bound': 3,
-                      'guess': 2,
-                      'name': 'a'}
-        u = Uniform(**parameters)
+    def test_construction_when_relying_argument_order(self):
+        parameters = OrderedDict([
+            ('lower_bound', 1),
+            ('upper_bound', 3),
+            ('guess', 2),
+            ('name', 'a')])
+        u = Uniform(*parameters.values())
         self.assertTrue(isinstance(u, Prior))
         for key, val in parameters.items():
             self.assertEqual(getattr(u, key), val)
