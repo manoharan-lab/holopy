@@ -114,6 +114,17 @@ class TestTiedParameters(unittest.TestCase):
         self.assertEqual(set(spheres.parameters.keys()), expected_keys)
 
     @attr("fast")
+    def test_add_tie(self):
+        spheres = [Sphere(n=Uniform(0, 1), r=Uniform(0, 1)) for i in range(3)]
+        spheres = Spheres(spheres)
+        spheres.add_tie('0:r', '1:r')
+        spheres.add_tie('r', '2:r')
+        spheres.add_tie('0:n', '1:n')
+        spheres.add_tie('0:n', '2:n')
+        expected_keys = {'n', 'r'}
+        self.assertEqual(set(spheres.parameters.keys()), expected_keys)
+
+    @attr("fast")
     def test_ties_update_automatically(self):
         spheres = [Sphere(n=Uniform(0, 1), r=Uniform(0, 1)) for i in range(3)]
         spheres = Spheres(spheres)

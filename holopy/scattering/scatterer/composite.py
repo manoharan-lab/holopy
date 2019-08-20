@@ -26,6 +26,7 @@ scatterers (e.g. two trimers).
 
 from copy import copy
 from numbers import Number
+import warnings
 
 import numpy as np
 
@@ -87,11 +88,13 @@ class Scatterers(Scatterer):
         if scatterers is None:
             scatterers = []
         self.scatterers = scatterers
-        self._update_ties()
+        self._find_new_ties()
+        self._check_ties()
 
     def add(self, scatterer):
         self.scatterers.append(scatterer)
-        self._update_ties()
+        self._find_new_ties()
+        self._check_ties()
 
     def __getitem__(self, key):
         return self.scatterers[key]
@@ -105,7 +108,20 @@ class Scatterers(Scatterer):
                 components.append(s)
         return components
 
-    def _update_ties(self):
+    def add_tie(self, old_name, new_name):
+        if old_name in self.ties.keys():
+            self.ties[old_name].append(new_name)
+        elif old_name in self._all_ties:
+            tie_name = self._reversed_ties[old_name]
+            self.ties[tie_name].append(new_name)
+        else:
+            tie_name = new_name.split(':', 1)[1]
+            if tie_name in self.ties.keys():
+                tie_name = new_name
+            self.ties[tie_name] = [new_name, old_name]
+        self._check_ties()
+
+    def _find_new_ties(self):
         reference_parameters = self.raw_parameters
         for fullkey, par in reference_parameters.items():
             if fullkey not in self._all_ties:
@@ -116,17 +132,8 @@ class Scatterers(Scatterer):
                     # priors defined separately, but identically will match
                     # whereas this way they are counted as separate objects.
                     if par is ref_par and not isinstance(par, Number):
-                        if ref_key in self._all_ties:
-                            subkey = self._reversed_ties[ref_key]
-                            self.ties[subkey].append(fullkey)
-                        else:
-                            subkey = fullkey.split(':', 1)[1]
-                            if subkey not in self.ties.keys():
-                                self.ties[subkey] = [fullkey, ref_key]
-                            else:
-                                self.ties[fullkey] = [fullkey, ref_key]
+                        self.add_tie(ref_key, fullkey)
                         break
-        self._check_ties()
 
     def _check_ties(self):
         raw_parameters = self.raw_parameters
@@ -166,7 +173,7 @@ class Scatterers(Scatterer):
 
     @property
     def parameters(self):
-        self._update_ties()
+        self._check_ties()
         raw_parameters = self.raw_parameters
         parameters = {key: val for key, val in raw_parameters.items()
                       if key not in self._all_ties}
