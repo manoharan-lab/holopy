@@ -6,7 +6,7 @@ from nose.plugins.attrib import attr
 
 from holopy.core.metadata import (
     detector_grid, detector_points, clean_concat, update_metadata,
-    get_spacing, get_extents, copy_metadata, make_subset_data)
+    get_spacing, get_extents, copy_metadata, make_subset_data, data_grid)
 from holopy.core.errors import CoordSysError
 
 
@@ -89,7 +89,6 @@ class TestDetectorGrid(unittest.TestCase):
         # the correct value, which we check by the shapes being equal:
         for key, value in extra_dims.items():
             self.assertIn(key, detector.coords)
-            detector_coord_value = detector.coords[key].values
             self.assertEqual(value.shape, detector.coords[key].values.shape)
 
 

@@ -22,7 +22,7 @@ plane wave scattering from a microsphere.
    :scale: 300 %
    :alt: Calculated hologram of a single sphere.
 
-We'll examine each section of code in turn.  The first few lines :
+(You may need to call `matplotlib.pyplot.show()` if you can't see the hologram after running this code.) We'll examine each section of code in turn.  The first few lines :
 
 ..  testcode::
 
@@ -80,12 +80,12 @@ field that is not scattered or absorbed by the particle.
 ..  testcode::
     :hide:
 
-    print(holo[0,0].values)
+    print(holo[0,0].values[0])
 
 ..  testoutput::
     :hide:
 
-    [1.01201782]
+    1.01201...
 
 You might have noticed that our scattering calculation requires much of the same
 metadata we specified when loading an image. If we have an experimental image
@@ -108,13 +108,13 @@ arguments.
     :hide:
 
     print(exp_img.shape)
-    print(holo[0,0].values)
+    print(holo[0,0].values[0])
 
 ..  testoutput::
     :hide:
 
     (1, 100, 100)
-    [1.01201782]
+    1.0120178...
 
 Note that we didn't need to explicitly specify illumination information when
 calling :func:`.calc_holo`, since our image contained saved metadata and HoloPy
@@ -186,12 +186,12 @@ first define the spheres individually, and then combine them into a
 ..  testcode::
     :hide:
 
-    print(holo[0,0].values)
+    print(holo[0,0].values[0])
 
 ..  testoutput::
     :hide:
 
-    [1.04897655]
+    1.0489765...
 
 .. image:: ../images/calc_twosphere.png
    :scale: 300 %
@@ -372,12 +372,14 @@ work with amplitude scattering matrices that are angle-dependent. (See
 ..  testcode::
     :hide:
 
-    print(matr[0,0,0].values)
+    print(matr[0,0,0].values.real)
+    print(matr[0,0,0].values.imag)
 
 ..  testoutput::
     :hide:
 
-    (24.656950420047853-19.765527788603396j)
+    24.6569504200...
+    -19.7655277886...
 
 Here we omit specifying the location (center) of the scatterer. This is
 only valid when you're calculating a far-field quantity. Similarly, note

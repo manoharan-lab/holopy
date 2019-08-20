@@ -31,12 +31,14 @@ from holopy.core.metadata import data_grid, clean_concat
 from holopy.core.utils import ensure_array, ensure_scalar
 from holopy.core.errors import BadImage
 
+
 class VisualizationNotImplemented(Exception):
     def __init__(self, o):
         self.o = o
     def __str__(self):
         return "Visualization of object of type: {0} not implemented".format(
             self.o.__class__.__name__)
+
 
 def show(o, scaling='auto', vert_axis='x', horiz_axis='y',
                     depth_axis='z', colour_axis='illumination'):
@@ -70,13 +72,14 @@ def show(o, scaling='auto', vert_axis='x', horiz_axis='y',
     else:
         raise VisualizationNotImplemented(o)
 
-class Show2D:
+
+class Show2D(object):
     def __init__(self, im):
         # Delay the pylab import until we actually use it to avoid a hard
         # dependency on matplotlib, and to avoid paying the cost of importing it
         # for non interactive code
         from matplotlib import pyplot as plt
-        
+
         self.i = 0
         vmin, vmax = im.attrs['_image_scaling']
         if im.ndim == 3:
@@ -114,7 +117,7 @@ class Show2D:
                                 for dim, pix in zip(dims, pixel)]
         unitcoords = ['{} = {:.1e},'.format(dim, loc)
                                 for dim, loc in zip(dims, location)]
-        return ' '.join(["pixels:"] + pixcoords + ["units:"] + unitcoords) 
+        return ' '.join(["pixels:"] + pixcoords + ["units:"] + unitcoords)
 
     def draw(self):
         self._title()
@@ -140,6 +143,7 @@ class Show2D:
             dimname = self.im.dims[0]
             titlestring = '{} = {}'.format(dimname, self.im[dimname].values[self.i])
             self.ax.set_title(titlestring)
+
 
 def display_image(im, scaling='auto', vert_axis='x', horiz_axis='y',
                     depth_axis='z', colour_axis='illumination'):
@@ -220,7 +224,8 @@ def display_image(im, scaling='auto', vert_axis='x', horiz_axis='y',
     dim_order = [depth_axis, vert_axis, horiz_axis, colour_axis][:im.ndim]
     return im.transpose(*dim_order)
 
-def show_sphere_cluster(s,color):
+
+def show_sphere_cluster(s, color):
     """
     This function to show a 3D rendering of a Spheres obj hasn't worked since
     HoloPy 3.0, due to Mayavi compatibility issues. We keep the code because
@@ -248,6 +253,7 @@ def show_sphere_cluster(s,color):
             resolution=32, color=color)
         mlab.view(-90,0,s.z[:].mean())
 
+
 def show_scatterer_slices(scatterer, spacing):
     """
     Show slices of a scatterer voxelation
@@ -260,20 +266,30 @@ def show_scatterer_slices(scatterer, spacing):
     vol = scatterer.voxelate(spacing, 0)
     show2d(vol)
 
+
 def test_display():
-    #diagnostic test to check matplotlib backend.
+    """Diagnostic test to check matplotlib backend.
+
+    You should see a white square inside a black square, with a colorbar.
+    Pressing the left or right arrow keys should cycle through z.
+    You should see:
+        Z = 0 : A white axes-aligned square
+        Z = 1 : A white circle
+        Z = 2 : A white diamond (square at 45 degrees)
+    """
     a = np.zeros([100, 100, 3])
     a[25:75,25:75,0] = 1
     for i in range(25):
         for j in range(25):
             if i + j <= 25:
                 a[50+i, 50+j, 1:3] = 1
-                a[50-i, 50+j, 1:3] = 1 
+                a[50-i, 50+j, 1:3] = 1
                 a[50-i, 50-j, 1:3] = 1
                 a[50+i, 50-j, 1:3] = 1
             elif i**2 + j**2 <= 25**2:
                 a[50+i, 50+j, 1] = 1
-                a[50-i, 50+j, 1] = 1 
+                a[50-i, 50+j, 1] = 1
                 a[50-i, 50-j, 1] = 1
                 a[50+i, 50-j, 1] = 1
     show(a)
+

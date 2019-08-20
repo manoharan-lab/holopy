@@ -47,7 +47,7 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_f
     data : xarray.DataArray
        Hologram to propagate
     d : float or list of floats
-       Distance to propagate, in meters, or desired schema.  A list tells to
+       Distance to propagate or desired schema.  A list tells to
        propagate to several distances and return the volume
     cfsp : integer (optional)
        Cascaded free-space propagation factor.  If this is an integer
@@ -65,6 +65,10 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_f
     data : xarray.DataArray
        The hologram progagated to a distance d from its current location.
 
+    Notes
+    -----
+    `holopy` is agnostic to units, and the propagation result will be
+    correct as long as the distance and wavelength are in the same units.
     """
     if np.isscalar(d) and d == 0:
         # Propagating no distance has no effect

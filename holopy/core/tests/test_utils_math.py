@@ -27,7 +27,12 @@ import numpy as np
 from numpy.testing import assert_allclose
 from nose.plugins.attrib import attr
 import xarray as xr
-from schwimmbad import MultiPool, pool, MPIPool
+try:
+    from schwimmbad import MultiPool, pool, MPIPool
+    _has_schwimmbad = True
+except ModuleNotFoundError:
+    _has_schwimmbad = False
+
 
 from holopy.core.utils import (
     ensure_array, ensure_listlike, ensure_scalar, mkdir_p, dict_without,
@@ -383,6 +388,7 @@ class TestChoosePool(unittest.TestCase):
         self.assertTrue(choose_pool(mp_pool) is mp_pool)
 
     @attr("fast")
+    @unittest.skipIf(not _has_schwimmbad, "schwimmbad not installed")
     def test_nonepool(self):
         none_pool = choose_pool(None)
         self.assertFalse(isinstance(none_pool, (pool.BasePool, mp.pool.Pool)))
@@ -390,18 +396,21 @@ class TestChoosePool(unittest.TestCase):
         self.assertTrue(hasattr(none_pool, "close"))
 
     @attr("fast")
+    @unittest.skipIf(not _has_schwimmbad, "schwimmbad not installed")
     def test_counting_all_cores(self):
         all_pool = choose_pool('all')
         self.assertTrue(isinstance(all_pool, MultiPool))
         self.assertEqual(all_pool._processes, mp.cpu_count())
 
     @attr("fast")
+    @unittest.skipIf(not _has_schwimmbad, "schwimmbad not installed")
     def test_schwimmbad_multipool(self):
         multi_pool = choose_pool(5)
         self.assertTrue(isinstance(multi_pool, MultiPool))
         self.assertEqual(multi_pool._processes, 5)
 
     @attr("fast")
+    @unittest.skipIf(not _has_schwimmbad, "schwimmbad not installed")
     def test_MPI(self):
         if MPIPool.enabled():
             # mpi should work
@@ -415,6 +424,8 @@ class TestChoosePool(unittest.TestCase):
             self.assertRaises(ValueError, choose_pool, 'mpi')
 
     @attr("fast")
+    @unittest.skipIf(not _has_schwimmbad, "schwimmbad not installed")
     def test_auto(self):
         auto_pool = choose_pool('auto')
         self.assertTrue(isinstance(auto_pool, (pool.BasePool, mp.pool.Pool)))
+
