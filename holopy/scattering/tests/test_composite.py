@@ -40,9 +40,8 @@ class TestBasicMethods(unittest.TestCase):
 
     @attr("fast")
     def test_raw_parameters(self):
-        n = Uniform(0, 1)
-        r = Uniform(0, 1)
-        spheres = [Sphere(n=n, r=r, center=[i, i, i]) for i in range(3)]
+        spheres = [Sphere(n=np.random.rand(), r=np.random.rand(),
+                          center=[i, i, i]) for i in range(3)]
         spheres = Spheres(spheres)
         expected_keys = {'0:n', '1:n', '2:n', '0:r', '1:r', '2:r',
                          '0:center.0', '0:center.1', '0:center.2',
@@ -50,6 +49,12 @@ class TestBasicMethods(unittest.TestCase):
                          '2:center.0', '2:center.1', '2:center.2'}
         self.assertEqual(set(spheres.raw_parameters.keys()), expected_keys)
 
+    @attr("fast")
+    def test_getattr(self):
+        spheres = [Sphere(n=np.random.rand(), r=np.random.rand(),
+                          center=[i, i, i]) for i in range(3)]
+        spheres = Spheres(spheres)
+        self.assertEqual(spheres[1], spheres.scatterers[1])
 
 class TestBrokenTies(unittest.TestCase):
     @attr("fast")
@@ -122,15 +127,6 @@ class TestTiedParameters(unittest.TestCase):
         spheres.add_tie('0:n', '1:n')
         spheres.add_tie('0:n', '2:n')
         expected_keys = {'n', 'r'}
-        self.assertEqual(set(spheres.parameters.keys()), expected_keys)
-
-    @attr("fast")
-    def test_ties_update_automatically(self):
-        spheres = [Sphere(n=Uniform(0, 1), r=Uniform(0, 1)) for i in range(3)]
-        spheres = Spheres(spheres)
-        spheres[1].n = spheres[0].n
-        spheres[1].r = spheres[0].r
-        expected_keys = {'n', 'r', '2:n', '2:r'}
         self.assertEqual(set(spheres.parameters.keys()), expected_keys)
 
     @attr("fast")

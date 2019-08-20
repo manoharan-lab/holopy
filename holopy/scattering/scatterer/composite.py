@@ -155,7 +155,7 @@ class Scatterers(Scatterer):
     def _reversed_ties(self):
         reversed_ties = {}
         for tiename, ties in self.ties.items():
-            reversed_ties.update({tie:tiename for tie in ties})
+            reversed_ties.update({tie: tiename for tie in ties})
         return reversed_ties
 
     @property
@@ -182,7 +182,7 @@ class Scatterers(Scatterer):
         parameters.update(ties)
         return parameters
 
-    def from_parameters(self, parameters, overwrite=False):
+    def from_parameters(self, new_parameters, overwrite=False):
         '''
         Makes a new object similar to self with values as given in parameters.
         This returns a physical object, so any priors are replaced with their
@@ -192,17 +192,19 @@ class Scatterers(Scatterer):
         ----------
         parameters : dict
             dictionary of parameters to use in the new object.
+            Keys should match those of self.parameters.
         overwrite : bool (optional)
             if True, constant values are replaced by those in parameters
         '''
         n_scatterers = len(self.scatterers)
-        for tied_name, raw_names in self.ties.items():
-            if tied_name in parameters:
-                for raw_name in raw_names:
-                    parameters[raw_name] = parameters[tied_name]
-                del parameters[tied_name]
         collected = [{} for i in range(n_scatterers)]
-        for key, val in parameters.items():
+        for tied_name, raw_names in self.ties.items():
+            try:
+                tied_val = new_parameters[tied_name]
+                new_parameters.update({name: tied_val for name in raw_names})
+            except KeyError:
+                pass
+        for key, val in new_parameters.items():
             parts = key.split(':', 1)
             if len(parts) == 2:
                 n = int(parts[0])
