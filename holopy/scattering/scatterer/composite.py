@@ -87,11 +87,11 @@ class Scatterers(Scatterer):
         if scatterers is None:
             scatterers = []
         self.scatterers = scatterers
-        self._update_ties
+        self._update_ties()
 
     def add(self, scatterer):
         self.scatterers.append(scatterer)
-        self._update_ties
+        self._update_ties()
 
     def __getitem__(self, key):
         return self.scatterers[key]
@@ -105,7 +105,6 @@ class Scatterers(Scatterer):
                 components.append(s)
         return components
 
-    @property
     def _update_ties(self):
         reference_parameters = self.raw_parameters
         for fullkey, par in reference_parameters.items():
@@ -127,9 +126,8 @@ class Scatterers(Scatterer):
                             else:
                                 self.ties[fullkey] = [fullkey, ref_key]
                         break
-        self._check_ties
+        self._check_ties()
 
-    @property
     def _check_ties(self):
         raw_parameters = self.raw_parameters
         for tied_name, raw_names in self.ties.items():
@@ -168,7 +166,7 @@ class Scatterers(Scatterer):
 
     @property
     def parameters(self):
-        self._update_ties
+        self._update_ties()
         raw_parameters = self.raw_parameters
         parameters = {key: val for key, val in raw_parameters.items()
                       if key not in self._all_ties}
