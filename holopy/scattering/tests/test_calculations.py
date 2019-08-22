@@ -31,33 +31,31 @@ from holopy.core import detector_grid
 from holopy.core.tests.common import assert_obj_close
 from holopy.scattering.calculations import *
 
-scatterer = Sphere(n=1.6, r=.5, center=(5, 5, 5))
-medium_index = 1.33
-locations = detector_grid(shape=(20, 20), spacing=.1)
-wavelen = 0.66
-polarization=(0, 1)
-
-@attr("fast")
-def test_calc_holo():
-    holo = calc_holo(locations, scatterer, medium_index, wavelen, polarization)
+SCATTERER = Sphere(n=1.6, r=.5, center=(5, 5, 5))
+MED_INDEX = 1.33
+LOCATIONS = detector_grid(shape=(20, 20), spacing=.1)
+WAVELEN = 0.66
+POL=(0, 1)
 
 
-def test_calc_field():
-    field = calc_field(locations, scatterer, medium_index, wavelen, polarization)
+class TestCalculations(unittest.TestCase):
+    @attr("fast")
+    def test_calc_holo(self):
+        holo = calc_holo(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
 
+    def test_calc_field(self):
+        field = calc_field(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
 
-@attr("fast")
-def test_calc_cross_section():
-    cross = calc_cross_sections(scatterer, medium_index, wavelen, polarization)
+    @attr("fast")
+    def test_calc_cross_section(self):
+        cross = calc_cross_sections(SCATTERER, MED_INDEX, WAVELEN, POL)
 
+    def test_calc_intensity(self):
+        intensity = calc_intensity(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
 
-def test_calc_intensity():
-    intensity = calc_intensity(locations, scatterer, medium_index, wavelen, polarization)
-
-
-@attr("fast")
-def test_calc_scat_matrix():
-    matr = calc_scat_matrix(locations, scatterer, medium_index, wavelen)
+    @attr("fast")
+    def test_calc_scat_matrix(self):
+        matr = calc_scat_matrix(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN)
 
 
 class TestDetermineTheory(unittest.TestCase):
@@ -88,7 +86,5 @@ class TestDetermineTheory(unittest.TestCase):
         correct_theory = Tmatrix()
         self.assertTrue(default_theory == correct_theory)
 
-
 if __name__ == '__main__':
     unittest.main()
-
