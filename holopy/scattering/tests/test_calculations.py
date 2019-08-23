@@ -30,6 +30,7 @@ from holopy.scattering import (
 from holopy.core import detector_grid
 from holopy.core.tests.common import assert_obj_close
 from holopy.scattering.calculations import *
+from holopy.scattering.errors import MissingParameter
 
 import xarray as xr
 
@@ -37,7 +38,7 @@ SCATTERER = Sphere(n=1.6, r=.5, center=(5, 5, 5))
 MED_INDEX = 1.33
 LOCATIONS = detector_grid(shape=(20, 20), spacing=.1)
 WAVELEN = 0.66
-POL=(0, 1)
+POL = (0, 1)
 
 
 class TestCalculations(unittest.TestCase):
@@ -75,7 +76,8 @@ class TestCalculations(unittest.TestCase):
         ref = xr.DataArray(np.array([0.5, 0, 0]), coords=[('vector', coords)])
         normals = np.array((0, 0, 1))
         holo = scattered_field_to_hologram(scat, ref, normals)
-        self.assertEquals(holo.values.mean(), 1.)
+        self.assertEqual(holo.values.mean(), 1.)
+
 
 class TestDetermineDefaultTheoryFor(unittest.TestCase):
     @attr("fast")
@@ -107,8 +109,32 @@ class TestDetermineDefaultTheoryFor(unittest.TestCase):
 
 
 class TestPrepSchema(unittest.TestCase):
-    pass
+    def test_wavelength_missing(self):
+        args = (LOCATIONS, MED_INDEX, None, POL)
+        self.assertRaises(MissingParameter, prep_schema, *args)
 
+    def test_medium_index_missing(self):
+        args = (LOCATIONS, None, WAVELEN, POL)
+        self.assertRaises(MissingParameter, prep_schema, *args)
+
+    def test_polarization_missing(self):
+        args = (LOCATIONS, MED_INDEX, WAVELEN, None)
+        self.assertRaises(MissingParameter, prep_schema, *args)
+
+    def test_multiple_illumination_via_polarization_shape(self):
+        coords = ['red', 'green']
+        polarization = xr.DataArray(np.array([[1, 0], [0, 1]]),
+                                    coords=[('illumination', coords),
+                                            ('vector', ['x', 'y'])])
+        prep_schema(LOCATIONS, MED_INDEX, WAVELEN, polarization)
+        self.assertTrue(True)
+
+    def test_multiple_illumination_via_detector_wavelength_shape(self):
+        coords = ['red', 'green']
+        wavelength = xr.DataArray(np.array([0.66, 0.532]),
+                                  coords=[('illumination', coords)])
+        prep_schema(LOCATIONS, MED_INDEX, wavelength, POL)
+        self.assertTrue(True)
 
 class TestInterpretTheory(unittest.TestCase):
     pass
