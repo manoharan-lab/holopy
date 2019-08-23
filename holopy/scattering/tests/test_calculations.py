@@ -48,7 +48,7 @@ class TestCalculations(unittest.TestCase):
         holo = calc_holo(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
         self.assertTrue(True)
 
-    @attr('med')
+    @attr('medium')
     def test_calc_field(self):
         field = calc_field(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
         self.assertTrue(True)
@@ -58,7 +58,7 @@ class TestCalculations(unittest.TestCase):
         cross = calc_cross_sections(SCATTERER, MED_INDEX, WAVELEN, POL)
         self.assertTrue(True)
 
-    @attr('med')
+    @attr('medium')
     def test_calc_intensity(self):
         intensity = calc_intensity(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
         self.assertTrue(True)
@@ -73,15 +73,16 @@ class TestCalculations(unittest.TestCase):
         detector = finalize(LOCATIONS.values, LOCATIONS)
         self.assertTrue(True)
 
-    @attr('med')
+    @attr('medium')
     def test_scattered_field_to_hologram(self):
         size = 3
         coords = np.linspace(0, 1, size)
-        scat = xr.DataArray(np.array([0.5, 0, 0]), coords=[('vector', coords)])
-        ref = xr.DataArray(np.array([0.5, 0, 0]), coords=[('vector', coords)])
+        scat = xr.DataArray(np.array([1, 0, 0]), coords=[('vector', coords)])
+        ref = xr.DataArray(np.array([1, 0, 0]), coords=[('vector', coords)])
         normals = np.array((0, 0, 1))
+        correct_holo = (np.abs(scat + ref)**2).sum(dim='vector')
         holo = scattered_field_to_hologram(scat, ref, normals)
-        self.assertEqual(holo.values.mean(), 1.)
+        self.assertEqual(holo.values.mean(), correct_holo.values.mean())
 
 
 class TestDetermineDefaultTheoryFor(unittest.TestCase):
