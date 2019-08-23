@@ -31,6 +31,8 @@ from holopy.core import detector_grid
 from holopy.core.tests.common import assert_obj_close
 from holopy.scattering.calculations import *
 
+import xarray as xr
+
 SCATTERER = Sphere(n=1.6, r=.5, center=(5, 5, 5))
 MED_INDEX = 1.33
 LOCATIONS = detector_grid(shape=(20, 20), spacing=.1)
@@ -67,7 +69,13 @@ class TestCalculations(unittest.TestCase):
         self.assertTrue(True)
 
     def test_scattered_field_to_hologram(self):
-        pass
+        size = 3
+        coords = np.linspace(0, 1, size)
+        scat = xr.DataArray(np.array([0.5, 0, 0]), coords=[('vector', coords)])
+        ref = xr.DataArray(np.array([0.5, 0, 0]), coords=[('vector', coords)])
+        normals = np.array((0, 0, 1))
+        holo = scattered_field_to_hologram(scat, ref, normals)
+        self.assertEquals(holo.values.mean(), 1.)
 
 class TestDetermineDefaultTheoryFor(unittest.TestCase):
     @attr("fast")
