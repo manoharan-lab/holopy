@@ -144,16 +144,16 @@ class TestPrepSchema(unittest.TestCase):
         polarization = xr.DataArray(np.array([[1, 0], [0, 1]]),
                                     coords=[('illumination', coords),
                                             ('vector', ['x', 'y'])])
-        prep_schema(LOCATIONS, MED_INDEX, WAVELEN, polarization)
-        self.assertTrue(True)
+        detector = prep_schema(LOCATIONS, MED_INDEX, WAVELEN, polarization)
+        self.assertTrue(len(detector.illum_wavelen == 2))
 
     @attr('fast')
     def test_multiple_illumination_via_detector_wavelength_shape(self):
         coords = ['red', 'green']
         wavelength = xr.DataArray(np.array([0.66, 0.532]),
                                   coords=[('illumination', coords)])
-        prep_schema(LOCATIONS, MED_INDEX, wavelength, POL)
-        self.assertTrue(True)
+        detector = prep_schema(LOCATIONS, MED_INDEX, wavelength, POL)
+        self.assertTrue(len(detector.illum_polarization) == 2)
 
 
 class TestInterpretTheory(unittest.TestCase):
