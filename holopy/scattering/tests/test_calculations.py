@@ -37,7 +37,7 @@ import xarray as xr
 
 SCATTERER = Sphere(n=1.6, r=.5, center=(5, 5, 5))
 MED_INDEX = 1.33
-LOCATIONS = detector_grid(shape=(20, 20), spacing=.1)
+LOCATIONS = detector_grid(shape=(2, 2), spacing=1)
 WAVELEN = 0.66
 POL = (0, 1)
 
