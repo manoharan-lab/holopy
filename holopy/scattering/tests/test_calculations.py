@@ -62,6 +62,12 @@ class TestCalculations(unittest.TestCase):
         matr = calc_scat_matrix(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN)
         self.assertTrue(True)
 
+    def test_finalize(self):
+        detector = finalize(LOCATIONS.values, LOCATIONS)
+        self.assertTrue(True)
+
+    def test_scattered_field_to_hologram(self):
+        pass
 
 class TestDetermineDefaultTheoryFor(unittest.TestCase):
     @attr("fast")
@@ -90,6 +96,15 @@ class TestDetermineDefaultTheoryFor(unittest.TestCase):
         default_theory = determine_default_theory_for(scatterer)
         correct_theory = Tmatrix()
         self.assertTrue(default_theory == correct_theory)
+
+
+class TestPrepSchema(unittest.TestCase):
+    pass
+
+
+class TestInterpretTheory(unittest.TestCase):
+    pass
+
 
 if __name__ == '__main__':
     unittest.main()
