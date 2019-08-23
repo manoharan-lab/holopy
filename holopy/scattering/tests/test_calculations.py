@@ -45,28 +45,52 @@ POL = (0, 1)
 class TestCalculations(unittest.TestCase):
     @attr('fast')
     def test_calc_holo(self):
-        holo = calc_holo(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
-        self.assertTrue(True)
+        # FIXME: Test results change when 'auto' theory for SCATTERER changes
+        result = calc_holo(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
+        expected = np.array([[1.03670094, 1.05260144], [1.04521558, 1.01477807]])
+        self.assertTrue(np.allclose(result.values.squeeze(), expected))
 
     @attr('medium')
     def test_calc_field(self):
-        field = calc_field(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
-        self.assertTrue(True)
+        # FIXME: Test results change when 'auto' theory for SCATTERER changes
+        result = calc_field(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
+        expected = np.array([[[-.00673848-.00213145j, -.0080032 +.00183085j],
+                              [-.0080032 +.00183085j, -.00310756+.00865182j]],
+                             [[ .0181347 +.00726132j,  .02591295-.00605441j],
+                              [ .02231151-.00523052j,  .00689569-.02923405j]],
+                             [[ .01184803+.00651537j,  .01382257-.00236663j],
+                              [ .01727821-.00295829j,  .00384075-.01752032j]]])
+        self.assertTrue(np.allclose(result.values.squeeze(), expected))
 
     @attr('fast')
     def test_calc_cross_sections(self):
-        cross = calc_cross_sections(SCATTERER, MED_INDEX, WAVELEN, POL)
-        self.assertTrue(True)
+        # FIXME: Test results change when 'auto' theory for SCATTERER changes
+        result = calc_cross_sections(SCATTERER, MED_INDEX, WAVELEN, POL)
+        expected = np.array([2.04017098e+00, -4.44089210e-16,
+                             2.04017098e+00, 9.13750771e-01])
+        self.assertTrue(np.allclose(result.values.squeeze(), expected))
 
     @attr('medium')
     def test_calc_intensity(self):
-        intensity = calc_intensity(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
-        self.assertTrue(True)
+        # FIXME: Test results change when 'auto' theory for SCATTERER changes
+        result = calc_intensity(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
+        expected = np.array([[0.00043154, 0.00077554],
+                             [0.00059256, 0.00098669]])
+        self.assertTrue(np.allclose(result.values.squeeze(), expected))
 
     @attr('fast')
     def test_calc_scat_matrix(self):
-        matr = calc_scat_matrix(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN)
-        self.assertTrue(True)
+        # FIXME: Test results change when 'auto' theory for SCATTERER changes 
+        result = calc_scat_matrix(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN)
+        expected = np.array([[[[-2.3818862 +1.10607989j, -2.41362056+1.74943249j],
+                               [-2.41362056+1.74943249j, -2.15238106+2.50562808j]],
+                              [[ 0.        +0.j        ,  0.        +0.j        ],
+                               [ 0.        +0.j        ,  0.        +0.j        ]]],
+                             [[[ 0.        +0.j        ,  0.        +0.j        ],
+                               [ 0.        +0.j        ,  0.        +0.j        ]],
+                              [[-2.55065057+1.60766597j, -2.74726197+2.19673594j],
+                               [-2.74726197+2.19673594j, -2.66462981+2.81492861j]]]])
+        self.assertTrue(np.allclose(result.values.squeeze(), expected))
 
     @attr('fast')
     def test_finalize(self):
