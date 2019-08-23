@@ -70,8 +70,9 @@ class TestCalculations(unittest.TestCase):
 
     @attr('fast')
     def test_finalize(self):
-        detector = finalize(LOCATIONS.values, LOCATIONS)
-        self.assertTrue(True)
+        result = finalize(LOCATIONS.values, LOCATIONS)
+        expected = copy_metadata(LOCATIONS.values, LOCATIONS)
+        self.assertTrue(result.equals(expected))
 
     @attr('medium')
     def test_scattered_field_to_hologram(self):
