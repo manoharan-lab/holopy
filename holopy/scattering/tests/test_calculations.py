@@ -20,6 +20,7 @@ Base class for scattering theories.  Implements python-based
 calc_intensity and calc_holo, based on subclass's calc_field
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
+.. moduleauthor:: R. Alexander <ralexander@g.harvard.edu>
 """
 import unittest
 
@@ -136,9 +137,17 @@ class TestPrepSchema(unittest.TestCase):
         prep_schema(LOCATIONS, MED_INDEX, wavelength, POL)
         self.assertTrue(True)
 
-class TestInterpretTheory(unittest.TestCase):
-    pass
 
+class TestInterpretTheory(unittest.TestCase):
+    def test_interpret_auto_theory(self):
+        theory = interpret_theory(SCATTERER, theory='auto')
+        theory_ok = type(theory) == Mie
+        self.assertTrue(theory_ok)
+
+    def test_interpret_specified_theory(self):
+        theory = interpret_theory(SCATTERER, theory=Mie)
+        theory_ok = type(theory) == Mie
+        self.assertTrue(theory_ok)
 
 if __name__ == '__main__':
     unittest.main()
