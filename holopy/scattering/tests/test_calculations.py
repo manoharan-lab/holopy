@@ -42,20 +42,25 @@ class TestCalculations(unittest.TestCase):
     @attr("fast")
     def test_calc_holo(self):
         holo = calc_holo(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
+        self.assertTrue(True)
 
     def test_calc_field(self):
         field = calc_field(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
+        self.assertTrue(True)
 
     @attr("fast")
     def test_calc_cross_sections(self):
         cross = calc_cross_sections(SCATTERER, MED_INDEX, WAVELEN, POL)
+        self.assertTrue(True)
 
     def test_calc_intensity(self):
         intensity = calc_intensity(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
+        self.assertTrue(True)
 
     @attr("fast")
     def test_calc_scat_matrix(self):
         matr = calc_scat_matrix(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN)
+        self.assertTrue(True)
 
 
 class TestDetermineDefaultTheoryFor(unittest.TestCase):
