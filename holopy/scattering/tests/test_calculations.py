@@ -110,14 +110,17 @@ class TestDetermineDefaultTheoryFor(unittest.TestCase):
 
 
 class TestPrepSchema(unittest.TestCase):
+    @attr("fast")
     def test_wavelength_missing(self):
         args = (LOCATIONS, MED_INDEX, None, POL)
         self.assertRaises(MissingParameter, prep_schema, *args)
 
+    @attr("fast")
     def test_medium_index_missing(self):
         args = (LOCATIONS, None, WAVELEN, POL)
         self.assertRaises(MissingParameter, prep_schema, *args)
 
+    @attr("fast")
     def test_polarization_missing(self):
         args = (LOCATIONS, MED_INDEX, WAVELEN, None)
         self.assertRaises(MissingParameter, prep_schema, *args)
@@ -139,11 +142,13 @@ class TestPrepSchema(unittest.TestCase):
 
 
 class TestInterpretTheory(unittest.TestCase):
+    @attr("fast")
     def test_interpret_auto_theory(self):
         theory = interpret_theory(SCATTERER, theory='auto')
         theory_ok = type(theory) == Mie
         self.assertTrue(theory_ok)
 
+    @attr("fast")
     def test_interpret_specified_theory(self):
         theory = interpret_theory(SCATTERER, theory=Mie)
         theory_ok = type(theory) == Mie
