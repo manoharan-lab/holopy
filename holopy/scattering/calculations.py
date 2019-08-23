@@ -158,7 +158,11 @@ def calc_intensity(detector, scatterer, medium_index=None, illum_wavelen=None,
     field = calc_field(detector, scatterer, medium_index=medium_index,
                        illum_wavelen=illum_wavelen,
                        illum_polarization=illum_polarization, theory=theory)
-    return finalize(detector, (abs(field*(1-detector.normals))**2).sum(dim=vector))
+    slices = tuple(
+        [slice(0, 2, None) if d =='vector' else slice(None)
+         for d in field.dims])
+    intensity = (np.abs(field[slices])**2).sum(dim=vector)
+    return finalize(detector, intensity)
 
 
 def calc_holo(detector, scatterer, medium_index=None, illum_wavelen=None,
@@ -207,7 +211,7 @@ def calc_holo(detector, scatterer, medium_index=None, illum_wavelen=None,
         scatterer.guess, uschema)
     reference_field = uschema.illum_polarization
     holo = scattered_field_to_hologram(
-        scattered_field * scaling, reference_field, uschema.normals)
+        scattered_field * scaling, reference_field)
     return finalize(uschema, holo)
 
 
@@ -323,7 +327,7 @@ def calc_field(detector, scatterer, medium_index=None, illum_wavelen=None,
 
 # this is pulled out separate from the calc_holo method because
 # occasionally you want to turn prepared  e_fields into holograms directly
-def scattered_field_to_hologram(scat, ref, normals):
+def scattered_field_to_hologram(scat, ref):
     """
     Calculate a hologram from an E-field
 
@@ -337,6 +341,10 @@ def scattered_field_to_hologram(scat, ref, normals):
         Vector normal to the detector the hologram should be measured at
         (defaults to z hat, a detector in the x, y plane)
     """
-    holo = (np.abs(scat+ref)**2 * (1 - normals)).sum(dim=vector)
+    total_field = scat + ref
+    slices = tuple(
+        [slice(0, 2, None) if d =='vector' else slice(None)
+         for d in total_field.dims])
+    holo = (np.abs(total_field[slices])**2).sum(dim=vector)
     return holo
 
