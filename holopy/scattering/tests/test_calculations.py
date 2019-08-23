@@ -43,33 +43,37 @@ POL = (0, 1)
 
 
 class TestCalculations(unittest.TestCase):
-    @attr("fast")
+    @attr('fast')
     def test_calc_holo(self):
         holo = calc_holo(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
         self.assertTrue(True)
 
+    @attr('med')
     def test_calc_field(self):
         field = calc_field(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
         self.assertTrue(True)
 
-    @attr("fast")
+    @attr('fast')
     def test_calc_cross_sections(self):
         cross = calc_cross_sections(SCATTERER, MED_INDEX, WAVELEN, POL)
         self.assertTrue(True)
 
+    @attr('med')
     def test_calc_intensity(self):
         intensity = calc_intensity(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
         self.assertTrue(True)
 
-    @attr("fast")
+    @attr('fast')
     def test_calc_scat_matrix(self):
         matr = calc_scat_matrix(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN)
         self.assertTrue(True)
 
+    @attr('fast')
     def test_finalize(self):
         detector = finalize(LOCATIONS.values, LOCATIONS)
         self.assertTrue(True)
 
+    @attr('med')
     def test_scattered_field_to_hologram(self):
         size = 3
         coords = np.linspace(0, 1, size)
@@ -81,7 +85,7 @@ class TestCalculations(unittest.TestCase):
 
 
 class TestDetermineDefaultTheoryFor(unittest.TestCase):
-    @attr("fast")
+    @attr('fast')
     def test_determine_default_theory_for_sphere(self):
         default_theory = determine_default_theory_for(Sphere())
         correct_theory = Mie()
@@ -110,21 +114,22 @@ class TestDetermineDefaultTheoryFor(unittest.TestCase):
 
 
 class TestPrepSchema(unittest.TestCase):
-    @attr("fast")
+    @attr('fast')
     def test_wavelength_missing(self):
         args = (LOCATIONS, MED_INDEX, None, POL)
         self.assertRaises(MissingParameter, prep_schema, *args)
 
-    @attr("fast")
+    @attr('fast')
     def test_medium_index_missing(self):
         args = (LOCATIONS, None, WAVELEN, POL)
         self.assertRaises(MissingParameter, prep_schema, *args)
 
-    @attr("fast")
+    @attr('fast')
     def test_polarization_missing(self):
         args = (LOCATIONS, MED_INDEX, WAVELEN, None)
         self.assertRaises(MissingParameter, prep_schema, *args)
 
+    @attr('fast')
     def test_multiple_illumination_via_polarization_shape(self):
         coords = ['red', 'green']
         polarization = xr.DataArray(np.array([[1, 0], [0, 1]]),
@@ -133,6 +138,7 @@ class TestPrepSchema(unittest.TestCase):
         prep_schema(LOCATIONS, MED_INDEX, WAVELEN, polarization)
         self.assertTrue(True)
 
+    @attr('fast')
     def test_multiple_illumination_via_detector_wavelength_shape(self):
         coords = ['red', 'green']
         wavelength = xr.DataArray(np.array([0.66, 0.532]),
@@ -142,13 +148,13 @@ class TestPrepSchema(unittest.TestCase):
 
 
 class TestInterpretTheory(unittest.TestCase):
-    @attr("fast")
+    @attr('fast')
     def test_interpret_auto_theory(self):
         theory = interpret_theory(SCATTERER, theory='auto')
         theory_ok = type(theory) == Mie
         self.assertTrue(theory_ok)
 
-    @attr("fast")
+    @attr('fast')
     def test_interpret_specified_theory(self):
         theory = interpret_theory(SCATTERER, theory=Mie)
         theory_ok = type(theory) == Mie
