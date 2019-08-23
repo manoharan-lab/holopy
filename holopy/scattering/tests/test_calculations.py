@@ -47,7 +47,7 @@ class TestCalculations(unittest.TestCase):
         field = calc_field(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
 
     @attr("fast")
-    def test_calc_cross_section(self):
+    def test_calc_cross_sections(self):
         cross = calc_cross_sections(SCATTERER, MED_INDEX, WAVELEN, POL)
 
     def test_calc_intensity(self):
@@ -58,29 +58,29 @@ class TestCalculations(unittest.TestCase):
         matr = calc_scat_matrix(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN)
 
 
-class TestDetermineTheory(unittest.TestCase):
+class TestDetermineDefaultTheoryFor(unittest.TestCase):
     @attr("fast")
-    def test_determine_default_theory_for_on_sphere(self):
+    def test_determine_default_theory_for_sphere(self):
         default_theory = determine_default_theory_for(Sphere())
         correct_theory = Mie()
         self.assertTrue(default_theory == correct_theory)
 
     @attr('fast')
-    def test_determine_default_theory_for_on_spheres(self):
+    def test_determine_default_theory_for_spheres(self):
         default_theory = determine_default_theory_for(
             Spheres([Sphere(), Sphere()]))
         correct_theory = Multisphere()
         self.assertTrue(default_theory == correct_theory)
 
     @attr('fast')
-    def test_determine_default_theory_for_on_spheroid(self):
+    def test_determine_default_theory_for_spheroid(self):
         scatterer = Spheroid(n=1.33, r=(1.0, 2.0))
         default_theory = determine_default_theory_for(scatterer)
         correct_theory = Tmatrix()
         self.assertTrue(default_theory == correct_theory)
 
     @attr('fast')
-    def test_determine_default_theory_for_on_cylinder(self):
+    def test_determine_default_theory_for_cylinder(self):
         scatterer = Cylinder(n=1.33, h=2, d=1)
         default_theory = determine_default_theory_for(scatterer)
         correct_theory = Tmatrix()
