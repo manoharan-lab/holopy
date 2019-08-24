@@ -213,8 +213,8 @@ def update_metadata(a, medium_index=None, illum_wavelen=None,
         copy of input image with updated metadata. The 'normals' field
         is not allowed to be empty.
     """
-    if normals is not None and np.shape(normals) != (3,):
-        raise ValueError("``normals`` must be a vector of shape (3,)")
+    if normals is not None:
+        raise ValueError(_normals_deprecation_message)
     attrlist = {'medium_index': medium_index,
                 'illum_wavelen': dict_to_array(a, illum_wavelen),
                 'illum_polarization': dict_to_array(
@@ -382,8 +382,10 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None,
         coords.update(extra_dims)
     dims = ['z', 'x', 'y'] + list(extra_dims.keys())
     out = xr.DataArray(arr, dims=dims,  coords=coords, name=name)
-    return update_metadata(out, medium_index, illum_wavelen,
-                           illum_polarization, normals, noise_sd)
+    out = update_metadata(
+        out, medium_index=medium_index, illum_wavelen=illum_wavelen,
+        illum_polarization=illum_polarization, noise_sd=noise_sd)
+    return out
 
 
 def to_vector(c):

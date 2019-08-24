@@ -323,50 +323,14 @@ class TestUpdateMetadata(unittest.TestCase):
         self.assertEqual(updated_detector.noise_sd, noise_sd)
 
     @attr("fast")
-    def test_does_update_normals(self):
+    def test_normals_raises_error_with_deprecation_message(self):
         detector = detector_grid(3, 0.1)
         np.random.seed(13)
         normals = np.random.randn(3)
         normals /= np.linalg.norm(normals)
-        updated_detector = update_metadata(detector, normals=normals)
-        self.assertTrue(np.all(updated_detector.normals.values == normals))
-
-    @attr("fast")
-    def test_raises_error_when_normals_are_of_shape_3xN(self):
-        npts = 12
-        x = np.random.randn(npts)
-        y = np.random.randn(npts)
-        z = np.random.randn(npts)
-        points = detector_points(x=x, y=y, z=z)
-
-        np.random.seed(13)
-        normals = np.random.randn(3, npts)
-        msg = "``normals`` must be a vector of shape *"
         self.assertRaisesRegex(
-            ValueError, msg, update_metadata, points, normals=normals)
-
-    @attr("fast")
-    def test_raises_error_when_normals_are_of_shape_4(self):
-        detector = detector_grid(3, 0.1)
-        np.random.seed(13)
-        msg = "``normals`` must be a vector of shape *"
-        normals = np.random.randn(4)
-        self.assertRaisesRegex(
-            ValueError, msg, update_metadata, detector, normals=normals)
-
-    @attr("fast")
-    def test_raises_error_when_normals_are_of_shape_Nx3(self):
-        npts = 12
-        x = np.random.randn(npts)
-        y = np.random.randn(npts)
-        z = np.random.randn(npts)
-        points = detector_points(x=x, y=y, z=z)
-
-        np.random.seed(13)
-        normals = np.random.randn(npts, 3)
-        msg = "``normals`` must be a vector of shape *"
-        self.assertRaisesRegex(
-            ValueError, msg, update_metadata, points, normals=normals)
+            ValueError, "`normals` are deprecated*",
+            update_metadata, detector, normals=normals)
 
 
 class TestGetSpacing(unittest.TestCase):
