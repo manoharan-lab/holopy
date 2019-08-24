@@ -43,6 +43,7 @@ from holopy.core.holopy_object import FullLoader# compatibility with pyyaml < 5
 attr_coords = '_attr_coords'
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
 
+
 def default_extension(inf, defext='.h5'):
     try:
         file, ext = os.path.splitext(inf)
@@ -55,6 +56,7 @@ def default_extension(inf, defext='.h5'):
     else:
         return inf
 
+
 def get_example_data_path(name):
     path = os.path.abspath(__file__)
     path = os.path.join(os.path.split(os.path.split(path)[0])[0],
@@ -66,8 +68,10 @@ def get_example_data_path(name):
         out = [os.path.join(path,img) for img in name]
     return out
 
+
 def get_example_data(name):
     return load(get_example_data_path(name))
+
 
 def pack_attrs(a, do_spacing=False):
     new_attrs = {attr_coords:{}}
@@ -90,6 +94,7 @@ def pack_attrs(a, do_spacing=False):
                                        default_flow_style=True)
     return new_attrs
 
+
 def unpack_attrs(a):
     if len(a) == 0:
         return a
@@ -109,6 +114,7 @@ def unpack_attrs(a):
         else:
             new_attrs[attr] = None
     return new_attrs
+
 
 def load(inf, lazy=False):
     """
@@ -191,6 +197,7 @@ def load(inf, lazy=False):
     else:
         raise NoMetadata
 
+
 def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
                illum_polarization=None, normals=None, noise_sd=None,
                channel=None, name=None):
@@ -270,6 +277,7 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
 
     return data_grid(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, noise_sd, name, extra_dims)
 
+
 def save(outf, obj):
     """
     Save a holopy object
@@ -303,6 +311,7 @@ def save(outf, obj):
         ds.to_netcdf(default_extension(outf), engine='h5netcdf')
     else:
         serialize.save(outf, obj)
+
 
 def save_image(filename, im, scaling='auto', depth=8):
     """Save an ndarray or image as a tiff.
@@ -365,7 +374,11 @@ def save_image(filename, im, scaling='auto', depth=8):
     else:
         pilimage.fromarray(im).save(filename)
 
-def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, noise_sd=None, channel=None, image_glob='*.tif'):
+
+def load_average(
+        filepath, refimg=None, spacing=None, medium_index=None,
+        illum_wavelen=None, illum_polarization=None, normals=None,
+        noise_sd=None, channel=None, image_glob='*.tif'):
     """
     Average a set of images (usually as a background)
 
@@ -490,3 +503,4 @@ class Accumulator:
             return None
         else:
             return np.sqrt(self._running_var / (self._n))
+
