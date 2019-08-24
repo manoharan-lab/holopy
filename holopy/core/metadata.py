@@ -38,6 +38,10 @@ vector = 'vector'
 illumination = 'illumination'
 
 
+_normals_deprecation_message = (
+    "`normals` are deprecated in holopy. Their old implementation was" +
+    " incorrect and cannot really be corrected.")
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #               Methods part of the Holopy API
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,8 +62,6 @@ def detector_grid(shape, spacing, normals=None, name=None, extra_dims=None):
         If int, distance between square detector pixels.
         If array_like, \ *spacing*\ [0] between adjacent rows and
         \ *spacing*\ [1] between adjacent columns.
-    normals : list-like or None
-        If list-like, detector orientation.
     name : string, optional
     extra_dims : dict or OrderedDict, optional
         extra dimension(s) to add to the empty detector grid as
@@ -87,12 +89,13 @@ def detector_grid(shape, spacing, normals=None, name=None, extra_dims=None):
         for val in extra_dims.values():
             shape.append(len(val))
     d = np.zeros(shape)
-    return data_grid(d, spacing, normals=normals, name=name,
-                     extra_dims=extra_dims)
+    if normals is not None:
+        raise ValueError(_normals_deprecation_message)
+    return data_grid(d, spacing, name=name, extra_dims=extra_dims)
 
 
 def detector_points(coords={}, x=None, y=None, z=None, r=None, theta=None,
-                    phi=None, normals='auto', name=None):
+                    phi=None, normals=None, name=None):
     """
     Returns a one-dimensional set of detector coordinates at which scattering
     calculations are to be done.
@@ -134,8 +137,8 @@ def detector_points(coords={}, x=None, y=None, z=None, r=None, theta=None,
     a digital camera.)
 
     """
-    if normals is not 'auto':
-        raise ValueError('Non-default normals not supported.')
+    if normals is not None:
+        raise ValueError(_normals_deprecation_message)
     updatelist = {'x': x, 'y': y, 'z': z, 'r': r, 'theta': theta, 'phi': phi}
     coords = updated(coords, updatelist)
     if 'x' in coords and 'y' in coords:
@@ -155,9 +158,8 @@ def detector_points(coords={}, x=None, y=None, z=None, r=None, theta=None,
 
     coords = repeat_sing_dims(coords, keys)
     coords = updated(coords, {key: ('point', coords[key]) for key in keys})
-    attrs = {'normals': default_norms(coords, normals)}
     return xr.DataArray(np.zeros(len(coords[keys[0]][1])), dims=['point'],
-                        coords=coords, attrs=attrs, name=name)
+                        coords=coords, name=name)
 
 
 def clean_concat(arrays, dim):
