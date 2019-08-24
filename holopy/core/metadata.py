@@ -118,10 +118,6 @@ def detector_points(coords={}, x=None, y=None, z=None, r=None, theta=None,
         Spherical polar coordinates (polar angle from z axis) of detectors.
     phi : int or array_like, optional
         Spherical polar azimuthal coodinates of detectors.
-    normals : string, optional
-        Default behavior: normal in +z direction for Cartesian coordinates,
-        -r direction for polar coordinates. Non-default behavior not currently
-        implemented.
     name : string
 
     Returns
@@ -202,16 +198,13 @@ def update_metadata(a, medium_index=None, illum_wavelen=None,
         Updated wavelength of illumination in the image.
     illum_polarization : list-like
         Updated polarization of illumination in the image.
-    normals : list-like
-        Updated detector orientation of the image.
     noise_sd : float
         standard deviation of Gaussian noise in the image.
 
     Returns
     -------
     b : xarray.DataArray
-        copy of input image with updated metadata. The 'normals' field
-        is not allowed to be empty.
+        copy of input image with updated metadata.
     """
     if normals is not None:
         raise ValueError(_normals_deprecation_message)
@@ -219,7 +212,6 @@ def update_metadata(a, medium_index=None, illum_wavelen=None,
                 'illum_wavelen': dict_to_array(a, illum_wavelen),
                 'illum_polarization': dict_to_array(
                     a, to_vector(illum_polarization)),
-                'normals': to_vector(normals),
                 'noise_sd': dict_to_array(a, noise_sd)}
     b = a.copy()
     b.attrs = updated(b.attrs, attrlist)
@@ -227,10 +219,6 @@ def update_metadata(a, medium_index=None, illum_wavelen=None,
     for attr in attrlist:
         if not hasattr(b, attr):
             b.attrs[attr] = None
-
-    if b.normals is None:
-        b.attrs['normals'] = default_norms(b.coords, 'auto')
-
     return b
 
 

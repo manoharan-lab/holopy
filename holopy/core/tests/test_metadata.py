@@ -37,13 +37,6 @@ class TestDetectorGrid(unittest.TestCase):
         self.assertEqual(detector.values.shape, true_shape)
 
     @attr("fast")
-    def test_normals_default_to_001(self):
-        detector = detector_grid(10, 0.1)  # default normals
-        default_normals = np.array([0, 0, 1.0])
-        detector_normals = detector.normals.values
-        self.assertTrue(np.allclose(detector_normals, default_normals, **TOLS))
-
-    @attr("fast")
     def test_normals_are_deprecated_with_error(self):
         normals = np.array([0.5, 0, 0.5])
         normals /= np.linalg.norm(normals)
