@@ -275,7 +275,11 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
                     pol_index = xr.DataArray(channel, dims=illumination, name=illumination)
                     illum_polarization=xr.concat([to_vector(pol) for pol in illum_polarization], pol_index)
 
-    return data_grid(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, noise_sd, name, extra_dims)
+    image = data_grid(
+        arr, spacing=spacing, medium_index=medium_index,
+        illum_wavelen=illum_wavelen, illum_polarization=illum_polarization,
+        noise_sd=noise_sd, name=name, extra_dims=extra_dims)
+    return image
 
 
 def save(outf, obj):

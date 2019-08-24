@@ -349,8 +349,8 @@ def make_subset_data(data, pixels=None, return_selection=False, seed=None):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None,
-              illum_polarization=None, normals=None, noise_sd=None,
-              name=None, extra_dims=None, z=0):
+              illum_polarization=None, noise_sd=None, name=None,
+              extra_dims=None, z=0):
     """
     Create a set of detector points along with other experimental metadata.
 
@@ -363,7 +363,6 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None,
     Use the higher-level detector_grid() and detector_points() functions.
     This should be viewed as a factory method.
     """
-
     if spacing is None:
         spacing = 1
         warn("No pixel spacing provided. Setting spacing to 1, but any"
