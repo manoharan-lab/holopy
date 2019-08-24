@@ -44,6 +44,11 @@ attr_coords = '_attr_coords'
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
 
 
+_normals_deprecation_message = (
+    "`normals` are deprecated in holopy. Their old implementation was" +
+    " incorrect and cannot really be corrected.")
+
+
 def default_extension(inf, defext='.h5'):
     try:
         file, ext = os.path.splitext(inf)
@@ -217,8 +222,6 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
         wavelength (in vacuum) of illuminating light
     illum_polarization : (float, float) (optional)
         (x, y) polarization vector of the illuminating light
-    normals : (float, float, float) (optional)
-        (x, y, z) vector of the component of light propagation captured by detector
     noise_sd : float (optional)
         noise level in the image, normalized to image intensity
     channel : int or tuple of ints (optional)
@@ -232,6 +235,8 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
     obj : xarray.DataArray representation of the image with associated metadata
 
     """
+    if normals is not None:
+        raise ValueError(_normals_deprecation_message)
     if name is None:
         name = os.path.splitext(os.path.split(inf)[-1])[0]
 
@@ -401,8 +406,6 @@ def load_average(
         Wavelength of illumination in the images. Used preferentially over refimg value if both are provided.
     illum_polarization : list-like
         Polarization of illumination in the images. Used preferentially over refimg value if both are provided.
-    normals : list-like
-        Orientation of detector. Used preferentially over refimg value if both are provided.
     image_glob : string
         Glob used to select images (if images is a directory)
 
@@ -412,6 +415,8 @@ def load_average(
         Image which is an average of images
         noise_sd attribute contains average pixel stdev normalized by total image intensity
     """
+    if normals is not None:
+        raise ValueError(_normals_deprecation_message)
 
     if isinstance(filepath, str):
         if os.path.isdir(filepath):
