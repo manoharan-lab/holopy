@@ -37,16 +37,12 @@ from holopy.core.io.vis import display_image
 from holopy.core.metadata import (data_grid, get_spacing, update_metadata,
                     copy_metadata, to_vector, illumination)
 from holopy.core.utils import ensure_array, dict_without
-from holopy.core.errors import NoMetadata, BadImage, LoadError
+from holopy.core.errors import (
+    NoMetadata, BadImage, LoadError, NORMALS_DEPRECATION_MESSAGE)
 from holopy.core.holopy_object import FullLoader# compatibility with pyyaml < 5
 
 attr_coords = '_attr_coords'
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
-
-
-_normals_deprecation_message = (
-    "`normals` are deprecated in holopy. Their old implementation was" +
-    " incorrect and cannot really be corrected.")
 
 
 def default_extension(inf, defext='.h5'):
@@ -236,7 +232,7 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
 
     """
     if normals is not None:
-        raise ValueError(_normals_deprecation_message)
+        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
     if name is None:
         name = os.path.splitext(os.path.split(inf)[-1])[0]
 
@@ -416,7 +412,7 @@ def load_average(
         noise_sd attribute contains average pixel stdev normalized by total image intensity
     """
     if normals is not None:
-        raise ValueError(_normals_deprecation_message)
+        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
 
     if isinstance(filepath, str):
         if os.path.isdir(filepath):

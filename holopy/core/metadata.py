@@ -31,16 +31,12 @@ import xarray as xr
 
 from holopy.core.utils import updated, repeat_sing_dims, ensure_array
 from holopy.core.math import to_cartesian
-from holopy.core.errors import CoordSysError
+from holopy.core.errors import CoordSysError, NORMALS_DEPRECATION_MESSAGE
 
 
 vector = 'vector'
 illumination = 'illumination'
 
-
-_normals_deprecation_message = (
-    "`normals` are deprecated in holopy. Their old implementation was" +
-    " incorrect and cannot really be corrected.")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #               Methods part of the Holopy API
@@ -90,7 +86,7 @@ def detector_grid(shape, spacing, normals=None, name=None, extra_dims=None):
             shape.append(len(val))
     d = np.zeros(shape)
     if normals is not None:
-        raise ValueError(_normals_deprecation_message)
+        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
     return data_grid(d, spacing, name=name, extra_dims=extra_dims)
 
 
@@ -134,7 +130,7 @@ def detector_points(coords={}, x=None, y=None, z=None, r=None, theta=None,
 
     """
     if normals is not None:
-        raise ValueError(_normals_deprecation_message)
+        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
     updatelist = {'x': x, 'y': y, 'z': z, 'r': r, 'theta': theta, 'phi': phi}
     coords = updated(coords, updatelist)
     if 'x' in coords and 'y' in coords:
@@ -207,7 +203,7 @@ def update_metadata(a, medium_index=None, illum_wavelen=None,
         copy of input image with updated metadata.
     """
     if normals is not None:
-        raise ValueError(_normals_deprecation_message)
+        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
     attrlist = {'medium_index': medium_index,
                 'illum_wavelen': dict_to_array(a, illum_wavelen),
                 'illum_polarization': dict_to_array(
