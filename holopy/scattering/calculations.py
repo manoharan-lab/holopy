@@ -158,10 +158,7 @@ def calc_intensity(detector, scatterer, medium_index=None, illum_wavelen=None,
     field = calc_field(detector, scatterer, medium_index=medium_index,
                        illum_wavelen=illum_wavelen,
                        illum_polarization=illum_polarization, theory=theory)
-    slices = tuple(
-        [slice(0, 2, None) if d =='vector' else slice(None)
-         for d in field.dims])
-    intensity = (np.abs(field[slices])**2).sum(dim=vector)
+    intensity = (np.abs(field.sel(vector=['x', 'y']))**2).sum(dim=vector)
     return finalize(detector, intensity)
 
 
@@ -342,9 +339,6 @@ def scattered_field_to_hologram(scat, ref):
         (defaults to z hat, a detector in the x, y plane)
     """
     total_field = scat + ref
-    slices = tuple(
-        [slice(0, 2, None) if d =='vector' else slice(None)
-         for d in total_field.dims])
-    holo = (np.abs(total_field[slices])**2).sum(dim=vector)
+    holo = (np.abs(total_field.sel(vector=['x', 'y']))**2).sum(dim=vector)
     return holo
 
