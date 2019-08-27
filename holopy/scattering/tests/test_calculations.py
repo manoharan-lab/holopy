@@ -26,7 +26,7 @@ import unittest
 
 from nose.plugins.attrib import attr
 
-from holopy.scattering import (Sphere, Spheres, LayeredSphere, Mie, Multisphere,
+from holopy.scattering import (Sphere, Spheres, Mie, Multisphere,
                                Spheroid, Cylinder, Tmatrix)
 from holopy.core import detector_grid
 from holopy.core.tests.common import assert_obj_close
@@ -139,9 +139,9 @@ class TestDetermineDefaultTheoryFor(unittest.TestCase):
         self.assertTrue(default_theory == correct_theory)
 
     @attr('fast')
-    def test_determine_default_theory_for_layered_sphere(self):
-
-        default_theory = determine_default_theory_for(LayeredSphere())
+    def test_determine_default_theory_for_layered_spheres(self):
+        layered_spheres = Spheres([Sphere(r=[0.5, 1], n=[1, 1.5])]*2)
+        default_theory = determine_default_theory_for(layered_spheres)
         correct_theory = Mie()
         self.assertTrue(default_theory == correct_theory)
 
