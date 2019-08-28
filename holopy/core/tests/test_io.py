@@ -58,11 +58,12 @@ class test_loading_and_saving(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             loaded = load_image(filename,
-                                name=self.holo.name, medium_index=self.holo.medium_index,
+                                name=self.holo.name,
+                                medium_index=self.holo.medium_index,
                                 spacing=get_spacing(self.holo),
                                 illum_wavelen=self.holo.illum_wavelen,
                                 illum_polarization=self.holo.illum_polarization,
-                                normals=self.holo.normals, noise_sd=self.holo.noise_sd)
+                                noise_sd=self.holo.noise_sd)
         return loaded
 
     @attr('fast')
@@ -157,6 +158,20 @@ class test_loading_and_saving(unittest.TestCase):
         # load_image does
         l = load_image(filename, spacing=get_spacing(self.holo))
         assert_obj_close(l, copy_metadata(l, self.holo))
+
+    @attr('fast')
+    def test_load_image_normals_raises_error_with_deprecation_message(self):
+        filename = 'error-should-raise-regardless-of-filename.tiff'
+        self.assertRaisesRegex(
+            ValueError, "`normals` are deprecated*",
+            load_image, filename, normals=np.array([0, 0, 1.]))
+
+    @attr('fast')
+    def test_load_average_normals_raises_error_with_deprecation_message(self):
+        filename = 'error-should-raise-regardless-of-filename.tiff'
+        self.assertRaisesRegex(
+            ValueError, "`normals` are deprecated*",
+            load_average, [filename], normals=np.array([0, 0, 1.]))
 
 
 class test_custom_yaml_output(unittest.TestCase):

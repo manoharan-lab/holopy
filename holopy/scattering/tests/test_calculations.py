@@ -23,6 +23,7 @@ calc_intensity and calc_holo, based on subclass's calc_field
 .. moduleauthor:: R. Alexander <ralexander@g.harvard.edu>
 """
 import unittest
+import warnings
 
 from nose.plugins.attrib import attr
 
@@ -100,13 +101,11 @@ class TestCalculations(unittest.TestCase):
 
     @attr('medium')
     def test_scattered_field_to_hologram(self):
-        size = 3
-        coords = np.linspace(0, 1, size)
+        coords = ['x', 'y', 'z']
         scat = xr.DataArray(np.array([1, 0, 0]), coords=[('vector', coords)])
         ref = xr.DataArray(np.array([1, 0, 0]), coords=[('vector', coords)])
-        normals = np.array((0, 0, 1))
         correct_holo = (np.abs(scat + ref)**2).sum(dim='vector')
-        holo = scattered_field_to_hologram(scat, ref, normals)
+        holo = scattered_field_to_hologram(scat, ref)
         self.assertEqual(holo.values.mean(), correct_holo.values.mean())
 
 
@@ -141,7 +140,9 @@ class TestDetermineDefaultTheoryFor(unittest.TestCase):
     @attr('fast')
     def test_determine_default_theory_for_layered_spheres(self):
         layered_spheres = Spheres([Sphere(r=[0.5, 1], n=[1, 1.5])]*2)
-        default_theory = determine_default_theory_for(layered_spheres)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')
+            default_theory = determine_default_theory_for(layered_spheres)
         correct_theory = Mie()
         self.assertTrue(default_theory == correct_theory)
 

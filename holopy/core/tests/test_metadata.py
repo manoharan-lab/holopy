@@ -37,20 +37,12 @@ class TestDetectorGrid(unittest.TestCase):
         self.assertEqual(detector.values.shape, true_shape)
 
     @attr("fast")
-    def test_normals_default_to_001(self):
-        detector = detector_grid(10, 0.1)  # default normals
-        default_normals = np.array([0, 0, 1.0])
-        detector_normals = detector.normals.values
-        self.assertTrue(np.allclose(detector_normals, default_normals, **TOLS))
-
-    @attr("fast")
-    def test_normals_are_stored_when_passed_as_scalar(self):
+    def test_normals_are_deprecated_with_error(self):
         normals = np.array([0.5, 0, 0.5])
         normals /= np.linalg.norm(normals)
-
-        detector = detector_grid(10, 0.1, normals=normals.copy())
-        detector_normals = detector.normals.values
-        self.assertTrue(np.allclose(detector_normals, normals, **TOLS))
+        self.assertRaisesRegex(
+            ValueError, "`normals` are deprecated*", detector_grid, 10, 1,
+            normals=normals)
 
     @attr("fast")
     def test_name_is_stored(self):
@@ -227,33 +219,13 @@ class TestDetectorPoints(unittest.TestCase):
         self.assertEqual(points.name, name)
 
     @attr("fast")
-    def test_has_attribute_normals(self):
-        x, y, z = np.random.randn(3, 10)
-        points = detector_points(x=x, y=y, z=z)
-        self.assertTrue(hasattr(points, 'normals'))
-
-    @attr("fast")
-    def test_default_normals_are_shape_3xN_for_spherical_coords(self):
-        npts = 13
-        r, theta, phi = np.random.randn(3, npts)
-        points = detector_points(r=r, theta=theta, phi=phi)
-        self.assertEqual(points.normals.values.shape, (3, npts))
-
-    @attr("fast")
-    def test_non_default_normals_not_supported(self):
+    def test_normals_raises_error_with_deprecation_message(self):
         npts = 13
         r, theta, phi = np.random.randn(3, npts)
         normals = np.random.randn(3, npts)
         self.assertRaisesRegex(
-            ValueError, 'Non-default normals not supported.',
+            ValueError, "`normals` are deprecated*",
             detector_points, r=r, theta=theta, phi=phi, normals=normals)
-
-    @attr("fast")
-    def test_default_normals_are_shape_3_for_cartesian_coords(self):
-        npts = 13
-        x, y, z = np.random.randn(3, npts)
-        points = detector_points(x=x, y=y, z=z)
-        self.assertEqual(points.normals.values.shape, (3,))
 
 
 class TestCleanConcat(unittest.TestCase):
@@ -344,50 +316,14 @@ class TestUpdateMetadata(unittest.TestCase):
         self.assertEqual(updated_detector.noise_sd, noise_sd)
 
     @attr("fast")
-    def test_does_update_normals(self):
+    def test_normals_raises_error_with_deprecation_message(self):
         detector = detector_grid(3, 0.1)
         np.random.seed(13)
         normals = np.random.randn(3)
         normals /= np.linalg.norm(normals)
-        updated_detector = update_metadata(detector, normals=normals)
-        self.assertTrue(np.all(updated_detector.normals.values == normals))
-
-    @attr("fast")
-    def test_raises_error_when_normals_are_of_shape_3xN(self):
-        npts = 12
-        x = np.random.randn(npts)
-        y = np.random.randn(npts)
-        z = np.random.randn(npts)
-        points = detector_points(x=x, y=y, z=z)
-
-        np.random.seed(13)
-        normals = np.random.randn(3, npts)
-        msg = "``normals`` must be a vector of shape *"
         self.assertRaisesRegex(
-            ValueError, msg, update_metadata, points, normals=normals)
-
-    @attr("fast")
-    def test_raises_error_when_normals_are_of_shape_4(self):
-        detector = detector_grid(3, 0.1)
-        np.random.seed(13)
-        msg = "``normals`` must be a vector of shape *"
-        normals = np.random.randn(4)
-        self.assertRaisesRegex(
-            ValueError, msg, update_metadata, detector, normals=normals)
-
-    @attr("fast")
-    def test_raises_error_when_normals_are_of_shape_Nx3(self):
-        npts = 12
-        x = np.random.randn(npts)
-        y = np.random.randn(npts)
-        z = np.random.randn(npts)
-        points = detector_points(x=x, y=y, z=z)
-
-        np.random.seed(13)
-        normals = np.random.randn(npts, 3)
-        msg = "``normals`` must be a vector of shape *"
-        self.assertRaisesRegex(
-            ValueError, msg, update_metadata, points, normals=normals)
+            ValueError, "`normals` are deprecated*",
+            update_metadata, detector, normals=normals)
 
 
 class TestGetSpacing(unittest.TestCase):

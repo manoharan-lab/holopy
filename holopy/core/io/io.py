@@ -37,11 +37,13 @@ from holopy.core.io.vis import display_image
 from holopy.core.metadata import (data_grid, get_spacing, update_metadata,
                     copy_metadata, to_vector, illumination)
 from holopy.core.utils import ensure_array, dict_without
-from holopy.core.errors import NoMetadata, BadImage, LoadError
+from holopy.core.errors import (
+    NoMetadata, BadImage, LoadError, NORMALS_DEPRECATION_MESSAGE)
 from holopy.core.holopy_object import FullLoader# compatibility with pyyaml < 5
 
 attr_coords = '_attr_coords'
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
+
 
 def default_extension(inf, defext='.h5'):
     try:
@@ -55,6 +57,7 @@ def default_extension(inf, defext='.h5'):
     else:
         return inf
 
+
 def get_example_data_path(name):
     path = os.path.abspath(__file__)
     path = os.path.join(os.path.split(os.path.split(path)[0])[0],
@@ -66,8 +69,10 @@ def get_example_data_path(name):
         out = [os.path.join(path,img) for img in name]
     return out
 
+
 def get_example_data(name):
     return load(get_example_data_path(name))
+
 
 def pack_attrs(a, do_spacing=False):
     new_attrs = {attr_coords:{}}
@@ -90,6 +95,7 @@ def pack_attrs(a, do_spacing=False):
                                        default_flow_style=True)
     return new_attrs
 
+
 def unpack_attrs(a):
     if len(a) == 0:
         return a
@@ -109,6 +115,7 @@ def unpack_attrs(a):
         else:
             new_attrs[attr] = None
     return new_attrs
+
 
 def load(inf, lazy=False):
     """
@@ -191,6 +198,7 @@ def load(inf, lazy=False):
     else:
         raise NoMetadata
 
+
 def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
                illum_polarization=None, normals=None, noise_sd=None,
                channel=None, name=None):
@@ -210,8 +218,6 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
         wavelength (in vacuum) of illuminating light
     illum_polarization : (float, float) (optional)
         (x, y) polarization vector of the illuminating light
-    normals : (float, float, float) (optional)
-        (x, y, z) vector of the component of light propagation captured by detector
     noise_sd : float (optional)
         noise level in the image, normalized to image intensity
     channel : int or tuple of ints (optional)
@@ -225,6 +231,8 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
     obj : xarray.DataArray representation of the image with associated metadata
 
     """
+    if normals is not None:
+        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
     if name is None:
         name = os.path.splitext(os.path.split(inf)[-1])[0]
 
@@ -268,7 +276,12 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
                     pol_index = xr.DataArray(channel, dims=illumination, name=illumination)
                     illum_polarization=xr.concat([to_vector(pol) for pol in illum_polarization], pol_index)
 
-    return data_grid(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, noise_sd, name, extra_dims)
+    image = data_grid(
+        arr, spacing=spacing, medium_index=medium_index,
+        illum_wavelen=illum_wavelen, illum_polarization=illum_polarization,
+        noise_sd=noise_sd, name=name, extra_dims=extra_dims)
+    return image
+
 
 def save(outf, obj):
     """
@@ -303,6 +316,7 @@ def save(outf, obj):
         ds.to_netcdf(default_extension(outf), engine='h5netcdf')
     else:
         serialize.save(outf, obj)
+
 
 def save_image(filename, im, scaling='auto', depth=8):
     """Save an ndarray or image as a tiff.
@@ -365,7 +379,11 @@ def save_image(filename, im, scaling='auto', depth=8):
     else:
         pilimage.fromarray(im).save(filename)
 
-def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, noise_sd=None, channel=None, image_glob='*.tif'):
+
+def load_average(
+        filepath, refimg=None, spacing=None, medium_index=None,
+        illum_wavelen=None, illum_polarization=None, normals=None,
+        noise_sd=None, channel=None, image_glob='*.tif'):
     """
     Average a set of images (usually as a background)
 
@@ -384,8 +402,6 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
         Wavelength of illumination in the images. Used preferentially over refimg value if both are provided.
     illum_polarization : list-like
         Polarization of illumination in the images. Used preferentially over refimg value if both are provided.
-    normals : list-like
-        Orientation of detector. Used preferentially over refimg value if both are provided.
     image_glob : string
         Glob used to select images (if images is a directory)
 
@@ -395,6 +411,8 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
         Image which is an average of images
         noise_sd attribute contains average pixel stdev normalized by total image intensity
     """
+    if normals is not None:
+        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
 
     if isinstance(filepath, str):
         if os.path.isdir(filepath):
@@ -490,3 +508,4 @@ class Accumulator:
             return None
         else:
             return np.sqrt(self._running_var / (self._n))
+
