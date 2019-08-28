@@ -31,7 +31,7 @@ import xarray as xr
 
 from holopy.core.utils import updated, repeat_sing_dims, ensure_array
 from holopy.core.math import to_cartesian
-from holopy.core.errors import CoordSysError
+from holopy.core.errors import CoordSysError, NORMALS_DEPRECATION_MESSAGE
 
 
 vector = 'vector'
@@ -58,8 +58,6 @@ def detector_grid(shape, spacing, normals=None, name=None, extra_dims=None):
         If int, distance between square detector pixels.
         If array_like, \ *spacing*\ [0] between adjacent rows and
         \ *spacing*\ [1] between adjacent columns.
-    normals : list-like or None
-        If list-like, detector orientation.
     name : string, optional
     extra_dims : dict or OrderedDict, optional
         extra dimension(s) to add to the empty detector grid as
@@ -87,12 +85,13 @@ def detector_grid(shape, spacing, normals=None, name=None, extra_dims=None):
         for val in extra_dims.values():
             shape.append(len(val))
     d = np.zeros(shape)
-    return data_grid(d, spacing, normals=normals, name=name,
-                     extra_dims=extra_dims)
+    if normals is not None:
+        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
+    return data_grid(d, spacing, name=name, extra_dims=extra_dims)
 
 
 def detector_points(coords={}, x=None, y=None, z=None, r=None, theta=None,
-                    phi=None, normals='auto', name=None):
+                    phi=None, normals=None, name=None):
     """
     Returns a one-dimensional set of detector coordinates at which scattering
     calculations are to be done.
@@ -115,10 +114,6 @@ def detector_points(coords={}, x=None, y=None, z=None, r=None, theta=None,
         Spherical polar coordinates (polar angle from z axis) of detectors.
     phi : int or array_like, optional
         Spherical polar azimuthal coodinates of detectors.
-    normals : string, optional
-        Default behavior: normal in +z direction for Cartesian coordinates,
-        -r direction for polar coordinates. Non-default behavior not currently
-        implemented.
     name : string
 
     Returns
@@ -134,8 +129,8 @@ def detector_points(coords={}, x=None, y=None, z=None, r=None, theta=None,
     a digital camera.)
 
     """
-    if normals is not 'auto':
-        raise ValueError('Non-default normals not supported.')
+    if normals is not None:
+        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
     updatelist = {'x': x, 'y': y, 'z': z, 'r': r, 'theta': theta, 'phi': phi}
     coords = updated(coords, updatelist)
     if 'x' in coords and 'y' in coords:
@@ -155,9 +150,8 @@ def detector_points(coords={}, x=None, y=None, z=None, r=None, theta=None,
 
     coords = repeat_sing_dims(coords, keys)
     coords = updated(coords, {key: ('point', coords[key]) for key in keys})
-    attrs = {'normals': default_norms(coords, normals)}
     return xr.DataArray(np.zeros(len(coords[keys[0]][1])), dims=['point'],
-                        coords=coords, attrs=attrs, name=name)
+                        coords=coords, name=name)
 
 
 def clean_concat(arrays, dim):
@@ -200,24 +194,20 @@ def update_metadata(a, medium_index=None, illum_wavelen=None,
         Updated wavelength of illumination in the image.
     illum_polarization : list-like
         Updated polarization of illumination in the image.
-    normals : list-like
-        Updated detector orientation of the image.
     noise_sd : float
         standard deviation of Gaussian noise in the image.
 
     Returns
     -------
     b : xarray.DataArray
-        copy of input image with updated metadata. The 'normals' field
-        is not allowed to be empty.
+        copy of input image with updated metadata.
     """
-    if normals is not None and np.shape(normals) != (3,):
-        raise ValueError("``normals`` must be a vector of shape (3,)")
+    if normals is not None:
+        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
     attrlist = {'medium_index': medium_index,
                 'illum_wavelen': dict_to_array(a, illum_wavelen),
                 'illum_polarization': dict_to_array(
                     a, to_vector(illum_polarization)),
-                'normals': to_vector(normals),
                 'noise_sd': dict_to_array(a, noise_sd)}
     b = a.copy()
     b.attrs = updated(b.attrs, attrlist)
@@ -225,10 +215,6 @@ def update_metadata(a, medium_index=None, illum_wavelen=None,
     for attr in attrlist:
         if not hasattr(b, attr):
             b.attrs[attr] = None
-
-    if b.normals is None:
-        b.attrs['normals'] = default_norms(b.coords, 'auto')
-
     return b
 
 
@@ -347,8 +333,8 @@ def make_subset_data(data, pixels=None, return_selection=False, seed=None):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None,
-              illum_polarization=None, normals=None, noise_sd=None,
-              name=None, extra_dims=None, z=0):
+              illum_polarization=None, noise_sd=None, name=None,
+              extra_dims=None, z=0):
     """
     Create a set of detector points along with other experimental metadata.
 
@@ -361,7 +347,6 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None,
     Use the higher-level detector_grid() and detector_points() functions.
     This should be viewed as a factory method.
     """
-
     if spacing is None:
         spacing = 1
         warn("No pixel spacing provided. Setting spacing to 1, but any"
@@ -380,8 +365,10 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None,
         coords.update(extra_dims)
     dims = ['z', 'x', 'y'] + list(extra_dims.keys())
     out = xr.DataArray(arr, dims=dims,  coords=coords, name=name)
-    return update_metadata(out, medium_index, illum_wavelen,
-                           illum_polarization, normals, noise_sd)
+    out = update_metadata(
+        out, medium_index=medium_index, illum_wavelen=illum_wavelen,
+        illum_polarization=illum_polarization, noise_sd=noise_sd)
+    return out
 
 
 def to_vector(c):

@@ -22,7 +22,9 @@ Error classes used in holopy
 .. moduleauthor :: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
-
+NORMALS_DEPRECATION_MESSAGE = (
+    "`normals` are deprecated in holopy. Their old implementation was" +
+    " incorrect and cannot really be corrected.")
 
 class LoadError(Exception):
     def __init__(self, filename, message):
