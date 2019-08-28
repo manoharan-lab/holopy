@@ -100,8 +100,7 @@ class TestCalculations(unittest.TestCase):
 
     @attr('medium')
     def test_scattered_field_to_hologram(self):
-        size = 3
-        coords = np.linspace(0, 1, size)
+        coords = ['x', 'y', 'z']
         scat = xr.DataArray(np.array([1, 0, 0]), coords=[('vector', coords)])
         ref = xr.DataArray(np.array([1, 0, 0]), coords=[('vector', coords)])
         correct_holo = (np.abs(scat + ref)**2).sum(dim='vector')
