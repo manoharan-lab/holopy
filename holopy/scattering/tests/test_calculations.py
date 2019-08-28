@@ -104,9 +104,8 @@ class TestCalculations(unittest.TestCase):
         coords = np.linspace(0, 1, size)
         scat = xr.DataArray(np.array([1, 0, 0]), coords=[('vector', coords)])
         ref = xr.DataArray(np.array([1, 0, 0]), coords=[('vector', coords)])
-        normals = np.array((0, 0, 1))
         correct_holo = (np.abs(scat + ref)**2).sum(dim='vector')
-        holo = scattered_field_to_hologram(scat, ref, normals)
+        holo = scattered_field_to_hologram(scat, ref)
         self.assertEqual(holo.values.mean(), correct_holo.values.mean())
 
 
