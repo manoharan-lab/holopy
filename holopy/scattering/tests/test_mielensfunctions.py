@@ -2,6 +2,7 @@ import unittest
 import itertools
 
 import numpy as np
+from numpy.polynomial.chebyshev import Chebyshev
 from scipy.special import jn_zeros
 from nose.plugins.attrib import attr
 
@@ -507,6 +508,113 @@ class TestCalculation(unittest.TestCase):
         self.assertTrue(np.isclose(ratio, 1.0, **self._highna_tols))
 
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#                           Interpolation Tests
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+class TestPiecewiseChebyshevApproximant(unittest.TestCase):
+    @attr("fast")
+    def test_mask_window(self):
+        window = (0, 1)
+        x = np.linspace(0, 2, 101)
+        mask = mielensfunctions.PiecewiseChebyshevApproximant._mask_window(
+            x, window)
+        self.assertLess(x[mask].max(), 1.0)
+        self.assertGreaterEqual(x[~mask].min(), 1.0)
+
+    @attr("fast")
+    def test_setup_windows_splits_into_n_windows(self):
+        nwindows = 5
+        piecewisecheb = mielensfunctions.PiecewiseChebyshevApproximant(
+            np.sin, degree=10,
+            window_breakpoints=np.linspace(0, 1, nwindows + 1))
+        windows = piecewisecheb._setup_windows()
+        self.assertEqual(len(windows), nwindows)
+
+    @attr("fast")
+    def test_setup_windows_partitions_window(self):
+        nwindows = 5
+        window = (0, 1)
+        piecewisecheb = mielensfunctions.PiecewiseChebyshevApproximant(
+            np.sin, degree=10,
+            window_breakpoints=np.linspace(*window, nwindows + 1))
+        windows = piecewisecheb._setup_windows()
+
+        np.random.seed(72)
+        x = np.random.rand(101) * np.ptp(window) + window[0]
+        masks = [piecewisecheb._mask_window(x, w) for w in windows]
+        number_of_masks_contained = np.sum(masks, axis=0)
+        self.assertTrue(np.all(number_of_masks_contained == 1))
+
+    @attr("fast")
+    def test_setup_approximants_generates_approximants(self):
+        piecewisecheb = mielensfunctions.PiecewiseChebyshevApproximant(
+            np.sin, degree=10, window_breakpoints=np.linspace(0, 1, 6))
+        approximants = piecewisecheb._setup_approximants()
+        for approximant in approximants:
+            self.assertTrue(isinstance(approximant, Chebyshev))
+
+    @attr("fast")
+    def test_dtype_on_float(self):
+        piecewisecheb = mielensfunctions.PiecewiseChebyshevApproximant(
+            np.sin, 10, window_breakpoints=np.linspace(0, 1, 6))
+        self.assertEqual(piecewisecheb._dtype.name, 'float64')
+
+    @attr("fast")
+    def test_dtype_on_complex(self):
+        piecewisecheb = mielensfunctions.PiecewiseChebyshevApproximant(
+            lambda x: np.exp(1j * x), 10,
+            window_breakpoints=np.linspace(0, 1, 6))
+        self.assertEqual(piecewisecheb._dtype.name, 'complex128')
+
+    @attr("fast")
+    def test_call_raises_error_when_x_less_than_window(self):
+        window = (0, 10)
+        piecewisecheb = mielensfunctions.PiecewiseChebyshevApproximant(
+            np.sin, 10, window_breakpoints=np.linspace(*window, 6))
+        self.assertRaises(ValueError, piecewisecheb, window[0] - 1)
+
+    @attr("fast")
+    def test_call_raises_error_when_x_greater_than_window(self):
+        window = (0, 10)
+        piecewisecheb = mielensfunctions.PiecewiseChebyshevApproximant(
+            np.sin, 10, window_breakpoints=np.linspace(*window, 6))
+        self.assertRaises(ValueError, piecewisecheb, window[1] + 1)
+
+    @attr("fast")
+    def test_call_raises_error_when_x_equal_to_max_window(self):
+        window = (0, 10)
+        piecewisecheb = mielensfunctions.PiecewiseChebyshevApproximant(
+            np.sin, 10, window_breakpoints=np.linspace(*window, 6))
+        self.assertRaises(ValueError, piecewisecheb, window[1])
+
+    @attr("fast")
+    def test_call_returns_correct_shape(self):
+        window = (0, 20)
+        piecewisecheb = mielensfunctions.PiecewiseChebyshevApproximant(
+            np.sin, 10, window_breakpoints=np.linspace(*window, 6))
+        x = np.linspace(window[0], window[1] - 0.1, 101)
+        true = np.sin(x)
+        approx = piecewisecheb(x)
+        self.assertEqual(true.shape, approx.shape)
+
+    @attr("fast")
+    def test_call_accurately_approximates(self):
+        window = (0, 20)
+        piecewisecheb = mielensfunctions.PiecewiseChebyshevApproximant(
+            np.sin, degree=12,
+            window_breakpoints=np.linspace(*window, 21))
+        x = np.linspace(window[0], window[1] - 0.1, 101)
+        true = np.sin(x)
+        approx = piecewisecheb(x)
+        self.assertTrue(np.allclose(true, approx, **TOLS))
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#                           Helper functions
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 def evaluate_scattered_field_in_lens(delta_index=0.1, size_parameter=0.1):
     miecalculator = mielensfunctions.MieLensCalculator(
         particle_kz=10, index_ratio=1.0 + delta_index,
@@ -599,3 +707,4 @@ def get_ratio_of_scattered_powerin_to_scattered_powerout(**kwargs):
 
 if __name__ == '__main__':
     unittest.main()
+

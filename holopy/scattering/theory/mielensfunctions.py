@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.polynomial.chebyshev import Chebyshev
 from scipy.special import j0, j1, spherical_jn, spherical_yn
 from scipy import interpolate
 
@@ -540,3 +541,52 @@ def calculate_pil_taul(theta, max_order):
         tau[n] = n * cos_th * pi[n] - (n + 1) * pi[n-1]
 
     return pi[1:].T, tau[1:].T
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#                           Interpolation
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+class PiecewiseChebyshevApproximant(object):
+    def __init__(self, function, degree, window_breakpoints, **kwargs):
+        """
+        Approximates on [window_breakpoints[0], window_breakpoints[1])
+        """
+        self.function = function
+        self.degree = degree
+        self.window_breakpoints = window_breakpoints
+        self.kwargs = kwargs
+
+        self._domain = (window_breakpoints[0], window_breakpoints[-1])
+        self._windows = self._setup_windows()
+        self._approximants = self._setup_approximants()
+        self._dtype = self._approximants[0].coef.dtype
+
+    def _setup_windows(self):
+        windows = [
+            (start, stop) for start, stop in
+            zip(self.window_breakpoints[:-1], self.window_breakpoints[1:])]
+        return windows
+
+    def _setup_approximants(self):
+        return [Chebyshev.interpolate(
+                    self.function, self.degree, domain=window, **self.kwargs)
+                for window in self._windows]
+
+    def __call__(self, x):
+        x = np.asarray(x)
+        if x.max() >= self._domain[1] or x.min() < self._domain[0]:
+            msg = "x must be within interpolation window [{}, {})".format(
+                *self._domain)
+            raise ValueError(msg)
+        result = np.zeros(x.shape, dtype=self._dtype)
+        for window, approximant in zip(self._windows, self._approximants):
+            mask = self._mask_window(x, window)
+            result[mask] = approximant(x[mask])
+        return result
+
+    @classmethod
+    def _mask_window(cls, x, window):
+        return (x >= window[0]) & (x < window[1])
+
