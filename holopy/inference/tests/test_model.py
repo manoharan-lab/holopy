@@ -50,6 +50,8 @@ def test_ComplexPar():
     interpreted_pars = {'alpha':.7, 'n':{'real':1.585}}
     assert_equal(_interpret_parameters(model.parameters), interpreted_pars)
 
+
+@attr('fast')
 def test_multidim():
     par_s = Sphere(
         n={'r': prior.Uniform(-1,1), 'g': 0, 'b': prior.Gaussian(0,1),'a':0},
@@ -74,6 +76,7 @@ def test_multidim():
     assert_equal(m.parameters, expected_params)
 
 
+@attr('fast')
 def test_pullingoutguess():
     g = Sphere(center = (prior.Uniform(0, 1e-5, guess=.567e-5),
                    prior.Uniform(0, 1e-5, .567e-5), prior.Uniform(1e-5, 2e-5, 15e-6)),
@@ -99,6 +102,8 @@ def test_pullingoutguess():
     assert_equal(s.r, model.scatterer.guess.r)
     assert_equal(s.center, model.scatterer.guess.center)
 
+
+@attr('fast')
 def test_find_noise():
     noise=0.5
     s = Sphere(n=prior.Uniform(1.5, 1.7), r=2, center=[1,2,3])
@@ -114,9 +119,12 @@ def test_find_noise():
     pars.update({'noise_sd':noise})
     assert_equal(model_g._find_noise(pars, data_base), noise)
 
+
+@attr('fast')
 def test_io():
     model = ExactModel(Sphere(1), calc_holo)
     assert_read_matches_write(model)
 
     model = ExactModel(Sphere(1), calc_holo, theory=Mie(False))
     assert_read_matches_write(model)
+
