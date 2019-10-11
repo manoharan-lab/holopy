@@ -48,10 +48,15 @@ class BaseModel(HoloPyObject):
         self._use_parameters(scatterer.parameters, False)
         if not (np.isscalar(noise_sd) or isinstance(noise_sd, (Prior, dict))):
             noise_sd = ensure_array(noise_sd)
-        self._use_parameters({'medium_index': medium_index,
-                             'illum_wavelen':illum_wavelen,
-                             'illum_polarization':illum_polarization,
-                             'theory':theory, 'noise_sd':noise_sd})
+        parameters_to_use = {
+            'medium_index': medium_index,
+            'illum_wavelen': illum_wavelen,
+            'illum_polarization': illum_polarization,
+            'theory': theory,
+            'noise_sd': noise_sd,
+            }
+        self._check_parameters_are_not_xarray(parameters_to_use)
+        self._use_parameters(parameters_to_use)
 
     @property
     def parameters(self):
@@ -182,6 +187,12 @@ class BaseModel(HoloPyObject):
             (self._residuals(pars, data, noise_sd)**2).sum())
         return log_likelihood
 
+    def _check_parameters_are_not_xarray(self, parameters_to_use):
+        for key, value in parameters_to_use.items():
+            if isinstance(value, xr.DataArray):
+                msg = ("{} cannot be an xarray.DataArray due to ".format(key) +
+                       "limitations in holopys ability to save objects.")
+                raise ValueError(msg)
 
 class LimitOverlaps(HoloPyObject):
     """

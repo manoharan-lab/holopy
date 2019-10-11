@@ -41,6 +41,14 @@ from holopy.inference.model import BaseModel
 
 
 class TestBaseModel(unittest.TestCase):
+    base_model_keywords = [
+        'noise_sd',
+        'medium_index',
+        'illum_wavelen',
+        'illum_polarization',
+        'theory',
+        ]
+
     @attr('fast')
     def test_initializable(self):
         scatterer = make_sphere()
@@ -48,20 +56,44 @@ class TestBaseModel(unittest.TestCase):
         self.assertTrue(model is not None)
 
     @attr('fast')
-    # FIXME test is wrong
-    def _test_initializing_with_xarray_raises_error(self):
+    def test_initializing_with_xarray_raises_error(self):
         sphere = make_sphere()
-        kwargs_correct = make_basemodel_kwargs()
-        # Generating with:
-        # noise_sd: auto-casts as a numpy array
-        # medium_index, illum_wavelen, illum_polarization, theory:
-        #  Raises an IndexError(tuple index out of range) in _expand_parameters
-        for key in kwargs_correct.keys():
-            xarray_kwargs = make_basemodel_kwargs()
-            xarray_kwargs[key] = xr.DataArray(kwargs_correct[key])
+        for key in self.base_model_keywords:
+            value = xr.DataArray(
+                [1, 0.],
+                dims=['illumination'],
+                coords={'illumination': ['red', 'green']})
+            kwargs = {key: value}
             error_regex = '{} cannot be an xarray'.format(key)
-            self.assertRaisesRegex(
-                ValueError, error_regex, BaseModel, sphere, **xarray_kwargs)
+            with self.subTest(key=key):
+                self.assertRaisesRegex(
+                    ValueError, error_regex, BaseModel, sphere, **kwargs)
+
+    @attr('fast')
+    def test_yaml_round_trip_with_dict(self):
+        sphere = make_sphere()
+        for key in self.base_model_keywords:
+            value = {'red': 1, 'green': 0}
+            kwargs = {key: value}
+            model = BaseModel(sphere, **kwargs)
+            with self.subTest(key=key):
+                reloaded = take_yaml_round_trip(model)
+                self.assertEqual(reloaded, model)
+
+    @attr('fast')
+    @unittest.skip("There is a problem with saving yaml xarrays")
+    def test_yaml_round_trip_with_xarray(self):
+        sphere = make_sphere()
+        for key in self.base_model_keywords:
+            value = xr.DataArray(
+                [1, 0.],
+                dims=['illumination'],
+                coords={'illumination': ['red', 'green']})
+            kwargs = {key: value}
+            model = BaseModel(sphere, **kwargs)
+            with self.subTest(key=key):
+                reloaded = take_yaml_round_trip(model)
+                self.assertEqual(reloaded, model)
 
 
 class TestAlphaModel(unittest.TestCase):
@@ -72,7 +104,6 @@ class TestAlphaModel(unittest.TestCase):
         self.assertTrue(model is not None)
 
     @attr('fast')
-    # FIXME test is wrong
     def test_initializing_with_xarray_alpha_raises_error(self):
         sphere = make_sphere()
         alpha_xarray = xr.DataArray(
