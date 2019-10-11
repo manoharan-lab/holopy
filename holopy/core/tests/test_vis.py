@@ -240,7 +240,9 @@ class TestDisplayImage(unittest.TestCase):
         base.attrs = {'a':2, 'b':3, 'c':4, 'd':5, '_image_scaling':(0, 59)}
         assert_equal(base.attrs, display_image(base).attrs)
 
+
 class ShowTest(unittest.TestCase):
+    # FIXME this test prints crap to the console
     @attr("medium")
     def test_show(self):
         d = get_example_data('image0001')
