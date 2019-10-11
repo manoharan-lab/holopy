@@ -17,8 +17,10 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import unittest
 import tempfile
 
+import yaml
 import numpy as np
 import xarray as xr
 from collections import OrderedDict
@@ -26,7 +28,7 @@ from collections import OrderedDict
 from nose.plugins.attrib import attr
 from numpy.testing import assert_raises
 
-from holopy.core import detector_grid, update_metadata
+from holopy.core import detector_grid, update_metadata, holopy_object
 from holopy.core.tests.common import assert_equal, assert_obj_close
 from holopy.scattering.theory import Mie
 from holopy.scattering.scatterer import Sphere, Spheres
@@ -35,15 +37,101 @@ from holopy.scattering.errors import MissingParameter
 from holopy.core.tests.common import assert_read_matches_write
 from holopy.scattering.calculations import calc_holo
 from holopy.inference import prior, AlphaModel, ExactModel
+from holopy.inference.model import BaseModel
+
+
+class TestBaseModel(unittest.TestCase):
+    @attr('fast')
+    def test_initializable(self):
+        scatterer = make_sphere()
+        model = BaseModel(scatterer)
+        self.assertTrue(model is not None)
+
+    @attr('fast')
+    # FIXME test is wrong
+    def _test_initializing_with_xarray_raises_error(self):
+        sphere = make_sphere()
+        kwargs_correct = make_basemodel_kwargs()
+        # Generating with:
+        # noise_sd: auto-casts as a numpy array
+        # medium_index, illum_wavelen, illum_polarization, theory:
+        #  Raises an IndexError(tuple index out of range) in _expand_parameters
+        for key in kwargs_correct.keys():
+            xarray_kwargs = make_basemodel_kwargs()
+            xarray_kwargs[key] = xr.DataArray(kwargs_correct[key])
+            error_regex = '{} cannot be an xarray'.format(key)
+            self.assertRaisesRegex(
+                ValueError, error_regex, BaseModel, sphere, **xarray_kwargs)
+
+
+class TestAlphaModel(unittest.TestCase):
+    @attr('fast')
+    def test_initializable(self):
+        scatterer = make_sphere()
+        model = AlphaModel(scatterer, alpha=0.6)
+        self.assertTrue(model is not None)
+
+    @attr('fast')
+    # FIXME test is wrong
+    def _test_initializing_with_xarray_alpha_raises_error(self):
+        sphere = make_sphere()
+        kwargs = make_basemodel_kwargs()
+        kwargs.update({'alpha': xr.DataArray(0.6)})
+        error_regex = 'alpha cannot be an xarray'
+        self.assertRaisesRegex(
+            ValueError, error_regex, AlphaModel, sphere, **kwargs)
+
+    @attr("fast")
+    @unittest.skip("There is a problem with saving yaml xarrays")
+    def test_yaml_round_trip_with_xarray(self):
+        alpha_xarray = xr.DataArray(
+            [1, 0.5],
+            dims=['illumination'],
+            coords={'illumination': ['red', 'green']})
+        sphere = make_sphere()
+        model = AlphaModel(sphere, alpha=alpha_xarray)
+
+        reloaded = take_yaml_round_trip(model)
+        self.assertEqual(reloaded, model)
+
+
+    @attr("fast")
+    def test_yaml_round_trip_with_dict(self):
+        alpha_dict = {'red': 1, 'green': 0.5}
+        sphere = make_sphere()
+        model = AlphaModel(sphere, alpha=alpha_dict)
+
+        reloaded = take_yaml_round_trip(model)
+        self.assertEqual(reloaded, model)
+
+
+def make_sphere():
+    index = prior.Uniform(1.4, 1.6)
+    radius = prior.Uniform(0.2, 0.8)
+    return Sphere(n=index, r=radius)
+
+
+def make_basemodel_kwargs():
+    kwargs = {
+        'noise_sd': 0.05,
+        'medium_index': 1.33,
+        'illum_wavelen': 0.66,
+        'illum_polarization': (1, 0),
+        'theory': 'auto',
+        # constraints?
+        # FIXME need to test alpha, lens_angle for other models
+        }
+    return kwargs
+
+
+def take_yaml_round_trip(model):
+    object_string = yaml.dump(model)
+    loaded = yaml.load(object_string, Loader=holopy_object.FullLoader)
+    return loaded
 
 
 @attr('fast')
-def test_ComplexPar():
-    # complex parameter
-    def makeScatterer(n):
-        n**2
-        return fake_sph
-
+def test_ComplexPrior():
     parm = Sphere(n=prior.ComplexPrior(real=prior.Uniform(1.58,1.59), imag=.001))
     model = AlphaModel(parm, alpha=prior.Uniform(.6, 1, .7))
     assert_equal(model.parameters['n.real'].name, 'n.real')
@@ -127,4 +215,8 @@ def test_io():
 
     model = ExactModel(Sphere(1), calc_holo, theory=Mie(False))
     assert_read_matches_write(model)
+
+
+if __name__ == '__main__':
+    unittest.main()
 
