@@ -32,6 +32,7 @@ from holopy.scattering.scatterer import (_expand_parameters,
                                          _interpret_parameters)
 from holopy.inference.prior import Prior, Uniform, generate_guess
 
+
 class BaseModel(HoloPyObject):
     """Model probabilites of observing data
 
@@ -202,6 +203,10 @@ class AlphaModel(BaseModel):
     def __init__(self, scatterer, alpha=1, noise_sd=None, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
                  constraints=[]):
+        if isinstance(alpha, xr.DataArray):
+            msg = ("alpha cannot be an xarray.DataArray due to limitations" +
+                   " in holopys ability to save objects.")
+            raise ValueError(msg)
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
                          illum_polarization, theory, constraints)
         self._use_parameters({'alpha':alpha})

@@ -73,13 +73,15 @@ class TestAlphaModel(unittest.TestCase):
 
     @attr('fast')
     # FIXME test is wrong
-    def _test_initializing_with_xarray_alpha_raises_error(self):
+    def test_initializing_with_xarray_alpha_raises_error(self):
         sphere = make_sphere()
-        kwargs = make_basemodel_kwargs()
-        kwargs.update({'alpha': xr.DataArray(0.6)})
+        alpha_xarray = xr.DataArray(
+            [1, 0.5],
+            dims=['illumination'],
+            coords={'illumination': ['red', 'green']})
         error_regex = 'alpha cannot be an xarray'
         self.assertRaisesRegex(
-            ValueError, error_regex, AlphaModel, sphere, **kwargs)
+            ValueError, error_regex, AlphaModel, sphere, alpha=alpha_xarray)
 
     @attr("fast")
     @unittest.skip("There is a problem with saving yaml xarrays")
