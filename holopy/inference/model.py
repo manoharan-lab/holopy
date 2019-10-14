@@ -194,6 +194,7 @@ class BaseModel(HoloPyObject):
                        "limitations in holopys ability to save objects.")
                 raise ValueError(msg)
 
+
 class LimitOverlaps(HoloPyObject):
     """
     Constraint prohibiting overlaps beyond a certain tolerance.
@@ -214,13 +215,11 @@ class AlphaModel(BaseModel):
     def __init__(self, scatterer, alpha=1, noise_sd=None, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
                  constraints=[]):
-        if isinstance(alpha, xr.DataArray):
-            msg = ("alpha cannot be an xarray.DataArray due to limitations" +
-                   " in holopys ability to save objects.")
-            raise ValueError(msg)
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
                          illum_polarization, theory, constraints)
-        self._use_parameters({'alpha':alpha})
+        additional_parameters_to_use = {'alpha': alpha}
+        self._use_parameters(additional_parameters_to_use)
+        self._check_parameters_are_not_xarray(additional_parameters_to_use)
 
     def forward(self, pars, detector):
         """
