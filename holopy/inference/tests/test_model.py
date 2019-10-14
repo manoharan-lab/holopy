@@ -37,7 +37,7 @@ from holopy.scattering.errors import MissingParameter
 from holopy.core.tests.common import assert_read_matches_write
 from holopy.scattering.calculations import calc_holo
 from holopy.inference import prior, AlphaModel, ExactModel
-from holopy.inference.model import BaseModel
+from holopy.inference.model import BaseModel, PerfectLensModel
 
 
 class TestBaseModel(unittest.TestCase):
@@ -136,6 +136,26 @@ class TestAlphaModel(unittest.TestCase):
 
         reloaded = take_yaml_round_trip(model)
         self.assertEqual(reloaded, model)
+
+
+class TestPerfectLensModel(unittest.TestCase):
+    @attr('fast')
+    def test_initializable(self):
+        scatterer = make_sphere()
+        model = PerfectLensModel(scatterer, lens_angle=0.6)
+        self.assertTrue(model is not None)
+
+    @attr('fast')
+    def test_initializing_with_xarray_lens_angle_raises_error(self):
+        sphere = make_sphere()
+        lens_angle_xarray = xr.DataArray(
+            [0.6, 0.6],
+            dims=['illumination'],
+            coords={'illumination': ['red', 'green']})
+        error_regex = 'lens_angle cannot be an xarray'
+        self.assertRaisesRegex(
+            ValueError, error_regex, PerfectLensModel, sphere,
+            lens_angle=lens_angle_xarray)
 
 
 def make_sphere():

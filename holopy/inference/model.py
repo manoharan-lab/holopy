@@ -289,12 +289,15 @@ class PerfectLensModel(BaseModel):
     Model of hologram image formation through a high-NA objective.
     """
     theory_params = ['lens_angle']
+
     def __init__(self, scatterer, lens_angle=1.0, noise_sd=None,
                  medium_index=None, illum_wavelen=None, theory='auto',
                  illum_polarization=None, constraints=[]):
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
                          illum_polarization, theory, constraints)
-        self._use_parameters({'lens_angle':lens_angle})
+        additional_parameters_to_use = {'lens_angle': lens_angle}
+        self._use_parameters(additional_parameters_to_use)
+        self._check_parameters_are_not_xarray(additional_parameters_to_use)
 
     def forward(self, pars, detector):
         """
@@ -311,8 +314,8 @@ class PerfectLensModel(BaseModel):
         """
         optics_kwargs, scatterer = self._optics_scatterer(pars, detector)
         # We need the lens parameter(s) for the theory:
-        theory_kwargs = {name:self._get_parameter(name, pars, detector)
-                                    for name in self.theory_params}
+        theory_kwargs = {name: self._get_parameter(name, pars, detector)
+                         for name in self.theory_params}
         # FIXME would be nice to have access to the interpolator kwargs
         theory = MieLens(**theory_kwargs)
         try:
@@ -338,3 +341,4 @@ class LnpostWrapper(HoloPyObject):
     def evaluate(self, par_vals):
         pars_dict = {par.name:val for par, val in zip(self.parameters, par_vals)}
         return self.prefactor * self.func(pars_dict, self.data, self.pixels)
+
