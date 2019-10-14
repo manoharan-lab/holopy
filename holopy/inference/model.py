@@ -60,7 +60,7 @@ class BaseModel(HoloPyObject):
 
     @property
     def parameters(self):
-        return {par.name:par for par in self._parameters}
+        return {par.name: par for par in self._parameters}
 
     def _get_parameter(self, name, pars, schema=None):
         interpreted_pars = _interpret_parameters(pars)
@@ -88,8 +88,8 @@ class BaseModel(HoloPyObject):
 
     def _optics_scatterer(self, pars, schema):
         optics_keys = ['medium_index', 'illum_wavelen', 'illum_polarization']
-        optics = {key:self._get_parameter(key, pars, schema)
-                            for key in optics_keys}
+        optics = {key: self._get_parameter(key, pars, schema)
+                  for key in optics_keys}
         scatterer = self.scatterer.from_parameters(pars)
         return optics, scatterer
 
@@ -152,7 +152,8 @@ class BaseModel(HoloPyObject):
         raise NotImplementedError("Implement in subclass")
 
     def _find_noise(self, pars, data):
-        noise = dict_to_array(data, self._get_parameter('noise_sd', pars, data))
+        noise = dict_to_array(
+            data, self._get_parameter('noise_sd', pars, data))
         if noise is None:
             if np.all([isinstance(par, Uniform) for par in self._parameters]):
                 noise = 1
@@ -251,7 +252,7 @@ class AlphaModel(BaseModel):
 # object is 1 sphere or a collection of spheres etc. So you can't
 # pass MieLens as a theory
 # For now it would be OK since PerfectLensModel only works with single
-# spheres or superpositions, but I'm going to leave this for later.
+# spheres or superpositions, but let's leave this for later.
 class ExactModel(BaseModel):
     """
     Model of arbitrary scattering function given by calc_func.
