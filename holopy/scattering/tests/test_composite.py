@@ -56,6 +56,14 @@ class TestBasicMethods(unittest.TestCase):
         spheres = Spheres(spheres)
         self.assertEqual(spheres[1], spheres.scatterers[1])
 
+    @attr("fast")
+    def test_from_parameters_keeps_attributes(self):
+        spheres = [Sphere(n=np.random.rand(), r=0.1,
+                          center=[i, i, i]) for i in range(3)]
+        spheres = Spheres(spheres, warn="TEST")
+        spheres = spheres.from_parameters(spheres.parameters)
+        self.assertEqual(spheres.warn, "TEST")
+
 class TestBrokenTies(unittest.TestCase):
     @attr("fast")
     def test_unequal_ties(self):

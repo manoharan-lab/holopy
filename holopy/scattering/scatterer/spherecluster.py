@@ -60,6 +60,7 @@ class Spheres(Scatterers):
 
     def __init__(self, scatterers, ties=None, warn=True):
         scatterers = ensure_listlike(scatterers)
+        self.warn = warn
         for s in ensure_listlike(scatterers):
             if not isinstance(s, Sphere):
                 raise InvalidScatterer(self,
@@ -69,7 +70,7 @@ class Spheres(Scatterers):
         super().__init__(scatterers, ties)
 
 
-        if self.overlaps and warn:
+        if self.overlaps and self.warn:
             warnings.warn(OverlapWarning(self, self.overlaps))
 
     @property
