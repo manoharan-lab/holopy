@@ -91,6 +91,13 @@ class TestFitResult(unittest.TestCase):
         result.add_attr({'foo':'bar', 'foobar':7})
         self.assertEqual(result.foo, 'bar')
 
+    @attr("fast")
+    def test_guess_matches_model(self):
+        result = generate_fit_result()
+        model_guess = {key: val.guess
+                       for key, val in result.model.parameters.items()}
+        self.assertEqual(result.initial_guess, model_guess)
+
 class TestIO(unittest.TestCase):
     #@attr("fast")
     def test_base_io(self):

@@ -86,6 +86,10 @@ class FitResult(HoloPyObject):
         return {name: val for name, val in zip(self._names, self.guess)}
 
     @property
+    def initial_guess(self):
+        return {name: val.guess for name, val in self.model.parameters.items()}
+
+    @property
     def scatterer(self):
         return self.model.scatterer.from_parameters(self.parameters)
 
