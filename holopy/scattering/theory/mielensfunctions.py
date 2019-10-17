@@ -48,13 +48,23 @@ class MieLensCalculator(object):
             Whether or not to interpolate the internally-evaluated
             integrals for speed. Default is `'check'`, which interpolates
             if it will be faster or does direct numerical quadrature
-            otherwise.
-        interpolation_spacing : float, optional
-            The spacing, in units of `1/k`, for the nodes of the
-            CubicSpline interpolators. A lower value gives more accurate
-            retuls; values greater than about 1 will be unreliable.
-            Default is 0.1, which gives better than single-precision
+            otherwise. Interpolation is done via a piecewise Chebyshev
+            approximant.
+        interpolator_window_size : float, optional
+            The spacing, in units of `1/k`, for the windows of the
+            piecewise Chebyshev approximants. A lower value gives more
+            accurate results, although accuracy depends on the
+            `interpolator_degree` parameter as well. The default is 39.
+            which gives 5e-13 relative accuracy.
+        interpolator_degree : int, optional
+            The polynomial degree for the piecewise Chebyshev
+            approximants. A higher value gives more accurate results,
+            although accuracy depends on the `interpolator_window_size`
+            parameter as well. The default is 32, which gives 5e-13
             relative accuracy.
+
+            It is best to leave the interpolator parameter as-is; they
+            are only exposed for testing and advanced usage.
         """
         self.particle_kz = particle_kz
         self.index_ratio = index_ratio
