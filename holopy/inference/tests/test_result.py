@@ -54,7 +54,7 @@ class TestUncertainValue(unittest.TestCase):
     def test_optional_assymetric_uncertainty(self):
         uncval1 = UncertainValue([10], np.array(2))
         uncval2 = UncertainValue(10, 2, 2)
-        self.assertEquals(uncval1, uncval2)
+        self.assertEqual(uncval1, uncval2)
 
 class TestFitResult(unittest.TestCase):
     @attr("fast")
@@ -65,10 +65,10 @@ class TestFitResult(unittest.TestCase):
     @attr("fast")
     def test_properties(self):
         result = generate_fit_result()
-        self.assertEquals(result.guess, [1.6, 0.6, 0.7])
-        self.assertEquals(result._names, ['n', 'r', 'alpha'])
-        self.assertEquals(result.parameters, {'r':0.6, 'n':1.6, 'alpha':0.7})
-        self.assertEquals(result.scatterer,
+        self.assertEqual(result.guess, [1.6, 0.6, 0.7])
+        self.assertEqual(result._names, ['n', 'r', 'alpha'])
+        self.assertEqual(result.parameters, {'r':0.6, 'n':1.6, 'alpha':0.7})
+        self.assertEqual(result.scatterer,
                           Sphere(n=1.6, r=0.6, center=[10, 10, 10]))
 
     @attr("medium")
