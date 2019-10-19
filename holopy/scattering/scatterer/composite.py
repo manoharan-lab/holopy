@@ -212,7 +212,9 @@ class Scatterers(Scatterer):
                 collected[n][par] = val
         scatterers = [scat.from_parameters(pars, overwrite)
                          for scat, pars in zip(self.scatterers, collected)]
-        return type(self)(scatterers, ties=self.ties)
+        self_dict = dict(self._iteritems())
+        self_dict['scatterers'] = scatterers
+        return type(self)(**self_dict)
 
     def _prettystr(self, level, indent="  "):
         '''
