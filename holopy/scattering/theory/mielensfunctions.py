@@ -15,7 +15,7 @@ LEGGAUSS_PTS_WTS_NPTS = np.polynomial.legendre.leggauss(NPTS)
 class MieLensCalculator(object):
     def __init__(self, particle_kz=None, index_ratio=None, size_parameter=None,
                  lens_angle=None, quad_npts=100, interpolate_integrals='check',
-                 interpolator_window_size=39.0, interpolator_degree=32):
+                 interpolator_window_size=30.0, interpolator_degree=32):
         """Calculates the field from a Mie scatterer imaged in a high-NA lens.
 
         The incindent electric field is E e^{ikz}, with the particle

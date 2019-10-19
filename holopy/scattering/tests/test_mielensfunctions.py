@@ -9,7 +9,7 @@ from nose.plugins.attrib import attr
 from holopy.scattering.theory import mielensfunctions
 
 
-TOLS = {'atol': 1e-10, 'rtol': 1e-10}
+TOLS = {'atol': 1e-12, 'rtol': 1e-12}
 MEDTOLS = {"atol": 1e-6, "rtol": 1e-6}
 SOFTTOLS = {'atol': 1e-3, 'rtol': 1e-3}
 
@@ -285,10 +285,11 @@ class TestMieLensCalculator(unittest.TestCase):
             fix, fiy = interpolating_calculator.calculate_scattered_field(
                 k * rho, phi)
 
-            close_enough_x = np.allclose(fdx, fix, **MEDTOLS)
-            close_enough_y = np.allclose(fdy, fiy, **MEDTOLS)
-            self.assertTrue(close_enough_x)
-            self.assertTrue(close_enough_y)
+            with self.subTest(rad=rad, z=z, index_ratio=index_ratio):
+                close_enough_x = np.allclose(fdx, fix, **TOLS)
+                close_enough_y = np.allclose(fdy, fiy, **TOLS)
+                self.assertTrue(close_enough_x)
+                self.assertTrue(close_enough_y)
 
     @attr("medium")
     def test_energy_is_conserved(self):
