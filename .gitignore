@@ -17,3 +17,4 @@ holopy/scattering/theory/tmatrix_f/S
 HoloPy.egg-info
 .DS_Store
 docs/.DS_Store
+*.so.dSYM
