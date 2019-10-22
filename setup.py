@@ -40,7 +40,7 @@ hp_root = os.path.dirname(os.path.realpath(sys.argv[0]))
 
 # this will automatically build the scattering extensions, using the
 # setup.py files located in their subdirectories
-def configuration(parent_package='',top_path=' '):
+def configuration(parent_package='',top_path=''):
     from numpy.distutils.misc_util import Configuration
     config = Configuration(None,parent_package,top_path)
 
