@@ -24,8 +24,10 @@ Test T-matrix sphere cluster calculations and python interface.
 
 import sys
 import os
-import numpy as np
 import warnings
+import unittest
+
+import numpy as np
 from numpy.testing import (assert_equal, assert_array_almost_equal,
                            assert_allclose, assert_array_equal, assert_raises)
 
@@ -33,11 +35,15 @@ from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
 import scipy
 
-from .. import calc_holo, calc_scat_matrix, calc_cross_sections, Multisphere, Sphere, Spheres
-from ...core.metadata import detector_points
-from ..errors import InvalidScatterer, TheoryNotCompatibleError, MultisphereFailure
-from .common import xschema, yschema, index, wavelen, xpolarization, ypolarization
-from .common import scaling_alpha, sphere
+from holopy.core.metadata import detector_points
+from holopy.scattering import (
+    calc_holo, calc_scat_matrix, calc_cross_sections, Multisphere, Sphere,
+    Spheres)
+from holopy.scattering.errors import (
+    InvalidScatterer, TheoryNotCompatibleError, MultisphereFailure)
+from holopy.scattering.tests.common import (
+    xschema, yschema, index, wavelen, xpolarization, ypolarization,
+    scaling_alpha, sphere)
 from holopy.core.tests.common import assert_obj_close, verify
 
 schema = xschema
@@ -148,32 +154,44 @@ def test_invalid():
     assert_raises(TheoryNotCompatibleError, calc_cross_sections, scatterer=sc2, medium_index=index, illum_wavelen=wavelen, illum_polarization=ypolarization, theory=Multisphere)
 
 
-@attr('fast')
-def test_overlap():
-    # should raise a warning
-    with warnings.catch_warnings(record=True) as w:
+class TestOverlap(unittest.TestCase):
+    @attr('fast')
+    # FIXME this test prints out a bunch of crap to the terminal!
+    def test_spheres_raises_warning_when_overlapping(self):
+        # should raise a warning
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            sc = Spheres(scatterers=[Sphere(center=[3e-6, 3e-6, 10e-6],
+                                               n=1.59, r=.5e-6),
+                                        Sphere(center=[3.4e-6, 3e-6, 10e-6],
+                                               n=1.59, r=.5e-6)])
+            assert len(w) > 0
+
+    @attr('fast')
+    def test_calc_holo_fails_to_converge_when_overlap_is_large(self):
+        # should fail to converge
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            sc = Spheres(scatterers=[Sphere(center=[3e-6, 3e-6, 10e-6],
+                                               n=1.59, r=.5e-6),
+                                        Sphere(center=[3.4e-6, 3e-6, 10e-6],
+                                               n=1.59, r=.5e-6)])
         warnings.simplefilter("always")
-        sc = Spheres(scatterers=[Sphere(center=[3e-6, 3e-6, 10e-6],
-                                           n=1.59, r=.5e-6),
-                                    Sphere(center=[3.4e-6, 3e-6, 10e-6],
-                                           n=1.59, r=.5e-6)])
-        assert len(w) > 0
+        assert_raises(MultisphereFailure, calc_holo, schema, sc, index, wavelen, xpolarization)
 
-    # should fail to converge
-    warnings.simplefilter("always")
-    assert_raises(MultisphereFailure, calc_holo, schema, sc, index, wavelen, xpolarization)
+        # but it should succeed with a small overlap, after raising a warning
+    @attr('fast')
+    def test_calc_holo_succeeds_but_warns_with_small_overlap(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            sc = Spheres(scatterers=[Sphere(center=[3e-6, 3e-6, 10e-6],
+                                               n=1.59, r=.5e-6),
+                                        Sphere(center=[3.9e-6, 3.e-6, 10e-6],
+                                               n=1.59, r=.5e-6)])
+            assert len(w) > 0
+        holo = calc_holo(schema, sc, index, wavelen, xpolarization)
 
-    # but it should succeed with a small overlap, after raising a warning
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        sc = Spheres(scatterers=[Sphere(center=[3e-6, 3e-6, 10e-6],
-                                           n=1.59, r=.5e-6),
-                                    Sphere(center=[3.9e-6, 3.e-6, 10e-6],
-                                           n=1.59, r=.5e-6)])
-        assert len(w) > 0
-    holo = calc_holo(schema, sc, index, wavelen, xpolarization)
-
-    verify(holo, '2_sphere_allow_overlap')
+        verify(holo, '2_sphere_allow_overlap')
 
 
 @attr('fast')
@@ -233,4 +251,8 @@ def test_wrap_sphere():
     holo=calc_holo(schema, sphere, theory=Multisphere, scaling=.6)
     holo_w=calc_holo(schema, sphere_w, theory=Multisphere, scaling=.6)
     assert_array_equal(holo,holo_w)
+
+
+if __name__ == '__main__':
+    unittest.main()
 
