@@ -511,16 +511,19 @@ class TestMakeCenterPriors(unittest.TestCase):
         evaluated = make_center_priors(self.image)
         self.assertEqual(evaluated, expected)
 
+    @attr("fast")
     def test_z_range_extents(self):
         expected = [Gaussian(0, 2), Gaussian(2, 2), Uniform(0, 16)]
         evaluated = make_center_priors(self.image, z_range_extents=2)
         self.assertEqual(evaluated, expected)
 
+    @attr("fast")
     def test_xy_uncertainty(self):
         expected = [Gaussian(0, 4), Gaussian(2, 4), Uniform(0, 40)]
         evaluated = make_center_priors(self.image, xy_uncertainty_pixels=2)
         self.assertEqual(evaluated, expected)
 
+    @attr("fast")
     def test_z_range_units(self):
         expected = [Gaussian(0, 2), Gaussian(2, 2), Uniform(2, 10)]
         evaluated = make_center_priors(self.image, z_range_units=(2, 10))

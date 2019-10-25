@@ -36,8 +36,10 @@ MODEL = AlphaModel(par_s, alpha=Uniform(0.6, 0.9, guess=0.8))
 INTERVALS = [UncertainValue(1.6, 0.1, name='n'), UncertainValue(0.6,
                         0.1, name='r'), UncertainValue(0.7, 0.1, name='alpha')]
 
+
 def generate_fit_result():
     return FitResult(DATA, MODEL, CmaStrategy(), 10, {'intervals': INTERVALS})
+
 
 def generate_sampling_result():
     samples = np.array([[[1, 2], [11, 12], [3, 3]], [[0, 3], [1, 3], [5, 6]]])
@@ -49,12 +51,14 @@ def generate_sampling_result():
                             kwargs={'samples':samples, 'lnprobs':lnprobs})
     return result
 
+
 class TestUncertainValue(unittest.TestCase):
     @attr("fast")
     def test_optional_assymetric_uncertainty(self):
         uncval1 = UncertainValue([10], np.array(2))
         uncval2 = UncertainValue(10, 2, 2)
         self.assertEqual(uncval1, uncval2)
+
 
 class TestFitResult(unittest.TestCase):
     @attr("fast")
@@ -98,14 +102,15 @@ class TestFitResult(unittest.TestCase):
                        for key, val in result.model.parameters.items()}
         self.assertEqual(result.initial_guess, model_guess)
 
+
 class TestIO(unittest.TestCase):
-    #@attr("fast")
+    @attr("fast")
     def test_base_io(self):
         result = FitResult(DATA, MODEL, CmaStrategy(),
                            10, {'intervals':INTERVALS})
         assert_read_matches_write(result)
 
-    #@attr("fast")
+    @attr("medium")
     def test_dataarray_attr(self):
         result = generate_fit_result()
         samples = xr.DataArray([[1,2,3], [4,5,6]], dims=['dim1', 'dim2'],
@@ -113,15 +118,16 @@ class TestIO(unittest.TestCase):
         result.add_attr({'samples': samples})
         assert_read_matches_write(result)
 
-    #@attr("medium")
+    @attr("medium")
     def test_saved_calculations(self):
         result = generate_fit_result()
         result.best_fit
         result.max_lnprob
         assert_read_matches_write(result)
 
+
 class TestSamplingResult(unittest.TestCase):
-    #@attr("fast")
+    @attr("fast")
     def test_intervals(self):
         result = generate_sampling_result()
         self.assertEqual(result.intervals[0].guess, 1)
@@ -129,7 +135,7 @@ class TestSamplingResult(unittest.TestCase):
         self.assertEqual(result.intervals[0].name, 'p1')
         self.assertEqual(result.intervals[1].name, 'p2')
 
-    #@attr("fast")
+    @attr("fast")
     def test_burn_in(self):
         result = generate_sampling_result().burn_in(1)
         self.assertEqual(result.intervals[0].guess, 11)
@@ -137,3 +143,7 @@ class TestSamplingResult(unittest.TestCase):
         self.assertEqual(result.intervals[0].name, 'p1')
         self.assertEqual(result.intervals[1].name, 'p2')
         self.assertEqual(result.samples.shape, (2, 2, 2))
+
+
+if __name__ == '__main__':
+    unittest.main()
