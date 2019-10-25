@@ -55,6 +55,7 @@ def test_construction():
     assert_equal(theory.qeps2, 1e-8)
 
 
+@attr('medium')
 def test_polarization():
     # test holograms for orthogonal polarizations; make sure they're
     # not the same, nor too different from one another.
@@ -78,6 +79,7 @@ def test_polarization():
     return xholo, yholo
 
 
+@attr('fast')
 def test_2_sph():
     sc = Spheres(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07),
@@ -92,6 +94,7 @@ def test_2_sph():
     assert_obj_close(holo.std(), 0.09558537595025796)
 
 
+@attr('medium')
 def test_radial_holos():
     # Check that holograms computed with and w/o radial part of E_scat differ
     sc = Spheres(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
@@ -143,8 +146,9 @@ def test_invalid():
                           n = [1.+0.1j, 1.2],
                           r = [4e-7, 5e-7])])
     assert_raises(TheoryNotCompatibleError, calc_cross_sections, scatterer=sc2, medium_index=index, illum_wavelen=wavelen, illum_polarization=ypolarization, theory=Multisphere)
-    
 
+
+@attr('fast')
 def test_overlap():
     # should raise a warning
     with warnings.catch_warnings(record=True) as w:
@@ -182,6 +186,8 @@ def test_niter():
 
     assert_raises(MultisphereFailure, calc_holo, schema, sc, index, wavelen, xpolarization, multi)
 
+
+@attr('medium')
 def test_cross_sections():
     wavelen = 1.
     index = 1.
@@ -207,6 +213,7 @@ def test_cross_sections():
     else:
         assert_allclose(xsects[:3], gold_xsects, rtol = 1e-3)
 
+
 @attr("fast")
 def test_farfield():
     schema = detector_points(theta = np.linspace(0, np.pi/2), phi = np.zeros(50))
@@ -218,9 +225,12 @@ def test_farfield():
 
     matr = calc_scat_matrix(schema, cluster, illum_wavelen=.66, medium_index=index, theory=Multisphere)
 
+
+@attr('medium')
 def test_wrap_sphere():
     sphere=Sphere(center=[7.1e-6, 7e-6, 10e-6],n=1.5811+1e-4j, r=5e-07)
     sphere_w=Spheres([sphere])
     holo=calc_holo(schema, sphere, theory=Multisphere, scaling=.6)
     holo_w=calc_holo(schema, sphere_w, theory=Multisphere, scaling=.6)
     assert_array_equal(holo,holo_w)
+
