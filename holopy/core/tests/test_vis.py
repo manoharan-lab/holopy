@@ -242,7 +242,6 @@ class TestDisplayImage(unittest.TestCase):
 
 
 class ShowTest(unittest.TestCase):
-    # FIXME this test prints crap to the console
     @attr("medium")
     def test_show(self):
         d = get_example_data('image0001')
@@ -253,7 +252,8 @@ class ShowTest(unittest.TestCase):
             raise SkipTest()
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', (DeprecationWarning, UserWarning))
-            plt.savefig(tempfile.TemporaryFile(suffix='.pdf'))
+            with tempfile.TemporaryFile(suffix='.pdf') as filename:
+                plt.savefig(filename)
 
 
 if __name__ == '__main__':
