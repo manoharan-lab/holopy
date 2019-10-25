@@ -175,22 +175,20 @@ class TestOverlap(unittest.TestCase):
 
     @attr('fast')
     def test_calc_holo_fails_to_converge_when_overlap_is_large(self):
-        # should fail to converge
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
             sc = Spheres(scatterers=SCATTERERS_LARGE_OVERLAP)
-        warnings.simplefilter("always")
-        assert_raises(MultisphereFailure, calc_holo, schema, sc, index, wavelen, xpolarization)
+            self.assertRaises(
+                MultisphereFailure,
+                calc_holo,
+                schema, sc, index, wavelen, xpolarization)
 
-    @attr('fast')
+    @attr('medium')
     def test_calc_holo_succeeds_but_warns_with_small_overlap(self):
-        # but it should succeed with a small overlap, after raising a warning
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
             sc = Spheres(scatterers=SCATTERERS_SMALL_OVERLAP)
-            assert len(w) > 0
-        holo = calc_holo(schema, sc, index, wavelen, xpolarization)
-
+            holo = calc_holo(schema, sc, index, wavelen, xpolarization)
         verify(holo, '2_sphere_allow_overlap')
 
 
