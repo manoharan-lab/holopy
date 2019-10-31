@@ -105,7 +105,6 @@ def test_optimization_with_maxiter_of_2():
     model = AlphaModel(
         par_s, medium_index=1.33, illum_wavelen=.66, illum_polarization=(1, 0),
         alpha=prior.Uniform(.1, 1, .6))
-    warnings.simplefilter("always")
     optimizer = Nmpfit(maxiter=2)
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
