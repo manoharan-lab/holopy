@@ -37,8 +37,9 @@ from os.path import join
 import nose
 from numpy.distutils.core import setup, Extension
 
-HOLOPY_NOSE_PLUGIN_LOCATION =
-    'holopycatchwarnings = holopy.core.tests.common:HoloPyCatchWarnings'
+HOLOPY_NOSE_PLUGIN_LOCATION = ('holopycatchwarnings = '
+                               'holopy.core.tests.common:HoloPyCatchWarnings')
+print(HOLOPY_NOSE_PLUGIN_LOCATION)
 
 hp_root = os.path.dirname(os.path.realpath(sys.argv[0]))
 
