@@ -18,20 +18,35 @@
 
 import tempfile
 import os
+import warnings
 import types
 import inspect
 import yaml
 import shutil
-from numpy.testing import assert_equal, assert_allclose
 import pickle
 from collections import OrderedDict
+
 import xarray as xr
+from numpy.testing import assert_equal, assert_allclose
+from nose.plugins import Plugin
 
 from holopy.core.io import load, save, get_example_data
 
-# tests should fail if they give warnings
-import warnings
-warnings.simplefilter("error")
+
+class HoloPyCatchWarnings(Plugin):
+    name='holopycatchwarnings'
+
+    def options(self, parser, env=os.environ):
+        super(HoloPyCatchWarnings, self).options(parser, env=env)
+
+    def configure(self, options, conf):
+        super(HoloPyCatchWarnings, self).configure(options, conf)
+        if not self.enabled:
+            return
+
+    def beforeTest(self, test):
+        warnings.simplefilter("error")
+
 
 def assert_read_matches_write(o):
     with tempfile.NamedTemporaryFile(suffix='.h5') as tempf:
