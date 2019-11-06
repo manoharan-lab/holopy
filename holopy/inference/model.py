@@ -31,6 +31,19 @@ from holopy.scattering.theory import MieLens
 from holopy.scattering.scatterer import (_expand_parameters,
                                          _interpret_parameters)
 from holopy.inference.prior import Prior, Uniform, generate_guess
+from holopy.inference.nmpfit import NmpfitStrategy
+from holopy.inference.scipyfit import LeastSquaresScipyStrategy
+from holopy.inference.cmaes import CmaStrategy
+from holopy.inference.emcee import EmceeStrategy, TemperedStrategy
+
+DEFAULT_STRATEGY = {'fit': 'nmpfit', 'sample': 'emcee'}
+ALL_STRATEGIES = {'fit': {'nmpfit': NmpfitStrategy(),
+                          'scipy lsq': LeastSquaresScipyStrategy(),
+                          'cma': CmaStrategy()},
+                  'sample': {'emcee': EmceeStrategy(),
+                            'subset tempering': TemperedStrategy(),
+                            'parallel tempering': NotImplemented}}
+
 
 class Model(HoloPyObject):
     """Model probabilites of observing data
@@ -187,6 +200,24 @@ class Model(HoloPyObject):
             (self._residuals(pars, data, noise_sd)**2).sum())
         return log_likelihood
 
+    def fit(self, data, strategy=None):
+        strategy = self.validate_strategy(strategy, 'fit')
+        return strategy.fit(model, data)
+
+    def sample(self, data, strategy = None):
+        strategy = self.validate_strategy(strategy, 'sample')
+        return strategy.sample(model, data)
+
+    def validate_strategy(self, strategy, operation):
+        if strategy is None:
+            strategy = DEFAULT_STRATEGY[operation]
+        if isinstance(strategy, str):
+            strategy = ALL_STRATEGIES[operation][strategy]
+        if not hasattr(strategy, operation):
+            raise ValueError("Cannot {} based on Strategy of type {}.".format(
+                operation, strategy.type))
+        return strategy
+
     def _check_parameters_are_not_xarray(self, parameters_to_use):
         for key, value in parameters_to_use.items():
             if isinstance(value, xr.DataArray):
@@ -328,16 +359,3 @@ class PerfectLensModel(Model):
 # It would be nice if some of the unittests for fitting were also
 # applicable to the inference models. This should be changed later,
 # when the two fitting approaches are unified.
-
-class LnpostWrapper(HoloPyObject):
-    def __init__(self, model, data, new_pixels, minus=False):
-        self.parameters = model._parameters
-        self.data = data
-        self.pixels=new_pixels
-        self.func = model.lnposterior
-        self.prefactor = (-1)**minus
-
-    def evaluate(self, par_vals):
-        pars_dict = {par.name:val for par, val in zip(self.parameters, par_vals)}
-        return self.prefactor * self.func(pars_dict, self.data, self.pixels)
-
