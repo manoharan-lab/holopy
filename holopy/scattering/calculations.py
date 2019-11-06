@@ -131,10 +131,13 @@ def determine_default_theory_for(scatterer):
 def calc_intensity(detector, scatterer, medium_index=None, illum_wavelen=None,
                    illum_polarization=None, theory='auto'):
     """
-    Calculate intensity at a location or set of locations
+    Calculate intensity from the scattered field at a set of locations
 
     Parameters
     ----------
+    detector : xarray object
+        The detector points and calculation metadata used to calculate
+        the intensity.
     scatterer : :class:`.scatterer` object
         (possibly composite) scatterer for which to compute scattering
     medium_index : float or complex
@@ -155,7 +158,8 @@ def calc_intensity(detector, scatterer, medium_index=None, illum_wavelen=None,
     field = calc_field(detector, scatterer, medium_index=medium_index,
                        illum_wavelen=illum_wavelen,
                        illum_polarization=illum_polarization, theory=theory)
-    return finalize(detector, (abs(field*(1-detector.normals))**2).sum(dim=vector))
+    intensity = (np.abs(field.sel(vector=['x', 'y']))**2).sum(dim=vector)
+    return finalize(detector, intensity)
 
 
 def calc_holo(detector, scatterer, medium_index=None, illum_wavelen=None,
@@ -200,11 +204,11 @@ def calc_holo(detector, scatterer, medium_index=None, illum_wavelen=None,
     scaling = _interpret_parameters(scaling)['alpha']
     scaling = dict_to_array(detector, scaling)
 
-    scattered_field = theory._calculate_scattered_field(
+    scattered_field = theory.calculate_scattered_field(
         scatterer.guess, uschema)
     reference_field = uschema.illum_polarization
     holo = scattered_field_to_hologram(
-        scattered_field * scaling, reference_field, uschema.normals)
+        scattered_field * scaling, reference_field)
     return finalize(uschema, holo)
 
 
@@ -236,7 +240,7 @@ def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None,
         cross sections, and <cos theta>
     """
     theory = interpret_theory(scatterer, theory)
-    cross_section = theory._calc_cross_sections(
+    cross_section = theory.calculate_cross_sections(
         scatterer=scatterer.guess,
         medium_wavevec=2*np.pi/(illum_wavelen/medium_index),
         medium_index=medium_index,
@@ -251,6 +255,9 @@ def calc_scat_matrix(detector, scatterer, medium_index=None, illum_wavelen=None,
 
     Parameters
     ----------
+    detector : xarray object
+        The detector points and calculation metadata used to calculate
+        the scattering matrices.
     scatterer : :class:`holopy.scattering.scatterer` object
         (possibly composite) scatterer for which to compute scattering
     medium_index : float or complex
@@ -274,18 +281,21 @@ def calc_scat_matrix(detector, scatterer, medium_index=None, illum_wavelen=None,
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=False)
-    result = theory._calc_scat_matrix(scatterer.guess, uschema)
+    result = theory.calculate_scattering_matrix(scatterer.guess, uschema)
     return finalize(uschema, result)
 
 
 def calc_field(detector, scatterer, medium_index=None, illum_wavelen=None,
                illum_polarization=None, theory='auto'):
     """
-    Calculate hologram formed by interference between scattered
-    fields and a reference wave
+    Calculate the scattered fields from a scatterer illuminated by
+    a reference wave.
 
     Parameters
     ----------
+    detector : xarray object
+        The detector points and calculation metadata used to calculate
+        the scattered fields.
     scatterer : :class:`.scatterer` object
         (possibly composite) scatterer for which to compute scattering
     medium_index : float or complex
@@ -308,13 +318,13 @@ def calc_field(detector, scatterer, medium_index=None, illum_wavelen=None,
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=illum_polarization)
-    result = theory._calculate_scattered_field(scatterer.guess, uschema)
+    result = theory.calculate_scattered_field(scatterer.guess, uschema)
     return finalize(uschema, result)
 
 
 # this is pulled out separate from the calc_holo method because
 # occasionally you want to turn prepared  e_fields into holograms directly
-def scattered_field_to_hologram(scat, ref, normals):
+def scattered_field_to_hologram(scat, ref):
     """
     Calculate a hologram from an E-field
 
@@ -328,6 +338,7 @@ def scattered_field_to_hologram(scat, ref, normals):
         Vector normal to the detector the hologram should be measured at
         (defaults to z hat, a detector in the x, y plane)
     """
-    holo = (np.abs(scat+ref)**2 * (1 - normals)).sum(dim=vector)
+    total_field = scat + ref
+    holo = (np.abs(total_field.sel(vector=['x', 'y']))**2).sum(dim=vector)
     return holo
 

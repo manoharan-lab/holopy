@@ -20,25 +20,15 @@ import xarray as xr
 from numpy.testing import assert_allclose, assert_equal
 from nose.plugins.attrib import attr
 
-from ..scatterer import Sphere, Difference
-from ...core import detector_grid, detector_points
-from ..theory import Mie
-from ...core.tests.common import assert_obj_close
-from ...core.metadata import sphere_coords, update_metadata
-from ..calculations import calc_intensity, calc_holo, calc_field
-from ..theory.scatteringtheory import stack_spherical
+from holopy.core import detector_grid, detector_points
+from holopy.core.tests.common import assert_obj_close
+from holopy.core.metadata import update_metadata
+from holopy.scattering.scatterer import Sphere, Difference
+from holopy.scattering.theory import Mie
+from holopy.scattering.calculations import calc_intensity, calc_holo, calc_field
 
 # small tests against results from the previous version of holopy
 
-@attr("fast")
-def test_sphere_coords():
-    t = detector_grid(shape = (2,2), spacing = .1)
-    p = sphere_coords(t, wavevec=2*np.pi*1.33/.66, origin=(0,0,1))
-    pos = stack_spherical(p).T
-    assert_allclose(pos, np.array([[ 12.66157039,   0.        ,   0.        ],
-       [ 12.72472076,   0.09966865,   1.57079633],
-       [ 12.72472076,   0.09966865,   0.        ],
-       [ 12.78755927,   0.1404897 ,   0.78539816]]))
 
 @attr("fast")
 def test_calc_field():
@@ -65,12 +55,23 @@ def test_calc_field():
 @attr("fast")
 def test_detector_points():
     s = Sphere(n=1.59, r=.5, center=(0,0,0))
-    medium_index = 1.33; illum_wavelen = 0.660; illum_polarization = (1,0)
-    points_c = detector_points(x = [1,0,-1,0], y = [0,1,0,-1], z = 1)
-    points_p = detector_points(theta = 3*np.pi/4, phi = [0,np.pi/2,np.pi,3*np.pi/2,], r=np.sqrt(2))
-    field_c = calc_field(points_c, s, medium_index, illum_wavelen, illum_polarization)
-    field_p = calc_field(points_p, s, medium_index, illum_wavelen, illum_polarization)
-    assert_allclose(field_c, field_p)
+    medium_index = 1.33
+    illum_wavelen = 0.660
+    illum_polarization = (1, 0)
+
+    points_cartesian = detector_points(
+        x=[1, 0, -1, 0],
+        y=[0, 1, 0, -1],
+        z=1)
+    points_spherical = detector_points(
+        theta=3*np.pi/4,
+        phi=[0, np.pi/2, np.pi, 3*np.pi/2],
+        r=np.sqrt(2))
+    field_cartesian = calc_field(
+        points_cartesian, s, medium_index, illum_wavelen, illum_polarization)
+    field_spherical = calc_field(
+        points_spherical, s, medium_index, illum_wavelen, illum_polarization)
+    assert_allclose(field_cartesian, field_spherical)
 
 
 @attr("fast")

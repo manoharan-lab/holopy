@@ -18,7 +18,8 @@
 
 import numpy as np
 from numpy import sin, cos, arccos, arctan2, sqrt, pi
-from .utils import repeat_sing_dims
+from holopy.core.utils import repeat_sing_dims
+
 
 def rotate_points(points, theta, phi, psi):
     """
@@ -44,6 +45,7 @@ def rotate_points(points, theta, phi, psi):
         return np.dot(rot, points)
     return np.array([np.dot(rot, c) for c in points])
 
+
 def rotation_matrix(alpha, beta, gamma, radians = True):
     """
     Return a 3D rotation matrix
@@ -58,7 +60,7 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
     Returns
     -------
     rot: array(3,3)
-        Rotation matrix. To rotate a column vector x, use np.dot(rot, x.) 
+        Rotation matrix. To rotate a column vector x, use np.dot(rot, x.)
 
     Notes
     -----
@@ -66,9 +68,9 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
     clockwise about the fixed lab z axis, beta clockwise about
     the lab y axis, and by gamma about the lab z axis.  Clockwise is
     defined as viewed from the origin, looking in the positive direction
-    along an axis.  
+    along an axis.
 
-    This breaks compatability with previous conventions, which were adopted for 
+    This breaks compatability with previous conventions, which were adopted for
     compatability with the passive picture used by SCSMFO.
 
     """
@@ -88,55 +90,85 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
                      ca*cb*sg + sa*cg, -sa*cb*sg + ca*cg, sb*sg,
                      -ca*sb, sa*sb, cb]).reshape((3,3)) # row major
 
-def to_spherical(x, y, z):
-    """
-    Return the spherical polar coordinates of a point in Cartesian coordinates.
 
-    Parameters
-    ----------
-    x, y, z: float
-        Cartesian coordinates of point
+def transform_cartesian_to_spherical(x_y_z):
+    x, y, z = x_y_z
+    r = np.linalg.norm(x_y_z, axis=0)
+    theta = np.arctan2(np.sqrt(x**2 + y**2), z)
+    phi = np.arctan2(y, x) % (2*np.pi)
+    return np.array([r, theta, phi])
 
-    Returns
-    -------
-    spherical_coords: dict
-        Dictionary of spherical polar coordinates (r, theta, phi) of point
-        with keys 'r', 'theta', 'phi'.
 
-    Notes
-    -----
-    theta is the polar angle measured from the z axis with range (0, pi). 
-    phi is the azimuthal angle with range (0, 2 pi).
+def transform_spherical_to_cartesian(r_theta_phi):
+    r, theta, phi = r_theta_phi
+    x = r * np.cos(phi) * np.sin(theta)
+    y = r * np.sin(phi) * np.sin(theta)
+    z = r * np.cos(theta)
+    return np.array([x, y, z])
 
-    """
-    r = sqrt(x**2 + y**2 + z**2)
-    theta = arctan2(sqrt(x**2 + y**2), z) #this correctly handles x=y=z=0
-    phi = arctan2(y, x)
-    phi = phi + 2 * pi * (phi < 0)
 
-    return repeat_sing_dims({'r': r, 'theta': theta, 'phi': phi})
+def transform_cartesian_to_cylindrical(x_y_z):
+    x, y, z = x_y_z
+    rho = np.sqrt(x**2 + y**2)
+    phi = np.arctan2(y, x) % (2*np.pi)
+    return np.array([rho, phi, z])
+
+
+def transform_cylindrical_to_cartesian(rho_phi_z):
+    rho, phi, z = rho_phi_z
+    x = rho * np.cos(phi)
+    y = rho * np.sin(phi)
+    return np.array([x, y, z])
+
+
+def transform_cylindrical_to_spherical(rho_phi_z):
+    rho, phi, z = rho_phi_z
+    r = np.sqrt(rho**2 + z**2)
+    theta = np.arctan2(rho, z)
+    return np.array([r, theta, phi])
+
+
+def transform_spherical_to_cylindrical(r_theta_phi):
+    r, theta, phi = r_theta_phi
+    rho = r * np.sin(theta)
+    z = r * np.cos(theta)
+    return np.array([rho, phi, z])
+
+
+def keep_in_same_coordinates(coords): return np.array(coords)
+
+
+_transformation_lut = {
+    'cartesian': {
+        'spherical': transform_cartesian_to_spherical,
+        'cylindrical': transform_cartesian_to_cylindrical,
+        'cartesian': keep_in_same_coordinates,
+        },
+    'spherical': {
+        'cartesian': transform_spherical_to_cartesian,
+        'cylindrical': transform_spherical_to_cylindrical,
+        'spherical': keep_in_same_coordinates,
+        },
+    'cylindrical': {
+        'cartesian': transform_cylindrical_to_cartesian,
+        'cylindrical': keep_in_same_coordinates,
+        'spherical': transform_cylindrical_to_spherical,
+        },
+    }
+def find_transformation_function(initial_coordinates, desired_coordinates):
+    try:
+        method = _transformation_lut[initial_coordinates][desired_coordinates]
+    except KeyError:
+        msg = "Transformation from {} to {} not implemented.".format(
+            initial_coordinates, desired_coordinates)
+        raise NotImplementedError(msg)
+    return method
+
 
 def to_cartesian(r, theta, phi):
-    """
-    Returns Cartesian coordinates of a point given in spherical polar 
-    coordinates.
-
-    Parameters
-    ----------
-    r, theta, phi: float
-        Spherical polar coordinates of point.
-
-    Returns
-    -------
-    cartesian_coords: dict
-        Dictionary of Cartesian coordinates of point with keys 'x', 'y', 
-        and 'z'.
-
-    """
-    x = r * sin(theta) * cos(phi)
-    y = r * sin(theta) * sin(phi)
-    z = r * cos(theta)
+    x, y, z = transform_spherical_to_cartesian([r, theta, phi])
     return repeat_sing_dims({'x': x, 'y': y, 'z': z})
+
 
 def cartesian_distance(p1, p2=[0,0,0]):
     """
@@ -150,16 +182,17 @@ def cartesian_distance(p1, p2=[0,0,0]):
     Returns
     -------
     dist: float64
-        Cartesian distance between points p1 and p2 
+        Cartesian distance between points p1 and p2
 
     """
     p1 = np.array(p1)
     p2 = np.array(p2)
     return np.sqrt(np.sum((p1-p2)**2))
 
+
 def chisq(fit, data):
     r"""
-    Calculate per-point value of chi-squared comparing a best-fit model and 
+    Calculate per-point value of chi-squared comparing a best-fit model and
     data.
 
     Parameters
@@ -176,7 +209,7 @@ def chisq(fit, data):
 
     Notes
     -----
-    chi-squared is defined as 
+    chi-squared is defined as
 
     .. math::
         \chi^2 = \frac{1}{N}\sum_{\textrm{points}} (\textrm{fit} - \textrm{data})^2
@@ -184,6 +217,7 @@ def chisq(fit, data):
     where :math:`N` is the number of data points.
     """
     return float((((fit-data))**2).sum() / fit.size)
+
 
 def rsq(fit, data):
     r"""
@@ -204,14 +238,13 @@ def rsq(fit, data):
 
     Notes
     -----
-    R-squared is defined as 
+    R-squared is defined as
 
     .. math::
         R^2 = 1 - \frac{\sum_{\textrm{points}} (\textrm{data} - \textrm{fit})^2}{\sum_{\textrm{points}} (\textrm{data} - \bar{\textrm{data}})^2}
 
-    where :math:`\bar{\textrm{data}}` is the mean value of the data. If the 
+    where :math:`\bar{\textrm{data}}` is the mean value of the data. If the
     model perfectly describes the data, :math:`R^2 = 1`.
     """
     return float(1 - ((data - fit)**2).sum()/((data - data.mean())**2).sum())
-
 

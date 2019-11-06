@@ -33,8 +33,12 @@ import setuptools
 import os
 import sys
 from os.path import join
+
+import nose
 from numpy.distutils.core import setup, Extension
 
+HOLOPY_NOSE_PLUGIN_LOCATION = ('holopycatchwarnings = '
+                               'holopy.core.tests.common:HoloPyCatchWarnings')
 
 hp_root = os.path.dirname(os.path.realpath(sys.argv[0]))
 
@@ -65,14 +69,18 @@ except ImportError:
 
 if __name__ == "__main__":
     requires=[l for l in open(os.path.join(hp_root,"requirements.txt")).readlines() if l[0] != '#']
+
+    tests_require = ['memory_profiler']
     setup(configuration=configuration,
           name='HoloPy',
           version=__version__,
           description='Holography in Python',
           install_requires=requires,
+          tests_require=tests_require,
           author='Manoharan Lab, Harvard University',
           author_email='vnm@seas.harvard.edu',
           url='http://manoharan.seas.harvard.edu/holopy',
           license='GNU GPL',
           test_suite='nose.collector',
+          entry_points = {'nose.plugins.0.10': HOLOPY_NOSE_PLUGIN_LOCATION},
           package=['HoloPy'])

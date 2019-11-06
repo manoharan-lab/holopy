@@ -47,14 +47,19 @@ class Model(HoloPyObject):
         self._use_parameters(scatterer.parameters, False)
         if not (np.isscalar(noise_sd) or isinstance(noise_sd, (Prior, dict))):
             noise_sd = ensure_array(noise_sd)
-        self._use_parameters({'medium_index': medium_index,
-                             'illum_wavelen':illum_wavelen,
-                             'illum_polarization':illum_polarization,
-                             'theory':theory, 'noise_sd':noise_sd})
+        parameters_to_use = {
+            'medium_index': medium_index,
+            'illum_wavelen': illum_wavelen,
+            'illum_polarization': illum_polarization,
+            'theory': theory,
+            'noise_sd': noise_sd,
+            }
+        self._check_parameters_are_not_xarray(parameters_to_use)
+        self._use_parameters(parameters_to_use)
 
     @property
     def parameters(self):
-        return {par.name:par for par in self._parameters}
+        return {par.name: par for par in self._parameters}
 
     def _get_parameter(self, name, pars, schema=None):
         interpreted_pars = _interpret_parameters(pars)
@@ -82,8 +87,8 @@ class Model(HoloPyObject):
 
     def _optics_scatterer(self, pars, schema):
         optics_keys = ['medium_index', 'illum_wavelen', 'illum_polarization']
-        optics = {key:self._get_parameter(key, pars, schema)
-                            for key in optics_keys}
+        optics = {key: self._get_parameter(key, pars, schema)
+                  for key in optics_keys}
         scatterer = self.scatterer.from_parameters(pars)
         return optics, scatterer
 
@@ -146,7 +151,8 @@ class Model(HoloPyObject):
         raise NotImplementedError("Implement in subclass")
 
     def _find_noise(self, pars, data):
-        noise = dict_to_array(data, self._get_parameter('noise_sd', pars, data))
+        noise = dict_to_array(
+            data, self._get_parameter('noise_sd', pars, data))
         if noise is None:
             if np.all([isinstance(par, Uniform) for par in self._parameters]):
                 noise = 1
@@ -181,6 +187,13 @@ class Model(HoloPyObject):
             (self._residuals(pars, data, noise_sd)**2).sum())
         return log_likelihood
 
+    def _check_parameters_are_not_xarray(self, parameters_to_use):
+        for key, value in parameters_to_use.items():
+            if isinstance(value, xr.DataArray):
+                msg = ("{} cannot be an xarray.DataArray due to ".format(key) +
+                       "limitations in holopys ability to save objects.")
+                raise ValueError(msg)
+
 
 class LimitOverlaps(HoloPyObject):
     """
@@ -204,7 +217,9 @@ class AlphaModel(Model):
                  constraints=[]):
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
                          illum_polarization, theory, constraints)
-        self._use_parameters({'alpha':alpha})
+        additional_parameters_to_use = {'alpha': alpha}
+        self._use_parameters(additional_parameters_to_use)
+        self._check_parameters_are_not_xarray(additional_parameters_to_use)
 
     def forward(self, pars, detector):
         """
@@ -236,7 +251,7 @@ class AlphaModel(Model):
 # object is 1 sphere or a collection of spheres etc. So you can't
 # pass MieLens as a theory
 # For now it would be OK since PerfectLensModel only works with single
-# spheres or superpositions, but I'm going to leave this for later.
+# spheres or superpositions, but let's leave this for later.
 class ExactModel(Model):
     """
     Model of arbitrary scattering function given by calc_func.
@@ -273,12 +288,15 @@ class PerfectLensModel(Model):
     Model of hologram image formation through a high-NA objective.
     """
     theory_params = ['lens_angle']
+
     def __init__(self, scatterer, lens_angle=1.0, noise_sd=None,
                  medium_index=None, illum_wavelen=None, theory='auto',
                  illum_polarization=None, constraints=[]):
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
                          illum_polarization, theory, constraints)
-        self._use_parameters({'lens_angle':lens_angle})
+        additional_parameters_to_use = {'lens_angle': lens_angle}
+        self._use_parameters(additional_parameters_to_use)
+        self._check_parameters_are_not_xarray(additional_parameters_to_use)
 
     def forward(self, pars, detector):
         """
@@ -295,8 +313,8 @@ class PerfectLensModel(Model):
         """
         optics_kwargs, scatterer = self._optics_scatterer(pars, detector)
         # We need the lens parameter(s) for the theory:
-        theory_kwargs = {name:self._get_parameter(name, pars, detector)
-                                    for name in self.theory_params}
+        theory_kwargs = {name: self._get_parameter(name, pars, detector)
+                         for name in self.theory_params}
         # FIXME would be nice to have access to the interpolator kwargs
         theory = MieLens(**theory_kwargs)
         try:
@@ -322,3 +340,4 @@ class LnpostWrapper(HoloPyObject):
     def evaluate(self, par_vals):
         pars_dict = {par.name:val for par, val in zip(self.parameters, par_vals)}
         return self.prefactor * self.func(pars_dict, self.data, self.pixels)
+

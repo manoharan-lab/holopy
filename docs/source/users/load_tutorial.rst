@@ -92,7 +92,7 @@ A dark-field image is specified as an optional third argument to :func:`.bg_corr
 ..  testoutput::
     :hide:
     
-    0.9196428571428571
+    0.91964285...
 
 Holopy includes some other convenient tools for manipulating image data.
 See the :ref:`tools` page for details.

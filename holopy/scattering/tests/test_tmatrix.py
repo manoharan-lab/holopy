@@ -22,15 +22,12 @@ Tests non-spherical T-matrix code calculations against Mie code
 .. moduleauthor:: Ron Alexander <ralex0@users.noreply.github.com>
 '''
 import unittest
+from collections import OrderedDict
 
 from numpy.testing import assert_raises, assert_allclose
-
 import numpy as np
-
 import pandas as pd
-
 import yaml
-
 from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
 
@@ -43,16 +40,31 @@ from holopy.core import detector_grid, update_metadata
 
 from holopy.scattering.theory.tmatrix_f.S import ampld
 
+
 SCHEMA = update_metadata(
     detector_grid(shape=20, spacing=0.1),
     illum_wavelen=.660, medium_index=1.33, illum_polarization=[1, 0])
 
-MISHCHENKO_PARAMS = {'axi': 10.0, 'rat': 0.1, 'lam': 2 * np.pi, 'mrr': 1.5,
-               'mri': 0.02, 'eps': 0.5, 'np': -1, 'ndgs': 2, 'alpha': 145.,
-               'beta': 52., 'thet0': 56., 'thet': 65., 'phi0': 114., 
-               'phi': 128., 'nang': 1}
+MISHCHENKO_PARAMS = OrderedDict((
+    ('axi', 10.0),
+    ('rat', 0.1),
+    ('lam', 2 * np.pi),
+    ('mrr', 1.5),
+    ('mri', 0.02),
+    ('eps', 0.5),
+    ('np', -1),
+    ('ndgs', 2),
+    ('alpha', 145.),
+    ('beta', 52.),
+    ('thet0', 56.),
+    ('thet', 65.),
+    ('phi0', 114.),
+    ('phi', 128.),
+    ('nang', 1)))
+
 
 class TestTMatrix(unittest.TestCase):
+    @attr('fast')
     def test_calc_scattering_matrix(self):
         """
         The original [ampld.lpd.f]
@@ -92,7 +104,7 @@ class TestTMatrix(unittest.TestCase):
                             's22': -.69323E1 + .24748E2j}
         s = ampld(*list(params.values()))
         results = {k: v for k, v in zip(['s11', 's12', 's21', 's22'], s)}
-        ok = [np.allclose(x, y, atol=5e-4) for x, y in 
+        ok = [np.allclose(x, y, atol=5e-4) for x, y in
               zip(expected_results.values(), results.values())]
         self.assertTrue(all(ok))
 
@@ -106,7 +118,7 @@ class TestTMatrix(unittest.TestCase):
 
     @attr("slow")
     def test_spheroid(self):
-        s = Spheroid(n=1.5, r=[.4, 1.], 
+        s = Spheroid(n=1.5, r=[.4, 1.],
                      rotation=(0, np.pi/2, np.pi/2), center=(5, 5, 15))
         holo = calc_holo_safe(SCHEMA, s)
         test_values = _load_verification_data('tmatrix_spheroid')
@@ -131,7 +143,7 @@ class TestTMatrix(unittest.TestCase):
 
     @attr("slow")
     def test_vs_dda(self):
-        s = Spheroid(n=1.5, r=[.4, 1.], 
+        s = Spheroid(n=1.5, r=[.4, 1.],
                      rotation=(0, np.pi/2, np.pi/2), center=(5, 5, 50))
         try:
             dda_holo = calc_holo_safe(SCHEMA, s, theory=DDA)
@@ -140,7 +152,7 @@ class TestTMatrix(unittest.TestCase):
         tmat_holo = calc_holo_safe(SCHEMA, s, theory=Tmatrix)
         assert_allclose(dda_holo, tmat_holo, atol=.05)
 
-
+    @attr("fast")
     def test_calc_scattering_matrix_multiple_angles(self):
         params = MISHCHENKO_PARAMS
         params['thet'] = np.ones(2) * params['thet']
@@ -149,6 +161,7 @@ class TestTMatrix(unittest.TestCase):
         s = ampld(*list(params.values()))
         self.assertTrue(len(s[0]) == 2)
 
+    @attr("fast")
     def test_raw_scat_matrs_same_as_mie(self):
         theory_mie = Mie()
         theory_tmat = Tmatrix()
@@ -160,7 +173,7 @@ class TestTMatrix(unittest.TestCase):
         s_tmat = theory_tmat._raw_scat_matrs(s, pos, 2*np.pi/.660, 1.33)
         self.assertTrue(np.allclose(s_mie, s_tmat))
 
-
+    @attr("fast")
     def test_raw_fields_similar_to_mie(self):
         theory_mie = Mie(False, False)
         theory_tmat = Tmatrix()
@@ -183,12 +196,15 @@ def calc_holo_safe(
     except DependencyMissing:
         raise SkipTest()
 
+
 def _load_verification_data(name):
     hp_root = hp.__path__[0]
     fname = hp_root + '/scattering/tests/gold/gold_' + name + '.yaml'
-    with open (fname, 'r') as f: 
+    with open (fname, 'r') as f:
         test_values = yaml.safe_load(f)
     return test_values
 
+
 if __name__ == '__main__':
     unittest.main()
+

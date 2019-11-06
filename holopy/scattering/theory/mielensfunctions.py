@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.polynomial.chebyshev import Chebyshev
 from scipy.special import j0, j1, spherical_jn, spherical_yn
 from scipy import interpolate
 
@@ -14,7 +15,7 @@ LEGGAUSS_PTS_WTS_NPTS = np.polynomial.legendre.leggauss(NPTS)
 class MieLensCalculator(object):
     def __init__(self, particle_kz=None, index_ratio=None, size_parameter=None,
                  lens_angle=None, quad_npts=100, interpolate_integrals='check',
-                 interpolation_spacing=0.1):
+                 interpolator_window_size=30.0, interpolator_degree=32):
         """Calculates the field from a Mie scatterer imaged in a high-NA lens.
 
         The incindent electric field is E e^{ikz}, with the particle
@@ -47,13 +48,23 @@ class MieLensCalculator(object):
             Whether or not to interpolate the internally-evaluated
             integrals for speed. Default is `'check'`, which interpolates
             if it will be faster or does direct numerical quadrature
-            otherwise.
-        interpolation_spacing : float, optional
-            The spacing, in units of `1/k`, for the nodes of the
-            CubicSpline interpolators. A lower value gives more accurate
-            retuls; values greater than about 1 will be unreliable.
-            Default is 0.1, which gives better than single-precision
+            otherwise. Interpolation is done via a piecewise Chebyshev
+            approximant.
+        interpolator_window_size : float, optional
+            The spacing, in units of `1/k`, for the windows of the
+            piecewise Chebyshev approximants. A lower value gives more
+            accurate results, although accuracy depends on the
+            `interpolator_degree` parameter as well. The default is 39.
+            which gives 5e-13 relative accuracy.
+        interpolator_degree : int, optional
+            The polynomial degree for the piecewise Chebyshev
+            approximants. A higher value gives more accurate results,
+            although accuracy depends on the `interpolator_window_size`
+            parameter as well. The default is 32, which gives 5e-13
             relative accuracy.
+
+            It is best to leave the interpolator parameter as-is; they
+            are only exposed for testing and advanced usage.
         """
         self.particle_kz = particle_kz
         self.index_ratio = index_ratio
@@ -63,7 +74,8 @@ class MieLensCalculator(object):
 
         self.quad_npts = quad_npts
         self.interpolate_integrals = interpolate_integrals
-        self.interpolation_spacing = interpolation_spacing
+        self.interpolator_window_size = interpolator_window_size
+        self.interpolator_degree = interpolator_degree
 
         quad_pts, quad_wts = gauss_legendre_pts_wts(
             np.cos(self.lens_angle), 1.0, npts=self.quad_npts)
@@ -209,7 +221,8 @@ class MieLensCalculator(object):
             The value of the integrand evaluated at the krho points.
         """
         if self.interpolate_integrals == 'check':
-            n_interp_pnts = krho.ptp() / self.interpolation_spacing
+            n_interp_pnts = (self.interpolator_degree * krho.ptp() /
+                             self.interpolator_window_size)
             n_krho_pts = krho.size
             interpolate_integrals = n_interp_pnts < 1.1 * n_krho_pts
         else:
@@ -240,10 +253,15 @@ class MieLensCalculator(object):
         return answer_flat.reshape(krho.shape)
 
     def _interpolate_and_eval_mielens_i_n(self, krho, n=0):
-        spacing = self.interpolation_spacing
-        interp_pts = np.arange(krho.min(), krho.max() + 5 * spacing, spacing)
-        interp_vals = self._direct_eval_mielens_i_n(interp_pts, n=n)
-        interpolator = interpolate.CubicSpline(interp_pts, interp_vals)
+        window_size = self.interpolator_window_size
+        window_start = np.floor(krho.min() / window_size)
+        window_end = np.ceil(krho.max() / window_size + 1e-4) + 1
+        window_breakpoints = window_size * np.arange(window_start, window_end)
+
+        interpolator = PiecewiseChebyshevApproximant(
+            lambda x: self._direct_eval_mielens_i_n(x, n=n),
+            degree=self.interpolator_degree,
+            window_breakpoints=window_breakpoints)
         return interpolator(krho)
 
     def _check_parameters(self):
@@ -540,3 +558,52 @@ def calculate_pil_taul(theta, max_order):
         tau[n] = n * cos_th * pi[n] - (n + 1) * pi[n-1]
 
     return pi[1:].T, tau[1:].T
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#                           Interpolation
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+class PiecewiseChebyshevApproximant(object):
+    def __init__(self, function, degree, window_breakpoints, *args):
+        """
+        Approximates on [window_breakpoints[0], window_breakpoints[1])
+        """
+        self.function = function
+        self.degree = degree
+        self.window_breakpoints = window_breakpoints
+        self.args = args
+
+        self._domain = (window_breakpoints[0], window_breakpoints[-1])
+        self._windows = self._setup_windows()
+        self._approximants = self._setup_approximants()
+        self._dtype = self._approximants[0].coef.dtype
+
+    def _setup_windows(self):
+        windows = [
+            (start, stop) for start, stop in
+            zip(self.window_breakpoints[:-1], self.window_breakpoints[1:])]
+        return windows
+
+    def _setup_approximants(self):
+        return [Chebyshev.interpolate(
+                    self.function, self.degree, domain=window, *self.args)
+                for window in self._windows]
+
+    def __call__(self, x):
+        x = np.asarray(x)
+        if x.max() >= self._domain[1] or x.min() < self._domain[0]:
+            msg = "x must be within interpolation window [{}, {})".format(
+                *self._domain)
+            raise ValueError(msg)
+        result = np.zeros(x.shape, dtype=self._dtype)
+        for window, approximant in zip(self._windows, self._approximants):
+            mask = self._mask_window(x, window)
+            result[mask] = approximant(x[mask])
+        return result
+
+    @classmethod
+    def _mask_window(cls, x, window):
+        return (x >= window[0]) & (x < window[1])
+

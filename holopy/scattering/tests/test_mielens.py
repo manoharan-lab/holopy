@@ -50,6 +50,19 @@ class TestMieLens(unittest.TestCase):
                          theory=theory)
         self.assertTrue(holo is not None)
 
+    @attr("fast")
+    def test_raises_error_if_multiple_z_values(self):
+        theory = MieLens()
+        np.random.seed(10)
+        positions = np.random.randn(3, 10)  # the zs will differ by chance
+        self.assertRaises(
+            ValueError, theory._raw_fields, positions, sphere, 1.0, 1.33,
+            xschema.illum_polarization)
+
+    @attr("fast")
+    def test_desired_coordinate_system_is_cylindrical(self):
+        self.assertTrue(MieLens.desired_coordinate_system == 'cylindrical')
+
     @attr("medium")
     def test_can_calculate_for_positive_and_negative_z(self):
         theory = MieLens()

@@ -117,16 +117,31 @@ def test_Sphere_parameters():
     assert_equal(s.center, sp.center)
 
 
-def test_expand_parameters():
-    f = xr.DataArray([[11,12,13],[14,15,16]],dims=['d2','d3'],coords={'d3':['H','He','Li'],'d2':['Left','Right']})
-    compressed = {'a':0, 'b':[0.5, 1, 2], 'c':{'c1':3, 'c2':4}, 'd':ComplexPrior(5, 6), 'e':{'e1':ComplexPrior(7, 8), 'e2':[9,10]},'f':f}
-    expanded = {'a': 0, 'b.0':0.5, 'b.1':1, 'b.2':2, 'c:c1':3, 'c:c2':4, 'd.real':5, 'd.imag':6, 'e:e1.real':7, 'e:e1.imag':8, 'e:e2.0':9, 'e:e2.1':10, 'f:Left:H':11, 'f:Left:He':12, 'f:Left:Li':13, 'f:Right:H':14, 'f:Right:He':15, 'f:Right:Li':16}
-    assert_equal(dict(_expand_parameters(compressed.items())), expanded)
+class TestParameterHandling(unittest.TestCase):
+    expanded = {'a': 0, 'b.0':0.5, 'b.1':1, 'b.2':2, 'c:c1':3, 'c:c2':4,
+                'd.real':5, 'd.imag':6, 'e:e1.real':7, 'e:e1.imag':8,
+                'e:e2.0':9, 'e:e2.1':10, 'f:Left:H':11, 'f:Left:He':12,
+                'f:Left:Li':13, 'f:Right:H':14, 'f:Right:He':15,
+                'f:Right:Li':16}
 
-    compressed['f'] = {'Left': {'H': 11, 'He': 12, 'Li': 13}, 'Right': {'H': 14, 'He': 15, 'Li': 16}}
-    compressed['d'] = compressed['d'].guess
-    compressed['e']['e1'] = compressed['e']['e1'].guess
-    assert_equal(_interpret_parameters(expanded), compressed)
+    @attr("fast")
+    def test_expand_parameters(self):
+        array_f = xr.DataArray([[11,12,13], [14,15,16]], dims=['d2','d3'],
+            coords={'d3':['H','He','Li'],'d2':['Left','Right']})
+        compressed = {'a':0, 'b':[0.5, 1, 2], 'c':{'c1':3, 'c2':4},
+                      'd':ComplexPrior(5, 6),
+                      'e':{'e1':ComplexPrior(7, 8), 'e2':[9,10]},'f':array_f}
+        expansion = dict(_expand_parameters(compressed.items()))
+        self.assertTrue(expansion == self.expanded)
+
+    @attr("fast")
+    def test_interpret_parameters(self):
+        dict_f = {'Left': {'H': 11, 'He': 12, 'Li': 13},
+                  'Right': {'H': 14, 'He': 15, 'Li': 16}}
+        simple_compressed = {'a':0, 'b':[0.5, 1, 2], 'c':{'c1':3, 'c2':4},
+                             'd':5+6j, 'e':{'e1':7+8j, 'e2':[9,10]},'f':dict_f}
+        compression = _interpret_parameters(self.expanded)
+        self.assertTrue(compression == simple_compressed)
 
 
 def test_from_parameters():

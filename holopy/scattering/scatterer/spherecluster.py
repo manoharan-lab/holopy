@@ -30,11 +30,11 @@ import warnings
 from copy import copy
 from numbers import Number
 
-from .sphere import Sphere
-from .composite import Scatterers
-from ..errors import OverlapWarning, InvalidScatterer
-from ...core.math import cartesian_distance, rotate_points
-from ...core.utils import ensure_array, dict_without
+from holopy.scattering.scatterer.sphere import Sphere
+from holopy.scattering.scatterer.composite import Scatterers
+from holopy.scattering.errors import OverlapWarning, InvalidScatterer
+from holopy.core.math import cartesian_distance, rotate_points
+from holopy.core.utils import ensure_array, dict_without, ensure_listlike
 
 # default to always warning the user about overlaps.  This can be overriden by
 # calling this function again with a different action.
@@ -48,26 +48,29 @@ class Spheres(Scatterers):
     ----------
     spheres : list of Spheres
         Spheres which will make up the cluster
+    ties : dict or None (optional)
+       dict indicating tied parameters of the form {'r': '0:r', '1:r'} to tie
+       radius of first 2 spheres
+    warn : bool
+       if True, overlapping spheres raise warnings.
 
     Notes
     -----
     '''
 
-    def __init__(self, scatterers, warn=True):
-        if isinstance(scatterers, Sphere):
-            #only one sphere and it's not in a list
-            self.scatterers = [scatterers]
-        else:
-            # make sure all components are spheres
-            for s in scatterers:
-                if not isinstance(s, Sphere):
-                    raise InvalidScatterer(self,
+    def __init__(self, scatterers, ties=None, warn=True):
+        scatterers = ensure_listlike(scatterers)
+        self.warn = warn
+        for s in ensure_listlike(scatterers):
+            if not isinstance(s, Sphere):
+                raise InvalidScatterer(self,
                         "Spheres expects all component " +
                         "scatterers to be Spheres.\n" +
                         repr(s) + " is not a Sphere")
-            self.scatterers = scatterers
+        super().__init__(scatterers, ties)
 
-        if self.overlaps and warn:
+
+        if self.overlaps and self.warn:
             warnings.warn(OverlapWarning(self, self.overlaps))
 
     @property
@@ -102,7 +105,7 @@ class Spheres(Scatterers):
                 "Spheres expects all component " +
                 "scatterers to be Spheres.\n" +
                 repr(scatterer) + " is not a Sphere")
-        self.scatterers.append(scatterer)
+        super().add(scatterer)
 
     @property
     def n(self):

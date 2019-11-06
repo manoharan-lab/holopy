@@ -116,7 +116,7 @@ visualizing the reconstruction results.
 ..  testcode::
     :hide:
 
-    print(round(abs(recons[0,450,550].values),20))
+    print(round(abs(recons[0,450,550].values), 20))
 
 ..  testoutput::
     :hide:

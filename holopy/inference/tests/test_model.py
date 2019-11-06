@@ -17,8 +17,10 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import unittest
 import tempfile
 
+import yaml
 import numpy as np
 import xarray as xr
 from collections import OrderedDict
@@ -26,27 +28,171 @@ from collections import OrderedDict
 from nose.plugins.attrib import attr
 from numpy.testing import assert_raises
 
-from holopy.core import detector_grid, update_metadata
+from holopy.core import detector_grid, update_metadata, holopy_object
 from holopy.core.tests.common import assert_equal, assert_obj_close
 from holopy.scattering.theory import Mie
 from holopy.scattering.scatterer import Sphere, Spheres
+from holopy.scattering.scatterer.scatterer import _interpret_parameters
 from holopy.scattering.errors import MissingParameter
 from holopy.core.tests.common import assert_read_matches_write
 from holopy.scattering.calculations import calc_holo
 from holopy.inference import prior, AlphaModel, ExactModel
+from holopy.inference.model import BaseModel, PerfectLensModel
+
+
+class TestBaseModel(unittest.TestCase):
+    base_model_keywords = [
+        'noise_sd',
+        'medium_index',
+        'illum_wavelen',
+        'illum_polarization',
+        'theory',
+        ]
+
+    @attr('fast')
+    def test_initializable(self):
+        scatterer = make_sphere()
+        model = BaseModel(scatterer)
+        self.assertTrue(model is not None)
+
+    @attr('fast')
+    def test_initializing_with_xarray_raises_error(self):
+        sphere = make_sphere()
+        for key in self.base_model_keywords:
+            value = xr.DataArray(
+                [1, 0.],
+                dims=['illumination'],
+                coords={'illumination': ['red', 'green']})
+            kwargs = {key: value}
+            error_regex = '{} cannot be an xarray'.format(key)
+            with self.subTest(key=key):
+                self.assertRaisesRegex(
+                    ValueError, error_regex, BaseModel, sphere, **kwargs)
+
+    @attr('fast')
+    def test_yaml_round_trip_with_dict(self):
+        sphere = make_sphere()
+        for key in self.base_model_keywords:
+            value = {'red': 1, 'green': 0}
+            kwargs = {key: value}
+            model = BaseModel(sphere, **kwargs)
+            with self.subTest(key=key):
+                reloaded = take_yaml_round_trip(model)
+                self.assertEqual(reloaded, model)
+
+    @attr('fast')
+    @unittest.skip("There is a problem with saving yaml xarrays")
+    def test_yaml_round_trip_with_xarray(self):
+        sphere = make_sphere()
+        for key in self.base_model_keywords:
+            value = xr.DataArray(
+                [1, 0.],
+                dims=['illumination'],
+                coords={'illumination': ['red', 'green']})
+            kwargs = {key: value}
+            model = BaseModel(sphere, **kwargs)
+            with self.subTest(key=key):
+                reloaded = take_yaml_round_trip(model)
+                self.assertEqual(reloaded, model)
+
+
+class TestAlphaModel(unittest.TestCase):
+    @attr('fast')
+    def test_initializable(self):
+        scatterer = make_sphere()
+        model = AlphaModel(scatterer, alpha=0.6)
+        self.assertTrue(model is not None)
+
+    @attr('fast')
+    def test_initializing_with_xarray_alpha_raises_error(self):
+        sphere = make_sphere()
+        alpha_xarray = xr.DataArray(
+            [1, 0.5],
+            dims=['illumination'],
+            coords={'illumination': ['red', 'green']})
+        error_regex = 'alpha cannot be an xarray'
+        self.assertRaisesRegex(
+            ValueError, error_regex, AlphaModel, sphere, alpha=alpha_xarray)
+
+    @attr("fast")
+    @unittest.skip("There is a problem with saving yaml xarrays")
+    def test_yaml_round_trip_with_xarray(self):
+        alpha_xarray = xr.DataArray(
+            [1, 0.5],
+            dims=['illumination'],
+            coords={'illumination': ['red', 'green']})
+        sphere = make_sphere()
+        model = AlphaModel(sphere, alpha=alpha_xarray)
+
+        reloaded = take_yaml_round_trip(model)
+        self.assertEqual(reloaded, model)
+
+
+    @attr("fast")
+    def test_yaml_round_trip_with_dict(self):
+        alpha_dict = {'red': 1, 'green': 0.5}
+        sphere = make_sphere()
+        model = AlphaModel(sphere, alpha=alpha_dict)
+
+        reloaded = take_yaml_round_trip(model)
+        self.assertEqual(reloaded, model)
+
+
+class TestPerfectLensModel(unittest.TestCase):
+    @attr('fast')
+    def test_initializable(self):
+        scatterer = make_sphere()
+        model = PerfectLensModel(scatterer, lens_angle=0.6)
+        self.assertTrue(model is not None)
+
+    @attr('fast')
+    def test_initializing_with_xarray_lens_angle_raises_error(self):
+        sphere = make_sphere()
+        lens_angle_xarray = xr.DataArray(
+            [0.6, 0.6],
+            dims=['illumination'],
+            coords={'illumination': ['red', 'green']})
+        error_regex = 'lens_angle cannot be an xarray'
+        self.assertRaisesRegex(
+            ValueError, error_regex, PerfectLensModel, sphere,
+            lens_angle=lens_angle_xarray)
+
+
+def make_sphere():
+    index = prior.Uniform(1.4, 1.6)
+    radius = prior.Uniform(0.2, 0.8)
+    return Sphere(n=index, r=radius)
+
+
+def make_basemodel_kwargs():
+    kwargs = {
+        'noise_sd': 0.05,
+        'medium_index': 1.33,
+        'illum_wavelen': 0.66,
+        'illum_polarization': (1, 0),
+        'theory': 'auto',
+        # constraints?
+        # FIXME need to test alpha, lens_angle for other models
+        }
+    return kwargs
+
+
+def take_yaml_round_trip(model):
+    object_string = yaml.dump(model)
+    loaded = yaml.load(object_string, Loader=holopy_object.FullLoader)
+    return loaded
 
 
 @attr('fast')
-def test_ComplexPar():
-    # complex parameter
-    def makeScatterer(n):
-        n**2
-        return fake_sph
-
+def test_ComplexPrior():
     parm = Sphere(n=prior.ComplexPrior(real=prior.Uniform(1.58,1.59), imag=.001))
     model = AlphaModel(parm, alpha=prior.Uniform(.6, 1, .7))
     assert_equal(model.parameters['n.real'].name, 'n.real')
+    interpreted_pars = {'alpha':.7, 'n':{'real':1.585}}
+    assert_equal(_interpret_parameters(model.parameters), interpreted_pars)
 
+
+@attr('fast')
 def test_multidim():
     par_s = Sphere(
         n={'r': prior.Uniform(-1,1), 'g': 0, 'b': prior.Gaussian(0,1),'a':0},
@@ -71,6 +217,7 @@ def test_multidim():
     assert_equal(m.parameters, expected_params)
 
 
+@attr('fast')
 def test_pullingoutguess():
     g = Sphere(center = (prior.Uniform(0, 1e-5, guess=.567e-5),
                    prior.Uniform(0, 1e-5, .567e-5), prior.Uniform(1e-5, 2e-5, 15e-6)),
@@ -96,6 +243,8 @@ def test_pullingoutguess():
     assert_equal(s.r, model.scatterer.guess.r)
     assert_equal(s.center, model.scatterer.guess.center)
 
+
+@attr('fast')
 def test_find_noise():
     noise=0.5
     s = Sphere(n=prior.Uniform(1.5, 1.7), r=2, center=[1,2,3])
@@ -111,9 +260,16 @@ def test_find_noise():
     pars.update({'noise_sd':noise})
     assert_equal(model_g._find_noise(pars, data_base), noise)
 
+
+@attr('fast')
 def test_io():
     model = ExactModel(Sphere(1), calc_holo)
     assert_read_matches_write(model)
 
     model = ExactModel(Sphere(1), calc_holo, theory=Mie(False))
     assert_read_matches_write(model)
+
+
+if __name__ == '__main__':
+    unittest.main()
+

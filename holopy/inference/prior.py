@@ -18,7 +18,8 @@
 
 import numpy as np
 from numpy import random
-from numbers import Number
+from numbers import Number, Real
+from scipy import stats
 
 from holopy.core.metadata import get_extents, get_spacing
 from holopy.core.process import center_find
@@ -27,27 +28,37 @@ from holopy.scattering.errors import ParameterSpecificationError
 
 EPS = 1e-6
 
+
 class Prior(HoloPyObject):
+    """Base class for Bayesian priors in holopy."""
+
+    def __init__(self):
+        raise NotImplementedError("Use subclass with a defined probability"
+                                  "distribution method prob and/or lnprob.")
+
     def __add__(self, value):
         if isinstance(value, Number):
-            return self.__addadd__(value)
+            return self._add(value)
         elif isinstance(value, np.ndarray):
             return np.array([self + val for val in value])
         else:
-            raise TypeError("Cannot add prior to objects of type {}".format(type(value)))
+            raise TypeError(
+                "Cannot add prior to objects of type {}".format(type(value)))
 
     def __mul__(self, value):
-        if isinstance(value, Number):
+        if isinstance(value, Real):
             if value > 0:
-                return self.__multiply__(value)
+                return self._multiply(value)
             elif value < 0:
-                return -self.__multiply__(-value)
+                return -self._multiply(-value)
             else:
-                TypeError("Cannot multiply a prior by 0")
+                raise TypeError("Cannot multiply a prior by 0")
         elif isinstance(value, np.ndarray):
             return np.array([self * val for val in value])
         else:
-            raise TypeError("Cannot multiply prior by objects of type {}".format(type(value)))
+            badtype = type(value)
+            raise TypeError(
+                "Cannot multiply prior by objects of type {}".format(badtype))
 
     def __radd__(self, value):
         return self + value
@@ -73,6 +84,19 @@ class Prior(HoloPyObject):
 
 class Uniform(Prior):
     def __init__(self, lower_bound, upper_bound, guess=None, name=None):
+        """
+        Uniform prior.
+
+        Parameters
+        ----------
+        lower_bouund, upper_bound : float
+        guess : float or None, optional
+            The value to take as an initial guess from the prior. If
+            guess is None, defaults to the midpoint of the prior for
+            proper priors.
+        name : string or None, optional
+            The name of the parameter.
+        """
         if lower_bound >= upper_bound:
             raise ParameterSpecificationError(
                     "Lower bound {} is not less than upper bound {}".format(
@@ -84,7 +108,7 @@ class Uniform(Prior):
         if np.isfinite(self.interval):
             self._lnprob = np.log(1/self.interval)
         else:
-            self._lnprob = -1/EPS # don't want -inf to add likelihood
+            self._lnprob = -1/EPS  # don't want -inf to add likelihood
 
         if guess is None:
             if np.isfinite(lower_bound) and np.isfinite(upper_bound):
@@ -112,10 +136,10 @@ class Uniform(Prior):
     def lnprob(self, p):
         if p < self.lower_bound or p > self.upper_bound:
             return -np.inf
-        # For a uniform prior, the value is the same every time, so we precompute it
+        # For a uniform prior, the value is always the same, so precompute it
         return self._lnprob
         # Turns out scipy.stats is noticably slower than doing it ourselves
-        #return stats.uniform.logpdf(p, self.lower_bound, self.upper_bound)
+        # return stats.uniform.logpdf(p, self.lower_bound, self.upper_bound)
 
     def prob(self, p):
         if p < self.lower_bound or p > self.upper_bound:
@@ -129,24 +153,37 @@ class Uniform(Prior):
     def sample(self, size=None):
         return random.uniform(self.lower_bound, self.upper_bound, size)
 
-    def __addadd__(self, value):
-        return Uniform(self.lower_bound+value, self.upper_bound+value, self.name)
+    def _add(self, value):
+        return Uniform(self.lower_bound+value, self.upper_bound+value,
+                       self.guess+value, name=self.name)
 
-    def __multiply__(self, value):
-        return Uniform(self.lower_bound*value, self.upper_bound*value, self.name)
+    def _multiply(self, value):
+        return Uniform(self.lower_bound*value, self.upper_bound*value,
+                       self.guess*value, self.name)
 
     def __neg__(self):
-        return Uniform(-self.upper_bound, -self.lower_bound)
+        return Uniform(-self.upper_bound, -self.lower_bound, -self.guess,
+                       self.name)
+
 
 class Gaussian(Prior):
     def __init__(self, mu, sd, name=None):
+        """
+        Gaussian prior.
+
+        Parameters
+        ----------
+        mu, sd : float
+            The mean and standard deviation of the Gaussian.
+        name : string or None, optional
+            The name of the parameter.
+        """
         self.mu = mu
         self.sd = sd
         if sd <= 0:
             raise ParameterSpecificationError(
                     "Specified sd of {} is not greater than 0".format(sd))
-        self.sdsq = sd**2
-        self.name=name
+        self.name = name
         self._lnprob_normalization = -np.log(self.sd * np.sqrt(2*np.pi))
 
         if abs(self.guess) > 1e-12:
@@ -154,10 +191,14 @@ class Gaussian(Prior):
         else:  # values near 0
             self.scale_factor = self.sd
 
+    @property
+    def variance(self):
+        return self.sd**2
+
     def lnprob(self, p):
-        return self._lnprob_normalization - (p-self.mu)**2/(2*self.sdsq)
+        return self._lnprob_normalization - (p-self.mu)**2/(2*self.variance)
         # Turns out scipy.stats is noticably slower than doing it ourselves
-        #return stats.norm.logpdf(p, self.mu, self.sd)
+        # return stats.norm.logpdf(p, self.mu, self.sd)
 
     def prob(self, p):
         return stats.norm.pdf(p, self.mu, self.sd)
@@ -170,7 +211,9 @@ class Gaussian(Prior):
         return random.normal(self.mu, self.sd, size=size)
 
     def __add__(self, value):
-        if isinstance(value, Gaussian) and not isinstance(value, BoundedGaussian) and not isinstance(self, BoundedGaussian):
+        if (isinstance(value, Gaussian)
+                and not isinstance(value, BoundedGaussian)
+                and not isinstance(self, BoundedGaussian)):
             new_sd = np.sqrt(self.sd**2 + value.sd**2)
             if self.name == value.name:
                 new_name = self.name
@@ -180,50 +223,83 @@ class Gaussian(Prior):
         else:
             return super().__add__(value)
 
-    def __addadd__(self, value):
+    def _add(self, value):
         return Gaussian(self.mu+value, self.sd, self.name)
 
-    def __multiply__(self, value):
+    def _multiply(self, value):
         return Gaussian(self.mu*value, self.sd*value, self.name)
 
     def __neg__(self):
         return Gaussian(-self.mu, self.sd, self.name)
 
+
 class BoundedGaussian(Gaussian):
     # Note: this is not normalized
-    def __init__(self, mu, sd, lower_bound=-np.inf, upper_bound=np.inf, name=None):
+    def __init__(self, mu, sd, lower_bound=-np.inf, upper_bound=np.inf,
+                 name=None):
+        """Gaussian prior restricted to an interval.
 
-        if lower_bound > upper_bound:
-            raise ParameterSpecificationError("Lower bound {} is greater than upper bound {}".format(lower_bound, upper_bound))
-        if mu < lower_bound or mu > upper_bound:
-            raise ParameterSpecificationError("Gaussian mean {} is not between bounds {} and {}.".format(mu, lower_bound, upper_bound))
+        Note that the `prob` and `lnprob` methods return a value proportional
+        to the probability only, and not the actual probability.
+
+        Parameters
+        ----------
+        mu, sd : float
+            The mean and standard deviation of the Gaussian.
+        lower_bouund, upper_bound : float, optional
+            Defaults to +- infinity.
+        name : string or None, optional
+            The name of the parameter.
+        """
+
+        if mu < lower_bound or mu > upper_bound or lower_bound == upper_bound:
+            raise ParameterSpecificationError(
+                "Lower bound {} must be less than mean {}. Upper bound {} must"
+                " be greater than mean.")
 
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         super().__init__(mu, sd, name)
 
     def lnprob(self, p):
-        if np.any(p < self.lower_bound) or np.any(p > self.upper_bound):
+        """Note that this does not return the actual log-probability, but
+        a value proportional to it.
+        """
+        if p < self.lower_bound or p > self.upper_bound:
             return -np.inf
         else:
             return super().lnprob(p)
+
+    def prob(self, p):
+        """Note that this does not return the actual probability, but
+        a value proportional to it.
+        """
+        if p < self.lower_bound or p > self.upper_bound:
+            return 0
+        else:
+            return super().prob(p)
 
     def sample(self, size=None):
         val = super().sample(size)
         out = True
         while np.any(out):
-            out = np.where(np.logical_or(val < self.lower_bound, val > self.upper_bound))
+            out = np.logical_or(val < self.lower_bound, val > self.upper_bound)
+            out = np.where(out)
             val[out] = super().sample(len(out[0]))
         return val
 
-    def __addadd__(self, value):
-        return BoundedGaussian(self.mu+value, self.sd, self.lower_bound+value, self.upper_bound+value, self.name)
+    def _add(self, value):
+        return BoundedGaussian(self.mu+value, self.sd, self.lower_bound+value,
+                               self.upper_bound+value, self.name)
 
-    def __multiply__(self, value):
-        return BoundedGaussian(self.mu*value, self.sd*value, self.lower_bound*value, self.upper_bound*value, self.name)
+    def _multiply(self, value):
+        return BoundedGaussian(self.mu*value, self.sd*value,
+                               self.lower_bound*value, self.upper_bound*value,
+                               self.name)
 
     def __neg__(self):
-        return BoundedGaussian(-self.mu, self.sd, -self.upper_bound, -self.lower_bound, self.name)
+        return BoundedGaussian(-self.mu, self.sd, -self.upper_bound,
+                               -self.lower_bound, self.name)
 
 
 class ComplexPrior(Prior):
@@ -245,7 +321,7 @@ class ComplexPrior(Prior):
         using a ParameterizedScatterer, a name will be assigned based its
         position within the scatterer.
     """
-    def __init__(self, real, imag, name = None):
+    def __init__(self, real, imag, name=None):
         '''
         real and imag may be scalars or Priors. If Priors, they must be
         pure real.
@@ -285,13 +361,19 @@ class ComplexPrior(Prior):
                 return val
         return get_val(self.real) + 1.0j * get_val(self.imag)
 
-    def __addadd__(self, value):
+    def __add__(self, value):
+        if isinstance(self, ComplexPrior) and isinstance(value, ComplexPrior):
+            return self._add(value)
+        else:
+            return super().__add__(value)
+
+    def _add(self, value):
         real = self.real + np.real(value)
         imag = self.imag + np.imag(value)
         return ComplexPrior(real, imag, self.name)
 
-    def __multiply__(self, value):
-        # This doesn't work for complex "value"
+    def _multiply(self, value):
+        # doesn't work for complex 'value' but they are caught in Prior.__mul__
         return ComplexPrior(self.real * value, self.imag * value, self.name)
 
     def __neg__(self):
@@ -318,6 +400,7 @@ def updated(prior, v, extra_uncertainty=0):
     else:
         return Gaussian(v.guess, sd, prior.name)
 
+
 def generate_guess(parameters, nguess=1, scaling=1, seed=None):
     def scaled_sample(prior):
         raw_sample = prior.sample(size=nguess)
@@ -328,7 +411,9 @@ def generate_guess(parameters, nguess=1, scaling=1, seed=None):
         np.random.seed(seed)
     return np.vstack([scaled_sample(p) for p in parameters]).T
 
-def make_center_priors(im, z_range_extents=5, xy_uncertainty_pixels=1, z_range_units=None):
+
+def make_center_priors(im, z_range_extents=5, xy_uncertainty_pixels=1,
+                       z_range_units=None):
     """
     Make sensible default priors for the center of a sphere in a hologram
 
@@ -346,7 +431,7 @@ def make_center_priors(im, z_range_extents=5, xy_uncertainty_pixels=1, z_range_u
          The number of pixels of uncertainty to assume for the centerfinder.
          The default is 1 pixel, and this is probably correct for most images.
     z_range_units : float
-         Specify the range of the z prior in your data units. If this is provided,
+         Specify the range of the z prior in your data units. If provided,
          z_range_extents is ignored.
     """
     if z_range_units is not None:
@@ -361,3 +446,4 @@ def make_center_priors(im, z_range_extents=5, xy_uncertainty_pixels=1, z_range_u
 
     xy_sd = xy_uncertainty_pixels * spacing
     return [Gaussian(c, s) for c, s in zip(center, xy_sd)] + [Uniform(*z_range)]
+

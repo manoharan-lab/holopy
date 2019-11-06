@@ -240,6 +240,7 @@ class TestDisplayImage(unittest.TestCase):
         base.attrs = {'a':2, 'b':3, 'c':4, 'd':5, '_image_scaling':(0, 59)}
         assert_equal(base.attrs, display_image(base).attrs)
 
+
 class ShowTest(unittest.TestCase):
     @attr("medium")
     def test_show(self):
@@ -251,7 +252,8 @@ class ShowTest(unittest.TestCase):
             raise SkipTest()
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', (DeprecationWarning, UserWarning))
-            plt.savefig(tempfile.TemporaryFile(suffix='.pdf'))
+            with tempfile.TemporaryFile(suffix='.pdf') as filename:
+                plt.savefig(filename)
 
 
 if __name__ == '__main__':
