@@ -59,8 +59,8 @@ class testEmcee(unittest.TestCase):
     def test_EmceeStrategy(self):
         data = np.array(.5)
         mod = SimpleModel(prior.Uniform(0, 1))
-        strat = EmceeStrategy(10, None, None, seed=48)
-        r = strat.optimize(mod, data, 5)
+        strat = EmceeStrategy(10, 5, None, None, seed=48)
+        r = strat.sample(mod, data)
         assert_allclose(r.guess, .5, rtol=.001)
 
 
@@ -70,11 +70,11 @@ class TestSubsetTempering(unittest.TestCase):
         holo = normalize(get_example_data('image0001'))
         scat = Sphere(r=0.65e-6, n=1.58, center=[5.5e-6, 5.8e-6, 14e-6])
         mod = AlphaModel(scat, noise_sd=.1, alpha=prior.Gaussian(0.7, 0.1))
-        strat = TemperedStrategy(
-            nwalkers=4, stages=1, stage_len=10, parallel=None, seed=40)
+        strat = TemperedStrategy(nwalkers=4, nsamples=10, stages=1,
+                                 stage_len=10, parallel=None, seed=40)
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            inference_result = strat.optimize(mod, holo, nsamples=10)
+            inference_result = strat.sample(mod, holo)
         desired_alpha = np.array([0.650348])
         is_ok = np.allclose(inference_result.guess, desired_alpha, rtol=1e-3)
         self.assertTrue(is_ok)
@@ -85,11 +85,11 @@ class TestSubsetTempering(unittest.TestCase):
         scatterer = Sphere(r=0.65e-6, n=1.58, center=[5.5e-6, 5.8e-6, 14e-6])
         model = PerfectLensModel(
             scatterer, noise_sd=.1, lens_angle=prior.Gaussian(0.7, 0.1))
-        strat = TemperedStrategy(
-            nwalkers=4, stages=1, stage_len=10, parallel=None, seed=40)
+        strat = TemperedStrategy(nwalkers=4, nsamples=10, stages=1,
+                                 stage_len=10, parallel=None, seed=40)
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            inference_result = strat.optimize(model, data, nsamples=10)
+            inference_result = strat.sample(model, data)
         desired_lens_angle = np.array([0.7197887])
         is_ok = np.allclose(
             inference_result.guess, desired_lens_angle, rtol=1e-3)

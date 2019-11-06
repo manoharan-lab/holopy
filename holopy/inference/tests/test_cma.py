@@ -52,6 +52,6 @@ def test_run_cma():
 
 def test_CmaStrategy():
     mod = SimpleModel()
-    strat = CmaStrategy(seed=18, tols=tols)
-    r = strat.optimize(mod, data, 5)
+    strat = CmaStrategy(seed=18, tols=tols, popsize=5)
+    r = strat.fit(mod, data)
     assert_allclose(np.mean(r.guess), .55, atol=.001)
