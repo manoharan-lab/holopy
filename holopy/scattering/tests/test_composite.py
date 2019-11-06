@@ -40,8 +40,12 @@ class TestBasicMethods(unittest.TestCase):
 
     @attr("fast")
     def test_raw_parameters(self):
-        spheres = [Sphere(n=np.random.rand(), r=np.random.rand(),
-                          center=[i, i, i]) for i in range(3)]
+        max_radius = np.sqrt(3) / 2.0
+        spheres = [
+            Sphere(n=np.random.rand(),
+            r=np.random.rand() * max_radius,
+            center=[i, i, i])
+            for i in range(3)]
         spheres = Spheres(spheres)
         expected_keys = {'0:n', '1:n', '2:n', '0:r', '1:r', '2:r',
                          '0:center.0', '0:center.1', '0:center.2',

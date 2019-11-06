@@ -35,7 +35,6 @@ down the problem.
 '''
 
 
-
 import os
 import yaml
 from numpy.testing import assert_allclose
@@ -45,9 +44,10 @@ from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
 from scipy.special import spherical_jn, spherical_yn
 
-from ..theory.mie_f import mieangfuncs, miescatlib, multilayer_sphere_lib, \
-    scsmfo_min, mie_specfuncs
-from ..theory.multisphere import _asm_far
+from holopy.core.utils import SuppressOutput
+from holopy.scattering.theory.mie_f import (
+    mieangfuncs, miescatlib, multilayer_sphere_lib, scsmfo_min, mie_specfuncs)
+from holopy.scattering.theory.multisphere import _asm_far
 
 # basic defs
 kr = 10.
@@ -247,8 +247,7 @@ def test_mie_bndy_conds():
 # independent of kr and close to the analytical result.
 
 
-# @attr('fast')
-# FIXME this test prints out a bunch of crap to the terminal!
+@attr('fast')
 def test_mie_multisphere_singlesph():
     '''
     Check that fields from mie_fields and tmatrix_fields are consistent
@@ -272,9 +271,10 @@ def test_mie_multisphere_singlesph():
     emie_x, emie_y, emie_z = mieangfuncs.mie_fields(field_pts, asbs, pol, 1, 1)
 
     # calculate fields with Multisphere
-    _, lmax, amn0, conv = scsmfo_min.amncalc(1, 0., 0., 0., m.real, m.imag,
-                                             x, 100, 1e-6, 1e-8, 1e-8, 1,
-                                             (0., 0.))
+    with SuppressOutput():
+        _, lmax, amn0, conv = scsmfo_min.amncalc(
+            1, 0., 0., 0., m.real, m.imag, x, 100, 1e-6, 1e-8, 1e-8, 1,
+            (0., 0.))
     # increase qeps1 from usual here
     limit = lmax**2 + 2 * lmax
     amn = amn0[:, 0:limit, :]
@@ -331,8 +331,7 @@ def test_dn1_lentz():
         lentz_illconditioned = mieangfuncs.lentz_dn1(z, nstop, 1., eps2)
         assert_allclose(lentz_illconditioned, lentz_start, rtol = 1e-12)
 
-# @attr("fast")
-# FIXME this test prints out a bunch of crap to the terminal!
+@attr("fast")
 def test_asm():
     centers = np.array([[ 0.,  0.,  1.], [ 0.,  0., -1.]])
     m = np.array([ 1.5+0.1j,  1.5+0.1j])
@@ -342,13 +341,13 @@ def test_asm():
     qeps1 = 1e-5
     qeps2 = 1e-8
     meth = 1
-    _, lmax, amn0, converged = scsmfo_min.amncalc(
-        1, centers[:,0],  centers[:,1],
+    with SuppressOutput():
         # The fortran code uses oppositely directed z axis (they have laser
         # propagation as positive, we have it negative), so we multiply the
         # z coordinate by -1 to correct for that.
-        -1.0 * centers[:,2],  m.real, m.imag,
-        size_p, niter, eps, qeps1, qeps2,  meth, (0,0))
+        _, lmax, amn0, converged = scsmfo_min.amncalc(
+            1, centers[:,0],  centers[:,1], -1.0 * centers[:,2],  m.real,
+            m.imag, size_p, niter, eps, qeps1, qeps2,  meth, (0,0))
     limit = lmax**2 + 2*lmax
     amn = amn0[:, 0:limit, :]
     asm_fwd = _asm_far(0, 0, amn, lmax)

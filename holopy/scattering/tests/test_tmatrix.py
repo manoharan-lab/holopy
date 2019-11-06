@@ -40,6 +40,7 @@ from holopy.core import detector_grid, update_metadata
 
 from holopy.scattering.theory.tmatrix_f.S import ampld
 
+
 SCHEMA = update_metadata(
     detector_grid(shape=20, spacing=0.1),
     illum_wavelen=.660, medium_index=1.33, illum_polarization=[1, 0])
@@ -63,6 +64,7 @@ MISHCHENKO_PARAMS = OrderedDict((
 
 
 class TestTMatrix(unittest.TestCase):
+    @attr('fast')
     def test_calc_scattering_matrix(self):
         """
         The original [ampld.lpd.f]
@@ -150,7 +152,7 @@ class TestTMatrix(unittest.TestCase):
         tmat_holo = calc_holo_safe(SCHEMA, s, theory=Tmatrix)
         assert_allclose(dda_holo, tmat_holo, atol=.05)
 
-
+    @attr("fast")
     def test_calc_scattering_matrix_multiple_angles(self):
         params = MISHCHENKO_PARAMS
         params['thet'] = np.ones(2) * params['thet']
@@ -159,6 +161,7 @@ class TestTMatrix(unittest.TestCase):
         s = ampld(*list(params.values()))
         self.assertTrue(len(s[0]) == 2)
 
+    @attr("fast")
     def test_raw_scat_matrs_same_as_mie(self):
         theory_mie = Mie()
         theory_tmat = Tmatrix()
@@ -170,7 +173,7 @@ class TestTMatrix(unittest.TestCase):
         s_tmat = theory_tmat._raw_scat_matrs(s, pos, 2*np.pi/.660, 1.33)
         self.assertTrue(np.allclose(s_mie, s_tmat))
 
-
+    @attr("fast")
     def test_raw_fields_similar_to_mie(self):
         theory_mie = Mie(False, False)
         theory_tmat = Tmatrix()
@@ -193,12 +196,14 @@ def calc_holo_safe(
     except DependencyMissing:
         raise SkipTest()
 
+
 def _load_verification_data(name):
     hp_root = hp.__path__[0]
     fname = hp_root + '/scattering/tests/gold/gold_' + name + '.yaml'
     with open (fname, 'r') as f:
         test_values = yaml.safe_load(f)
     return test_values
+
 
 if __name__ == '__main__':
     unittest.main()
