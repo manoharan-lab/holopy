@@ -37,10 +37,9 @@ except ModuleNotFoundError:
 
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.metadata import make_subset_data
-from holopy.core.utils import choose_pool
+from holopy.core.utils import choose_pool, LnpostWrapper
 from holopy.core.errors import DependencyMissing
 from holopy.inference import prior
-from holopy.inference.model import LnpostWrapper
 from holopy.inference.result import FitResult, UncertainValue
 
 class CmaStrategy(HoloPyObject):
@@ -68,10 +67,12 @@ class CmaStrategy(HoloPyObject):
         number of threads to use or pool object or one of {None, 'all', 'mpi'}.
         Default tries 'mpi' then 'all'.
     """
-    def __init__(self, npixels=None, resample_pixels=True,
+    def __init__(self, npixels=None, popsize = None, resample_pixels=True,
                     parent_fraction=0.25, weight_function=None,
-                    tols={}, seed=None, parallel='auto'):
+                    walker_initial_pos=None, tols={}, seed=None,
+                    parallel='auto'):
         self.npixels = npixels
+        self.popsize = popsize
         if resample_pixels:
             self.new_pixels = self.npixels
         else:
@@ -80,25 +81,29 @@ class CmaStrategy(HoloPyObject):
             def weight_function(x, n):
                 return (x + 1) <= (parent_fraction * n)
         self.weights = weight_function
+        self.walker_initial_pos = walker_initial_pos
         self.tols = {'maxiter':2000, 'tolx':0.001, 'tolfun':0.1,
                      'tolstagnation':100}
         self.tols.update(tols)
         self.seed = seed
         self.parallel = parallel
 
-    def optimize(self, model, data, popsize=None, walker_initial_pos=None):
+    def fit(self, model, data):
         parameters = model._parameters
         time_start = time.time()
         if self.npixels is not None and self.new_pixels is None:
             data = make_subset_data(data, pixels=self.npixels, seed=self.seed)
-        if popsize is None:
-            numpars = len(parameters)
-            popsize = int(2 + numpars + np.sqrt(numpars)) #cma uses 4+3*ln(n)
-        if walker_initial_pos is None:
-            walker_initial_pos = model.generate_guess(popsize, seed=self.seed)
+        if self.popsize is None:
+            npars = len(parameters)
+            self.popsize = int(2 + npars + np.sqrt(numpars))#cma uses 4+3*ln(n)
+
+        if self.walker_initial_pos is None:
+            self.walker_initial_pos = model.generate_guess(self.popsize,
+                                                           seed=self.seed)
         obj_func = LnpostWrapper(model, data, self.new_pixels, True)
-        sampler = run_cma(obj_func.evaluate, parameters, walker_initial_pos, 
-                            self.weights, self.tols, self.seed, self.parallel)
+        sampler = run_cma(obj_func.evaluate, parameters,
+                          self.walker_initial_pos, self.weights, self.tols,
+                          self.seed, self.parallel)
         xrecent = sampler.logger.data['xrecent']
         samples = xr.DataArray([xrecent[:,5:]], 
                         dims = ['walker','chain','parameter'], 
@@ -111,7 +116,7 @@ class CmaStrategy(HoloPyObject):
         stop = dict(sampler.stop())
         d_time = time.time() - time_start
         kwargs = {'lnprobs':lnprobs, 'samples':samples, 'intervals': intervals,
-                     'stop_condition':stop, 'popsize': popsize}
+                     'stop_condition':stop, 'popsize': self.popsize}
         return FitResult(data, model, self, d_time, kwargs)
 
 

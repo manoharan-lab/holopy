@@ -89,7 +89,7 @@ class NmpfitStrategy(HoloPyObject):
         assert len(parameters) == len(values)
         return {par.name: par.unscale(value) for par, value in zip(parameters, values)}
 
-    def optimize(self, model, data):
+    def fit(self, model, data):
         """
         fit a model to some data
 
