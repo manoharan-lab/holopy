@@ -39,6 +39,29 @@ except ModuleNotFoundError:
 
 from holopy.core.errors import DependencyMissing
 
+
+# FIXME this is difficult to test, since it works on the file level
+# perhaps make this capture the output rather than writing it to devnull?
+class SuppressOutput(object):
+    STD_OUT = 1
+    def __init__(self, suppress_output=True):
+        self.suppress_output = suppress_output
+
+    def __enter__(self):
+        if self.suppress_output:
+            #store default (current) stdout
+            self.default_stdout = os.dup(self.STD_OUT)
+            self.devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(self.devnull, self.STD_OUT)
+        return self
+
+    def __exit__(self, *args):
+        if self.suppress_output:
+            os.dup2(self.default_stdout, self.STD_OUT)
+            os.close(self.devnull)
+            os.close(self.default_stdout)
+
+
 def ensure_array(x):
     '''
     if x is None, returns None. Otherwise, gives x in a form so that each of:

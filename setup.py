@@ -33,8 +33,12 @@ import setuptools
 import os
 import sys
 from os.path import join
+
+import nose
 from numpy.distutils.core import setup, Extension
 
+HOLOPY_NOSE_PLUGIN_LOCATION = ('holopycatchwarnings = '
+                               'holopy.core.tests.common:HoloPyCatchWarnings')
 
 hp_root = os.path.dirname(os.path.realpath(sys.argv[0]))
 
@@ -78,4 +82,5 @@ if __name__ == "__main__":
           url='http://manoharan.seas.harvard.edu/holopy',
           license='GNU GPL',
           test_suite='nose.collector',
+          entry_points = {'nose.plugins.0.10': HOLOPY_NOSE_PLUGIN_LOCATION},
           package=['HoloPy'])
