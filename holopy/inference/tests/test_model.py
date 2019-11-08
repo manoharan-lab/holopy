@@ -36,8 +36,12 @@ from holopy.scattering.scatterer.scatterer import _interpret_parameters
 from holopy.scattering.errors import MissingParameter
 from holopy.core.tests.common import assert_read_matches_write
 from holopy.scattering.calculations import calc_holo
-from holopy.inference import prior, AlphaModel, ExactModel
+from holopy.inference import (prior, AlphaModel, ExactModel,
+                              NmpfitStrategy, EmceeStrategy,
+                              available_fit_strategies,
+                              available_sampling_strategies)
 from holopy.inference.model import Model, PerfectLensModel
+from holopy.inference.tests.common import SimpleModel
 
 
 class TestModel(unittest.TestCase):
@@ -95,6 +99,61 @@ class TestModel(unittest.TestCase):
                 reloaded = take_yaml_round_trip(model)
                 self.assertEqual(reloaded, model)
 
+class TestModelFittingMethods(unittest.TestCase):
+    @attr('fast')
+    def test_default_fit_strategy_is_nmpfit(self):
+        model = Model(Sphere())
+        default_strategy = model.validate_strategy(None, 'fit')
+        self.assertEqual(NmpfitStrategy(), default_strategy)
+
+    @attr('fast')
+    def test_default_sampling_strategy_is_emcee(self):
+        model = Model(Sphere())
+        default_strategy = model.validate_strategy(None, 'sample')
+        self.assertEqual(EmceeStrategy(), default_strategy)
+
+    @attr('fast')
+    def test_fit_strategy_names(self):
+        model = Model(Sphere())
+        for name, strategy in available_fit_strategies.items():
+            strategy_by_name = model.validate_strategy(name, 'fit')
+            self.assertEqual(strategy, strategy_by_name)
+
+    @attr('fast')
+    def test_sample_strategy_names(self):
+        model = Model(Sphere())
+        for name, strategy in available_sampling_strategies.items():
+            if strategy is not NotImplemented:
+                strategy_by_name = model.validate_strategy(name, 'sample')
+                self.assertEqual(strategy, strategy_by_name)
+
+    @attr('fast')
+    def test_parallel_tempering_not_implemented(self):
+        model = Model(Sphere())
+        self.assertRaises(ValueError, model.validate_strategy,
+                          'parallel tempering', 'sample')
+
+    @attr('medium')
+    def test_model_fit_method_identical_to_strategy_method(self):
+        model = SimpleModel()
+        strategy = NmpfitStrategy(seed = 123)
+        data = np.array(.5)
+        strategy_result = strategy.fit(model, data)
+        strategy_result.time = None
+        model_result = model.fit(data, strategy)
+        model_result.time = None
+        self.assertEqual(strategy_result, model_result)
+
+    @attr('medium')
+    def test_model_sample_method_identical_to_strategy_method(self):
+        model = SimpleModel()
+        strategy = EmceeStrategy(nwalkers=6, nsamples=10, seed=123)
+        data = np.array(.5)
+        strategy_result = strategy.sample(model, data)
+        strategy_result.time = None
+        model_result = model.sample(data, strategy)
+        model_result.time = None
+        self.assertEqual(strategy_result, model_result)
 
 class TestAlphaModel(unittest.TestCase):
     @attr('fast')
