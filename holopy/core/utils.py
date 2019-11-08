@@ -169,12 +169,12 @@ class LnpostWrapper(HoloPyObject):
     However, individual functions can't be pickled to distribute hologram
     calculations with python multiprocessing. This class solves both issues.
     '''
-    def __init__(self, model, data, new_pixels, minus=False):
+    def __init__(self, model, data, new_pixels=None, minus=False):
         self.parameters = model._parameters
         self.data = data
-        self.pixels=new_pixels
+        self.pixels = new_pixels
         self.func = model.lnposterior
-        self.prefactor = (-1)**minus
+        self.prefactor = -1 if minus else 1
 
     def evaluate(self, par_vals):
         pars_dict = {par.name:val for par, val in zip(self.parameters, par_vals)}
