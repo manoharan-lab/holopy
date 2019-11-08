@@ -242,9 +242,9 @@ class MieLensCalculator(object):
         # from cos(lens_angle) to 1.0:
         # Placing things in order [quadrature points, rho-z values]
         rr = krho.reshape(1, -1)
-        integrand = (np.exp(1j * self.particle_kz * (1 - self._quad_pts)) *
-                     scatmatrix_values * ji(rr * self._sintheta_pts) *
-                     np.sqrt(self._quad_pts))
+        phase = self._calculate_phase()
+        integrand = (np.exp(1j * phase) * scatmatrix_values *
+                     ji(rr * self._sintheta_pts) * np.sqrt(self._quad_pts))
         answer_flat = np.sum(integrand * self._quad_wts, axis=0)
         return answer_flat.reshape(krho.shape)
 
@@ -259,6 +259,9 @@ class MieLensCalculator(object):
             degree=self.interpolator_degree,
             window_breakpoints=window_breakpoints)
         return interpolator(krho)
+
+    def _calculate_phase(self):
+        return self.particle_kz * (1 - self._quad_pts)
 
     def _check_parameters(self):
         must_be_specified = [

@@ -255,6 +255,18 @@ class TestMieLensCalculator(unittest.TestCase):
         fields_dont_explode = np.all(np.abs(field_x < 2e-4))
         self.assertTrue(fields_dont_explode)
 
+    @attr("fast")
+    def test_calculate_phase(self):
+        np.random.seed(119)
+        kz = 20.0 * np.random.rand()
+        calculator = mielensfunctions.MieLensCalculator(
+            size_parameter=10, lens_angle=1.0, particle_kz=kz,
+            index_ratio=1.1)
+
+        correct_phase = kz * (1 - calculator._quad_pts)
+        phase = calculator._calculate_phase()
+        self.assertTrue(np.allclose(correct_phase, phase, **TOLS))
+
     @attr("slow")
     def test_interpolate_is_same_as_direct_computation(self):
         k = 2 * np.pi / 0.66
