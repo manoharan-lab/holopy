@@ -31,6 +31,7 @@ from holopy.scattering import Sphere, Mie
 from holopy.inference import prior
 from holopy.inference.model import AlphaModel, Model, PerfectLensModel
 from holopy.inference.emcee import sample_emcee, EmceeStrategy
+from holopy.inference.tests.common import SimpleModel
 
 
 class testEmcee(unittest.TestCase):
@@ -94,15 +95,6 @@ class TestSubsetTempering(unittest.TestCase):
         is_ok = np.allclose(
             inference_result.guess, desired_lens_angle, rtol=1e-3)
         self.assertTrue(is_ok)
-
-
-class SimpleModel(Model):
-    def __init__(self, x=prior.Uniform(0, 1)):
-        self._parameters = [x]
-
-    def lnposterior(self, par_vals, data, dummy):
-        x = par_vals
-        return -((x[None]-data)**2).sum()
 
 
 if __name__ == '__main__':
