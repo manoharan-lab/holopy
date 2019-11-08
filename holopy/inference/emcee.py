@@ -45,7 +45,7 @@ def sample_one_sigma_gaussian(result):
 
 
 class EmceeStrategy(HoloPyObject):
-    def __init__(self, nwalkers=100, nsamples=1000, npixels=None, walker_initial_pos = None, parallel='auto', cleanup_threads=True, seed=None, resample_pixels=False):
+    def __init__(self, nwalkers=100, nsamples=1000, npixels=None, walker_initial_pos = None, parallel='auto', cleanup_threads=True, seed=None):
         self.nwalkers = nwalkers
         self.nsamples = nsamples
         self.npixels = npixels
@@ -53,10 +53,6 @@ class EmceeStrategy(HoloPyObject):
         self.parallel = parallel
         self.cleanup_threads = cleanup_threads
         self.seed = seed
-        if resample_pixels:
-            self.new_pixels = self.npixels
-        else:
-            self.new_pixels = None
 
     def sample(self, model, data, nsamples = None, walker_initial_pos = None):
         if nsamples is not None:
@@ -72,7 +68,7 @@ class EmceeStrategy(HoloPyObject):
                         'passing walker_initial_pos to EmceeStrategy.sample')
             self.walker_initial_pos = walker_initial_pos
         time_start = time.time()
-        if self.npixels is not None and self.new_pixels is None:
+        if self.npixels is not None:
             data = make_subset_data(data, pixels=self.npixels, seed=self.seed)
         if self.walker_initial_pos is None:
             self.walker_initial_pos = model.generate_guess(self.nwalkers, seed=self.seed)
@@ -80,7 +76,7 @@ class EmceeStrategy(HoloPyObject):
                                walker_initial_pos=self.walker_initial_pos,
                                nsamples=self.nsamples, parallel=self.parallel,
                                cleanup_threads=self.cleanup_threads,
-                               seed=self.seed, new_pixels=self.new_pixels)
+                               seed=self.seed)
 
         samples = emcee_samples_DataArray(sampler, model._parameters)
         lnprobs = emcee_lnprobs_DataArray(sampler)
@@ -91,49 +87,43 @@ class EmceeStrategy(HoloPyObject):
 
 
 class TemperedStrategy(EmceeStrategy):
-    def __init__(self, next_initial_dist=sample_one_sigma_gaussian, nwalkers=100, nsamples=1000, min_pixels=None, npixels=1000, walker_initial_pos = None, parallel='auto', stages=3, stage_len=30, seed=None, resample_pixels=False):
-        self.stages = stages
+    def __init__(self, next_initial_dist=sample_one_sigma_gaussian, nwalkers=100, nsamples=1000, min_pixels=None, npixels=1000, walker_initial_pos = None, parallel='auto', stages=3, stage_len=30, seed=None):
+        self.nwalkers = nwalkers
+        self.parallel = parallel
+        self.seed = seed
+        self.walker_initial_pos = walker_initial_pos
+        self.next_initial_dist = next_initial_dist
         self.stage_strategies = []
         if min_pixels is None:
             min_pixels = npixels/20
-        self.npixels = npixels
-        self.npixels_for_stages = np.logspace(np.log10(min_pixels),
-                                              np.log10(npixels), stages+1)
-        self.seed = seed
-        self.resample_pixels = resample_pixels
-        self.parallel = parallel
-        self.stage_len = stage_len
-        self.nwalkers = nwalkers
-        self.nsamples = nsamples
-        self.walker_initial_pos = walker_initial_pos
-        self.next_initial_dist = next_initial_dist
+        npixels_for_stages = np.logspace(np.log10(min_pixels),
+                                              np.log10(npixels), stages + 1)
+        for stage_pixels in npixels_for_stages[:-1]:
+            self.add_stage_strategy(stage_len, stage_pixels)
+        self.add_stage_strategy(nsamples, npixels)
+
+    def add_stage_strategy(self, nsamples, npixels):
+        self.stage_strategies.append(
+            EmceeStrategy(nwalkers=self.nwalkers,
+                          nsamples = nsamples,
+                          npixels = int(round(npixels)),
+                          parallel = self.parallel,
+                          seed = self.seed))
+        if self.seed is not None:
+            self.seed += 1
 
     def sample(self, model, data):
         start_time = time.time()
         stage_results = []
         guess = self.walker_initial_pos
-        for npixels in self.npixels_for_stages[:-1]:
-            stage = self.create_stage(self.stage_len, npixels, guess)
-            self.stage_strategies.append(stage)
-            result = stage.sample(model, data)
-            guess = self.next_initial_dist(result)
+        for i, strategy in enumerate(self.stage_strategies):
+            strategy.walker_initial_pos = guess
+            result = strategy.sample(model, data)
             stage_results.append(result)
-            if self.seed is not None:
-                self.seed += 1
-        stage = self.create_stage(self.nsamples, self.npixels, guess)
-        self.stage_strategies.append(stage)
-        end_result = stage.sample(model, data)
+            guess = self.next_initial_dist(result)
         d_time = time.time()-start_time
-        return TemperedSamplingResult(end_result, stage_results, self, d_time)
+        return TemperedSamplingResult(result, stage_results, self, d_time)
 
-    def create_stage(self, nsamples, npixels, walker_initial_pos):
-        return EmceeStrategy(nwalkers=self.nwalkers,
-                             nsamples = nsamples,
-                             npixels = int(round(npixels)),
-                             walker_initial_pos = walker_initial_pos,
-                             parallel = self.parallel,
-                             seed = self.seed,
-                             resample_pixels = self.resample_pixels)
 
 def emcee_samples_DataArray(sampler, parameters):
     return xr.DataArray(sampler.chain, dims=['walker', 'chain', 'parameter'],
@@ -145,12 +135,12 @@ def emcee_lnprobs_DataArray(sampler):
                         attrs={"acceptance_fraction": sampler.acceptance_fraction.mean()})
 
 def sample_emcee(model, data, nwalkers, nsamples, walker_initial_pos,
-                 parallel='auto', cleanup_threads=True, seed=None, new_pixels = None):
+                 parallel='auto', cleanup_threads=True, seed=None):
     if _EMCEE_MISSING:
         raise DependencyMissing('emcee',
             "Install it with \'conda install -c conda-forge emcee\'.")
 
-    obj_func = LnpostWrapper(model, data, new_pixels)
+    obj_func = LnpostWrapper(model, data)
     pool = choose_pool(parallel)
     sampler = emcee.EnsembleSampler(nwalkers, len(model._parameters), 
                                         obj_func.evaluate, pool=pool)
