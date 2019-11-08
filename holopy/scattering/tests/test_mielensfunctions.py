@@ -16,32 +16,25 @@ SOFTTOLS = {'atol': 1e-3, 'rtol': 1e-3}
 
 class TestMieLensCalculator(unittest.TestCase):
     @attr("fast")
-    def test_raises_error_when_params_arent_specified(self):
-        kwargs = {'particle_kz': None,
-                  'index_ratio': None,
-                  'size_parameter': None,
-                  'lens_angle': None,
-                  }
+    def test_raises_error_when_no_params_are_specified(self):
+        self.assertRaises(ValueError, mielensfunctions.MieLensCalculator)
 
-        def create_calculator(**kwargs):
-            return mielensfunctions.MieLensCalculator(**kwargs)
-
-        # 1. Check when none are supplied
-        self.assertRaises(ValueError, create_calculator, **kwargs)
-        self.assertRaises(ValueError, create_calculator)
-        # 2. Check when all but 1 are supplied
+    @attr("fast")
+    def test_raises_error_when_any_params_isnt_specified(self):
         kwargs = {'particle_kz': 10.0,
                   'index_ratio': 1.3,
                   'size_parameter': 5.0,
                   'lens_angle': 0.8,
                   }
+
+        def create_calculator(**kwargs):
+            return mielensfunctions.MieLensCalculator(**kwargs)
+
         for key in kwargs.keys():
             value = kwargs[key]  # popping it out
             kwargs[key] = None
             self.assertRaises(ValueError, create_calculator, **kwargs)
             kwargs[key] = value  # putting it back
-        # 3. Check that no error is raised when all are supplied:
-        dum = create_calculator(**kwargs)
 
     @attr("fast")
     def test_raises_error_when_inputs_mismatched_size(self):
