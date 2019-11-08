@@ -336,6 +336,59 @@ class TestMieLensCalculator(unittest.TestCase):
     # 2. E_x = 0 at phi = pi/2, E_y = 0 at phi = 0
 
 
+class TestAberratedMieLensCalculator(unittest.TestCase):
+    @attr("fast")
+    def test_raises_error_when_no_params_are_specified(self):
+        self.assertRaises(
+            ValueError, mielensfunctions.AberratedMieLensCalculator)
+
+    @attr("fast")
+    def test_raises_error_when_any_params_isnt_specified(self):
+        kwargs = {'particle_kz': 10.0,
+                  'index_ratio': 1.3,
+                  'size_parameter': 5.0,
+                  'lens_angle': 0.8,
+                  'spherical_aberration': 1.0,
+                  }
+
+        def create_calculator(**kwargs):
+            return mielensfunctions.AberratedMieLensCalculator(**kwargs)
+
+        for key in kwargs.keys():
+            value = kwargs[key]  # popping it out
+            kwargs[key] = None
+            self.assertRaises(ValueError, create_calculator, **kwargs)
+            kwargs[key] = value  # putting it back
+
+    @attr("fast")
+    def test_calculate_aberration_form(self):
+        calculator = mielensfunctions.AberratedMieLensCalculator(
+            size_parameter=10., lens_angle=1.0, particle_kz=10.,
+            index_ratio=1.1, spherical_aberration=0.0)  # kwargs dont matter
+
+        aberration = calculator._calculate_unit_aberration()
+
+        theta = np.arccos(calculator._quad_pts)
+        correct_aberration = (np.cos(theta) - 1.0)**2
+        self.assertTrue(np.allclose(aberration, correct_aberration, **TOLS))
+
+    @attr("fast")
+    def test_calculate_phase(self):
+        kz = 10.0
+        np.random.seed(143)
+        spherical_aberration = np.random.randn()
+        calculator = mielensfunctions.AberratedMieLensCalculator(
+            size_parameter=10, lens_angle=1.0, particle_kz=kz,
+            index_ratio=1.1, spherical_aberration=spherical_aberration)
+
+        phase = calculator._calculate_phase()
+        unit_aberration = calculator._calculate_unit_aberration()
+        correct_phase = (
+            kz * (1 - calculator._quad_pts) +
+            spherical_aberration * unit_aberration)
+        self.assertTrue(np.allclose(correct_phase, phase, **TOLS))
+
+
 class TestMieScatteringMatrix(unittest.TestCase):
     @attr("fast")
     def test_raises_error_on_nans(self):

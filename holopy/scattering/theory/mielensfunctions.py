@@ -13,6 +13,9 @@ LEGGAUSS_PTS_WTS_NPTS = np.polynomial.legendre.leggauss(NPTS)
 
 
 class MieLensCalculator(object):
+    must_be_specified = [
+        'particle_kz', 'index_ratio', 'size_parameter', 'lens_angle']
+
     def __init__(self, particle_kz=None, index_ratio=None, size_parameter=None,
                  lens_angle=None, quad_npts=100, interpolate_integrals='check',
                  interpolator_window_size=30.0, interpolator_degree=32):
@@ -264,10 +267,35 @@ class MieLensCalculator(object):
         return self.particle_kz * (1 - self._quad_pts)
 
     def _check_parameters(self):
-        must_be_specified = [
-            'particle_kz', 'index_ratio', 'size_parameter', 'lens_angle']
-        if any([getattr(self, p) is None for p in must_be_specified]):
-            raise ValueError("{} must be specified.".format(must_be_specified))
+        if any([getattr(self, p) is None for p in self.must_be_specified]):
+            msg = "{} must be specified.".format(self.must_be_specified)
+            raise ValueError(msg)
+
+
+class AberratedMieLensCalculator(MieLensCalculator):
+    must_be_specified = [
+        'particle_kz', 'index_ratio', 'size_parameter', 'lens_angle',
+        'spherical_aberration']
+
+    def __init__(self, spherical_aberration=None, **kwargs):
+        self.spherical_aberration = spherical_aberration
+        super(AberratedMieLensCalculator, self).__init__(**kwargs)
+
+    def _calculate_phase(self):
+        unit_aberration = self._calculate_unit_aberration()
+        unaberrated_phase = (
+            super(AberratedMieLensCalculator, self)._calculate_phase())
+        aberrated_phase = self.spherical_aberration * unit_aberration
+        return unaberrated_phase + aberrated_phase
+
+
+    def _calculate_unit_aberration(self):
+        # We want something that is roughly of the form theta^4, which
+        # is 3rd-order spherical aberration.  We also need Phi(0) = 0,
+        # otherwise we'll phase shift relative to the incident beam.  To
+        # satisfy both of these, we use (cos(theta) - 1)**2, which also
+        # has no quadratic term, so minimal unnecessary defocus.
+        return (self._quad_pts - 1)**2
 
 
 class MieScatteringMatrix(object):
