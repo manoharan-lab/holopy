@@ -151,10 +151,6 @@ class MieLensCalculator(object):
     def calculate_total_field(self, krho, phi):
         """The total (incident + scattered) field at the detector
         """
-        # Uses the incident field as
-        #   E_in = E_0 \hat{x} * 4 pi * (f1 / f2) * e^{ik(f1 + f2)} * i
-        # which is more-or-less from the brightfield writeups.
-        # return 1j - 0.25 * mielens_field(krho, phi, **kwargs)
         scattered_x, scattered_y = self.calculate_scattered_field(krho, phi)
         incident_x, incident_y = self.calculate_incident_field()
         return incident_x + scattered_x, incident_y + scattered_y
@@ -165,10 +161,10 @@ class MieLensCalculator(object):
 
     def calculate_incident_field(self):
         """This is here so
-            (i)  Any corrections in the theory to the scattered field
-                 have an easy place to enter, and
-            (ii) Other packages can consistently use the same scattered
-                 field as this package.
+        (i)  Any corrections in the theory to the scattered field
+             have an easy place to enter, and
+        (ii) Other modules can consistently use the same scattered
+             field as this module.
         """
         return -1, 0
 
@@ -265,8 +261,8 @@ class MieLensCalculator(object):
         return interpolator(krho)
 
     def _check_parameters(self):
-        must_be_specified = ['particle_kz', 'index_ratio',
-                             'size_parameter', 'lens_angle']
+        must_be_specified = [
+            'particle_kz', 'index_ratio', 'size_parameter', 'lens_angle']
         if any([getattr(self, p) is None for p in must_be_specified]):
             raise ValueError("{} must be specified.".format(must_be_specified))
 
