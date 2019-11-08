@@ -120,10 +120,11 @@ class Model(HoloPyObject):
         -------
         lnprior: float
         """
-        try:
-            par_scat = self.scatterer.from_parameters(par_vals)
-        except InvalidScatterer:
-            return -np.inf
+        if hasattr(self, 'scatterer'):
+            try:
+                par_scat = self.scatterer.from_parameters(par_vals)
+            except InvalidScatterer:
+                return -np.inf
 
         for constraint in self.constraints:
             if not constraint.check(par_scat):
@@ -202,11 +203,11 @@ class Model(HoloPyObject):
 
     def fit(self, data, strategy=None):
         strategy = self.validate_strategy(strategy, 'fit')
-        return strategy.fit(model, data)
+        return strategy.fit(self, data)
 
     def sample(self, data, strategy = None):
         strategy = self.validate_strategy(strategy, 'sample')
-        return strategy.sample(model, data)
+        return strategy.sample(self, data)
 
     def validate_strategy(self, strategy, operation):
         if strategy is None:
@@ -214,8 +215,12 @@ class Model(HoloPyObject):
         if isinstance(strategy, str):
             strategy = ALL_STRATEGIES[operation][strategy]
         if not hasattr(strategy, operation):
-            raise ValueError("Cannot {} based on Strategy of type {}.".format(
-                operation, strategy.type))
+            if strategy is NotImplemented:
+                strategy_type = strategy
+            else:
+                strategy_type = strategy.type
+            raise ValueError("Cannot {} with Strategy of type {}.".format(
+                operation, strategy_type))
         return strategy
 
     def _check_parameters_are_not_xarray(self, parameters_to_use):

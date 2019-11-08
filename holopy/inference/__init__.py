@@ -21,5 +21,9 @@ from holopy.inference.result import (FitResult, SamplingResult,
 from holopy.inference.emcee import EmceeStrategy, TemperedStrategy
 from holopy.inference.nmpfit import NmpfitStrategy
 from holopy.inference.cmaes import CmaStrategy
-from holopy.inference.model import AlphaModel, ExactModel, LimitOverlaps
+from holopy.inference.model import (AlphaModel, ExactModel,
+                                    LimitOverlaps, ALL_STRATEGIES)
 from holopy.inference.scipyfit import LeastSquaresScipyStrategy
+
+available_fit_strategies = ALL_STRATEGIES['fit']
+available_sampling_strategies = ALL_STRATEGIES['sample']
