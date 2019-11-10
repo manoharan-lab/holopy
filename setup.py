@@ -29,22 +29,38 @@ C compilers, as well as f2py and cython. On Ubuntu, you will need the
 "gfortran" and "python-dev" packages installed.
 '''
 
-import setuptools
-import os
-import sys
+import glob, os, setuptools, shutil, site, sys
 from os.path import join
 
 import nose
 from numpy.distutils.core import setup, Extension
+from setuptools.command.develop import develop
+from setuptools.command.install import install
 
-HOLOPY_NOSE_PLUGIN_LOCATION = ('holopycatchwarnings = '
-                               'holopy.core.tests.common:HoloPyCatchWarnings')
+try:
+    from holopy import __version__
+except ImportError:
+    __version__ = 'unknown'
 
 hp_root = os.path.dirname(os.path.realpath(sys.argv[0]))
 
-# this will automatically build the scattering extensions, using the
-# setup.py files located in their subdirectories
+class PostDevelopConfig(develop):
+    """Post-installation for development mode."""
+    def run(self):
+        develop.run(self)
+        _move_S_msvc_libs()
+
+
+class PostInstallConfig(install):
+    """Post-installation for installation mode."""
+    def run(self):
+        install.run(self)
+        _move_S_msvc_libs()
+
+
 def configuration(parent_package='',top_path=''):
+    # this will automatically build the scattering extensions, using the
+    # setup.py files located in their subdirectories
     from numpy.distutils.misc_util import Configuration
     config = Configuration(None,parent_package,top_path)
 
@@ -62,10 +78,27 @@ def configuration(parent_package='',top_path=''):
 
     return config
 
-try:
-    from holopy import __version__
-except ImportError:
-    __version__ = 'unknown'
+# TODO: Why is this necessary on Win10 with VC 14.0?
+def _move_S_msvc_libs():
+    """ These dlls need to be moved if the fortran is complied in an environment
+    with MSVC 2015 as the C compiler.
+    """
+    if os.name == 'nt':
+        package_dir = _get_holopy_install_dir()
+        lib_dir = os.path.join(package_dir, '.libs')
+        sep = os.path.sep
+        libs = glob.glob(lib_dir + sep + 'libS.*.dll')
+        dest = os.path.join(package_dir, 'scattering', 'theory', 'tmatrix_f')
+        for dll in libs:
+            shutil.copy2(dll, dest)
+
+def _get_holopy_install_dir():
+    sitepackages = list(site.getsitepackages())
+    dir = [glob.glob(sp + '\\**\\*holopy', recursive=True)[0].lower()
+           for sp in sitepackages]
+    dir = list(set(dir))
+    assert len(dir) == 1
+    return dir[0]
 
 if __name__ == "__main__":
     requires=[l for l in open(os.path.join(hp_root,"requirements.txt")).readlines() if l[0] != '#']
@@ -82,5 +115,7 @@ if __name__ == "__main__":
           url='http://manoharan.seas.harvard.edu/holopy',
           license='GNU GPL',
           test_suite='nose.collector',
-          entry_points = {'nose.plugins.0.10': HOLOPY_NOSE_PLUGIN_LOCATION},
-          package=['HoloPy'])
+          package=['HoloPy'],
+          cmdclass={'develop': PostDevelopConfig,
+                    'install': PostInstallConfig})
+
