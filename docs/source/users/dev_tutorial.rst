@@ -17,12 +17,11 @@ Download or clone the latest version of HoloPy from Git Hub at `https://github.c
 Let's say you downloaded or cloned HoloPy to
 ``/home/me/holopy``. Then open a terminal, ``cd`` to ``/home/me/holopy`` and run::
 
-    python setup.py build_ext --inplace
+    python setup.py develop
 
 This puts the extensions inside the source tree, so that you can work
-directly from ``/home/me/holopy``.  You will need to add
-``/home/me/holopy`` to your python_path for python to find the
-module when you import it.
+directly from ``/home/me/holopy`` and have the changes reflected in the version
+of HoloPy that you import into python.
 
 **Note for Mac users:** gfortran may put its library in a place python can't find it. If you get errors including something like ``can't find /usr/local/libgfortran.3.dynlib`` you can symlink them in from your install. You can do this by running::
 

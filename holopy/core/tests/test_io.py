@@ -253,6 +253,7 @@ class TestAccumulator(unittest.TestCase):
         numpy_mean = np.mean([holo.values for holo in data], axis=0)
         self.assertTrue(np.allclose(numpy_mean, accumulator.mean().values))
 
+    @attr("fast")
     def test_mean_hologram_type(self):
         import xarray
         expected_type = xarray.core.dataarray.DataArray
@@ -285,6 +286,7 @@ class TestAccumulator(unittest.TestCase):
         accumulator = Accumulator()
         self.assertTrue(accumulator.cv() is None)
 
+    @attr("medium")
     def test_calculate_hologram_noise_sd(self):
         accumulator = Accumulator()
         refimg = _load_raw_example_data()
@@ -293,13 +295,16 @@ class TestAccumulator(unittest.TestCase):
         # This value is from the legacy version of load_average
         self.assertTrue(np.allclose(bg.noise_sd, 0.00709834))
 
+    @attr('fast')
     def test_2_colour_noise_sd(self):
         paths = get_example_data_path(['2colourbg0.jpg', '2colourbg1.jpg',
                                        '2colourbg2.jpg', '2colourbg3.jpg'])
         image = load_average(paths, spacing=1, channel=[0,1])
         gold_noise = [0.06864433355667054, 0.04913377621162473]
-        noise = [image.noise_sd.loc[colour].item() for colour in ['green', 'red']]
+        noise = [image.noise_sd.loc[colour].item()
+                 for colour in ['green', 'red']]
         self.assertTrue(np.allclose(gold_noise, noise))
+
 
 def _load_raw_example_data():
     imagepath = get_example_data_path('image01.jpg')
@@ -311,3 +316,4 @@ def _load_example_data_backgrounds():
 
 if __name__ == '__main__':
     unittest.main()
+
