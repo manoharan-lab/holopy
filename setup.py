@@ -46,14 +46,14 @@ class PostDevelopConfig(develop):
     """Post-installation for development mode."""
     def run(self):
         develop.run(self)
-        _move_S_msvc_libs()
+        _move_S_msvc_libs('develop')
 
 
 class PostInstallConfig(install):
     """Post-installation for installation mode."""
     def run(self):
         install.run(self)
-        _move_S_msvc_libs()
+        _move_S_msvc_libs('install')
 
 
 def configuration(parent_package='',top_path=''):
@@ -77,12 +77,12 @@ def configuration(parent_package='',top_path=''):
     return config
 
 # TODO: Why is this necessary on Win10 with VC 14.0?
-def _move_S_msvc_libs():
+def _move_S_msvc_libs(mode='install'):
     """ These dlls need to be moved if the fortran is complied in an environment
     with MSVC 2015 as the C compiler.
     """
     if os.name == 'nt':
-        package_dir = _get_holopy_install_dir()
+        package_dir = _get_holopy_install_dir(mode)
         lib_dir = os.path.join(package_dir, '.libs')
         sep = os.path.sep
         libs = glob.glob(lib_dir + sep + 'libS.*.dll')
@@ -90,13 +90,16 @@ def _move_S_msvc_libs():
         for dll in libs:
             shutil.copy2(dll, dest)
 
-def _get_holopy_install_dir():
-    sitepackages = list(site.getsitepackages())
-    dir = [glob.glob(sp + '\\**\\*holopy', recursive=True)[0].lower()
-           for sp in sitepackages]
-    dir = list(set(dir))
-    assert len(dir) == 1
-    return dir[0]
+def _get_holopy_install_dir(mode):
+    if mode == 'install':
+        sitepackages = list(site.getsitepackages())
+        dir = [path for path in site.getsitepackages() if 'site-packages' in path]
+        assert len(dir) == 1
+        dir = os.path.join(dir[0], 'holopy')
+    if mode == 'develop':
+        dir = os.path.dirname(os.path.realpath(__file__))
+        dir = os.path.join(dir, 'holopy')
+    return dir
 
 if __name__ == "__main__":
     requires=[l for l in open(os.path.join(hp_root,"requirements.txt")).readlines() if l[0] != '#']
