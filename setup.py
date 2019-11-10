@@ -48,14 +48,14 @@ class PostDevelopConfig(develop):
     """Post-installation for development mode."""
     def run(self):
         develop.run(self)
-        _move_S_msvc_libs('develop')
+        if os.name == 'nt': _move_S_msvc_libs('develop')
 
 
 class PostInstallConfig(install):
     """Post-installation for installation mode."""
     def run(self):
         install.run(self)
-        _move_S_msvc_libs('install')
+        if os.name == 'nt': _move_S_msvc_libs('install')
 
 
 def configuration(parent_package='',top_path=''):
@@ -78,32 +78,24 @@ def configuration(parent_package='',top_path=''):
 
     return config
 
-# TODO: Why is this necessary on Win10 with VC 14.0?
 def _move_S_msvc_libs(mode='install'):
     """ These dlls need to be moved if the fortran is complied in an environment
     with MSVC 2015 as the C compiler.
     """
-    if os.name == 'nt':
-        package_dir = _get_holopy_install_dir(mode)
-        lib_dir = os.path.join(package_dir, '.libs')
-        sep = os.path.sep
-        # TMatirix libs
-        libs = glob.glob(lib_dir + sep + 'libS.*.dll')
-        dest = os.path.join(package_dir, 'scattering', 'theory', 'tmatrix_f')
-        for dll in libs:
-            shutil.copy2(dll, dest)
+    package_dir = _get_holopy_install_dir(mode)
+    lib_dir = os.path.join(package_dir, '.libs')
+    sep = os.path.sep
 
-        # TMatirix libs
-        tmatrix_libs = glob.glob(lib_dir + sep + 'libS.*.dll')
-        mie_libs = glob.glob(lib_dir + sep + 'libscsm*.dll')
-        mie_libs += glob.glob(lib_dir + sep + 'libmieang*.dll')
-        mie_libs += glob.glob(lib_dir + sep + 'libuts*.dll')
+    tmatrix_libs = glob.glob(lib_dir + sep + 'libS.*.dll')
+    mie_libs = glob.glob(lib_dir + sep + 'libscsm*.dll')
+    mie_libs += glob.glob(lib_dir + sep + 'libmieang*.dll')
+    mie_libs += glob.glob(lib_dir + sep + 'libuts*.dll')
 
-        tmatrix_f_dir = os.path.join(package_dir, 'scattering', 'theory', 'tmatrix_f')
-        mie_f_dir = os.path.join(package_dir, 'scattering', 'theory', 'mie_f')
+    tmatrix_f_dir = os.path.join(package_dir, 'scattering', 'theory', 'tmatrix_f')
+    mie_f_dir = os.path.join(package_dir, 'scattering', 'theory', 'mie_f')
 
-        for dll in tmatrix_libs: shutil.copy2(dll, tmatrix_f_dir)
-        for dll in mie_libs: shutil.copy2(dll, mie_f_dir)
+    for dll in tmatrix_libs: shutil.move(dll, tmatrix_f_dir)
+    for dll in mie_libs: shutil.move(dll, mie_f_dir)
 
 
 def _get_holopy_install_dir(mode):
