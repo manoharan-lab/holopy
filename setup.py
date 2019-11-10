@@ -87,10 +87,24 @@ def _move_S_msvc_libs(mode='install'):
         package_dir = _get_holopy_install_dir(mode)
         lib_dir = os.path.join(package_dir, '.libs')
         sep = os.path.sep
+        # TMatirix libs
         libs = glob.glob(lib_dir + sep + 'libS.*.dll')
         dest = os.path.join(package_dir, 'scattering', 'theory', 'tmatrix_f')
         for dll in libs:
             shutil.copy2(dll, dest)
+
+        # TMatirix libs
+        tmatrix_libs = glob.glob(lib_dir + sep + 'libS.*.dll')
+        mie_libs = glob.glob(lib_dir + sep + 'libscsm*.dll')
+        mie_libs += glob.glob(lib_dir + sep + 'libmieang*.dll')
+        mie_libs += glob.glob(lib_dir + sep + 'libuts*.dll')
+
+        tmatrix_f_dir = os.path.join(package_dir, 'scattering', 'theory', 'tmatrix_f')
+        mie_f_dir = os.path.join(package_dir, 'scattering', 'theory', 'mie_f')
+
+        for dll in tmatrix_libs: shutil.copy2(dll, tmatrix_f_dir)
+        for dll in mie_libs: shutil.copy2(dll, mie_f_dir)
+
 
 def _get_holopy_install_dir(mode):
     if mode == 'install':
