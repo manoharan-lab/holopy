@@ -18,3 +18,4 @@ HoloPy.egg-info
 .DS_Store
 docs/.DS_Store
 *.so.dSYM
+*.libs
