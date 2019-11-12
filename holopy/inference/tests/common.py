@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
+import numpy as np
+
 from holopy.inference import prior
 from holopy.inference.model import Model
 from holopy.scattering import Sphere
@@ -32,5 +34,6 @@ class SimpleModel(Model):
 
     def lnposterior(self, par_vals, data, dummy):
         x = par_vals
+        data = np.array(data)
         return -((x[self.parameter_name]-data)**2).sum()
 

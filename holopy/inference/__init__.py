@@ -16,14 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
-from holopy.inference.result import (FitResult, SamplingResult,
-                                     TemperedSamplingResult)
+from holopy.inference.result import (
+    FitResult, SamplingResult, TemperedSamplingResult)
+from holopy.inference.model import (AlphaModel, ExactModel, LimitOverlaps)
+from holopy.inference.functional_api import (
+    fit, sample, available_fit_strategies, available_sampling_strategies)
 from holopy.inference.emcee import EmceeStrategy, TemperedStrategy
 from holopy.inference.nmpfit import NmpfitStrategy
 from holopy.inference.cmaes import CmaStrategy
-from holopy.inference.model import (AlphaModel, ExactModel,
-                                    LimitOverlaps, ALL_STRATEGIES)
 from holopy.inference.scipyfit import LeastSquaresScipyStrategy
-
-available_fit_strategies = ALL_STRATEGIES['fit']
-available_sampling_strategies = ALL_STRATEGIES['sample']

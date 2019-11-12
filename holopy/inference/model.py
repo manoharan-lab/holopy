@@ -215,12 +215,8 @@ class Model(HoloPyObject):
         if isinstance(strategy, str):
             strategy = ALL_STRATEGIES[operation][strategy]
         if not hasattr(strategy, operation):
-            if strategy is NotImplemented:
-                strategy_type = strategy
-            else:
-                strategy_type = strategy.type
             raise ValueError("Cannot {} with Strategy of type {}.".format(
-                operation, strategy_type))
+                operation, type(strategy).__name__))
         return strategy
 
     def _check_parameters_are_not_xarray(self, parameters_to_use):

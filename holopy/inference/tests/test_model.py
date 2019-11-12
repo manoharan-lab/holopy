@@ -110,7 +110,7 @@ class TestModelFittingMethods(unittest.TestCase):
     def test_default_sampling_strategy_is_emcee(self):
         model = Model(Sphere())
         default_strategy = model.validate_strategy(None, 'sample')
-        self.assertEqual(EmceeStrategy(), default_strategy)
+        self.assertTrue(isinstance(default_strategy, EmceeStrategy))
 
     @attr('fast')
     def test_fit_strategy_names(self):
