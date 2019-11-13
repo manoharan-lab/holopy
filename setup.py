@@ -55,7 +55,7 @@ class PostInstallConfig(install):
     """Post-installation for installation mode."""
     def run(self):
         install.run(self)
-        if os.name == 'nt': _move_S_msvc_libs('install')
+        if os.name == 'nt': _move_msvc_libs('install')
 
 
 def configuration(parent_package='',top_path=''):
@@ -78,7 +78,7 @@ def configuration(parent_package='',top_path=''):
 
     return config
 
-def _move_S_msvc_libs(mode='install'):
+def _move_msvc_libs(mode='install'):
     """ These dlls need to be moved if the fortran is complied in an environment
     with MSVC 2015 as the C compiler.
     """
