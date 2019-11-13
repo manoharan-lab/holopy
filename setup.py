@@ -98,7 +98,7 @@ def _move_msvc_libs(mode='install'):
 
     for dll in tmatrix_libs: shutil.move(dll, tmatrix_f_dir)
     for dll in mie_libs: shutil.move(dll, mie_f_dir)
-
+    shutil.rmtree(lib_dir)
 
 def _get_holopy_install_dir(mode):
     if mode == 'install':
