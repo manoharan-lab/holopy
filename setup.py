@@ -48,7 +48,7 @@ class PostDevelopConfig(develop):
     """Post-installation for development mode."""
     def run(self):
         develop.run(self)
-        if os.name == 'nt': _move_S_msvc_libs('develop')
+        if os.name == 'nt': _move_msvc_libs('develop')
 
 
 class PostInstallConfig(install):
