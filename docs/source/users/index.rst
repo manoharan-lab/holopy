@@ -17,7 +17,6 @@ and want to get started quickly.
    calc_tutorial
    dda_tutorial
    fit_tutorial
-   infer_tutorial
    dev_tutorial
    tools
    concepts

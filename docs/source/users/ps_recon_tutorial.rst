@@ -1,4 +1,4 @@
-.. ps_recon_tutorial:
+.. _ps_recon_tutorial:
 
 Reconstructing Point Source Holograms
 =====================================

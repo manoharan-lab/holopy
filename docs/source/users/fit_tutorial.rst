@@ -21,7 +21,8 @@ in the tutorial on :ref:`load_tutorial`.
     from holopy.core.io import get_example_data_path, load_average
     from holopy.core.process import bg_correct, subimage, normalize
     from holopy.scattering import Sphere, Spheres, calc_holo
-    from holopy.inference import (fit, sample, prior, ExactModel, CmaStrategy)
+    from holopy.inference import (
+        fit, sample, prior, ExactModel, CmaStrategy, EmceeStrategy)
 
     # load an image
     imagepath = get_example_data_path('image01.jpg')
@@ -40,8 +41,8 @@ Next we define a scatterer that we wish to model as our initial guess. We can
 calculate the hologram that it would produce if it were placed in our
 experimental setup, as in the previous tutorial on :ref:`calc_tutorial`.
 Fitting works best if your initial guess is close to the correct result. You
-can find guesses for `x` and `y` coordinates with :func:`.center_find`, and
-guess `z` with :func:`.propagate`.
+can find guesses for `x` and `y` coordinates with :func:`.center_find`, and a
+guess for `z` with :func:`.propagate`.
 
 ..  testcode::
 
@@ -68,14 +69,14 @@ various ways, and can be saved to a file with ``hp.save`` :
 
     best_fit_dictionary = fit_result.parameters
     best_fit_sphere = fit_result.scatterer
-    initial_guess_hologram = fit_result.initial_guess
+    initial_guess_values = fit_result.initial_guess
     best_fit_hologram = fit_result.best_fit
     best_fit_lnprob = fit_result.max_lnprob
     hp.save('results_file.h5', fit_result)
 
 If we look at ``best_fit_dictionary`` or ``best_fit_sphere``, we see that our
 initial guess of the sphere's position of (24, 22, 15) was corrected to
-(24.17, 21.84, 16.42). Note that we have achieved sub-pixel position
+(24.16, 21.84, 16.35). Note that we have achieved sub-pixel position
 resolution!
 
 
@@ -108,8 +109,9 @@ defining them as :class:`.Prior` objects.
 
 The model in our example has read in some metadata from ``data_holo``
 (illumination wavelength & polarization, medium refractive index, and image
-noise level), but we could have specified those with keywords when defining our
-:class:`.Model` instead.
+noise level). If we want to override those values, or if we loaded an image
+without specifying metadata, we can pass them directly into the
+:class:`.Model` object by using keywords when defining it.
 
 
 Advanced Parameter Specification
@@ -160,22 +162,20 @@ to speed up the calculation further down on this page.
 
 The :func:`.sample` calculation returns a :class:`.SamplingResult`
 object, which is similar to the :class:`.FitResult` returned by
-:func:`.point_estimate`, but with some additional features. We can access the
+:func:`.fit`, but with some additional features. We can access the
 sampled parameter values and calculated log-probabilities with
 :attr:`.SamplingResult.samples` and :attr:`.SamplingResult.lnprobs`,
 respectively. Usually, the MCMC samples will take some steps to converge or
-"burn-in" to a stationary distribution from your initial guess. You can remove
-these samples with the built-in method :meth:`.SamplingResult.burn_in`, which
-returns a new :class:`.SamplingResult` with only the burned-in samples. To
-reduce the burn in time, provide an initial guess position and width that is as
-close as possible to the eventual posterior distribution. You can use 
-:meth:`.Model.generate_guess` to generate an initial sampling to pass in as
-an initial guess.
-
+"burn-in" to a stationary distribution from your initial guess. This is most
+easily seen in the values of :attr:`.SamplingResult.lnprobs`, which will
+rise at first and then fluctuate around a stationary value after having burned
+in. You can remove the early samples with the built-in method
+:meth:`.SamplingResult.burn_in`, which returns a new :class:`.SamplingResult`
+with only the burned-in samples.
 
 Customizing the algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-The :func:`.fit` and :func:`sample` functions follow algorithms that determine
+The :func:`.fit` and :func:`.sample` functions follow algorithms that determine
 which sets of parameter values to simulate and compare to the experimental
 data. You can specify a different algorithm by passing a *strategy* keyword
 into either function. Options for :func:`.fit` currently include the default
@@ -183,15 +183,18 @@ Levenberg-Marquardt (``strategy="nmpfit"``), as well as cma-es
 (``strategy="cma"``) and scipy least squares (``strategy="scipy lsq"``).
 Options for :func:`.sample` include the default without tempering
 (``strategy="emcee"``) or tempering by changing the number of pixels evaluated (``strategy="subset tempering"``) or Monte Carlo temperature
-(``strategy="parallel tempering"``) [not currently implemented].
+(``strategy="parallel tempering"``) [not currently implemented]. You can see
+the available strategies in your version of HoloPy by calling
+`hp.inference.available_fit_strategies` or
+`hp.inference.available_sampling_strategies`.
 
 Each of these algorithms runs with a set of default values, but these may need
 to be adjusted for your particular situation. For example, you may want to set
 a random seed, control parallel computations, customize an initial guess, or
 specify hyperparameters of the algorithm. To use non-default settings, you must
-define an :class:`.FittingStrategy` or :class:`.SamplingStrategy`object for
-the algorithm you would like to use. You can save the strategy to a file for
-use in future calculations or modify it in place during an interactive session.
+define a *Strategy* object for the algorithm you would like to use. You can
+save the strategy to a file for use in future calculations or modify it in
+place during an interactive session.
 
 ..  testcode::
 
@@ -202,22 +205,28 @@ use in future calculations or modify it in place during an interactive session.
     
 Running the :meth:`.Model.fit` method is the same as calling
 :func:`.fit`, but with the option to customize how the algorithm runs through
-the :class:`.FittingStrategy` object. In the example above, we have adjusted
+the :class:`.CmaStrategy` object. In the example above, we have adjusted
 the ``popsize`` hyperparameter of the cma-es algorithm, prevented the
-calculation from running as a paralell computation, and set a random seed for
+calculation from running as a parallel computation, and set a random seed for
 reproducibility. The calculation returns a :class:`.FitResult` object, just
 like a direct call to :func:`.fit`.
 
 Similarly, we can customize a MCMC computation to sample a posterior by calling
-:meth:`.Model.sample` with an :class:`.SamplingStrategy` object. Here we
-perform a MCMC calculation that uses only 500 pixels in the image and runs for
-2000 samples. We set the initial walker distribution to be one tenth of the
-prior width.
+:meth:`.Model.sample` with a :class:`.EmceeStrategy` object. Here we perform a
+MCMC calculation that uses only 500 pixels from the image and runs 50 walkers
+each for 2000 samples. We set the initial walker distribution to be one tenth
+of the prior width.  In general, the burn-in time for a MCMC calculation will
+be reduced if you provide an initial guess position and width that is as close
+as possible to the eventual posterior distribution. You can use
+:meth:`.Model.generate_guess` to generate an initial sampling to pass in as an
+initial guess to your :class:`.EmceeStrategy` object.
 
 ..  testcode::
 
-        emcee_strategy = EmceeStrategy(npixels=500, nsamples=2000)
-        emcee_strategy.initial_distribution_scaling = 0.1
+        nwalkers = 50
+        initial_guess = model.generate_guess(nwalkers, scaling=0.1)
+        emcee_strategy = EmceeStrategy(npixels=500, nwalkers=nwalkers,
+            nsamples=2000, walker_initial_pos=initial_guess)
         hp.save('emcee_strategy_file.h5', emcee_strategy)
         emcee_result = model.sample(data_holo, emcee_strategy)
 
@@ -226,9 +235,8 @@ Random Subset Fitting
 In the most recent example, we evaluated the holograms at the locations of only
 500 pixels in the experimental image. This is because a hologram usually
 contains far more information than is needed to estimate your parameters of
-interest. Because of this, you can often get a significantly faster fit with
-little or no loss in accuracy by fitting to only a random fraction of the
-pixels in a hologram. 
+interest. You can often get a significantly faster fit with little or no loss
+in accuracy by fitting to only a random fraction of the pixels in a hologram. 
 
 You will want to do some testing to make sure that you still get
 acceptable answers with your data, but our investigations have shown
