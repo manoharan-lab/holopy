@@ -25,6 +25,14 @@ holopy.inference.emcee module
    :undoc-members:
    :show-inheritance:
 
+holopy.inference.functional\_api module
+---------------------------------------
+
+.. automodule:: holopy.inference.functional_api
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 holopy.inference.model module
 -----------------------------
 
