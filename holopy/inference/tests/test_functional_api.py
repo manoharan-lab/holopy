@@ -77,11 +77,15 @@ class TestUserFacingFunctions(unittest.TestCase):
     @attr('medium')
     def test_model_takes_precendence_over_parameters(self):
         model = make_default_model(SPHERE, ['n', 'x'])
-        with warnings.catch_warnings(record=True) as w:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
             result = fit(DATA, model, ['r', 'y'])
-            self.assertEqual(len(w), 1) # single warning raised
         self.assertEqual(result._names, ['n', 'center.0'])
 
+    @attr('medium')
+    def test_passing_model_and_parameters_gives_warning(self):
+        model = make_default_model(SPHERE, None)
+        self.assertWarns(UserWarning, fit, DATA, model, ['r', 'y'])
 
 class TestHelperFunctions(unittest.TestCase):
     @attr('fast')

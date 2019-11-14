@@ -41,7 +41,7 @@ def fit(data, model, parameters = None):
         model = make_default_model(model, parameters)
     elif parameters is not None:
         warnings.warn("Ignoring parameters {} in favour of model {}.".format(
-                      parameters, model))
+                      parameters, model), UserWarning)
     return model.fit(data)
 
 def make_default_model(base_scatterer, fitting_parameters):
