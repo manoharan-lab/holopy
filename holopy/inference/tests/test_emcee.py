@@ -62,7 +62,7 @@ class testEmcee(unittest.TestCase):
         mod = SimpleModel(prior.Uniform(0, 1))
         strat = EmceeStrategy(10, 5, None, None, seed=48)
         r = strat.sample(mod, data)
-        assert_allclose(r.guess, .5, rtol=.001)
+        assert_allclose(r._parameters, .5, rtol=.001)
 
 
 class TestSubsetTempering(unittest.TestCase):
@@ -77,7 +77,8 @@ class TestSubsetTempering(unittest.TestCase):
             warnings.simplefilter('ignore')
             inference_result = strat.sample(mod, holo)
         desired_alpha = np.array([0.650348])
-        is_ok = np.allclose(inference_result.guess, desired_alpha, rtol=1e-3)
+        is_ok = np.allclose(
+            inference_result._parameters, desired_alpha, rtol=1e-3)
         self.assertTrue(is_ok)
 
     @attr("slow")
@@ -93,7 +94,7 @@ class TestSubsetTempering(unittest.TestCase):
             inference_result = strat.sample(model, data)
         desired_lens_angle = np.array([0.7197887])
         is_ok = np.allclose(
-            inference_result.guess, desired_lens_angle, rtol=1e-3)
+            inference_result._parameters, desired_lens_angle, rtol=1e-3)
         self.assertTrue(is_ok)
 
 

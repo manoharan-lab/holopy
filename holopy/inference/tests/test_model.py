@@ -117,7 +117,7 @@ class TestModelFittingMethods(unittest.TestCase):
         model = Model(Sphere())
         for name, strategy in available_fit_strategies.items():
             strategy_by_name = model.validate_strategy(name, 'fit')
-            self.assertEqual(strategy, strategy_by_name)
+            self.assertEqual(strategy(), strategy_by_name)
 
     @attr('fast')
     def test_sample_strategy_names(self):
@@ -125,7 +125,7 @@ class TestModelFittingMethods(unittest.TestCase):
         for name, strategy in available_sampling_strategies.items():
             if strategy is not NotImplemented:
                 strategy_by_name = model.validate_strategy(name, 'sample')
-                self.assertEqual(strategy, strategy_by_name)
+                self.assertEqual(strategy(), strategy_by_name)
 
     @attr('fast')
     def test_parallel_tempering_not_implemented(self):

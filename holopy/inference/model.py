@@ -37,11 +37,11 @@ from holopy.inference.cmaes import CmaStrategy
 from holopy.inference.emcee import EmceeStrategy, TemperedStrategy
 
 DEFAULT_STRATEGY = {'fit': 'nmpfit', 'sample': 'emcee'}
-ALL_STRATEGIES = {'fit': {'nmpfit': NmpfitStrategy(),
-                          'scipy lsq': LeastSquaresScipyStrategy(),
-                          'cma': CmaStrategy()},
-                  'sample': {'emcee': EmceeStrategy(),
-                            'subset tempering': TemperedStrategy(),
+ALL_STRATEGIES = {'fit': {'nmpfit': NmpfitStrategy,
+                          'scipy lsq': LeastSquaresScipyStrategy,
+                          'cma': CmaStrategy},
+                  'sample': {'emcee': EmceeStrategy,
+                            'subset tempering': TemperedStrategy,
                             'parallel tempering': NotImplemented}}
 
 
@@ -217,6 +217,10 @@ class Model(HoloPyObject):
         if not hasattr(strategy, operation):
             raise ValueError("Cannot {} with Strategy of type {}.".format(
                 operation, type(strategy).__name__))
+        try:
+            strategy = strategy()
+        except TypeError:
+            pass
         return strategy
 
     def _check_parameters_are_not_xarray(self, parameters_to_use):
