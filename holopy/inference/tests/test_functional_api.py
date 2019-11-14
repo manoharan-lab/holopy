@@ -31,9 +31,9 @@ from holopy.inference.functional_api import (
 from holopy.inference.result import SamplingResult
 from holopy.inference.tests.common import SimpleModel
 
-DATA = data_grid(np.random.rand(2, 2), spacing=1, medium_index=1,
+DATA = data_grid(np.ones((2, 2)), spacing=1, medium_index=1,
     illum_wavelen=0.5, illum_polarization = [0,1])
-SPHERE = Sphere(n=1.5, center=[2, 2, 2])
+SPHERE = Sphere(n=1, center=[2, 2, 2])
 GUESSES = {'n': 1, 'r': 2, 'center.0': 3}
 
 class TestUserFacingFunctions(unittest.TestCase):
