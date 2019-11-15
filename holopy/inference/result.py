@@ -94,7 +94,7 @@ class FitResult(HoloPyObject):
 
     @property
     def inferred_scatterer(self):
-        return self.model.scatterer.from_parameters(self.parameters)
+        return self.model.scatterer.from_parameters(self.inferred_parameters)
 
     @property
     def guess_scatterer(self):
@@ -103,7 +103,7 @@ class FitResult(HoloPyObject):
     @property
     def inferred_hologram(self):
         def calculation():
-            return self.forward(self.parameters)
+            return self.forward(self.inferred_parameters)
         return self._calculate_first_time("_inferred_hologram", calculation)
 
     @property
@@ -115,7 +115,7 @@ class FitResult(HoloPyObject):
     @property
     def max_lnprob(self):
         def calculation():
-            return self.model.lnposterior(self.parameters, self.data)
+            return self.model.lnposterior(self.inferred_parameters, self.data)
         return self._calculate_first_time("_max_lnprob", calculation)
 
     def _calculate_first_time(self, attr_name, long_calculation):
@@ -186,6 +186,7 @@ class FitResult(HoloPyObject):
 
     # deprecated methods as of 3.3
     def best_fit(self):
+        # this method is published in the HoloPy paper
         from holopy.fitting import fit_warning
         fit_warning('FitResult.inferred_hologram', 'SamplingResult.best_fit()')
         return self.inferred_hologram
