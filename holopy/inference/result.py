@@ -82,38 +82,41 @@ class FitResult(HoloPyObject):
         return [val.name for val in self.intervals]
 
     @property
-    def parameters(self):
+    def inferred_parameters(self):
         return {name: val for name, val in zip(self._names, self._parameters)}
 
     @property
-    def initial_guess(self):
+    def guess_parameters(self):
         return {name: val.guess for name, val in self.model.parameters.items()}
 
     @property
-    def scatterer(self):
+    def inferred_scatterer(self):
         return self.model.scatterer.from_parameters(self.parameters)
 
     @property
-    def best_fit(self):
-        # calculate the first time it's called and then store it
-        try:
-            return self._best_fit
-        except AttributeError:
-            pass
-        self._best_fit = self.forward(self.parameters)
-        self._kwargs_keys.append('_best_fit')
-        return self.best_fit
+    def guess_scatterer(self):
+        return self.model.scatterer.from_parameters(self.model.parameters)
+
+    @property
+    def inferred_hologram(self):
+        function = lambda : self.forward(self.parameters)
+        return self._calculate_first_time("_inferred_hologram", function)
+
+    @property
+    def guess_hologram(self):
+        function = lambda : self.forward(self.model.parameters)
+        return self._calculate_first_time("_guess_hologram", function)
 
     @property
     def max_lnprob(self):
-        # calculate the first time it's called and then store it
-        try:
-            return self._max_lnprob
-        except AttributeError:
-            pass
-        self._max_lnprob = self.model.lnposterior(self.parameters, self.data)
-        self._kwargs_keys.append('_max_lnprob')
-        return self.max_lnprob
+        function = lambda : self.model.lnposterior(self.parameters, self.data)
+        return self._calculate_first_time("_max_lnprob", function)
+
+    def _calculate_first_time(self, attr_name, long_calculation):
+        if not hasattr(self, attr_name):
+            setattr(self, attr_name, long_calculation())
+            self._kwargs_keys.append(attr_name)
+        return getattr(self, attr_name)
 
     def add_attr(self, kwargs):
         for key, val in kwargs.items():
@@ -173,6 +176,18 @@ class FitResult(HoloPyObject):
         ds = self._serialization_ds()
         ds.to_netcdf(filename, engine='h5netcdf', **kwargs)
 
+    # deprecated methods as of 3.3
+    def best_fit(self):
+        from holopy.fitting import fit_warning
+        fit_warning('FitResult.inferred_hologram', 'SamplingResult.best_fit()')
+        return self.inferred_hologram
+
+    def output_scatterer(self):
+        from holopy.fitting import fit_warning
+        fit_warning('FitResult.inferred_scatterer',
+                    'SamplingResult.output_scatterer()')
+        return self.inferred_hologram
+
     @classmethod
     def _unserialize(cls, ds):
         data = ds.data
@@ -225,6 +240,7 @@ class FitResult(HoloPyObject):
        with xr.open_dataset(ds, engine='h5netcdf', **kwargs) as ds:
             args = cls._unserialize(ds.load())
        return cls(*args)
+
 
 class SamplingResult(FitResult):
     def __init__(self, data, model, strategy, time, kwargs={}):
