@@ -108,7 +108,7 @@ def test_optimization_with_maxiter_of_2():
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
         result = optimizer.fit(model, holo)
-    assert_obj_close(gold_fit_dict,result.parameters,rtol=1e-5)
+    assert_obj_close(gold_fit_dict, result.inferred_parameters, rtol=1e-5)
 
 
 # TODO: There could be a test that the optimizer raises a warning when
