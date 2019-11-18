@@ -1,3 +1,27 @@
+# Copyright 2011-2019, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
+# Ronald Alexander
+#
+# This file is part of HoloPy.
+#
+# HoloPy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# HoloPy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
+'''
+post_install.py
+
+use setuptools to preform post install actions.
+'''
+
 import glob
 import os
 import shutil
@@ -46,6 +70,8 @@ def _move_msvc_libs(mode='install'):
 
 
 def _get_holopy_install_dir(mode):
+    # We only intend for this function to run on Windows with a default python
+    # installation (i.e. default PYTHONPATH.) Milage may vary otherwise.
     if mode == 'install':
         hp_dir = [path for path in site.getsitepackages()
                if 'site-packages' in path]
