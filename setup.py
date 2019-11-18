@@ -28,16 +28,20 @@ The t-matrix and mie scattering codes require working Fortran 90 and
 C compilers, as well as f2py and cython. On Ubuntu, you will need the
 "gfortran" and "python-dev" packages installed.
 '''
+
+import glob
 import os
 from os.path import join
+import setuptools
+import shutil
+import site
 import sys
 
 import nose
 from numpy.distutils.core import setup, Extension
-from numpy.distutils.misc_util import Configuration
 import setuptools
-
-from post_install import PostDevelopConfig, PostInstallConfig
+from setuptools.command.develop import develop
+from setuptools.command.install import install
 
 try:
     from holopy import __version__
@@ -50,9 +54,26 @@ HOLOPY_NOSE_PLUGIN_LOCATION = ('holopycatchwarnings = '
 hp_root = os.path.dirname(os.path.realpath(sys.argv[0]))
 
 
+class PostDevelopConfig(develop):
+    """Post-installation for development mode."""
+    def run(self):
+        develop.run(self)
+        if os.name == 'nt':
+            _move_msvc_libs('develop')
+
+
+class PostInstallConfig(install):
+    """Post-installation for installation mode."""
+    def run(self):
+        install.run(self)
+        if os.name == 'nt':
+            _move_msvc_libs('install')
+
+
 def configuration(parent_package='', top_path=''):
     # this will automatically build the scattering extensions, using the
     # setup.py files located in their subdirectories
+    from numpy.distutils.misc_util import Configuration
     config = Configuration(None, parent_package, top_path)
 
     pkglist = setuptools.find_packages(hp_root)
@@ -75,12 +96,49 @@ def configuration(parent_package='', top_path=''):
     return config
 
 
+def _move_msvc_libs(mode='install'):
+    """ These dlls need to be moved if the fortran is complied in an
+    environment with MSVC 2015 as the C compiler.
+    """
+    package_dir = _get_holopy_install_dir(mode)
+    lib_dir = os.path.join(package_dir, '.libs')
+    sep = os.path.sep
+
+    tmatrix_libs = glob.glob(lib_dir + sep + 'libS.*.dll')
+    mie_libs = glob.glob(lib_dir + sep + 'libscsm*.dll')
+    mie_libs += glob.glob(lib_dir + sep + 'libmieang*.dll')
+    mie_libs += glob.glob(lib_dir + sep + 'libuts*.dll')
+
+    tmatrix_f_dir = os.path.join(package_dir, 'scattering', 'theory',
+                                 'tmatrix_f')
+    mie_f_dir = os.path.join(package_dir, 'scattering', 'theory', 'mie_f')
+
+    for dll in tmatrix_libs:
+        shutil.move(dll, tmatrix_f_dir)
+    for dll in mie_libs:
+        shutil.move(dll, mie_f_dir)
+    shutil.rmtree(lib_dir)
+
+
+def _get_holopy_install_dir(mode):
+    if mode == 'install':
+        sitepackages = list(site.getsitepackages())
+        dir = [path for path in site.getsitepackages()
+               if 'site-packages' in path]
+        assert len(dir) == 1
+        dir = os.path.join(dir[0], 'holopy')
+    if mode == 'develop':
+        dir = os.path.dirname(os.path.realpath(__file__))
+        dir = os.path.join(dir, 'holopy')
+    return dir
+
+
 if __name__ == "__main__":
-    with open(os.path.join(hp_root, "requirements.txt")) as requirements:
-        requires = [l for l in requirements.readlines() if l[0] != '#']
+    requires = [l for l in
+                open(os.path.join(hp_root, "requirements.txt")).readlines()
+                if l[0] != '#']
 
     tests_require = ['memory_profiler']
-
     setup(configuration=configuration,
           name='HoloPy',
           version=__version__,
