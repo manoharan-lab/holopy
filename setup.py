@@ -36,6 +36,7 @@ import sys
 
 import nose
 from numpy.distutils.core import setup, Extension
+from numpy.distutils.misc_util import Configuration
 import setuptools
 
 from post_install import PostDevelopCommand, PostInstallCommand
@@ -54,7 +55,6 @@ hp_root = os.path.dirname(os.path.realpath(sys.argv[0]))
 def configuration(parent_package='', top_path=''):
     # this will automatically build the scattering extensions, using the
     # setup.py files located in their subdirectories
-    from numpy.distutils.misc_util import Configuration
     config = Configuration(None, parent_package, top_path)
 
     pkglist = setuptools.find_packages(hp_root)
