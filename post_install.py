@@ -6,7 +6,7 @@ import site
 from setuptools.command.develop import develop
 from setuptools.command.install import install
 
-class PostDevelopConfig(develop):
+class PostDevelopCommand(develop):
     """Post-installation for development mode."""
     def run(self):
         develop.run(self)
@@ -14,7 +14,7 @@ class PostDevelopConfig(develop):
             _move_msvc_libs('develop')
 
 
-class PostInstallConfig(install):
+class PostInstallCommand(install):
     """Post-installation for installation mode."""
     def run(self):
         install.run(self)
@@ -28,12 +28,11 @@ def _move_msvc_libs(mode='install'):
     """
     package_dir = _get_holopy_install_dir(mode)
     lib_dir = os.path.join(package_dir, '.libs')
-    sep = os.path.sep
 
-    tmatrix_libs = glob.glob(lib_dir + sep + 'libS.*.dll')
-    mie_libs = glob.glob(lib_dir + sep + 'libscsm*.dll')
-    mie_libs += glob.glob(lib_dir + sep + 'libmieang*.dll')
-    mie_libs += glob.glob(lib_dir + sep + 'libuts*.dll')
+    tmatrix_libs = glob.glob(os.path.join(lib_dir, 'libS.*.dll'))
+    mie_libs = glob.glob(os.path.join(lib_dir, 'libscsm*.dll'))
+    mie_libs += glob.glob(os.path.join(lib_dir, 'libmieang*.dll'))
+    mie_libs += glob.glob(os.path.join(lib_dir, 'libuts*.dll'))
 
     tmatrix_f_dir = os.path.join(package_dir, 'scattering', 'theory',
                                  'tmatrix_f')
