@@ -1,5 +1,6 @@
-# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Copyright 2011-2019, Vinothan N. Manoharan, Thomas G. Dimiduk,
 # Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
+# Ronald Alexander
 #
 # This file is part of HoloPy.
 #
