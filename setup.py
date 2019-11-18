@@ -38,7 +38,7 @@ import nose
 from numpy.distutils.core import setup, Extension
 import setuptools
 
-from post_install import PostDevelopConfig, PostInstallConfig
+from post_install import PostDevelopCommand, PostInstallCommand
 
 try:
     from holopy import __version__
@@ -96,6 +96,5 @@ if __name__ == "__main__":
           test_suite='nose.collector',
           entry_points={'nose.plugins.0.10': HOLOPY_NOSE_PLUGIN_LOCATION},
           package=['HoloPy'],
-          cmdclass={'develop': PostDevelopConfig,
-                    'install': PostInstallConfig})
-
+          cmdclass={'develop': PostDevelopCommand,
+                    'install': PostInstallCommand})
