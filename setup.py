@@ -28,16 +28,17 @@ The t-matrix and mie scattering codes require working Fortran 90 and
 C compilers, as well as f2py and cython. On Ubuntu, you will need the
 "gfortran" and "python-dev" packages installed.
 '''
+
 import os
 from os.path import join
+import setuptools
 import sys
 
 import nose
 from numpy.distutils.core import setup, Extension
-from numpy.distutils.misc_util import Configuration
 import setuptools
 
-from post_install import PostDevelopConfig, PostInstallConfig
+from post_install import PostDevelopCommand, PostInstallCommand
 
 try:
     from holopy import __version__
@@ -53,6 +54,7 @@ hp_root = os.path.dirname(os.path.realpath(sys.argv[0]))
 def configuration(parent_package='', top_path=''):
     # this will automatically build the scattering extensions, using the
     # setup.py files located in their subdirectories
+    from numpy.distutils.misc_util import Configuration
     config = Configuration(None, parent_package, top_path)
 
     pkglist = setuptools.find_packages(hp_root)
@@ -76,8 +78,9 @@ def configuration(parent_package='', top_path=''):
 
 
 if __name__ == "__main__":
-    with open(os.path.join(hp_root, "requirements.txt")) as requirements:
-        requires = [l for l in requirements.readlines() if l[0] != '#']
+    requires = [l for l in
+                open(os.path.join(hp_root, "requirements.txt")).readlines()
+                if l[0] != '#']
 
     tests_require = ['memory_profiler']
 
@@ -94,5 +97,5 @@ if __name__ == "__main__":
           test_suite='nose.collector',
           entry_points={'nose.plugins.0.10': HOLOPY_NOSE_PLUGIN_LOCATION},
           package=['HoloPy'],
-          cmdclass={'develop': PostDevelopConfig,
-                    'install': PostInstallConfig})
+          cmdclass={'develop': PostDevelopCommand,
+                    'install': PostInstallCommand})
