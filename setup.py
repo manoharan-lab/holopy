@@ -122,14 +122,14 @@ def _move_msvc_libs(mode='install'):
 def _get_holopy_install_dir(mode):
     if mode == 'install':
         sitepackages = list(site.getsitepackages())
-        dir = [path for path in site.getsitepackages()
+        hp_dir = [path for path in site.getsitepackages()
                if 'site-packages' in path]
-        assert len(dir) == 1
-        dir = os.path.join(dir[0], 'holopy')
+        assert len(hp_dir) == 1
+        hp_dir = os.path.join(hp_dir[0], 'holopy')
     if mode == 'develop':
-        dir = os.path.dirname(os.path.realpath(__file__))
-        dir = os.path.join(dir, 'holopy')
-    return dir
+        hp_dir = os.path.dirname(os.path.realpath(__file__))
+        hp_dir = os.path.join(hp_dir, 'holopy')
+    return hp_dir
 
 
 if __name__ == "__main__":
