@@ -258,11 +258,13 @@ we can set bounds on the coordinate parameters and and use a Gaussian prior
 
 Here we have used an :class:`.ExactModel` which takes a function ``calc_func``
 to apply on the :class:`.Scatterer` (we have used :func:`.calc_holo` here).
-The :class:`.ExactModel` is the default for :func:`.fit` but HoloPy also
-includes :class:`.AlphaModel` and :class:`.PerfectLensModel`, which describe
-specific models of hologram image formation. They take additional parameters
-that allow for a more sophisticated calculation than a basic call to
-:func:`.calc_holo`. Of course, these extra parameters can also be fit by
+The :class:`.ExactModel` isn't actually the default when we call :func:`.fit`
+directly. Instead, HoloPy uses an :class:`.AlphaModel`, which includes an
+additional fitting parameter to control the hologram contrast intensity - the
+same as calling :func:`.calc_holo` with a `scaling` argument. HoloPy also
+includes a :class:`.PerfectLensModel`, which is a more sophisticated
+description of hologram image formation and depends on the acceptance angle of
+the objective lens. You can fit for the extra parameters in these models by
 defining them as :class:`.Prior` objects.
 
 The model in our example has read in some metadata from ``data_holo``

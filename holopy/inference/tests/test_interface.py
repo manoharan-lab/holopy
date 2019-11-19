@@ -25,7 +25,7 @@ from nose.plugins.attrib import attr
 
 from holopy.core.metadata import data_grid
 from holopy.scattering import Sphere
-from holopy.inference import sample, fit, prior, ExactModel, EmceeStrategy
+from holopy.inference import sample, fit, prior, AlphaModel, EmceeStrategy
 from holopy.inference.interface import (
     make_default_model, parameterize_scatterer, rename_xyz, make_uniform)
 from holopy.inference.result import SamplingResult
@@ -80,7 +80,7 @@ class TestUserFacingFunctions(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', UserWarning)
             result = fit(DATA, model, ['r', 'y'])
-        self.assertEqual(result._names, ['n', 'center.0'])
+        self.assertEqual(result._names, ['n', 'center.0', 'alpha'])
 
     @attr('medium')
     def test_passing_model_and_parameters_gives_warning(self):
@@ -91,18 +91,20 @@ class TestHelperFunctions(unittest.TestCase):
     @attr('fast')
     def test_make_default_model_with_no_parameters(self):
         model = make_default_model(SPHERE, None)
-        self.assertEqual(model.parameters.keys(), SPHERE.parameters.keys())
+        expected_parameters = SPHERE.parameters
+        expected_parameters['alpha'] = None
+        self.assertEqual(model.parameters.keys(), expected_parameters.keys())
 
     @attr('fast')
     def test_make_default_model_with_parameters(self):
         model = make_default_model(SPHERE, ['r'])
-        self.assertEqual(set(model.parameters.keys()), {'r'})
+        self.assertEqual(set(model.parameters.keys()), {'r', 'alpha'})
 
     @attr('fast')
     def test_make_default_model_construction(self):
         model = make_default_model(Sphere(), None)
         self.assertEqual(model.noise_sd, 1)
-        self.assertTrue(isinstance(model, ExactModel))
+        self.assertTrue(isinstance(model, AlphaModel))
 
     @attr('fast')
     def test_parameterize_scatterer_makes_priors(self):
