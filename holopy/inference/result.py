@@ -195,7 +195,7 @@ class FitResult(HoloPyObject):
         from holopy.fitting import fit_warning
         fit_warning('FitResult.inferred_scatterer',
                     'SamplingResult.output_scatterer()')
-        return self.inferred_hologram
+        return self.inferred_scatterer
 
     @classmethod
     def _unserialize(cls, ds):
