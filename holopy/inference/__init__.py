@@ -19,7 +19,7 @@
 from holopy.inference.result import (
     FitResult, SamplingResult, TemperedSamplingResult)
 from holopy.inference.model import (AlphaModel, ExactModel, LimitOverlaps)
-from holopy.inference.functional_api import (
+from holopy.inference.interface import (
     fit, sample, available_fit_strategies, available_sampling_strategies)
 from holopy.inference.emcee import EmceeStrategy, TemperedStrategy
 from holopy.inference.nmpfit import NmpfitStrategy

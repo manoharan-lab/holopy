@@ -26,7 +26,7 @@ from nose.plugins.attrib import attr
 from holopy.core.metadata import data_grid
 from holopy.scattering import Sphere
 from holopy.inference import sample, fit, prior, ExactModel, EmceeStrategy
-from holopy.inference.functional_api import (
+from holopy.inference.interface import (
     make_default_model, parameterize_scatterer, rename_xyz, make_uniform)
 from holopy.inference.result import SamplingResult
 from holopy.inference.tests.common import SimpleModel
