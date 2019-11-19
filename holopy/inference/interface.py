@@ -22,7 +22,7 @@ import numpy as np
 
 from holopy.scattering import Scatterer
 from holopy.scattering.scatterer import _interpret_parameters
-from holopy.inference.model import ALL_STRATEGIES, Model, ExactModel
+from holopy.inference.model import ALL_STRATEGIES, Model, AlphaModel
 from holopy.inference.prior import Uniform
 
 available_fit_strategies = ALL_STRATEGIES['fit']
@@ -36,7 +36,8 @@ def sample(data, model):
         msg = "Sampling model {} is not a HoloPy Model object.".format(model)
         raise ValueError(msg)
 
-def fit(data, model, parameters = None):
+
+def fit(data, model, parameters=None):
     if isinstance(model, Scatterer):
         model = make_default_model(model, parameters)
     elif parameters is not None:
@@ -44,18 +45,22 @@ def fit(data, model, parameters = None):
                       parameters, model), UserWarning)
     return model.fit(data)
 
+
 def make_default_model(base_scatterer, fitting_parameters):
     if fitting_parameters is None:
         fitting_parameters = base_scatterer.parameters.keys()
     scatterer = parameterize_scatterer(base_scatterer, fitting_parameters)
-    return ExactModel(scatterer, noise_sd = 1)
+    alpha_prior = Uniform(0, 1, guess=0.7, name='alpha')
+    return AlphaModel(scatterer, noise_sd=1, alpha=alpha_prior)
+
 
 def parameterize_scatterer(base_scatterer, fitting_parameters):
     parameters = base_scatterer.guess.parameters
     variable_parameters = {par_name: make_uniform(parameters, par_name)
-                          for par_name in rename_xyz(fitting_parameters)}
+                           for par_name in rename_xyz(fitting_parameters)}
     parameters.update(variable_parameters)
     return type(base_scatterer)(**_interpret_parameters(parameters, True))
+
 
 def rename_xyz(parameters_list):
     for i, key in enumerate(['x', 'y', 'z']):
@@ -65,6 +70,7 @@ def rename_xyz(parameters_list):
             parameters_list[loc] = new_key
     return parameters_list
 
+
 def make_uniform(guesses, key):
     try:
         guess_value = guesses[key]
@@ -73,4 +79,4 @@ def make_uniform(guesses, key):
         raise ValueError(msg)
     minval = 0 if key in ['n', 'r'] else -np.inf
     return Uniform(minval, np.inf, guess_value, key)
-    
+
