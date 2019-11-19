@@ -89,6 +89,7 @@ class TestFitResult(unittest.TestCase):
     def test_best_fit_returns_inferred_hologram(self):
         result = generate_fit_result()
         with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
             best_fit = result.best_fit()
         inferred_hologram = result.inferred_hologram
         np.testing.assert_equal(best_fit.values, inferred_hologram.values)
@@ -98,6 +99,20 @@ class TestFitResult(unittest.TestCase):
     def test_best_fit_raises_warning(self):
         result = generate_fit_result()
         self.assertWarns(UserWarning, result.best_fit)
+
+    @attr("medium")
+    def test_output_scatterer_returns_inferred_scatterer(self):
+        result = generate_fit_result()
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            old_scatterer = result.output_scatterer()
+        new_scatterer = result.inferred_scatterer
+        self.assertEqual(old_scatterer, new_scatterer)
+
+    @attr("medium")
+    def test_best_fit_raises_warning(self):
+        result = generate_fit_result()
+        self.assertWarns(UserWarning, result.output_scatterer)
 
     @attr("medium")
     def test_max_lnprob(self):
