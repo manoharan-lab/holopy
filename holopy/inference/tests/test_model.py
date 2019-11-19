@@ -30,12 +30,10 @@ from numpy.testing import assert_raises
 
 from holopy.core import detector_grid, update_metadata, holopy_object
 from holopy.core.tests.common import assert_equal, assert_obj_close
-from holopy.scattering.theory import Mie
-from holopy.scattering.scatterer import Sphere, Spheres
+from holopy.scattering import Sphere, Spheres, Mie, calc_holo
 from holopy.scattering.scatterer.scatterer import _interpret_parameters
 from holopy.scattering.errors import MissingParameter
 from holopy.core.tests.common import assert_read_matches_write
-from holopy.scattering.calculations import calc_holo
 from holopy.inference import (prior, AlphaModel, ExactModel,
                               NmpfitStrategy, EmceeStrategy,
                               available_fit_strategies,

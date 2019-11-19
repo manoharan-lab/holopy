@@ -23,10 +23,9 @@ import numpy as np
 from numpy.testing import assert_equal, assert_raises, assert_allclose
 from nose.plugins.attrib import attr
 
-from holopy.scattering.scatterer import Sphere, Spheres
+from holopy.scattering import Sphere, Spheres, calc_holo
 from holopy.core import detector_grid
 from holopy.core.tests.common import assert_obj_close
-from holopy.scattering.calculations import calc_holo
 from holopy.scattering.errors import ParameterSpecificationError
 from holopy.inference import NmpfitStrategy as Nmpfit
 from holopy.inference import prior, AlphaModel

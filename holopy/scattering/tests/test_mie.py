@@ -41,7 +41,7 @@ from holopy.scattering.tests.common import (
     sphere, xschema, scaling_alpha, yschema, xpolarization, ypolarization,
     x, y, z, n, radius, wavelen, index)
 from holopy.core.tests.common import assert_obj_close, verify
-from holopy.scattering.calculations import (
+from holopy.scattering.interface import (
     calc_field, calc_holo, calc_intensity, calc_scat_matrix,
     calc_cross_sections)
 

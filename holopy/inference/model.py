@@ -26,7 +26,7 @@ from holopy.core.utils import ensure_array, ensure_listlike, ensure_scalar
 from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering.errors import (MultisphereFailure, TmatrixFailure,
                                 InvalidScatterer, MissingParameter)
-from holopy.scattering.calculations import calc_holo
+from holopy.scattering.interface import calc_holo
 from holopy.scattering.theory import MieLens
 from holopy.scattering.scatterer import (_expand_parameters,
                                          _interpret_parameters)
