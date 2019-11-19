@@ -49,7 +49,7 @@ class testEmcee(unittest.TestCase):
         data = np.array(.5)
         nwalkers = 10
         ndim = 1
-        mod = SimpleModel()
+        mod = SimpleModel(1)
         p0 = np.linspace(0, 1, nwalkers*ndim).reshape((nwalkers, ndim))
         r = sample_emcee(mod, data, nwalkers, 500, p0, parallel=None, seed=40)
         should_be_onehalf = r.chain[r.lnprobability == r.lnprobability.max()]
@@ -59,7 +59,7 @@ class testEmcee(unittest.TestCase):
     @attr("fast")
     def test_EmceeStrategy(self):
         data = np.array(.5)
-        mod = SimpleModel(prior.Uniform(0, 1))
+        mod = SimpleModel(1)
         strat = EmceeStrategy(10, 5, None, None, seed=48)
         r = strat.sample(mod, data)
         assert_allclose(r._parameters, .5, rtol=.001)

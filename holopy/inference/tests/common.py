@@ -23,9 +23,9 @@ from holopy.inference.model import Model
 from holopy.scattering import Sphere
 
 class SimpleModel(Model):
-    def __init__(self, x=prior.Uniform(0, 1, name='x')):
-        self._parameters = [x]
-        self.parameter_name = x.name
+    def __init__(self, npars=2):
+        self._parameters = [prior.Uniform(0, 1, name='x'),
+                            prior.Uniform(0, 1, name='y')][:npars]
         self.constraints = []
         self.noise_sd = 1
 
@@ -35,5 +35,4 @@ class SimpleModel(Model):
     def lnposterior(self, par_vals, data, dummy):
         x = par_vals
         data = np.array(data)
-        return -((x[self.parameter_name]-data)**2).sum()
-
+        return -((x[self._parameters[-1].name] - data)**2).sum()
