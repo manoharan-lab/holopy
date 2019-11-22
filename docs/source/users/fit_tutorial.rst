@@ -150,6 +150,7 @@ various ways, and can be saved to a file with ``hp.save`` :
 ..  testcode::
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     best_fit_values = fit_result.parameters
     initial_guess_values = fit_result.guess_parameters
     best_fit_sphere = fit_result.scatterer
@@ -160,6 +161,12 @@ various ways, and can be saved to a file with ``hp.save`` :
     best_fit_sphere = fit_result.inferred_scatterer
     best_fit_hologram = fit_result.inferred_hologram
 >>>>>>> update and add tests
+=======
+    best_fit_values = fit_result.parameters
+    initial_guess_values = fit_result.guess_parameters
+    best_fit_sphere = fit_result.scatterer
+    best_fit_hologram = fit_result.hologram
+>>>>>>> remove inferred prefixes from FitResult.
     best_fit_lnprob = fit_result.max_lnprob
     hp.save('results_file.h5', fit_result)
 

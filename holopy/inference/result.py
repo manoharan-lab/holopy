@@ -94,12 +94,17 @@ class FitResult(HoloPyObject):
 
     @property
 <<<<<<< HEAD
+<<<<<<< HEAD
     def scatterer(self):
         return self.model.scatterer.from_parameters(self.parameters)
 =======
     def inferred_scatterer(self):
         return self.model.scatterer.from_parameters(self.inferred_parameters)
 >>>>>>> update and add tests
+=======
+    def scatterer(self):
+        return self.model.scatterer.from_parameters(self.parameters)
+>>>>>>> remove inferred prefixes from FitResult.
 
     @property
     def guess_scatterer(self):
@@ -109,12 +114,17 @@ class FitResult(HoloPyObject):
     def hologram(self):
         def calculation():
 <<<<<<< HEAD
+<<<<<<< HEAD
             return self.forward(self.parameters)
         return self._calculate_first_time("_hologram", calculation)
 =======
             return self.forward(self.inferred_parameters)
         return self._calculate_first_time("_inferred_hologram", calculation)
 >>>>>>> update and add tests
+=======
+            return self.forward(self.parameters)
+        return self._calculate_first_time("_hologram", calculation)
+>>>>>>> remove inferred prefixes from FitResult.
 
     @property
     def guess_hologram(self):
@@ -125,7 +135,7 @@ class FitResult(HoloPyObject):
     @property
     def max_lnprob(self):
         def calculation():
-            return self.model.lnposterior(self.inferred_parameters, self.data)
+            return self.model.lnposterior(self.parameters, self.data)
         return self._calculate_first_time("_max_lnprob", calculation)
 
     def _calculate_first_time(self, attr_name, long_calculation):
@@ -203,8 +213,12 @@ class FitResult(HoloPyObject):
 
     def output_scatterer(self):
         from holopy.fitting import fit_warning
+<<<<<<< HEAD
         fit_warning('FitResult.scatterer',
                     'SamplingResult.output_scatterer()')
+=======
+        fit_warning('FitResult.scatterer', 'SamplingResult.output_scatterer()')
+>>>>>>> remove inferred prefixes from FitResult.
         return self.scatterer
 
     @classmethod

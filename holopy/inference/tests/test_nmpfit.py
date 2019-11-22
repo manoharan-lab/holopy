@@ -59,13 +59,13 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
 
         fitter = LeastSquaresScipyStrategy()
         result = fitter.fit(model, holo)
-        fitted = result.inferred_scatterer
+        fitted = result.scatterer
 
         self.assertTrue(np.isclose(fitted.n, gold_sphere.n, rtol=1e-3))
         self.assertTrue(np.isclose(fitted.r, gold_sphere.r, rtol=1e-3))
         self.assertTrue(
             np.allclose(fitted.center, gold_sphere.center, rtol=1e-3))
-        self.assertTrue(np.isclose(result.inferred_parameters['alpha'],
+        self.assertTrue(np.isclose(result.parameters['alpha'],
                         gold_alpha, rtol=0.1))
         self.assertEqual(model, result.model)
 
@@ -89,13 +89,13 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
         np.random.seed(40)
         fitter = LeastSquaresScipyStrategy(npixels=1000)
         result = fix_flat(fitter.fit(model, holo))
-        fitted = result.inferred_scatterer
+        fitted = result.scatterer
 
         self.assertTrue(np.isclose(fitted.n, gold_sphere.n, rtol=1e-2))
         self.assertTrue(np.isclose(fitted.r, gold_sphere.r, rtol=1e-2))
         self.assertTrue(
             np.allclose(fitted.center, gold_sphere.center, rtol=1e-2))
-        self.assertTrue(np.isclose(result.inferred_parameters['alpha'],
+        self.assertTrue(np.isclose(result.parameters['alpha'],
                                    gold_alpha, rtol=0.1))
         self.assertEqual(model, result.model)
 
@@ -126,8 +126,8 @@ def test_fit_mie_single():
 
     result = NmpfitStrategy().fit(model, holo)
 
-    assert_obj_close(result.inferred_scatterer, gold_sphere, rtol = 1e-3)
-    assert_approx_equal(result.inferred_parameters['alpha'], gold_alpha,
+    assert_obj_close(result.scatterer, gold_sphere, rtol = 1e-3)
+    assert_approx_equal(result.parameters['alpha'], gold_alpha,
                         significant=3)
     assert_equal(model, result.model)
 
@@ -145,9 +145,9 @@ def test_fit_mie_par_scatterer():
     model = AlphaModel(s, theory=thry, alpha = Uniform(.1, 1, .6))
 
     result = fix_flat(NmpfitStrategy().fit(model, holo))
-    assert_obj_close(result.inferred_scatterer, gold_sphere, rtol=1e-3)
+    assert_obj_close(result.scatterer, gold_sphere, rtol=1e-3)
     # TODO: see if we can get this back to 3 sig figs correct alpha
-    assert_approx_equal(result.inferred_parameters['alpha'], gold_alpha,
+    assert_approx_equal(result.parameters['alpha'], gold_alpha,
                         significant=3)
     assert_equal(model, result.model)
     assert_read_matches_write(result)
@@ -168,10 +168,10 @@ def test_fit_random_subset():
 
     # TODO: this tolerance has to be rather large to pass, we should
     # probably track down if this is a sign of a problem
-    assert_obj_close(result.inferred_scatterer, gold_sphere, rtol=1e-2)
+    assert_obj_close(result.scatterer, gold_sphere, rtol=1e-2)
     # TODO: figure out if it is a problem that alpha is frequently coming out
     # wrong in the 3rd decimal place.
-    assert_approx_equal(result.inferred_parameters['alpha'], gold_alpha,
+    assert_approx_equal(result.parameters['alpha'], gold_alpha,
                         significant=3)
     assert_equal(model, result.model)
 
@@ -221,7 +221,7 @@ def test_integer_correctness():
                    center = (Uniform(5, 15), Uniform(5, 15), Uniform(5, 15)))
     model = AlphaModel(par_s, alpha = Uniform(.1, 1, .6))
     result = NmpfitStrategy().fit(model, holo)
-    assert_allclose(result.inferred_scatterer.center, [10.2, 9.8, 10.3])
+    assert_allclose(result.scatterer.center, [10.2, 9.8, 10.3])
 
 
 def test_model_guess():
@@ -248,7 +248,7 @@ def test_layered():
     guess = LayeredSphere((1,2), (Uniform(1, 1.01), Uniform(.99,1)), (2, 2, 2))
     model = ExactModel(guess, calc_holo)
     res = NmpfitStrategy().fit(model, hs)
-    assert_allclose(res.inferred_scatterer.t, (1, 1), rtol = 1e-12)
+    assert_allclose(res.scatterer.t, (1, 1), rtol = 1e-12)
 
 
 if __name__ == '__main__':
