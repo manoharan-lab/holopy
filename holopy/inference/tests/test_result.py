@@ -73,27 +73,27 @@ class TestFitResult(unittest.TestCase):
         result = generate_fit_result()
         self.assertEqual(result._parameters, [1.6, 0.6, 0.7])
         self.assertEqual(result._names, ['n', 'r', 'alpha'])
-        self.assertEqual(result.inferred_parameters,
+        self.assertEqual(result.parameters,
                          {'r':0.6, 'n':1.6, 'alpha':0.7})
-        self.assertEqual(result.inferred_scatterer,
+        self.assertEqual(result.scatterer,
                          Sphere(n=1.6, r=0.6, center=[10, 10, 10]))
 
     @attr("medium")
-    def test_inferred_hologram(self):
+    def test_hologram(self):
         result = generate_fit_result()
         self.assertAlmostEqual(
-            result.inferred_hologram.mean().item(), 1.005387, places=6)
-        self.assertTrue(hasattr(result, '_inferred_hologram'))
+            result.hologram.mean().item(), 1.005387, places=6)
+        self.assertTrue(hasattr(result, '_hologram'))
 
     @attr("medium")
-    def test_best_fit_returns_inferred_hologram(self):
+    def test_best_fit_returns_hologram(self):
         result = generate_fit_result()
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             best_fit = result.best_fit()
-        inferred_hologram = result.inferred_hologram
-        np.testing.assert_equal(best_fit.values, inferred_hologram.values)
-        self.assertEqual(best_fit.attrs, inferred_hologram.attrs)
+        hologram = result.hologram
+        np.testing.assert_equal(best_fit.values, hologram.values)
+        self.assertEqual(best_fit.attrs, hologram.attrs)
 
     @attr("medium")
     def test_best_fit_raises_warning(self):
@@ -101,12 +101,12 @@ class TestFitResult(unittest.TestCase):
         self.assertWarns(UserWarning, result.best_fit)
 
     @attr("medium")
-    def test_output_scatterer_returns_inferred_scatterer(self):
+    def test_output_scatterer_returns_scatterer(self):
         result = generate_fit_result()
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             old_scatterer = result.output_scatterer()
-        new_scatterer = result.inferred_scatterer
+        new_scatterer = result.scatterer
         self.assertEqual(old_scatterer, new_scatterer)
 
     @attr("medium")
@@ -134,7 +134,7 @@ class TestFitResult(unittest.TestCase):
     @attr("fast")
     def test_values_only_calculated_once(self):
         result = generate_fit_result()
-        calculations = ['max_lnprob', 'inferred_hologram', 'guess_hologram']
+        calculations = ['max_lnprob', 'hologram', 'guess_hologram']
         for calculation in calculations:
             random_val = np.random.rand()
             setattr(result, '_' + calculation, random_val)
