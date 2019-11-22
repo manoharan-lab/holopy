@@ -61,83 +61,86 @@ its radius, but hold its refractive index fixed.
 
 ..  testoutput::
     :options: +NORMALIZE_WHITESPACE
-    
-    Iter       1    CHI-SQUARE =  122.2991772  DOF =  39997
-       r = 1  
-       center.0 = 1  
-       center.1 = 1  
-       center.2 = 1  
-    Iter       2    CHI-SQUARE =  73.1743179  DOF =  39997
-       r = 0.8985179252  
-       center.0 = 1.003214606  
-       center.1 = 0.9978521719  
-       center.2 = 1.014361104  
-    Iter       3    CHI-SQUARE =  40.63411872  DOF =  39997
-       r = 0.9073623251  
-       center.0 = 1.005863599  
-       center.1 = 0.9957062809  
-       center.2 = 1.045412721  
-    Iter       4    CHI-SQUARE =  24.45376276  DOF =  39997
-       r = 0.9452170024  
-       center.0 = 1.006911124  
-       center.1 = 0.9939173215  
-       center.2 = 1.071988733  
-    Iter       5    CHI-SQUARE =  21.16623209  DOF =  39997
-       r = 0.958813881  
-       center.0 = 1.006953814  
-       center.1 = 0.9931590158  
-       center.2 = 1.084211067  
-    Iter       6    CHI-SQUARE =  20.74045935  DOF =  39997
-       r = 0.9589420606  
-       center.0 = 1.006880604  
-       center.1 = 0.9929427187  
-       center.2 = 1.088112117  
-    Iter       7    CHI-SQUARE =  20.68330482  DOF =  39997
-       r = 0.9574523224  
-       center.0 = 1.006838202  
-       center.1 = 0.9928860496  
-       center.2 = 1.089302504  
-    Iter       8    CHI-SQUARE =  20.67511947  DOF =  39997
-       r = 0.9565873408  
-       center.0 = 1.006819234  
-       center.1 = 0.9928712692  
-       center.2 = 1.089696776  
-    Iter       9    CHI-SQUARE =  20.67392811  DOF =  39997
-       r = 0.9562066479  
-       center.0 = 1.006811419  
-       center.1 = 0.9928673007  
-       center.2 = 1.089836786  
-    Iter      10    CHI-SQUARE =  20.6737543  DOF =  39997
-       r = 0.9560531311  
-       center.0 = 1.006808321  
-       center.1 = 0.9928661771  
-       center.2 = 1.089888524  
-    Iter      11    CHI-SQUARE =  20.67372897  DOF =  39997
-       r = 0.955993013  
-       center.0 = 1.006807111  
-       center.1 = 0.9928658359  
-       center.2 = 1.089907898  
-    Iter      12    CHI-SQUARE =  20.67372525  DOF =  39997
-       r = 0.9559701628  
-       center.0 = 1.006806653  
-       center.1 = 0.992865729  
-       center.2 = 1.089915406  
-    Iter      13    CHI-SQUARE =  20.67372471  DOF =  39997
-       r = 0.9559613745  
-       center.0 = 1.006806477  
-       center.1 = 0.9928656913  
-       center.2 = 1.08991827  
-    Iter      14    CHI-SQUARE =  20.67372464  DOF =  39997
-       r = 0.9559575958  
-       center.0 = 1.0068064  
-       center.1 = 0.9928656735  
-       center.2 = 1.089919146  
-    Iter      15    CHI-SQUARE =  20.67372462  DOF =  39997
-       r = 0.9559565899  
-       center.0 = 1.006806381  
-       center.1 = 0.992865673  
-       center.2 = 1.089919683  
-    
+
+    Iter       1    CHI-SQUARE =  89.69171717  DOF =  39996
+       r = 1
+       center.0 = 1
+       center.1 = 1
+       center.2 = 1
+       alpha = 1
+    Iter       2    CHI-SQUARE =  51.31364864  DOF =  39996
+       r = 1.126802082
+       center.0 = 1.003779108
+       center.1 = 0.9972397803
+       center.2 = 1.051451235
+       alpha = 0.6726765427
+    Iter       3    CHI-SQUARE =  25.05557602  DOF =  39996
+       r = 1.335940375
+       center.0 = 1.008268023
+       center.1 = 0.9927218753
+       center.2 = 1.140799516
+       alpha = 0.6727595631
+    Iter       4    CHI-SQUARE =  17.95474917  DOF =  39996
+       r = 1.064910137
+       center.0 = 1.00674047
+       center.1 = 0.992639106
+       center.2 = 1.095493975
+       alpha = 0.929853769
+    Iter       5    CHI-SQUARE =  14.56983945  DOF =  39996
+       r = 1.148838566
+       center.0 = 1.007100046
+       center.1 = 0.9928651515
+       center.2 = 1.115292363
+       alpha = 0.9635979762
+    Iter       6    CHI-SQUARE =  14.37605814  DOF =  39996
+       r = 1.101757106
+       center.0 = 1.007121683
+       center.1 = 0.9928318618
+       center.2 = 1.106051064
+       alpha = 1.021438237
+    Iter       7    CHI-SQUARE =  14.33982428  DOF =  39996
+       r = 1.116807036
+       center.0 = 1.007092224
+       center.1 = 0.9928436159
+       center.2 = 1.109551173
+       alpha = 1.004426143
+    Iter       8    CHI-SQUARE =  14.3371398  DOF =  39996
+       r = 1.111946278
+       center.0 = 1.007101556
+       center.1 = 0.9928406008
+       center.2 = 1.108616751
+       alpha = 1.011973864
+    Iter       9    CHI-SQUARE =  14.33692949  DOF =  39996
+       r = 1.113124068
+       center.0 = 1.007097504
+       center.1 = 0.9928416602
+       center.2 = 1.10889507
+       alpha = 1.010292855
+    Iter      10    CHI-SQUARE =  14.33691361  DOF =  39996
+       r = 1.112757113
+       center.0 = 1.007098099
+       center.1 = 0.9928414158
+       center.2 = 1.108824344
+       alpha = 1.010839049
+    Iter      11    CHI-SQUARE =  14.33691253  DOF =  39996
+       r = 1.112831854
+       center.0 = 1.00709773
+       center.1 = 0.992841478
+       center.2 = 1.108841643
+       alpha = 1.010728759
+    Iter      12    CHI-SQUARE =  14.3369125  DOF =  39996
+       r = 1.112815902
+       center.0 = 1.007097803
+       center.1 = 0.992841465
+       center.2 = 1.108839042
+       alpha = 1.010752456
+    Iter      13    CHI-SQUARE =  14.3369125  DOF =  39996
+       r = 1.112818641
+       center.0 = 1.007097795
+       center.1 = 0.992841469
+       center.2 = 1.108840003
+       alpha = 1.010749038
+
 The :func:`.fit` function automatically runs :func:`.calc_holo` on many
 different sets of parameter values to find the combination that gives the best
 match to the experimental ``data_holo``. We get back a :class:`.FitResult`
