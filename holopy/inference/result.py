@@ -85,7 +85,7 @@ class FitResult(HoloPyObject):
         return [val.name for val in self.intervals]
 
     @property
-    def inferred_parameters(self):
+    def parameters(self):
         return {name: val for name, val in zip(self._names, self._parameters)}
 
     @property
@@ -93,18 +93,18 @@ class FitResult(HoloPyObject):
         return {name: val.guess for name, val in self.model.parameters.items()}
 
     @property
-    def inferred_scatterer(self):
-        return self.model.scatterer.from_parameters(self.inferred_parameters)
+    def scatterer(self):
+        return self.model.scatterer.from_parameters(self.parameters)
 
     @property
     def guess_scatterer(self):
         return self.model.scatterer.from_parameters(self.model.parameters)
 
     @property
-    def inferred_hologram(self):
+    def hologram(self):
         def calculation():
-            return self.forward(self.inferred_parameters)
-        return self._calculate_first_time("_inferred_hologram", calculation)
+            return self.forward(self.parameters)
+        return self._calculate_first_time("_hologram", calculation)
 
     @property
     def guess_hologram(self):
@@ -115,7 +115,7 @@ class FitResult(HoloPyObject):
     @property
     def max_lnprob(self):
         def calculation():
-            return self.model.lnposterior(self.inferred_parameters, self.data)
+            return self.model.lnposterior(self.parameters, self.data)
         return self._calculate_first_time("_max_lnprob", calculation)
 
     def _calculate_first_time(self, attr_name, long_calculation):
@@ -188,14 +188,13 @@ class FitResult(HoloPyObject):
     def best_fit(self):
         # this method is published in the HoloPy paper
         from holopy.fitting import fit_warning
-        fit_warning('FitResult.inferred_hologram', 'SamplingResult.best_fit()')
-        return self.inferred_hologram
+        fit_warning('FitResult.hologram', 'SamplingResult.best_fit()')
+        return self.hologram
 
     def output_scatterer(self):
         from holopy.fitting import fit_warning
-        fit_warning('FitResult.inferred_scatterer',
-                    'SamplingResult.output_scatterer()')
-        return self.inferred_scatterer
+        fit_warning('FitResult.scatterer', 'SamplingResult.output_scatterer()')
+        return self.scatterer
 
     @classmethod
     def _unserialize(cls, ds):
