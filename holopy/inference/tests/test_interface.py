@@ -65,6 +65,10 @@ class TestUserFacingFunctions(unittest.TestCase):
         object_result.time = None
         self.assertEqual(function_result, object_result)
 
+    @attr('fast')
+    def test_fit_does_not_work_with_arbitrary_object(self):
+        self.assertRaises(AttributeError, fit, DATA, 'string')
+
     @attr('medium')
     def test_fit_works_with_scatterer_and_parameters(self):
         function_result = fit(DATA, SPHERE, ['n', 'x'])
@@ -86,6 +90,7 @@ class TestUserFacingFunctions(unittest.TestCase):
     def test_passing_model_and_parameters_gives_warning(self):
         model = make_default_model(SPHERE, None)
         self.assertWarns(UserWarning, fit, DATA, model, ['r', 'y'])
+
 
 class TestHelperFunctions(unittest.TestCase):
     @attr('fast')
@@ -118,7 +123,7 @@ class TestHelperFunctions(unittest.TestCase):
         self.assertEqual(parameters_list, ['center.0', 'p', 'center.1'])
 
     @attr('fast')
-    def test_make_uniform_fails_with_unexpceted_parameters(self):
+    def test_make_uniform_fails_with_unexpected_parameters(self):
         self.assertRaises(ValueError, make_uniform, GUESSES, 'q')
 
     @attr('fast')
