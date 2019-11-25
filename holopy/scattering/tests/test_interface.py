@@ -31,7 +31,7 @@ from holopy.scattering import (Sphere, Spheres, Mie, Multisphere,
                                Spheroid, Cylinder, Tmatrix)
 from holopy.core import detector_grid
 from holopy.core.tests.common import assert_obj_close
-from holopy.scattering.calculations import *
+from holopy.scattering.interface import *
 from holopy.scattering.errors import MissingParameter
 
 import xarray as xr
@@ -43,7 +43,7 @@ WAVELEN = 0.66
 POL = (0, 1)
 
 
-class TestCalculations(unittest.TestCase):
+class TestInterface(unittest.TestCase):
     @attr('fast')
     def test_calc_holo(self):
         # FIXME: Test results change when 'auto' theory for SCATTERER changes

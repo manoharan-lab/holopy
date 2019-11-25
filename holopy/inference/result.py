@@ -74,7 +74,7 @@ class FitResult(HoloPyObject):
             raise MissingParameter('intervals')
 
     @property
-    def guess(self):
+    def _parameters(self):
         return [val.guess for val in self.intervals]
 
     @property
@@ -83,7 +83,7 @@ class FitResult(HoloPyObject):
 
     @property
     def parameters(self):
-        return {name: val for name, val in zip(self._names, self.guess)}
+        return {name: val for name, val in zip(self._names, self._parameters)}
 
     @property
     def initial_guess(self):
@@ -100,22 +100,7 @@ class FitResult(HoloPyObject):
             return self._best_fit
         except AttributeError:
             pass
-        if hasattr(self.data, 'original_dims'):
-            # dealing with subset data
-            original_dims = self.data.original_dims
-            # can't currently handle non-0 values of z, as in detector_grid
-            x = original_dims['x']
-            y = original_dims['y']
-            shape = (len(x), len(y))
-            spacing = (np.diff(x)[0], np.diff(y)[0])
-            extra_dims = dict_without(original_dims, ['x', 'y', 'z'])
-            schema = detector_grid(shape, spacing, extra_dims=extra_dims)
-            schema = copy_metadata(self.data, schema, do_coords=False)
-            schema['x'] = x
-            schema['y'] = y
-        else:
-            schema = self.data
-        self._best_fit = self.model.forward(self.parameters, schema)
+        self._best_fit = self.forward(self.parameters)
         self._kwargs_keys.append('_best_fit')
         return self.best_fit
 
@@ -134,6 +119,24 @@ class FitResult(HoloPyObject):
         for key, val in kwargs.items():
             setattr(self, key, val)
             self._kwargs_keys.append(key)
+
+    def forward(self, pars):
+        if hasattr(self.data, 'original_dims'):
+            # dealing with subset data
+            original_dims = self.data.original_dims
+            # can't currently handle non-0 values of z, as in detector_grid
+            x = original_dims['x']
+            y = original_dims['y']
+            shape = (len(x), len(y))
+            spacing = (np.diff(x)[0], np.diff(y)[0])
+            extra_dims = dict_without(original_dims, ['x', 'y', 'z'])
+            schema = detector_grid(shape, spacing, extra_dims=extra_dims)
+            schema = copy_metadata(self.data, schema, do_coords=False)
+            schema['x'] = x
+            schema['y'] = y
+        else:
+            schema = self.data
+        return self.model.forward(pars, schema)
 
     @property
     def _source_class(self):
@@ -256,8 +259,8 @@ class SamplingResult(FitResult):
     # deprecated methods as of 3.3
     def MAP(self):
         from holopy.fitting import fit_warning
-        fit_warning('SamplingResult.guess', 'SamplingResult.MAP')
-        return self.guess
+        fit_warning('SamplingResult.parameters', 'SamplingResult.MAP')
+        return self._parameters
 
     def values(self):
         from holopy.fitting import fit_warning

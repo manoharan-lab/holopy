@@ -1,5 +1,5 @@
 # Copyright 2011-2013, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -29,11 +29,15 @@ from holopy.scattering.scatterer import Sphere, Spheroid, Cylinder
 from holopy.scattering.errors import TheoryNotCompatibleError, TmatrixFailure
 from holopy.core.errors import DependencyMissing
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
-from holopy.scattering.theory.tmatrix_f.S import ampld
+try:
+    from holopy.scattering.theory.tmatrix_f.S import ampld
+    COMPILED_TMATRIX_FORTRAN = True
+except ModuleNotFoundError:
+    COMPILED_TMATRIX_FORTRAN = False
 try:
     from holopy.scattering.theory.mie_f import mieangfuncs
     _NO_MIEANGFUNCS = False
-except:
+except ImportError:
     _NO_MIEANGFUNCS = True
 
 class Tmatrix(ScatteringTheory):
@@ -51,6 +55,11 @@ class Tmatrix(ScatteringTheory):
 
     """
     def __init__(self):
+        if not COMPILED_TMATRIX_FORTRAN:
+            raise DependencyMissing("T-matrix theory", "This is probably "
+                                    "due to a problem with compiling Fortran "
+                                    "code, as it should be built with the rest"
+                                    " of HoloPy through f2py.")
         super().__init__()
 
     def _can_handle(self, scatterer):

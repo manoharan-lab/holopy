@@ -30,7 +30,7 @@ from nose.plugins.attrib import attr
 from holopy.core.metadata import detector_grid
 from holopy.scattering.theory import Mie, MieLens, mielensfunctions
 from holopy.scattering.scatterer import Sphere, Spheres
-from holopy.scattering.calculations import calc_holo
+from holopy.scattering.interface import calc_holo
 
 from holopy.scattering.tests.common import (
     sphere, xschema, scaling_alpha, yschema, xpolarization, ypolarization,

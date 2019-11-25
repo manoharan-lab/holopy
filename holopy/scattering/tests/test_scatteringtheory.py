@@ -11,7 +11,7 @@ from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 from holopy.scattering.theory import Mie
 from holopy.scattering.scatterer import Sphere, Spheres, Ellipsoid
 from holopy.scattering.errors import TheoryNotCompatibleError
-from holopy.scattering.calculations import prep_schema
+from holopy.scattering.interface import prep_schema
 from holopy.scattering.tests.common import xschema as XSCHEMA
 
 

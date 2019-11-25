@@ -1,5 +1,5 @@
 # Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -30,18 +30,20 @@ from numpy.testing import assert_raises
 
 from holopy.core import detector_grid, update_metadata, holopy_object
 from holopy.core.tests.common import assert_equal, assert_obj_close
-from holopy.scattering.theory import Mie
-from holopy.scattering.scatterer import Sphere, Spheres
+from holopy.scattering import Sphere, Spheres, Mie, calc_holo
 from holopy.scattering.scatterer.scatterer import _interpret_parameters
 from holopy.scattering.errors import MissingParameter
 from holopy.core.tests.common import assert_read_matches_write
-from holopy.scattering.calculations import calc_holo
-from holopy.inference import prior, AlphaModel, ExactModel
-from holopy.inference.model import BaseModel, PerfectLensModel
+from holopy.inference import (prior, AlphaModel, ExactModel,
+                              NmpfitStrategy, EmceeStrategy,
+                              available_fit_strategies,
+                              available_sampling_strategies)
+from holopy.inference.model import Model, PerfectLensModel
+from holopy.inference.tests.common import SimpleModel
 
 
-class TestBaseModel(unittest.TestCase):
-    base_model_keywords = [
+class TestModel(unittest.TestCase):
+    model_keywords = [
         'noise_sd',
         'medium_index',
         'illum_wavelen',
@@ -52,13 +54,13 @@ class TestBaseModel(unittest.TestCase):
     @attr('fast')
     def test_initializable(self):
         scatterer = make_sphere()
-        model = BaseModel(scatterer)
+        model = Model(scatterer)
         self.assertTrue(model is not None)
 
     @attr('fast')
     def test_initializing_with_xarray_raises_error(self):
         sphere = make_sphere()
-        for key in self.base_model_keywords:
+        for key in self.model_keywords:
             value = xr.DataArray(
                 [1, 0.],
                 dims=['illumination'],
@@ -67,15 +69,15 @@ class TestBaseModel(unittest.TestCase):
             error_regex = '{} cannot be an xarray'.format(key)
             with self.subTest(key=key):
                 self.assertRaisesRegex(
-                    ValueError, error_regex, BaseModel, sphere, **kwargs)
+                    ValueError, error_regex, Model, sphere, **kwargs)
 
     @attr('fast')
     def test_yaml_round_trip_with_dict(self):
         sphere = make_sphere()
-        for key in self.base_model_keywords:
+        for key in self.model_keywords:
             value = {'red': 1, 'green': 0}
             kwargs = {key: value}
-            model = BaseModel(sphere, **kwargs)
+            model = Model(sphere, **kwargs)
             with self.subTest(key=key):
                 reloaded = take_yaml_round_trip(model)
                 self.assertEqual(reloaded, model)
@@ -84,17 +86,72 @@ class TestBaseModel(unittest.TestCase):
     @unittest.skip("There is a problem with saving yaml xarrays")
     def test_yaml_round_trip_with_xarray(self):
         sphere = make_sphere()
-        for key in self.base_model_keywords:
+        for key in self.model_keywords:
             value = xr.DataArray(
                 [1, 0.],
                 dims=['illumination'],
                 coords={'illumination': ['red', 'green']})
             kwargs = {key: value}
-            model = BaseModel(sphere, **kwargs)
+            model = Model(sphere, **kwargs)
             with self.subTest(key=key):
                 reloaded = take_yaml_round_trip(model)
                 self.assertEqual(reloaded, model)
 
+class TestModelFittingMethods(unittest.TestCase):
+    @attr('fast')
+    def test_default_fit_strategy_is_nmpfit(self):
+        model = Model(Sphere())
+        default_strategy = model.validate_strategy(None, 'fit')
+        self.assertEqual(NmpfitStrategy(), default_strategy)
+
+    @attr('fast')
+    def test_default_sampling_strategy_is_emcee(self):
+        model = Model(Sphere())
+        default_strategy = model.validate_strategy(None, 'sample')
+        self.assertTrue(isinstance(default_strategy, EmceeStrategy))
+
+    @attr('fast')
+    def test_fit_strategy_names(self):
+        model = Model(Sphere())
+        for name, strategy in available_fit_strategies.items():
+            strategy_by_name = model.validate_strategy(name, 'fit')
+            self.assertEqual(strategy(), strategy_by_name)
+
+    @attr('fast')
+    def test_sample_strategy_names(self):
+        model = Model(Sphere())
+        for name, strategy in available_sampling_strategies.items():
+            if strategy is not NotImplemented:
+                strategy_by_name = model.validate_strategy(name, 'sample')
+                self.assertEqual(strategy(), strategy_by_name)
+
+    @attr('fast')
+    def test_parallel_tempering_not_implemented(self):
+        model = Model(Sphere())
+        self.assertRaises(ValueError, model.validate_strategy,
+                          'parallel tempering', 'sample')
+
+    @attr('medium')
+    def test_model_fit_method_identical_to_strategy_method(self):
+        model = SimpleModel()
+        strategy = NmpfitStrategy(seed = 123)
+        data = np.array(.5)
+        strategy_result = strategy.fit(model, data)
+        strategy_result.time = None
+        model_result = model.fit(data, strategy)
+        model_result.time = None
+        self.assertEqual(strategy_result, model_result)
+
+    @attr('medium')
+    def test_model_sample_method_identical_to_strategy_method(self):
+        model = SimpleModel()
+        strategy = EmceeStrategy(nwalkers=6, nsamples=10, seed=123)
+        data = np.array(.5)
+        strategy_result = strategy.sample(model, data)
+        strategy_result.time = None
+        model_result = model.sample(data, strategy)
+        model_result.time = None
+        self.assertEqual(strategy_result, model_result)
 
 class TestAlphaModel(unittest.TestCase):
     @attr('fast')
@@ -164,7 +221,7 @@ def make_sphere():
     return Sphere(n=index, r=radius)
 
 
-def make_basemodel_kwargs():
+def make_model_kwargs():
     kwargs = {
         'noise_sd': 0.05,
         'medium_index': 1.33,

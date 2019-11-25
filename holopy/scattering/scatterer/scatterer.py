@@ -276,7 +276,7 @@ class CenteredScatterer(Scatterer):
         return type(self)(**params)
 
 
-def _interpret_parameters(raw_pars):
+def _interpret_parameters(raw_pars, keep_priors = False):
 # doesn't really have anything to do with scatterer - shouldn't be in this file
     out_dict = {}
     subkeys = set(
@@ -284,7 +284,7 @@ def _interpret_parameters(raw_pars):
     for subkey in subkeys:
         if subkey in raw_pars.keys():
             val = raw_pars[subkey]
-            if hasattr(val, 'guess'):
+            if hasattr(val, 'guess') and not keep_priors:
                 val = val.guess
             out_dict[subkey] = val
         else:
@@ -298,9 +298,9 @@ def _interpret_parameters(raw_pars):
             if delimchar is ':':
                 # dict or xarray, but we don't know dim names
                 # so we always return dict
-                out_dict[subkey] = _interpret_parameters(subset)
+                out_dict[subkey] = _interpret_parameters(subset, keep_priors)
             elif delimchar is '.':
-                dictform = _interpret_parameters(subset)
+                dictform = _interpret_parameters(subset, keep_priors)
                 if '0' in dictform.keys():
                     # this might fail if called on model.parameters created
                     # from a scatterer containing an array with some fixed,

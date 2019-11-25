@@ -1,5 +1,5 @@
 # Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -69,7 +69,7 @@ class TestFitResult(unittest.TestCase):
     @attr("fast")
     def test_properties(self):
         result = generate_fit_result()
-        self.assertEqual(result.guess, [1.6, 0.6, 0.7])
+        self.assertEqual(result._parameters, [1.6, 0.6, 0.7])
         self.assertEqual(result._names, ['n', 'r', 'alpha'])
         self.assertEqual(result.parameters, {'r':0.6, 'n':1.6, 'alpha':0.7})
         self.assertEqual(result.scatterer,
