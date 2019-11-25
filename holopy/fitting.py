@@ -98,6 +98,7 @@ class Parametrization():
 
 
 class limit_overlaps():
+    # defined as a class, not a function for compatibility with pre-release 3.3
     def __new__(self, fraction=.1):
         fit_warning('inference.model.LimitOverlaps', 'limit_overlaps')
         return LimitOverlaps(fraction)
