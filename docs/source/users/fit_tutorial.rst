@@ -168,8 +168,8 @@ Sometimes you might want a bit more control over how the parameters are varied.
 You can customize the parameters with a :class:`.Model` object that describes
 parameters as :class:`.Prior` objects instead of simply passing in your best
 guess scatterer and the names of the parameters you wish to vary. For example,
-we can set bounds on the coordinate parameters and and use a Gaussian prior
-(std=0.05) for radius.
+we can set bounds on the coordinate parameters and use a Gaussian prior for the
+radius - here, with a mean of 0.5 and standard deviation of 0.05 micrometers.
 
 ..  testcode::
 
@@ -286,9 +286,10 @@ such as specifying a complex refractive index :
 
     n = prior.ComplexPrior(real=prior.Gaussian(1.58, 0.02), imag=1e-4)
 
-When this is used to define a :class:`.Sphere`, :func:`.fit` will fit to
-the real part of index of refraction while holding the imaginary part fixed.
-You could fit it as well by specifying a :class:`.Prior` for ``imag``.
+When this refractive index is used to define a :class:`.Sphere`, :func:`.fit`
+will fit to the real part of index of refraction while holding the imaginary
+part fixed. You could fit it as well by specifying a :class:`.Prior` for
+``imag``.
 
 You may desire to fit holograms with *tied parameters*, in which
 several physical quantities that could be varied independently are
@@ -306,8 +307,8 @@ defining a parameter and using it in multiple places.
     Sphere(n = n1, r = 0.5, center = [9., 11., 21.])])
 
 
-Sampling a Posterior
-~~~~~~~~~~~~~~~~~~~~
+Bayesian Parameter Estimation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Often, we aren't just interested in the best-fit (MAP) parameter values, but
 in the full range of parameter values that provide a reasonable fit to an
@@ -345,7 +346,8 @@ into either function. Options for :func:`.fit` currently include the default
 Levenberg-Marquardt (``strategy="nmpfit"``), as well as cma-es
 (``strategy="cma"``) and scipy least squares (``strategy="scipy lsq"``).
 Options for :func:`.sample` include the default without tempering
-(``strategy="emcee"``) or tempering by changing the number of pixels evaluated (``strategy="subset tempering"``) or Monte Carlo temperature
+(``strategy="emcee"``), tempering by changing the number of pixels evaluated
+(``strategy="subset tempering"``), or parallel tempered MCMC
 (``strategy="parallel tempering"``) [not currently implemented]. You can see
 the available strategies in your version of HoloPy by calling
 `hp.inference.available_fit_strategies` or
@@ -399,5 +401,5 @@ in accuracy by fitting to only a random fraction of the pixels in a hologram.
 
 You will want to do some testing to make sure that you still get
 acceptable answers with your data, but our investigations have shown
-that you can frequently use random fractions of .1 or .01 with little
+that you can frequently use random fractions of 0.1 or 0.01 with little
 effect on your results and gain a speedup of 10x or greater.
