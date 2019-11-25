@@ -32,12 +32,12 @@ from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 try:
     from holopy.scattering.theory.tmatrix_f.S import ampld
     COMPILED_TMATRIX_FORTRAN = True
-except:
+except ModuleNotFoundError:
     COMPILED_TMATRIX_FORTRAN = False
 try:
     from holopy.scattering.theory.mie_f import mieangfuncs
     _NO_MIEANGFUNCS = False
-except:
+except ImportError:
     _NO_MIEANGFUNCS = True
 
 class Tmatrix(ScatteringTheory):

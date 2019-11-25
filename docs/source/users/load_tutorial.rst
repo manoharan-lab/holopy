@@ -126,9 +126,10 @@ specify metadata when loading the image, we can use :func:`.update_metadata` to 
     holo = hp.core.update_metadata(holo, medium_index=1.33, illum_wavelen=0.660, illum_polarization=(1,0))
 
 .. note::
-    Spacing and wavelength must be given in the same units - microns in the example
-    above. Holopy has no built-in length scale and requires only that you be consistent. 
-    For example, we could have specified both parameters in terms of nanometers or meters instead.
+    Spacing and wavelength must be given in the same units - micrometers in the
+    example above. Holopy has no built-in length scale and requires only that
+    you be consistent. For example, we could have specified both parameters in
+    terms of nanometers or meters instead.
 
 ..  testcode::
     :hide:
