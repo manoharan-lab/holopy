@@ -43,6 +43,7 @@ warn_text = 'Loading a legacy (pre-3.3) HoloPy file. Please \
 # anywhere warn_text appears, there's an if-statement that can be removed.
 # it is also used once in hp.core.io.io.unpack_attrs
 
+
 def get_strategy(strategy):
     try:
         return yaml.load(strategy, Loader=FullLoader)
@@ -60,6 +61,7 @@ def get_strategy(strategy):
         strategy = strategy[:index] + 'parallel' + strategy[index+7]
     return yaml.load(strategy, Loader=FullLoader)
 
+
 class FitResult(HoloPyObject):
     def __init__(self, data, model, strategy, time, kwargs={}):
         self.data = data
@@ -70,7 +72,8 @@ class FitResult(HoloPyObject):
         self.time = time
         self._kwargs_keys = []
         self.add_attr(kwargs)
-        if not (isinstance(self,SamplingResult) or hasattr(self,'intervals')):
+        needs_intervals = not isinstance(self, SamplingResult)
+        if needs_intervals and not hasattr(self, 'intervals'):
             raise MissingParameter('intervals')
 
     @property
@@ -86,7 +89,7 @@ class FitResult(HoloPyObject):
         return {name: val for name, val in zip(self._names, self._parameters)}
 
     @property
-    def initial_guess(self):
+    def guess_parameters(self):
         return {name: val.guess for name, val in self.model.parameters.items()}
 
     @property
@@ -94,26 +97,32 @@ class FitResult(HoloPyObject):
         return self.model.scatterer.from_parameters(self.parameters)
 
     @property
-    def best_fit(self):
-        # calculate the first time it's called and then store it
-        try:
-            return self._best_fit
-        except AttributeError:
-            pass
-        self._best_fit = self.forward(self.parameters)
-        self._kwargs_keys.append('_best_fit')
-        return self.best_fit
+    def guess_scatterer(self):
+        return self.model.scatterer.from_parameters(self.model.parameters)
+
+    @property
+    def hologram(self):
+        def calculation():
+            return self.forward(self.parameters)
+        return self._calculate_first_time("_hologram", calculation)
+
+    @property
+    def guess_hologram(self):
+        def calculation():
+            return self.forward(self.model.parameters)
+        return self._calculate_first_time("_guess_hologram", calculation)
 
     @property
     def max_lnprob(self):
-        # calculate the first time it's called and then store it
-        try:
-            return self._max_lnprob
-        except AttributeError:
-            pass
-        self._max_lnprob = self.model.lnposterior(self.parameters, self.data)
-        self._kwargs_keys.append('_max_lnprob')
-        return self.max_lnprob
+        def calculation():
+            return self.model.lnposterior(self.parameters, self.data)
+        return self._calculate_first_time("_max_lnprob", calculation)
+
+    def _calculate_first_time(self, attr_name, long_calculation):
+        if not hasattr(self, attr_name):
+            setattr(self, attr_name, long_calculation())
+            self._kwargs_keys.append(attr_name)
+        return getattr(self, attr_name)
 
     def add_attr(self, kwargs):
         for key, val in kwargs.items():
@@ -143,18 +152,20 @@ class FitResult(HoloPyObject):
         return "holopy.inference.{}".format(self.__class__.__name__)
 
     def _serialization_ds(self):
-        ds = xr.Dataset({'data':self.data})
+        ds = xr.Dataset({'data': self.data})
         if 'flat' in ds:
             ds.data.attrs['_flat'] = [list(f) for f in ds.data.flat.values]
             ds = ds.rename({'flat': 'point'})
             ds['point'].values = np.arange(len(ds.point))
         ds.data.attrs = pack_attrs(ds.data)
         attrs = ['model', 'strategy', 'time', '_source_class']
+
         def make_yaml(key):
             attr = getattr(self, key)
             if isinstance(attr, HoloPyObject):
                 attr = yaml.dump(attr, default_flow_style=True)
             return str(attr)
+
         attrs = {str(key): make_yaml(key) for key in attrs}
         xr_kw = {}
         yaml_kw = {}
@@ -173,22 +184,34 @@ class FitResult(HoloPyObject):
         ds = self._serialization_ds()
         ds.to_netcdf(filename, engine='h5netcdf', **kwargs)
 
+    # deprecated methods as of 3.3
+    def best_fit(self):
+        # this method is published in the HoloPy paper
+        from holopy.fitting import fit_warning
+        fit_warning('FitResult.hologram', 'SamplingResult.best_fit()')
+        return self.hologram
+
+    def output_scatterer(self):
+        from holopy.fitting import fit_warning
+        fit_warning('FitResult.scatterer', 'SamplingResult.output_scatterer()')
+        return self.scatterer
+
     @classmethod
     def _unserialize(cls, ds):
         data = ds.data
         data.attrs = unpack_attrs(data.attrs)
         if '_flat' in data.attrs.keys():
             flats = np.array(data.attrs['_flat']).T
-            levels = [data.original_dims[key] for key in ['x','y','z']]
+            levels = [data.original_dims[key] for key in ['x', 'y', 'z']]
             codes = [[level.index(f) for f in flat]
-                                for level, flat in zip(levels, flats)]
-            flat_index = pd.MultiIndex(levels, codes, names=['x','y','z'])
+                     for level, flat in zip(levels, flats)]
+            flat_index = pd.MultiIndex(levels, codes, names=['x', 'y', 'z'])
             coordnames = list(data.coords)
             coordnames.remove('point')
             coords = {coord: data[coord] for coord in coordnames}
             coords['flat'] = flat_index
             data = xr.DataArray(data.values, dims=coordnames + ['flat'],
-                                        coords=coords, attrs=data.attrs)
+                                coords=coords, attrs=data.attrs)
         model = yaml.load(ds.attrs['model'], Loader=FullLoader)
         strategy = get_strategy(ds.attrs['strategy'])
         outlist = [data, model, strategy]
@@ -222,9 +245,10 @@ class FitResult(HoloPyObject):
 
     @classmethod
     def _load(cls, ds, **kwargs):
-       with xr.open_dataset(ds, engine='h5netcdf', **kwargs) as ds:
+        with xr.open_dataset(ds, engine='h5netcdf', **kwargs) as ds:
             args = cls._unserialize(ds.load())
-       return cls(*args)
+        return cls(*args)
+
 
 class SamplingResult(FitResult):
     def __init__(self, data, model, strategy, time, kwargs={}):
@@ -232,23 +256,27 @@ class SamplingResult(FitResult):
         self.intervals = self._calc_intervals()
 
     def _calc_intervals(self):
-        P_LOW = 100 * 0.158655253931457 # (1-scipy.special.erf(1/np.sqrt(2)))/2
+        P_LOW = 15.865525393145708  # 100*(1-scipy.special.erf(1/np.sqrt(2)))/2
         map_val = self.samples[np.unravel_index(
                                     self.lnprobs.argmax(), self.lnprobs.shape)]
-        minus = map_val - self.samples.reduce(np.percentile, q=P_LOW,
-                                                    dim=['walker', 'chain'])
-        plus = -map_val + self.samples.reduce(np.percentile, q=(100 - P_LOW),
-                                                    dim=['walker', 'chain'])
-        return [UncertainValue(map_val.loc[[p]], plus.loc[[p]], minus.loc[[p]], p)
-                                        for p in self.samples.parameter.values]
+        minus = map_val - self.samples.reduce(
+            np.percentile, q=P_LOW, dim=['walker', 'chain'])
+        plus = -map_val + self.samples.reduce(
+            np.percentile, q=(100 - P_LOW), dim=['walker', 'chain'])
+
+        def make_uncertain_value(p):
+            return UncertainValue(
+                map_val.loc[[p]], plus.loc[[p]], minus.loc[[p]], p)
+
+        return [make_uncertain_value(p) for p in self.samples.parameter.values]
 
     def burn_in(self, sample_number):
 
         def cut_start(array):
-            if len(array.chain.coords)==0:
+            if len(array.chain.coords) == 0:
                 array['chain'] = ('chain', array.chain)
                 array.set_index(chain='chain')
-            return array.sel(chain = slice(sample_number, None))
+            return array.sel(chain=slice(sample_number, None))
 
         burned_in = copy(self)
         burned_in.samples = cut_start(burned_in.samples)
@@ -269,16 +297,18 @@ class SamplingResult(FitResult):
 
 
 GROUPNAME = 'stage_results[{}]'
+
+
 class TemperedSamplingResult(SamplingResult):
     def __init__(self, end_result, stage_results, strategy, time):
-        kwargs = {'lnprobs': end_result.lnprobs, 'samples':end_result.samples}
+        kwargs = {'lnprobs': end_result.lnprobs, 'samples': end_result.samples}
         super().__init__(end_result.data, end_result.model, strategy, time,
-                        kwargs)
+                         kwargs)
         self.stage_results = stage_results
 
     def _save(self, filename):
         for i, ds in enumerate(self.stage_results):
-            ds._save(filename, group = GROUPNAME.format(i), mode='a')
+            ds._save(filename, group=GROUPNAME.format(i), mode='a')
         super()._save(filename, mode='a')
 
     @classmethod
@@ -288,11 +318,11 @@ class TemperedSamplingResult(SamplingResult):
         except AttributeError:
             # old file
             warn(warn_text)
-            ds = SamplingResult._load(filename, group = 'end_result')
+            ds = SamplingResult._load(filename, group='end_result')
             with xr.open_dataset(filename, engine='h5netcdf') as top:
                 ds.strategy = get_strategy(top.attrs['strategy'])
         stages = [SamplingResult._load(filename, group=GROUPNAME.format(i))
-                        for i in range(len(ds.strategy.stage_strategies)-1)]
+                  for i in range(len(ds.strategy.stage_strategies) - 1)]
         return cls(ds, stages, ds.strategy, ds.time)
 
 
@@ -322,10 +352,13 @@ class UncertainValue(HoloPyObject):
 
     def _repr_latex_(self):
         from IPython.display import Math
-        confidence=""
+        confidence = ""
         if self.n_sigma != 1:
-            confidence=" (\mathrm{{{}\ sigma}})".format(self.n_sigma)
-        display_precision = int(round(np.log10(self.guess/(min(self.plus, self.minus))) + .6))
+            confidence = " (\mathrm{{{}\ sigma}})".format(self.n_sigma)
+        display_precision = int(
+            round(np.log10(self.guess/(min(self.plus, self.minus))) + .6))
         guess_fmt = "{{:.{}g}}".format(max(display_precision, 2))
         guess = guess_fmt.format(self.guess)
-        return "${guess}^{{+{s.plus:.2g}}}_{{-{s.minus:.2g}}}{confidence}$".format(s=self, confidence=confidence, guess=guess)
+        return "${guess}^{{+{s.plus:.2g}}}_{{-{s.minus:.2g}}}{conf}$".format(
+            s=self, conf=confidence, guess=guess)
+
