@@ -29,8 +29,9 @@ from holopy.core.process import normalize
 from holopy.core.tests.common import assert_obj_close, get_example_data
 from holopy.scattering import Sphere, Mie
 from holopy.inference import prior
-from holopy.inference.model import AlphaModel, BaseModel, PerfectLensModel
+from holopy.inference.model import AlphaModel, Model, PerfectLensModel
 from holopy.inference.emcee import sample_emcee, EmceeStrategy
+from holopy.inference.tests.common import SimpleModel
 
 
 class testEmcee(unittest.TestCase):
@@ -38,7 +39,7 @@ class testEmcee(unittest.TestCase):
     def test_BaseModel_lnprior(self):
         scat = Sphere(r=prior.Gaussian(1, 1), n=prior.Gaussian(1, 1),
                       center=[10, 10, 10])
-        mod = BaseModel(scat, noise_sd=0.1)
+        mod = Model(scat, noise_sd=0.1)
         # Desired: log(sqrt(0.5/pi))-1/2
         desired_sigma = -1.4189385332
         assert_obj_close(mod.lnprior({'n': 0, 'r': 0}), desired_sigma * 2)
@@ -48,7 +49,7 @@ class testEmcee(unittest.TestCase):
         data = np.array(.5)
         nwalkers = 10
         ndim = 1
-        mod = SimpleModel()
+        mod = SimpleModel(1)
         p0 = np.linspace(0, 1, nwalkers*ndim).reshape((nwalkers, ndim))
         r = sample_emcee(mod, data, nwalkers, 500, p0, parallel=None, seed=40)
         should_be_onehalf = r.chain[r.lnprobability == r.lnprobability.max()]
@@ -58,10 +59,10 @@ class testEmcee(unittest.TestCase):
     @attr("fast")
     def test_EmceeStrategy(self):
         data = np.array(.5)
-        mod = SimpleModel(prior.Uniform(0, 1))
-        strat = EmceeStrategy(10, None, None, seed=48)
-        r = strat.optimize(mod, data, 5)
-        assert_allclose(r.guess, .5, rtol=.001)
+        mod = SimpleModel(1)
+        strat = EmceeStrategy(10, 5, None, None, seed=48)
+        r = strat.sample(mod, data)
+        assert_allclose(r._parameters, .5, rtol=.001)
 
 
 class TestSubsetTempering(unittest.TestCase):
@@ -70,13 +71,14 @@ class TestSubsetTempering(unittest.TestCase):
         holo = normalize(get_example_data('image0001'))
         scat = Sphere(r=0.65e-6, n=1.58, center=[5.5e-6, 5.8e-6, 14e-6])
         mod = AlphaModel(scat, noise_sd=.1, alpha=prior.Gaussian(0.7, 0.1))
-        strat = TemperedStrategy(
-            nwalkers=4, stages=1, stage_len=10, parallel=None, seed=40)
+        strat = TemperedStrategy(nwalkers=4, nsamples=10, stages=1,
+                                 stage_len=10, parallel=None, seed=40)
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            inference_result = strat.optimize(mod, holo, nsamples=10)
+            inference_result = strat.sample(mod, holo)
         desired_alpha = np.array([0.650348])
-        is_ok = np.allclose(inference_result.guess, desired_alpha, rtol=1e-3)
+        is_ok = np.allclose(
+            inference_result._parameters, desired_alpha, rtol=1e-3)
         self.assertTrue(is_ok)
 
     @attr("slow")
@@ -85,24 +87,15 @@ class TestSubsetTempering(unittest.TestCase):
         scatterer = Sphere(r=0.65e-6, n=1.58, center=[5.5e-6, 5.8e-6, 14e-6])
         model = PerfectLensModel(
             scatterer, noise_sd=.1, lens_angle=prior.Gaussian(0.7, 0.1))
-        strat = TemperedStrategy(
-            nwalkers=4, stages=1, stage_len=10, parallel=None, seed=40)
+        strat = TemperedStrategy(nwalkers=4, nsamples=10, stages=1,
+                                 stage_len=10, parallel=None, seed=40)
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            inference_result = strat.optimize(model, data, nsamples=10)
+            inference_result = strat.sample(model, data)
         desired_lens_angle = np.array([0.7197887])
         is_ok = np.allclose(
-            inference_result.guess, desired_lens_angle, rtol=1e-3)
+            inference_result._parameters, desired_lens_angle, rtol=1e-3)
         self.assertTrue(is_ok)
-
-
-class SimpleModel(BaseModel):
-    def __init__(self, x=prior.Uniform(0, 1)):
-        self._parameters = [x]
-
-    def lnposterior(self, par_vals, data, dummy):
-        x = par_vals
-        return -((x[None]-data)**2).sum()
 
 
 if __name__ == '__main__':

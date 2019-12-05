@@ -16,5 +16,23 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
-from holopy.propagation.convolution_propagation import propagate
-from holopy.propagation.point_source_propagate import ps_propagate
+import numpy as np
+
+from holopy.inference import prior
+from holopy.inference.model import Model
+from holopy.scattering import Sphere
+
+class SimpleModel(Model):
+    def __init__(self, npars=2):
+        self._parameters = [prior.Uniform(0, 1, name='x'),
+                            prior.Uniform(0, 1, name='y')][:npars]
+        self.constraints = []
+        self.noise_sd = 1
+
+    def _residuals(self, pars, data, noise):
+        return self.lnposterior(pars, data, None)
+
+    def lnposterior(self, par_vals, data, dummy):
+        x = par_vals
+        data = np.array(data)
+        return -((x[self._parameters[-1].name] - data)**2).sum()

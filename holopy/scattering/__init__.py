@@ -42,6 +42,6 @@ from holopy.scattering import scatterer, theory
 from holopy.scattering.scatterer import (Scatterer, Scatterers, Sphere,
     LayeredSphere, Spheres, RigidCluster, Ellipsoid, Capsule, Cylinder,
     Bisphere, Spheroid, JanusSphere_Uniform, JanusSphere_Tapered)
-from holopy.scattering.calculations import (calc_holo, calc_field,
+from holopy.scattering.interface import (calc_holo, calc_field,
     calc_intensity, calc_cross_sections, calc_scat_matrix)
 from holopy.scattering.theory import Mie, MieLens, Multisphere, DDA, Tmatrix

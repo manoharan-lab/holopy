@@ -17,19 +17,13 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 
 from holopy.inference.cmaes import run_cma, CmaStrategy
-from holopy.inference.model import BaseModel
+from holopy.inference.model import Model
 from holopy.inference import prior
+from holopy.inference.tests.common import SimpleModel
 
-class SimpleModel(BaseModel):
-    def __init__(self, x=prior.Uniform(0,1), y=prior.Uniform(0,1)):
-        self._parameters = [x,y]
-
-    def lnposterior(self, par_vals, data, dummy):
-        x = par_vals
-        return -((x[None]-data)**2).sum()
 
 def simplefunc(x):
     return -np.array((x-0.5)**2).mean()
@@ -52,6 +46,14 @@ def test_run_cma():
 
 def test_CmaStrategy():
     mod = SimpleModel()
-    strat = CmaStrategy(seed=18, tols=tols)
-    r = strat.optimize(mod, data, 5)
-    assert_allclose(np.mean(r.guess), .55, atol=.001)
+    strat = CmaStrategy(seed=18, tols=tols, popsize=5)
+    r = strat.fit(mod, data)
+    assert_allclose(np.mean(r._parameters), .55, atol=.001)
+
+def test_default_popsize():
+    npars = 2
+    mod = SimpleModel(npars)
+    strat = CmaStrategy(seed=18, tols=tols, popsize=None)
+    strat.fit(mod, data)
+    assert_equal(strat.popsize, int(2 + npars + np.sqrt(npars)))
+

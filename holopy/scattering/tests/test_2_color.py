@@ -29,7 +29,7 @@ import xarray as xr
 from nose.plugins.attrib import attr
 
 from holopy.scattering import Sphere, Spheres, calc_holo
-from holopy.scattering.calculations import prep_schema
+from holopy.scattering.interface import prep_schema
 from holopy.core.metadata import detector_grid, update_metadata, to_vector
 from holopy.inference import prior
 from holopy.core.tests.common import (
