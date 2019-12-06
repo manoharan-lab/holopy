@@ -1,4 +1,5 @@
 import unittest
+import warnings
 
 import numpy as np
 from nose.plugins.attrib import attr
@@ -21,8 +22,10 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
         holo = normalize(get_example_data('image0001'))
         model = make_model()
 
-        fitter = LeastSquaresScipyStrategy()
-        result = fitter.fit(model, holo)
+        fitter = LeastSquaresScipyStrategy(max_nfev=25)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            result = fitter.fit(model, holo)
         fitted = result.scatterer
 
         self.assertTrue(np.isclose(fitted.n, CORRECT_SPHERE.n, rtol=1e-3))
@@ -39,8 +42,10 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
         model = make_model()
 
         np.random.seed(40)
-        fitter = LeastSquaresScipyStrategy(npixels=1000)
-        result = fitter.fit(model, holo)
+        fitter = LeastSquaresScipyStrategy(npixels=1000, max_nfev=25)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            result = fitter.fit(model, holo)
         fitted = result.scatterer
 
         self.assertTrue(np.isclose(fitted.n, CORRECT_SPHERE.n, rtol=1e-2))
