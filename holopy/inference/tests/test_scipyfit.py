@@ -94,10 +94,11 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
         uncertainties_900 = pack_uncertainties_into_dict(result_900)
 
         for key in uncertainties_100.keys():
-            self.assertAlmostEqual(
-                uncertainties_100[key],
-                3 * uncertainties_900[key],
-                places=1)
+            self.assertTrue(
+                np.isclose(
+                    uncertainties_100[key],
+                    3 * uncertainties_900[key],
+                    rtol=0.3, atol=0))
 
     @attr('medium')
     def test_fitted_uncertainties_similar_to_nmpfit(self):
@@ -115,10 +116,11 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
         uncertainties_nmp = pack_uncertainties_into_dict(result_nmp)
 
         for key in uncertainties_scipy.keys():
-            self.assertAlmostEqual(
-                uncertainties_scipy[key],
-                uncertainties_nmp[key],
-                places=4)
+            self.assertTrue(
+                np.isclose(
+                    uncertainties_scipy[key],
+                    uncertainties_nmp[key],
+                    rtol=0.1, atol=0))
 
 
 def make_model():
