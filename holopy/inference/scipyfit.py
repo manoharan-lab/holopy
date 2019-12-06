@@ -82,13 +82,13 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         if not minimizer_info.success:
             warnings.warn("Minimizer Convergence Failed, your results \
                                 may not be correct.")
-        perrors = self._estimate_error_from_fit(minimizer_info, data.size)
+        perrors = self._estimate_gaussian_errors_from_fit(minimizer_info)
         assert len(parameters) == perrors.size
         intervals = [UncertainValue(fitted_pars[par.name], err, name=par.name)
                      for err, par in zip(perrors, parameters)]
         # timing decorator...
         d_time = time.time() - time_start
-        kwargs = {'intervals':intervals, 'minimizer_info':minimizer_info}
+        kwargs = {'intervals': intervals, 'minimizer_info': minimizer_info}
         return FitResult(data, model, self, d_time, kwargs)
 
     def minimize(self, parameters, residuals_function):
@@ -98,11 +98,14 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         result_pars = self.unscale_pars_from_minimizer(parameters, fitresult.x)
         return result_pars, fitresult
 
-    def _estimate_error_from_fit(self, minimizer_info, n_data_points):
-        # Estimates 1-sigma gaussian errors
+    @classmethod
+    def _estimate_gaussian_errors_from_fit(cls, minimizer_info):
         jacobian = minimizer_info.jac
+        n_data_points = jacobian.shape[0]
         jtj = np.dot(jacobian.T, jacobian)
         jtjinv = np.linalg.inv(jtj)
-        noise_estimate = np.sqrt(minimizer_info.cost / n_data_points)
-        parameter_uncertainties = np.diag(jtjinv) * noise_estimate
-        return parameter_uncertainties
+        noise_variance_estimate = minimizer_info.cost / n_data_points
+        posterior_variance = np.diag(jtjinv) * noise_variance_estimate
+        posterior_std = np.sqrt(posterior_variance)
+        return posterior_std
+
