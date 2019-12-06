@@ -79,6 +79,27 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
                 places=4)
 
     @attr('medium')
+    def test_fitted_uncertainties_scale_with_number_of_points(self):
+        holo = normalize(get_example_data('image0001'))
+        model = make_model()
+
+        np.random.seed(40)
+        fitter_100 = LeastSquaresScipyStrategy(npixels=100)
+        result_100 = fitter_100.fit(model, holo)
+        uncertainties_100 = pack_uncertainties_into_dict(result_100)
+
+        np.random.seed(40)
+        fitter_900 = LeastSquaresScipyStrategy(npixels=900)
+        result_900 = fitter_900.fit(model, holo)
+        uncertainties_900 = pack_uncertainties_into_dict(result_900)
+
+        for key in uncertainties_100.keys():
+            self.assertAlmostEqual(
+                uncertainties_100[key],
+                3 * uncertainties_900[key],
+                places=1)
+
+    @attr('medium')
     def test_fitted_uncertainties_similar_to_nmpfit(self):
         holo = normalize(get_example_data('image0001'))
         model = make_model()
