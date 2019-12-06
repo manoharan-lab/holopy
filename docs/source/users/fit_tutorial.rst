@@ -149,14 +149,14 @@ various ways, and can be saved to a file with ``hp.save`` :
 
 ..  testcode::
 
-    best_fit_dictionary = fit_result.parameters
+    best_fit_values = fit_result.parameters
+    initial_guess_values = fit_result.guess_parameters
     best_fit_sphere = fit_result.scatterer
-    initial_guess_values = fit_result.initial_guess
-    best_fit_hologram = fit_result.best_fit
+    best_fit_hologram = fit_result.hologram
     best_fit_lnprob = fit_result.max_lnprob
     hp.save('results_file.h5', fit_result)
 
-If we look at ``best_fit_dictionary`` or ``best_fit_sphere``, we see that our
+If we look at ``best_fit_values`` or ``best_fit_sphere``, we see that our
 initial guess of the sphere's position of (24, 22, 15) was corrected to
 (24.16, 21.84, 16.35). Note that we have achieved sub-pixel position
 resolution!

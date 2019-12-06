@@ -4,7 +4,9 @@
 *.exe
 dist
 build
+coverage_results
 docs/build
+docs/*.h5
 holopy/propagation/tests/gold/full_data/*.yaml
 holopy/scattering/tests/gold/full_data/*.yaml
 holopy/scattering/theory/tmatrix_f/S
