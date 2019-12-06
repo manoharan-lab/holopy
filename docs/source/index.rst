@@ -29,7 +29,7 @@ answer questions, and benefit from other users' questions.
 .. toctree::
    :maxdepth: 2
 
-   whatsnew
+   releasenotes
    users/index
    reference/holopy
    credits
