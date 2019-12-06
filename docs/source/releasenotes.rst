@@ -12,13 +12,16 @@ New Features
   is that the least-squares based fitting algorithms such as `Nmpfit`
   can now work correctly priors, including with non-uniform priors.
   There is also a new, user-friendly functionality for inference in
-  `holopy`.
+  `holopy`. Moreover, the inference pipelines can work with arbitrary
+  user-defined functions instead of just holograms.
 - There is a new scattering theory, `holopy.scattering.theory.MieLens`,
   which describes the effect of the objective lens on recorded holograms
   of spherical particles. This new theory is especially useful if you
   want to analyze particles below the microscope focus.
 - There are two new inference strategies: a global optimizer CMA-ES
-  strategy, under `holopy.inference.cmaes.CmaStrategy`, and a FIXME...
+  strategy, under `holopy.inference.cmaes.CmaStrategy`, and a
+  least-squares strategy which uses `scipy.optimize.leastsq` instead of
+  the `Nmpfit` code.
 
 
 Deprecations
@@ -44,6 +47,7 @@ been fixed:
   fixed.
 - Tied parameters in inference calculations works correctly on edge
   cases.
+- Inference should work with more generic scatterers.
 
 
 Improvements
@@ -58,12 +62,10 @@ Improvements
   and for CMA inference strategies can now be specified.
 
 
-Future Changes
---------------
-
 Compatibility Notes
 --------------------
- - emcee v3 ??
+ - We are curently phasing out support for pre-3.6 Python versions (due
+   to ordered vs unordered dicts).
 
 
 Developer Notes
