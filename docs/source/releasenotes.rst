@@ -1,5 +1,9 @@
+.. _releasenotes:
+
+
+************************
 Holopy 3.3 Release Notes
-========================
+************************
 
 
 New Features
@@ -40,6 +44,7 @@ Bugfixes
 --------
 In addition to many minor bugfixes, the following user-facing bugs have
 been fixed:
+
 - `load_average` now works with a cropped reference image.
 - Issues with loss of fidelity on saving and loading objects have been
   fixed.
@@ -64,8 +69,8 @@ Improvements
 
 Compatibility Notes
 --------------------
- - We are curently phasing out support for pre-3.6 Python versions (due
-   to ordered vs unordered dicts).
+- We are curently phasing out support for pre-3.6 Python versions (due
+  to ordered vs unordered dicts).
 
 
 Developer Notes
