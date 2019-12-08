@@ -56,7 +56,6 @@ class testEmcee(unittest.TestCase):
                                           == r.get_log_prob().max()]
         assert_allclose(should_be_onehalf, .5, rtol=.001)
 
-
     @attr("fast")
     def test_EmceeStrategy(self):
         data = np.array(.5)
