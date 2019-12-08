@@ -5,10 +5,14 @@ python:
 
 env:
 <<<<<<< HEAD
+<<<<<<< HEAD
   - DEPS="scipy pyyaml pillow pandas h5py=2.9 sphinx matplotlib nose emcee=2.2.1 schwimmbad numpy xarray h5netcdf yaml<0.2"
 =======
   - DEPS="scipy pyyaml pillow pandas h5py=2.9 sphinx matplotlib nose emcee schwimmbad numpy xarray h5netcdf"
 >>>>>>> remove emcee version 2 requiremnt for travis
+=======
+  - DEPS="scipy pyyaml pillow pandas h5py=2.9 sphinx matplotlib nose emcee schwimmbad numpy xarray h5netcdf yaml<0.2"
+>>>>>>> Pin travis yaml<0.2 for ODict support
 
 branches:
   except:
