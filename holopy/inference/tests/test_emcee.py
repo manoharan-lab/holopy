@@ -61,7 +61,7 @@ class testEmcee(unittest.TestCase):
     def test_EmceeStrategy(self):
         data = np.array(.5)
         mod = SimpleModel(1)
-        strat = EmceeStrategy(10, 5, None, None, seed=48)
+        strat = EmceeStrategy(10, 15, None, None, seed=48)
         r = strat.sample(mod, data)
         assert_allclose(r._parameters, .5, rtol=.001)
 
@@ -78,9 +78,7 @@ class TestSubsetTempering(unittest.TestCase):
             warnings.simplefilter('ignore')
             inference_result = strat.sample(mod, holo)
         desired_alpha = np.array([0.650348])
-        is_ok = np.allclose(
-            inference_result._parameters, desired_alpha, rtol=1e-3)
-        self.assertTrue(is_ok)
+        assert_allclose(inference_result._parameters, desired_alpha, rtol=5e-3)
 
     @attr("slow")
     def test_perfectlens_subset_tempering(self):
