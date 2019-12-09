@@ -82,10 +82,16 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         if not minimizer_info.success:
             warnings.warn("Minimizer Convergence Failed, your results \
                                 may not be correct.")
-        perrors = self._estimate_gaussian_errors_from_fit(minimizer_info)
-        assert len(parameters) == perrors.size
-        intervals = [UncertainValue(fitted_pars[par.name], err, name=par.name)
-                     for err, par in zip(perrors, parameters)]
+
+        unit_errors = self._calculate_unit_noise_errors_from_fit(minimizer_info)
+        noise = model._find_noise(fitted_pars, data)
+        errors_scaled = noise * unit_errors
+        errors = self.unscale_pars_from_minimizer(parameters, errors_scaled)
+        intervals = [
+            UncertainValue(
+                fitted_pars[par.name], errors[par.name], name=par.name)
+            for err, par in zip(errors, parameters)]
+
         # timing decorator...
         d_time = time.time() - time_start
         kwargs = {'intervals': intervals, 'minimizer_info': minimizer_info}
@@ -99,13 +105,11 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         return result_pars, fitresult
 
     @classmethod
-    def _estimate_gaussian_errors_from_fit(cls, minimizer_info):
+    def _calculate_unit_noise_errors_from_fit(cls, minimizer_info):
         jacobian = minimizer_info.jac
-        n_data_points = jacobian.shape[0]
-        jtj = np.dot(jacobian.T, jacobian)
+        # For some reason the convention in the residuals function
+        # re-scales the residuals by sqrt(2), so we adjust back:
+        jtj = np.dot(jacobian.T, jacobian) * 2
         jtjinv = np.linalg.inv(jtj)
-        noise_variance_estimate = minimizer_info.cost / n_data_points
-        posterior_variance = np.diag(jtjinv) * noise_variance_estimate
-        posterior_std = np.sqrt(posterior_variance)
-        return posterior_std
+        return np.sqrt(np.diag(jtjinv))
 
