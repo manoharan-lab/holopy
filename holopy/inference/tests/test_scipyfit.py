@@ -116,6 +116,27 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
         delta_loglikelihood = loglikelihood_best - loglikelihood_1sig
         self.assertAlmostEqual(delta_loglikelihood, 0.5, places=2)
 
+    @attr('medium')
+    @unittest.skip('Nmpfit does not unscale uncertainties')  # expectedFailure
+    def test_fitted_uncertainties_similar_to_nmpfit(self):
+        data = make_fake_data()
+        model = make_model()
+
+        fitter_scipy = LeastSquaresScipyStrategy(npixels=300)
+        result_scipy = fitter_scipy.fit(model, data)
+        uncertainties_scipy = pack_uncertainties_into_dict(result_scipy)
+
+        fitter_nmp = NmpfitStrategy(npixels=300)
+        result_nmp = fitter_nmp.fit(model, data)
+        uncertainties_nmp = pack_uncertainties_into_dict(result_nmp)
+
+        for key in uncertainties_scipy.keys():
+            self.assertTrue(
+                np.isclose(
+                    uncertainties_scipy[key],
+                    uncertainties_nmp[key],
+                    rtol=0.1, atol=0))
+
 
 def make_fake_data():
     detector = holopy.detector_grid([40, 40], spacing=2.878e-7)
