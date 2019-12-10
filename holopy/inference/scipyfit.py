@@ -72,6 +72,7 @@ class LeastSquaresScipyStrategy(HoloPyObject):
                 parameters, rescaled_values)
             noise = model._find_noise(unscaled_values, data)
             residuals = model._residuals(unscaled_values, data, noise)
+            # FIXME why isn't this just `sqrt(model.lnprior)`?
             prior = np.sqrt(guess_prior - model.lnprior(unscaled_values))
             np.append(residuals, prior)
             return residuals
@@ -107,9 +108,7 @@ class LeastSquaresScipyStrategy(HoloPyObject):
     @classmethod
     def _calculate_unit_noise_errors_from_fit(cls, minimizer_info):
         jacobian = minimizer_info.jac
-        # For some reason the convention in the residuals function
-        # re-scales the residuals by sqrt(2), so we adjust back:
-        jtj = np.dot(jacobian.T, jacobian) * 2
+        jtj = np.dot(jacobian.T, jacobian)
         jtjinv = np.linalg.inv(jtj)
         return np.sqrt(np.diag(jtjinv))
 
