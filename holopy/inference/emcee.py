@@ -136,14 +136,15 @@ class TemperedStrategy(EmceeStrategy):
 
 def emcee_samples_DataArray(sampler, parameters):
     acceptance_fraction = sampler.acceptance_fraction.mean()
-    return xr.DataArray(sampler.chain, dims=['walker', 'chain', 'parameter'],
+    return xr.DataArray(sampler.get_chain(),
+                        dims=['walker', 'chain', 'parameter'],
                         coords={'parameter': [p.name for p in parameters]},
                         attrs={"acceptance_fraction": acceptance_fraction})
 
 
 def emcee_lnprobs_DataArray(sampler):
     acceptance_fraction = sampler.acceptance_fraction.mean()
-    return xr.DataArray(sampler.lnprobability, dims=['walker', 'chain'],
+    return xr.DataArray(sampler.get_log_prob(), dims=['walker', 'chain'],
                         attrs={"acceptance_fraction": acceptance_fraction})
 
 
@@ -167,4 +168,3 @@ def sample_emcee(model, data, nwalkers, nsamples, walker_initial_pos,
         pool.close()
 
     return sampler
-

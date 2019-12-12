@@ -52,9 +52,9 @@ class testEmcee(unittest.TestCase):
         mod = SimpleModel(1)
         p0 = np.linspace(0, 1, nwalkers*ndim).reshape((nwalkers, ndim))
         r = sample_emcee(mod, data, nwalkers, 500, p0, parallel=None, seed=40)
-        should_be_onehalf = r.chain[r.lnprobability == r.lnprobability.max()]
+        should_be_onehalf = r.get_chain()[r.get_log_prob()
+                                          == r.get_log_prob().max()]
         assert_allclose(should_be_onehalf, .5, rtol=.001)
-
 
     @attr("fast")
     def test_EmceeStrategy(self):
