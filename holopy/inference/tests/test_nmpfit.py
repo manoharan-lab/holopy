@@ -213,7 +213,7 @@ def test_serialization():
 
 def test_integer_correctness():
     # we keep having bugs where the fitter doesn't
-    schema = detector_grid(shape = 10, spacing = 1)
+    schema = detector_grid(shape=10, spacing=1)
     s = Sphere(center = (10.2, 9.8, 10.3), r = .5, n = 1.58)
     holo = calc_holo(schema, s, illum_wavelen = .660, medium_index = 1.33,
                      illum_polarization = (1, 0))
