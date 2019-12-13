@@ -20,6 +20,8 @@ import numpy as np
 
 from holopy.inference import prior
 from holopy.inference.model import Model
+from holopy.inference.result import SamplingResult
+from holopy.inference.emcee import EmceeStrategy
 from holopy.scattering import Sphere
 
 class SimpleModel(Model):
@@ -36,3 +38,8 @@ class SimpleModel(Model):
         x = par_vals
         data = np.array(data)
         return -((x[self._parameters[-1].name] - data)**2).sum()
+
+    def sample(self, data, strategy=None):
+        strategy = self.validate_strategy(strategy, 'sample')
+        kwargs = {'samples': None, 'lnprobs': None, 'intervals': None}
+        return SamplingResult(data, self, strategy, 0, kwargs)
