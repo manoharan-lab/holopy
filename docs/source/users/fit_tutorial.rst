@@ -59,88 +59,6 @@ its radius, but hold its refractive index fixed.
 
     fit_result = fit(data_holo, guess_sphere, parameters=['x', 'y', 'z', 'r'])
 
-..  testoutput::
-    :options: +NORMALIZE_WHITESPACE
-
-    Iter       1    CHI-SQUARE =  89.69171717  DOF =  39996
-       r = 1
-       center.0 = 1
-       center.1 = 1
-       center.2 = 1
-       alpha = 1
-    Iter       2    CHI-SQUARE =  51.31364864  DOF =  39996
-       r = 1.126802082
-       center.0 = 1.003779108
-       center.1 = 0.9972397803
-       center.2 = 1.051451235
-       alpha = 0.6726765427
-    Iter       3    CHI-SQUARE =  25.05557602  DOF =  39996
-       r = 1.335940375
-       center.0 = 1.008268023
-       center.1 = 0.9927218753
-       center.2 = 1.140799516
-       alpha = 0.6727595631
-    Iter       4    CHI-SQUARE =  17.95474917  DOF =  39996
-       r = 1.064910137
-       center.0 = 1.00674047
-       center.1 = 0.992639106
-       center.2 = 1.095493975
-       alpha = 0.929853769
-    Iter       5    CHI-SQUARE =  14.56983945  DOF =  39996
-       r = 1.148838566
-       center.0 = 1.007100046
-       center.1 = 0.9928651515
-       center.2 = 1.115292363
-       alpha = 0.9635979762
-    Iter       6    CHI-SQUARE =  14.37605814  DOF =  39996
-       r = 1.101757106
-       center.0 = 1.007121683
-       center.1 = 0.9928318618
-       center.2 = 1.106051064
-       alpha = 1.021438237
-    Iter       7    CHI-SQUARE =  14.33982428  DOF =  39996
-       r = 1.116807036
-       center.0 = 1.007092224
-       center.1 = 0.9928436159
-       center.2 = 1.109551173
-       alpha = 1.004426143
-    Iter       8    CHI-SQUARE =  14.3371398  DOF =  39996
-       r = 1.111946278
-       center.0 = 1.007101556
-       center.1 = 0.9928406008
-       center.2 = 1.108616751
-       alpha = 1.011973864
-    Iter       9    CHI-SQUARE =  14.33692949  DOF =  39996
-       r = 1.113124068
-       center.0 = 1.007097504
-       center.1 = 0.9928416602
-       center.2 = 1.10889507
-       alpha = 1.010292855
-    Iter      10    CHI-SQUARE =  14.33691361  DOF =  39996
-       r = 1.112757113
-       center.0 = 1.007098099
-       center.1 = 0.9928414158
-       center.2 = 1.108824344
-       alpha = 1.010839049
-    Iter      11    CHI-SQUARE =  14.33691253  DOF =  39996
-       r = 1.112831854
-       center.0 = 1.00709773
-       center.1 = 0.992841478
-       center.2 = 1.108841643
-       alpha = 1.010728759
-    Iter      12    CHI-SQUARE =  14.3369125  DOF =  39996
-       r = 1.112815902
-       center.0 = 1.007097803
-       center.1 = 0.992841465
-       center.2 = 1.108839042
-       alpha = 1.010752456
-    Iter      13    CHI-SQUARE =  14.3369125  DOF =  39996
-       r = 1.112818641
-       center.0 = 1.007097795
-       center.1 = 0.992841469
-       center.2 = 1.108840003
-       alpha = 1.010749038
-
 The :func:`.fit` function automatically runs :func:`.calc_holo` on many
 different sets of parameter values to find the combination that gives the best
 match to the experimental ``data_holo``. We get back a :class:`.FitResult`
@@ -179,85 +97,6 @@ radius - here, with a mean of 0.5 and standard deviation of 0.05 micrometers.
     par_sphere = Sphere(n=1.58, r=prior.Gaussian(0.5, 0.05), center=[x, y, z])
     model = ExactModel(scatterer=par_sphere, calc_func=calc_holo)
     fit_result = fit(data_holo, model)
-
-..  testoutput::
-    :options: +NORMALIZE_WHITESPACE
-
-    Iter       1    CHI-SQUARE =  2427226.876  DOF =  39997
-       r = 1  
-       center.0 = 1  
-       center.1 = 1  
-       center.2 = 1  
-    Iter       2    CHI-SQUARE =  1452264.089  DOF =  39997
-       r = 0.898518235  
-       center.0 = 1.003214606  
-       center.1 = 0.9978521719  
-       center.2 = 1.014361149  
-    Iter       3    CHI-SQUARE =  806449.818  DOF =  39997
-       r = 0.9073627025  
-       center.0 = 1.005863598  
-       center.1 = 0.9957062884  
-       center.2 = 1.045412833  
-    Iter       4    CHI-SQUARE =  485324.5589  DOF =  39997
-       r = 0.9452177325  
-       center.0 = 1.006911119  
-       center.1 = 0.9939173194  
-       center.2 = 1.07198883  
-    Iter       5    CHI-SQUARE =  420078.987  DOF =  39997
-       r = 0.9588134486  
-       center.0 = 1.006953804  
-       center.1 = 0.9931590131  
-       center.2 = 1.084210817  
-    Iter       6    CHI-SQUARE =  411628.2723  DOF =  39997
-       r = 0.9589424617  
-       center.0 = 1.006880613  
-       center.1 = 0.9929427182  
-       center.2 = 1.088112307  
-    Iter       7    CHI-SQUARE =  410494.0376  DOF =  39997
-       r = 0.9574525307  
-       center.0 = 1.006838214  
-       center.1 = 0.992886033  
-       center.2 = 1.089302588  
-    Iter       8    CHI-SQUARE =  410331.6001  DOF =  39997
-       r = 0.9565875508  
-       center.0 = 1.006819237  
-       center.1 = 0.9928712659  
-       center.2 = 1.089696833  
-    Iter       9    CHI-SQUARE =  410307.9575  DOF =  39997
-       r = 0.9562069239  
-       center.0 = 1.006811423  
-       center.1 = 0.9928673014  
-       center.2 = 1.089836875  
-    Iter      10    CHI-SQUARE =  410304.5094  DOF =  39997
-       r = 0.9560533245  
-       center.0 = 1.006808322  
-       center.1 = 0.9928661767  
-       center.2 = 1.08988857  
-    Iter      11    CHI-SQUARE =  410304.0062  DOF =  39997
-       r = 0.9559935222  
-       center.0 = 1.006807116  
-       center.1 = 0.9928658363  
-       center.2 = 1.089908104  
-    Iter      12    CHI-SQUARE =  410303.9332  DOF =  39997
-       r = 0.9559702453  
-       center.0 = 1.00680665  
-       center.1 = 0.9928657253  
-       center.2 = 1.089915414  
-    Iter      13    CHI-SQUARE =  410303.9225  DOF =  39997
-       r = 0.9559614218  
-       center.0 = 1.006806474  
-       center.1 = 0.9928656889  
-       center.2 = 1.089918235  
-    Iter      14    CHI-SQUARE =  410303.921  DOF =  39997
-       r = 0.9559580746  
-       center.0 = 1.006806407  
-       center.1 = 0.9928656759  
-       center.2 = 1.089919325  
-    Iter      15    CHI-SQUARE =  410303.9207  DOF =  39997
-       r = 0.9559566861  
-       center.0 = 1.006806381  
-       center.1 = 0.9928656724  
-       center.2 = 1.089919691  
 
 Here we have used an :class:`.ExactModel` which takes a function ``calc_func``
 to apply on the :class:`.Scatterer` (we have used :func:`.calc_holo` here).
@@ -365,7 +204,7 @@ place during an interactive session. ::
     cma_fit_strategy.seed = 1234
     hp.save('cma_strategy_file.h5', cma_fit_strategy)
     strategy_result = model.fit(data_holo, cma_fit_strategy)
-    
+
 Running the :meth:`.Model.fit` method is the same as calling
 :func:`.fit`, but with the option to customize how the algorithm runs through
 the :class:`.CmaStrategy` object. In the example above, we have adjusted
@@ -397,7 +236,7 @@ In the most recent example, we evaluated the holograms at the locations of only
 500 pixels in the experimental image. This is because a hologram usually
 contains far more information than is needed to estimate your parameters of
 interest. You can often get a significantly faster fit with little or no loss
-in accuracy by fitting to only a random fraction of the pixels in a hologram. 
+in accuracy by fitting to only a random fraction of the pixels in a hologram.
 
 You will want to do some testing to make sure that you still get
 acceptable answers with your data, but our investigations have shown

@@ -37,7 +37,7 @@ from holopy.scattering.errors import (
 from holopy.inference.result import FitResult, UncertainValue
 
 
-# FIXME the errors from Nmpfit strategy seem to be incorrect! They do
+# FIXME the errors from NmpfitStrategy seem to be incorrect! They do
 # not agree with those from scipy least squares
 
 
@@ -51,7 +51,7 @@ class NmpfitStrategy(HoloPyObject):
     npixels: None
         Fit only a randomly selected fraction of the data points in data
     quiet: Boolean
-        If True, suppress output on minimizer convergence.
+        If False, print output on minimizer convergence. Default is True
     ftol: float
         Convergence criterion for minimizer: converges if actual and predicted
         relative reductions in chi squared <= ftol
@@ -79,7 +79,7 @@ class NmpfitStrategy(HoloPyObject):
     you need to supply a custom residual function.
 
     """
-    def __init__(self, npixels=None, quiet=False, ftol=1e-10, xtol=1e-10,
+    def __init__(self, npixels=None, quiet=True, ftol=1e-10, xtol=1e-10,
                  gtol=1e-10, damp=0, maxiter=100, seed=None):
         self.ftol = ftol
         self.xtol = xtol
