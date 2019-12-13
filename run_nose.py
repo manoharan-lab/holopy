@@ -20,7 +20,7 @@ from subprocess import call
 import sys
 import multiprocessing
 
-t = ['nosetests', '-a', '!slow']
+t = ['nosetests']
 
 if len(sys.argv) > 1 and sys.argv[1] == 'coverage':
     t.extend(['--with-coverage', '--cover-package=holopy', '--cover-erase'])
