@@ -41,8 +41,8 @@ class TestUserFacingFunctions(unittest.TestCase):
     def test_cannot_sample_without_model(self):
         self.assertRaises(ValueError, sample, DATA, Sphere())
 
-    @attr('medium')
-    def test_sample_function_samples(self):
+    @attr('fast')
+    def test_sample_function_calls_model_sample(self):
         result = sample(DATA, SimpleModel())
         self.assertTrue(isinstance(result, SamplingResult))
         self.assertTrue(isinstance(result.strategy, EmceeStrategy))
