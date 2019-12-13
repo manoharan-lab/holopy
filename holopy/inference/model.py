@@ -176,7 +176,7 @@ class Model(HoloPyObject):
 
     def _residuals(self, pars, data, noise):
         forward_model = self.forward(pars, data)
-        return ((forward_model - data) / (np.sqrt(2) * noise)).values
+        return ((forward_model - data) / noise).values
 
     def lnlike(self, pars, data):
         """
@@ -198,7 +198,7 @@ class Model(HoloPyObject):
         log_likelihood = ensure_scalar(
             -N/2 * np.log(2 * np.pi) -
             N * np.mean(np.log(ensure_array(noise_sd))) -
-            (self._residuals(pars, data, noise_sd)**2).sum())
+            0.5 * (self._residuals(pars, data, noise_sd)**2).sum())
         return log_likelihood
 
     def fit(self, data, strategy=None):

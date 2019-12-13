@@ -28,7 +28,7 @@ class LeastSquaresScipyStrategy(HoloPyObject):
             'gtol': self.gtol,
             'max_nfev': self.max_nfev,
             'jac': '2-point',
-            'method': 'lm',  # FIXME
+            'method': 'lm',
             'loss': 'linear',
             }
 
@@ -65,15 +65,17 @@ class LeastSquaresScipyStrategy(HoloPyObject):
             data = flat(data)
         else:
             data = make_subset_data(data, pixels=self.npixels)
-        guess_prior = model.lnprior({par.name:par.guess for par in parameters})
+        guess_lnprior = model.lnprior(
+            {par.name:par.guess for par in parameters})
 
         def residual(rescaled_values):
             unscaled_values = self.unscale_pars_from_minimizer(
                 parameters, rescaled_values)
             noise = model._find_noise(unscaled_values, data)
             residuals = model._residuals(unscaled_values, data, noise)
-            prior = np.sqrt(guess_prior - model.lnprior(unscaled_values))
-            np.append(residuals, prior)
+            ln_prior = model.lnprior(unscaled_values) - guess_lnprior
+            zscore_prior = np.sqrt(2 * -ln_prior)
+            np.append(residuals, zscore_prior)
             return residuals
 
         # The only work here
@@ -82,13 +84,19 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         if not minimizer_info.success:
             warnings.warn("Minimizer Convergence Failed, your results \
                                 may not be correct.")
-        perrors = self._estimate_error_from_fit(minimizer_info, data.size)
-        assert len(parameters) == perrors.size
-        intervals = [UncertainValue(fitted_pars[par.name], err, name=par.name)
-                     for err, par in zip(perrors, parameters)]
+
+        unit_errors = self._calculate_unit_noise_errors_from_fit(minimizer_info)
+        noise = model._find_noise(fitted_pars, data)
+        errors_scaled = noise * unit_errors
+        errors = self.unscale_pars_from_minimizer(parameters, errors_scaled)
+        intervals = [
+            UncertainValue(
+                fitted_pars[par.name], errors[par.name], name=par.name)
+            for err, par in zip(errors, parameters)]
+
         # timing decorator...
         d_time = time.time() - time_start
-        kwargs = {'intervals':intervals, 'minimizer_info':minimizer_info}
+        kwargs = {'intervals': intervals, 'minimizer_info': minimizer_info}
         return FitResult(data, model, self, d_time, kwargs)
 
     def minimize(self, parameters, residuals_function):
@@ -98,11 +106,10 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         result_pars = self.unscale_pars_from_minimizer(parameters, fitresult.x)
         return result_pars, fitresult
 
-    def _estimate_error_from_fit(self, minimizer_info, n_data_points):
-        # Estimates 1-sigma gaussian errors
+    @classmethod
+    def _calculate_unit_noise_errors_from_fit(cls, minimizer_info):
         jacobian = minimizer_info.jac
         jtj = np.dot(jacobian.T, jacobian)
         jtjinv = np.linalg.inv(jtj)
-        noise_estimate = np.sqrt(minimizer_info.cost / n_data_points)
-        parameter_uncertainties = np.diag(jtjinv) * noise_estimate
-        return parameter_uncertainties
+        return np.sqrt(np.diag(jtjinv))
+

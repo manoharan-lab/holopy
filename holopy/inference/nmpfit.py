@@ -32,8 +32,13 @@ from holopy.core.metadata import flat, make_subset_data
 from holopy.core.math import chisq, rsq
 from holopy.inference.third_party import nmpfit
 from holopy.inference.prior import Uniform
-from holopy.scattering.errors import ParameterSpecificationError, MissingParameter
+from holopy.scattering.errors import (
+    ParameterSpecificationError, MissingParameter)
 from holopy.inference.result import FitResult, UncertainValue
+
+
+# FIXME the errors from NmpfitStrategy seem to be incorrect! They do
+# not agree with those from scipy least squares
 
 
 class NmpfitStrategy(HoloPyObject):
@@ -46,7 +51,7 @@ class NmpfitStrategy(HoloPyObject):
     npixels: None
         Fit only a randomly selected fraction of the data points in data
     quiet: Boolean
-        If True, suppress output on minimizer convergence.
+        If False, print output on minimizer convergence. Default is True
     ftol: float
         Convergence criterion for minimizer: converges if actual and predicted
         relative reductions in chi squared <= ftol
@@ -74,8 +79,8 @@ class NmpfitStrategy(HoloPyObject):
     you need to supply a custom residual function.
 
     """
-    def __init__(self, npixels=None, quiet = False, ftol = 1e-10, xtol = 1e-10,
-                    gtol = 1e-10, damp = 0, maxiter = 100, seed=None):
+    def __init__(self, npixels=None, quiet=True, ftol=1e-10, xtol=1e-10,
+                 gtol=1e-10, damp=0, maxiter=100, seed=None):
         self.ftol = ftol
         self.xtol = xtol
         self.gtol = gtol
@@ -85,9 +90,10 @@ class NmpfitStrategy(HoloPyObject):
         self.npixels = npixels
         self.seed = seed
 
-    def pars_from_minimizer(self, parameters, values):
+    def unscale_pars_from_minimizer(self, parameters, values):
         assert len(parameters) == len(values)
-        return {par.name: par.unscale(value) for par, value in zip(parameters, values)}
+        return {par.name: par.unscale(value)
+                for par, value in zip(parameters, values)}
 
     def fit(self, model, data):
         """
@@ -96,15 +102,16 @@ class NmpfitStrategy(HoloPyObject):
         Parameters
         ----------
         model : :class:`~holopy.fitting.model.Model` object
-            A model describing the scattering system which leads to your data and
-            the parameters to vary to fit it to the data
+            A model describing the scattering system which leads to your
+            data and the parameters to vary to fit it to the data
         data : xarray.DataArray
             The data to fit
 
         Returns
         -------
         result : :class:`FitResult`
-            an object containing the best fit parameters and information about the fit
+            an object containing the best fit parameters and information
+            about the fit
         """
         time_start = time.time()
         parameters = model._parameters
@@ -131,13 +138,16 @@ class NmpfitStrategy(HoloPyObject):
         else:
             setattr(minimizer_info, 'converged', True)
 
-        perror = minimizer_info.perror
-        if perror is None:
-            perror = [0] * len(parameters)
-        intervals = [UncertainValue(fitted_pars[par.name], diff, name=par.name)
-                     for diff, par in zip(perror, parameters)]
+        # Getting errors:
+        errors_rescaled = minimizer_info.perror
+        if errors_rescaled is None:
+            errors_rescaled = [0] * len(parameters)
+        errors = self.unscale_pars_from_minimizer(parameters, errors_rescaled)
+        intervals = [
+            UncertainValue(fitted_pars[name], errors[name], name=name)
+            for name in errors.keys()]
         d_time = time.time() - time_start
-        return FitResult(data, model, self, d_time, 
+        return FitResult(data, model, self, d_time,
                      {'intervals': intervals, 'mpfit_details':minimizer_info})
 
     def minimize(self, parameters, obj_func):
@@ -155,15 +165,19 @@ class NmpfitStrategy(HoloPyObject):
 
         def resid_wrapper(p, fjac=None):
             status = 0
-            return [status, obj_func(self.pars_from_minimizer(parameters, p))]
+            out = obj_func(self.unscale_pars_from_minimizer(parameters, p))
+            return [status, out]
 
         # now fit it
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
-            fitresult = nmpfit.mpfit(resid_wrapper, parinfo=nmp_pars, ftol = self.ftol,
-                                 xtol = self.xtol, gtol = self.gtol, damp = self.damp,
-                                 maxiter = self.maxiter, quiet = self.quiet)
+            fitresult = nmpfit.mpfit(
+                resid_wrapper, parinfo=nmp_pars, ftol = self.ftol,
+                xtol = self.xtol, gtol = self.gtol, damp = self.damp,
+                maxiter = self.maxiter, quiet = self.quiet)
 
-        result_pars = self.pars_from_minimizer(parameters, fitresult.params)
+        result_pars = self.unscale_pars_from_minimizer(
+            parameters, fitresult.params)
 
         return result_pars, fitresult
+
