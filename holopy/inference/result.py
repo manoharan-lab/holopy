@@ -253,7 +253,8 @@ class FitResult(HoloPyObject):
 class SamplingResult(FitResult):
     def __init__(self, data, model, strategy, time, kwargs={}):
         super().__init__(data, model, strategy, time, kwargs)
-        self.intervals = self._calc_intervals()
+        if not hasattr(self, 'intervals'):
+            self.intervals = self._calc_intervals()
 
     def _calc_intervals(self):
         P_LOW = 15.865525393145708  # 100*(1-scipy.special.erf(1/np.sqrt(2)))/2
