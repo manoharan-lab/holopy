@@ -49,14 +49,12 @@ def sample_one_sigma_gaussian(result):
 
 class EmceeStrategy(HoloPyObject):
     def __init__(self, nwalkers=100, nsamples=1000, npixels=None,
-                 walker_initial_pos=None, parallel='auto',
-                 cleanup_threads=True, seed=None):
+                 walker_initial_pos=None, parallel='auto', seed=None):
         self.nwalkers = nwalkers
         self.nsamples = nsamples
         self.npixels = npixels
         self.walker_initial_pos = walker_initial_pos
         self.parallel = parallel
-        self.cleanup_threads = cleanup_threads
         self.seed = seed
 
     def sample(self, model, data, nsamples=None, walker_initial_pos=None):
@@ -81,7 +79,6 @@ class EmceeStrategy(HoloPyObject):
         sampler = sample_emcee(model=model, data=data, nwalkers=self.nwalkers,
                                walker_initial_pos=self.walker_initial_pos,
                                nsamples=self.nsamples, parallel=self.parallel,
-                               cleanup_threads=self.cleanup_threads,
                                seed=self.seed)
 
         samples = emcee_samples_DataArray(sampler, model._parameters)
@@ -148,7 +145,7 @@ def emcee_lnprobs_DataArray(sampler):
 
 
 def sample_emcee(model, data, nwalkers, nsamples, walker_initial_pos,
-                 parallel='auto', cleanup_threads=True, seed=None):
+                 parallel='auto', seed=None):
     if _EMCEE_MISSING:
         raise DependencyMissing(
             'emcee', "Install it with \'conda install -c conda-forge emcee\'.")
