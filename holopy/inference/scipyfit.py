@@ -28,7 +28,7 @@ class LeastSquaresScipyStrategy(HoloPyObject):
             'gtol': self.gtol,
             'max_nfev': self.max_nfev,
             'jac': '2-point',
-            'method': 'lm',  # FIXME
+            'method': 'lm',
             'loss': 'linear',
             }
 
@@ -65,16 +65,17 @@ class LeastSquaresScipyStrategy(HoloPyObject):
             data = flat(data)
         else:
             data = make_subset_data(data, pixels=self.npixels)
-        guess_prior = model.lnprior({par.name:par.guess for par in parameters})
+        guess_lnprior = model.lnprior(
+            {par.name:par.guess for par in parameters})
 
         def residual(rescaled_values):
             unscaled_values = self.unscale_pars_from_minimizer(
                 parameters, rescaled_values)
             noise = model._find_noise(unscaled_values, data)
             residuals = model._residuals(unscaled_values, data, noise)
-            # FIXME why isn't this just `sqrt(model.lnprior)`?
-            prior = np.sqrt(guess_prior - model.lnprior(unscaled_values))
-            np.append(residuals, prior)
+            ln_prior = model.lnprior(unscaled_values) - guess_lnprior
+            zscore_prior = np.sqrt(2 * -ln_prior)
+            np.append(residuals, zscore_prior)
             return residuals
 
         # The only work here
