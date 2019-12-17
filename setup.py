@@ -84,6 +84,7 @@ if __name__ == "__main__":
                 if l[0] != '#']
 
     tests_require = ['memory_profiler']
+
     setup(configuration=configuration,
           name='HoloPy',
           version=__version__,

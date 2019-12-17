@@ -73,7 +73,6 @@ def _get_holopy_install_dir(mode):
     # We only intend for this function to run on Windows with a default python
     # installation (i.e. default PYTHONPATH.) Milage may vary otherwise.
     if mode == 'install':
-        sitepackages = list(site.getsitepackages())
         hp_dir = [path for path in site.getsitepackages()
                if 'site-packages' in path]
         assert len(hp_dir) == 1
