@@ -45,7 +45,8 @@ Bugfixes
 In addition to many minor bugfixes, the following user-facing bugs have
 been fixed:
 
-- `load_average` now works with a cropped reference image.
+- `load_average` now works with a cropped reference image and uses less
+  memory on large image stacks.
 - Issues with loss of fidelity on saving and loading objects have been
   fixed.
 - A bug where `hp.propagate` failed when `gradient_filter=True` has been
@@ -53,6 +54,11 @@ been fixed:
 - Tied parameters in inference calculations works correctly on edge
   cases.
 - Inference should work with more generic scatterers.
+- The Fortran code should be easier to build and install on Windows
+  machines. This is partially done via a post-install script that
+  checks that files are written to the correct location (which corrects
+  some compiler differences between Windows and Linux). We still
+  recommend installing Holopy with Anaconda.
 
 
 Improvements
