@@ -14,7 +14,7 @@ New Features
   convenience functions available to the user both for the inference
   strategies and the inference results. One noticeable change with this
   is that the least-squares based fitting algorithms such as `Nmpfit`
-  can now work correctly priors, including with non-uniform priors.
+  now work correctly with priors, including with non-uniform priors.
   There is also a new, user-friendly functionality for inference in
   `holopy`. Moreover, the inference pipelines can work with arbitrary
   user-defined functions instead of just holograms.
@@ -58,7 +58,7 @@ been fixed:
   machines. This is partially done via a post-install script that
   checks that files are written to the correct location (which corrects
   some compiler differences between Windows and Linux). We still
-  recommend installing Holopy with Anaconda.
+  recommend installing Holopy with conda.
 
 
 Improvements
