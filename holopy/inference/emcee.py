@@ -133,7 +133,12 @@ class TemperedStrategy(EmceeStrategy):
 
 def emcee_samples_DataArray(sampler, parameters):
     acceptance_fraction = sampler.acceptance_fraction.mean()
-    return xr.DataArray(sampler.get_chain(),
+    try:
+        chain = sampler.get_chain()
+    except AttributeError:
+        # emcee version < 3.0.0
+        chain = sampler.chain
+    return xr.DataArray(chain,
                         dims=['walker', 'chain', 'parameter'],
                         coords={'parameter': [p.name for p in parameters]},
                         attrs={"acceptance_fraction": acceptance_fraction})
@@ -141,7 +146,12 @@ def emcee_samples_DataArray(sampler, parameters):
 
 def emcee_lnprobs_DataArray(sampler):
     acceptance_fraction = sampler.acceptance_fraction.mean()
-    return xr.DataArray(sampler.get_log_prob(), dims=['walker', 'chain'],
+    try:
+        lnprob = sampler.get_log_prob()
+    except AttributeError:
+        # emcee version < 3.0.0
+        lnprob = sampler.lnprobability
+    return xr.DataArray(lnprob, dims=['walker', 'chain'],
                         attrs={"acceptance_fraction": acceptance_fraction})
 
 
