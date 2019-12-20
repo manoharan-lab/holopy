@@ -51,7 +51,8 @@ class testEmcee(unittest.TestCase):
         ndim = 1
         mod = SimpleModel(1)
         p0 = np.linspace(0, 1, nwalkers*ndim).reshape((nwalkers, ndim))
-        r = sample_emcee(mod, data, nwalkers, 500, p0, parallel=None, seed=40)
+        sampler = sample_emcee(
+            mod, data, nwalkers, 500, p0, parallel=None, seed=40)
         try:
             chain = sampler.get_chain()
             lnprob = sampler.get_log_prob()
