@@ -30,15 +30,13 @@ C compilers, as well as f2py and cython. On Ubuntu, you will need the
 "gfortran" and "python-dev" packages installed.
 '''
 
-import os
-from os.path import join
+from os.path import join, dirname, realpath
 import setuptools
 import sys
 
 import nose
-from numpy.distutils.core import setup, Extension
+from numpy.distutils.core import setup
 from numpy.distutils.misc_util import Configuration
-import setuptools
 
 from post_install import PostDevelopCommand, PostInstallCommand
 
@@ -50,7 +48,7 @@ except ImportError:
 HOLOPY_NOSE_PLUGIN_LOCATION = ('holopycatchwarnings = '
                                'holopy.core.tests.common:HoloPyCatchWarnings')
 
-hp_root = os.path.dirname(os.path.realpath(sys.argv[0]))
+hp_root = dirname(realpath(sys.argv[0]))
 
 
 def configuration(parent_package='', top_path=''):
@@ -80,7 +78,7 @@ def configuration(parent_package='', top_path=''):
 
 if __name__ == "__main__":
     requires = [l for l in
-                open(os.path.join(hp_root, "requirements.txt")).readlines()
+                open(join(hp_root, "requirements.txt")).readlines()
                 if l[0] != '#']
 
     tests_require = ['memory_profiler']
