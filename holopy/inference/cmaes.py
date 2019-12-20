@@ -37,15 +37,15 @@ except ModuleNotFoundError:
 
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.metadata import make_subset_data
-from holopy.core.utils import choose_pool
+from holopy.core.utils import choose_pool, LnpostWrapper
 from holopy.core.errors import DependencyMissing
 from holopy.inference import prior
-from holopy.inference.model import LnpostWrapper
 from holopy.inference.result import FitResult, UncertainValue
+
 
 class CmaStrategy(HoloPyObject):
     """
-    Inference strategy defining a Covariance Matrix Adaptation Evolutionary 
+    Inference strategy defining a Covariance Matrix Adaptation Evolutionary
     Strategy using cma package
 
     Parameters
@@ -53,13 +53,13 @@ class CmaStrategy(HoloPyObject):
     npixels : int, optional
         Number of pixels in the image to fit. default fits all.
     resample_pixels: Boolean, optional
-        If true (default), npixel new pixels are chosen for each call ofposterior.
+        If true (default), new pixels are chosen for each call of posterior.
         Otherwise, a single pixel subset is used throughout calculation.
     parent_fraction: float, optional
-        Fraction of each generation to use to construct the next generation. 
+        Fraction of each generation to use to construct the next generation.
         Takes symbol \mu in cma literature
     weight_function: function, optional
-        takes arguments i, popsize with i in range(popsize); returns weight of i
+        takes arguments (i, popsize), i in range(popsize); returns weight of i
     tols: dict, optional
         tolerance values to overwrite the cma defaults
     seed: int, optional
@@ -68,10 +68,12 @@ class CmaStrategy(HoloPyObject):
         number of threads to use or pool object or one of {None, 'all', 'mpi'}.
         Default tries 'mpi' then 'all'.
     """
-    def __init__(self, npixels=None, resample_pixels=True,
-                    parent_fraction=0.25, weight_function=None,
-                    tols={}, seed=None, parallel='auto'):
+    def __init__(self, npixels=None, popsize=None, resample_pixels=True,
+                 parent_fraction=0.25, weight_function=None,
+                 walker_initial_pos=None, tols={}, seed=None,
+                 parallel='auto'):
         self.npixels = npixels
+        self.popsize = popsize
         if resample_pixels:
             self.new_pixels = self.npixels
         else:
@@ -80,43 +82,49 @@ class CmaStrategy(HoloPyObject):
             def weight_function(x, n):
                 return (x + 1) <= (parent_fraction * n)
         self.weights = weight_function
-        self.tols = {'maxiter':2000, 'tolx':0.001, 'tolfun':0.1,
-                     'tolstagnation':100}
+        self.walker_initial_pos = walker_initial_pos
+        self.tols = {'maxiter': 2000, 'tolx': 0.001, 'tolfun': 0.1,
+                     'tolstagnation': 100}
         self.tols.update(tols)
         self.seed = seed
         self.parallel = parallel
 
-    def optimize(self, model, data, popsize=None, walker_initial_pos=None):
+    def fit(self, model, data):
         parameters = model._parameters
         time_start = time.time()
         if self.npixels is not None and self.new_pixels is None:
             data = make_subset_data(data, pixels=self.npixels, seed=self.seed)
-        if popsize is None:
-            numpars = len(parameters)
-            popsize = int(2 + numpars + np.sqrt(numpars)) #cma uses 4+3*ln(n)
-        if walker_initial_pos is None:
-            walker_initial_pos = model.generate_guess(popsize, seed=self.seed)
+        if self.popsize is None:
+            npars = len(parameters)
+            self.popsize = int(2 + npars + np.sqrt(npars))
+            # cma default popsize is 4+3*ln(n). Ours is larger for npars > 5.
+
+        if self.walker_initial_pos is None:
+            self.walker_initial_pos = model.generate_guess(self.popsize,
+                                                           seed=self.seed)
         obj_func = LnpostWrapper(model, data, self.new_pixels, True)
-        sampler = run_cma(obj_func.evaluate, parameters, walker_initial_pos, 
-                            self.weights, self.tols, self.seed, self.parallel)
+        sampler = run_cma(obj_func.evaluate, parameters,
+                          self.walker_initial_pos, self.weights, self.tols,
+                          self.seed, self.parallel)
         xrecent = sampler.logger.data['xrecent']
-        samples = xr.DataArray([xrecent[:,5:]], 
-                        dims = ['walker','chain','parameter'], 
-                        coords = {'parameter':[p.name for p in parameters]})
-        lnprobs = xr.DataArray([-xrecent[:,4]], dims=['walker', 'chain'])
+        samples = xr.DataArray(
+            [xrecent[:, 5:]], dims=['walker', 'chain', 'parameter'],
+            coords={'parameter': [p.name for p in parameters]})
+        lnprobs = xr.DataArray([-xrecent[:, 4]], dims=['walker', 'chain'])
         best_vals = sampler.best.get()[0]
         diffs = sampler.result.stds
-        intervals = [UncertainValue(best_val, diff, name=par.name) 
-                for best_val, diff, par in zip(best_vals, diffs, parameters)]
+        intervals = [UncertainValue(best_val, diff, name=par.name) for
+                     best_val, diff, par in zip(best_vals, diffs, parameters)]
         stop = dict(sampler.stop())
         d_time = time.time() - time_start
-        kwargs = {'lnprobs':lnprobs, 'samples':samples, 'intervals': intervals,
-                     'stop_condition':stop, 'popsize': popsize}
+        kwargs = {'lnprobs': lnprobs, 'samples': samples,
+                  'intervals': intervals, 'stop_condition': stop,
+                  'popsize': self.popsize}
         return FitResult(data, model, self, d_time, kwargs)
 
 
 def run_cma(obj_func, parameters, initial_population, weight_function,
-                                        tols={}, seed=None, parallel='auto'):
+            tols={}, seed=None, parallel='auto'):
     """
     instantiate and run a CMAEvolutionStrategy object
 
@@ -129,7 +137,7 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
     initial_population: array
         starting population with shape = (popsize, len(parameters))
     weight_function: function
-        takes arguments i, popsize with i in range(popsize); returns weight of i
+        takes arguments (i, popsize), i in range(popsize); returns weight of i
     tols: dict, optional
         tolerance values to overwrite the cma defaults
     seed: int, optional
@@ -142,18 +150,18 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
         raise DependencyMissing('cma', "Install it with \'pip install cma\'.")
 
     popsize = len(initial_population)
-    stds = [par.sd if isinstance(par, prior.Gaussian) 
-                    else par.interval/4 for par in parameters]
+    stds = [par.sd if isinstance(par, prior.Gaussian)
+            else par.interval/4 for par in parameters]
     weights = [weight_function(i, popsize) for i in range(popsize)]
     if weights[-1] > 0:
         weights[-1] = 0
         warnings.warn('Setting weight of worst parent to 0')
     with tempfile.TemporaryDirectory() as tempdir:
-        cmaoptions = {'CMA_stds':stds, 'CMA_recombination_weights':weights,
-                      'verb_filenameprefix':tempdir, 'verbose':-3}
+        cmaoptions = {'CMA_stds': stds, 'CMA_recombination_weights': weights,
+                      'verb_filenameprefix': tempdir, 'verbose': -3}
         cmaoptions.update(tols)
         if seed is not None:
-            cmaoptions.update({'seed':seed})
+            cmaoptions.update({'seed': seed})
         guess = [par.guess for par in parameters]
         cma_strategy = cma.CMAEvolutionStrategy(guess, 1, cmaoptions)
         cma_strategy.inject(initial_population, force=True)
@@ -168,7 +176,7 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
                 solutions[invalid, :] = attempts
                 func_vals[invalid] = list(pool.map(obj_func, attempts))
                 invalid = ~np.isfinite(func_vals)
-                inf_replace_counter += 1 # catches case where all are inf
+                inf_replace_counter += 1  # catches case where all are inf
             cma_strategy.tell(solutions, func_vals)
             cma_strategy.logger.add()
         cma_strategy.logger.load()
@@ -177,3 +185,4 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
         # I made pool, responsible for closing it.
         pool.close()
     return cma_strategy
+

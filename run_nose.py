@@ -16,17 +16,14 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-from shutil import copyfile
 from subprocess import call
 import sys
 import multiprocessing
 
-import matplotlib as mpl
-
-t = ['nosetests', '-a', '!slow']
+t = ['nosetests']
 
 if len(sys.argv) > 1 and sys.argv[1] == 'coverage':
-    t.extend(['--with-coverage', '--cover-package=holopy'])
+    t.extend(['--with-coverage', '--cover-package=holopy', '--cover-erase'])
 else:
     t.extend(['--processes={0}'.format(multiprocessing.cpu_count())] +
              sys.argv[2:])

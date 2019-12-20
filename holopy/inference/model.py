@@ -26,14 +26,26 @@ from holopy.core.utils import ensure_array, ensure_listlike, ensure_scalar
 from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering.errors import (MultisphereFailure, TmatrixFailure,
                                 InvalidScatterer, MissingParameter)
-from holopy.scattering.calculations import calc_holo
+from holopy.scattering.interface import calc_holo
 from holopy.scattering.theory import MieLens
 from holopy.scattering.scatterer import (_expand_parameters,
                                          _interpret_parameters)
 from holopy.inference.prior import Prior, Uniform, generate_guess
+from holopy.inference.nmpfit import NmpfitStrategy
+from holopy.inference.scipyfit import LeastSquaresScipyStrategy
+from holopy.inference.cmaes import CmaStrategy
+from holopy.inference.emcee import EmceeStrategy, TemperedStrategy
+
+DEFAULT_STRATEGY = {'fit': 'nmpfit', 'sample': 'emcee'}
+ALL_STRATEGIES = {'fit': {'nmpfit': NmpfitStrategy,
+                          'scipy lsq': LeastSquaresScipyStrategy,
+                          'cma': CmaStrategy},
+                  'sample': {'emcee': EmceeStrategy,
+                            'subset tempering': TemperedStrategy,
+                            'parallel tempering': NotImplemented}}
 
 
-class BaseModel(HoloPyObject):
+class Model(HoloPyObject):
     """Model probabilites of observing data
 
     Compute probabilities that observed data could be explained by a set of
@@ -108,10 +120,11 @@ class BaseModel(HoloPyObject):
         -------
         lnprior: float
         """
-        try:
-            par_scat = self.scatterer.from_parameters(par_vals)
-        except InvalidScatterer:
-            return -np.inf
+        if hasattr(self, 'scatterer'):
+            try:
+                par_scat = self.scatterer.from_parameters(par_vals)
+            except InvalidScatterer:
+                return -np.inf
 
         for constraint in self.constraints:
             if not constraint.check(par_scat):
@@ -163,7 +176,7 @@ class BaseModel(HoloPyObject):
 
     def _residuals(self, pars, data, noise):
         forward_model = self.forward(pars, data)
-        return ((forward_model - data) / (np.sqrt(2) * noise)).values
+        return ((forward_model - data) / noise).values
 
     def lnlike(self, pars, data):
         """
@@ -185,8 +198,30 @@ class BaseModel(HoloPyObject):
         log_likelihood = ensure_scalar(
             -N/2 * np.log(2 * np.pi) -
             N * np.mean(np.log(ensure_array(noise_sd))) -
-            (self._residuals(pars, data, noise_sd)**2).sum())
+            0.5 * (self._residuals(pars, data, noise_sd)**2).sum())
         return log_likelihood
+
+    def fit(self, data, strategy=None):
+        strategy = self.validate_strategy(strategy, 'fit')
+        return strategy.fit(self, data)
+
+    def sample(self, data, strategy = None):
+        strategy = self.validate_strategy(strategy, 'sample')
+        return strategy.sample(self, data)
+
+    def validate_strategy(self, strategy, operation):
+        if strategy is None:
+            strategy = DEFAULT_STRATEGY[operation]
+        if isinstance(strategy, str):
+            strategy = ALL_STRATEGIES[operation][strategy]
+        if not hasattr(strategy, operation):
+            raise ValueError("Cannot {} with Strategy of type {}.".format(
+                operation, type(strategy).__name__))
+        try:
+            strategy = strategy()
+        except TypeError:
+            pass
+        return strategy
 
     def _check_parameters_are_not_xarray(self, parameters_to_use):
         for key, value in parameters_to_use.items():
@@ -209,7 +244,7 @@ class LimitOverlaps(HoloPyObject):
         return s.largest_overlap() <= ((np.min(s.r) * 2) * self.fraction)
 
 
-class AlphaModel(BaseModel):
+class AlphaModel(Model):
     """
     Model of hologram image formation with scaling parameter alpha.
     """
@@ -253,7 +288,7 @@ class AlphaModel(BaseModel):
 # pass MieLens as a theory
 # For now it would be OK since PerfectLensModel only works with single
 # spheres or superpositions, but let's leave this for later.
-class ExactModel(BaseModel):
+class ExactModel(Model):
     """
     Model of arbitrary scattering function given by calc_func.
     """
@@ -284,7 +319,7 @@ class ExactModel(BaseModel):
             return -np.inf
 
 
-class PerfectLensModel(BaseModel):
+class PerfectLensModel(Model):
     """
     Model of hologram image formation through a high-NA objective.
     """
@@ -329,16 +364,3 @@ class PerfectLensModel(BaseModel):
 # It would be nice if some of the unittests for fitting were also
 # applicable to the inference models. This should be changed later,
 # when the two fitting approaches are unified.
-
-class LnpostWrapper(HoloPyObject):
-    def __init__(self, model, data, new_pixels, minus=False):
-        self.parameters = model._parameters
-        self.data = data
-        self.pixels=new_pixels
-        self.func = model.lnposterior
-        self.prefactor = (-1)**minus
-
-    def evaluate(self, par_vals):
-        pars_dict = {par.name:val for par, val in zip(self.parameters, par_vals)}
-        return self.prefactor * self.func(pars_dict, self.data, self.pixels)
-

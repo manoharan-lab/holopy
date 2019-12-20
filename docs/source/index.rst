@@ -22,13 +22,14 @@ HoloPy started as a project in the `Manoharan Lab at Harvard
 University <http://manoharan.seas.harvard.edu/holopy>`_. If you use HoloPy,
 you may wish to cite one or more of the sources listed in
 :ref:`credits`. We also encourage you to sign up for our `User Mailing
-List <https://groups.google.com/d/forum/holopy-users>`_ to keep up to
-date on releases, answer questions, and benefit from other users'
-questions.
+List <https://groups.google.com/d/forum/holopy-users>`_ or join us on `GitHub`
+<https://github.com/manoharan-lab/holopy> to keep up to date on releases, 
+answer questions, and benefit from other users' questions.
 
 .. toctree::
    :maxdepth: 2
 
+   releasenotes
    users/index
    reference/holopy
    credits

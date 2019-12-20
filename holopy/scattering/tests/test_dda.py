@@ -143,6 +143,7 @@ def test_Ellipsoid_dda():
     except DependencyMissing:
         raise SkipTest()
 
+@attr('slow')
 def test_predefined_scatterers():
     # note this tests only that the code runs, not that it is correct
     try:

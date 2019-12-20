@@ -1,5 +1,5 @@
 # Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -16,9 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
+
+import unittest
+import warnings
+
 import xarray as xr
 import numpy as np
-import unittest
 from nose.plugins.attrib import attr
 
 from holopy.inference.prior import Uniform
@@ -35,7 +38,6 @@ par_s = Sphere(n=Uniform(1.5, 1.65), r=Uniform(0.5, 0.7), center=[10, 10, 10])
 MODEL = AlphaModel(par_s, alpha=Uniform(0.6, 0.9, guess=0.8))
 INTERVALS = [UncertainValue(1.6, 0.1, name='n'), UncertainValue(0.6,
                         0.1, name='r'), UncertainValue(0.7, 0.1, name='alpha')]
-
 
 def generate_fit_result():
     return FitResult(DATA, MODEL, CmaStrategy(), 10, {'intervals': INTERVALS})
@@ -69,11 +71,48 @@ class TestFitResult(unittest.TestCase):
     @attr("fast")
     def test_properties(self):
         result = generate_fit_result()
-        self.assertEqual(result.guess, [1.6, 0.6, 0.7])
+        self.assertEqual(result._parameters, [1.6, 0.6, 0.7])
         self.assertEqual(result._names, ['n', 'r', 'alpha'])
-        self.assertEqual(result.parameters, {'r':0.6, 'n':1.6, 'alpha':0.7})
+        self.assertEqual(result.parameters,
+                         {'r':0.6, 'n':1.6, 'alpha':0.7})
         self.assertEqual(result.scatterer,
-                          Sphere(n=1.6, r=0.6, center=[10, 10, 10]))
+                         Sphere(n=1.6, r=0.6, center=[10, 10, 10]))
+
+    @attr("medium")
+    def test_hologram(self):
+        result = generate_fit_result()
+        self.assertAlmostEqual(
+            result.hologram.mean().item(), 1.005387, places=6)
+        self.assertTrue(hasattr(result, '_hologram'))
+
+    @attr("medium")
+    def test_best_fit_returns_hologram(self):
+        result = generate_fit_result()
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            best_fit = result.best_fit()
+        hologram = result.hologram
+        np.testing.assert_equal(best_fit.values, hologram.values)
+        self.assertEqual(best_fit.attrs, hologram.attrs)
+
+    @attr("medium")
+    def test_best_fit_raises_warning(self):
+        result = generate_fit_result()
+        self.assertWarns(UserWarning, result.best_fit)
+
+    @attr("medium")
+    def test_output_scatterer_returns_scatterer(self):
+        result = generate_fit_result()
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            old_scatterer = result.output_scatterer()
+        new_scatterer = result.scatterer
+        self.assertEqual(old_scatterer, new_scatterer)
+
+    @attr("medium")
+    def test_best_fit_raises_warning(self):
+        result = generate_fit_result()
+        self.assertWarns(UserWarning, result.output_scatterer)
 
     @attr("medium")
     def test_max_lnprob(self):
@@ -81,13 +120,25 @@ class TestFitResult(unittest.TestCase):
         self.assertAlmostEqual(result.max_lnprob, -138.17557, places=5)
         self.assertTrue(hasattr(result, '_max_lnprob'))
 
-    @attr("medium")
-    def test_best_fit(self):
+    @attr("fast")
+    def test_calculate_first_time(self):
         result = generate_fit_result()
-        self.assertEqual(result.best_fit.shape, (10, 10, 1))
-        self.assertAlmostEqual(
-            result.best_fit.mean().item(), 1.005387, places=6)
-        self.assertTrue(hasattr(result, '_best_fit'))
+        dummy_string = "a dummy string"
+        dummy_name = "dummy_attr_name"
+        def dummy_function():
+            return dummy_string
+        result._calculate_first_time(dummy_name, dummy_function)
+        self.assertEqual(getattr(result, dummy_name), dummy_string)
+        self.assertEqual(result._kwargs_keys[-1], dummy_name)
+
+    @attr("fast")
+    def test_values_only_calculated_once(self):
+        result = generate_fit_result()
+        calculations = ['max_lnprob', 'hologram', 'guess_hologram']
+        for calculation in calculations:
+            random_val = np.random.rand()
+            setattr(result, '_' + calculation, random_val)
+            self.assertEqual(getattr(result, calculation), random_val)
 
     @attr("fast")
     def test_add_attr(self):
@@ -95,12 +146,19 @@ class TestFitResult(unittest.TestCase):
         result.add_attr({'foo':'bar', 'foobar':7})
         self.assertEqual(result.foo, 'bar')
 
-    @attr("fast")
-    def test_guess_matches_model(self):
+    @attr("medium")
+    def test_guesses_match_model(self):
         result = generate_fit_result()
-        model_guess = {key: val.guess
-                       for key, val in result.model.parameters.items()}
-        self.assertEqual(result.initial_guess, model_guess)
+        model = result.model
+        guess_parameters = {key: val.guess
+                            for key, val in model.parameters.items()}
+        guess_scatterer = model.scatterer.from_parameters(model.parameters)
+        guess_hologram = model.forward(model.parameters, result.data)
+        self.assertEqual(result.guess_parameters, guess_parameters)
+        self.assertEqual(result.guess_scatterer, guess_scatterer)
+        np.testing.assert_equal(result.guess_hologram.values,
+                                guess_hologram.values)
+        self.assertEqual(result.guess_hologram.attrs, guess_hologram.attrs)
 
 
 class TestIO(unittest.TestCase):

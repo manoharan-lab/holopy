@@ -38,6 +38,7 @@ except ModuleNotFoundError:
     NO_SCHWIMMBAD = True
 
 from holopy.core.errors import DependencyMissing
+from holopy.core.holopy_object import HoloPyObject
 
 
 # FIXME this is difficult to test, since it works on the file level
@@ -160,6 +161,25 @@ def repeat_sing_dims(indict, keys = 'all'):
     subdict={key:np.repeat(val, maxlen) for key, val in subdict.items() if len(val)==1}
 
     return updated(indict, subdict)
+
+class LnpostWrapper(HoloPyObject):
+    '''
+    We want to be able to define a specific model.lnposterior calculation that
+    only takes parameter values as an argument for passing into optimizers.
+    However, individual functions can't be pickled to distribute hologram
+    calculations with python multiprocessing. This class solves both issues.
+    '''
+    def __init__(self, model, data, new_pixels=None, minus=False):
+        self.parameters = model._parameters
+        self.data = data
+        self.pixels = new_pixels
+        self.func = model.lnposterior
+        self.prefactor = -1 if minus else 1
+
+    def evaluate(self, par_vals):
+        pars_dict = {par.name:val for par, val in zip(self.parameters, par_vals)}
+        return self.prefactor * self.func(pars_dict, self.data, self.pixels)
+
 
 def choose_pool(parallel):
     """
