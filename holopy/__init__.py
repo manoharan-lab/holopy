@@ -36,5 +36,5 @@ from holopy.core import (load, save, load_image, save_image, show, test_display,
                                             detector_grid, detector_points)
 from holopy.propagation import propagate
 
-__version__ = '3.3.0'
+__version__ = '3.3.1'
 __version_info__ = tuple([ int(num) for num in __version__.split('.')])
