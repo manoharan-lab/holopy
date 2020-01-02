@@ -17,7 +17,7 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
 Compute holograms using the discrete dipole approximation (DDA).  Currently uses
-ADDA (http://code.google.com/p/a-dda/) to do DDA calculations.
+ADDA (https://github.com/adda-team/adda) to do DDA calculations.
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
@@ -25,9 +25,6 @@ ADDA (http://code.google.com/p/a-dda/) to do DDA calculations.
 #(values are too small), so we should probably nondimensionalize before talking
 #to adda.
 
-
-
-import numpy as np
 import subprocess
 import tempfile
 import glob
@@ -36,16 +33,14 @@ import shutil
 import time
 import warnings
 
-from .scatteringtheory import ScatteringTheory
+import numpy as np
 
-from ..scatterer import Ellipsoid, Capsule, Cylinder, Bisphere, Sphere, Scatterer, Spheroid
-from ...core.utils import ensure_array
-from ..errors import DependencyMissing
+from holopy.core.utils import ensure_array
+from holopy.scattering.scatterer import (
+    Ellipsoid, Capsule, Cylinder, Bisphere, Sphere, Scatterer, Spheroid)
+from holopy.core.errors import DependencyMissing
+from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 
-try:
-    from .mie_f import mieangfuncs
-except ImportError:
-    pass
 
 class DDA(ScatteringTheory):
     """
@@ -77,14 +72,16 @@ class DDA(ScatteringTheory):
     This can in principle handle any scatterer, but in practice it will need
     excessive memory or computation time for particularly large scatterers.
     """
-    def __init__(self, n_cpu = 1, max_dpl_size=None, use_indicators=False, keep_raw_calculations=False,
-            addacmd=[]):
+    def __init__(self, n_cpu = 1, max_dpl_size=None, use_indicators=True,
+                 keep_raw_calculations=False, addacmd=[]):
 
         # Check that adda is present and able to run
         try:
             subprocess.check_call(['adda', '-V'])
         except (subprocess.CalledProcessError, OSError):
-            raise DependencyMissing('adda')
+            raise DependencyMissing('adda', "adda is not included with HoloPy "
+                "and must be installed separately. You should be able to run "
+                "the command 'adda' from a terminal.")
 
         self.n_cpu = n_cpu
         self.max_dpl_size = max_dpl_size
@@ -99,7 +96,6 @@ class DDA(ScatteringTheory):
         # shouldn't, because it would take crazy long)
         return True
 
-
     def _run_adda(self, scatterer, medium_wavevec, medium_index, temp_dir):
         medium_wavelen = 2*np.pi/medium_wavevec
         if self.n_cpu == 1:
@@ -112,101 +108,31 @@ class DDA(ScatteringTheory):
         cmd.extend(['-save_geom'])
         cmd.extend(self.addacmd)
 
-        if isinstance(scatterer, Ellipsoid) and not self.use_indicators:
-            scat_args = self._adda_ellipsoid(scatterer, medium_wavelen, medium_index, temp_dir)
-        elif isinstance(scatterer, Spheroid) and not self.use_indicators:
-            scat_args = self._adda_spheroid(scatterer, medium_wavelen, medium_index, temp_dir)
-        elif isinstance(scatterer, Capsule) and not self.use_indicators:
-            scat_args = self._adda_capsule(scatterer, medium_wavelen, medium_index, temp_dir)
-        elif isinstance(scatterer, Cylinder) and not self.use_indicators:
-            scat_args = self._adda_cylinder(scatterer, medium_wavelen, medium_index, temp_dir)
-        elif isinstance(scatterer, Bisphere) and not self.use_indicators:
-            scat_args = self._adda_bisphere(scatterer, medium_wavelen, medium_index, temp_dir)
-        elif isinstance(scatterer, Sphere) and not self.use_indicators and np.isscalar(scatterer.r):
-            scat_args = self._adda_sphere(scatterer, medium_wavelen, medium_index, temp_dir)
+        predefined = isinstance(scatterer, tuple(_get_predefined_shape.keys()))
+        layered=isinstance(scatterer, Sphere) and not np.isscalar(scatterer.r)
+        if not predefined or self.use_indicators or layered:
+            scat_args = self._adda_discretized(scatterer, medium_wavelen, medium_index, temp_dir)
         else:
-            scat_args = self._adda_scatterer(scatterer, medium_wavelen, medium_index, temp_dir)
-
+            scat_args = self._adda_predefined(scatterer, medium_wavelen, medium_index, temp_dir)
         cmd.extend(scat_args)
-
         subprocess.check_call(cmd, cwd=temp_dir)
 
-    # TODO: figure out why our discritzation gives a different result
+    # TODO: figure out why our discretization gives a different result
     # and fix so that we can use that and eliminate this.
-    def _adda_ellipsoid(self, scatterer, medium_wavelen, medium_index, temp_dir):
+    def _adda_predefined(self, scatterer, medium_wavelen, medium_index, temp_dir):
+        scatterer_pars = _get_predefined_shape[scatterer.__class__](scatterer)
         cmd = []
-        cmd.extend(['-eq_rad', str(scatterer.r[0])])
-        cmd.extend(['-shape', 'ellipsoid'])
-        cmd.extend([str(r_i/scatterer.r[0]) for r_i in scatterer.r[1:]])
+        cmd.extend(['-eq_rad', str(scatterer_pars[0]), '-shape'])
+        cmd.extend(scatterer_pars[1])
         cmd.extend(['-m', str(scatterer.n.real/medium_index),
                     str(scatterer.n.imag/medium_index)])
-        cmd.extend(['-orient'])
-        cmd.extend([str(angle*180/np.pi) for angle in reversed(scatterer.rotation)])
-        # rotation angles are gamma, beta, alpha in adda reference frame
-
+        if hasattr(scatterer, 'rotation'):
+            cmd.extend(['-orient'])
+            cmd.extend([str(angle*180/np.pi) for angle in reversed(scatterer.rotation)])
+            # rotation angles are gamma, beta, alpha in adda reference frame
         return cmd
 
-    def _adda_spheroid(self, scatterer, medium_wavelen, medium_index, temp_dir):
-        cmd = []
-        cmd.extend(['-eq_rad', str(scatterer.r[0])])
-        cmd.extend(['-shape', 'ellipsoid'])
-        cmd.extend([str(1), str(scatterer.r[1]/scatterer.r[0])])
-        cmd.extend(['-m', str(scatterer.n.real/medium_index),
-                    str(scatterer.n.imag/medium_index)])
-        cmd.extend(['-orient'])
-        cmd.extend([str(angle*180/np.pi) for angle in reversed(scatterer.rotation)])
-        # rotation angles are gamma, beta, alpha in adda reference frame
-
-        return cmd
-
-    def _adda_capsule(self, scatterer, medium_wavelen, medium_index, temp_dir):
-        cmd = []
-        cmd.extend(['-eq_rad', str((scatterer.h+scatterer.d)/2.0)])
-        cmd.extend(['-shape', 'capsule'])
-        cmd.extend([str(scatterer.h/scatterer.d)])
-        cmd.extend(['-m', str(scatterer.n.real/medium_index),
-                    str(scatterer.n.imag/mediumindex)])
-        cmd.extend(['-orient'])
-        cmd.extend([str(angle*180/np.pi) for angle in reversed(scatterer.rotation)])
-        # rotation angles are gamma, beta, alpha in adda reference frame
-
-        return cmd
-
-    def _adda_cylinder(self, scatterer, medium_wavelen, medium_index, temp_dir):
-        cmd = []
-        cmd.extend(['-eq_rad', str(scatterer.h/2.0)])
-        cmd.extend(['-shape', 'cylinder'])
-        cmd.extend([str(scatterer.h/scatterer.d)])
-        cmd.extend(['-m', str(scatterer.n.real/medium_index),
-                    str(scatterer.n.imag/medium_index)])
-        cmd.extend(['-orient'])
-        cmd.extend([str(angle*180/np.pi) for angle in reversed(scatterer.rotation)])
-        # rotation angles are gamma, beta, alpha in adda reference frame
-
-        return cmd
-
-    def _adda_bisphere(self, scatterer, medium_wavelen, medium_index, temp_dir):
-        cmd = []
-        cmd.extend(['-eq_rad', str((scatterer.h+scatterer.d)/2.0)])
-        cmd.extend(['-shape', 'bisphere'])
-        cmd.extend([str(scatterer.h/scatterer.d)])
-        cmd.extend(['-m', str(scatterer.n.real/medium_index),
-                    str(scatterer.n.imag/medium_index)])
-        cmd.extend(['-orient'])
-        cmd.extend([str(angle*180/np.pi) for angle in reversed(scatterer.rotation)])
-        # rotation angles are gamma, beta, alpha in adda reference frame
-
-        return cmd
-
-    def _adda_sphere(self, scatterer, medium_wavelen, medium_index, temp_dir):
-        cmd = []
-        cmd.extend(['-eq_rad', str(scatterer.r)])
-        cmd.extend(['-shape', 'sphere'])
-        cmd.extend(['-m', str(scatterer.n.real/medium_index),
-                    str(scatterer.n.imag/medium_index)])
-        return cmd
-
-    def _adda_scatterer(self, scatterer, medium_wavelen, medium_index, temp_dir):
+    def _adda_discretized(self, scatterer, medium_wavelen, medium_index, temp_dir):
         spacing = self.required_spacing(medium_wavelen, medium_index, scatterer.n)
         outf = tempfile.NamedTemporaryFile(dir = temp_dir, delete=False)
 
@@ -227,7 +153,8 @@ class DDA(ScatteringTheory):
 
         cmd = []
         cmd.extend(['-shape', 'read', outf.name])
-        cmd.extend(['-dpl', str(self._dpl(medium_wavelen, medium_index, scatterer.n))])
+        cmd.extend(
+            ['-dpl', str(self._dpl(medium_wavelen, medium_index, scatterer.n))])
         cmd.extend(['-m'])
         for n in ns:
             m = n.real/medium_index
@@ -266,13 +193,15 @@ class DDA(ScatteringTheory):
         np.savetxt(outf, angles)
         outf.close()
 
-        self._run_adda(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index, temp_dir=temp_dir)
+        self._run_adda(
+            scatterer, medium_wavevec=medium_wavevec,
+            medium_index=medium_index, temp_dir=temp_dir)
 
         # Go into the results directory, there should only be one run
         result_dir = glob.glob(os.path.join(temp_dir, 'run000*'))[0]
         if self.keep_raw_calculations:
             self._last_result_dir = result_dir
- 
+
         adda_result = np.loadtxt(os.path.join(result_dir, 'ampl_scatgrid'),
                                  skiprows=1)
         # columns in result are
@@ -292,3 +221,14 @@ class DDA(ScatteringTheory):
             shutil.rmtree(temp_dir)
 
         return scat_matr
+
+
+_get_predefined_shape = {
+        Ellipsoid: lambda s:(s.r[0], ['ellipsoid'] +
+                                        [str(r_i/s.r[0]) for r_i in s.r[1:]]),
+        Spheroid: lambda s: (s.r[0], ['ellipsoid', '1', str(s.r[1]/s.r[0])]),
+        Capsule: lambda s: ((s.h+s.d)/2, ['capsule', str(s.h/s.d)]),
+        Cylinder: lambda s: (s.h/2, ['cylinder', str(s.h/s.d)]),
+        Bisphere: lambda s: ((s.h+s.d)/2, ['bisphere', str(s.h/s.d)]),
+        Sphere: lambda s: (s.r, ['sphere'])}
+

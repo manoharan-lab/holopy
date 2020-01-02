@@ -18,19 +18,35 @@
 
 import tempfile
 import os
+import warnings
 import types
 import inspect
 import yaml
 import shutil
-from numpy.testing import assert_equal, assert_allclose
 import pickle
 from collections import OrderedDict
 
-from ..io import load, save, get_example_data
+import xarray as xr
+from numpy.testing import assert_equal, assert_allclose
+from nose.plugins import Plugin
 
-# tests should fail if they give warnings
-import warnings
-warnings.simplefilter("error")
+from holopy.core.io import load, save, get_example_data
+
+
+class HoloPyCatchWarnings(Plugin):
+    name='holopycatchwarnings'
+
+    def options(self, parser, env=os.environ):
+        super(HoloPyCatchWarnings, self).options(parser, env=env)
+
+    def configure(self, options, conf):
+        super(HoloPyCatchWarnings, self).configure(options, conf)
+        if not self.enabled:
+            return
+
+    def beforeTest(self, test):
+        warnings.simplefilter("error")
+
 
 def assert_read_matches_write(o):
     with tempfile.NamedTemporaryFile(suffix='.h5') as tempf:
@@ -63,6 +79,12 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
         assert_allclose(actual, desired, rtol = rtol, atol = atol, err_msg=context)
     except (NotImplementedError, TypeError):
         pass
+
+    if (isinstance(desired, xr.DataArray) and isinstance(actual, xr.DataArray)
+            and hasattr(actual, "_indexes")):
+        # as of xarray 0.12.1, saved and reloaded objects do not maintain
+        # the redundant ._indexes attribute
+        desired._indexes = actual._indexes
 
     # if None, let some things that are functially equivalent to None pass
     nonelike = [None, OrderedDict()]
@@ -127,7 +149,7 @@ def verify(result, name, rtol=1e-7, atol=1e-8):
     gold_dir = os.path.join(location, 'gold')
     gold_name = os.path.join(location, 'gold', 'gold_'+name)
     with open(gold_name+'.yaml') as gold_file:
-        gold_yaml = yaml.load(gold_file)
+        gold_yaml = yaml.safe_load(gold_file)
 
     full = os.path.join(gold_dir, 'full_data', 'gold_full_{0}'.format(name))
     if os.path.exists(full):

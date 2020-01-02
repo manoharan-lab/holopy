@@ -1,5 +1,5 @@
 # Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang
+# Rebecca W. Perry, Jerome Fung, and Ryan McGorty, Anna Wang, Solomon Barkley
 #
 # This file is part of HoloPy.
 #
@@ -21,4 +21,5 @@ scattering theory.
 
 .. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 """
-
+from holopy.scattering.theory.mie_f.multilayer_sphere_lib import (
+    scatcoeffs_multi)

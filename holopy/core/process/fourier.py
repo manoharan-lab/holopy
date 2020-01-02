@@ -23,13 +23,12 @@ Handles Fourier transforms of HoloPy images by using scipy's fftpack. Tries to c
 .. moduleauthor:: Tom G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 """
-
-
-
 from scipy import fftpack
 import numpy as np
 import xarray as xr
-from ..utils import ensure_array
+
+from holopy.core.utils import ensure_array
+
 
 def fft(a, overwrite=False, shift=True):
     """
@@ -65,15 +64,22 @@ def fft(a, overwrite=False, shift=True):
             res = fftpack.fft(a, overwrite_x=overwrite)
     else:
         if shift:
-            res = fftpack.fftshift(fftpack.fft2(a, axes=[a.dims.index('x'), a.dims.index('y')],
-                                                 overwrite_x=overwrite),
-                                    axes=[a.dims.index('x'), a.dims.index('y')])
+            res = fftpack.fftshift(
+                fftpack.fft2(
+                    a,
+                    axes=[a.dims.index('x'), a.dims.index('y')],
+                    overwrite_x=overwrite),
+                axes=[a.dims.index('x'), a.dims.index('y')])
         else:
-            res = fftpack.fft2(a, axes=[a.dims.index('x'), a.dims.index('y')], overwrite_x=overwrite)
+            res = fftpack.fft2(
+                a,
+                axes=[a.dims.index('x'), a.dims.index('y')],
+                overwrite_x=overwrite)
 
     if isinstance(a, xr.DataArray):
         res = xr.DataArray(res, **transform_metadata(a, False))
     return res
+
 
 def ifft(a, overwrite=False, shift=True):
     """
@@ -118,6 +124,7 @@ def ifft(a, overwrite=False, shift=True):
         res = xr.DataArray(res, **transform_metadata(a, True))
     return res
 
+
 #The following handles transforming coordinates for fft/ifft
 def transform_metadata(a, inverse):
     dims=list(a.dims)
@@ -133,11 +140,13 @@ def transform_metadata(a, inverse):
 
     return {'dims': dims, 'coords': coords, 'attrs': a.attrs, 'name': a.name}
 
+
 def get_spacing(c):
     spacing = np.diff(c)
     if not np.allclose(spacing[0], spacing):
         raise ValueError("array has nonuniform spacing, can't determine coordinates for fft")
     return spacing[0]
+
 
 def ft_coord(c):
     spacing = get_spacing(c)
@@ -145,17 +154,20 @@ def ft_coord(c):
     ext = spacing * dim
     return np.linspace(-dim/(2*ext), dim/(2*ext), dim)
 
+
 def ift_coord(c):
     spacing = get_spacing(c)
     dim = len(c)
     ext = spacing * dim
     return np.linspace(0, dim/ext, dim)
 
+
 def ft_coords(cs):
     d = {k: v.values for k, v in cs.items()}
     d['m'] = ft_coord(d.pop('x'))
     d['n'] = ft_coord(d.pop('y'))
     return d
+
 
 def ift_coords(cs):
     d = {k: v.values for k, v in cs.items()}

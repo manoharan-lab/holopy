@@ -27,18 +27,18 @@ scattered field.
 '''
 
 import numpy as np
-from ...core.utils import ensure_array
-from ..errors import TheoryNotCompatibleError, InvalidScatterer
-from ..scatterer import Sphere, Scatterers
-from .scatteringtheory import ScatteringTheory
+from holopy.core.utils import ensure_array
+from holopy.core.errors import DependencyMissing
+from holopy.scattering.errors import TheoryNotCompatibleError, InvalidScatterer
+from holopy.scattering.scatterer import Sphere, Spheres
+from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 try:
-    from .mie_f import mieangfuncs, miescatlib
-    from .mie_f.multilayer_sphere_lib import scatcoeffs_multi
+    from holopy.scattering.theory.mie_f import (mieangfuncs, miescatlib,
+                                                scatcoeffs_multi)
+    _COMPILED_FORTRAN = True
 except ImportError:
-    import warnings
-    from ..errors import NoScattering
-    warnings.simplefilter('always', NoScattering)
-    warnings.warn(NoScattering('Mie'))
+    _COMPILED_FORTRAN = False
+
 
 class Mie(ScatteringTheory):
     """
@@ -59,23 +59,29 @@ class Mie(ScatteringTheory):
     which is nonradiative.
 
     Currently, in calculating the Lorenz-Mie scattering coefficients,
-    the maximum size parameter x = ka is limited to 1000. 
+    the maximum size parameter x = ka is limited to 1000.
     """
 
-    # don't need to define __init__() because we'll use the base class
-    # constructor
-
-    def __init__(self, compute_escat_radial = True,
-                 full_radial_dependence = True,
-                 eps1 = 1e-2, eps2 = 1e-16):
-        #compute_escat_radial determines if radial components will be calculated
-        #full_radial dependence deermines if the full spherical Hankel function
-        # will be used, or if it will be approximated to be in the far field.
+    def __init__(self, compute_escat_radial=True, full_radial_dependence=True,
+                 eps1=1e-2, eps2=1e-16):
+        """
+        Parameters
+        ----------
+        compute_escat_radial : bool
+            determines if radial components will be calculated
+        full_radial dependence : bool
+            determines if the full spherical Hankel function will be used,
+            or if it will be approximated to be in the far field.
+        """
         self.compute_escat_radial = compute_escat_radial
         self.full_radial_dependence = full_radial_dependence
         self.eps1 = eps1
         self.eps2 = eps2
-        # call base class constructor
+        if not _COMPILED_FORTRAN:
+            raise DependencyMissing("Mie theory", "This is probably "
+                                    "due to a problem with compiling Fortran "
+                                    "code, as it should be built with the rest"
+                                    " of HoloPy through f2py.")
         super().__init__()
 
     def _can_handle(self, scatterer):
@@ -86,30 +92,38 @@ class Mie(ScatteringTheory):
         Returns far-field amplitude scattering matrices (with theta and phi
         dependence only) -- assume spherical wave asymptotic r dependence
         '''
-        if isinstance(scatterer, Sphere):
-            scat_coeffs = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
+        if self._can_handle(scatterer):
+            scat_coeffs = self._scat_coeffs(
+                scatterer, medium_wavevec, medium_index)
 
-            # In the mie solution the amplitude scattering matrix is independent of phi
-            return [mieangfuncs.asm_mie_far(scat_coeffs, theta) for
-                          r, theta, phi in pos.T]
+            # In the mie solution the amplitude scattering matrix is
+            # independent of phi
+            return [mieangfuncs.asm_mie_far(scat_coeffs, theta)
+                    for r, theta, phi in pos.T]
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
-    def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index, illum_polarization):
+    def _raw_fields(
+            self, positions, scatterer, medium_wavevec, medium_index,
+            illum_polarization):
         scat_coeffs = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
-        return mieangfuncs.mie_fields(positions, scat_coeffs, illum_polarization.values[:2],
-                                      self.compute_escat_radial,
-                                      self.full_radial_dependence)
+        fields = mieangfuncs.mie_fields(
+            positions, scat_coeffs, illum_polarization.values[:2],
+            self.compute_escat_radial, self.full_radial_dependence)
+        return fields
 
-    def _raw_internal_fields(self, positions, scatterer, medium_wavevec, medium_index, illum_polarization):
+    def _raw_internal_fields(
+            self, positions, scatterer, medium_wavevec, medium_index,
+            illum_polarization):
         scat_coeffs = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
         # TODO BUG: this isn't right for layered spheres (and will
         # probably crash)
-        return mieangfuncs.mie_internal_fields(positions, scatterer.n,
-                                               scat_coeffs, illum_polarization)
+        fields = mieangfuncs.mie_internal_fields(
+            positions, scatterer.n, scat_coeffs, illum_polarization)
+        return fields
 
-
-    def _raw_cross_sections(self, scatterer, medium_wavevec, medium_index, illum_polarization):
+    def _raw_cross_sections(
+            self, scatterer, medium_wavevec, medium_index, illum_polarization):
         """
         Calculate scattering, absorption, and extinction cross
         sections, and asymmetry parameter for spherically
@@ -139,10 +153,9 @@ class Mie(ScatteringTheory):
 
         where I_0 is the incident intensity.  See van de Hulst, p. 14.
         """
-        if isinstance(scatterer, Scatterers):
-            raise InvalidScatterer(scatterer,
-                                        "Use Multisphere to calculate " +
-                                        "radiometric quantities")
+        if isinstance(scatterer, Spheres):
+            msg = "Use Multisphere to calculate radiometric quantities"
+            raise InvalidScatterer(scatterer, msg)
         albl = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
 
         cscat, cext, cback = miescatlib.cross_sections(albl[0], albl[1]) * \
@@ -179,13 +192,13 @@ class Mie(ScatteringTheory):
         '''
         if (ensure_array(s.r) == 0).any():
             raise InvalidScatterer(s, "Radius is zero")
-        x_arr = medium_wavevec * ensure_array(s.r)
-        m_arr = ensure_array(s.n) / medium_index
+        x_arr = ensure_array(medium_wavevec * ensure_array(s.r))
+        m_arr = ensure_array(ensure_array(s.n) / medium_index)
 
         # Check that the scatterer is in a range we can compute for
         if x_arr.max() > 1e3:
-            raise InvalidScatterer(s, "radius too large, field "+
-                                        "calculation would take forever")
+            msg =  "radius too large, field calculation would take forever"
+            raise InvalidScatterer(s, msg)
 
         if len(x_arr) == 1 and len(m_arr) == 1:
             # Could just use scatcoeffs_multi here, but jerome is in favor of
@@ -196,10 +209,9 @@ class Mie(ScatteringTheory):
         else:
             return scatcoeffs_multi(m_arr, x_arr, self.eps1, self.eps2)
 
-
     def _scat_coeffs_internal(self, s, medium_wavevec, medium_index):
         '''
-        Calculate expansion coefficients for Lorenz-Mie electric field 
+        Calculate expansion coefficients for Lorenz-Mie electric field
         inside a sphere.
         '''
         x_arr = medium_wavevec * ensure_array(s.r)
@@ -207,13 +219,12 @@ class Mie(ScatteringTheory):
 
         # Check that the scatterer is in a range we can compute for
         if x_arr.max() > 1e3:
-            raise InvalidScatterer(s, "radius too large, field "+
-                                        "calculation would take forever")
+            msg = "radius too large, field calculation would take forever"
+            raise InvalidScatterer(s, msg)
 
         if len(x_arr) == 1 and len(m_arr) == 1:
             # Could just use scatcoeffs_multi here, but jerome is in favor of
             # keeping the simpler single layer code here
             lmax = miescatlib.nstop(x_arr[0])
             return  miescatlib.internal_coeffs(m_arr[0], x_arr[0], lmax)
-        # else:
-#             return scatcoeffs_multi(m_arr, x_arr)
+

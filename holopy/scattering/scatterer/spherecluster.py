@@ -27,11 +27,14 @@ Defines Spheres, a Scatterers scatterer consisting of Spheres
 
 import numpy as np
 import warnings
+from copy import copy
+from numbers import Number
 
-from .sphere import Sphere
-from .composite import Scatterers
-from ..errors import OverlapWarning, InvalidScatterer
-from ...core.math import cartesian_distance, rotate_points
+from holopy.scattering.scatterer.sphere import Sphere
+from holopy.scattering.scatterer.composite import Scatterers
+from holopy.scattering.errors import OverlapWarning, InvalidScatterer
+from holopy.core.math import cartesian_distance, rotate_points
+from holopy.core.utils import ensure_array, dict_without, ensure_listlike
 
 # default to always warning the user about overlaps.  This can be overriden by
 # calling this function again with a different action.
@@ -45,26 +48,29 @@ class Spheres(Scatterers):
     ----------
     spheres : list of Spheres
         Spheres which will make up the cluster
+    ties : dict or None (optional)
+       dict indicating tied parameters of the form {'r': '0:r', '1:r'} to tie
+       radius of first 2 spheres
+    warn : bool
+       if True, overlapping spheres raise warnings.
 
     Notes
     -----
     '''
 
-    def __init__(self, scatterers, warn=True):
-        if isinstance(scatterers, Sphere):
-            #only one sphere and it's not in a list
-            self.scatterers = [scatterers]
-        else:
-            # make sure all components are spheres
-            for s in scatterers:
-                if not isinstance(s, Sphere):
-                    raise InvalidScatterer(self,
+    def __init__(self, scatterers, ties=None, warn=True):
+        scatterers = ensure_listlike(scatterers)
+        self.warn = warn
+        for s in ensure_listlike(scatterers):
+            if not isinstance(s, Sphere):
+                raise InvalidScatterer(self,
                         "Spheres expects all component " +
                         "scatterers to be Spheres.\n" +
                         repr(s) + " is not a Sphere")
-            self.scatterers = scatterers
+        super().__init__(scatterers, ties)
 
-        if self.overlaps:
+
+        if self.overlaps and self.warn:
             warnings.warn(OverlapWarning(self, self.overlaps))
 
     @property
@@ -99,10 +105,7 @@ class Spheres(Scatterers):
                 "Spheres expects all component " +
                 "scatterers to be Spheres.\n" +
                 repr(scatterer) + " is not a Sphere")
-        self.scatterers.append(scatterer)
-
-    def guess(self):
-        return Spheres([sphere.guess() for sphere in self.scatterers])
+        super().add(scatterer)
 
     @property
     def n(self):
@@ -132,4 +135,46 @@ class Spheres(Scatterers):
     @property
     def center(self):
         return self.centers.mean(0)
+
+class RigidCluster(Spheres):
+
+    def __init__(self, spheres, translation=(0,0,0), rotation=(0,0,0)):
+        if isinstance(spheres, Spheres):
+            self.spheres = spheres
+        else:
+            raise InvalidScatterer(self, "RigidCluster only accepts a scatterer of class Spheres.")
+        if not (len(ensure_array(translation))==3 and len(ensure_array(rotation))==3):
+            raise ValueError('translation and rotation must be listlike of len 3')
+        else:
+            self.translation=translation
+            self.rotation=rotation
+
+    @property
+    def scatterers(self):
+        return self.spheres.rotated(self.rotation).translated(self.translation).scatterers
+
+    @property
+    def parameters(self):
+        def expand(key, par):
+            return{'{0}.{1}'.format(key,p[0]):p[1] for p in enumerate(par)}
+
+        d = self.spheres.parameters
+        d.update(expand('translation',self.translation))
+        d.update(expand('rotation', self.rotation))
+        return d
+
+    def from_parameters(self, parameters, overwrite=False):
+        parameters = copy(parameters)
+        keys = filter(lambda key : sum([key.startswith(op) for op in ['rotation', 'translation']]), self.parameters)
+        rigid_pars = {key:self.parameters[key] for key in keys}
+
+        for key in rigid_pars.keys():
+            if key in parameters.keys():
+                if not isinstance(rigid_pars[key], Number) or overwrite:
+                    rigid_pars[key] = parameters.pop(key)
+
+        translation = [rigid_pars['translation.{0}'.format(i)] for i in range(3)]
+        rotation = [rigid_pars['rotation.{0}'.format(i)] for i in range(3)]
+        spheres = self.spheres.from_parameters(parameters, overwrite)
+        return spheres.rotated(rotation).translated(translation)
 

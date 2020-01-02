@@ -40,14 +40,13 @@ Using HoloPy
 ~~~~~~~~~~~~
 
 You will probably be most comfortable using HoloPy in Jupyter (resembles
-Mathematica) or Spyder (resembles Matlab) interfaces. One perennially tricky
-issue concerns matplotlib backends. HoloPy is designed to be used with an
+Mathematica) or Spyder (resembles Matlab) interfaces. HoloPy is designed to be used with an
 interactive backend. In the console, try running::
 
     from holopy import test_disp
     test_disp()
 
-You should see a window pop up with an image, and you should be able to change
+You should see an image, and you should be able to change
 the square to a circle or diamond by using the left/right arrow keys. If you
 can, then you're all set! Check out our :ref:`load_tutorial` tutorial to start
 using HoloPy. If you don't see an image, or if the arrow keys don't do anything,
@@ -66,13 +65,15 @@ kernel and immediately enter the ``%matplotlib`` command before doing anything
 else. Sometimes a backend will be chosen for you (that cannot be changed later)
 as soon as you plot something, for example by running ``test_disp()`` or
 :func:`.show`. Trying to set to one of the above backends that is not installed
-on your system will result in an error, but will also prevent you from setting a different
-backend until you restart your kernel.
+ will result in an error, but will also prevent you from setting 
+a different backend until you restart your kernel.
 
 An additional option in Spyder is to change the backend through the menu: Tools
 > Preferences > IPython console > Graphics. It will not take effect until you
 restart your kernel, but it will then remember your backend for future sessions,
 which can be convenient.
 
-An additional option in jupyter is to use ``%matplotlib
-nbagg`` to use inline interactive plots.
+Additional options for inline interactive polts in jupyter are::
+
+    %matplotlib nbagg
+    %matplotlib widget

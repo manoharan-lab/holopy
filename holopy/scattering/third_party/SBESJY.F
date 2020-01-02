@@ -98,15 +98,34 @@ C------ CALCULATE THE L=0 SPHERICAL BESSEL FUNCTIONS DIRECTLY
         JP(0)   = -Y(0) - XINV * J(0)
         YP(0)   =  J(0) - XINV * Y(0)
         IF (LMAX .GT. 0) THEN
-                   OMEGA  =  J(0) / DEN
-                      SL  = ZERO
-            DO 40 L = 1 , LMAX
+           IF (J(0) .GT. DSQRT(ACCUR)) THEN ! usual case, nonzero j(0) 
+                OMEGA  =  J(0) / DEN
+                SL  = ZERO
+                DO 40 L = 1 , LMAX
                     J (L) = OMEGA * J (L)
                     JP(L) = OMEGA * JP(L)
                     Y (L) = SL * Y(L-1)   -   YP(L-1)
                       SL  = SL + XINV
                     YP(L) = Y(L-1)  -  (SL + XINV) * Y(L)
-   40       CONTINUE
+ 40              CONTINUE
+              ELSE              ! j(0) = 0, normalize with j(1) instead
+                 DEN = J(1)
+                 J (1) = DSIN(X) * XINV**2 - DCOS(X) * XINV 
+                 OMEGA = J(1) / DEN
+                 SL = ZERO
+                 JP(1) = OMEGA * JP(1) ! handle L = 1 case
+                 Y(1) = SL * Y(0) - YP(0)
+                 SL = SL + XINV
+                 YP(1) = Y(0) - (SL + XINV) * Y(1)
+                 DO 70 L = 2, LMAX ! loop over remaining cases
+                    J (L) = OMEGA * J(L)
+                    JP(L) = OMEGA* JP(L)
+                    Y(L) = SL * Y(L-1) - YP(L-1)
+                    SL = SL + XINV
+                    YP(L) = Y(L-1) - (SL + XINV) * Y(L)
+ 70              CONTINUE
+                 
+           ENDIF       
         ENDIF
         IFAIL = 0                       ! calculations successful
         RETURN

@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 import numpy as np
+from nose.plugins.attrib import attr
+
 from ...core.io import get_example_data_path, load_image
 from ...propagation import ps_propagate
 from scipy.ndimage.measurements import center_of_mass
@@ -23,6 +25,8 @@ from ...core.process import bg_correct, subimage
 from ...core.tests.common import verify
 from warnings import simplefilter
 
+
+@attr("medium")
 def test_ps():
 
     imagepath = get_example_data_path('ps_image01.jpg')

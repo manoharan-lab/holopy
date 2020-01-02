@@ -24,8 +24,10 @@ Test T-matrix sphere cluster calculations and python interface.
 
 import sys
 import os
-import numpy as np
 import warnings
+import unittest
+
+import numpy as np
 from numpy.testing import (assert_equal, assert_array_almost_equal,
                            assert_allclose, assert_array_equal, assert_raises)
 
@@ -33,14 +35,29 @@ from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
 import scipy
 
-from .. import calc_holo, calc_scat_matrix, calc_cross_sections, Multisphere, Sphere, Spheres
-from ...core.metadata import detector_points
-from ..errors import InvalidScatterer, TheoryNotCompatibleError, MultisphereFailure
-from .common import xschema, yschema, index, wavelen, xpolarization, ypolarization
-from .common import scaling_alpha, sphere
+from holopy.core.metadata import detector_points
+from holopy.scattering import (
+    calc_holo, calc_scat_matrix, calc_cross_sections, Multisphere, Sphere,
+    Spheres)
+from holopy.scattering.errors import (
+    InvalidScatterer, TheoryNotCompatibleError, MultisphereFailure,
+    OverlapWarning)
+from holopy.scattering.tests.common import (
+    xschema, yschema, index, wavelen, xpolarization, ypolarization,
+    scaling_alpha, sphere)
 from holopy.core.tests.common import assert_obj_close, verify
 
 schema = xschema
+
+SCATTERERS_LARGE_OVERLAP = [
+    Sphere(center=[3e-6, 3e-6, 10e-6], n=1.59, r=.5e-6),
+    Sphere(center=[3.4e-6, 3e-6, 10e-6], n=1.59, r=.5e-6),
+    ]
+SCATTERERS_SMALL_OVERLAP = [
+    Sphere(center=[3e-6, 3e-6, 10e-6], n=1.59, r=.5e-6),
+    Sphere(center=[3.9e-6, 3.e-6, 10e-6], n=1.59, r=.5e-6),
+    ]
+
 
 @attr('fast')
 def test_construction():
@@ -55,6 +72,7 @@ def test_construction():
     assert_equal(theory.qeps2, 1e-8)
 
 
+@attr('medium')
 def test_polarization():
     # test holograms for orthogonal polarizations; make sure they're
     # not the same, nor too different from one another.
@@ -78,6 +96,7 @@ def test_polarization():
     return xholo, yholo
 
 
+@attr('fast')
 def test_2_sph():
     sc = Spheres(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07),
@@ -92,6 +111,7 @@ def test_2_sph():
     assert_obj_close(holo.std(), 0.09558537595025796)
 
 
+@attr('medium')
 def test_radial_holos():
     # Check that holograms computed with and w/o radial part of E_scat differ
     sc = Spheres(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
@@ -113,7 +133,7 @@ def test_radial_holos():
         raise AssertionError("Holograms computed with and without radial component of scattered electric field are too similar.")
 
 
-@attr('fast')
+@attr('medium')
 def test_invalid():
     sc = Spheres(scatterers=[Sphere(center=[7.1, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07),
@@ -143,33 +163,33 @@ def test_invalid():
                           n = [1.+0.1j, 1.2],
                           r = [4e-7, 5e-7])])
     assert_raises(TheoryNotCompatibleError, calc_cross_sections, scatterer=sc2, medium_index=index, illum_wavelen=wavelen, illum_polarization=ypolarization, theory=Multisphere)
-    
 
-def test_overlap():
-    # should raise a warning
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        sc = Spheres(scatterers=[Sphere(center=[3e-6, 3e-6, 10e-6],
-                                           n=1.59, r=.5e-6),
-                                    Sphere(center=[3.4e-6, 3e-6, 10e-6],
-                                           n=1.59, r=.5e-6)])
-        assert len(w) > 0
 
-    # should fail to converge
-    warnings.simplefilter("always")
-    assert_raises(MultisphereFailure, calc_holo, schema, sc, index, wavelen, xpolarization)
+class TestOverlap(unittest.TestCase):
+    @attr('fast')
+    def test_spheres_raises_warning_when_overlapping(self):
+        self.assertWarns(
+            OverlapWarning,
+            Spheres,
+            scatterers=SCATTERERS_LARGE_OVERLAP)
 
-    # but it should succeed with a small overlap, after raising a warning
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        sc = Spheres(scatterers=[Sphere(center=[3e-6, 3e-6, 10e-6],
-                                           n=1.59, r=.5e-6),
-                                    Sphere(center=[3.9e-6, 3.e-6, 10e-6],
-                                           n=1.59, r=.5e-6)])
-        assert len(w) > 0
-    holo = calc_holo(schema, sc, index, wavelen, xpolarization)
+    @attr('fast')
+    def test_calc_holo_fails_to_converge_when_overlap_is_large(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            sc = Spheres(scatterers=SCATTERERS_LARGE_OVERLAP)
+            self.assertRaises(
+                MultisphereFailure,
+                calc_holo,
+                schema, sc, index, wavelen, xpolarization)
 
-    verify(holo, '2_sphere_allow_overlap')
+    @attr('medium')
+    def test_calc_holo_succeeds_but_warns_with_small_overlap(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            sc = Spheres(scatterers=SCATTERERS_SMALL_OVERLAP)
+            holo = calc_holo(schema, sc, index, wavelen, xpolarization)
+        verify(holo, '2_sphere_allow_overlap')
 
 
 @attr('fast')
@@ -182,6 +202,8 @@ def test_niter():
 
     assert_raises(MultisphereFailure, calc_holo, schema, sc, index, wavelen, xpolarization, multi)
 
+
+@attr('medium')
 def test_cross_sections():
     wavelen = 1.
     index = 1.
@@ -207,6 +229,8 @@ def test_cross_sections():
     else:
         assert_allclose(xsects[:3], gold_xsects, rtol = 1e-3)
 
+
+@attr("fast")
 def test_farfield():
     schema = detector_points(theta = np.linspace(0, np.pi/2), phi = np.zeros(50))
     n = 1.59+0.01j
@@ -217,9 +241,16 @@ def test_farfield():
 
     matr = calc_scat_matrix(schema, cluster, illum_wavelen=.66, medium_index=index, theory=Multisphere)
 
+
+@attr('medium')
 def test_wrap_sphere():
     sphere=Sphere(center=[7.1e-6, 7e-6, 10e-6],n=1.5811+1e-4j, r=5e-07)
     sphere_w=Spheres([sphere])
     holo=calc_holo(schema, sphere, theory=Multisphere, scaling=.6)
     holo_w=calc_holo(schema, sphere_w, theory=Multisphere, scaling=.6)
     assert_array_equal(holo,holo_w)
+
+
+if __name__ == '__main__':
+    unittest.main()
+
