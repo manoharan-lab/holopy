@@ -29,9 +29,6 @@ class TestLensScatteringTheory(unittest.TestCase):
         expected_size = 4 * theory.quad_npts ** 2
         self.assertTrue(actual_size==expected_size)
 
-    def test_relative_postions_cylindrical(self):
-        pass
-
     def test_lens_plus_mie_fields_same_as_mielens(self):
         detector = test_common.xschema
         scatterer = test_common.sphere
