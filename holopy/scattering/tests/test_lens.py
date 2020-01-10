@@ -26,9 +26,8 @@ class TestLensScatteringTheory(unittest.TestCase):
         quad_s_matrix = theory._compute_scattering_matrices_quad_pts(
                                        scatterer, medium_wavevec, medium_index)
         actual_size = quad_s_matrix.size
-        expected_size = 4 * theory._theta_pts.size * theory._phi_pts.size
+        expected_size = 4 * theory.quad_npts ** 2
         self.assertTrue(actual_size==expected_size)
-
 
     def test_lens_plus_mie_fields_same_as_mielens(self):
         detector = test_common.xschema

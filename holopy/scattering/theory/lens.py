@@ -24,6 +24,9 @@ class LensScatteringTheory(ScatteringTheory):
         quad_phi_pts, quad_phi_wts = gauss_legendre_pts_wts(
              0, 2 * np.pi, npts=self.quad_npts)
 
+        quad_theta_pts, quad_phi_pts = cartesian(quad_theta_pts, quad_phi_pts).T
+        quad_theta_wts, quad_phi_wts = cartesian(quad_theta_wts, quad_phi_wts).T
+
         self._costheta_pts = quad_theta_pts.reshape(-1, 1)
         self._theta_pts = np.arccos(quad_theta_pts)
         self._sintheta_pts = np.sin(self._theta_pts).reshape(-1, 1)
@@ -52,7 +55,7 @@ class LensScatteringTheory(ScatteringTheory):
 
     def _compute_scattering_matrices_quad_pts(self, scatterer, medium_wavevec,
                                               medium_index):
-        theta, phi = cartesian(self._theta_pts, self._phi_pts).T
+        theta, phi = self._theta_pts, self._phi_pts
         pts = detector_points(theta=theta, phi=phi)
         illum_wavelen = 2 * np.pi / medium_wavevec
         pts = update_metadata(pts, medium_index=medium_index, illum_wavelen=illum_wavelen)
