@@ -29,6 +29,9 @@ class TestLensScatteringTheory(unittest.TestCase):
         expected_size = 4 * theory.quad_npts ** 2
         self.assertTrue(actual_size==expected_size)
 
+    def test_relative_postions_cylindrical(self):
+        pass
+
     def test_lens_plus_mie_fields_same_as_mielens(self):
         detector = test_common.xschema
         scatterer = test_common.sphere
@@ -47,4 +50,19 @@ class TestLensScatteringTheory(unittest.TestCase):
         self.assertTrue(fields_ok)
 
 if __name__ == '__main__':
-    unittest.main()
+    # unittest.main()
+    detector = test_common.xschema
+    scatterer = test_common.sphere
+    medium_wavevec = 2 * np.pi / test_common.wavelen
+    medium_index = test_common.index
+    illum_polarization = test_common.xpolarization
+    lens_angle = 1.0
+
+    theory_old = MieLens(lens_angle=lens_angle)
+    theory_new = LensScatteringTheory(lens_angle=lens_angle, theory=Mie)
+
+    fields_old = theory_old.calculate_scattered_field(scatterer, detector)
+    # fields_new = theory_new._raw_fields(detector, scatterer, medium_wavevec, medium_index,
+    #                 illum_polarization)
+
+    fields_new = theory_new.calculate_scattered_field(scatterer, detector)

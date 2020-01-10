@@ -8,6 +8,8 @@ class LensScatteringTheory(ScatteringTheory):
     """ Wraps a ScatteringTheory and overrides the _raw_fields to include the
     effect of an objective lens.
     """
+    desired_coordinate_system = 'cartesian'
+
     def __init__(self, lens_angle, theory, quad_npts=100):
         super(LensScatteringTheory, self).__init__()
         self.lens_angle = lens_angle
@@ -27,31 +29,74 @@ class LensScatteringTheory(ScatteringTheory):
         quad_theta_pts, quad_phi_pts = cartesian(quad_theta_pts, quad_phi_pts).T
         quad_theta_wts, quad_phi_wts = cartesian(quad_theta_wts, quad_phi_wts).T
 
-        self._costheta_pts = quad_theta_pts.reshape(-1, 1)
+        self._costheta_pts = quad_theta_pts#.reshape(-1, 1)
         self._theta_pts = np.arccos(quad_theta_pts)
-        self._sintheta_pts = np.sin(self._theta_pts).reshape(-1, 1)
-        self._theta_wts = quad_theta_wts.reshape(-1, 1)
+        self._sintheta_pts = np.sin(self._theta_pts)#.reshape(-1, 1)
+        self._theta_wts = quad_theta_wts#.reshape(-1, 1)
 
-        self._phi_pts = quad_phi_pts.ravel()
+        self._phi_pts = quad_phi_pts#.ravel()
         self._cosphi_pts = np.cos(self._phi_pts)
         self._sinphi_pts = np.sin(self._phi_pts)
-        self._phi_wts = quad_phi_wts.reshape(-1, 1)
+        self._phi_wts = quad_phi_wts#.reshape(-1, 1)
 
     def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
         scat_matrs = self._compute_scattering_matrices_quad_pts(scatterer,
                                                    medium_wavevec, medium_index)
-        integral = self._compute_integral(scat_matrs, scatterer)
-        prefactor = self._compute_field_prefactor()
+        integral_x, integral_y = self._compute_integral(positions, scatterer,
+                                                        medium_wavevec, scat_matrs,
+                                                        illum_polarization)
+        integral = np.vstack([integral_x, integral_y, np.zeros_like(integral_x)])
+        prefactor = self._compute_field_prefactor(scatterer, medium_wavevec)
         fields = prefactor * integral
         return fields
 
-    # TODO: Implement the B&B method
-    def _compute_integral(self, scat_matrs, scatterer):
-        return 0.
+    def _compute_integral(self, positions, scatterer, medium_wavevec, scat_matrs, illum_polarization):
+        krho, phi, kz = self._get_relative_positions_cylindrical(positions, scatterer, illum_polarization)
+        #krho *= medium_wavevec
+        #kz *= medium_wavevec
+        int_x, int_y = self._compute_integrand(krho, phi, kz, scat_matrs)
+        integral_x = np.sum(int_x, axis=1)
+        integral_y = np.sum(int_y, axis=1)
+        return integral_x, integral_y
 
-    def _compute_field_prefactor(self):
-        return -1.
+    def _get_relative_positions_cylindrical(self, positions, scatterer, illum_polarization):
+        x = positions[0] - scatterer.center[0]
+        y = positions[1] - scatterer.center[1]
+
+        rho = np.sqrt(x**2 + y**2)
+        phi = np.arctan2(y, x)
+        z = scatterer.center[2] * np.ones(rho.size)
+
+        pol_angle = np.arctan2(
+            illum_polarization[1], illum_polarization[0])
+        phi += pol_angle.values
+        phi %= (2 * np.pi)
+        return rho.reshape(-1, 1), phi.reshape(-1, 1), z.reshape(-1, 1)
+
+    def _compute_integrand(self, krho, phi0, kz, scat_matrs):
+        sinth = self._sintheta_pts
+        costh = self._costheta_pts
+        dth = self._theta_wts
+
+        sinphi = self._sinphi_pts
+        cosphi = self._cosphi_pts
+        phi = self._phi_pts
+        dphi = self._phi_wts
+
+        prefactor = np.exp(1j * krho * sinth * np.cos(phi - phi0))
+        prefactor *= np.exp(1j * kz * (1 - costh))
+        prefactor *= .5 * np.sqrt(costh) * sinth * dphi * dth
+
+        S11 = scat_matrs.values[:, 0, 0]
+        S21 = scat_matrs.values[:, 1, 0]
+
+        integrand_x = prefactor * (S11 * cosphi + S21 * sinphi)
+        integrand_y = prefactor * (S11 * sinphi - S21 * cosphi)
+        return integrand_x, integrand_y
+
+    def _compute_field_prefactor(self, scatterer, medium_wavevec):
+        return -1.# * np.exp(1j * medium_wavevec * scatterer.center[2])
 
     def _compute_scattering_matrices_quad_pts(self, scatterer, medium_wavevec,
                                               medium_index):
