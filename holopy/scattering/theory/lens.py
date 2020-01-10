@@ -52,8 +52,8 @@ class LensScatteringTheory(ScatteringTheory):
 
     def _compute_scattering_matrices_quad_pts(self, scatterer, medium_wavevec,
                                               medium_index):
-
-        pts = detector_points(theta=self._theta_pts, phi=self._phi_pts)
+        theta, phi = cartesian(self._theta_pts, self._phi_pts).T
+        pts = detector_points(theta=theta, phi=phi)
         illum_wavelen = 2 * np.pi / medium_wavevec
         pts = update_metadata(pts, medium_index=medium_index, illum_wavelen=illum_wavelen)
         matr = self.theory.calculate_scattering_matrix(scatterer, pts)
@@ -70,3 +70,6 @@ def gauss_legendre_pts_wts(a, b, npts=100):
     wts = wts_raw * (b - a) * 0.5
     pts += 0.5 * (a + b)
     return pts, wts
+
+def cartesian(*dims):
+    return np.array(np.meshgrid(*dims, indexing='ij')).T.reshape(-1, len(dims))
