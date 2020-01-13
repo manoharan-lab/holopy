@@ -22,15 +22,18 @@ class LensScatteringTheory(ScatteringTheory):
 
     def _setup_quadrature(self):
         quad_theta_pts, quad_theta_wts = gauss_legendre_pts_wts(
-             np.cos(self.lens_angle), 1.0, npts=self.quad_npts)
+             #np.cos(self.lens_angle), 1.0, npts=self.quad_npts)
+             0, self.lens_angle, npts=self.quad_npts)
         quad_phi_pts, quad_phi_wts = gauss_legendre_pts_wts(
              0, 2 * np.pi, npts=self.quad_npts)
 
         quad_theta_pts, quad_phi_pts = cartesian(quad_theta_pts, quad_phi_pts).T
         quad_theta_wts, quad_phi_wts = cartesian(quad_theta_wts, quad_phi_wts).T
 
-        self._costheta_pts = quad_theta_pts
-        self._theta_pts = np.arccos(quad_theta_pts)
+        #self._costheta_pts = quad_theta_pts
+        #self._theta_pts = np.arccos(quad_theta_pts)
+        self._theta_pts = quad_theta_pts
+        self._costheta_pts = np.cos(self._theta_pts)
         self._sintheta_pts = np.sin(self._theta_pts)
         self._theta_wts = quad_theta_wts
 
@@ -75,23 +78,27 @@ class LensScatteringTheory(ScatteringTheory):
 
         prefactor = np.exp(1j * krho_p[:, None] * sinth * np.cos(phi - phi_p[:, None]))
         prefactor *= np.exp(1j * kz_p[:, None] * (1 - costh))
-        prefactor *= .5 * np.sqrt(costh) * sinth * dphi * dth
+        prefactor *= np.sqrt(costh) * sinth * dphi * dth
+        prefactor *= 1. / (2 * np.pi)
 
         S11 = scat_matrs.values[:, 0, 0]
         S21 = scat_matrs.values[:, 1, 0]
+        S12 = scat_matrs.values[:, 0, 1]
+        S22 = scat_matrs.values[:, 1, 1]
 
-        integrand_x = prefactor * (S11 * cosphi + S21 * sinphi)
-        integrand_y = prefactor * (S11 * sinphi - S21 * cosphi)
+        integrand_x = prefactor * (S11 * cosphi + S22 * sinphi)
+        integrand_y = prefactor * (S11 * sinphi - S22 * cosphi)
+
         return integrand_x, integrand_y
 
     def _compute_field_prefactor(self, scatterer, medium_wavevec):
-        return -1.# * np.exp(1j * medium_wavevec * scatterer.center[2])
+        return -1. * np.exp(1j * medium_wavevec * scatterer.center[2])
 
     def _compute_scattering_matrices_quad_pts(self, scatterer, medium_wavevec,
                                               medium_index):
         theta, phi = self._theta_pts, self._phi_pts
         pts = detector_points(theta=theta, phi=phi)
-        illum_wavelen = 2 * np.pi / medium_wavevec
+        illum_wavelen = 2 * np.pi * medium_index / medium_wavevec
         pts = update_metadata(pts, medium_index=medium_index, illum_wavelen=illum_wavelen)
         matr = self.theory.calculate_scattering_matrix(scatterer, pts)
         return matr
