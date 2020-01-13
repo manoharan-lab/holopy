@@ -1,6 +1,7 @@
 import unittest
 
 import numpy as np
+from numpy.testing import assert_allclose
 
 from holopy.scattering.theory import Mie, MieLens
 from holopy.scattering.theory.lens import LensScatteringTheory
@@ -39,10 +40,23 @@ class TestLensScatteringTheory(unittest.TestCase):
         num_ok = len(MIE_THEORY._phi_pts) == len(MIE_THEORY._phi_wts)
         self.assertTrue(num_ok)
 
-    def test_integrate_over_theta_with_2D_quad_points(self):
-        pass
+    def test_integrate_over_theta_with_quad_points(self):
+        pts = MIE_THEORY._theta_pts
+        wts = MIE_THEORY._theta_wts
+        func = np.cos
+        integral = np.sum(func(pts) * wts)
+        expected_val = np.sin(1.) # analytic result
+        assert_allclose(integral, expected_val)
 
-    def test_integrate_over_theta_with_2D_quad_points(self):
+    def test_integrate_over_phi_with_quad_points(self):
+        pts = MIE_THEORY._phi_pts
+        wts = MIE_THEORY._phi_wts
+        func = lambda x: np.cos(np.pi * x)
+        integral = np.sum(func(pts) * wts)
+        expected_val = np.sin(2 * np.pi ** 2) /  np.pi # analytic result
+        assert_allclose(integral, expected_val)
+
+    def test_integrate_over_2D_with_quad_points(self):
         pass
 
     def test_quadrature_scattering_matrix_size(self):

@@ -22,7 +22,6 @@ class LensScatteringTheory(ScatteringTheory):
 
     def _setup_quadrature(self):
         quad_theta_pts, quad_theta_wts = gauss_legendre_pts_wts(
-             #np.cos(self.lens_angle), 1.0, npts=self.quad_npts)
              0, self.lens_angle, npts=self.quad_npts)
         quad_phi_pts, quad_phi_wts = gauss_legendre_pts_wts(
              0, 2 * np.pi, npts=self.quad_npts)
@@ -30,17 +29,16 @@ class LensScatteringTheory(ScatteringTheory):
         quad_theta_pts, quad_phi_pts = cartesian(quad_theta_pts, quad_phi_pts).T
         quad_theta_wts, quad_phi_wts = cartesian(quad_theta_wts, quad_phi_wts).T
 
-        #self._costheta_pts = quad_theta_pts
-        #self._theta_pts = np.arccos(quad_theta_pts)
         self._theta_pts = quad_theta_pts
         self._costheta_pts = np.cos(self._theta_pts)
         self._sintheta_pts = np.sin(self._theta_pts)
-        self._theta_wts = quad_theta_wts
 
         self._phi_pts = quad_phi_pts
         self._cosphi_pts = np.cos(self._phi_pts)
         self._sinphi_pts = np.sin(self._phi_pts)
-        self._phi_wts = quad_phi_wts
+
+        self._theta_wts = quad_theta_wts / self.quad_npts
+        self._phi_wts = quad_phi_wts / self.quad_npts
 
     def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
