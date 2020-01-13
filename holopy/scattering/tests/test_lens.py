@@ -57,7 +57,16 @@ class TestLensScatteringTheory(unittest.TestCase):
         assert_allclose(integral, expected_val)
 
     def test_integrate_over_2D_with_quad_points(self):
-        pass
+        pts_theta = MIE_THEORY._theta_pts
+        wts_theta = MIE_THEORY._theta_wts
+
+        pts_phi = MIE_THEORY._phi_pts[:, np.newaxis]
+        wts_phi = MIE_THEORY._phi_wts[:, np.newaxis]
+
+        func = lambda theta, phi: np.cos(theta) * np.cos(np.pi * phi)
+        integral = np.sum(func(pts_theta, pts_phi) * wts_theta * wts_phi)
+        expected_val = np.sin(1.) * np.sin(2 * np.pi ** 2) /  np.pi
+        assert_allclose(integral, expected_val)
 
     def test_quadrature_scattering_matrix_size(self):
         detector = test_common.xschema
