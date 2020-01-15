@@ -5,6 +5,7 @@ from numpy.testing import assert_allclose
 
 from holopy.scattering.theory import Mie, MieLens
 from holopy.scattering.theory.lens import LensScatteringTheory
+from holopy.scattering.theory.mielensfunctions import MieLensCalculator
 import holopy.scattering.tests.common as test_common
 
 LENS_ANGLE = 1.
@@ -69,18 +70,47 @@ class TestLensScatteringTheory(unittest.TestCase):
         assert_allclose(integral, expected_val)
 
     def test_quadrature_scattering_matrix_size(self):
-        detector = test_common.xschema
         scatterer = test_common.sphere
         medium_wavevec = 2 * np.pi / test_common.wavelen
         medium_index = test_common.index
 
         theory = LensScatteringTheory(lens_angle=LENS_ANGLE, theory=Mie)
 
-        quad_s_matrix = theory._compute_scattering_matrices_quad_pts(
+        quad_s_matrix = theory._calc_scattering_matrices_at_quad_pts(
                                        scatterer, medium_wavevec, medium_index)
         actual_size = quad_s_matrix.size
         expected_size = 4 * theory.quad_npts ** 2
         self.assertTrue(actual_size==expected_size)
+
+    def test_quadrature_scattering_matrix_same_as_mielens(self):
+        scatterer = test_common.sphere
+        medium_wavevec = 2 * np.pi / test_common.wavelen
+        medium_index = test_common.index
+
+        theory = LensScatteringTheory(lens_angle=LENS_ANGLE, theory=Mie)
+
+        s_matrix_new = theory._calc_scattering_matrices_at_quad_pts(
+                                       scatterer, medium_wavevec, medium_index)
+
+        particle_kz = medium_wavevec * scatterer.z
+        index_ratio = scatterer.n / medium_index
+        size_parameter = medium_wavevec * scatterer.r
+
+        mielens_calculator = MieLensCalculator(
+            particle_kz=particle_kz, index_ratio=index_ratio,
+            size_parameter=size_parameter, lens_angle=LENS_ANGLE)
+
+        s_matrix_old_perp = mielens_calculator._scat_perp_values.ravel()
+        s_matrix_old_prll = mielens_calculator._scat_prll_values.ravel()
+
+        S11 = _get_smatrix_theta_near_phi_is_zero(s_matrix_new[:, 0, 0],
+                                                  theory._cosphi_pts,
+                                                  theory._phi_pts)
+        S22 = _get_smatrix_theta_near_phi_is_pi_over_2(s_matrix_new[:, 1, 1],
+                                                  theory._sinphi_pts,
+                                                  theory._phi_pts)
+        assert_allclose(S11.values, s_matrix_old_prll, rtol=1e-2)
+        assert_allclose(S22.values, s_matrix_old_perp, rtol=1e-2)
 
     def test_lens_plus_mie_fields_same_as_mielens(self):
         detector = test_common.xschema
@@ -97,6 +127,18 @@ class TestLensScatteringTheory(unittest.TestCase):
 
         fields_ok = np.allclose(fields_old, fields_new)
         self.assertTrue(fields_ok)
+
+def _get_smatrix_theta_near_phi_is_zero(smatrix, cosphi, phi):
+    cp = cosphi[np.logical_and(cosphi == max(abs(cosphi)), phi < np.pi)]
+    s = smatrix[np.logical_and(cosphi == max(abs(cosphi)), phi < np.pi)]
+    return s / cp
+
+
+def _get_smatrix_theta_near_phi_is_pi_over_2(smatrix, sinphi, phi):
+    sp = sinphi[sinphi == max(abs(sinphi))]
+    s = smatrix[sinphi == max(abs(sinphi))]
+    return s / sp
+
 
 if __name__ == '__main__':
     unittest.main()
