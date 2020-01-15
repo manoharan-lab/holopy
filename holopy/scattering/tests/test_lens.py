@@ -125,8 +125,7 @@ class TestLensScatteringTheory(unittest.TestCase):
         fields_old = theory_old.calculate_scattered_field(scatterer, detector)
         fields_new = theory_new.calculate_scattered_field(scatterer, detector)
 
-        fields_ok = np.allclose(fields_old, fields_new)
-        self.assertTrue(fields_ok)
+        assert_allclose(fields_old, fields_new)
 
 def _get_smatrix_theta_near_phi_is_zero(smatrix, cosphi, phi):
     cp = cosphi[np.logical_and(cosphi == max(abs(cosphi)), phi < np.pi)]
