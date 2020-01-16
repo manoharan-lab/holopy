@@ -22,7 +22,6 @@ class LensScatteringTheory(ScatteringTheory):
     def _can_handle(self, scatterer):
         return self.theory._can_handle(scatterer)
 
-
     def _setup_quadrature(self):
         """Calculate quadrature points and weights for 2D integration over lens
         pupil
@@ -30,16 +29,18 @@ class LensScatteringTheory(ScatteringTheory):
         TODO: Decide how to calculate theta or cos theta quadrature points
         """
         quad_theta_pts, quad_theta_wts = gauss_legendre_pts_wts(
-             #0, self.lens_angle, npts=self.quad_npts)
-             np.cos(self.lens_angle), 1.0, npts=self.quad_npts_theta)
+             0, self.lens_angle, npts=self.quad_npts_theta)
+             #np.cos(self.lens_angle), 1.0, npts=self.quad_npts_theta)
         quad_phi_pts, quad_phi_wts = gauss_legendre_pts_wts(
              0, 2 * np.pi, npts=self.quad_npts_phi)
 
         quad_theta_pts, quad_phi_pts = cartesian(quad_theta_pts, quad_phi_pts).T
         quad_theta_wts, quad_phi_wts = cartesian(quad_theta_wts, quad_phi_wts).T
 
-        self._theta_pts = np.arccos(quad_theta_pts)
-        self._costheta_pts = quad_theta_pts
+        # self._theta_pts = np.arccos(quad_theta_pts)
+        # self._costheta_pts = quad_theta_pts
+        self._theta_pts = quad_theta_pts
+        self._costheta_pts = np.cos(self._theta_pts)
         self._sintheta_pts = np.sin(self._theta_pts)
 
         self._phi_pts = quad_phi_pts
