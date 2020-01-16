@@ -94,17 +94,23 @@ class TestLensScatteringTheory(unittest.TestCase):
             particle_kz=particle_kz, index_ratio=index_ratio,
             size_parameter=size_parameter, lens_angle=LENS_ANGLE)
 
-        s_matrix_old_perp = mielens_calculator._scat_perp_values.ravel()[::-1]
-        s_matrix_old_prll = mielens_calculator._scat_prll_values.ravel()[::-1]
+        s_perp = mielens_calculator._scat_perp_values.ravel()
+        s_prll = mielens_calculator._scat_prll_values.ravel()
 
-        S11 = _get_smatrix_theta_near_phi_is_zero(s_matrix_new[:, 0, 0],
+        S11, theta_prll = _get_smatrix_theta_near_phi_is_zero(s_matrix_new[:, 0, 0],
                                                   theory._cosphi_pts,
-                                                  theory._phi_pts)
-        S22 = _get_smatrix_theta_near_phi_is_pi_over_2(s_matrix_new[:, 1, 1],
+                                                  theory._phi_pts,
+                                                  theory._theta_pts)
+        S22, theta_perp = _get_smatrix_theta_near_phi_is_pi_over_2(s_matrix_new[:, 1, 1],
                                                   theory._sinphi_pts,
-                                                  theory._phi_pts)
-        assert_allclose(S11.values, s_matrix_old_prll, rtol=1e-2)
-        assert_allclose(S22.values, s_matrix_old_perp, rtol=1e-2)
+                                                  theory._phi_pts,
+                                                  theory._theta_pts)
+
+        s_perp_new = np.interp(mielens_calculator._theta_pts, theta_perp, S22)
+        s_prll_new = np.interp(mielens_calculator._theta_pts, theta_prll, S11)
+
+        assert_allclose(s_perp_new, s_perp, rtol=5e-3)
+        assert_allclose(s_prll_new, s_prll, rtol=5e-3)
 
     def test_lens_plus_mie_fields_same_as_mielens(self):
         detector = test_common.xschema
@@ -121,16 +127,18 @@ class TestLensScatteringTheory(unittest.TestCase):
 
         assert_allclose(fields_old, fields_new)
 
-def _get_smatrix_theta_near_phi_is_zero(smatrix, cosphi, phi):
+def _get_smatrix_theta_near_phi_is_zero(smatrix, cosphi, phi, theta):
     cp = cosphi[np.logical_and(cosphi == max(abs(cosphi)), phi < np.pi)]
     s = smatrix[np.logical_and(cosphi == max(abs(cosphi)), phi < np.pi)]
-    return s / cp
+    t = theta[np.logical_and(cosphi == max(abs(cosphi)), phi < np.pi)]
+    return s / cp, t
 
 
-def _get_smatrix_theta_near_phi_is_pi_over_2(smatrix, sinphi, phi):
+def _get_smatrix_theta_near_phi_is_pi_over_2(smatrix, sinphi, phi, theta):
     sp = sinphi[sinphi == max(abs(sinphi))]
     s = smatrix[sinphi == max(abs(sinphi))]
-    return s / sp
+    t = theta[sinphi == max(abs(sinphi))]
+    return s / sp, t
 
 
 if __name__ == '__main__':
