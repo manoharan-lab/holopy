@@ -25,20 +25,15 @@ class LensScatteringTheory(ScatteringTheory):
     def _setup_quadrature(self):
         """Calculate quadrature points and weights for 2D integration over lens
         pupil
-
-        TODO: Decide how to calculate theta or cos theta quadrature points
         """
         quad_theta_pts, quad_theta_wts = gauss_legendre_pts_wts(
              0, self.lens_angle, npts=self.quad_npts_theta)
-             #np.cos(self.lens_angle), 1.0, npts=self.quad_npts_theta)
         quad_phi_pts, quad_phi_wts = gauss_legendre_pts_wts(
              0, 2 * np.pi, npts=self.quad_npts_phi)
 
         quad_theta_pts, quad_phi_pts = cartesian(quad_theta_pts, quad_phi_pts).T
         quad_theta_wts, quad_phi_wts = cartesian(quad_theta_wts, quad_phi_wts).T
 
-        # self._theta_pts = np.arccos(quad_theta_pts)
-        # self._costheta_pts = quad_theta_pts
         self._theta_pts = quad_theta_pts
         self._costheta_pts = np.cos(self._theta_pts)
         self._sintheta_pts = np.sin(self._theta_pts)
@@ -63,9 +58,18 @@ class LensScatteringTheory(ScatteringTheory):
         integral_x, integral_y = self._compute_integral(positions, scatterer,
                                                         scat_matrs,
                                                         illum_polarization)
-        integral = np.vstack([integral_x, integral_y, np.zeros_like(integral_x)])
+        #fields = np.vstack([integral_x, integral_y, np.zeros_like(integral_x)])
+        pol_angle = np.arctan2(
+            illum_polarization.values[1], illum_polarization.values[0])
+        parallel = np.array([np.cos(pol_angle), np.sin(pol_angle)])
+        perpendicular = np.array([-np.sin(pol_angle), np.cos(pol_angle)])
+        fields = np.zeros([3, integral_x.size], dtype='complex')
+        for i in range(2):
+            fields[i, :] += integral_x * parallel[i]
+            fields[i, :] += integral_y * perpendicular[i]
+
         prefactor = self._compute_field_prefactor(scatterer, medium_wavevec)
-        fields = prefactor * integral
+        fields = prefactor * fields
         return fields
 
     def _calc_scattering_matrices_at_quad_pts(self, scatterer, medium_wavevec,
@@ -98,10 +102,10 @@ class LensScatteringTheory(ScatteringTheory):
         phi = self._phi_pts
         dphi = self._phi_wts
 
-        prefactor = np.exp(1j * krho_p[:, None] * sinth * np.cos(phi - phi_p[:, None]))
-        prefactor *= np.exp(1j * kz_p[:, None] * (1 - costh))
+        prefactor = .5 * np.exp(1j * kz_p[:, None] * (1 - costh))
+        prefactor *= np.exp(1j * krho_p[:, None] * sinth * np.cos(phi - phi_p[:, None]))
         prefactor *= np.sqrt(costh) * sinth * dphi * dth
-        prefactor *= 1. / (2 * np.pi)
+        prefactor *= 1. / np.pi
 
         S11 = scat_matrs.values[:, 0, 0]
         S22 = scat_matrs.values[:, 1, 1]
