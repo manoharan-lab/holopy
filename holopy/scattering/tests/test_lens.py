@@ -11,7 +11,7 @@ import holopy.scattering.tests.common as test_common
 
 LENS_ANGLE = 1.
 QLIM_TOL = {'atol': 1e-2, 'rtol': 1e-2}
-MIE_THEORY = LensScatteringTheory(lens_angle=LENS_ANGLE, theory=Mie)
+MIE_THEORY = LensScatteringTheory(lens_angle=LENS_ANGLE, theory=Mie, theory_args=[False, False])
 
 class TestLensScatteringTheory(unittest.TestCase):
     def test_can_handle(self):
@@ -78,9 +78,13 @@ class TestLensScatteringTheory(unittest.TestCase):
                             scatterer, medium_wavevec,medium_index))
 
         actual_size = s_matrix.size
+        actual_shape = s_matrix.shape
+
         expected_size = 4 * theory.quad_npts_theta * theory.quad_npts_phi
+        expected_shape = (4, theory.quad_npts_theta, theory.quad_npts_phi, 1)
+        
         self.assertTrue(actual_size==expected_size)
-        self.assertTrue(actual_size==expected_size)
+        self.assertTrue(actual_shape==expected_shape)
 
     def test_quadrature_scattering_matrix_same_as_mielens(self):
         scatterer = test_common.sphere

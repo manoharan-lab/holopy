@@ -11,10 +11,10 @@ class LensScatteringTheory(ScatteringTheory):
     desired_coordinate_system = 'cylindrical'
 
     def __init__(self, lens_angle, theory, quad_npts_theta=100,
-                 quad_npts_phi=100):
+                 quad_npts_phi=100, theory_args=[]):
         super(LensScatteringTheory, self).__init__()
         self.lens_angle = lens_angle
-        self.theory = theory()
+        self.theory = theory(*theory_args)
         self.quad_npts_theta = quad_npts_theta
         self.quad_npts_phi = quad_npts_phi
         self._setup_quadrature()
@@ -91,12 +91,12 @@ class LensScatteringTheory(ScatteringTheory):
         kz_p = kz_p.reshape(pos_shape)
 
         prefactor = np.ones((self.quad_npts_theta, self.quad_npts_phi, len(kz_p)), dtype='complex')
-        prefactor = prefactor * .5 * np.exp(1j * kz_p * (1 - costh))
+        prefactor = prefactor * np.exp(1j * kz_p * (1 - costh))
         prefactor = prefactor * np.exp(1j * krho_p * sinth * np.cos(phi - phi_p))
         prefactor = prefactor * np.sqrt(costh) * sinth * dphi * dth
-        prefactor = prefactor * 1. / np.pi
+        prefactor = prefactor * .5 / np.pi
 
-        S22, S11 = self._calc_scattering_matrix(scatterer, medium_wavevec, medium_index)[:2]
+        S22, S11, S12, S21 = self._calc_scattering_matrix(scatterer, medium_wavevec, medium_index)
 
         integrand_x = prefactor * (S11 * cosphi + S22 * sinphi)
         integrand_y = prefactor * (S11 * sinphi - S22 * cosphi)
@@ -104,16 +104,17 @@ class LensScatteringTheory(ScatteringTheory):
         return integrand_x, integrand_y
 
     def _calc_scattering_matrix(self, scatterer, medium_wavevec, medium_index):
-        theta, phi = cartesian(self._theta_pts.ravel(), self._phi_pts.ravel()).T
-        pts = detector_points(theta=theta, phi=phi)
-        illum_wavelen = 2 * np.pi * medium_index / medium_wavevec
+        #theta, phi = cartesian(self._theta_pts, self._phi_pts).T
+        theta, phi = np.meshgrid(self._theta_pts, self._phi_pts)
+        pts = detector_points(theta=theta.ravel(), phi=phi.ravel())
+        illum_wavelen = 2 * np.pi / medium_wavevec
         pts = update_metadata(pts, medium_index=medium_index, illum_wavelen=illum_wavelen)
         matr = self.theory.calculate_scattering_matrix(scatterer, pts)
-        matr = np.conj(matr.values.reshape(2, 2, self.quad_npts_theta, self.quad_npts_phi))
-        S1 = matr[1, 1, :, :].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
-        S2 = matr[0, 0, :, :].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
-        S3 = matr[0, 1, :, :].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
-        S4 = matr[1, 0, :, :].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
+        matr = np.conj(matr.values.reshape(self.quad_npts_theta, self.quad_npts_phi, 2, 2))
+        S1 = matr[:, :, 1, 1].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
+        S2 = matr[:, :, 0, 0].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
+        S3 = matr[:, :, 0, 1].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
+        S4 = matr[:, :, 1, 0].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
         return S1, S2, S3, S4
 
     def _transform_integral_from_lr_to_xyz(self, prll_component, perp_component,
