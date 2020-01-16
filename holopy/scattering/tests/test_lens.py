@@ -1,7 +1,7 @@
 import unittest
 
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 
 from holopy.scattering.theory import Mie, MieLens
 from holopy.scattering.theory.lens import LensScatteringTheory
@@ -18,35 +18,29 @@ class TestLensScatteringTheory(unittest.TestCase):
         self.assertTrue(theory._can_handle(test_common.sphere))
 
     def test_theta_quad_pts_min(self):
-        min_ok = np.allclose(np.min(MIE_THEORY._theta_pts), 0., **QLIM_TOL)
-        self.assertTrue(min_ok)
+        assert_allclose(np.min(MIE_THEORY._theta_pts), 0., **QLIM_TOL)
 
     def test_theta_quad_pts_max(self):
-        max_ok = np.allclose(np.max(MIE_THEORY._theta_pts), LENS_ANGLE, **QLIM_TOL)
-        self.assertTrue(max_ok)
+        assert_allclose(np.max(MIE_THEORY._theta_pts), LENS_ANGLE, **QLIM_TOL)
 
     def test_theta_quad_pts_num(self):
-        num_ok = len(MIE_THEORY._theta_pts) == len(MIE_THEORY._theta_wts)
-        self.assertTrue(num_ok)
+        assert_equal(len(MIE_THEORY._theta_pts), len(MIE_THEORY._theta_wts))
 
     def test_phi_quad_pts_min(self):
-        min_ok = np.allclose(np.min(MIE_THEORY._phi_pts), 0., **QLIM_TOL)
-        self.assertTrue(min_ok)
+        assert_allclose(np.min(MIE_THEORY._phi_pts), 0., **QLIM_TOL)
 
     def test_phi_quad_pts_max(self):
-        max_ok = np.allclose(np.max(MIE_THEORY._phi_pts), 2*np.pi, **QLIM_TOL)
-        self.assertTrue(max_ok)
+        assert_allclose(np.max(MIE_THEORY._phi_pts), 2*np.pi, **QLIM_TOL)
 
     def test_phi_quad_pts_num(self):
-        num_ok = len(MIE_THEORY._phi_pts) == len(MIE_THEORY._phi_wts)
-        self.assertTrue(num_ok)
+        assert_equal(len(MIE_THEORY._phi_pts), len(MIE_THEORY._phi_wts))
 
     def test_integrate_over_theta_with_quad_points(self):
         pts = MIE_THEORY._theta_pts
         wts = MIE_THEORY._theta_wts
         func = np.cos
         integral = np.sum(func(pts) * wts)
-        expected_val = np.sin(1.) # analytic result
+        expected_val = np.sin(MIE_THEORY.lens_angle) # analytic result
         assert_allclose(integral, expected_val)
 
     def test_integrate_over_phi_with_quad_points(self):
@@ -100,8 +94,8 @@ class TestLensScatteringTheory(unittest.TestCase):
             particle_kz=particle_kz, index_ratio=index_ratio,
             size_parameter=size_parameter, lens_angle=LENS_ANGLE)
 
-        s_matrix_old_perp = mielens_calculator._scat_perp_values.ravel()
-        s_matrix_old_prll = mielens_calculator._scat_prll_values.ravel()
+        s_matrix_old_perp = mielens_calculator._scat_perp_values.ravel()[::-1]
+        s_matrix_old_prll = mielens_calculator._scat_prll_values.ravel()[::-1]
 
         S11 = _get_smatrix_theta_near_phi_is_zero(s_matrix_new[:, 0, 0],
                                                   theory._cosphi_pts,
