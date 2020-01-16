@@ -53,14 +53,9 @@ class LensScatteringTheory(ScatteringTheory):
         integral_x, integral_y = self._compute_integral(positions, scatterer,
                                                         medium_wavevec, medium_index,
                                                         illum_polarization)
-        pol_angle = np.arctan2(
-            illum_polarization.values[1], illum_polarization.values[0])
-        parallel = np.array([np.cos(pol_angle), np.sin(pol_angle)])
-        perpendicular = np.array([-np.sin(pol_angle), np.cos(pol_angle)])
-        fields = np.zeros([3, integral_x.size], dtype='complex')
-        for i in range(2):
-            fields[i, :] += integral_x * parallel[i]
-            fields[i, :] += integral_y * perpendicular[i]
+
+        fields = self._transform_integral_from_lr_to_xyz(integral_x, integral_y,
+                                                         illum_polarization)
 
         prefactor = self._compute_field_prefactor(scatterer, medium_wavevec)
         fields = prefactor * fields
@@ -101,7 +96,7 @@ class LensScatteringTheory(ScatteringTheory):
         prefactor = prefactor * np.sqrt(costh) * sinth * dphi * dth
         prefactor = prefactor * 1. / np.pi
 
-        S11, S22 = self._calc_scattering_matrix(scatterer, medium_wavevec, medium_index)
+        S22, S11 = self._calc_scattering_matrix(scatterer, medium_wavevec, medium_index)[:2]
 
         integrand_x = prefactor * (S11 * cosphi + S22 * sinphi)
         integrand_y = prefactor * (S11 * sinphi - S22 * cosphi)
@@ -115,9 +110,23 @@ class LensScatteringTheory(ScatteringTheory):
         pts = update_metadata(pts, medium_index=medium_index, illum_wavelen=illum_wavelen)
         matr = self.theory.calculate_scattering_matrix(scatterer, pts)
         matr = np.conj(matr.values.reshape(2, 2, self.quad_npts_theta, self.quad_npts_phi))
-        S11 = matr[0, 0, :, :].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
-        S22 = matr[1, 1, :, :].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
-        return S11, S22
+        S1 = matr[1, 1, :, :].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
+        S2 = matr[0, 0, :, :].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
+        S3 = matr[0, 1, :, :].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
+        S4 = matr[1, 0, :, :].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
+        return S1, S2, S3, S4
+
+    def _transform_integral_from_lr_to_xyz(self, prll_component, perp_component,
+                                           illum_polarization):
+        pol_angle = np.arctan2(illum_polarization.values[1],
+                               illum_polarization.values[0])
+        parallel = np.array([np.cos(pol_angle), np.sin(pol_angle)])
+        perpendicular = np.array([-np.sin(pol_angle), np.cos(pol_angle)])
+        xyz = np.zeros([3, prll_component.size], dtype='complex')
+        for i in range(2):
+            xyz[i, :] += prll_component * parallel[i]
+            xyz[i, :] += perp_component * perpendicular[i]
+        return xyz
 
     def _compute_field_prefactor(self, scatterer, medium_wavevec):
         return -1. * np.exp(1j * medium_wavevec * scatterer.center[2])

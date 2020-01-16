@@ -74,10 +74,12 @@ class TestLensScatteringTheory(unittest.TestCase):
 
         theory = LensScatteringTheory(lens_angle=LENS_ANGLE, theory=Mie)
 
-        quad_s_matrix = theory._calc_scattering_matrices_at_quad_pts(
-                                       scatterer, medium_wavevec, medium_index)
-        actual_size = quad_s_matrix.size
+        s_matrix = np.array(theory._calc_scattering_matrix(
+                            scatterer, medium_wavevec,medium_index))
+
+        actual_size = s_matrix.size
         expected_size = 4 * theory.quad_npts_theta * theory.quad_npts_phi
+        self.assertTrue(actual_size==expected_size)
         self.assertTrue(actual_size==expected_size)
 
     def test_quadrature_scattering_matrix_same_as_mielens(self):
