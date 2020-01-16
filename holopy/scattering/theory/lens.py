@@ -10,23 +10,30 @@ class LensScatteringTheory(ScatteringTheory):
     """
     desired_coordinate_system = 'cylindrical'
 
-    def __init__(self, lens_angle, theory, quad_npts=100):
+    def __init__(self, lens_angle, theory, quad_npts_theta=100,
+                 quad_npts_phi=100):
         super(LensScatteringTheory, self).__init__()
         self.lens_angle = lens_angle
         self.theory = theory()
-        self.quad_npts = quad_npts
+        self.quad_npts_theta = quad_npts_theta
+        self.quad_npts_phi = quad_npts_phi
         self._setup_quadrature()
 
     def _can_handle(self, scatterer):
         return self.theory._can_handle(scatterer)
 
-    # TODO: Decide how to calculate theta or cos theta quadrature points
+
     def _setup_quadrature(self):
+        """Calculate quadrature points and weights for 2D integration over lens
+        pupil
+
+        TODO: Decide how to calculate theta or cos theta quadrature points
+        """
         quad_theta_pts, quad_theta_wts = gauss_legendre_pts_wts(
              #0, self.lens_angle, npts=self.quad_npts)
-             np.cos(self.lens_angle), 1.0, npts=self.quad_npts)
+             np.cos(self.lens_angle), 1.0, npts=self.quad_npts_theta)
         quad_phi_pts, quad_phi_wts = gauss_legendre_pts_wts(
-             0, 2 * np.pi, npts=self.quad_npts)
+             0, 2 * np.pi, npts=self.quad_npts_phi)
 
         quad_theta_pts, quad_phi_pts = cartesian(quad_theta_pts, quad_phi_pts).T
         quad_theta_wts, quad_phi_wts = cartesian(quad_theta_wts, quad_phi_wts).T
@@ -39,8 +46,14 @@ class LensScatteringTheory(ScatteringTheory):
         self._cosphi_pts = np.cos(self._phi_pts)
         self._sinphi_pts = np.sin(self._phi_pts)
 
-        self._theta_wts = quad_theta_wts / self.quad_npts
-        self._phi_wts = quad_phi_wts / self.quad_npts
+        self._scale_quadrature_wieghts(quad_theta_wts, quad_phi_wts)
+
+    def _scale_quadrature_wieghts(self, theta_wieghts, phi_weights):
+        """Scales the Gaussain quadrature wieghts so we can integrate over 2d
+        space properly.
+        """
+        self._theta_wts = theta_wieghts / self.quad_npts_phi
+        self._phi_wts = phi_weights / self.quad_npts_theta
 
     def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
@@ -71,8 +84,7 @@ class LensScatteringTheory(ScatteringTheory):
 
     def _compute_integrand(self, positions, scat_matrs, illum_polarization):
         krho_p, phi_p, kz_p = positions
-        pol_angle = np.arctan2(
-            illum_polarization[1], illum_polarization[0])
+        pol_angle = np.arctan2(illum_polarization[1], illum_polarization[0])
         phi_p += pol_angle.values
         phi_p %= (2 * np.pi)
 
@@ -91,8 +103,6 @@ class LensScatteringTheory(ScatteringTheory):
         prefactor *= 1. / (2 * np.pi)
 
         S11 = scat_matrs.values[:, 0, 0]
-        S21 = scat_matrs.values[:, 1, 0]
-        S12 = scat_matrs.values[:, 0, 1]
         S22 = scat_matrs.values[:, 1, 1]
 
         integrand_x = prefactor * (S11 * cosphi + S22 * sinphi)
