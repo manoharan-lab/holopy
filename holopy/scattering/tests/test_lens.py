@@ -3,8 +3,9 @@ import unittest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
+from holopy.core import detector_points, update_metadata
 from holopy.scattering.theory import Mie, MieLens
-from holopy.scattering.theory.lens import LensScatteringTheory
+from holopy.scattering.theory.lens import LensScatteringTheory, cartesian
 from holopy.scattering.theory.mielensfunctions import MieLensCalculator
 import holopy.scattering.tests.common as test_common
 
@@ -53,10 +54,13 @@ class TestLensScatteringTheory(unittest.TestCase):
 
     def test_integrate_over_2D_with_quad_points(self):
         pts_theta = MIE_THEORY._theta_pts
-        wts_theta = MIE_THEORY._theta_wts
+        wts_theta = MIE_THEORY._theta_wts# / MIE_THEORY.quad_npts_phi
 
-        pts_phi = MIE_THEORY._phi_pts[:, np.newaxis]
-        wts_phi = MIE_THEORY._phi_wts[:, np.newaxis]
+        pts_phi = MIE_THEORY._phi_pts
+        wts_phi = MIE_THEORY._phi_wts# / MIE_THEORY.quad_npts_theta
+
+        pts_theta, pts_phi = np.meshgrid(pts_theta, pts_phi)
+        wts_theta, wts_phi = np.meshgrid(wts_theta, wts_phi)
 
         func = lambda theta, phi: np.cos(theta) * np.cos(np.pi * phi)
         integral = np.sum(func(pts_theta, pts_phi) * wts_theta * wts_phi)
@@ -83,9 +87,10 @@ class TestLensScatteringTheory(unittest.TestCase):
 
         theory = LensScatteringTheory(lens_angle=LENS_ANGLE, theory=Mie)
 
-        s_matrix_new = theory._calc_scattering_matrices_at_quad_pts(
+        theta, phi, s_matrix_new = _get_quad_pts_and_scattering_matrix(theory,
                                        scatterer, medium_wavevec, medium_index)
-
+        sinphi = np.sin(phi)
+        cosphi = np.cos(phi)
         mielens_calculator = _setup_mielens_calculator(scatterer, medium_wavevec,
                                                        medium_index)
 
@@ -94,14 +99,14 @@ class TestLensScatteringTheory(unittest.TestCase):
 
         S11, theta_prll = _get_smatrix_theta_near_phi_is_zero(
                                                   s_matrix_new[:, 0, 0],
-                                                  theory._cosphi_pts,
-                                                  theory._phi_pts,
-                                                  theory._theta_pts)
+                                                  cosphi,
+                                                  phi,
+                                                  theta)
         S22, theta_perp = _get_smatrix_theta_near_phi_is_pi_over_2(
                                                   s_matrix_new[:, 1, 1],
-                                                  theory._sinphi_pts,
-                                                  theory._phi_pts,
-                                                  theory._theta_pts)
+                                                  sinphi,
+                                                  phi,
+                                                  theta)
 
         s_perp_new = np.interp(mielens_calculator._theta_pts, theta_perp, S22)
         s_prll_new = np.interp(mielens_calculator._theta_pts, theta_prll, S11)
@@ -158,6 +163,15 @@ def _setup_mielens_calculator(scatterer, medium_wavevec, medium_index):
                                    size_parameter=size_parameter,
                                    lens_angle=LENS_ANGLE)
     return calculator
+
+def _get_quad_pts_and_scattering_matrix(theory, scatterer, medium_wavevec,
+                                          medium_index):
+    theta, phi = cartesian(theory._theta_pts.ravel(), theory._phi_pts.ravel()).T
+    pts = detector_points(theta=theta, phi=phi)
+    illum_wavelen = 2 * np.pi * medium_index / medium_wavevec
+    pts = update_metadata(pts, medium_index=medium_index, illum_wavelen=illum_wavelen)
+    matr = theory.theory.calculate_scattering_matrix(scatterer, pts)
+    return theta, phi, np.conj(matr)
 
 def _get_smatrix_theta_near_phi_is_zero(smatrix, cosphi, phi, theta):
     cp = cosphi[np.logical_and(cosphi == max(abs(cosphi)), phi < np.pi)]
