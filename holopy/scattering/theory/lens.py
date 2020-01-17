@@ -11,10 +11,10 @@ class LensScatteringTheory(ScatteringTheory):
     desired_coordinate_system = 'cylindrical'
 
     def __init__(self, lens_angle, theory, quad_npts_theta=100,
-                 quad_npts_phi=100, theory_args=[]):
+                 quad_npts_phi=100):
         super(LensScatteringTheory, self).__init__()
         self.lens_angle = lens_angle
-        self.theory = theory(*theory_args)
+        self.theory = theory
         self.quad_npts_theta = quad_npts_theta
         self.quad_npts_phi = quad_npts_phi
         self._setup_quadrature()

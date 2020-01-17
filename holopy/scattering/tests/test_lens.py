@@ -11,53 +11,53 @@ import holopy.scattering.tests.common as test_common
 
 LENS_ANGLE = 1.
 QLIM_TOL = {'atol': 1e-2, 'rtol': 1e-2}
-MIE_THEORY = LensScatteringTheory(lens_angle=LENS_ANGLE, theory=Mie, theory_args=[False, False])
+LENSMIE = LensScatteringTheory(lens_angle=LENS_ANGLE, theory=Mie(False, False))
 
 class TestLensScatteringTheory(unittest.TestCase):
     def test_can_handle(self):
-        theory = MIE_THEORY
+        theory = LENSMIE
         self.assertTrue(theory._can_handle(test_common.sphere))
 
     def test_theta_quad_pts_min(self):
-        assert_allclose(np.min(MIE_THEORY._theta_pts), 0., **QLIM_TOL)
+        assert_allclose(np.min(LENSMIE._theta_pts), 0., **QLIM_TOL)
 
     def test_theta_quad_pts_max(self):
-        assert_allclose(np.max(MIE_THEORY._theta_pts), LENS_ANGLE, **QLIM_TOL)
+        assert_allclose(np.max(LENSMIE._theta_pts), LENS_ANGLE, **QLIM_TOL)
 
     def test_theta_quad_pts_num(self):
-        assert_equal(len(MIE_THEORY._theta_pts), len(MIE_THEORY._theta_wts))
+        assert_equal(len(LENSMIE._theta_pts), len(LENSMIE._theta_wts))
 
     def test_phi_quad_pts_min(self):
-        assert_allclose(np.min(MIE_THEORY._phi_pts), 0., **QLIM_TOL)
+        assert_allclose(np.min(LENSMIE._phi_pts), 0., **QLIM_TOL)
 
     def test_phi_quad_pts_max(self):
-        assert_allclose(np.max(MIE_THEORY._phi_pts), 2*np.pi, **QLIM_TOL)
+        assert_allclose(np.max(LENSMIE._phi_pts), 2*np.pi, **QLIM_TOL)
 
     def test_phi_quad_pts_num(self):
-        assert_equal(len(MIE_THEORY._phi_pts), len(MIE_THEORY._phi_wts))
+        assert_equal(len(LENSMIE._phi_pts), len(LENSMIE._phi_wts))
 
     def test_integrate_over_theta_with_quad_points(self):
-        pts = MIE_THEORY._theta_pts
-        wts = MIE_THEORY._theta_wts
+        pts = LENSMIE._theta_pts
+        wts = LENSMIE._theta_wts
         func = np.cos
         integral = np.sum(func(pts) * wts)
-        expected_val = np.sin(MIE_THEORY.lens_angle) # analytic result
+        expected_val = np.sin(LENSMIE.lens_angle) # analytic result
         assert_allclose(integral, expected_val)
 
     def test_integrate_over_phi_with_quad_points(self):
-        pts = MIE_THEORY._phi_pts
-        wts = MIE_THEORY._phi_wts
+        pts = LENSMIE._phi_pts
+        wts = LENSMIE._phi_wts
         func = lambda x: np.cos(np.pi * x)
         integral = np.sum(func(pts) * wts)
         expected_val = np.sin(2 * np.pi ** 2) /  np.pi # analytic result
         assert_allclose(integral, expected_val)
 
     def test_integrate_over_2D_with_quad_points(self):
-        pts_theta = MIE_THEORY._theta_pts
-        wts_theta = MIE_THEORY._theta_wts
+        pts_theta = LENSMIE._theta_pts
+        wts_theta = LENSMIE._theta_wts
 
-        pts_phi = MIE_THEORY._phi_pts
-        wts_phi = MIE_THEORY._phi_wts
+        pts_phi = LENSMIE._phi_pts
+        wts_phi = LENSMIE._phi_wts
 
         pts_theta, pts_phi = np.meshgrid(pts_theta, pts_phi)
         wts_theta, wts_phi = np.meshgrid(wts_theta, wts_phi)
@@ -72,7 +72,7 @@ class TestLensScatteringTheory(unittest.TestCase):
         medium_wavevec = 2 * np.pi / test_common.wavelen
         medium_index = test_common.index
 
-        theory = LensScatteringTheory(lens_angle=LENS_ANGLE, theory=Mie)
+        theory = LENSMIE
 
         s_matrix = np.array(theory._calc_scattering_matrix(
                             scatterer, medium_wavevec,medium_index))
@@ -91,7 +91,7 @@ class TestLensScatteringTheory(unittest.TestCase):
         medium_wavevec = 2 * np.pi / test_common.wavelen
         medium_index = test_common.index
 
-        theory = LensScatteringTheory(lens_angle=LENS_ANGLE, theory=Mie)
+        theory = LENSMIE
 
         theta, phi, s_matrix_new = _get_quad_pts_and_scattering_matrix(theory,
                                        scatterer, medium_wavevec, medium_index)
@@ -131,7 +131,7 @@ class TestLensScatteringTheory(unittest.TestCase):
         pos_old = theory_old._transform_to_desired_coordinates(
                                 detector, scatterer.center, wavevec=medium_wavevec)
 
-        theory_new = LensScatteringTheory(lens_angle=LENS_ANGLE, theory=Mie)
+        theory_new = LENSMIE
         pos_new = theory_new._transform_to_desired_coordinates(
                                 detector, scatterer.center, wavevec=medium_wavevec)
 
@@ -151,7 +151,7 @@ class TestLensScatteringTheory(unittest.TestCase):
         illum_polarization = test_common.xpolarization
 
         theory_old = MieLens(lens_angle=LENS_ANGLE)
-        theory_new = LensScatteringTheory(lens_angle=LENS_ANGLE, theory=Mie)
+        theory_new = LENSMIE
 
         fields_old = theory_old.calculate_scattered_field(scatterer, detector)
         fields_new = theory_new.calculate_scattered_field(scatterer, detector)
