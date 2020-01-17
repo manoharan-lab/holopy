@@ -114,7 +114,8 @@ class LensScatteringTheory(ScatteringTheory):
     def _calc_scattering_matrix(self, scatterer, medium_wavevec, medium_index):
         theta, phi = np.meshgrid(self._theta_pts, self._phi_pts)
         pts = detector_points(theta=theta.ravel(), phi=phi.ravel())
-        illum_wavelen = 2 * np.pi / medium_wavevec
+        illum_wavelen = 2 * np.pi * medium_index / medium_wavevec
+
         pts = update_metadata(pts, medium_index=medium_index,
                               illum_wavelen=illum_wavelen)
         S = self.theory.calculate_scattering_matrix(scatterer, pts)

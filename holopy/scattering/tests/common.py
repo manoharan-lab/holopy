@@ -26,7 +26,7 @@ xpolarization = [1.0, 0.] # x-polarized
 pixel_scale = [.1151e-6, .1151e-6]
 index = 1.33
 
-xschema = update_metadata(detector_grid(shape = 128, spacing=pixel_scale), illum_wavelen=wavelen, medium_index=index, illum_polarization=xpolarization)
+xschema = update_metadata(detector_grid(shape=64, spacing=pixel_scale), illum_wavelen=wavelen, medium_index=index, illum_polarization=xpolarization)
 yschema = update_metadata(xschema, illum_polarization=ypolarization)
 
 scaling_alpha = .6

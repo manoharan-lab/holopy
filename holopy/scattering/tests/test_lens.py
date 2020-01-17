@@ -82,7 +82,7 @@ class TestLensScatteringTheory(unittest.TestCase):
 
         expected_size = 4 * theory.quad_npts_theta * theory.quad_npts_phi
         expected_shape = (4, theory.quad_npts_theta, theory.quad_npts_phi, 1)
-        
+
         self.assertTrue(actual_size==expected_size)
         self.assertTrue(actual_shape==expected_shape)
 
@@ -139,11 +139,10 @@ class TestLensScatteringTheory(unittest.TestCase):
                         illum_polarization)
         fx, fy, fz = theory_new._raw_fields(pos_new, scatterer, medium_wavevec, medium_index,
                         illum_polarization)
-        assert_allclose(f0x, fx)
-        assert_allclose(f0y, fy)
-        assert_allclose(f0z, fz)
+        assert_allclose(f0x, fx, atol=1e-2, rtol=0.05)
+        assert_allclose(f0y, fy, atol=1e-2, rtol=0.05)
+        assert_allclose(f0z, fz, atol=1e-2, rtol=0.05)
 
-    @unittest.skip("Debug")
     def test_lens_plus_mie_fields_same_as_mielens(self):
         detector = test_common.xschema
         scatterer = test_common.sphere
@@ -157,7 +156,7 @@ class TestLensScatteringTheory(unittest.TestCase):
         fields_old = theory_old.calculate_scattered_field(scatterer, detector)
         fields_new = theory_new.calculate_scattered_field(scatterer, detector)
 
-        assert_allclose(fields_old, fields_new)
+        assert_allclose(fields_old, fields_new, atol=1e-1, rtol=0.05)
 
 def _setup_mielens_calculator(scatterer, medium_wavevec, medium_index):
     particle_kz = medium_wavevec * scatterer.z
