@@ -120,6 +120,7 @@ class LensScatteringTheory(ScatteringTheory):
         S = self.theory.calculate_scattering_matrix(scatterer, pts)
         S = np.conj(S.values.reshape(self.quad_npts_theta,
                                      self.quad_npts_phi, 2, 2))
+        S = np.swapaxes(S, 0, 1)
         S1 = S[:, :, 1, 1].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
         S2 = S[:, :, 0, 0].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
         S3 = S[:, :, 0, 1].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
