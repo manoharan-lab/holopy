@@ -61,13 +61,17 @@ class LensScatteringTheory(ScatteringTheory):
         fields = prefactor * fields
         return fields
 
-    def _compute_integral(self, positions, scatterer, medium_wavevec, medium_index, illum_polarization):
-        int_x, int_y = self._compute_integrand(positions, scatterer, medium_wavevec, medium_index, illum_polarization)
+    def _compute_integral(self, positions, scatterer, medium_wavevec,
+                          medium_index, illum_polarization):
+        int_x, int_y = self._compute_integrand(positions, scatterer,
+                                               medium_wavevec, medium_index,
+                                               illum_polarization)
         integral_x = np.sum(int_x, axis=(0,1))
         integral_y = np.sum(int_y, axis=(0,1))
         return integral_x, integral_y
 
-    def _compute_integrand(self, positions, scatterer, medium_wavevec, medium_index, illum_polarization):
+    def _compute_integrand(self, positions, scatterer, medium_wavevec,
+                           medium_index, illum_polarization):
         krho_p, phi_p, kz_p = positions
         pol_angle = np.arctan2(illum_polarization[1], illum_polarization[0])
         phi_p += pol_angle.values
@@ -90,31 +94,36 @@ class LensScatteringTheory(ScatteringTheory):
         phi_p = phi_p.reshape(pos_shape)
         kz_p = kz_p.reshape(pos_shape)
 
-        prefactor = np.ones((self.quad_npts_theta, self.quad_npts_phi, len(kz_p)), dtype='complex')
+        prefactor = np.ones((self.quad_npts_theta, self.quad_npts_phi, len(kz_p)),
+                            dtype='complex')
         prefactor = prefactor * np.exp(1j * kz_p * (1 - costh))
         prefactor = prefactor * np.exp(1j * krho_p * sinth * np.cos(phi - phi_p))
         prefactor = prefactor * np.sqrt(costh) * sinth * dphi * dth
         prefactor = prefactor * .5 / np.pi
 
-        S22, S11, S12, S21 = self._calc_scattering_matrix(scatterer, medium_wavevec, medium_index)
+        S1, S2, S3, S4 = self._calc_scattering_matrix(scatterer, medium_wavevec,
+                                                      medium_index)
 
-        integrand_x = prefactor * (S11 * cosphi + S22 * sinphi)
-        integrand_y = prefactor * (S11 * sinphi - S22 * cosphi)
+        integrand_x = prefactor * (cosphi * (cosphi * S2 + sinphi * S3)
+                                   + sinphi * (cosphi * S4 + sinphi * S1))
+        integrand_y = prefactor * (sinphi * (cosphi * S2 + sinphi * S3)
+                                   - cosphi * (cosphi * S4 + sinphi * S1))
 
         return integrand_x, integrand_y
 
     def _calc_scattering_matrix(self, scatterer, medium_wavevec, medium_index):
-        #theta, phi = cartesian(self._theta_pts, self._phi_pts).T
         theta, phi = np.meshgrid(self._theta_pts, self._phi_pts)
         pts = detector_points(theta=theta.ravel(), phi=phi.ravel())
         illum_wavelen = 2 * np.pi / medium_wavevec
-        pts = update_metadata(pts, medium_index=medium_index, illum_wavelen=illum_wavelen)
-        matr = self.theory.calculate_scattering_matrix(scatterer, pts)
-        matr = np.conj(matr.values.reshape(self.quad_npts_theta, self.quad_npts_phi, 2, 2))
-        S1 = matr[:, :, 1, 1].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
-        S2 = matr[:, :, 0, 0].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
-        S3 = matr[:, :, 0, 1].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
-        S4 = matr[:, :, 1, 0].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
+        pts = update_metadata(pts, medium_index=medium_index,
+                              illum_wavelen=illum_wavelen)
+        S = self.theory.calculate_scattering_matrix(scatterer, pts)
+        S = np.conj(S.values.reshape(self.quad_npts_theta,
+                                     self.quad_npts_phi, 2, 2))
+        S1 = S[:, :, 1, 1].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
+        S2 = S[:, :, 0, 0].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
+        S3 = S[:, :, 0, 1].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
+        S4 = S[:, :, 1, 0].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
         return S1, S2, S3, S4
 
     def _transform_integral_from_lr_to_xyz(self, prll_component, perp_component,
