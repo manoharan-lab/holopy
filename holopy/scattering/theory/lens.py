@@ -39,14 +39,8 @@ class LensScatteringTheory(ScatteringTheory):
         self._cosphi_pts = np.cos(self._phi_pts)
         self._sinphi_pts = np.sin(self._phi_pts)
 
-        self._scale_quadrature_wts(quad_theta_wts, quad_phi_wts)
-
-    def _scale_quadrature_wts(self, theta_wieghts, phi_weights):
-        """Scales the Gaussain quadrature wieghts so we can integrate over 2d
-        space properly.
-        """
-        self._theta_wts = theta_wieghts# / self.quad_npts_phi
-        self._phi_wts = phi_weights# / self.quad_npts_theta
+        self._theta_wts = quad_theta_wts
+        self._phi_wts = quad_phi_wts
 
     def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index,
                     illum_polarization):

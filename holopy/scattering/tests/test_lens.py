@@ -54,10 +54,10 @@ class TestLensScatteringTheory(unittest.TestCase):
 
     def test_integrate_over_2D_with_quad_points(self):
         pts_theta = MIE_THEORY._theta_pts
-        wts_theta = MIE_THEORY._theta_wts# / MIE_THEORY.quad_npts_phi
+        wts_theta = MIE_THEORY._theta_wts
 
         pts_phi = MIE_THEORY._phi_pts
-        wts_phi = MIE_THEORY._phi_wts# / MIE_THEORY.quad_npts_theta
+        wts_phi = MIE_THEORY._phi_wts
 
         pts_theta, pts_phi = np.meshgrid(pts_theta, pts_phi)
         wts_theta, wts_phi = np.meshgrid(wts_theta, wts_phi)
