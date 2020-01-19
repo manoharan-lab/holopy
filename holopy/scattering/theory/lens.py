@@ -88,12 +88,10 @@ class LensScatteringTheory(ScatteringTheory):
         phi_p = phi_p.reshape(pos_shape)
         kz_p = kz_p.reshape(pos_shape)
 
-        prefactor = np.ones((self.quad_npts_theta, self.quad_npts_phi, len(kz_p)),
-                            dtype='complex')
-        prefactor = prefactor * np.exp(1j * kz_p * (1 - costh))
-        prefactor = prefactor * np.exp(1j * krho_p * sinth * np.cos(phi - phi_p))
-        prefactor = prefactor * np.sqrt(costh) * sinth * dphi * dth
-        prefactor = prefactor * .5 / np.pi
+        prefactor = np.exp(1j * krho_p * sinth * np.cos(phi - phi_p))
+        prefactor *= np.exp(1j * kz_p * (1 - costh))
+        prefactor *= np.sqrt(costh) * sinth * dphi * dth
+        prefactor *= .5 / np.pi
 
         S1, S2, S3, S4 = self._calc_scattering_matrix(scatterer, medium_wavevec,
                                                       medium_index)
