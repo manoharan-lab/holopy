@@ -88,20 +88,26 @@ class LensScatteringTheory(ScatteringTheory):
         phi_p = phi_p.reshape(pos_shape)
         kz_p = kz_p.reshape(pos_shape)
 
-        prefactor = np.exp(1j * krho_p * sinth * np.cos(phi - phi_p))
-        prefactor *= np.exp(1j * kz_p * (1 - costh))
-        prefactor *= np.sqrt(costh) * sinth * dphi * dth
-        prefactor *= .5 / np.pi
+        prefactor = self._integrand_prefactor(sinth, costh, phi, dth, dphi,
+                                              krho_p, phi_p, kz_p)
 
         S1, S2, S3, S4 = self._calc_scattering_matrix(scatterer, medium_wavevec,
                                                       medium_index)
 
-        integrand_l = prefactor * (cosphi * (cosphi * S2 + sinphi * S3)
-                                   + sinphi * (cosphi * S4 + sinphi * S1))
-        integrand_r = prefactor * (sinphi * (cosphi * S2 + sinphi * S3)
-                                   - cosphi * (cosphi * S4 + sinphi * S1))
+        integrand_l = self._integrand_prll(prefactor, cosphi, sinphi,
+                                           S1, S2, S3, S4)
+        integrand_r = self._integrand_perp(prefactor, cosphi, sinphi,
+                                           S1, S2, S3, S4)
 
         return integrand_l, integrand_r
+
+    def _integrand_prefactor(self, sinth, costh, phi, dth, dphi,
+                             krho_p, phi_p, kz_p):
+        prefactor = np.exp(1j * krho_p * sinth * np.cos(phi - phi_p))
+        prefactor *= np.exp(1j * kz_p * (1 - costh))
+        prefactor *= np.sqrt(costh) * sinth * dphi * dth
+        prefactor *= .5 / np.pi
+        return prefactor
 
     def _calc_scattering_matrix(self, scatterer, medium_wavevec, medium_index):
         theta, phi = np.meshgrid(self._theta_pts, self._phi_pts)
@@ -119,6 +125,16 @@ class LensScatteringTheory(ScatteringTheory):
         S3 = S[:, :, 0, 1].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
         S4 = S[:, :, 1, 0].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
         return S1, S2, S3, S4
+
+    def _integrand_prll(self, prefactor, cosphi, sinphi, S1, S2, S3, S4):
+        integrand_l = prefactor * (cosphi * (cosphi * S2 + sinphi * S3)
+                                 + sinphi * (cosphi * S4 + sinphi * S1))
+        return integrand_l
+
+    def _integrand_perp(self, prefactor, cosphi, sinphi, S1, S2, S3, S4):
+        integrand_r = prefactor * (sinphi * (cosphi * S2 + sinphi * S3)
+                                 - cosphi * (cosphi * S4 + sinphi * S1))
+        return integrand_r
 
     def _transform_integral_from_lr_to_xyz(self, prll_component, perp_component,
                                            illum_polarization):
