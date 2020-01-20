@@ -71,13 +71,13 @@ class LensScatteringTheory(ScatteringTheory):
         phi_p += pol_angle.values
         phi_p %= (2 * np.pi)
 
-        theta_shape = (1, self.quad_npts_theta, 1)
+        theta_shape = (self.quad_npts_theta, 1, 1)
         th = self._theta_pts.reshape(theta_shape)
         sinth = self._sintheta_pts.reshape(theta_shape)
         costh = self._costheta_pts.reshape(theta_shape)
         dth = self._theta_wts.reshape(theta_shape)
 
-        phi_shape = (self.quad_npts_phi, 1, 1)
+        phi_shape = (1, self.quad_npts_phi, 1)
         sinphi = self._sinphi_pts.reshape(phi_shape)
         cosphi = self._cosphi_pts.reshape(phi_shape)
         phi = self._phi_pts.reshape(phi_shape)
@@ -113,7 +113,7 @@ class LensScatteringTheory(ScatteringTheory):
         S = self.theory.calculate_scattering_matrix(scatterer, pts)
         S = np.conj(S.values.reshape(self.quad_npts_theta,
                                      self.quad_npts_phi, 2, 2))
-
+        S = np.swapaxes(S, 0, 1)
         S1 = S[:, :, 1, 1].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
         S2 = S[:, :, 0, 0].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
         S3 = S[:, :, 0, 1].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
