@@ -44,25 +44,25 @@ class LensScatteringTheory(ScatteringTheory):
 
     def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
-        integral_x, integral_y = self._compute_integral(positions, scatterer,
-                                                        medium_wavevec, medium_index,
+        integral_l, integral_r = self._compute_integral(positions, scatterer,
+                                                        medium_wavevec,
+                                                        medium_index,
                                                         illum_polarization)
 
-        fields = self._transform_integral_from_lr_to_xyz(integral_x, integral_y,
+        fields = self._transform_integral_from_lr_to_xyz(integral_l, integral_r,
                                                          illum_polarization)
 
-        prefactor = self._compute_field_prefactor(scatterer, medium_wavevec)
-        fields = prefactor * fields
+        fields *= self._compute_field_prefactor(scatterer, medium_wavevec)
         return fields
 
     def _compute_integral(self, positions, scatterer, medium_wavevec,
                           medium_index, illum_polarization):
-        int_x, int_y = self._compute_integrand(positions, scatterer,
+        int_l, int_r = self._compute_integrand(positions, scatterer,
                                                medium_wavevec, medium_index,
                                                illum_polarization)
-        integral_x = np.sum(int_x, axis=(0,1))
-        integral_y = np.sum(int_y, axis=(0,1))
-        return integral_x, integral_y
+        integral_l = np.sum(int_l, axis=(0,1))
+        integral_r = np.sum(int_r, axis=(0,1))
+        return integral_l, integral_r
 
     def _compute_integrand(self, positions, scatterer, medium_wavevec,
                            medium_index, illum_polarization):
@@ -71,13 +71,13 @@ class LensScatteringTheory(ScatteringTheory):
         phi_p += pol_angle.values
         phi_p %= (2 * np.pi)
 
-        theta_shape = (self.quad_npts_theta, 1, 1)
+        theta_shape = (1, self.quad_npts_theta, 1)
         th = self._theta_pts.reshape(theta_shape)
         sinth = self._sintheta_pts.reshape(theta_shape)
         costh = self._costheta_pts.reshape(theta_shape)
         dth = self._theta_wts.reshape(theta_shape)
 
-        phi_shape = (1, self.quad_npts_phi, 1)
+        phi_shape = (self.quad_npts_phi, 1, 1)
         sinphi = self._sinphi_pts.reshape(phi_shape)
         cosphi = self._cosphi_pts.reshape(phi_shape)
         phi = self._phi_pts.reshape(phi_shape)
@@ -96,12 +96,12 @@ class LensScatteringTheory(ScatteringTheory):
         S1, S2, S3, S4 = self._calc_scattering_matrix(scatterer, medium_wavevec,
                                                       medium_index)
 
-        integrand_x = prefactor * (cosphi * (cosphi * S2 + sinphi * S3)
+        integrand_l = prefactor * (cosphi * (cosphi * S2 + sinphi * S3)
                                    + sinphi * (cosphi * S4 + sinphi * S1))
-        integrand_y = prefactor * (sinphi * (cosphi * S2 + sinphi * S3)
+        integrand_r = prefactor * (sinphi * (cosphi * S2 + sinphi * S3)
                                    - cosphi * (cosphi * S4 + sinphi * S1))
 
-        return integrand_x, integrand_y
+        return integrand_l, integrand_r
 
     def _calc_scattering_matrix(self, scatterer, medium_wavevec, medium_index):
         theta, phi = np.meshgrid(self._theta_pts, self._phi_pts)
@@ -113,7 +113,7 @@ class LensScatteringTheory(ScatteringTheory):
         S = self.theory.calculate_scattering_matrix(scatterer, pts)
         S = np.conj(S.values.reshape(self.quad_npts_theta,
                                      self.quad_npts_phi, 2, 2))
-        S = np.swapaxes(S, 0, 1)
+
         S1 = S[:, :, 1, 1].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
         S2 = S[:, :, 0, 0].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
         S3 = S[:, :, 0, 1].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
@@ -146,6 +146,3 @@ def gauss_legendre_pts_wts(a, b, npts=100):
     wts = wts_raw * (b - a) * 0.5
     pts += 0.5 * (a + b)
     return pts, wts
-
-def cartesian(*dims):
-    return np.array(np.meshgrid(*dims, indexing='ij')).T.reshape(-1, len(dims))

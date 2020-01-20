@@ -5,7 +5,7 @@ from numpy.testing import assert_allclose, assert_equal
 
 from holopy.core import detector_points, update_metadata
 from holopy.scattering.theory import Mie, MieLens
-from holopy.scattering.theory.lens import LensScatteringTheory, cartesian
+from holopy.scattering.theory.lens import LensScatteringTheory
 from holopy.scattering.theory.mielensfunctions import MieLensCalculator
 import holopy.scattering.tests.common as test_common
 
@@ -177,6 +177,9 @@ def _get_quad_pts_and_scattering_matrix(theory, scatterer, medium_wavevec,
     pts = update_metadata(pts, medium_index=medium_index, illum_wavelen=illum_wavelen)
     matr = theory.theory.calculate_scattering_matrix(scatterer, pts)
     return theta, phi, np.conj(matr)
+
+def cartesian(*dims):
+    return np.array(np.meshgrid(*dims, indexing='ij')).T.reshape(-1, len(dims))
 
 def _get_smatrix_theta_near_phi_is_zero(smatrix, cosphi, phi, theta):
     cp = cosphi[np.logical_and(cosphi == max(abs(cosphi)), phi < np.pi)]
