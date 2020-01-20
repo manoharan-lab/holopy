@@ -3,7 +3,8 @@ import unittest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
-from holopy.core import detector_points, update_metadata
+from holopy.core import detector_points, update_metadata, detector_grid
+from holopy.scattering import calc_holo
 from holopy.scattering.theory import Mie, MieLens
 from holopy.scattering.theory.lens import LensScatteringTheory
 from holopy.scattering.theory.mielensfunctions import MieLensCalculator
@@ -157,6 +158,19 @@ class TestLensScatteringTheory(unittest.TestCase):
         fields_new = theory_new.calculate_scattered_field(scatterer, detector)
 
         assert_allclose(fields_old, fields_new, atol=5e-3)
+
+    def test_calc_holo_theta_npts_not_equal_phi_npts(self):
+        scatterer = test_common.sphere
+        pts = detector_grid(shape=4, spacing=test_common.pixel_scale)
+        pts = update_metadata(pts, illum_wavelen=test_common.wavelen,
+                              medium_index=test_common.index,
+                              illum_polarization=test_common.xpolarization)
+        theory = LensScatteringTheory(LENS_ANGLE, Mie(),
+                                          quad_npts_theta=8,
+                                          quad_npts_phi=10)
+        holo = calc_holo(pts, scatterer, theory=theory)
+        self.assertTrue(True)
+
 
 def _setup_mielens_calculator(scatterer, medium_wavevec, medium_index):
     particle_kz = medium_wavevec * scatterer.z
