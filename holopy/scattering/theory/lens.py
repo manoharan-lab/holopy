@@ -1,5 +1,11 @@
 import numpy as np
 
+try:
+    import numexpr as ne
+    NUMEXPR_INSTALLED = True
+except ModuleNotFoundError:
+    NUMEXPR_INSTALLED = False
+
 from holopy.core import detector_points, update_metadata
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 
@@ -9,6 +15,14 @@ class LensScatteringTheory(ScatteringTheory):
     effect of an objective lens.
     """
     desired_coordinate_system = 'cylindrical'
+
+    numexpr_integrand_prefactor1 = 'exp(1j * krho_p * sinth * cos(phi - phi_p))'
+    numexpr_integrand_prefactor2 = 'exp(1j * kz_p * (1 - costh))'
+    numexpr_integrand_prefactor3 = 'sqrt(costh) * sinth * dphi * dth'
+    numexpr_integrandl = ('prefactor * (cosphi * (cosphi * S2 + sinphi * S3) +'
+                         + ' sinphi * (cosphi * S4 + sinphi * S1))')
+    numexpr_integrandr = ('prefactor * (sinphi * (cosphi * S2 + sinphi * S3) -'
+                         + ' cosphi * (cosphi * S4 + sinphi * S1))')
 
     def __init__(self, lens_angle, theory, quad_npts_theta=100,
                  quad_npts_phi=100):
@@ -101,11 +115,17 @@ class LensScatteringTheory(ScatteringTheory):
 
         return integrand_l, integrand_r
 
-    def _integrand_prefactor(self, sinth, costh, phi, dth, dphi,
+    @classmethod
+    def _integrand_prefactor(cls, sinth, costh, phi, dth, dphi,
                              krho_p, phi_p, kz_p):
-        prefactor = np.exp(1j * krho_p * sinth * np.cos(phi - phi_p))
-        prefactor *= np.exp(1j * kz_p * (1 - costh))
-        prefactor *= np.sqrt(costh) * sinth * dphi * dth
+        if NUMEXPR_INSTALLED:
+            prefactor = ne.evaluate(cls.numexpr_integrand_prefactor1)
+            prefactor *= ne.evaluate(cls.numexpr_integrand_prefactor2)
+            prefactor *= ne.evaluate(cls.numexpr_integrand_prefactor3)
+        else:
+            prefactor = np.exp(1j * krho_p * sinth * np.cos(phi - phi_p))
+            prefactor *= np.exp(1j * kz_p * (1 - costh))
+            prefactor *= np.sqrt(costh) * sinth * dphi * dth
         prefactor *= .5 / np.pi
         return prefactor
 
@@ -126,14 +146,22 @@ class LensScatteringTheory(ScatteringTheory):
         S4 = S[:, :, 1, 0].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
         return S1, S2, S3, S4
 
-    def _integrand_prll(self, prefactor, cosphi, sinphi, S1, S2, S3, S4):
-        integrand_l = prefactor * (cosphi * (cosphi * S2 + sinphi * S3)
-                                 + sinphi * (cosphi * S4 + sinphi * S1))
+    @classmethod
+    def _integrand_prll(cls, prefactor, cosphi, sinphi, S1, S2, S3, S4):
+        if NUMEXPR_INSTALLED:
+            integrand_l = ne.evaluate(cls.numexpr_integrandl)
+        else:
+            integrand_l = prefactor * (cosphi * (cosphi * S2 + sinphi * S3)
+                                     + sinphi * (cosphi * S4 + sinphi * S1))
         return integrand_l
 
-    def _integrand_perp(self, prefactor, cosphi, sinphi, S1, S2, S3, S4):
-        integrand_r = prefactor * (sinphi * (cosphi * S2 + sinphi * S3)
-                                 - cosphi * (cosphi * S4 + sinphi * S1))
+    @classmethod
+    def _integrand_perp(cls, prefactor, cosphi, sinphi, S1, S2, S3, S4):
+        if NUMEXPR_INSTALLED:
+            integrand_r = ne.evaluate(cls.numexpr_integrandr)
+        else:
+            integrand_r = prefactor * (sinphi * (cosphi * S2 + sinphi * S3)
+                                     - cosphi * (cosphi * S4 + sinphi * S1))
         return integrand_r
 
     def _transform_integral_from_lr_to_xyz(self, prll_component, perp_component,
