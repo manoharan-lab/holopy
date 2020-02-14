@@ -369,7 +369,7 @@ class TestAberratedMieLensCalculator(unittest.TestCase):
         aberration = calculator._calculate_unit_aberration()
 
         theta = np.arccos(calculator._quad_pts)
-        correct_aberration = (np.cos(theta) - 1.0)**2
+        correct_aberration = (np.cos(theta) - 1.0)
         self.assertTrue(np.allclose(aberration, correct_aberration, **TOLS))
 
     @attr("fast")
@@ -378,15 +378,87 @@ class TestAberratedMieLensCalculator(unittest.TestCase):
         np.random.seed(143)
         spherical_aberration = np.random.randn()
         calculator = mielensfunctions.AberratedMieLensCalculator(
-            size_parameter=10, lens_angle=1.0, particle_kz=kz,
-            index_ratio=1.1, spherical_aberration=spherical_aberration)
+            size_parameter=10,
+            lens_angle=1.0,
+            particle_kz=kz,
+            index_ratio=1.1,
+            spherical_aberration=spherical_aberration)
 
         phase = calculator._calculate_phase()
         unit_aberration = calculator._calculate_unit_aberration()
         correct_phase = (
             kz * (1 - calculator._quad_pts) +
-            spherical_aberration * unit_aberration)
+            spherical_aberration * unit_aberration**2)
         self.assertTrue(np.allclose(correct_phase, phase, **TOLS))
+
+    @attr("fast")
+    def test_gives_correct_values(self):
+        calculator = mielensfunctions.AberratedMieLensCalculator(
+            size_parameter=10,
+            lens_angle=1.0,
+            particle_kz=10.0,
+            index_ratio=1.1,
+            spherical_aberration=42.1)
+        krho = np.linspace(0, 100, 10)
+        fx_calc, fy_calc = calculator.calculate_scattered_field(krho, 0 * krho)
+
+        fx_true = np.array([
+            1.62200970e+00 + 2.11177687e+00j,
+            1.97957403e-01 + 2.91793510e-01j,
+            -1.23716044e-02 + 5.20378583e-02j,
+            -7.72814013e-03 - 8.83646666e-03j,
+            -9.92495711e-03 + 1.45672004e-02j,
+            1.27054494e-02 - 7.32949748e-04j,
+            -6.93675387e-03 - 4.27264277e-03j,
+            3.06621454e-03 + 4.21161773e-03j,
+            -1.33377823e-03 - 3.21410269e-03j,
+            6.26057275e-04 + 2.38456278e-03j])
+        fy_true = 0
+        self.assertTrue(np.allclose(fx_calc, fx_true, atol=1e-9))
+        self.assertTrue(np.allclose(fy_calc, fy_true, **TOLS))
+
+    @attr("fast")
+    def test_higher_order_aberrations_differ_from_3rd_order(self):
+        np.random.seed(354)
+        other_kwargs = {
+            "size_parameter": 10,
+            "lens_angle": 1.0,
+            "particle_kz": 20.0,
+            "index_ratio": 1.1,
+            }
+        high_order = 10 * np.random.randn(10)  # 10th-order aberrations!
+
+        calc_high = mielensfunctions.AberratedMieLensCalculator(
+            spherical_aberration=high_order, **other_kwargs)
+        calc_low = mielensfunctions.AberratedMieLensCalculator(
+            spherical_aberration=high_order[:1], **other_kwargs)
+
+        krho = np.linspace(0, 100, 10)
+        fields_high = calc_high.calculate_scattered_field(krho, 0*krho)
+        fields_low = calc_low.calculate_scattered_field(krho, 0*krho)
+        self.assertFalse(np.allclose(fields_high, fields_low, **TOLS))
+
+    @attr("fast")
+    def test_higher_order_aberrations_zero_same_as_3rd_order(self):
+        np.random.seed(354)
+        other_kwargs = {
+            "size_parameter": 10,
+            "lens_angle": 1.0,
+            "particle_kz": 20.0,
+            "index_ratio": 1.1,
+            }
+        high_order = np.zeros(7)
+        high_order[0] = 10 * np.random.randn()
+
+        calc_high = mielensfunctions.AberratedMieLensCalculator(
+            spherical_aberration=high_order, **other_kwargs)
+        calc_low = mielensfunctions.AberratedMieLensCalculator(
+            spherical_aberration=high_order[:1], **other_kwargs)
+
+        krho = np.linspace(0, 100, 10)
+        fields_high = calc_high.calculate_scattered_field(krho, 0*krho)
+        fields_low = calc_low.calculate_scattered_field(krho, 0*krho)
+        self.assertTrue(np.allclose(fields_high, fields_low, **TOLS))
 
 
 class TestMieScatteringMatrix(unittest.TestCase):

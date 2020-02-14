@@ -278,24 +278,50 @@ class AberratedMieLensCalculator(MieLensCalculator):
         'spherical_aberration']
 
     def __init__(self, spherical_aberration=None, **kwargs):
+        """
+        See `MieLensCalculator` for a more complete docstring.
+
+        Parameters
+        ----------
+        spherical_aberration : float or array-like of floats
+            The spherical aberration, up to arbitrary order. If a float,
+            just the coefficient of the 3rd-order aberration (4th-order
+            in wavefront). When an array, the coefficients of
+            aberrations in ascending order (3rd, 5th, 7th, etc), where
+            the wavefront distortion for the nth-order aberration is of
+            the form (cos(theta) - 1)^(n+1), where n = 3, 5, 7, etc
+            Default is None, which raises an error.
+
+        Other Parameters
+        ----------------
+        See MieLensCalculator
+        """
         self.spherical_aberration = spherical_aberration
         super(AberratedMieLensCalculator, self).__init__(**kwargs)
 
     def _calculate_phase(self):
-        unit_aberration = self._calculate_unit_aberration()
         unaberrated_phase = (
             super(AberratedMieLensCalculator, self)._calculate_phase())
-        aberrated_phase = self.spherical_aberration * unit_aberration
+        aberrated_phase = self._calculate_aberrated_phase()
         return unaberrated_phase + aberrated_phase
 
+    def _calculate_aberrated_phase(self):
+        unit_aberration = self._calculate_unit_aberration()
+        coeffs_high_to_low = np.reshape(self.spherical_aberration, -1)
+        coeffs_low_to_high = coeffs_high_to_low[::-1]
+        aberrated_phase = (
+            unit_aberration**2 *
+            np.polyval(coeffs_low_to_high, unit_aberration))
+        return aberrated_phase
 
     def _calculate_unit_aberration(self):
         # We want something that is roughly of the form theta^4, which
         # is 3rd-order spherical aberration.  We also need Phi(0) = 0,
         # otherwise we'll phase shift relative to the incident beam.  To
-        # satisfy both of these, we use (cos(theta) - 1)**2, which also
-        # has no quadratic term, so minimal unnecessary defocus.
-        return (self._quad_pts - 1)**2
+        # satisfy both of these, we use (cos(theta) - 1).
+        # To minimize defocus, we ensure that the lowest term in the
+        # aberration series is unit_aberration**2.
+        return (self._quad_pts - 1)
 
 
 class MieScatteringMatrix(object):
