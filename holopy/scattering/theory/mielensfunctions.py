@@ -306,21 +306,17 @@ class AberratedMieLensCalculator(MieLensCalculator):
         return unaberrated_phase + aberrated_phase
 
     def _calculate_aberrated_phase(self):
-        unit_aberration = self._calculate_unit_aberration()
         coeffs_high_to_low = np.reshape(self.spherical_aberration, -1)
         coeffs_low_to_high = coeffs_high_to_low[::-1]
         aberrated_phase = (
-            unit_aberration**2 *
-            np.polyval(coeffs_low_to_high, unit_aberration))
+            self._pupil_x_squared**2 *
+            np.polyval(coeffs_low_to_high, self._pupil_x_squared))
         return aberrated_phase
 
-    def _calculate_unit_aberration(self):
-        # We want something that is roughly of the form theta^4, which
-        # is 3rd-order spherical aberration.  We also need Phi(0) = 0,
-        # otherwise we'll phase shift relative to the incident beam.  To
-        # satisfy both of these, we use (cos(theta) - 1).
-        # To minimize defocus, we ensure that the lowest term in the
-        # aberration series is unit_aberration**2.
+    @property
+    def _pupil_x_squared(self):
+        # Actually (cos(theta) - 1) instead of theta^2. Making this
+        # choice since this corresponds to the defocus from the particle
         return (self._quad_pts - 1)
 
 

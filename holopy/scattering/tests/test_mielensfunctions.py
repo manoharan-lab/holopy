@@ -363,7 +363,7 @@ class TestAberratedMieLensCalculator(unittest.TestCase):
     @attr("fast")
     def test_calculate_aberration_form(self):
         calculator = make_calculator_with_aberration_of(0.0)
-        aberration = calculator._calculate_unit_aberration()
+        aberration = calculator._pupil_x_squared
 
         theta = np.arccos(calculator._quad_pts)
         correct_aberration = (np.cos(theta) - 1.0)
@@ -377,10 +377,9 @@ class TestAberratedMieLensCalculator(unittest.TestCase):
         kz = calculator.particle_kz
 
         phase = calculator._calculate_phase()
-        unit_aberration = calculator._calculate_unit_aberration()
         correct_phase = (
             kz * (1 - calculator._quad_pts) +
-            spherical_aberration * unit_aberration**2)
+            spherical_aberration * calculator._pupil_x_squared**2)
         self.assertTrue(np.allclose(correct_phase, phase, **TOLS))
 
     @attr("fast")
