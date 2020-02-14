@@ -362,10 +362,7 @@ class TestAberratedMieLensCalculator(unittest.TestCase):
 
     @attr("fast")
     def test_calculate_aberration_form(self):
-        calculator = mielensfunctions.AberratedMieLensCalculator(
-            size_parameter=10., lens_angle=1.0, particle_kz=10.,
-            index_ratio=1.1, spherical_aberration=0.0)  # kwargs dont matter
-
+        calculator = make_calculator_with_aberration_of(0.0)
         aberration = calculator._calculate_unit_aberration()
 
         theta = np.arccos(calculator._quad_pts)
@@ -374,15 +371,10 @@ class TestAberratedMieLensCalculator(unittest.TestCase):
 
     @attr("fast")
     def test_calculate_phase(self):
-        kz = 10.0
         np.random.seed(143)
         spherical_aberration = np.random.randn()
-        calculator = mielensfunctions.AberratedMieLensCalculator(
-            size_parameter=10,
-            lens_angle=1.0,
-            particle_kz=kz,
-            index_ratio=1.1,
-            spherical_aberration=spherical_aberration)
+        calculator = make_calculator_with_aberration_of(spherical_aberration)
+        kz = calculator.particle_kz
 
         phase = calculator._calculate_phase()
         unit_aberration = calculator._calculate_unit_aberration()
@@ -393,12 +385,7 @@ class TestAberratedMieLensCalculator(unittest.TestCase):
 
     @attr("fast")
     def test_gives_correct_values(self):
-        calculator = mielensfunctions.AberratedMieLensCalculator(
-            size_parameter=10,
-            lens_angle=1.0,
-            particle_kz=10.0,
-            index_ratio=1.1,
-            spherical_aberration=42.1)
+        calculator = make_calculator_with_aberration_of(42.1)
         krho = np.linspace(0, 100, 10)
         fx_calc, fy_calc = calculator.calculate_scattered_field(krho, 0 * krho)
 
@@ -420,18 +407,9 @@ class TestAberratedMieLensCalculator(unittest.TestCase):
     @attr("fast")
     def test_higher_order_aberrations_differ_from_3rd_order(self):
         np.random.seed(354)
-        other_kwargs = {
-            "size_parameter": 10,
-            "lens_angle": 1.0,
-            "particle_kz": 20.0,
-            "index_ratio": 1.1,
-            }
         high_order = 10 * np.random.randn(10)  # 10th-order aberrations!
-
-        calc_high = mielensfunctions.AberratedMieLensCalculator(
-            spherical_aberration=high_order, **other_kwargs)
-        calc_low = mielensfunctions.AberratedMieLensCalculator(
-            spherical_aberration=high_order[:1], **other_kwargs)
+        calc_high = make_calculator_with_aberration_of(high_order)
+        calc_low = make_calculator_with_aberration_of(high_order[:1])
 
         krho = np.linspace(0, 100, 10)
         fields_high = calc_high.calculate_scattered_field(krho, 0*krho)
@@ -441,19 +419,10 @@ class TestAberratedMieLensCalculator(unittest.TestCase):
     @attr("fast")
     def test_higher_order_aberrations_zero_same_as_3rd_order(self):
         np.random.seed(354)
-        other_kwargs = {
-            "size_parameter": 10,
-            "lens_angle": 1.0,
-            "particle_kz": 20.0,
-            "index_ratio": 1.1,
-            }
         high_order = np.zeros(7)
         high_order[0] = 10 * np.random.randn()
-
-        calc_high = mielensfunctions.AberratedMieLensCalculator(
-            spherical_aberration=high_order, **other_kwargs)
-        calc_low = mielensfunctions.AberratedMieLensCalculator(
-            spherical_aberration=high_order[:1], **other_kwargs)
+        calc_high = make_calculator_with_aberration_of(high_order)
+        calc_low = make_calculator_with_aberration_of(high_order[:1])
 
         krho = np.linspace(0, 100, 10)
         fields_high = calc_high.calculate_scattered_field(krho, 0*krho)
@@ -834,6 +803,16 @@ def get_ratio_of_scattered_powerin_to_scattered_powerout(**kwargs):
     power_in = checker.evaluate_scattered_power_incident_on_pupil()
     power_out = checker.evaluate_scattered_power_incident_on_detector()
     return power_in / power_out
+
+
+def make_calculator_with_aberration_of(spherical_aberration):
+    calculator = mielensfunctions.AberratedMieLensCalculator(
+        size_parameter=10,
+        lens_angle=1.0,
+        particle_kz=10.0,
+        index_ratio=1.1,
+        spherical_aberration=spherical_aberration)
+    return calculator
 
 
 if __name__ == '__main__':
