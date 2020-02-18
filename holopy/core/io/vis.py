@@ -29,7 +29,13 @@ import numpy as np
 
 from holopy.core.metadata import data_grid, clean_concat
 from holopy.core.utils import ensure_array, ensure_scalar
-from holopy.core.errors import BadImage
+from holopy.core.errors import BadImage, DependencyMissing
+
+try:
+    from matplotlib import pyplot as plt
+    _NO_MATPLOTLIB = False
+except ImportError:
+    _NO_MATPLOTLIB = True
 
 
 class VisualizationNotImplemented(Exception):
@@ -78,7 +84,9 @@ class Show2D(object):
         # Delay the pylab import until we actually use it to avoid a hard
         # dependency on matplotlib, and to avoid paying the cost of importing it
         # for non interactive code
-        from matplotlib import pyplot as plt
+        if _NO_MATPLOTLIB:
+            raise DependencyMissing('matplotlib',
+                "Install it with \'conda install -c conda-forge matplotlib\'.")
 
         self.i = 0
         vmin, vmax = im.attrs['_image_scaling']
