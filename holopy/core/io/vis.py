@@ -276,7 +276,7 @@ def show_scatterer_slices(scatterer, spacing):
     show2d(vol)
 
 
-def test_display():
+def _test_display():
     """Diagnostic test to check matplotlib backend.
 
     You should see a white square inside a black square, with a colorbar.
