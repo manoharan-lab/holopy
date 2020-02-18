@@ -81,9 +81,6 @@ def show(o, scaling='auto', vert_axis='x', horiz_axis='y',
 
 class Show2D(object):
     def __init__(self, im):
-        # Delay the pylab import until we actually use it to avoid a hard
-        # dependency on matplotlib, and to avoid paying the cost of importing it
-        # for non interactive code
         if _NO_MATPLOTLIB:
             raise DependencyMissing('matplotlib',
                 "Install it with \'conda install -c conda-forge matplotlib\'.")
@@ -276,7 +273,7 @@ def show_scatterer_slices(scatterer, spacing):
     show2d(vol)
 
 
-def _test_display():
+def test_display():
     """Diagnostic test to check matplotlib backend.
 
     You should see a white square inside a black square, with a colorbar.
@@ -300,5 +297,9 @@ def _test_display():
                 a[50-i, 50+j, 1] = 1
                 a[50-i, 50-j, 1] = 1
                 a[50+i, 50-j, 1] = 1
-    show(a)
+    if _NO_MATPLOTLIB:
+        warn("Display requires matplotlib (not found). "
+                "Install it with \'conda install -c conda-forge matplotlib\'.")
+    else:
+        show(a)
 

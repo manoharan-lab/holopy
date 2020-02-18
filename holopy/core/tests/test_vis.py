@@ -32,6 +32,12 @@ from holopy.core.io.io import get_example_data
 from holopy.core.tests.common import assert_obj_close
 from holopy.core.errors import BadImage
 
+try:
+    from matplotlib import pyplot as plt
+    _NO_MATPLOTLIB = False
+except ImportError:
+    _NO_MATPLOTLIB = True
+
 
 # Creating some d-dimensional arrays for testing visualization:
 ARRAY_2D = np.arange(20).reshape(5, 4)
@@ -239,11 +245,7 @@ class TestDisplayImage(unittest.TestCase):
 class ShowTest(unittest.TestCase):
     @attr("medium")
     def test_show(self):
-        try:
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore')
-                from matplotlib import pyplot as plt
-        except ImportError:
+        if _NO_MATPLOTLIB:
             raise SkipTest()
         plt.ioff()
         d = get_example_data('image0001')
