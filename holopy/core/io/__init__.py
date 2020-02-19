@@ -18,4 +18,4 @@
 from holopy.core.io.io import (load, load_image, save, save_image,
     get_example_data, get_example_data_path, load_average)
 from holopy.core.io.vis import (show, display_image, show_scatterer_slices,
-                                test_display)
+                                check_display)

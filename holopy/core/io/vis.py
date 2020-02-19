@@ -273,7 +273,7 @@ def show_scatterer_slices(scatterer, spacing):
     show2d(vol)
 
 
-def test_display():
+def check_display():
     """Diagnostic test to check matplotlib backend.
 
     You should see a white square inside a black square, with a colorbar.
@@ -297,9 +297,5 @@ def test_display():
                 a[50-i, 50+j, 1] = 1
                 a[50-i, 50-j, 1] = 1
                 a[50+i, 50-j, 1] = 1
-    if _NO_MATPLOTLIB:
-        warn("Display requires matplotlib (not found). "
-                "Install it with \'conda install -c conda-forge matplotlib\'.")
-    else:
-        show(a)
+    show(a)
 

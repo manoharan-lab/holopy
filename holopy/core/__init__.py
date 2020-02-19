@@ -25,4 +25,4 @@
 from holopy.core.metadata import (detector_grid, detector_points,
                                   update_metadata, copy_metadata)
 from holopy.core.io import (load, load_image, save, save_image,
-                            show, test_display)
+                            show, check_display)

@@ -43,8 +43,8 @@ You will probably be most comfortable using HoloPy in Jupyter (resembles
 Mathematica) or Spyder (resembles Matlab) interfaces. HoloPy is designed to be used with an
 interactive backend. In the console, try running::
 
-    from holopy import test_display
-    test_display()
+    from holopy import check_display
+    check_display()
 
 You should see an image, and you should be able to change
 the square to a circle or diamond by using the left/right arrow keys. If you
