@@ -72,6 +72,48 @@ def show(o, scaling='auto', vert_axis='x', horiz_axis='y',
     else:
         raise VisualizationNotImplemented(o)
 
+def save(o, names, scaling='auto', vert_axis='x', horiz_axis='y',
+                    depth_axis='z', colour_axis='illumination'):
+    """
+    Saves a hologram or reconstruction to (a) file(s).
+
+    Parameters
+    ----------
+    o : xarray.DataArray or ndarray
+        Object to visualize.
+    names : str
+        Name(s) of the file(s). If there is only one image contained (e.g.
+        hologram), the name will be used as a file name. If o contains more
+        plottable images (e.g. reconstruction volume), this string will be
+        formatted to get a counting index inserted. Example:
+        "reconstruction-%i.png"
+    scaling : (float, float), optional
+        (min, max) value to display in image, default is full range of o.
+    vert_axis : str, optional
+        axis to display vertically, default x.
+    horiz_axis : str, optional
+        axis to display horizontally, default y.
+    depth_axis : str, optional
+        axis to scroll with arrow keys, default 'z'.
+    colour_axis : str, optional
+        axis to display as RGB channels in colour image, default illumination.
+
+    Notes
+    -----
+    Loads plotting library the first time it is required (so that we don't have
+    to import all of matplotlib or mayavi just to load holopy)
+    """
+    if isinstance(o, (xr.DataArray, np.ndarray, list, tuple)):
+        im = display_image(o, scaling, vert_axis, horiz_axis, depth_axis,
+                           colour_axis)
+        s = Show2D(im)
+        if len (im) > 1:
+            s.saveAll(names)
+        else:
+            s.save(names)
+    else:
+        raise VisualizationNotImplemented(o)
+
 
 class Show2D(object):
     def __init__(self, im):
@@ -143,6 +185,32 @@ class Show2D(object):
             dimname = self.im.dims[0]
             titlestring = '{} = {}'.format(dimname, self.im[dimname].values[self.i])
             self.ax.set_title(titlestring)
+
+    def save(self, name):
+        """
+        Saves the currently displayed Plot into a file.
+
+        Parameters
+        ----------
+        name : str
+            Name for the file to save to.
+        """
+        self.draw()
+        self.fig.savefig(name)
+
+    def saveAll(self, names):
+        """
+        Saves the complete stack of images into separate files.
+
+        Parameters
+        ----------
+        names : str
+            Name of the files, will be formatted to get a counting index
+            inserted. Example: "reconstruction-%i.png"
+        """
+        for i in range(len(self.im)):
+            self.i = i
+            self.save(names % i)
 
 
 def display_image(im, scaling='auto', vert_axis='x', horiz_axis='y',
@@ -293,4 +361,3 @@ def test_display():
                 a[50-i, 50-j, 1] = 1
                 a[50+i, 50-j, 1] = 1
     show(a)
-
