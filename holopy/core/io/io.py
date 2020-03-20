@@ -379,6 +379,94 @@ def save_image(filename, im, scaling='auto', depth=8):
     else:
         pilimage.fromarray(im).save(filename)
 
+def save_images(filenames, ims, scaling='auto', depth = 8):
+    """
+    Saves a volume as separate images (think of reconstruction volumes).
+
+    Parameters
+    ----------
+    ims : ndarray or :class:`holopy.image.Image`
+        Images to save, with separate z-coordinates from which they each will be
+        selected.
+    filename : str
+        Filename in which to save image. Has to contain a format placeholder for
+        the z-values. E.g. "testfile%f.png"
+    scaling : 'auto', None, or (Int, Int)
+        How the images should be scaled for saving. Ignored for float output. It
+        defaults to auto, use the full range of the output format. Other options
+        are None, meaning no scaling, or a pair of integers specifying the
+        values which should be set to the maximum and minimum values of the
+        image format.
+    depth : 8, 16 or 'float'
+        What type of image to save. Options other than 8bit may not be supported
+        for many image types. You probably don't want to save 8bit images
+        without some kind of scaling.
+    """
+    # TODO: Here could be a check whether ims has the correct format.
+    ims = display_image(ims, scaling)
+    for im in ims:
+        z = im.z.values.item(0) # TODO: There must be a nicer way…
+        _save_im(filenames % z, im, scaling, depth)
+
+def _save_im(filename, im, scaling='auto', depth=8):
+    """
+    Internal single-image-save-method to be used in save_images. Maybe it can be
+    merged with save_image.
+
+    Parameters
+    ----------
+    im : ndarray or :class:`holopy.image.Image`
+        Image to save.
+    filename : basestring
+        Filename in which to save image. If im is an image the function should
+        default to the image's name field if no filename is specified
+    scaling : 'auto', None, or (Int, Int)
+        How the images should be scaled for saving. Ignored for float output. It
+        defaults to auto, use the full range of the output format. Other options
+        are None, meaning no scaling, or a pair of integers specifying the
+        values which should be set to the maximum and minimum values of the
+        image format.
+    depth : 8, 16 or 'float'
+        What type of image to save. Options other than 8bit may not be supported
+        for many image types. You probably don't want to save 8bit images
+        without some kind of scaling.
+    """
+    # if we don't have an extension, default to tif
+    if os.path.splitext(filename)[1] is '':
+        filename += '.tif'
+
+    metadat=False
+    if os.path.splitext(filename)[1] in tiflist:
+        if im.name is None:
+            im.name=os.path.splitext(os.path.split(filename)[-1])[0]
+        metadat = pack_attrs(im, do_spacing = True)
+        # import ifd2 - hidden here since it doesn't play nice in some cases.
+        from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
+        tiffinfo = ifd2()
+        # place metadata in the 'imagedescription' field of the tiff metadata
+        tiffinfo[270] = yaml.dump(metadat, default_flow_style=True)
+
+    im = im.values
+
+    if depth is not 'float':
+        if depth is 8:
+            depth = 8
+            typestr = 'uint8'
+        elif depth is 16 or depth is 32:
+            depth = depth-1
+            typestr = 'int' + str(depth)
+        else:
+            raise Error("Unknown image depth")
+
+        if im.max() <= 1:
+            im = im * ((2**depth)-1) + .499999
+            im = im.astype(typestr)
+
+    if metadat:
+        pilimage.fromarray(im).save(filename, tiffinfo=tiffinfo)
+    else:
+        pilimage.fromarray(im).save(filename)
+
 
 def load_average(
         filepath, refimg=None, spacing=None, medium_index=None,
@@ -508,4 +596,3 @@ class Accumulator:
             return None
         else:
             return np.sqrt(self._running_var / (self._n))
-
