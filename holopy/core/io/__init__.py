@@ -17,5 +17,5 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 from holopy.core.io.io import (load, load_image, save, save_image,
     get_example_data, get_example_data_path, load_average)
-from holopy.core.io.vis import (show, test_display, display_image,
-                                show_scatterer_slices)
+from holopy.core.io.vis import (show, display_image, show_scatterer_slices,
+                                check_display)

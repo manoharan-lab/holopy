@@ -29,7 +29,13 @@ import numpy as np
 
 from holopy.core.metadata import data_grid, clean_concat
 from holopy.core.utils import ensure_array, ensure_scalar
-from holopy.core.errors import BadImage
+from holopy.core.errors import BadImage, DependencyMissing
+
+try:
+    from matplotlib import pyplot as plt
+    _NO_MATPLOTLIB = False
+except ImportError:
+    _NO_MATPLOTLIB = True
 
 
 class VisualizationNotImplemented(Exception):
@@ -75,10 +81,9 @@ def show(o, scaling='auto', vert_axis='x', horiz_axis='y',
 
 class Show2D(object):
     def __init__(self, im):
-        # Delay the pylab import until we actually use it to avoid a hard
-        # dependency on matplotlib, and to avoid paying the cost of importing it
-        # for non interactive code
-        from matplotlib import pyplot as plt
+        if _NO_MATPLOTLIB:
+            raise DependencyMissing('matplotlib',
+                "Install it with \'conda install -c conda-forge matplotlib\'.")
 
         self.i = 0
         vmin, vmax = im.attrs['_image_scaling']
@@ -268,7 +273,7 @@ def show_scatterer_slices(scatterer, spacing):
     show2d(vol)
 
 
-def test_display():
+def check_display():
     """Diagnostic test to check matplotlib backend.
 
     You should see a white square inside a black square, with a colorbar.

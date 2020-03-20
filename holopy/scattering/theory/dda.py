@@ -35,7 +35,7 @@ import warnings
 
 import numpy as np
 
-from holopy.core.utils import ensure_array
+from holopy.core.utils import ensure_array, SuppressOutput
 from holopy.scattering.scatterer import (
     Ellipsoid, Capsule, Cylinder, Bisphere, Sphere, Scatterer, Spheroid)
 from holopy.core.errors import DependencyMissing
@@ -73,11 +73,13 @@ class DDA(ScatteringTheory):
     excessive memory or computation time for particularly large scatterers.
     """
     def __init__(self, n_cpu = 1, max_dpl_size=None, use_indicators=True,
-                 keep_raw_calculations=False, addacmd=[]):
+                 keep_raw_calculations=False, addacmd=[],
+                 suppress_C_output=True):
 
         # Check that adda is present and able to run
         try:
-            subprocess.check_call(['adda', '-V'])
+            with SuppressOutput():
+                subprocess.check_call(['adda', '-V'])
         except (subprocess.CalledProcessError, OSError):
             raise DependencyMissing('adda', "adda is not included with HoloPy "
                 "and must be installed separately. You should be able to run "
@@ -88,6 +90,7 @@ class DDA(ScatteringTheory):
         self.use_indicators = use_indicators
         self.keep_raw_calculations = keep_raw_calculations
         self.addacmd = addacmd
+        self.suppress_C_output = suppress_C_output
         super().__init__()
 
     def _can_handle(self, scatterer):
@@ -115,7 +118,8 @@ class DDA(ScatteringTheory):
         else:
             scat_args = self._adda_predefined(scatterer, medium_wavelen, medium_index, temp_dir)
         cmd.extend(scat_args)
-        subprocess.check_call(cmd, cwd=temp_dir)
+        with SuppressOutput(suppress_output=self.suppress_C_output):
+            subprocess.check_call(cmd, cwd=temp_dir)
 
     # TODO: figure out why our discretization gives a different result
     # and fix so that we can use that and eliminate this.

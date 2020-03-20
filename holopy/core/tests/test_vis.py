@@ -24,12 +24,19 @@ from collections import OrderedDict
 import numpy as np
 from numpy.testing import assert_allclose, assert_raises, assert_equal
 from nose.plugins.attrib import attr
+from nose.plugins.skip import SkipTest
 
 from holopy.core.metadata import data_grid, clean_concat, illumination as ILLUM
 from holopy.core.io.vis import display_image, show
 from holopy.core.io.io import get_example_data
 from holopy.core.tests.common import assert_obj_close
 from holopy.core.errors import BadImage
+
+try:
+    from matplotlib import pyplot as plt
+    _NO_MATPLOTLIB = False
+except ImportError:
+    _NO_MATPLOTLIB = True
 
 
 # Creating some d-dimensional arrays for testing visualization:
@@ -39,12 +46,6 @@ ARRAY_4D = np.transpose(
     [ARRAY_3D, ARRAY_3D + 0.5, 0 * ARRAY_3D],
     axes=(1, 2, 3, 0))
 ARRAY_5D = np.reshape(ARRAY_4D, ARRAY_4D.shape + (1,))
-
-
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore')
-    import matplotlib.pyplot as plt
-plt.ioff()
 
 
 def convert_ndarray_to_xarray(array, extra_dims=None):
@@ -244,6 +245,9 @@ class TestDisplayImage(unittest.TestCase):
 class ShowTest(unittest.TestCase):
     @attr("medium")
     def test_show(self):
+        if _NO_MATPLOTLIB:
+            raise SkipTest()
+        plt.ioff()
         d = get_example_data('image0001')
         try:
             show(d)
