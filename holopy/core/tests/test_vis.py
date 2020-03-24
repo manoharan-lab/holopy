@@ -19,6 +19,7 @@
 import warnings
 import unittest
 import tempfile
+import os
 from collections import OrderedDict
 
 import numpy as np
