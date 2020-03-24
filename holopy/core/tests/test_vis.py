@@ -26,7 +26,7 @@ from numpy.testing import assert_allclose, assert_raises, assert_equal
 from nose.plugins.attrib import attr
 
 from holopy.core.metadata import data_grid, clean_concat, illumination as ILLUM
-from holopy.core.io.vis import display_image, show
+from holopy.core.io.vis import display_image, show, save_plot
 from holopy.core.io.io import get_example_data
 from holopy.core.tests.common import assert_obj_close
 from holopy.core.errors import BadImage
@@ -63,6 +63,37 @@ def convert_ndarray_to_xarray(array, extra_dims=None):
     array.attrs['_image_scaling'] = None
     return array
 
+
+class TestSavingImage(unittest.TestCase):
+    def setUp(self):
+        names = ['image0001', 'image0002', 'image0003']
+        self.holograms = [get_example_data(n) for n in names]
+        self.tempdir = tempfile.mkdtemp()
+        fnames = ['%s.png' % n for n in names]
+        self.filenames = [os.path.join(self.tempdir, f) for f in fnames]
+
+    @attr("fast")
+    def test_save_single_image(self):
+        save_plot(self.filenames[0], self.holograms[0])
+        show(self.holograms[0])
+        fname = os.path.join(self.tempdir, 'test.png')
+        plt.savefig(fname)
+        plt.clf()
+        self._compare_two_images_by_fname(self.filenames[0], fname)
+
+    @attr("fast")
+    def test_save_multiple_images(self):
+        save_plot(self.filenames, self.holograms)
+        for name, holo in zip(self.filenames, self.holograms):
+            show(holo)
+            fname = os.path.join(self.tempdir, 'test.png')
+            plt.savefig(fname)
+            plt.clf()
+            self._compare_two_images_by_fname(name, fname)
+
+    def _compare_two_images_by_fname(self, fname1, fname2):
+        # TODO: Implementation: How to compare two images? Maybe via ov2?
+        raise NotImplementedError()
 
 class TestDisplayImage(unittest.TestCase):
     @attr("fast")
