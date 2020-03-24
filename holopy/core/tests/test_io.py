@@ -32,7 +32,7 @@ from PIL import Image as pilimage
 from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 
 import holopy as hp
-from holopy.core import load, save, load_image, save_image
+from holopy.core import load, save, load_image, save_image, save_images
 from holopy.core.errors import NoMetadata
 from holopy.core.io import load_average, get_example_data_path
 from holopy.core.io.io import Accumulator

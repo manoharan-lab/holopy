@@ -386,7 +386,7 @@ def save_images(filenames, ims, scaling='auto', depth=8):
 
     Parameters
     ----------
-    filenames : str
+    filenames : list
         List of filenames. There have to be the same number of filenames as of
         images to save. Each image will be saved in the corresponding file with
         the same index.
