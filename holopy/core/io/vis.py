@@ -103,8 +103,8 @@ def save_plot(filenames, data, scaling='auto', vert_axis='x', horiz_axis='y',
     Loads plotting library the first time it is required (so that we don't have
     to import all of matplotlib or mayavi just to load holopy)
     """
-    if isinstance(o, (xr.DataArray, np.ndarray, list, tuple)):
-        im = display_image(o, scaling, vert_axis, horiz_axis, depth_axis,
+    if isinstance(data, (xr.DataArray, np.ndarray, list, tuple)):
+        im = display_image(data, scaling, vert_axis, horiz_axis, depth_axis,
                            colour_axis)
         s = Show2D(im)
         if len(im) > 1:
