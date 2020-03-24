@@ -380,7 +380,7 @@ def save_image(filename, im, scaling='auto', depth=8):
         pilimage.fromarray(im).save(filename)
 
 
-def save_images(filenames, ims, scaling='auto', depth=8):
+def save_images(ims, filenames, scaling='auto', depth=8):
     """
     Saves a volume as separate images (think of reconstruction volumes).
 
@@ -389,9 +389,10 @@ def save_images(filenames, ims, scaling='auto', depth=8):
     ims : ndarray or :class:`holopy.image.Image`
         Images to save, with separate z-coordinates from which they each will
         be selected.
-    filename : str
-        Filename in which to save image. Has to contain a format placeholder
-        for the z-values. E.g. "testfile%f.png"
+    filenames : str
+        List of filenames. There have to be the same number of filenames as of
+        images to save. Each image will be saved in the corresponding file with
+        the same index.
     scaling : 'auto', None, or (Int, Int)
         How the images should be scaled for saving. Ignored for float output.
         It defaults to auto, use the full range of the output format. Other
@@ -404,13 +405,14 @@ def save_images(filenames, ims, scaling='auto', depth=8):
         images without some kind of scaling.
     """
     # TODO: Here could be a check whether ims has the correct format.
+    if len(ims) != len(filenames):
+        raise Error("Not enough filenames or images provided.")
+
     ims = display_image(ims, scaling)
-    for im in ims:
-        z = im.z.values.item(0)  # TODO: There must be a nicer way…
-        _save_im(filenames % z, im, scaling, depth)
+    for i, im in enumerate(ims): _save_im(im, filenames[i], scaling, depth)
 
 
-def _save_im(filename, im, scaling='auto', depth=8):
+def _save_im(im, filename, scaling='auto', depth=8):
     """
     Internal single-image-save-method to be used in save_images. Maybe it can
     be merged with save_image.
