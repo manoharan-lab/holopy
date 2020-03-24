@@ -49,6 +49,9 @@ IMAGE01_METADATA = {'spacing': 0.0851, 'medium_index': 1.33,
 class test_loading_and_saving(unittest.TestCase):
     def setUp(self):
         self.holo = get_example_data('image0001')
+        self.holograms = [get_example_data('image0001'),
+                          get_example_data('image0002'),
+                          get_example_data('image0003')]
         self.tempdir = tempfile.mkdtemp()
 
     def tearDown(self):
@@ -76,6 +79,17 @@ class test_loading_and_saving(unittest.TestCase):
         save_image(filename, self.holo, scaling=None)
         l = self.load_image_with_metadata(filename)
         assert_obj_close(l, self.holo)
+
+    @attr("fast")
+    def test_images_io(self):
+        filenames = ['image1001.tif', 'image1002.tif', 'image1003.tif']
+        for i, f in enumerate(filenames):
+            filenames[i] = os.path.join(self.tempdir, f)
+        save_images(filenames, self.holograms, scaling=None)
+
+        for holo, file in zip(self.holograms, filenames):
+            l = self.load_image_with_metadata(file)
+            assert_obj_close(l, holo)
 
     @attr("fast")
     def test_default_save_is_tif(self):
@@ -316,4 +330,3 @@ def _load_example_data_backgrounds():
 
 if __name__ == '__main__':
     unittest.main()
-
