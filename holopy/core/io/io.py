@@ -323,12 +323,12 @@ def save_image(filename, im, scaling='auto', depth=8):
 
     Parameters
     ----------
-    im : ndarray or :class:`holopy.image.Image`
-        image to save.
     filename : basestring
         filename in which to save image. If im is an image the
         function should default to the image's name field if no
         filename is specified
+    im : ndarray or :class:`holopy.image.Image`
+        image to save.
     scaling : 'auto', None, or (Int, Int)
         How the image should be scaled for saving. Ignored for float
         output. It defaults to auto, use the full range of the output
@@ -380,19 +380,19 @@ def save_image(filename, im, scaling='auto', depth=8):
         pilimage.fromarray(im).save(filename)
 
 
-def save_images(ims, filenames, scaling='auto', depth=8):
+def save_images(filenames, ims, scaling='auto', depth=8):
     """
     Saves a volume as separate images (think of reconstruction volumes).
 
     Parameters
     ----------
-    ims : ndarray or :class:`holopy.image.Image`
-        Images to save, with separate z-coordinates from which they each will
-        be selected.
     filenames : str
         List of filenames. There have to be the same number of filenames as of
         images to save. Each image will be saved in the corresponding file with
         the same index.
+    ims : ndarray or :class:`holopy.image.Image`
+        Images to save, with separate z-coordinates from which they each will
+        be selected.
     scaling : 'auto', None, or (Int, Int)
         How the images should be scaled for saving. Ignored for float output.
         It defaults to auto, use the full range of the output format. Other
@@ -412,18 +412,18 @@ def save_images(ims, filenames, scaling='auto', depth=8):
     for i, im in enumerate(ims): _save_im(im, filenames[i], depth)
 
 
-def _save_im(im, filename, depth=8):
+def _save_im(filename, im, depth=8):
     """
     Internal single-image-save-method to be used in save_images. Maybe it can
     be merged with save_image.
 
     Parameters
     ----------
-    im : ndarray or :class:`holopy.image.Image`
-        Image to save.
     filename : basestring
         Filename in which to save image. If im is an image the function should
         default to the image's name field if no filename is specified
+    im : ndarray or :class:`holopy.image.Image`
+        Image to save.
     depth : 8, 16 or 'float'
         What type of image to save. Options other than 8bit may not be
         supported for many image types. You probably don't want to save 8bit
