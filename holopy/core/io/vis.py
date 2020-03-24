@@ -211,7 +211,7 @@ class Show2D(object):
         if len(filenames) != len(self.im):
             raise Error("Number of images and filenames does not match!")
 
-        for i, name = enumerate(filenames):
+        for i, name in enumerate(filenames):
             self.i = i
             self.save(name)
 
