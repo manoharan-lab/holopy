@@ -72,6 +72,7 @@ def show(o, scaling='auto', vert_axis='x', horiz_axis='y',
     else:
         raise VisualizationNotImplemented(o)
 
+
 def save_plot(filenames, data, scaling='auto', vert_axis='x', horiz_axis='y',
               depth_axis='z', colour_axis='illumination'):
     """
@@ -204,8 +205,8 @@ class Show2D(object):
         Parameters
         ----------
         filenames : list
-            Names of the files to save as a list. Has to have the same length as
-            the number of images that are contained in this object.
+            Names of the files to save as a list. Has to have the same length
+            as the number of images that are contained in this object.
         """
         if len(filenames) != len(self.im):
             raise Error("Number of images and filenames does not match!")
