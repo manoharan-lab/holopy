@@ -342,42 +342,7 @@ def save_image(filename, im, scaling='auto', depth=8):
 
     """
     im = display_image(im, scaling)
-
-    # if we don't have an extension, default to tif
-    if os.path.splitext(filename)[1] is '':
-        filename += '.tif'
-
-    metadat=False
-    if os.path.splitext(filename)[1] in tiflist:
-        if im.name is None:
-            im.name=os.path.splitext(os.path.split(filename)[-1])[0]
-        metadat = pack_attrs(im, do_spacing = True)
-        # import ifd2 - hidden here since it doesn't play nice in some cases.
-        from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
-        tiffinfo = ifd2()
-        # place metadata in the 'imagedescription' field of the tiff metadata
-        tiffinfo[270] = yaml.dump(metadat, default_flow_style=True)
-
-    im = im.values[0]
-
-    if depth is not 'float':
-        if depth is 8:
-            depth = 8
-            typestr = 'uint8'
-        elif depth is 16 or depth is 32:
-            depth = depth-1
-            typestr = 'int' + str(depth)
-        else:
-            raise Error("Unknown image depth")
-
-        if im.max() <= 1:
-            im = im * ((2**depth)-1) + .499999
-            im = im.astype(typestr)
-
-    if metadat:
-        pilimage.fromarray(im).save(filename, tiffinfo=tiffinfo)
-    else:
-        pilimage.fromarray(im).save(filename)
+    _save_im(filename, im, depth)
 
 
 def save_images(filenames, ims, scaling='auto', depth=8):
@@ -445,6 +410,7 @@ def _save_im(filename, im, depth=8):
         tiffinfo[270] = yaml.dump(metadat, default_flow_style=True)
 
     im = im.values
+    if im.ndim > 2: im = im[0]
 
     if depth is not 'float':
         if depth is 8:
