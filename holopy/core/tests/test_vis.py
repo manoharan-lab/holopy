@@ -16,10 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import shutil
 import warnings
 import unittest
 import tempfile
-import os
 from collections import OrderedDict
 
 import numpy as np
@@ -67,34 +68,45 @@ def convert_ndarray_to_xarray(array, extra_dims=None):
 
 class TestSavingImage(unittest.TestCase):
     def setUp(self):
-        names = ['image0001', 'image0002', 'image0003']
+        names = ['image0001', 'image0002']
         self.holograms = [get_example_data(n) for n in names]
         self.tempdir = tempfile.mkdtemp()
-        fnames = ['%s.png' % n for n in names]
-        self.filenames = [os.path.join(self.tempdir, f) for f in fnames]
+
+    def tearDown(self):
+        shutil.rmtree(self.tempdir)
+
+    def _make_unused_filename_in_tempdir(self, extension):
+        for i in range(100):
+            filename = os.path.join(
+                self.tempdir,
+                'tempfile-{}.{}'.format(i, extension))
+            if not os.path.exists(filename):
+                return filename
+        else:  # for-break-else:
+            msg = "more than 100 files in temp directory... test is broken"
+            raise RuntimeError(msg)
 
     @attr("fast")
-    def test_save_single_image(self):
-        save_plot(self.filenames[0], self.holograms[0])
-        show(self.holograms[0])
-        fname = os.path.join(self.tempdir, 'test.png')
-        plt.savefig(fname)
-        plt.clf()
-        self._compare_two_images_by_fname(self.filenames[0], fname)
+    def test_save_single_image_writes_image_file(self):
+        # For now, we just test that it writes an image file, not that
+        # the file is correct:
+        savename = self._make_unused_filename_in_tempdir('png')
+        assert not os.path.exists(savename)
+        save_plot(savename, self.holograms[0])
+        self.assertTrue(os.path.exists(savename))
+        os.remove(savename)  # cleaning up
 
     @attr("fast")
-    def test_save_multiple_images(self):
-        save_plot(self.filenames, self.holograms)
-        for name, holo in zip(self.filenames, self.holograms):
-            show(holo)
-            fname = os.path.join(self.tempdir, 'test.png')
-            plt.savefig(fname)
-            plt.clf()
-            self._compare_two_images_by_fname(name, fname)
+    def test_save_multiple_images_writes_image_files(self):
+        # For now, we just test that it writes the image files, not that
+        # the files are correct:
+        savenames = [
+            self._make_unused_filename_in_tempdir('png')
+            for _ in self.holograms]
+        assert all([not os.path.exists(nm) for nm in savenames])
+        save_plot(savenames, self.holograms)
+        self.assertTrue(all([os.path.exists(nm) for nm in savenames]))
 
-    def _compare_two_images_by_fname(self, fname1, fname2):
-        # TODO: Implementation: How to compare two images? Maybe via ov2?
-        raise NotImplementedError()
 
 class TestDisplayImage(unittest.TestCase):
     @attr("fast")
