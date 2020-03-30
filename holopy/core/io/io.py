@@ -373,8 +373,9 @@ def save_images(filenames, ims, scaling='auto', depth=8):
     if len(ims) != len(filenames):
         raise Error("Not enough filenames or images provided.")
 
-    ims = display_image(ims, scaling)
-    for i, im in enumerate(ims): _save_im(im, filenames[i], depth)
+    for image_raw, filename in zip(ims, filenames):
+        image_displayed = display_image(image_raw, scaling)
+        _save_im(filename, image_displayed, depth)
 
 
 def _save_im(filename, im, depth=8):
