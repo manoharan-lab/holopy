@@ -86,7 +86,7 @@ class TestSavingImage(unittest.TestCase):
             msg = "more than 100 files in temp directory... test is broken"
             raise RuntimeError(msg)
 
-    @attr("fast")
+    @attr("medium")
     def test_save_single_image_writes_image_file(self):
         # For now, we just test that it writes an image file, not that
         # the file is correct:
@@ -96,7 +96,7 @@ class TestSavingImage(unittest.TestCase):
         self.assertTrue(os.path.exists(savename))
         os.remove(savename)  # cleaning up
 
-    @attr("fast")
+    @attr("medium")
     def test_save_multiple_images_writes_image_files(self):
         # For now, we just test that it writes the image files, not that
         # the files are correct:
