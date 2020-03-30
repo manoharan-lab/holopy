@@ -108,7 +108,7 @@ def save_plot(filenames, data, scaling='auto', vert_axis='x', horiz_axis='y',
                            colour_axis)
         s = Show2D(im)
         if len(im) > 1:
-            s.saveAll(filenames)
+            s.save_all(filenames)
         else:
             s.save(filenames)
     else:

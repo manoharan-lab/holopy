@@ -75,8 +75,8 @@ class TestSavingImage(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tempdir)
 
-    def _make_unused_filename_in_tempdir(self, extension):
-        for i in range(100):
+    def _make_unused_filename_in_tempdir(self, extension, start_index=0):
+        for i in range(start_index, 100):
             filename = os.path.join(
                 self.tempdir,
                 'tempfile-{}.{}'.format(i, extension))
@@ -101,10 +101,11 @@ class TestSavingImage(unittest.TestCase):
         # For now, we just test that it writes the image files, not that
         # the files are correct:
         savenames = [
-            self._make_unused_filename_in_tempdir('png')
-            for _ in self.holograms]
+            self._make_unused_filename_in_tempdir('png', i)
+            for i, _ in enumerate(self.holograms)]
         assert all([not os.path.exists(nm) for nm in savenames])
-        save_plot(savenames, self.holograms)
+        save_plot(savenames,
+                  clean_concat(self.holograms, dim='z'))
         self.assertTrue(all([os.path.exists(nm) for nm in savenames]))
 
 
