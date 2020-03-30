@@ -369,9 +369,8 @@ def save_images(filenames, ims, scaling='auto', depth=8):
         supported for many image types. You probably don't want to save 8bit
         images without some kind of scaling.
     """
-    # TODO: Here could be a check whether ims has the correct format.
     if len(ims) != len(filenames):
-        raise Error("Not enough filenames or images provided.")
+        raise ValueError("Not enough filenames or images provided.")
 
     for image_raw, filename in zip(ims, filenames):
         image_displayed = display_image(image_raw, scaling)

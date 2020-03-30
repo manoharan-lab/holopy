@@ -80,6 +80,18 @@ class TestLoadingAndSaving(unittest.TestCase):
         assert_obj_close(l, self.holo)
 
     @attr("fast")
+    def test_save_images_checks_names_and_holograms_are_same_length(self):
+        filenames_too_long = [
+            os.path.join(self.tempdir, 'dummy_filename_{}.tif'.format(i))
+            for i in range(len(self.holograms) + 1)]
+
+        self.assertRaises(
+            ValueError,
+            save_images,
+            filenames_too_long,
+            self.holograms)
+
+    @attr("fast")
     def test_save_images(self):
         filenames = [
             os.path.join(self.tempdir, f)
