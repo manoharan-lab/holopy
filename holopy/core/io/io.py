@@ -395,12 +395,11 @@ def _save_im(filename, im, depth=8):
         images without some kind of scaling.
     """
     # if we don't have an extension, default to tif
-    if os.path.splitext(filename)[1] is '':
-        filename += '.tif'
+    if os.path.splitext(filename)[1] == '': filename += '.tif'
 
     metadat = False
     if os.path.splitext(filename)[1] in tiflist:
-        if im.name is None:
+        if im.name == None:
             im.name = os.path.splitext(os.path.split(filename)[-1])[0]
         metadat = pack_attrs(im, do_spacing=True)
         # import ifd2 - hidden here since it doesn't play nice in some cases.
@@ -412,11 +411,11 @@ def _save_im(filename, im, depth=8):
     im = im.values
     if im.ndim > 2: im = im[0]
 
-    if depth is not 'float':
-        if depth is 8:
+    if depth != 'float':
+        if depth == 8:
             depth = 8
             typestr = 'uint8'
-        elif depth is 16 or depth is 32:
+        elif depth == 16 or depth == 32:
             depth = depth-1
             typestr = 'int' + str(depth)
         else:
