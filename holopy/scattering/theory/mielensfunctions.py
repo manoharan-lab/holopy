@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.polynomial.chebyshev import Chebyshev
+from numpy.polynomial.legendre import legval
 from scipy.special import j0, j1, spherical_jn, spherical_yn
 from scipy import interpolate
 
@@ -307,10 +308,9 @@ class AberratedMieLensCalculator(MieLensCalculator):
 
     def _calculate_aberrated_phase(self):
         coeffs_high_to_low = np.reshape(self.spherical_aberration, -1)
-        coeffs_low_to_high = coeffs_high_to_low[::-1]
         aberrated_phase = (
             self._pupil_x_squared**2 *
-            np.polyval(coeffs_low_to_high, self._pupil_x_squared))
+            legval(self._pupil_x_squared, coeffs_high_to_low))
         return aberrated_phase
 
     @property
