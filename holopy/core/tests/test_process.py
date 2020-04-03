@@ -115,8 +115,20 @@ class TestFourier(unittest.TestCase):
     @attr("fast")
     def test_ifft_of_xarray_returns_xarray(self):
         xarray = get_example_data('image0001')
-        after_ifft = ifft(xarray)
-        self.assertIsInstance(after_ifft, xr.DataArray)
+        forward = fft(xarray)
+        backward = ifft(forward)
+        self.assertIsInstance(backward, xr.DataArray)
+
+    @attr("fast")
+    def test_fft_ifft_2d_are_inverses(self):
+        xarray = get_example_data('image0001')
+        forward = fft(xarray)
+        backward = ifft(forward)
+        data_is_same = np.allclose(
+            xarray.values,
+            backward.values,
+            atol=1e-13, rtol=1e-13)
+        self.assertTrue(data_is_same)
 
 
 if __name__ == '__main__':
