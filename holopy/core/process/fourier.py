@@ -16,7 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
-Handles Fourier transforms of HoloPy images by using scipy's fftpack. Tries to correctly interpret dimensions from xarray.
+Handles Fourier transforms of HoloPy images by using numpy's fft
+package. Tries to correctly interpret dimensions from xarray.
 
 .. moduleauthor:: Ryan McGorty <mcgorty@fas.harvard.edu>
 .. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
@@ -25,26 +26,25 @@ Handles Fourier transforms of HoloPy images by using scipy's fftpack. Tries to c
 """
 import warnings
 
-from scipy import fftpack
 import numpy as np
 import xarray as xr
 
 from holopy.core.utils import ensure_array
 
 
-
 _overwrite_deprectation_warning = (
     "The `overwrite` keyword is deprectated. Data will not be " +
     "overwritten when calling fft or ifft.")
+
 
 def fft(data, overwrite=False, shift=True):
     """
     More convenient Fast Fourier Transform
 
     An easier to use fft function, it will pick the correct fft to do
-    based on the shape of the Marray, and do the fftshift for you.  This
-    is intended for working with images, and thus for dimensions
-    greater than 2 does slicewise transforms of each "image" in a
+    based on the shape of the xarray, and do the fftshift for you. This
+    is intended for working with images, and thus for dimensions greater
+    than 2 does slicewise transforms of each "image" in a
     multidimensional stack
 
     Parameters
@@ -68,14 +68,13 @@ def fft(data, overwrite=False, shift=True):
         warnings.warn(_overwrite_deprectation_warning)
     data_np = data.values if isinstance(data, xr.DataArray) else data
     if data.ndim is 1:
-        res = fftpack.fft(data_np, overwrite_x=overwrite)
+        res = np.fft.fft(data_np)
         if shift:
             res = np.fft.fftshift(res)
     else:
-        res = fftpack.fft2(
+        res = np.fft.fft2(
             data_np,
-            axes=[data.dims.index('x'), data.dims.index('y')],
-            overwrite_x=overwrite)
+            axes=[data.dims.index('x'), data.dims.index('y')])
         if shift:
             res = np.fft.fftshift(
                 res,
@@ -117,20 +116,19 @@ def ifft(data, overwrite=False, shift=True):
         warnings.warn(_overwrite_deprectation_warning)
     data_np = data.values if isinstance(data, xr.DataArray) else data
     if data_np.ndim is 1:
-        res = fftpack.ifft(data_np, overwrite_x=overwrite)
+        res = np.fft.ifft(data_np)
         if shift:
-            res = fftpack.fftshift(data_np, overwrite_x=overwrite)
+            res = np.fft.fftshift(data_np)
     else:
         if shift:
             shifted = np.fft.fftshift(
                 data_np,
                 axes=[data.dims.index('m'), data.dims.index('n')])
-            res = fftpack.ifft2(
+            res = np.fft.ifft2(
                 shifted,
-                axes=[data.dims.index('m'), data.dims.index('n')],
-                overwrite_x=overwrite)
+                axes=[data.dims.index('m'), data.dims.index('n')])
         else:
-            res = fftpack.ifft2(data_np, overwrite_x=overwrite)
+            res = np.fft.ifft2(data_np)
 
     if isinstance(data, xr.DataArray):
         res = xr.DataArray(res, **transform_metadata(data, True))
