@@ -23,12 +23,19 @@ Handles Fourier transforms of HoloPy images by using scipy's fftpack. Tries to c
 .. moduleauthor:: Tom G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 """
+import warnings
+
 from scipy import fftpack
 import numpy as np
 import xarray as xr
 
 from holopy.core.utils import ensure_array
 
+
+
+_overwrite_deprectation_warning = (
+    "The `overwrite` keyword is deprectated. Data will not be " +
+    "overwritten when calling fft or ifft.")
 
 def fft(data, overwrite=False, shift=True):
     """
@@ -57,6 +64,8 @@ def fft(data, overwrite=False, shift=True):
     fta : ndarray
        The fourier transform of `a`
     """
+    if overwrite is True:
+        warnings.warn(_overwrite_deprectation_warning)
     data_np = data.values if isinstance(data, xr.DataArray) else data
     if data.ndim is 1:
         res = fftpack.fft(data_np, overwrite_x=overwrite)
@@ -104,6 +113,8 @@ def ifft(data, overwrite=False, shift=True):
     ndarray
        The inverse fourier transform of `data`
     """
+    if overwrite is True:
+        warnings.warn(_overwrite_deprectation_warning)
     data_np = data.values if isinstance(data, xr.DataArray) else data
     if data_np.ndim is 1:
         res = fftpack.ifft(data_np, overwrite_x=overwrite)
@@ -111,10 +122,11 @@ def ifft(data, overwrite=False, shift=True):
             res = fftpack.fftshift(data_np, overwrite_x=overwrite)
     else:
         if shift:
+            shifted = np.fft.fftshift(
+                data_np,
+                axes=[data.dims.index('m'), data.dims.index('n')])
             res = fftpack.ifft2(
-                fftpack.fftshift(
-                    data_np,
-                    axes=[data.dims.index('m'), data.dims.index('n')]),
+                shifted,
                 axes=[data.dims.index('m'), data.dims.index('n')],
                 overwrite_x=overwrite)
         else:
