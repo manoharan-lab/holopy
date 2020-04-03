@@ -30,7 +30,7 @@ import xarray as xr
 from holopy.core.utils import ensure_array
 
 
-def fft(a, overwrite=False, shift=True):
+def fft(data, overwrite=False, shift=True):
     """
     More convenient Fast Fourier Transform
 
@@ -42,7 +42,7 @@ def fft(a, overwrite=False, shift=True):
 
     Parameters
     ----------
-    a : ndarray
+    data : ndarray
        The array to transform
     overwrite : bool
        Allow this function to overwrite the Marry you pass in.  This
@@ -57,27 +57,23 @@ def fft(a, overwrite=False, shift=True):
     fta : ndarray
        The fourier transform of `a`
     """
-    if a.ndim is 1:
+    data_np = data.values if isinstance(data, xr.DataArray) else data
+    if data.ndim is 1:
+        res = fftpack.fft(data_np, overwrite_x=overwrite)
         if shift:
-            res = fftpack.fftshift(fftpack.fft(a, overwrite_x=overwrite))
-        else:
-            res = fftpack.fft(a, overwrite_x=overwrite)
+            res = np.fft.fftshift(res)
     else:
+        res = fftpack.fft2(
+            data_np,
+            axes=[data.dims.index('x'), data.dims.index('y')],
+            overwrite_x=overwrite)
         if shift:
             res = fftpack.fftshift(
-                fftpack.fft2(
-                    a,
-                    axes=[a.dims.index('x'), a.dims.index('y')],
-                    overwrite_x=overwrite),
-                axes=[a.dims.index('x'), a.dims.index('y')])
-        else:
-            res = fftpack.fft2(
-                a,
-                axes=[a.dims.index('x'), a.dims.index('y')],
-                overwrite_x=overwrite)
+                res,
+                axes=[data.dims.index('x'), data.dims.index('y')])
 
-    if isinstance(a, xr.DataArray):
-        res = xr.DataArray(res, **transform_metadata(a, False))
+    if isinstance(data, xr.DataArray):
+        res = xr.DataArray(res, **transform_metadata(data, False))
     return res
 
 
