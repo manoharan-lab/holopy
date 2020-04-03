@@ -68,7 +68,7 @@ def fft(data, overwrite=False, shift=True):
             axes=[data.dims.index('x'), data.dims.index('y')],
             overwrite_x=overwrite)
         if shift:
-            res = fftpack.fftshift(
+            res = np.fft.fftshift(
                 res,
                 axes=[data.dims.index('x'), data.dims.index('y')])
 
@@ -77,19 +77,19 @@ def fft(data, overwrite=False, shift=True):
     return res
 
 
-def ifft(a, overwrite=False, shift=True):
+def ifft(data, overwrite=False, shift=True):
     """
     More convenient Inverse Fast Fourier Transform
 
     An easier to use ifft function, it will pick the correct ifft to
     do based on the shape of the Marry, and do the fftshift for you.
-    This is indendended for working with images, and thus for
-    dimensions greater than 2 does slicewise transforms of each
-    "image" in a multidimensional stack
+    This is intended for working with images, and thus for dimensions
+    greater than 2 does slicewise transforms of each "image" in a
+    multidimensional stack
 
     Parameters
     ----------
-    a : ndarray
+    data : ndarray
        The array to transform
     overwrite : bool
        Allow this function to overwrite the Marry you pass in.  This
@@ -101,23 +101,27 @@ def ifft(a, overwrite=False, shift=True):
 
     Returns
     -------
-    ifta : ndarray
-       The inverse fourier transform of `a`
+    ndarray
+       The inverse fourier transform of `data`
     """
-    if a.ndim is 1:
+    data_np = data.values if isinstance(data, xr.DataArray) else data
+    if data_np.ndim is 1:
+        res = fftpack.ifft(data_np, overwrite_x=overwrite)
         if shift:
-            res = fftpack.ifft(fftpack.fftshift(a, overwrite_x=overwrite))
-        else:
-            res = fftpack.ifft(a, overwrite_x=overwrite)
+            res = fftpack.fftshift(data_np, overwrite_x=overwrite)
     else:
         if shift:
-            res = fftpack.ifft2(fftpack.fftshift(a, axes=[a.dims.index('m'), a.dims.index('n')]), axes=[a.dims.index('m'), a.dims.index('n')],
-                                 overwrite_x=overwrite)
+            res = fftpack.ifft2(
+                fftpack.fftshift(
+                    data_np,
+                    axes=[data.dims.index('m'), data.dims.index('n')]),
+                axes=[data.dims.index('m'), data.dims.index('n')],
+                overwrite_x=overwrite)
         else:
-            res = fftpack.ifft2(a, overwrite_x=overwrite)
+            res = fftpack.ifft2(data_np, overwrite_x=overwrite)
 
-    if isinstance(a, xr.DataArray):
-        res = xr.DataArray(res, **transform_metadata(a, True))
+    if isinstance(data, xr.DataArray):
+        res = xr.DataArray(res, **transform_metadata(data, True))
     return res
 
 
