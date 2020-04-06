@@ -38,7 +38,8 @@ from ..scattering.errors import MissingParameter
 # so that we can do things other than convolution
 
 
-def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_filter=False):
+def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0,
+              gradient_filter=False):
     """
     Propagates a hologram along the optical axis
 
@@ -52,8 +53,8 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_f
     cfsp : integer (optional)
        Cascaded free-space propagation factor.  If this is an integer
        > 0, the transfer function G will be calculated at d/csf and
-       the value returned will be G**csf.  This helps avoid artifacts related to
-       the limited window of the transfer function
+       the value returned will be G**csf.  This helps avoid artifacts
+       related to the limited window of the transfer function
     gradient_filter : float
        For each distance, compute a second propagation a distance
        gradient_filter away and subtract.  This enhances contrast of
@@ -74,7 +75,8 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_f
         # Propagating no distance has no effect
         return data
 
-    data = update_metadata(data, medium_index=medium_index, illum_wavelen=illum_wavelen)
+    data = update_metadata(
+        data, medium_index=medium_index, illum_wavelen=illum_wavelen)
 
     if data.medium_index is None or data.illum_wavelen is None:
         raise MissingParameter("refractive index and wavelength")
@@ -93,12 +95,14 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0, gradient_f
             d_old = d
             d = np.delete(d, np.nonzero(d == 0))
 
-    G = trans_func(data, d, med_wavelen, cfsp=cfsp, gradient_filter=gradient_filter)
+    G = trans_func(
+        data, d, med_wavelen, cfsp=cfsp, gradient_filter=gradient_filter)
 
     ft = fft(data)
-    res = ifft(ft.squeeze('z') * G, overwrite=True)
+    res = ifft(ft.squeeze('z') * G)
 
-    # we may have lost coordinate values to floating point precision during fft/ifft
+    # we may have lost coordinate values to floating point precision
+    # during fft/ifft
     res.name = 'propagation'
     res = res.to_dataset().update({'x': data.x, 'y': data.y})[res.name]
 

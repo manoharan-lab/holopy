@@ -32,7 +32,7 @@ from PIL import Image as pilimage
 from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 
 import holopy as hp
-from holopy.core import load, save, load_image, save_image
+from holopy.core import load, save, load_image, save_image, save_images
 from holopy.core.errors import NoMetadata
 from holopy.core.io import load_average, get_example_data_path
 from holopy.core.io.io import Accumulator
@@ -46,9 +46,11 @@ from holopy.core.tests.common import (
 IMAGE01_METADATA = {'spacing': 0.0851, 'medium_index': 1.33,
                     'illum_wavelen': 0.66, 'illum_polarization':  (1,0)}
 
-class test_loading_and_saving(unittest.TestCase):
+class TestLoadingAndSaving(unittest.TestCase):
     def setUp(self):
         self.holo = get_example_data('image0001')
+        self.holograms = [get_example_data('image0001'),
+                          get_example_data('image0002')]
         self.tempdir = tempfile.mkdtemp()
 
     def tearDown(self):
@@ -76,6 +78,30 @@ class test_loading_and_saving(unittest.TestCase):
         save_image(filename, self.holo, scaling=None)
         l = self.load_image_with_metadata(filename)
         assert_obj_close(l, self.holo)
+
+    @attr("fast")
+    def test_save_images_checks_names_and_holograms_are_same_length(self):
+        filenames_too_long = [
+            os.path.join(self.tempdir, 'dummy_filename_{}.tif'.format(i))
+            for i in range(len(self.holograms) + 1)]
+
+        self.assertRaises(
+            ValueError,
+            save_images,
+            filenames_too_long,
+            self.holograms)
+
+    @attr("fast")
+    def test_save_images(self):
+        filenames = [
+            os.path.join(self.tempdir, f)
+            for f in ['dummy_filename_1.tif', 'dummy_filename_2.tif']]
+
+        save_images(filenames, self.holograms, scaling=None)
+
+        for ground_truth, filename in zip(self.holograms, filenames):
+            loaded = load(filename)
+            self.assertTrue(np.all(loaded.values ==  ground_truth.values))
 
     @attr("fast")
     def test_default_save_is_tif(self):
@@ -316,4 +342,3 @@ def _load_example_data_backgrounds():
 
 if __name__ == '__main__':
     unittest.main()
-

@@ -39,7 +39,7 @@ To simply remove a planar intensity gradient from an image, use
 
 Frequency space analysis provides a powerful tool for working with images. Use
 :func:`.fft` and :func:`.ifft` to perform fourier transforms and inverse fourier
-transforms, respectively. These make use of ``scipy.fftpack`` functions, but are
+transforms, respectively. These make use of ``numpy.fft`` functions, but are
 wrapped to correctly interpret HoloPy objects. HoloPy also includes a Hough
 transform (:func:`.hough`) to help identify lines and other features in your
 images.
