@@ -19,7 +19,6 @@ import unittest
 
 import numpy as np
 import xarray as xr
-from scipy import fftpack
 from numpy.testing import assert_allclose
 from nose.plugins.attrib import attr
 
@@ -101,7 +100,7 @@ class TestFourier(unittest.TestCase):
             -0.01661491+0.06769537j, -0.03353658+0.00998524j,
             -0.04443262+0.01863101j,  0.02483062-0.09611888j])
 
-        assert_allclose(ifft(a, shift=False), fftpack.ifft(a))
+        assert_allclose(ifft(a, shift=False), np.fft.ifft(a))
 
     @attr('fast')
     def test_fft(self):
