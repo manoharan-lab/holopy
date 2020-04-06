@@ -32,12 +32,7 @@ import xarray as xr
 from holopy.core.utils import ensure_array
 
 
-_overwrite_deprectation_warning = (
-    "The `overwrite` keyword is deprectated. Data will not be " +
-    "overwritten when calling fft or ifft.")
-
-
-def fft(data, overwrite=False, shift=True):
+def fft(data, shift=True):
     """
     More convenient Fast Fourier Transform
 
@@ -51,9 +46,6 @@ def fft(data, overwrite=False, shift=True):
     ----------
     data : ndarray
        The array to transform
-    overwrite : bool
-       Allow this function to overwrite the Marry you pass in.  This
-       may improve performance slightly.  Default is not to overwrite
     shift : bool
        Whether to preform an fftshift on the Marry to give low
        frequences near the center as you probably expect.  Default is
@@ -64,8 +56,6 @@ def fft(data, overwrite=False, shift=True):
     fta : ndarray
        The fourier transform of `a`
     """
-    if overwrite is True:
-        warnings.warn(_overwrite_deprectation_warning)
     data_np = data.values if isinstance(data, xr.DataArray) else data
     if data.ndim is 1:
         res = np.fft.fft(data_np)
@@ -85,7 +75,7 @@ def fft(data, overwrite=False, shift=True):
     return res
 
 
-def ifft(data, overwrite=False, shift=True):
+def ifft(data, shift=True):
     """
     More convenient Inverse Fast Fourier Transform
 
@@ -99,9 +89,6 @@ def ifft(data, overwrite=False, shift=True):
     ----------
     data : ndarray
        The array to transform
-    overwrite : bool
-       Allow this function to overwrite the Marry you pass in.  This
-       may improve performance slightly.  Default is not to overwrite
     shift : bool
        Whether to preform an fftshift on the Marry to give low
        frequences near the center as you probably expect.  Default is to
@@ -112,8 +99,6 @@ def ifft(data, overwrite=False, shift=True):
     ndarray
        The inverse fourier transform of `data`
     """
-    if overwrite is True:
-        warnings.warn(_overwrite_deprectation_warning)
     data_np = data.values if isinstance(data, xr.DataArray) else data
     if data_np.ndim is 1:
         res = np.fft.ifft(data_np)

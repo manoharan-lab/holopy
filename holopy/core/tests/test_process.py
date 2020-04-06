@@ -132,23 +132,6 @@ class TestFourier(unittest.TestCase):
             atol=1e-13, rtol=1e-13)
         self.assertTrue(data_is_same)
 
-    @attr("fast")
-    def test_fft_warns_if_overwrite_is_true(self):
-        xarray = get_example_data('image0001')
-        self.assertWarnsRegex(
-            UserWarning,
-            "overwrite",
-            fft, xarray, overwrite=True)
-
-    @attr("fast")
-    def test_ifft_warns_if_overwrite_is_true(self):
-        xarray = get_example_data('image0001')
-        forward = fft(xarray)
-        self.assertWarnsRegex(
-            UserWarning,
-            "overwrite",
-            ifft, forward, overwrite=True)
-
 
 if __name__ == '__main__':
     unittest.main()
