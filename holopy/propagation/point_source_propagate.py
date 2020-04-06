@@ -19,7 +19,6 @@
 import numpy as np
 from holopy.core.metadata import get_spacing, data_grid, copy_metadata
 from scipy.interpolate import RectBivariateSpline
-import scipy.fftpack as fftpack
 from scipy.optimize import fsolve
 from xarray import concat
 
@@ -172,29 +171,29 @@ def ps_propagate_plane(data, d, L, beam_c, out_schema = None, old_Ip = False):
 
         else:
             result = old_Ip * np.exp(ikz/L_over_Rp)      
-        
+
         return result
-        
+
     #get I'
     result = np.fromfunction(lambda i,j: Ip_calc(i,j), (npix, npix), dtype=int) #result is I'
-   
+
     if isinstance(old_Ip,bool) and old_Ip: # returns partially computed I' and uncropped size of reconstruction
         return result, npix
-        
+
     #compute final result, K_nm (eqn 1.33)
     i2Pi_over_N = 2j*np.pi/npix # this is i*2pi/N
     phase_factor = np.fromfunction(lambda i,j: np.exp( -i2Pi_over_N * (i*i_c + j*j_c) ), (npix, npix), dtype=int)
     print('Taking FFT')
-    result = fftpack.ifft2(fftpack.fftshift(result*phase_factor, axes=[0,1]), axes=[0, 1], overwrite_x=True)
-    
-    #result = ifft(result*phase_factor, shift =1, overwrite = True)
-    
+    result = np.fft.ifft2(
+        np.fft.fftshift(result * phase_factor, axes=[0, 1]),
+        axes=[0, 1])
+
     print('Multiplying prefactor')
     phase_factor = np.fromfunction(lambda i,j: np.exp( i2Pi_over_N * ((i-i_c)*X0p/Dxp + (j-j_c)*Y0p/Dyp) ), (npix, npix), dtype=int)
-        
+
     result = Dxp*Dyp*phase_factor*result
-    
-    
+
+
     #crop to correct size
     if npix > npix0:
         x_cen = int(npix/2)
