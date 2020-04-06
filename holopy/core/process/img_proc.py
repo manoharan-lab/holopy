@@ -28,7 +28,6 @@ or detrending
 from ..errors import BadImage
 from ..metadata import copy_metadata, update_metadata, detector_grid, get_spacing, get_values
 from scipy.signal import detrend as dt
-from scipy import fftpack
 from scipy.ndimage import gaussian_filter
 import numpy as np
 
