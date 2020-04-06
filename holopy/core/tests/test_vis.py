@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import shutil
 import warnings
 import unittest
 import tempfile
@@ -27,7 +29,7 @@ from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
 
 from holopy.core.metadata import data_grid, clean_concat, illumination as ILLUM
-from holopy.core.io.vis import display_image, show
+from holopy.core.io.vis import display_image, show, save_plot
 from holopy.core.io.io import get_example_data
 from holopy.core.tests.common import assert_obj_close
 from holopy.core.errors import BadImage
@@ -63,6 +65,49 @@ def convert_ndarray_to_xarray(array, extra_dims=None):
     array = data_grid(array, spacing=1, z=z, extra_dims=extra_dims)
     array.attrs['_image_scaling'] = None
     return array
+
+
+class TestSavingImage(unittest.TestCase):
+    def setUp(self):
+        names = ['image0001', 'image0002']
+        self.holograms = [get_example_data(n) for n in names]
+        self.tempdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tempdir)
+
+    def _make_unused_filename_in_tempdir(self, extension, start_index=0):
+        for i in range(start_index, 100):
+            filename = os.path.join(
+                self.tempdir,
+                'tempfile-{}.{}'.format(i, extension))
+            if not os.path.exists(filename):
+                return filename
+        else:  # for-break-else:
+            msg = "more than 100 files in temp directory... test is broken"
+            raise RuntimeError(msg)
+
+    @attr("medium")
+    def test_save_single_image_writes_image_file(self):
+        # For now, we just test that it writes an image file, not that
+        # the file is correct:
+        savename = self._make_unused_filename_in_tempdir('png')
+        assert not os.path.exists(savename)
+        save_plot(savename, self.holograms[0])
+        self.assertTrue(os.path.exists(savename))
+        os.remove(savename)  # cleaning up
+
+    @attr("medium")
+    def test_save_multiple_images_writes_image_files(self):
+        # For now, we just test that it writes the image files, not that
+        # the files are correct:
+        savenames = [
+            self._make_unused_filename_in_tempdir('png', i)
+            for i, _ in enumerate(self.holograms)]
+        assert all([not os.path.exists(nm) for nm in savenames])
+        save_plot(savenames,
+                  clean_concat(self.holograms, dim='z'))
+        self.assertTrue(all([os.path.exists(nm) for nm in savenames]))
 
 
 class TestDisplayImage(unittest.TestCase):

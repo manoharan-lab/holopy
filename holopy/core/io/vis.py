@@ -79,6 +79,48 @@ def show(o, scaling='auto', vert_axis='x', horiz_axis='y',
         raise VisualizationNotImplemented(o)
 
 
+def save_plot(filenames, data, scaling='auto', vert_axis='x', horiz_axis='y',
+              depth_axis='z', colour_axis='illumination'):
+    """
+    Saves a hologram or reconstruction to (a) file(s).
+
+    Parameters
+    ----------
+    filenames : list / str
+        Name(s) of the file(s). If there is only one image contained (e.g.
+        hologram), the name will be used as a file name. If o contains more
+        plottable images (e.g. reconstruction volume), it should be a list of
+        filenames with the same length as objects.
+    data : xarray.DataArray or ndarray
+        Object to save.
+    scaling : (float, float), optional
+        (min, max) value to display in image, default is full range of o.
+    vert_axis : str, optional
+        axis to display vertically, default x.
+    horiz_axis : str, optional
+        axis to display horizontally, default y.
+    depth_axis : str, optional
+        axis to scroll with arrow keys, default 'z'.
+    colour_axis : str, optional
+        axis to display as RGB channels in colour image, default illumination.
+
+    Notes
+    -----
+    Loads plotting library the first time it is required (so that we don't have
+    to import all of matplotlib or mayavi just to load holopy)
+    """
+    if isinstance(data, (xr.DataArray, np.ndarray, list, tuple)):
+        im = display_image(data, scaling, vert_axis, horiz_axis, depth_axis,
+                           colour_axis)
+        s = Show2D(im)
+        if len(im) > 1:
+            s.save_all(filenames)
+        else:
+            s.save(filenames)
+    else:
+        raise VisualizationNotImplemented(o)
+
+
 class Show2D(object):
     def __init__(self, im):
         if _NO_MATPLOTLIB:
@@ -148,6 +190,35 @@ class Show2D(object):
             dimname = self.im.dims[0]
             titlestring = '{} = {}'.format(dimname, self.im[dimname].values[self.i])
             self.ax.set_title(titlestring)
+
+    def save(self, filename):
+        """
+        Saves the currently displayed Plot into a file.
+
+        Parameters
+        ----------
+        filename : str
+            Name for the file to save to.
+        """
+        self.draw()
+        self.fig.savefig(filename)
+
+    def save_all(self, filenames):
+        """
+        Saves the complete stack of images into separate files.
+
+        Parameters
+        ----------
+        filenames : list
+            Names of the files to save as a list. Has to have the same length
+            as the number of images that are contained in this object.
+        """
+        if len(filenames) != len(self.im):
+            raise Error("Number of images and filenames does not match!")
+
+        for i, name in enumerate(filenames):
+            self.i = i
+            self.save(name)
 
 
 def display_image(im, scaling='auto', vert_axis='x', horiz_axis='y',
@@ -298,4 +369,3 @@ def check_display():
                 a[50-i, 50-j, 1] = 1
                 a[50+i, 50-j, 1] = 1
     show(a)
-
