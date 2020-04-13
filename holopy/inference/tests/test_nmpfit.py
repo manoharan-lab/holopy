@@ -19,9 +19,11 @@
 import tempfile
 import warnings
 import unittest
+
 import numpy as np
 from nose.plugins.attrib import attr
-from numpy.testing import assert_equal, assert_approx_equal, assert_allclose, assert_raises
+from numpy.testing import (
+    assert_equal, assert_approx_equal, assert_allclose, assert_raises)
 
 from holopy.scattering import Sphere, Spheres, LayeredSphere, Mie, calc_holo
 from holopy.core import detector_grid, load, save, update_metadata
@@ -92,29 +94,65 @@ def test_fit_mie_par_scatterer():
     assert_read_matches_write(result)
 
 
-@attr('medium')
-def test_fit_random_subset():
-    holo = normalize(get_example_data('image0001'))
+class TestRandomSubsetFitting(unittest.TestCase):
+    def _make_model(self):
+        sphere = Sphere(
+            center=(Uniform(0, 1e-5, guess=.567e-5),
+                    Uniform(0, 1e-5, .567e-5),
+                    Uniform(1e-5, 2e-5)),
+            r=Uniform(1e-8, 1e-5, 8.5e-7),
+            n=ComplexPrior(Uniform(1, 2, 1.59), 1e-4))
 
-    s = Sphere(center = (Uniform(0, 1e-5, guess=.567e-5),
-                         Uniform(0, 1e-5, .567e-5), Uniform(1e-5, 2e-5)),
-               r = Uniform(1e-8, 1e-5, 8.5e-7),
-               n = ComplexPrior(Uniform(1, 2, 1.59), 1e-4))
+        model = AlphaModel(
+            sphere, theory=Mie(False), alpha=Uniform(0.1, 1, 0.6))
+        return model
 
-    model = AlphaModel(s, theory=Mie(False), alpha = Uniform(.1, 1, .6))
-    np.random.seed(40)
-    result = fix_flat(NmpfitStrategy(npixels=1000).fit(model, holo))
+    @attr('medium')
+    def test_returns_close_values(self):
+        model = self._make_model()
+        holo = normalize(get_example_data('image0001'))
 
-    # TODO: this tolerance has to be rather large to pass, we should
-    # probably track down if this is a sign of a problem
-    assert_obj_close(result.scatterer, gold_sphere, rtol=1e-2)
-    # TODO: figure out if it is a problem that alpha is frequently coming out
-    # wrong in the 3rd decimal place.
-    assert_approx_equal(result.parameters['alpha'], gold_alpha,
-                        significant=3)
-    assert_equal(model, result.model)
+        np.random.seed(40)
+        result = NmpfitStrategy(npixels=1000).fit(model, holo)
 
-    assert_read_matches_write(result)
+        # TODO: figure out if it is a problem that alpha is frequently
+        # coming out wrong in the 3rd decimal place.
+        self.assertAlmostEqual(
+            result.parameters['alpha'],
+            gold_alpha,
+            places=3)
+        # TODO: this tolerance has to be rather large to pass, we should
+        # probably track down if this is a sign of a problem
+        assert_obj_close(result.scatterer, gold_sphere, rtol=1e-2)
+
+    @attr('medium')
+    def test_fit_result_is_saveable(self):
+        model = self._make_model()
+        holo = normalize(get_example_data('image0001'))
+
+        np.random.seed(40)
+        fitter = NmpfitStrategy(npixels=100, maxiter=1)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            # ignore not-converged warnings since we only do 2 iterations
+            fitted = fitter.fit(model, holo)
+
+        result = fix_flat(fitted)
+        assert_read_matches_write(result)
+
+    @attr('medium')
+    def test_fit_result_stores_model(self):
+        model = self._make_model()
+        holo = normalize(get_example_data('image0001'))
+
+        np.random.seed(40)
+        fitter = NmpfitStrategy(npixels=100, maxiter=1)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            # ignore not-converged warnings since we only do 2 iterations
+            fitted = fitter.fit(model, holo)
+
+        self.assertEqual(model, fitted.model)
 
 
 def test_n():
