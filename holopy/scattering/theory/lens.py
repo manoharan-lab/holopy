@@ -10,7 +10,7 @@ from holopy.core import detector_points, update_metadata
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 
 
-class LensScatteringTheory(ScatteringTheory):
+class Lens(ScatteringTheory):
     """ Wraps a ScatteringTheory and overrides the _raw_fields to include the
     effect of an objective lens.
     """
@@ -26,7 +26,7 @@ class LensScatteringTheory(ScatteringTheory):
 
     def __init__(self, lens_angle, theory, quad_npts_theta=100,
                  quad_npts_phi=100):
-        super(LensScatteringTheory, self).__init__()
+        super(Lens, self).__init__()
         self.lens_angle = lens_angle
         self.theory = theory
         self.quad_npts_theta = quad_npts_theta

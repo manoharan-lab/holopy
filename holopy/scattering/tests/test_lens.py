@@ -6,15 +6,15 @@ from numpy.testing import assert_allclose, assert_equal
 from holopy.core import detector_points, update_metadata, detector_grid
 from holopy.scattering import calc_holo
 from holopy.scattering.theory import Mie, MieLens
-from holopy.scattering.theory.lens import LensScatteringTheory
+from holopy.scattering.theory.lens import Lens
 from holopy.scattering.theory.mielensfunctions import MieLensCalculator
 import holopy.scattering.tests.common as test_common
 
 LENS_ANGLE = 1.
 QLIM_TOL = {'atol': 1e-2, 'rtol': 1e-2}
-LENSMIE = LensScatteringTheory(lens_angle=LENS_ANGLE, theory=Mie(False, False))
+LENSMIE = Lens(lens_angle=LENS_ANGLE, theory=Mie(False, False))
 
-class TestLensScatteringTheory(unittest.TestCase):
+class TestLens(unittest.TestCase):
     def test_can_handle(self):
         theory = LENSMIE
         self.assertTrue(theory._can_handle(test_common.sphere))
@@ -165,7 +165,7 @@ class TestLensScatteringTheory(unittest.TestCase):
         pts = update_metadata(pts, illum_wavelen=test_common.wavelen,
                               medium_index=test_common.index,
                               illum_polarization=test_common.xpolarization)
-        theory = LensScatteringTheory(LENS_ANGLE, Mie(),
+        theory = Lens(LENS_ANGLE, Mie(),
                                           quad_npts_theta=8,
                                           quad_npts_phi=10)
         holo = calc_holo(pts, scatterer, theory=theory)
