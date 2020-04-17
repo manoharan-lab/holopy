@@ -129,7 +129,7 @@ class Show2D(object):
 
         self.i = 0
         vmin, vmax = im.attrs['_image_scaling']
-        if im.ndim == 3:
+        if im.ndim == 3 and not hasattr(im,'voxel'):
             #greyscale image
             self.im = im * (vmax-vmin) + vmin
         else:
@@ -341,7 +341,7 @@ def show_scatterer_slices(scatterer, spacing):
         voxel spacing for the visualization
     """
     vol = scatterer.voxelate(spacing, 0)
-    show2d(vol)
+    Show2D(vol)
 
 
 def check_display():
