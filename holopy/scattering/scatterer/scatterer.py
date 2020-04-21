@@ -196,7 +196,7 @@ class Scatterer(HoloPyObject):
             dtype = np.float
         index = np.ones_like(domains, dtype=dtype) * background
         for i, n in enumerate(ns):
-            index[domains==i+1] = n
+            index[domains == i + 1] = n
         return index
 
     def in_domain(self, points):
@@ -217,9 +217,10 @@ class Scatterer(HoloPyObject):
         if points.ndim == 1:
             points = points.reshape((1, 3))
         domains = np.zeros(points.shape[:-1], dtype='int')
+        indicators = self.indicators(points - self.center)
         # Indicators earlier in the list have priority
-        for i, ind in reversed(list(enumerate(self.indicators(points-self.center)))):
-            domains[np.nonzero(ind)] = i+1
+        for i, ind in reversed(list(enumerate(indicators))):
+            domains[np.nonzero(ind)] = i + 1
         return domains
 
     @property
@@ -271,13 +272,14 @@ class Scatterer(HoloPyObject):
 class CenteredScatterer(Scatterer):
     def __init__(self, center=None):
         if center is not None and (np.isscalar(center) or len(center) != 3):
-            raise InvalidScatterer(self,"center specified as {0}, center "
-                "should be specified as (x, y, z)".format(center))
+            msg = ("center specified as {0}, "
+                   "center should be specified as (x, y, z)".format(center))
+            raise InvalidScatterer(self, msg)
         self.center = center
 
 
-def _interpret_parameters(raw_pars, keep_priors = False):
-# doesn't really have anything to do with scatterer - shouldn't be in this file
+def _interpret_parameters(raw_pars, keep_priors=False):
+    # doesn't really have anything to do with scatterer - shouldn't be here
     out_dict = {}
     subkeys = set(
         [key.split('.', 1)[0].split(':', 1)[0] for key in raw_pars.keys()])
@@ -293,7 +295,7 @@ def _interpret_parameters(raw_pars, keep_priors = False):
                 subset = {key[clip+1:]: val
                           for key, val in raw_pars.items()
                           if key.startswith(subkey + delimchar)}
-                if len(subset)>0:
+                if len(subset) > 0:
                     break
             if delimchar is ':':
                 # dict or xarray, but we don't know dim names
@@ -309,7 +311,7 @@ def _interpret_parameters(raw_pars, keep_priors = False):
                         dictform[str(i)] for i in range(len(dictform))]
                 elif set(dictform.keys()) == {'real', 'imag'}:
                     out_dict[subkey] = (1.0 * dictform['real'] +
-                                                     1.0j * dictform['imag'])
+                                        1.0j * dictform['imag'])
                 else:
                     # not array or complex, just return as dict
                     out_dict[subkey] = dictform
@@ -320,7 +322,7 @@ def _interpret_parameters(raw_pars, keep_priors = False):
 
 
 def _expand_parameters(pairs, basekey=''):
-# doesn't really have anything to do with scatterer - shouldn't be in this file
+    # doesn't really have anything to do with scatterer - shouldn't be here
     subs = []
     for subkey, par in pairs:
         key = basekey + str(subkey)
@@ -333,7 +335,7 @@ def _expand_parameters(pairs, basekey=''):
         elif isinstance(par, xr.DataArray):
             subkeys = [coord.item() for coord in par.coords[par.dims[0]]]
             subvals = [par.loc[subkey] for subkey in subkeys]
-            if len(par.dims)==1:
+            if len(par.dims) == 1:
                 subvals = [subval.item() for subval in subvals]
             add_pars(zip(subkeys, subvals), ':')
         elif hasattr(par, 'name') and hasattr(par, 'imag'):
@@ -380,7 +382,7 @@ def find_bounds(indicator):
 
 
 def bound_union(d1, d2):
-    new = [[0, 0],[0, 0],[0, 0]]
+    new = [[0, 0], [0, 0], [0, 0]]
     for i in range(3):
         new[i][0] = min(d1[i][0], d2[i][0])
         new[i][1] = max(d1[i][1], d2[i][1])
@@ -392,11 +394,11 @@ class Indicators(HoloPyObject):
     Class holding functions describing a scatterer
 
     One or more functions (one per domain) that take Nx3 arrays of points and
-    return a boolean array of membership in each domain. More than one indicator
-    is allowed to return true for a given point, in that case the point is
-    considered a member of the first domain with a true value.
+    return a boolean array of membership in each domain. More than one
+    indicator is allowed to return true for a given point, in that case the
+    point is considered a member of the first domain with a true value.
     """
-    def __init__(self, functions, bound = None):
+    def __init__(self, functions, bound=None):
         try:
             len(functions)
         except TypeError:
