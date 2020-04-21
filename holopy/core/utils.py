@@ -23,6 +23,7 @@ Misc utility functions to make coding more convenient
 
 
 import os
+import io
 import sys
 import shutil
 import errno
@@ -43,22 +44,26 @@ from holopy.core.holopy_object import HoloPyObject
 
 # FIXME this is difficult to test, since it works on the file level
 # perhaps make this capture the output rather than writing it to devnull?
-class SuppressOutput(object):
-    STD_OUT = 1
+class SuppressOutput():
     def __init__(self, suppress_output=True):
         self.suppress_output = suppress_output
+        self.std_out = sys.stdout.fileno()
+
+    def _redirect_stdout(self, destination_fileno):
+        sys.stdout.close()
+        os.dup2(destination_fileno, self.std_out)
+        sys.stdout = io.TextIOWrapper(os.fdopen(self.std_out, 'wb'))
 
     def __enter__(self):
         if self.suppress_output:
             #store default (current) stdout
-            self.default_stdout = os.dup(self.STD_OUT)
+            self.default_stdout = os.dup(self.std_out)
             self.devnull = os.open(os.devnull, os.O_WRONLY)
-            os.dup2(self.devnull, self.STD_OUT)
-        return self
+            self._redirect_stdout(self.devnull)
 
     def __exit__(self, *args):
         if self.suppress_output:
-            os.dup2(self.default_stdout, self.STD_OUT)
+            self._redirect_stdout(self.default_stdout)
             os.close(self.devnull)
             os.close(self.default_stdout)
 
