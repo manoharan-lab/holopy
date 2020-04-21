@@ -118,36 +118,6 @@ class TestRandomSubsetFitting(unittest.TestCase):
         # probably track down if this is a sign of a problem
         assert_obj_close(result.scatterer, gold_sphere, rtol=1e-2)
 
-    @attr('medium')
-    @unittest.skip("Known Failure")
-    def test_fit_result_is_saveable(self):
-        model = self._make_model()
-        holo = normalize(get_example_data('image0001'))
-
-        np.random.seed(40)
-        fitter = NmpfitStrategy(npixels=100, maxiter=1)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
-            # ignore not-converged warnings since we only do 2 iterations
-            fitted = fitter.fit(model, holo)
-
-        result = fitted  # was fix_flat(fitted)
-        assert_read_matches_write(result)
-
-    @attr('medium')
-    def test_fit_result_stores_model(self):
-        model = self._make_model()
-        holo = normalize(get_example_data('image0001'))
-
-        np.random.seed(40)
-        fitter = NmpfitStrategy(npixels=100, maxiter=1)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
-            # ignore not-converged warnings since we only do 2 iterations
-            fitted = fitter.fit(model, holo)
-
-        self.assertEqual(model, fitted.model)
-
 
 def test_n():
     sph = Sphere(.5, 1.6, (5,5,5))
