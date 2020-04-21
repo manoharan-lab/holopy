@@ -157,7 +157,8 @@ class FitResult(HoloPyObject):
             dataset.data.attrs['_flat'] = [
                 list(f) for f in dataset.data.flat.values]
             dataset = dataset.rename({'flat': 'point'})
-            dataset['point'].values = np.arange(len(dataset.point))
+            new_coords = {'point': np.arange(len(dataset.point))}
+            dataset = dataset.assign_coords(new_coords)
         dataset.data.attrs = pack_attrs(dataset.data)
         attrs = ['model', 'strategy', 'time', '_source_class']
 

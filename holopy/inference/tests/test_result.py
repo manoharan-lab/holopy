@@ -175,7 +175,6 @@ class TestFitResult(unittest.TestCase):
         self.assertEqual(result.guess_hologram.attrs, guess_hologram.attrs)
 
     @attr('medium')
-    @unittest.skip("Known Failure")
     def test_subset_data_fit_result_is_saveable(self):
         model = self._make_model()
         holo = get_example_data('image0001')
