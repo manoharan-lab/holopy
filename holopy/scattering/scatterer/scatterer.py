@@ -59,6 +59,18 @@ class Scatterer(HoloPyObject):
         self.n = ensure_array(n)
         self.center = np.array(center)
 
+    @property
+    def x(self):
+        return self.center[0]
+
+    @property
+    def y(self):
+        return self.center[1]
+
+    @property
+    def z(self):
+        return self.center[2]
+
     def translated(self, coord1, coord2=None, coord3=None):
         """
         Make a copy of this scatterer translated to a new location
@@ -85,122 +97,6 @@ class Scatterer(HoloPyObject):
         new = copy(self)
         new.center = self.center + trans_coords
         return new
-
-    def contains(self, points):
-        return self.in_domain(points) > 0
-
-    def index_at(self, points, background=0):
-        domains = self.in_domain(points)
-        ns = ensure_array(self.n)
-        if np.iscomplex(np.append(self.n, background)).any():
-            dtype = np.complex
-        else:
-            dtype = np.float
-        index = np.ones_like(domains, dtype=dtype) * background
-        for i, n in enumerate(ns):
-            index[domains==i+1] = n
-        return index
-
-    @property
-    def guess(self):
-        if hasattr(self, 'parameters'):
-            parameters = self.parameters
-            for key in parameters.keys():
-                try:
-                    parameters[key] = parameters[key].guess
-                except AttributeError:
-                    pass
-            return self.from_parameters(parameters)
-        else:
-            return self
-
-    def in_domain(self, points):
-        """
-        Tell which domain of a scatterer points are in
-
-        Parameters
-        ----------
-        points : np.ndarray (Nx3)
-           Point or list of points to evaluate
-
-        Returns
-        -------
-        domain : np.ndarray (N)
-           The domain of each point. Domain 0 means not in the particle
-        """
-        points = np.array(points)
-        if points.ndim == 1:
-            points = points.reshape((1, 3))
-        domains = np.zeros(points.shape[:-1], dtype='int')
-        # Indicators earlier in the list have priority
-        for i, ind in reversed(list(enumerate(self.indicators(points-self.center)))):
-            domains[np.nonzero(ind)] = i+1
-        return domains
-
-    @property
-    def num_domains(self):
-        return len(self.indicators)
-
-    def _index_type(self, background=0.):
-        if np.iscomplex([self.n]).any() or np.iscomplex(background):
-            return np.complex
-        else:
-            return np.float
-
-    @property
-    def x(self):
-        return self.center[0]
-
-    @property
-    def y(self):
-        return self.center[1]
-
-    @property
-    def z(self):
-        return self.center[2]
-
-    @property
-    def bounds(self):
-        return [(c+b[0], c+b[1]) for c, b in zip(self.center,
-                                                 self.indicators.bound)]
-
-    def _voxel_coords(self, spacing):
-        if np.isscalar(spacing) or len(spacing) == 1:
-            spacing = np.ones(3) * spacing
-
-        grid = np.mgrid[
-            [slice(b[0], b[1], s) for b, s in zip(self.bounds, spacing)]]
-        return np.concatenate([g[..., np.newaxis] for g in grid], 3)
-
-    def voxelate(self, spacing, medium_index=0):
-        """
-        Represent a scatterer by discretizing into voxels
-
-        Parameters
-        ----------
-        spacing : float
-            The spacing between voxels in the returned voxelation
-        medium_index : float
-            The background index of refraction to fill in at regions where the
-            scatterer is not present
-
-        Returns
-        -------
-        voxelation : np.ndarray
-            An array with refractive index at every pixel
-        """
-        return self.index_at(self._voxel_coords(spacing))
-
-    def voxelate_domains(self, spacing):
-        return self.in_domain(self._voxel_coords(spacing))
-
-
-class CenteredScatterer(Scatterer):
-    def __init__(self, center=None):
-        if center is not None and (np.isscalar(center) or len(center) != 3):
-            raise InvalidScatterer(self,"center specified as {0}, center "
-                "should be specified as (x, y, z)".format(center))
-        self.center = center
 
     @property
     def parameters(self):
@@ -249,6 +145,19 @@ class CenteredScatterer(Scatterer):
                     all_pars[key] = parameters[key]
         return type(self)(**_interpret_parameters(all_pars))
 
+    @property
+    def guess(self):
+        if hasattr(self, 'parameters'):
+            parameters = self.parameters
+            for key in parameters.keys():
+                try:
+                    parameters[key] = parameters[key].guess
+                except AttributeError:
+                    pass
+            return self.from_parameters(parameters)
+        else:
+            return self
+
     def select(self, keys):
         """
         Select certain parts of a Scatterer with multiple parameter values
@@ -274,6 +183,97 @@ class CenteredScatterer(Scatterer):
                     if len(params[key]) == 1:
                         params[key] = params[key][0]
         return type(self)(**params)
+
+    def contains(self, points):
+        return self.in_domain(points) > 0
+
+    def index_at(self, points, background=0):
+        domains = self.in_domain(points)
+        ns = ensure_array(self.n)
+        if np.iscomplex(np.append(self.n, background)).any():
+            dtype = np.complex
+        else:
+            dtype = np.float
+        index = np.ones_like(domains, dtype=dtype) * background
+        for i, n in enumerate(ns):
+            index[domains==i+1] = n
+        return index
+
+    def in_domain(self, points):
+        """
+        Tell which domain of a scatterer points are in
+
+        Parameters
+        ----------
+        points : np.ndarray (Nx3)
+           Point or list of points to evaluate
+
+        Returns
+        -------
+        domain : np.ndarray (N)
+           The domain of each point. Domain 0 means not in the particle
+        """
+        points = np.array(points)
+        if points.ndim == 1:
+            points = points.reshape((1, 3))
+        domains = np.zeros(points.shape[:-1], dtype='int')
+        # Indicators earlier in the list have priority
+        for i, ind in reversed(list(enumerate(self.indicators(points-self.center)))):
+            domains[np.nonzero(ind)] = i+1
+        return domains
+
+    @property
+    def num_domains(self):
+        return len(self.indicators)
+
+    def _index_type(self, background=0.):
+        if np.iscomplex([self.n]).any() or np.iscomplex(background):
+            return np.complex
+        else:
+            return np.float
+
+    @property
+    def bounds(self):
+        return [(c+b[0], c+b[1]) for c, b in zip(self.center,
+                                                 self.indicators.bound)]
+
+    def _voxel_coords(self, spacing):
+        if np.isscalar(spacing) or len(spacing) == 1:
+            spacing = np.ones(3) * spacing
+
+        grid = np.mgrid[
+            [slice(b[0], b[1], s) for b, s in zip(self.bounds, spacing)]]
+        return np.concatenate([g[..., np.newaxis] for g in grid], 3)
+
+    def voxelate(self, spacing, medium_index=0):
+        """
+        Represent a scatterer by discretizing into voxels
+
+        Parameters
+        ----------
+        spacing : float
+            The spacing between voxels in the returned voxelation
+        medium_index : float
+            The background index of refraction to fill in at regions where the
+            scatterer is not present
+
+        Returns
+        -------
+        voxelation : np.ndarray
+            An array with refractive index at every pixel
+        """
+        return self.index_at(self._voxel_coords(spacing))
+
+    def voxelate_domains(self, spacing):
+        return self.in_domain(self._voxel_coords(spacing))
+
+
+class CenteredScatterer(Scatterer):
+    def __init__(self, center=None):
+        if center is not None and (np.isscalar(center) or len(center) != 3):
+            raise InvalidScatterer(self,"center specified as {0}, center "
+                "should be specified as (x, y, z)".format(center))
+        self.center = center
 
 
 def _interpret_parameters(raw_pars, keep_priors = False):
