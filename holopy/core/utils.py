@@ -56,7 +56,7 @@ class SuppressOutput():
 
     def __enter__(self):
         if self.suppress_output:
-            #store default (current) stdout
+            # store default (current) stdout
             self.default_stdout = os.dup(self.std_out)
             self.devnull = os.open(os.devnull, os.O_WRONLY)
             self._redirect_stdout(self.devnull)
@@ -79,11 +79,12 @@ def ensure_array(x):
         x = np.array(x)
     if x.shape == ():
         # len() and indexing will fail. Need to expand to 1-D
-        if isinstance(x, xr.DataArray) and len(x.coords)>0:
+        if isinstance(x, xr.DataArray) and len(x.coords) > 0:
             x = x.expand_dims(list(x.coords))
         else:
             x = np.array([x])
     return x
+
 
 def ensure_listlike(x):
     if x is None:
@@ -94,8 +95,10 @@ def ensure_listlike(x):
     except TypeError:
         return [x]
 
+
 def ensure_scalar(x):
     return ensure_array(x).item()
+
 
 def mkdir_p(path):
     '''
@@ -106,9 +109,8 @@ def mkdir_p(path):
     try:
         os.makedirs(path)
     except OSError as exc:
-        if exc.errno == errno.EEXIST:
-            pass
-        else: raise # pragma: no cover
+        assert exc.errno == errno.EEXIST
+
 
 def dict_without(d, keys):
     """
@@ -134,6 +136,7 @@ def dict_without(d, keys):
             pass
     return d
 
+
 def updated(d, update={}, filter_none=True, **kwargs):
     """Return a dictionary updated with keys from update
 
@@ -154,18 +157,18 @@ def updated(d, update={}, filter_none=True, **kwargs):
             d[key] = val
     return d
 
-def repeat_sing_dims(indict, keys = 'all'):
+
+def repeat_sing_dims(indict, keys='all'):
     if keys == 'all':
         subdict = indict
     else:
-       subdict = {key: indict[key] for key in keys}
-
+        subdict = {key: indict[key] for key in keys}
     subdict = {key: ensure_array(val) for key, val in subdict.items()}
     maxlen = max([len(val) for val in subdict.values()])
-
-    subdict={key:np.repeat(val, maxlen) for key, val in subdict.items() if len(val)==1}
-
+    subdict = {key: np.repeat(val, maxlen)
+               for key, val in subdict.items() if len(val) == 1}
     return updated(indict, subdict)
+
 
 class LnpostWrapper(HoloPyObject):
     '''
@@ -182,13 +185,14 @@ class LnpostWrapper(HoloPyObject):
         self.prefactor = -1 if minus else 1
 
     def evaluate(self, par_vals):
-        pars_dict = {par.name:val for par, val in zip(self.parameters, par_vals)}
+        pars_dict = {par.name: val for par, val in zip(self.parameters,
+                                                       par_vals)}
         return self.prefactor * self.func(pars_dict, self.data, self.pixels)
 
 
 def choose_pool(parallel):
     """
-    This is a remake of schwimmbad.choose_pool with a single argument that has more options.
+    This is a remake of schwimmbad.choose_pool with a single argument.
     """
     # TODO: This function should be refactored as a factory class with methods
     #       to enable more thorough testing of imports, MPI behaviour, etc.
@@ -228,8 +232,10 @@ def choose_pool(parallel):
                         "object with 'map' method.")
     return pool
 
+
 class NonePool():
     def map(self, function, arguments):
         return map(function, arguments)
+
     def close(self):
         pass
