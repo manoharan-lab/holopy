@@ -47,7 +47,10 @@ from holopy.core.holopy_object import HoloPyObject
 class SuppressOutput():
     def __init__(self, suppress_output=True):
         self.suppress_output = suppress_output
-        self.std_out = sys.stdout.fileno()
+        try:
+            self.std_out = sys.stdout.fileno()
+        except io.UnsupportedOperation:
+            self.std_out = 1
 
     def _redirect_stdout(self, destination_fileno):
         sys.stdout.close()
