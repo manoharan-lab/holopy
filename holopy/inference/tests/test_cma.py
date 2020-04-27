@@ -50,7 +50,7 @@ def test_run_cma_returns_reproducible_answer():
     r = run_cma(simplefunc, pars, p0, weightfunc, tols, seed=1)
     found = r.logger.xrecent.mean()
     correct = 2.876866703907526
-    assert_allclose(found, correct, rtol=1e-5)
+    assert_allclose(found, correct, rtol=1e-3)
 
 
 def test_CmaStrategy():
