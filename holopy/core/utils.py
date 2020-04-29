@@ -50,12 +50,16 @@ class SuppressOutput():
         try:
             self.std_out = sys.stdout.fileno()
         except io.UnsupportedOperation:
+            self.stdout_behaves_normally = False # ie running on travis
             self.std_out = 1
+        else:
+            self.stdout_behaves_normally = True
 
     def _redirect_stdout(self, destination_fileno):
-        sys.stdout.close()
         os.dup2(destination_fileno, self.std_out)
-        sys.stdout = io.TextIOWrapper(os.fdopen(self.std_out, 'wb'))
+        if self.stdout_behaves_normally:
+            sys.stdout.close()
+            sys.stdout = io.TextIOWrapper(os.fdopen(self.std_out, 'wb'))
 
     def __enter__(self):
         if self.suppress_output:
