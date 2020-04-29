@@ -31,7 +31,6 @@ from nose.plugins.attrib import attr
 from holopy.core import detector_grid
 from holopy.scattering import (
     Sphere, Spheres, Scatterer, Ellipsoid, Scatterers, calc_holo)
-from holopy.scattering.scatterer.ellipsoid import isnumber
 from holopy.scattering.scatterer.scatterer import (
     find_bounds, _expand_parameters, _interpret_parameters)
 from holopy.inference.prior import ComplexPrior, Uniform
@@ -65,8 +64,6 @@ def test_Ellipsoid():
     assert_equal(s.r, (1, 2, 3))
     assert_equal(s.center, (3, 2, 1))
     assert_equal(str(s)[0:9], 'Ellipsoid')
-    assert_equal(True, isnumber(3))
-    assert_equal(False, isnumber('p'))
 
 
 @attr('fast')
