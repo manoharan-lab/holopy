@@ -280,7 +280,10 @@ This calculation uses T-matrix methods to give the exact solution to Maxwell's e
 for the scattering from an arbitrary arrangement of non-overlapping spheres.
 
 Sometimes you might want to calculate scattering from multiple spheres
-using Mie theory if you are worried about computation time or if you are
+using Mie theory if you are worried about computation time,
+if your spheres are widely separated (such that optical coupling between
+the spheres is negligible),
+or if you are
 using multi-layered spheres (HoloPy's implementation of the multisphere theory
 can't currently handle coated spheres). You can specify Mie theory manually when
 calling the :func:`.calc_holo` function:
