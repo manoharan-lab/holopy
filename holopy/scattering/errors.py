@@ -25,17 +25,10 @@ other exceptions in other parts of HoloPy to keep things modular.
 
 import warnings
 
-class NoScattering(ImportWarning):
-    def __init__(self, theory):
-        self.theory = theory
-    def __str__(self):
-        return "Could not import "+self.theory+" scattering theory. You will not be able to do scattering calculations but the rest of HoloPy should remain usable. This is probably due to a problem with compiling Fortran code."
-
-
 class InvalidScatterer(Exception):
     def __init__(self, scatterer, message):
         self.scatterer = scatterer
-        super(InvalidScatterer, self).__init__(
+        super().__init__(
             "Invalid scatterer of type " +
             self.scatterer.__class__.__name__ +
             ".\n" + message)
@@ -58,13 +51,16 @@ class TheoryNotCompatibleError(Exception):
                     self.scatterer.__class__.__name__)
         if reason is not None:
             message += " because: " + message
-        super(TheoryNotCompatibleError, self).__init__(message)
+        super().__init__(message)
 
 class MissingParameter(Exception):
     def __init__(self, parameter_name):
         self.parameter_name = parameter_name
     def __str__(self):
         return ("Calculation requires specification of " + self.parameter_name + ".")
+
+class ParameterSpecificationError(Exception):
+    pass
 
 class MultisphereFailure(Exception):
     def __str__(self):
@@ -78,12 +74,6 @@ class TmatrixFailure(Exception):
         with open(self.logfilestr) as logfile:
             reason=list(logfile)[-1]
         return("Tmatrix calculation failed. This might be because your scatterer's size or aspect ratio is too large for default parameters. \n Tmatrix error message: " + reason + "Full details are available in " + self.logfilestr)
-
-class DependencyMissing(Exception):
-    def __init__(self, dep):
-        self.dep = dep
-    def __str__(self):
-        return("External Dependency: " + self.dep + " could not be found, terminating.")
 
 class AutoTheoryFailed(Exception):
     def __init__(self, scatterer):

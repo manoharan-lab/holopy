@@ -23,17 +23,17 @@ The abstract base class for all scattering objects
 '''
 
 from collections import defaultdict
-
 from itertools import chain
 from copy import copy
+from numbers import Number
 
 import numpy as np
 import xarray as xr
 
-from ...core.holopy_object  import HoloPyObject
-from ...core.utils import ensure_array, is_none, updated
-from ..errors import InvalidScatterer
-from functools import reduce
+from holopy.core.holopy_object import HoloPyObject
+from holopy.core.utils import ensure_array
+from holopy.scattering.errors import (
+    InvalidScatterer, ParameterSpecificationError)
 
 
 class Scatterer(HoloPyObject):
@@ -46,15 +46,12 @@ class Scatterer(HoloPyObject):
         Parameters
         ----------
         indicators : function or list of functions
-            Function or functions returning true for points inside the scatterer (or
-            inside a specific domain) and false outside.
+            Function or functions returning true for points inside the
+            scatterer (or inside a specific domain) and false outside.
         n : complex
             Index of refraction of the scatterer or each domain.
         center : (float, float, float)
-            The center of mass of the scatterer. 
-        bounding_box : ((float, float), (float, float), (float, float))
-            Optional. Box containing the scatterer. If a bounding box is not given, the
-            constructor will attempt to determine one.
+            The center of mass of the scatterer.
         """
         if not isinstance(indicators, Indicators):
             indicators = Indicators(indicators)
@@ -76,14 +73,15 @@ class Scatterer(HoloPyObject):
         translated : Scatterer
             A copy of this scatterer translated to a new location
         """
-        if is_none(coord2) and len(ensure_array(coord1)==3):
-            #entered translation vector
+        if coord2 is None and len(ensure_array(coord1) == 3):
+            # entered translation vector
             trans_coords = ensure_array(coord1)
-        elif not is_none(coord2) and not is_none(coord3):
-            #entered 3 coords
+        elif coord2 is not None and coord3 is not None:
+            # entered 3 coords
             trans_coords = np.array([coord1, coord2, coord3])
         else:
-            raise InvalidScatterer(self, "Cannot interpret translation coordinates")
+            raise InvalidScatterer(
+                self, "Cannot interpret translation coordinates")
         new = copy(self)
         new.center = self.center + trans_coords
         return new
@@ -91,7 +89,7 @@ class Scatterer(HoloPyObject):
     def contains(self, points):
         return self.in_domain(points) > 0
 
-    def index_at(self, points, background = 0):
+    def index_at(self, points, background=0):
         domains = self.in_domain(points)
         ns = ensure_array(self.n)
         if np.iscomplex(np.append(self.n, background)).any():
@@ -103,8 +101,18 @@ class Scatterer(HoloPyObject):
             index[domains==i+1] = n
         return index
 
+    @property
     def guess(self):
-        return self
+        if hasattr(self, 'parameters'):
+            parameters = self.parameters
+            for key in parameters.keys():
+                try:
+                    parameters[key] = parameters[key].guess
+                except AttributeError:
+                    pass
+            return self.from_parameters(parameters)
+        else:
+            return self
 
     def in_domain(self, points):
         """
@@ -121,7 +129,7 @@ class Scatterer(HoloPyObject):
            The domain of each point. Domain 0 means not in the particle
         """
         points = np.array(points)
-        if points.ndim==1:
+        if points.ndim == 1:
             points = points.reshape((1, 3))
         domains = np.zeros(points.shape[:-1], dtype='int')
         # Indicators earlier in the list have priority
@@ -142,9 +150,11 @@ class Scatterer(HoloPyObject):
     @property
     def x(self):
         return self.center[0]
+
     @property
     def y(self):
         return self.center[1]
+
     @property
     def z(self):
         return self.center[2]
@@ -158,9 +168,9 @@ class Scatterer(HoloPyObject):
         if np.isscalar(spacing) or len(spacing) == 1:
             spacing = np.ones(3) * spacing
 
-        grid = np.mgrid[[slice(b[0], b[1], s) for b, s in
-                            zip(self.bounds, spacing)]]
-        return np.concatenate([g[...,np.newaxis] for g in grid], 3)
+        grid = np.mgrid[
+            [slice(b[0], b[1], s) for b, s in zip(self.bounds, spacing)]]
+        return np.concatenate([g[..., np.newaxis] for g in grid], 3)
 
     def voxelate(self, spacing, medium_index=0):
         """
@@ -184,18 +194,14 @@ class Scatterer(HoloPyObject):
     def voxelate_domains(self, spacing):
         return self.in_domain(self._voxel_coords(spacing))
 
+
 class CenteredScatterer(Scatterer):
-    def __init__(self, center = None):
+    def __init__(self, center=None):
         if center is not None and (np.isscalar(center) or len(center) != 3):
             raise InvalidScatterer(self,"center specified as {0}, center "
                 "should be specified as (x, y, z)".format(center))
         self.center = center
 
-    # eliminate parameters and from_parameters?  This is kind of fitting
-    # specific information.  Or should it be in serializable?  In many ways this
-    # is just a slight variation on what we do to put something in yaml format.
-    # It is probably possible to have to_dict, to_string, to_yaml all with
-    # mostly common code
     @property
     def parameters(self):
         """
@@ -208,33 +214,27 @@ class CenteredScatterer(Scatterer):
         Returns
         -------
         parameters: dict
-            A dictionary of this scatterer's parameters.  This dict can be
-            passed to Scatterer.from_parameters to make a copy of this scatterer
+            A dictionary of this scatterer's parameters. This dict can be
+            passed to Scatterer.from_parameters to make a copy of this
+            scatterer
         """
-
         # classes that have anything complicated happening with their variables
-        # should override this, but for simple classes the variable dict is the
-        # correct answer
+        # should override this, but for simple classes the variable self._dict
+        # is the correct answer
+        return dict(_expand_parameters(self._dict.items()))
 
-        def expand(key, par):
-            if isinstance(par, (list, tuple, np.ndarray)):
-                subs = (expand('{0}[{1}]'.format(key, p[0]), p[1]) for p in enumerate(par))
-                return chain(*subs)
-            else:
-                return [(key, par)]
-
-        return dict(chain(*[expand(*p) for p in self._dict.items()]))
-
-    def from_parameters(self, parameters, update=False):
+    def from_parameters(self, parameters, overwrite=False):
         """
         Create a Scatterer from a dictionary of parameters
 
         Parameters
         ----------
-        parameters: dict or list
+        parameters: dict
             Parameters for a scatterer.  This should be of the form returned by
             Scatterer.parameters.
-
+        overwrite: boolean
+            If true, all parameters in self are replaced with parameters.
+            Otherwise only Prior objects are
         Returns
         -------
         scatterer: Scatterer class
@@ -242,60 +242,107 @@ class CenteredScatterer(Scatterer):
         """
         # This will need to be overriden for subclasses that do anything
         # complicated with parameters
-        stopped = defaultdict(dict)
-        for key, val in parameters.items():
-            if isinstance(val, dict):
-                stopped[key] = {'_stop':val}
-            else:
-                stopped[key] = val
-
-        collected = defaultdict(dict)
-
-        for key, val in stopped.items():
-            tok = key.split('.', 1)
-            if len(tok) > 1:
-                collected[tok[0]][tok[1]] = val
-            else:
-                collected[key] = val
-
-        collected_arrays = defaultdict(dict)
-        for key, val in collected.items():
-            tok = key.split('[', 1)
-            if len(key.split('[', 1)) > 1:
-                sub_key, n = key.split('[', 1)
-                n = int(n[:-1])
-                collected_arrays[sub_key][n] = val
-            else:
-                collected_arrays[key] = val
-
-        built = {}
-
-        def build(par):
-            if isinstance(par, dict):
-                if list(par.keys()) == ['_stop']:
-                    return par['_stop']
-                else:
-                    reduce(lambda x, i: isinstance(i, int) and x,
-                       list(par.keys()), True)
-                    d = [p[1] for p in sorted(iter(par.items()), key =
-                                          lambda x: x[0])]
-                    return [build(p) for p in d]
-            return par
-
-        for key, val in collected_arrays.items():
-            built[key] = checkguess(build(val))
-
-        if update:
-            built = updated(checkguess(self).parameters, built)
-
-        return type(self)(**built)
+        all_pars = copy(self.parameters)
+        for key in all_pars.keys():
+            if key in parameters.keys():
+                if not isinstance(all_pars[key], Number) or overwrite:
+                    all_pars[key] = parameters[key]
+        return type(self)(**_interpret_parameters(all_pars))
 
     def select(self, keys):
-        params = self.parameters
-        for key, val in params.items():
-            if isinstance(val, xr.DataArray):
-                params[key] = np.asscalar(val.sel(**keys))
-        return self.from_parameters(params)
+        """
+        Select certain parts of a Scatterer with multiple parameter values
+
+        Parameters
+        ----------
+        parameters: dict
+            values to select. Should be of form {dim:val(s)}.
+
+        Returns
+        -------
+        scatterer: Scatterer class
+            A scatterer with only the values for each parameter specified.
+        """
+        params = _interpret_parameters(self.parameters)
+        for key in params.keys():
+            if isinstance(getattr(self, key), xr.DataArray):
+                params[key] = getattr(self, key).sel(**keys).item()
+            elif isinstance(params[key], dict):
+                for dimkeys in keys.values():
+                    params[key] = [params[key][dimkey]
+                                   for dimkey in ensure_array(dimkeys)]
+                    if len(params[key]) == 1:
+                        params[key] = params[key][0]
+        return type(self)(**params)
+
+
+def _interpret_parameters(raw_pars, keep_priors = False):
+# doesn't really have anything to do with scatterer - shouldn't be in this file
+    out_dict = {}
+    subkeys = set(
+        [key.split('.', 1)[0].split(':', 1)[0] for key in raw_pars.keys()])
+    for subkey in subkeys:
+        if subkey in raw_pars.keys():
+            val = raw_pars[subkey]
+            if hasattr(val, 'guess') and not keep_priors:
+                val = val.guess
+            out_dict[subkey] = val
+        else:
+            clip = len(subkey)
+            for delimchar in '.:':
+                subset = {key[clip+1:]: val
+                          for key, val in raw_pars.items()
+                          if key.startswith(subkey + delimchar)}
+                if len(subset)>0:
+                    break
+            if delimchar is ':':
+                # dict or xarray, but we don't know dim names
+                # so we always return dict
+                out_dict[subkey] = _interpret_parameters(subset, keep_priors)
+            elif delimchar is '.':
+                dictform = _interpret_parameters(subset, keep_priors)
+                if '0' in dictform.keys():
+                    # this might fail if called on model.parameters created
+                    # from a scatterer containing an array with some fixed,
+                    # and some varying parameters, e.g. hold x,y fit z only.
+                    out_dict[subkey] = [
+                        dictform[str(i)] for i in range(len(dictform))]
+                elif set(dictform.keys()) == {'real', 'imag'}:
+                    out_dict[subkey] = (1.0 * dictform['real'] +
+                                                     1.0j * dictform['imag'])
+                else:
+                    # not array or complex, just return as dict
+                    out_dict[subkey] = dictform
+        if subkey not in out_dict.keys():
+            msg = "Cannot interpret parameter {0}.".format(subkey)
+            raise ParameterSpecificationError(msg)
+    return out_dict
+
+
+def _expand_parameters(pairs, basekey=''):
+# doesn't really have anything to do with scatterer - shouldn't be in this file
+    subs = []
+    for subkey, par in pairs:
+        key = basekey + str(subkey)
+        def add_pars(newpairs, delimiter):
+            subs.append(_expand_parameters(newpairs, key + delimiter))
+        if isinstance(par, (list, tuple, np.ndarray)):
+            add_pars(enumerate(par), '.')
+        elif isinstance(par, dict):
+            add_pars(par.items(), ':')
+        elif isinstance(par, xr.DataArray):
+            subkeys = [coord.item() for coord in par.coords[par.dims[0]]]
+            subvals = [par.loc[subkey] for subkey in subkeys]
+            if len(par.dims)==1:
+                subvals = [subval.item() for subval in subvals]
+            add_pars(zip(subkeys, subvals), ':')
+        elif hasattr(par, 'name') and hasattr(par, 'imag'):
+            # prior.ComplexPrior
+            add_pars(zip(['real', 'imag'], [par.real, par.imag]), '.')
+        else:
+            subs.append([(key, par)])
+    return chain(*subs)
+
 
 def find_bounds(indicator):
     """
@@ -331,12 +378,14 @@ def find_bounds(indicator):
     #something like an oblique ellipsoid doesn't get missed'
     return bounds
 
+
 def bound_union(d1, d2):
     new = [[0, 0],[0, 0],[0, 0]]
     for i in range(3):
         new[i][0] = min(d1[i][0], d2[i][0])
         new[i][1] = max(d1[i][1], d2[i][1])
     return new
+
 
 class Indicators(HoloPyObject):
     """
@@ -362,28 +411,3 @@ class Indicators(HoloPyObject):
 
     def __call__(self, points):
         return [test(points) for test in self.functions]
-
-def checkguess(par):
-    def guess(a):
-        if isinstance(a,np.ndarray):
-            return np.array([checkguess(val) for val in ensure_array(a)]).squeeze()
-        elif isinstance(a, dict):
-            return {key: checkguess(val) for key, val in a.items()}
-        elif isinstance(a, list):
-            return [checkguess(val) for val in a]
-
-        if hasattr(a, 'guess'):
-            try:
-                # Scatterer
-                return a.guess()
-            except TypeError:
-                # Prior
-                return a.guess
-        elif hasattr(a, 'value'):
-            # UncertainValue
-            return a.value
-        return a
-
-    if isinstance(par, xr.DataArray):
-        return xr.apply_ufunc(guess, par)
-    return guess(par)

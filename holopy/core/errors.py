@@ -22,12 +22,13 @@ Error classes used in holopy
 .. moduleauthor :: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
-
+NORMALS_DEPRECATION_MESSAGE = (
+    "`normals` are deprecated in holopy. Their old implementation was" +
+    " incorrect and cannot really be corrected.")
 
 class LoadError(Exception):
     def __init__(self, filename, message):
-        self.filename = filename
-        super(LoadError, self).__init__("Error loading file " + self.filename + ": " + self.message)
+        super().__init__("Error loading file %r: %s" % (filename, message))
 
 class BadImage(Exception):
     pass
@@ -39,3 +40,11 @@ class NoMetadata(Exception):
 class CoordSysError(Exception):
     def __str__(self):
         return "Could not interpret your points. Use either Cartesian or spherical coordinates"
+
+class DependencyMissing(Exception):
+    def __init__(self, dependency, message=""):
+        self.dependency = dependency
+        self.message = message
+    def __str__(self):
+        return "Calculation requires {} but it could not be found. {}".format(
+                self.dependency, self.message)

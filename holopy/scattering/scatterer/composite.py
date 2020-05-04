@@ -25,13 +25,15 @@ scatterers (e.g. two trimers).
 
 
 from copy import copy
+from numbers import Number
+import warnings
 
 import numpy as np
 
+from holopy.scattering.scatterer.scatterer import Scatterer
+from holopy.core.math import rotate_points
+from holopy.core.utils import ensure_array, dict_without
 
-from . import Scatterer
-from ...core.math import rotate_points
-from ...core.utils import is_none, ensure_array, updated
 
 class Scatterers(Scatterer):
     '''
@@ -41,8 +43,23 @@ class Scatterers(Scatterer):
 
     Attributes
     ----------
-    scatterers: list
-       List of scatterers that make up this object
+    scatterers : list
+        List of scatterers that make up this object
+    ties : dict or None (optional)
+        dict indicating parameters to tie of the form: {'r': '0:r', '1:r'}
+
+    Methods
+    -------
+    parameters [property]
+        Dictionary of composite's unique parameters, accounting for ties.
+    raw_parameters [property]
+        Dictionary of all parameters in constituent scatterer objects. Does
+        not account for ties.
+    add(scatterer)
+        Adds a new scatterer to the composite.
+    from_parameters
+    translated
+    rotated
 
     Notes
     -----
@@ -56,14 +73,31 @@ class Scatterers(Scatterer):
     # http://stackoverflow.com/questions/1175110/python-classes-for-simple-gtd-app
     # for a python example
 
-    def __init__(self, scatterers=None):
+    def __init__(self, scatterers=None, ties=None):
+        '''
+        Parameters
+        ----------
+        scatterers : list
+            List of scatterers that make up this object
+        ties : dict or None (optional)
+            dict indicating parameters to tie of the form: {'r': '0:r', '1:r'}
+        '''
+        if ties is None:
+            ties = {}
+        self.ties = ties
         if scatterers is None:
-            self.scatterers = []
-        else:
-            self.scatterers = scatterers
+            scatterers = []
+        self.scatterers = scatterers
+        self._find_new_ties()
+        self._check_ties()
 
     def add(self, scatterer):
         self.scatterers.append(scatterer)
+        self._find_new_ties()
+        self._check_ties()
+
+    def __getitem__(self, key):
+        return self.scatterers[key]
 
     def get_component_list(self):
         components = []
@@ -74,44 +108,113 @@ class Scatterers(Scatterer):
                 components.append(s)
         return components
 
+    def add_tie(self, old_name, new_name):
+        if old_name in self.ties.keys():
+            self.ties[old_name].append(new_name)
+        elif old_name in self._all_ties:
+            tie_name = self._reversed_ties[old_name]
+            self.ties[tie_name].append(new_name)
+        else:
+            tie_name = new_name.split(':', 1)[1]
+            if tie_name in self.ties.keys():
+                tie_name = new_name
+            self.ties[tie_name] = [new_name, old_name]
+        self._check_ties()
+
+    def _find_new_ties(self):
+        reference_parameters = self.raw_parameters
+        for fullkey, par in reference_parameters.items():
+            if fullkey not in self._all_ties:
+                # not already in the list of ties, so check if it should be
+                for ref_key, ref_par in dict_without(
+                        reference_parameters, fullkey).items():
+                    # can't simply check par in parameters because then two
+                    # priors defined separately, but identically will match
+                    # whereas this way they are counted as separate objects.
+                    if par is ref_par and not isinstance(par, Number):
+                        self.add_tie(ref_key, fullkey)
+                        break
+
+    def _check_ties(self):
+        raw_parameters = self.raw_parameters
+        for tied_name, raw_names in self.ties.items():
+            for raw_name in raw_names:
+                if raw_name not in raw_parameters.keys():
+                    msg = ('Tied parameter {} not present in raw parameters '
+                           '{}.').format(raw_name, raw_parameters.keys())
+                    raise ValueError(msg)
+            tied_val = raw_parameters[raw_names[0]]
+            for raw_name in raw_names:
+                if not raw_parameters[raw_name] == tied_val:
+                    msg = ('Tied parameters {} and {} are not equal but have '
+                           'values {} and {}.').format(raw_name, raw_names[0],
+                           raw_parameters[raw_name], tied_val)
+                    raise ValueError(msg)
+
+    @property
+    def _reversed_ties(self):
+        reversed_ties = {}
+        for tiename, ties in self.ties.items():
+            reversed_ties.update({tie: tiename for tie in ties})
+        return reversed_ties
+
+    @property
+    def _all_ties(self):
+        return sum(self.ties.values(), [])
+
+    @property
+    def raw_parameters(self):
+        parameters = {}
+        for i, scatterer in enumerate(self.scatterers):
+            single_scatterer_parameters = {'{0}:{1}'.format(i, key): val
+                            for key, val in scatterer.parameters.items()}
+            parameters.update(single_scatterer_parameters)
+        return parameters
+
     @property
     def parameters(self):
-        d = {}
-        for i, scatterer in enumerate(self.scatterers):
-            for key, par in scatterer.parameters.items():
-                d['{0}:{1}.{2}'.format(i, scatterer.__class__.__name__, key)] = par
-        return dict(sorted(list(d.items()), key = lambda t: t[0]))
+        self._check_ties()
+        raw_parameters = self.raw_parameters
+        parameters = {key: val for key, val in raw_parameters.items()
+                      if key not in self._all_ties}
+        ties = {tied_name: raw_parameters[raw_names[0]] for
+                tied_name, raw_names in self.ties.items()}
+        parameters.update(ties)
+        return parameters
 
+    def from_parameters(self, new_parameters, overwrite=False):
+        '''
+        Makes a new object similar to self with values as given in parameters.
+        This returns a physical object, so any priors are replaced with their
+        guesses if not included in passed-in parameters.
 
-    def from_parameters(self, parameters, update = False):
-        if update:
-            parameters = updated(self.parameters, {key: val for key, val in parameters.items() if key[0].isdigit()})
-        n_scatterers = len(set([p.split(':')[0] for p in list(parameters.keys())]))
+        Parameters
+        ----------
+        parameters : dict
+            dictionary of parameters to use in the new object.
+            Keys should match those of self.parameters.
+        overwrite : bool (optional)
+            if True, constant values are replaced by those in parameters
+        '''
+        n_scatterers = len(self.scatterers)
         collected = [{} for i in range(n_scatterers)]
-        types = [None] * n_scatterers
-        for key, val in parameters.items():
-            n, spec = key.split(':', 1)
-            n = int(n)
-            scat_type, par = spec.split('.', 1)
-
-            collected[n][par] = val
-            if types[n]:
-                assert types[n] == scat_type
-            else:
-                types[n] = scat_type
-
-        scatterers = []
-        # pull in the scatterer package, this lets us grab scatterers by class
-        # name
-        # we have to do it here rather than at the top of the file because we
-        # cannot import scatterer until it is done importing, which will not
-        # happen until import of composite finishes.
-        from .. import scatterer
-        for i, scat_type in enumerate(types):
-            scatterers.append(getattr(scatterer,
-                              scat_type)().from_parameters(collected[i]))
-
-        return type(self)(scatterers)
+        for tied_name, raw_names in self.ties.items():
+            try:
+                tied_val = new_parameters[tied_name]
+                new_parameters.update({name: tied_val for name in raw_names})
+            except KeyError:
+                pass
+        for key, val in new_parameters.items():
+            parts = key.split(':', 1)
+            if len(parts) == 2:
+                n = int(parts[0])
+                par = parts[1]
+                collected[n][par] = val
+        scatterers = [scat.from_parameters(pars, overwrite)
+                         for scat, pars in zip(self.scatterers, collected)]
+        self_dict = dict(self._iteritems())
+        self_dict['scatterers'] = scatterers
+        return type(self)(**self_dict)
 
     def _prettystr(self, level, indent="  "):
         '''
@@ -147,10 +250,10 @@ class Scatterers(Scatterer):
         translated : Scatterer
             A copy of this scatterer translated to a new location
         """
-        if is_none(coord2) and len(ensure_array(coord1)==3):
+        if coord2 is None and len(ensure_array(coord1)==3):
             #entered translation vector
             trans_coords = ensure_array(coord1)
-        elif not is_none(coord2) and not is_none(coord3):
+        elif coord2 is not None and coord3 is not None:
             #entered 3 coords
             trans_coords = np.array([coord1, coord2, coord3])
         else:
@@ -163,10 +266,10 @@ class Scatterers(Scatterer):
 
     def rotated(self, ang1, ang2=None, ang3=None):
 
-        if is_none(ang2) and len(ensure_array(ang1)==3):
+        if ang2 is None and len(ensure_array(ang1)==3):
             #entered rotation angle tuple
             alpha, beta, gamma = ang1
-        elif not is_none(ang2) and not is_none(ang3):
+        elif ang2 is not None and ang3 is not None:
             #entered 3 angles
             alpha=ang1; beta=ang2; gamma=ang3
         else:

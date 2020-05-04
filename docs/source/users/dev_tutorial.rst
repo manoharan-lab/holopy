@@ -17,12 +17,11 @@ Download or clone the latest version of HoloPy from Git Hub at `https://github.c
 Let's say you downloaded or cloned HoloPy to
 ``/home/me/holopy``. Then open a terminal, ``cd`` to ``/home/me/holopy`` and run::
 
-    python setup.py build_ext --inplace
+    python setup.py develop
 
 This puts the extensions inside the source tree, so that you can work
-directly from ``/home/me/holopy``.  You will need to add
-``/home/me/holopy`` to your python_path for python to find the
-module when you import it.
+directly from ``/home/me/holopy`` and have the changes reflected in the version
+of HoloPy that you import into python.
 
 **Note for Mac users:** gfortran may put its library in a place python can't find it. If you get errors including something like ``can't find /usr/local/libgfortran.3.dynlib`` you can symlink them in from your install. You can do this by running::
 
@@ -128,7 +127,7 @@ Adding a new inference model
 
 To perform inference, you need a noise model. You can make a new noise model by inheriting from :class:`~holopy.inference.noise_model.NoiseModel`. This class has all the machinery to compute likelihoods of observing data given some set of parameters and assuming Gaussian noise. 
 
-To implement a new model, you just need to implement one function: ``_forward``. 
+To implement a new model, you just need to implement one function: ``forward``.
 This function receives a dictionary of parameter values and a data shape schema (defined by :func:`.detector_grid`, for example) and needs to return simulated data of shape specified. See the ``_forward`` function in :class:`~holopy.inference.noise_model.AlphaModel` for an example of how to do this. 
 
 If you want to use some other noise model, you may need to override _lnlike and define the probablity given your uncertainty. You can reference _lnlike in :class:`~holopy.inference.noise_model.NoiseModel`.

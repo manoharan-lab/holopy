@@ -33,23 +33,23 @@ from numpy import arctan2, sin, cos
 from warnings import warn
 from scipy.integrate import dblquad
 
-from ..scatterer import Spheres,Sphere
-from ..errors import (TheoryNotCompatibleError, InvalidScatterer,
-                      MultisphereFailure)
-from .scatteringtheory import ScatteringTheory
-
+from holopy.core.utils import SuppressOutput
+from holopy.core.errors import DependencyMissing
+from holopy.scattering.scatterer import Spheres,Sphere
+from holopy.scattering.errors import (
+    TheoryNotCompatibleError, InvalidScatterer, MultisphereFailure)
+from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 try:
-    from .mie_f import mieangfuncs
-    from .mie_f import scsmfo_min
-    from .mie_f import uts_scsmfo
+    from holopy.scattering.theory.mie_f import (uts_scsmfo, scsmfo_min,
+                                                mieangfuncs)
+    _COMPILED_FORTRAN = True
 except ImportError:
-    import warnings
-    from ..errors import NoScattering
-    warnings.simplefilter('always', NoScattering)
-    warnings.warn(NoScattering('multisphere'))
+    _COMPILED_FORTRAN = False
 
 def normalize_polarization(illum_polarization):
     return (illum_polarization / np.sqrt((illum_polarization**2).sum()))[:2]
+
+
 class Multisphere(ScatteringTheory):
     """
     Exact scattering from a cluster of spheres.
@@ -131,8 +131,13 @@ class Multisphere(ScatteringTheory):
         self.compute_escat_radial = compute_escat_radial
         self.suppress_fortran_output=suppress_fortran_output
 
+        if not _COMPILED_FORTRAN:
+            raise DependencyMissing("Multisphere theory", "This is probably "
+                                    "due to a problem with compiling Fortran "
+                                    "code, as it should be built with the rest"
+                                    " of HoloPy through f2py.")
         # call base class constructor
-        super(Multisphere, self).__init__()
+        super().__init__()
 
     def _can_handle(self, scatterer):
         return (isinstance(scatterer, Spheres) or isinstance(scatterer, Sphere))
@@ -179,27 +184,15 @@ class Multisphere(ScatteringTheory):
         if (centers > 1e4).any():
             raise InvalidScatterer(scatterer, "Particle separation "
                                         "too large, calculation would take forever")
-        if self.suppress_fortran_output:
-            #NOTE: This causes an error if it is run more than 1024 times per thread
-            #store default (current) stdout
-            default = os.dup(1)
-            #copy devnull into stdout
-            devnull = os.open(os.devnull,os.O_WRONLY)
-            os.dup2(devnull,1)
-
-        _, lmax, amn0, converged = scsmfo_min.amncalc(
-            1, centers[:,0],  centers[:,1],
-            # The fortran code uses oppositely directed z axis (they have laser
-            # propagation as positive, we have it negative), so we multiply the
-            # z coordinate by -1 to correct for that.
-            -1.0 * centers[:,2],  m.real, m.imag,
-            scatterer.r * medium_wavevec, self.niter, self.eps,
-            self.qeps1, self.qeps2,  self.meth, (0,0))
-
-        if self.suppress_fortran_output:
-            #restore stdout to default
-            os.dup2(default,1)
-            os.close(devnull)
+        with SuppressOutput(suppress_output=self.suppress_fortran_output):
+            # The fortran code uses oppositely directed z axis (they
+            # have laser propagation as positive, we have it negative),
+            # so we multiply the z coordinate by -1 to correct for that.
+            _, lmax, amn0, converged = scsmfo_min.amncalc(
+                1, centers[:,0],  centers[:,1],
+                -1.0 * centers[:,2],  m.real, m.imag,
+                scatterer.r * medium_wavevec, self.niter, self.eps,
+                self.qeps1, self.qeps2,  self.meth, (0,0))
 
         # converged == 1 if the SCSMFO iterative solver converged
         # f2py converts F77 LOGICAL to int
@@ -356,7 +349,8 @@ class Multisphere(ScatteringTheory):
         asym = integral / medium_wavevec**2 # need to divide by cscat
         return asym
 
-    def _calc_cross_sections(self, scatterer, medium_wavevec, medium_index, illum_polarization):
+    def calculate_cross_sections(
+            self, scatterer, medium_wavevec, medium_index, illum_polarization):
         """
         Calculate scattering, absorption, and extinction cross
         sections, and asymmetry parameter for sphere clusters

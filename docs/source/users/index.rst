@@ -16,7 +16,6 @@ and want to get started quickly.
    ps_recon_tutorial
    calc_tutorial
    dda_tutorial
-   infer_tutorial
    fit_tutorial
    dev_tutorial
    tools

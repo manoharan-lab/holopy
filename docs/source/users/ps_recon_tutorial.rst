@@ -1,4 +1,4 @@
-.. ps_recon_tutorial:
+.. _ps_recon_tutorial:
 
 Reconstructing Point Source Holograms
 =====================================
@@ -23,7 +23,7 @@ Example Reconstruction
 .. plot:: pyplots/basic_ps_recon.py
    :include-source:
 
-We'll examine each bsection of code in turn. The first block:
+We'll examine each section of code in turn. The first block:
 
 ..  testcode::
 
@@ -116,12 +116,12 @@ visualizing the reconstruction results.
 ..  testcode::
     :hide:
 
-    print(abs(recons[0,450,550].values))
+    print(round(abs(recons[0,450,550].values), 20))
 
 ..  testoutput::
     :hide:
 
-    1.3709806551938934e-11
+    1.370980655e-11
 
 Magnification and Output Image Size
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
