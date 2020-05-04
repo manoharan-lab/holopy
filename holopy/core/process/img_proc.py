@@ -27,25 +27,23 @@ or detrending
 
 from ..errors import BadImage
 from ..metadata import copy_metadata, update_metadata, detector_grid, get_spacing, get_values
-from ..utils import is_none
 from scipy.signal import detrend as dt
-from scipy import fftpack
 from scipy.ndimage import gaussian_filter
 import numpy as np
 
 def normalize(image):
     """
-    Normalize an image (NumPy array) by dividing by the pixel average.
+    Normalize an image by dividing by the pixel average.
     This gives the image a mean value of 1.
 
     Parameters
     ----------
-    image : ndarray
+    image : xarray.DataArray
        The array to normalize
 
     Returns
     -------
-    normalized_image : ndarray
+    normalized_image : xarray.DataArray
        The normalized image
     """
     return copy_metadata(image, image * 1.0 / image.sum() * image.size)
@@ -58,12 +56,12 @@ def detrend(image):
 
     Parameters
     ----------
-    image : ndarray
+    image : xarray.DataArray
        Image to process
 
     Returns
     -------
-    image : ndarray
+    image : xarray.DataArray
        Image with linear trends removed
     '''
     return copy_metadata(image, dt(dt(image, image.dims.index('x')), image.dims.index('y')))
@@ -75,12 +73,12 @@ def zero_filter(image):
 
     Parameters
     ----------
-    image : ndarray
+    image : xarray.DataArray
        Image to process
 
     Returns
     -------
-    image : ndimage
+    image : xarray.DataArray
        Image where pixels = 0 are instead given values equal to average of
        neighbors.  dtype is the same as the input image
     '''
@@ -115,7 +113,7 @@ def subimage(arr, center, shape):
 
     Parameters
     ----------
-    arr : numpy.ndarray
+    arr : xarray.DataArray
         The array to subimage
     center : tuple of ints or floats
         The desired center of the region, should have the same number of
@@ -126,8 +124,8 @@ def subimage(arr, center, shape):
 
     Returns
     -------
-    sub : numpy.ndarray or :class:`.RegularGrid` marray object
-        Subset of shape shape centered at center. For marrays, marray.origin
+    sub : xarray.DataArray
+        Subset of shape shape centered at center. DataArray coords
         will be set such that the upper left corner of the output has
         coordinates relative to the input.
     """
@@ -160,7 +158,7 @@ def add_noise(image, noise_mean=.1, smoothing=.01, poisson_lambda=1000):
 
     Parameters
     ----------
-    image : ndarray or Image
+    image : xarray.DataArray
         The image to add noise to.
     smoothing : float
         Fraction of the image size to smooth by. Should in general be << 1
@@ -171,7 +169,7 @@ def add_noise(image, noise_mean=.1, smoothing=.01, poisson_lambda=1000):
 
     Returns
     -------
-    noisy_image : ndarray
+    noisy_image : xarray.DataArray
        A copy of the input image with noise added.
 
     """
@@ -226,7 +224,7 @@ def bg_correct(raw, bg, df=None):
        A copy of the background divided input image with None values of noise_sd updated to match bg.
 
     """
-    if is_none(df):
+    if df is None:
         df = raw.copy()
         df[:] = 0
 

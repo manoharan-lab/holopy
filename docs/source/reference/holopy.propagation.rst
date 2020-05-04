@@ -1,29 +1,34 @@
 holopy.propagation package
 ==========================
 
-Module contents
----------------
-
 .. automodule:: holopy.propagation
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-holopy.propagation.convolution_propagation module
--------------------------------------------------
+Subpackages
+-----------
+
+.. toctree::
+
+   holopy.propagation.tests
+
+Submodules
+----------
+
+holopy.propagation.convolution\_propagation module
+--------------------------------------------------
 
 .. automodule:: holopy.propagation.convolution_propagation
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-holopy.propagation.point_source_propagate module
-------------------------------------------------
+holopy.propagation.point\_source\_propagate module
+--------------------------------------------------
 
 .. automodule:: holopy.propagation.point_source_propagate
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
+   :members:
+   :undoc-members:
+   :show-inheritance:
 

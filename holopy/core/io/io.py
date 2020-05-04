@@ -20,29 +20,35 @@ Common entry point for holopy io.  Dispatches to the correct load/save
 functions.
 
 .. moduleauthor:: Tom Dimiduk <tdimiduk@physics.havard.edu>
+.. moduleauthor:: Ron Alexander <ralexander@g.harvard.edu>
 """
 import os
 import glob
 import yaml
 import warnings
-from scipy.misc import fromimage
 from PIL import Image as pilimage
 import xarray as xr
 import numpy as np
 import importlib
+from collections import OrderedDict
 
-from . import serialize
-from ..metadata import data_grid, get_spacing, update_metadata, copy_metadata, to_vector, illumination, clean_concat
-from ..utils import is_none, ensure_array, dict_without
-from ..errors import NoMetadata, BadImage, LoadError
+from holopy.core.io import serialize
+from holopy.core.io.vis import display_image
+from holopy.core.metadata import (data_grid, get_spacing, update_metadata,
+                    copy_metadata, to_vector, illumination)
+from holopy.core.utils import ensure_array, dict_without
+from holopy.core.errors import (
+    NoMetadata, BadImage, LoadError, NORMALS_DEPRECATION_MESSAGE)
+from holopy.core.holopy_object import FullLoader# compatibility with pyyaml < 5
 
 attr_coords = '_attr_coords'
 tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
 
+
 def default_extension(inf, defext='.h5'):
     try:
         file, ext = os.path.splitext(inf)
-    except AttributeError:
+    except:
         # this will happen if inf is already a file, which means we don't
         # need to do anything here
         return inf
@@ -50,6 +56,7 @@ def default_extension(inf, defext='.h5'):
         return file + defext
     else:
         return inf
+
 
 def get_example_data_path(name):
     path = os.path.abspath(__file__)
@@ -62,60 +69,53 @@ def get_example_data_path(name):
         out = [os.path.join(path,img) for img in name]
     return out
 
+
 def get_example_data(name):
     return load(get_example_data_path(name))
 
-def pad_channel(im, color_axis=illumination, padval=0):
-    new_ax = im.isel(**{color_axis:0}).copy()
-    new_ax[:] = padval
-    if isinstance(im[color_axis].values[0],str):
-        'coords labeled rgb'
-        concat_dim = xr.DataArray(['red','green','blue'], dims=color_axis, name=color_axis)
-        for col in concat_dim:
-            if col.values not in im[color_axis].values:
-                new_ax[color_axis] = col
-                im.attrs['_dummy_channel'] = list(concat_dim).index(col)
-    else:
-        new_ax[color_axis] = np.NaN
-        concat_dim = color_axis
-        im.attrs['_dummy_channel'] = -1
-    return clean_concat([im, new_ax], concat_dim)
 
-def pack_attrs(a, do_spacing=False, scaling = None):
-    new_attrs = {'name':a.name, attr_coords:{}}
-
+def pack_attrs(a, do_spacing=False):
+    new_attrs = {attr_coords:{}}
+    if a.name is not None:
+        new_attrs['name'] = a.name
     if do_spacing:
         new_attrs['spacing']=list(get_spacing(a))
 
-    if scaling is 'auto':
-        scaling = [np.asscalar(a.min()), np.asscalar(a.max())]
-    if scaling:
-        new_attrs['scaling']=list(scaling)
-
     for attr, val in a.attrs.items():
         if isinstance(val, xr.DataArray):
-            new_attrs[attr_coords][attr]={}
+            new_attrs[attr_coords][attr] = OrderedDict()
             for dim in val.dims:
                 new_attrs[attr_coords][attr][str(dim)]=val[dim].values
             new_attrs[attr]=list(ensure_array(val.values))
         else:
             new_attrs[attr_coords][attr]=False
-            if not is_none(val):
-                new_attrs[attr]=val
-    new_attrs[attr_coords]=yaml.dump(new_attrs[attr_coords])
+            if val is not None:
+                new_attrs[attr] = yaml.dump(val)
+    new_attrs[attr_coords] = yaml.dump(new_attrs[attr_coords],
+                                       default_flow_style=True)
     return new_attrs
 
+
 def unpack_attrs(a):
+    if len(a) == 0:
+        return a
     new_attrs={}
-    attr_ref=yaml.load(a[attr_coords])
-    for attr in dict_without(attr_ref,['spacing','name', '_dummy_channel, scaling']):
+    attr_ref=yaml.load(a[attr_coords], Loader=FullLoader)
+    attrs_to_ignore = ['spacing', 'name', '_dummy_channel', '_image_scaling']
+    for attr in dict_without(attr_ref, attrs_to_ignore):
         if attr_ref[attr]:
             new_attrs[attr] = xr.DataArray(a[attr], coords=attr_ref[attr],dims=list(attr_ref[attr].keys()))
         elif attr in a:
-            new_attrs[attr] = a[attr]
+            try:
+                new_attrs[attr] = yaml.safe_load(a[attr])
+            except AttributeError:
+                from holopy.inference.result import warn_text
+                warnings.warn(warn_text)
+                new_attrs[attr] = a[attr]
         else:
             new_attrs[attr] = None
     return new_attrs
+
 
 def load(inf, lazy=False):
     """
@@ -148,8 +148,6 @@ def load(inf, lazy=False):
             if not lazy:
                 ds = ds.load()
 
-
-
             #loaded dataset potential contains multiple DataArrays. We need
             #to find out their names and loop through them to unpack metadata
             data_vars = list(ds.data_vars.keys())
@@ -175,17 +173,23 @@ def load(inf, lazy=False):
     if os.path.splitext(inf)[1] in tiflist:
         try:
             with open(inf, 'rb') as imagefile:
-                meta = yaml.load(pilimage.open(imagefile).tag[270][0])
-            if meta['spacing'] is None:
+                meta = yaml.safe_load(pilimage.open(imagefile).tag[270][0])
+            try:
+                spacing = meta['spacing']
+                assert spacing is not None
+            except:
                 raise NoMetadata
             else:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    im = load_image(inf, meta['spacing'], name = meta['name'], channel='all')
+                    im = load_image(inf, spacing, name = meta['name'],
+                                    channel='all')
                 if '_dummy_channel' in meta:
-                    im = im.drop(np.asscalar(im.illumination[meta['_dummy_channel']]), illumination)
-                if 'scaling' in meta:
-                    smin, smax = meta['scaling']
+                    dummy_channel = yaml.safe_load(meta['_dummy_channel'])
+                    dummy_channel = im.illumination[dummy_channel]
+                    im = im.drop(dummy_channel.item(), illumination)
+                if '_image_scaling' in meta:
+                    smin, smax = yaml.safe_load(meta['_image_scaling'])
                     im = (im-im.min())*(smax-smin)/(im.max()-im.min())+smin
                 im.attrs = unpack_attrs(meta)
                 return im
@@ -194,32 +198,53 @@ def load(inf, lazy=False):
     else:
         raise NoMetadata
 
-def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, noise_sd=None, channel=None, name=None):
+
+def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
+               illum_polarization=None, normals=None, noise_sd=None,
+               channel=None, name=None):
     """
     Load data or results
 
     Parameters
     ----------
-    inf : single or list of basestring or files
-        File to load.  If the file is a yaml file, all other arguments are
-        ignored.  If inf is a list of image files or filenames they are all
-        loaded as a a timeseries hologram
+    inf : string
+        File to load.
+    spacing : float or (float, float) (optional)
+        pixel size of images in each dimension - assumes square pixels if single value.
+        set equal to 1 if not passed in and issues warning.
+    medium_index : float (optional)
+        refractive index of the medium
+    illum_wavelen : float (optional)
+        wavelength (in vacuum) of illuminating light
+    illum_polarization : (float, float) (optional)
+        (x, y) polarization vector of the illuminating light
+    noise_sd : float (optional)
+        noise level in the image, normalized to image intensity
     channel : int or tuple of ints (optional)
         number(s) of channel to load for a color image (in general 0=red,
         1=green, 2=blue)
+	name : str (optional)
+        name to assign the xr.DataArray object resulting from load_image
 
     Returns
     -------
-    obj : The object loaded, :class:`holopy.core.marray.Image`, or as loaded from yaml
+    obj : xarray.DataArray representation of the image with associated metadata
 
     """
+    if normals is not None:
+        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
     if name is None:
         name = os.path.splitext(os.path.split(inf)[-1])[0]
 
-    with open(inf,'rb') as pi:
-        arr = fromimage(pilimage.open(pi)).astype('d')
-        if hasattr(pi, 'tag') and isinstance(yaml.load(pi.tag[270][0]), dict):
-            warnings.warn("Metadata detected but ignored. Use hp.load to read it")
+    with open(inf,'rb') as pi_raw:
+        pi = pilimage.open(pi_raw)
+        arr = np.asarray(pi).astype('d')
+        try:
+            if isinstance(yaml.safe_load(pi.tag[270][0]), dict):
+                warnings.warn(
+                    "Metadata detected but ignored. Use hp.load to read it.")
+        except (AttributeError, KeyError):
+            pass
 
     extra_dims = None
     if channel is None:
@@ -245,13 +270,18 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None, illum_p
                 if channel.max() <=2:
                     channel = [['red','green','blue'][c] for c in channel]
                 extra_dims = {illumination: channel}
-                if not is_none(illum_wavelen) and not isinstance(illum_wavelen,dict) and len(ensure_array(illum_wavelen)) == len(channel):
+                if illum_wavelen is not None and not isinstance(illum_wavelen,dict) and len(ensure_array(illum_wavelen)) == len(channel):
                     illum_wavelen = xr.DataArray(ensure_array(illum_wavelen), dims=illumination, coords=extra_dims)
                 if not isinstance(illum_polarization, dict) and np.array(illum_polarization).ndim == 2:
                     pol_index = xr.DataArray(channel, dims=illumination, name=illumination)
                     illum_polarization=xr.concat([to_vector(pol) for pol in illum_polarization], pol_index)
 
-    return data_grid(arr, spacing, medium_index, illum_wavelen, illum_polarization, normals, noise_sd, name, extra_dims)
+    image = data_grid(
+        arr, spacing=spacing, medium_index=medium_index,
+        illum_wavelen=illum_wavelen, illum_polarization=illum_polarization,
+        noise_sd=noise_sd, name=name, extra_dims=extra_dims)
+    return image
+
 
 def save(outf, obj):
     """
@@ -287,18 +317,19 @@ def save(outf, obj):
     else:
         serialize.save(outf, obj)
 
+
 def save_image(filename, im, scaling='auto', depth=8):
     """Save an ndarray or image as a tiff.
 
     Parameters
     ----------
-    im : ndarray or :class:`holopy.image.Image`
-        image to save.
     filename : basestring
         filename in which to save image. If im is an image the
         function should default to the image's name field if no
         filename is specified
-    scaling : 'auto', None, or (None|Int, None|Int)
+    im : ndarray or :class:`holopy.image.Image`
+        image to save.
+    scaling : 'auto', None, or (Int, Int)
         How the image should be scaled for saving. Ignored for float
         output. It defaults to auto, use the full range of the output
         format. Other options are None, meaning no scaling, or a pair
@@ -310,60 +341,81 @@ def save_image(filename, im, scaling='auto', depth=8):
         some kind of scaling.
 
     """
+    im = display_image(im, scaling)
+    _save_im(filename, im, depth)
 
+
+def save_images(filenames, ims, scaling='auto', depth=8):
+    """
+    Saves a volume as separate images (think of reconstruction volumes).
+
+    Parameters
+    ----------
+    filenames : list
+        List of filenames. There have to be the same number of filenames as of
+        images to save. Each image will be saved in the corresponding file with
+        the same index.
+    ims : ndarray or :class:`holopy.image.Image`
+        Images to save, with separate z-coordinates from which they each will
+        be selected.
+    scaling : 'auto', None, or (Int, Int)
+        How the images should be scaled for saving. Ignored for float output.
+        It defaults to auto, use the full range of the output format. Other
+        options are None, meaning no scaling, or a pair of integers specifying
+        the values which should be set to the maximum and minimum values of the
+        image format.
+    depth : 8, 16 or 'float'
+        What type of image to save. Options other than 8bit may not be
+        supported for many image types. You probably don't want to save 8bit
+        images without some kind of scaling.
+    """
+    if len(ims) != len(filenames):
+        raise ValueError("Not enough filenames or images provided.")
+
+    for image_raw, filename in zip(ims, filenames):
+        image_displayed = display_image(image_raw, scaling)
+        _save_im(filename, image_displayed, depth)
+
+
+def _save_im(filename, im, depth=8):
+    """
+    Internal single-image-save-method to be used in save_images. Maybe it can
+    be merged with save_image.
+
+    Parameters
+    ----------
+    filename : basestring
+        Filename in which to save image. If im is an image the function should
+        default to the image's name field if no filename is specified
+    im : ndarray or :class:`holopy.image.Image`
+        Image to save.
+    depth : 8, 16 or 'float'
+        What type of image to save. Options other than 8bit may not be
+        supported for many image types. You probably don't want to save 8bit
+        images without some kind of scaling.
+    """
     # if we don't have an extension, default to tif
-    if os.path.splitext(filename)[1] is '':
-        filename += '.tif'
-    
-    if im.ndim > 2 + hasattr(im,illumination) + hasattr(im, 'z'):
-        raise BadImage("Cannot interpret multidimensional image")
-    else:
-        im = im.copy()
-        if isinstance(im, xr.DataArray):
-            if illumination in im.dims and len(im.illumination) == 2:
-                im = pad_channel(im)
-            elif illumination in im.dims and len(im.illumination) > 3:
-                raise BadImage("Too many illumination channels")
-            if 'z' in im.dims:
-                im = im.isel(z=0)
-            if im.ndim == 3:
-                im = im.transpose('x','y','illumination')
+    if os.path.splitext(filename)[1] == '': filename += '.tif'
 
-    metadat=False
-    if os.path.splitext(filename)[1] in tiflist and isinstance(im, xr.DataArray):
-        if im.name is None:
-            im.name=os.path.splitext(os.path.split(filename)[-1])[0]
-        metadat = pack_attrs(im, do_spacing = True, scaling=scaling)
-        from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2 #hiding this import here since it doesn't play nice in some scenarios
+    metadat = False
+    if os.path.splitext(filename)[1] in tiflist:
+        if im.name == None:
+            im.name = os.path.splitext(os.path.split(filename)[-1])[0]
+        metadat = pack_attrs(im, do_spacing=True)
+        # import ifd2 - hidden here since it doesn't play nice in some cases.
+        from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
         tiffinfo = ifd2()
-        tiffinfo[270] = yaml.dump(metadat) #This edits the 'imagedescription' field of the tiff metadata
+        # place metadata in the 'imagedescription' field of the tiff metadata
+        tiffinfo[270] = yaml.dump(metadat, default_flow_style=True)
 
-    if np.iscomplex(im).any():
-        raise BadImage("Cannot interpret image with complex values")
+    im = im.values
+    if im.ndim > 2: im = im[0]
 
-    if isinstance(im, xr.DataArray):
-        im = im.values
-
-    if scaling is not None:
-        if scaling is 'auto':
-            min = im.min()
-            max = im.max()
-        elif len(scaling) == 2:
-            min, max = scaling
-            im = np.minimum(im, max)
-            im = np.maximum(im, min)
-        else:
-            raise Error("Invalid image scaling")
-        if min is not None:
-            im = im - min
-        if max is not None:
-            im = im / (max-min)
-
-    if depth is not 'float':
-        if depth is 8:
+    if depth != 'float':
+        if depth == 8:
             depth = 8
             typestr = 'uint8'
-        elif depth is 16 or depth is 32:
+        elif depth == 16 or depth == 32:
             depth = depth-1
             typestr = 'int' + str(depth)
         else:
@@ -378,7 +430,11 @@ def save_image(filename, im, scaling='auto', depth=8):
     else:
         pilimage.fromarray(im).save(filename)
 
-def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_wavelen=None, illum_polarization=None, normals=None, noise_sd=None, channel=None, image_glob='*.tif'):
+
+def load_average(
+        filepath, refimg=None, spacing=None, medium_index=None,
+        illum_wavelen=None, illum_polarization=None, normals=None,
+        noise_sd=None, channel=None, image_glob='*.tif'):
     """
     Average a set of images (usually as a background)
 
@@ -397,8 +453,6 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
         Wavelength of illumination in the images. Used preferentially over refimg value if both are provided.
     illum_polarization : list-like
         Polarization of illumination in the images. Used preferentially over refimg value if both are provided.
-    normals : list-like
-        Orientation of detector. Used preferentially over refimg value if both are provided.
     image_glob : string
         Glob used to select images (if images is a directory)
 
@@ -408,6 +462,8 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
         Image which is an average of images
         noise_sd attribute contains average pixel stdev normalized by total image intensity
     """
+    if normals is not None:
+        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
 
     if isinstance(filepath, str):
         if os.path.isdir(filepath):
@@ -419,16 +475,87 @@ def load_average(filepath, refimg=None, spacing=None, medium_index=None, illum_w
     if len(filepath) < 1:
         raise LoadError(filepath, "No images found")
 
-    if is_none(spacing):
+    # read spacing from refimg if none provided
+    if spacing is None:
         spacing = get_spacing(refimg)
 
-    if channel is None and illumination in refimg.dims:
+    # read colour channels from refimg
+    channel_dict = {'0': 'red', '1': 'green', '2': 'blue'}
+    if channel is None and refimg is not None and illumination in refimg.dims:
         channel = [i for i, col in enumerate(['red','green','blue']) if col in refimg[illumination].values]
-    accumulator = clean_concat([load_image(image, spacing, channel=channel) for image in filepath],'images')
-    if noise_sd is None:
-        noise_sd = ensure_array((accumulator.std('images')/accumulator.mean('images')).mean(('x','y','z')))
-    accumulator = accumulator.mean('images')
 
-    if not is_none(refimg):
-        accumulator = copy_metadata(refimg, accumulator, do_coords=False)
-    return update_metadata(accumulator, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)
+    if np.isscalar(spacing):
+        spacing = np.repeat(spacing, 2)
+
+    # calculate the average
+    accumulator = Accumulator()
+    for path in filepath:
+        accumulator.push(load_image(path, spacing, channel=channel))
+    mean_image = accumulator.mean()
+
+    # calculate average noise from image
+    if noise_sd is None and len(filepath) > 1:
+        if channel:
+            noise_sd = xr.DataArray(accumulator.cv(),
+                                    [[channel_dict[str(ch)] for ch in channel]],
+                                    ['illumination'])
+        else:
+            noise_sd = ensure_array(accumulator.cv())
+
+    # crop according to refimg dimensions
+    if refimg is not None:
+        def extent(i):
+            name = ['x','y'][i]
+            return np.around(refimg[name].values/spacing[i]).astype('int')
+        mean_image = mean_image.isel(x=extent(0), y=extent(1))
+        mean_image['x'] = refimg.x
+        mean_image['y'] = refimg.y
+
+    # copy metadata from refimg
+    if refimg is not None:
+        mean_image = copy_metadata(refimg, mean_image, do_coords=False)
+
+    # overwrite metadata from refimg with provided values
+    return update_metadata(mean_image, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)
+
+
+class Accumulator:
+    """Calculates average and coefficient of variance for numerical data in
+    one pass using Welford's algorithim.
+    """
+    def __init__(self):
+        self._n = 0
+        self._running_mean = None
+        self._running_var = None
+
+    def push(self, x):
+        self._n += 1
+
+        if self._n == 1:
+            self._running_var = x * 0.0
+            self._running_mean = self._running_var + x
+        else:
+            self._running_var += ((x - self._running_mean) *
+             ((x - (self._running_mean + (x - self._running_mean) / self._n))))
+            self._running_mean += (x - self._running_mean) / self._n
+
+    def mean(self):
+        return self._running_mean if self._running_mean is not None else 0.0
+
+    def cv(self):
+        """ The coefficient of variation
+        """
+        if self._n == 0:
+            return None
+        else:
+            try: # If data is a multicolor hologram, average over first 3 dims
+                return np.mean(np.array(self._std() / self.mean()),
+                               axis=(0, 1, 2))
+            except IndexError:
+                return np.mean(np.array(self._std() / self.mean()))
+
+    def _std(self):
+        if self._n == 0:
+            return None
+        else:
+            return np.sqrt(self._running_var / (self._n))

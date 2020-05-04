@@ -35,7 +35,6 @@ down the problem.
 '''
 
 
-
 import os
 import yaml
 from numpy.testing import assert_allclose
@@ -45,9 +44,10 @@ from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
 from scipy.special import spherical_jn, spherical_yn
 
-from ..theory.mie_f import mieangfuncs, miescatlib, multilayer_sphere_lib, \
-    scsmfo_min, mie_specfuncs
-from ..theory.multisphere import _asm_far
+from holopy.core.utils import SuppressOutput
+from holopy.scattering.theory.mie_f import (
+    mieangfuncs, miescatlib, multilayer_sphere_lib, scsmfo_min, mie_specfuncs)
+from holopy.scattering.theory.multisphere import _asm_far
 
 # basic defs
 kr = 10.
@@ -96,7 +96,7 @@ def test_polarization_to_scatt_coords():
     assert_allclose(fortran_result, dot(conversion_mat, test_vect))
 
 
-@attr('medium')
+@attr('fast')
 def test_mie_amplitude_scattering_matrices():
     '''
     Test calculation of Mie amplitude scattering matrix elements.
@@ -128,7 +128,7 @@ def test_mie_amplitude_scattering_matrices():
     gold_name = os.path.join(location, 'gold',
                              'gold_mie_scat_matrix')
     with open(gold_name + '.yaml') as gold_file:
-        gold_dict = yaml.load(gold_file)
+        gold_dict = yaml.safe_load(gold_file)
     
     gold = np.array([gold_dict['S11'], gold_dict['pol'],
                      gold_dict['S33'], gold_dict['S34']])
@@ -183,7 +183,7 @@ def test_scattered_field_from_asm():
     assert_allclose(fortran_test, gold)
 
 
-@attr('medium')
+@attr('fast')
 def test_mie_internal_coeffs():
     if os.name == 'nt':
         raise SkipTest()
@@ -247,7 +247,7 @@ def test_mie_bndy_conds():
 # independent of kr and close to the analytical result.
 
 
-@attr('medium')
+@attr('fast')
 def test_mie_multisphere_singlesph():
     '''
     Check that fields from mie_fields and tmatrix_fields are consistent
@@ -271,9 +271,10 @@ def test_mie_multisphere_singlesph():
     emie_x, emie_y, emie_z = mieangfuncs.mie_fields(field_pts, asbs, pol, 1, 1)
 
     # calculate fields with Multisphere
-    _, lmax, amn0, conv = scsmfo_min.amncalc(1, 0., 0., 0., m.real, m.imag,
-                                             x, 100, 1e-6, 1e-8, 1e-8, 1,
-                                             (0., 0.))
+    with SuppressOutput():
+        _, lmax, amn0, conv = scsmfo_min.amncalc(
+            1, 0., 0., 0., m.real, m.imag, x, 100, 1e-6, 1e-8, 1e-8, 1,
+            (0., 0.))
     # increase qeps1 from usual here
     limit = lmax**2 + 2 * lmax
     amn = amn0[:, 0:limit, :]
@@ -300,7 +301,7 @@ def test_dn1_down_recursion():
     assert_allclose(dn1_fortran, dn1_python, rtol = 1e-6)
 
 
-@attr('medium')
+@attr('fast')
 def test_dn1_lentz():
     '''
     Test down recursion beginning with Lentz continued fraction algorithm
@@ -330,6 +331,7 @@ def test_dn1_lentz():
         lentz_illconditioned = mieangfuncs.lentz_dn1(z, nstop, 1., eps2)
         assert_allclose(lentz_illconditioned, lentz_start, rtol = 1e-12)
 
+@attr("fast")
 def test_asm():
     centers = np.array([[ 0.,  0.,  1.], [ 0.,  0., -1.]])
     m = np.array([ 1.5+0.1j,  1.5+0.1j])
@@ -339,13 +341,13 @@ def test_asm():
     qeps1 = 1e-5
     qeps2 = 1e-8
     meth = 1
-    _, lmax, amn0, converged = scsmfo_min.amncalc(
-        1, centers[:,0],  centers[:,1],
+    with SuppressOutput():
         # The fortran code uses oppositely directed z axis (they have laser
         # propagation as positive, we have it negative), so we multiply the
         # z coordinate by -1 to correct for that.
-        -1.0 * centers[:,2],  m.real, m.imag,
-        size_p, niter, eps, qeps1, qeps2,  meth, (0,0))
+        _, lmax, amn0, converged = scsmfo_min.amncalc(
+            1, centers[:,0],  centers[:,1], -1.0 * centers[:,2],  m.real,
+            m.imag, size_p, niter, eps, qeps1, qeps2,  meth, (0,0))
     limit = lmax**2 + 2*lmax
     amn = amn0[:, 0:limit, :]
     asm_fwd = _asm_far(0, 0, amn, lmax)

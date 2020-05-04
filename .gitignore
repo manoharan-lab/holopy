@@ -11,8 +11,12 @@ holopy/scattering/theory/tmatrix_f/S
 .coverage
 .nfs*
 *~
+*.swp
 *.eggs
 .ipynb_checkpoints
 HoloPy.egg-info
 .DS_Store
 docs/.DS_Store
+*.so.dSYM
+*.libs
+*.dll

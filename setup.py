@@ -1,5 +1,6 @@
-# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
+# Copyright 2011-2019, Vinothan N. Manoharan, Thomas G. Dimiduk,
 # Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
+# Ronald Alexander
 #
 # This file is part of HoloPy.
 #
@@ -29,68 +30,71 @@ C compilers, as well as f2py and cython. On Ubuntu, you will need the
 "gfortran" and "python-dev" packages installed.
 '''
 
+from os.path import join, dirname, realpath
 import setuptools
-import subprocess
-import os
 import sys
-from os.path import join
-from numpy.distutils.core import setup, Extension
 
-#setup to make Tmatrix fortran code
-tmat_dir = join('holopy','scattering','theory','tmatrix_f')
-if os.name == 'nt':
-    make=['mingw32-make']
-    tmat_file = 'S.exe'
-else:
-    make=['make']
-    tmat_file = 'S'
+import nose
+from numpy.distutils.core import setup
+from numpy.distutils.misc_util import Configuration
 
-# this will automatically build the scattering extensions, using the
-# setup.py files located in their subdirectories
-def configuration(parent_package='',top_path=''):
-    from numpy.distutils.misc_util import Configuration
-    config = Configuration(None,parent_package,top_path)
+from post_install import PostDevelopCommand, PostInstallCommand
 
-    pkglist=setuptools.find_packages()
-    print(pkglist)
-    for i in pkglist:
-        config.add_subpackage(i)
-
-    config.add_data_files(['.',['AUTHORS']])
-    config.add_data_files(join('holopy','scattering','tests','gold','full_data','*.h5'))
-    config.add_data_files(join('holopy','scattering','tests','gold','*.yaml'))
-    config.add_data_files(join('holopy','core','tests','exampledata','*.h5'))
-    config.add_data_files(join('holopy','core','tests','exampledata','*.jpg'))
-    config.add_data_files(join('holopy','propagation','tests','gold','full_data','*.h5'))
-    config.add_data_files(join('holopy','propagation','tests','gold','*.yaml'))
-    config.add_data_files(join(tmat_dir,tmat_file))
-
-    config.get_version()
-    return config
-
-__version__ = 'unknown'
 try:
     from holopy import __version__
 except ImportError:
-    # no version specified, or file got deleted in bzr
-    pass
+    __version__ = 'unknown'
+
+HOLOPY_NOSE_PLUGIN_LOCATION = ('holopycatchwarnings = '
+                               'holopy.core.tests.common:HoloPyCatchWarnings')
+
+hp_root = dirname(realpath(sys.argv[0]))
+
+
+def configuration(parent_package='', top_path=''):
+    # this will automatically build the scattering extensions, using the
+    # setup.py files located in their subdirectories
+    config = Configuration(None, parent_package, top_path)
+
+    pkglist = setuptools.find_packages(hp_root)
+    for i in pkglist:
+        config.add_subpackage(i)
+
+    config.add_data_files(['.', [join(hp_root, 'AUTHORS')]])
+    config.add_data_files(join(hp_root, 'holopy', 'scattering', 'tests',
+                               'gold', 'full_data', '*.h5'))
+    config.add_data_files(join(hp_root, 'holopy', 'scattering', 'tests',
+                               'gold', '*.yaml'))
+    config.add_data_files(join(hp_root, 'holopy', 'core', 'tests',
+                               'exampledata', '*.h5'))
+    config.add_data_files(join(hp_root, 'holopy', 'core', 'tests',
+                               'exampledata', '*.jpg'))
+    config.add_data_files(join(hp_root, 'holopy', 'propagation', 'tests',
+                               'gold', 'full_data', '*.h5'))
+    config.add_data_files(join(hp_root, 'holopy', 'propagation', 'tests',
+                               'gold', '*.yaml'))
+    return config
+
 
 if __name__ == "__main__":
+    requires = [l for l in
+                open(join(hp_root, "requirements.txt")).readlines()
+                if l[0] != '#']
 
-    if not hasattr(sys, 'real_prefix'):
-        #we are not in a virtual_env.
-        #compile Tmatrix fortran code
-        subprocess.check_call(make, cwd=tmat_dir)
+    tests_require = ['memory_profiler']
 
-    requires=[l for l in open("requirements.txt").readlines() if l[0] != '#']
     setup(configuration=configuration,
           name='HoloPy',
           version=__version__,
           description='Holography in Python',
           install_requires=requires,
+          tests_require=tests_require,
           author='Manoharan Lab, Harvard University',
           author_email='vnm@seas.harvard.edu',
           url='http://manoharan.seas.harvard.edu/holopy',
           license='GNU GPL',
           test_suite='nose.collector',
-          package=['HoloPy'])
+          entry_points={'nose.plugins.0.10': HOLOPY_NOSE_PLUGIN_LOCATION},
+          package=['HoloPy'],
+          cmdclass={'develop': PostDevelopCommand,
+                    'install': PostInstallCommand})

@@ -20,11 +20,13 @@ Test file IO of scatterpy objects
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
+from nose.plugins.attrib import attr
 
 from ...core.tests.common import assert_read_matches_write
 from ..scatterer import Sphere, Spheres
 
-    
+
+@attr("fast")
 def test_scatterer_io():
     s = Sphere()
     assert_read_matches_write(s)
