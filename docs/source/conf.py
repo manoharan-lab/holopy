@@ -19,6 +19,7 @@ import os
 import holopy as hp
 
 import sphinx_rtd_theme
+from sphinx.ext import apidoc
 
 from unittest.mock import MagicMock
 
@@ -30,6 +31,18 @@ class Mock(MagicMock):
 MOCK_MODULES = ['mie_f', 'tmatrix_f']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
+def run_apidoc(_):
+    flags = ["-f",  # overwrite existing files
+             "-T",  # don't generate redundant table of contents
+             "-M",  # put module description before contents
+             "-E"]  # limit hierarchy levels
+    filepaths = ["-o", "source/reference",  # output destination
+                 "../holopy"]  # codebase
+    exclusions = ["../holopy*/thirdparty/*"]
+    apidoc.main(flags + filepaths + exclusions)
+
+def setup(app):
+    app.connect('builder-inited', run_apidoc)
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
