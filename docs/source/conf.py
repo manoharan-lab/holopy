@@ -31,14 +31,17 @@ class Mock(MagicMock):
 MOCK_MODULES = ['mie_f', 'tmatrix_f']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
+docs_root = os.path.join(os.path.dirname(__file__), '..')
+holopy_root = os.path.join(docs_root, '..', "holopy")
 def run_apidoc(_):
     flags = ["-f",  # overwrite existing files
              "-T",  # don't generate redundant table of contents
              "-M",  # put module description before contents
              "-E"]  # limit hierarchy levels
-    filepaths = ["-o", "source/reference",  # output destination
-                 "../holopy"]  # codebase
-    exclusions = ["../holopy*/thirdparty/*"]
+    filepaths = ["-o",
+                 os.path.join(docs_root, 'source', 'reference'),  # destination
+                 holopy_root]  # codebase
+    exclusions = [os.path.join(holopy_root, '*', 'third_party', '*')]
     apidoc.main(flags + filepaths + exclusions)
 
 def setup(app):
