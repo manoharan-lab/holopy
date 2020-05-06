@@ -30,6 +30,7 @@ answer questions, and benefit from other users' questions.
    :maxdepth: 2
 
    releasenotes
+   tutorial/index
    users/index
    reference/holopy
    credits
