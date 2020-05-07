@@ -48,7 +48,7 @@ class MieLens(ScatteringTheory):
         Parameters
         ----------
         positions : (3, N) numpy.ndarray
-            The (k * r, theta, phi) coordinates, relative to the sphere,
+            The (k * rho, phi, z) coordinates, relative to the sphere,
             of the points to calculate the fields. Note that the radial
             coordinate is rescaled by the wavevector.
         scatterer : ``scatterer.Sphere`` object
@@ -93,15 +93,14 @@ class MieLens(ScatteringTheory):
         # Then we need to do 2 separate modifications to the fields.
         # First, in a lens, the incident field is Gouy phase shifted
         # to be E0 * -1, whereas in holopy the field is considered as
-        # imaged without a phase shift. So since in holopy the incident
-        # field, imaged by the lens, is phase shifted by -pi, we need
-        # to phase-shift the scattered fields by -pi as well = multiply
-        # by -1.
+        # imaged without a phase shift. So we need to re-scale the
+        # scattered field by 1 / the incident field.
         # Second, holopy considers the reference wave to have phase
         # e^{ikz}. For numerical reasons, in the mielens calculation I
         # consider the incident wave to have phase 1. So we need to fix
         # this by multiplying by e^{ikz}.
-        # Combined, we multiply by -1 * e^{ikz}:
-        field_xyz *= -1 * np.exp(1j * particle_kz)
+        # Combined, we multiply by e^{ikz} / incident_field[x-component]:
+        incident_field_x, _ = field_calculator.calculate_incident_field()
+        field_xyz *= np.exp(1j * particle_kz) / incident_field_x
         return field_xyz
 
