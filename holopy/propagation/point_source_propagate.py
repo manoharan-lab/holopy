@@ -25,22 +25,34 @@ from xarray import concat
 
 def ps_propagate(data, d, L, beam_c, out_schema = None):
     '''
-    Propagates light back through a hologram that was taken using a diverging reference beam.
+    Propagates light back through a hologram that was taken using a
+    diverging reference beam.
+
+    Parameters
+    ----------
+    data is a holopy Xarray. It is the hologram to reconstruct. Must be
+    square. The pixel spacing must also be square.
+    d = distance from pinhole to reconstructed image, in meters (this is
+    z in Jericho and Kreuzer). Can be a scalar or a 1D list or array.
+    L = distance from screen to pinhole, in meters
+    beam_c = [x,y] coodinates of beam center, in pixels
+    out_schema = size of output image and pixel spacing, default is the schema
+    of data.
+
+    Returns
+    -------
+    an image(volume) corresponding to the reconstruction at plane(s) d.
+
+    Notes
+    -----
     Only propagation through media with refractive index 1 is supported.
     This is a wrapper function for ps_propagate_plane()
     This function can handle a single reconstruction plane or a volume.
 
-    Based on the algorithm described in Manfred H. Jericho and H. Jurgen Kreuzer, "Point Source
-    Digital In-Line Holographic Microscopy," Chapter 1 of Coherent Light Microscopy, Springer, 2010.
+    Based on the algorithm described in Manfred H. Jericho and H. Jurgen
+    Kreuzer, "Point Source Digital In-Line Holographic Microscopy,"
+    Chapter 1 of Coherent Light Microscopy, Springer, 2010.
     http://link.springer.com/chapter/10.1007%2F978-3-642-15813-1_1
-
-    data is a holopy Xarray. It is the hologram to reconstruct. Must be square. The pixel spacing must also be square.
-    d = distance from pinhole to reconstructed image, in meters (this is z in Jericho and Kreuzer). Can be a scalar or a 1D list or array.
-    L = distance from screen to pinhole, in meters
-    beam_c = [x,y] coodinates of beam center, in pixels
-    out_schema = size of output image and pixel spacing, default is the schema of data.
-
-    returns an image(volume) corresponding to the reconstruction at plane(s) d.
     '''
 
     #handle a list of reconstruction planes
@@ -62,24 +74,36 @@ def ps_propagate(data, d, L, beam_c, out_schema = None):
 
 def ps_propagate_plane(data, d, L, beam_c, out_schema = None, old_Ip = False):
     '''
-    Propagates light back through a hologram that was taken using a diverging reference beam.
-    Propataion can be to one plane only.
-    Only propagation through media with refractive index 1 is supported.
+    Propagates light back through a hologram that was taken using a diverging
+    reference beam.
 
-    Based on the algorithm described in Manfred H. Jericho and H. Jurgen Kreuzer, "Point Source
-    Digital In-Line Holographic Microscopy," Chapter 1 of Coherent Light Microscopy, Springer, 2010.
-    http://link.springer.com/chapter/10.1007%2F978-3-642-15813-1_1
-
-    data is a holopy Xarray. It is the hologram to reconstruct. Must be square. The pixel spacing must also be square.
-    d = distance from pinhole to reconstructed image, in meters (this is z in Jericho and Kreuzer). Must be a scalar.
+    Parameters
+    ----------
+    data is a holopy Xarray. It is the hologram to reconstruct. Must be square.
+    The pixel spacing must also be square.
+    d = distance from pinhole to reconstructed image, in meters (this is z in
+    Jericho and Kreuzer). Must be a scalar.
     L = distance from screen to pinhole, in meters
     beam_c = [x,y] coodinates of beam center, in pixels
-    out_schema = size of output image and pixel spacing, default is the schema of data.
+    out_schema = size of output image and pixel spacing, default is the schema
+    of data.
     if Ip == True, returns Ip to be used on calculations in the stack
     if Ip == False compute reconstructed image as normal
     if Ip is an image, use this to speed up calculations
 
+    Returns
+    -------
     returns an image(volume) corresponding to the reconstruction at plane(s) d.
+
+    Notes
+    -----
+    Propataion can be to one plane only.
+    Only propagation through media with refractive index 1 is supported.
+
+    Based on the algorithm described in Manfred H. Jericho and H. Jurgen
+    Kreuzer, "Point Source Digital In-Line Holographic Microscopy," Chapter 1
+    of Coherent Light Microscopy, Springer, 2010.
+    http://link.springer.com/chapter/10.1007%2F978-3-642-15813-1_1
     '''
 
     npix0 = float(len(data.x)) # size of original image in pixels
