@@ -103,8 +103,8 @@ class Multisphere(ScatteringTheory):
 
     Changing these values will require recompiling Fortran extensions.
 
-    The maximum size parameter of each individual sphere in a cluster is 
-    currently limited to 1000, indepdently of the above scfodim.for 
+    The maximum size parameter of each individual sphere in a cluster is
+    currently limited to 1000, indepdently of the above scfodim.for
     parameters.
 
     References
@@ -122,7 +122,7 @@ class Multisphere(ScatteringTheory):
     """
 
     def __init__(self, niter=200, eps=1e-6, meth=1, qeps1=1e-5, qeps2=1e-8,
-                 compute_escat_radial = False, suppress_fortran_output = True):
+                 compute_escat_radial=False, suppress_fortran_output=True):
         self.niter = niter
         self.eps = eps
         self.meth = meth
@@ -211,7 +211,8 @@ class Multisphere(ScatteringTheory):
 
         return amn, lmax
 
-    def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index, illum_polarization):
+    def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index,
+                    illum_polarization):
         amn, lmax = self._scsmfo_setup(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index)
         fields = mieangfuncs.tmatrix_fields(positions, amn, lmax, 0,
                                             illum_polarization.values[:2],
@@ -221,13 +222,15 @@ class Multisphere(ScatteringTheory):
 
         return fields
 
-    def _raw_internal_fields(self, positions, scatterer, medium_wavevec, medium_index, illum_polarization):
+    def _raw_internal_fields(self, positions, scatterer, medium_wavevec,
+                             medium_index, illum_polarization):
         warn("Fields inside your Sphere(s) set to 0 because {0} Theory "
              " does not yet support calculating internal fields".format(
                  self.__class__.__name__))
         return [np.zeros(positions.shape[0], dtype='complex') for i in range(3)]
 
-    def _calc_cext(self, scatterer, medium_wavevec, medium_index, illum_polarization, amn = None, lmax = None):
+    def _calc_cext(self, scatterer, medium_wavevec, medium_index,
+                   illum_polarization, amn=None, lmax=None):
         """
         Calculate extinction cross section via optical theorem for
         cluster-centered field expansion.
@@ -240,7 +243,9 @@ class Multisphere(ScatteringTheory):
 
         # calculate amn coefficients if need be
         if amn is None:
-            amn, lmax = self._scsmfo_setup(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index)
+            amn, lmax = self._scsmfo_setup(
+                scatterer, medium_wavevec=medium_wavevec,
+                medium_index=medium_index)
 
         # calculate forward scattering
         asm_fwd = _asm_far(0., 0., amn, lmax)
