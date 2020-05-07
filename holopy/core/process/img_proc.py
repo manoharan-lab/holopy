@@ -24,12 +24,14 @@ or detrending
 .. moduleauthor:: Tom G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 """
-
-from ..errors import BadImage
-from ..metadata import copy_metadata, update_metadata, detector_grid, get_spacing, get_values
 from scipy.signal import detrend as dt
 from scipy.ndimage import gaussian_filter
 import numpy as np
+
+from holopy.core.errors import BadImage
+from holopy.core.metadata import (
+    copy_metadata, update_metadata, detector_grid, get_spacing, get_values)
+
 
 def normalize(image):
     """
@@ -48,6 +50,7 @@ def normalize(image):
     """
     return copy_metadata(image, image * 1.0 / image.sum() * image.size)
 
+
 def detrend(image):
     '''
     Remove linear trends from an image.
@@ -65,6 +68,7 @@ def detrend(image):
        Image with linear trends removed
     '''
     return copy_metadata(image, dt(dt(image, image.dims.index('x')), image.dims.index('y')))
+
 
 def zero_filter(image):
     '''
@@ -107,6 +111,7 @@ def zero_filter(image):
 
     return copy_metadata(image, output)
 
+
 def subimage(arr, center, shape):
     """
     Pick out a region of an image or other array
@@ -142,6 +147,7 @@ def subimage(arr, center, shape):
 
     return copy_metadata(arr, arr.isel(x=extent[0], y=extent[1]))
 
+
 def add_noise(image, noise_mean=.1, smoothing=.01, poisson_lambda=1000):
     """Add simulated noise to images. Intended for use with exact
     calculated images to make them look more like noisy 'real'
@@ -176,6 +182,7 @@ def add_noise(image, noise_mean=.1, smoothing=.01, poisson_lambda=1000):
     return copy_metadata(image, image + simulate_noise(image.shape, noise_mean, smoothing,
                                   poisson_lambda) * get_values(image.mean()))
 
+
 def simulate_noise(shape, mean=.1, smoothing=.01, poisson_lambda=1000):
     """Create an array of correlated noise. The noise_mean can be controlled independently of
     the poisson_lambda that controls the shape of the distribution. In
@@ -205,6 +212,7 @@ def simulate_noise(shape, mean=.1, smoothing=.01, poisson_lambda=1000):
     raw_poisson = np.random.poisson(poisson_lambda, shape)
     smoothed = gaussian_filter(raw_poisson, np.array(shape)*smoothing)
     return smoothed/smoothed.mean() * mean
+
 
 def bg_correct(raw, bg, df=None):
     """Correct for noisy images by dividing by a background. The calculation used is (raw-df)/(bg-df). 
