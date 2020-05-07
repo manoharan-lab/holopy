@@ -58,16 +58,21 @@ def ps_propagate(data, d, L, beam_c, out_schema = None):
     #handle a list of reconstruction planes
     if isinstance(d, list) or isinstance(d, np.ndarray):
 
-        #save time by getting portion of recontruction that doesn't change when z changes
-        old_Ip, npix_plane = ps_propagate_plane(data, d[0], L, beam_c, out_schema, old_Ip = True)
+        # save time by getting portion of recontruction that doesn't change
+        # when z changes
+        old_Ip, npix_plane = ps_propagate_plane(
+            data, d[0], L, beam_c, out_schema, old_Ip=True)
 
         # Loop through each value of d.
         # This saves memory because only the cropped output image is stored.
-        result = [ps_propagate_plane(data, z, L ,beam_c, out_schema, old_Ip = old_Ip) for z in d]
+        result = [
+            ps_propagate_plane(data, z, L ,beam_c, out_schema, old_Ip = old_Ip)
+            for z in d]
         result = concat(result, dim='z')
 
-    else:# if only reconstructing at one plane
-        result = ps_propagate_plane(data, d, L ,beam_c, out_schema, old_Ip = False)
+    else:  # if only reconstructing at one plane
+        result = ps_propagate_plane(
+            data, d, L ,beam_c, out_schema, old_Ip=False)
 
     return result
 
@@ -106,18 +111,18 @@ def ps_propagate_plane(data, d, L, beam_c, out_schema = None, old_Ip = False):
     http://link.springer.com/chapter/10.1007%2F978-3-642-15813-1_1
     '''
 
-    npix0 = float(len(data.x)) # size of original image in pixels
-    wavelen = float(data.illum_wavelen) #laser wavelength in meters
-    n_medium = float(data.medium_index) #not used for now (assumes n_medium = 1)
+    npix0 = float(len(data.x))  # size of original image in pixels
+    wavelen = float(data.illum_wavelen)  # laser wavelength in meters
+    n_medium = float(data.medium_index)  # not used (assumes n_medium = 1)
     datavals = data.values.squeeze()
 
-    Dx,Dy = get_spacing(data) #size of pixels on camera
+    Dx, Dy = get_spacing(data)  # size of pixels on camera
 
     if out_schema is None:
-        #mag = 1
+        # mag = 1
         out_spacing = Dx
     else:
-        #mag = Dx/get_spacing(out_schema)[0]
+        # mag = Dx/get_spacing(out_schema)[0]
         out_spacing = get_spacing(out_schema)[0]
 
     #get number of pixels to reconstruct given the desired output spacing
