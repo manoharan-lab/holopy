@@ -151,13 +151,15 @@ class FitResult(HoloPyObject):
     def _source_class(self):
         return "holopy.inference.{}".format(self.__class__.__name__)
 
-    def _serialization_ds(self):
-        ds = xr.Dataset({'data': self.data})
-        if 'flat' in ds:
-            ds.data.attrs['_flat'] = [list(f) for f in ds.data.flat.values]
-            ds = ds.rename({'flat': 'point'})
-            ds['point'].values = np.arange(len(ds.point))
-        ds.data.attrs = pack_attrs(ds.data)
+    def _serialize_as_dataset(self):
+        dataset = xr.Dataset({'data': self.data})
+        if 'flat' in dataset:
+            dataset.data.attrs['_flat'] = [
+                list(f) for f in dataset.data.flat.values]
+            dataset = dataset.rename({'flat': 'point'})
+            new_coords = {'point': np.arange(len(dataset.point))}
+            dataset = dataset.assign_coords(new_coords)
+        dataset.data.attrs = pack_attrs(dataset.data)
         attrs = ['model', 'strategy', 'time', '_source_class']
 
         def make_yaml(key):
@@ -176,13 +178,13 @@ class FitResult(HoloPyObject):
         attrs['_kwargs'] = yaml.dump(yaml_kw, default_flow_style=True)
         for key, val in xr_kw.items():
             xr_kw[key].attrs = pack_attrs(val)
-        ds = xr.merge([ds, xr_kw])
-        ds.attrs = attrs
-        return ds
+        dataset = xr.merge([dataset, xr_kw])
+        dataset.attrs = attrs
+        return dataset
 
     def _save(self, filename, **kwargs):
-        ds = self._serialization_ds()
-        ds.to_netcdf(filename, engine='h5netcdf', **kwargs)
+        dataset = self._serialize_as_dataset()
+        dataset.to_netcdf(filename, engine='h5netcdf', **kwargs)
 
     # deprecated methods as of 3.3
     def best_fit(self):
@@ -197,8 +199,8 @@ class FitResult(HoloPyObject):
         return self.scatterer
 
     @classmethod
-    def _unserialize(cls, ds):
-        data = ds.data
+    def _unserialize(cls, dataset):
+        data = dataset.data
         data.attrs = unpack_attrs(data.attrs)
         if '_flat' in data.attrs.keys():
             flats = np.array(data.attrs['_flat']).T
@@ -212,28 +214,28 @@ class FitResult(HoloPyObject):
             coords['flat'] = flat_index
             data = xr.DataArray(data.values, dims=coordnames + ['flat'],
                                 coords=coords, attrs=data.attrs)
-        model = yaml.load(ds.attrs['model'], Loader=FullLoader)
-        strategy = get_strategy(ds.attrs['strategy'])
+        model = yaml.load(dataset.attrs['model'], Loader=FullLoader)
+        strategy = get_strategy(dataset.attrs['strategy'])
         outlist = [data, model, strategy]
         try:
-            outlist.append(yaml.safe_load(ds.attrs['time']))
+            outlist.append(yaml.safe_load(dataset.attrs['time']))
         except KeyError:
             outlist.append(None)
             warn(warn_text)
         try:
-            kwargs = yaml.safe_load(ds.attrs['_kwargs'])
+            kwargs = yaml.safe_load(dataset.attrs['_kwargs'])
         except KeyError:
             warn(warn_text)
             kwargs = {}
         try:
-            kwargs['intervals'] = yaml.load(ds.attrs['intervals'],
+            kwargs['intervals'] = yaml.load(dataset.attrs['intervals'],
                                             Loader=FullLoader)
             warn(warn_text)
         except:
             pass
         for key in ['lnprobs', 'samples', '_best_fit']:
             try:
-                kwargs[key] = getattr(ds, key)
+                kwargs[key] = getattr(dataset, key)
                 try:
                     kwargs[key].attrs = unpack_attrs(kwargs[key].attrs)
                 except KeyError:

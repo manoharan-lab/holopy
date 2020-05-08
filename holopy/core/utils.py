@@ -50,7 +50,7 @@ class SuppressOutput():
         try:
             self.std_out = sys.stdout.fileno()
         except io.UnsupportedOperation:
-            self.stdout_behaves_normally = False # ie running on travis
+            self.stdout_behaves_normally = False  # ie running on travis
             self.std_out = 1
         else:
             self.stdout_behaves_normally = True

@@ -26,11 +26,13 @@ from nose.plugins.attrib import attr
 
 from holopy.inference.prior import Uniform
 from holopy.inference.result import UncertainValue, FitResult, SamplingResult
-from holopy.inference import AlphaModel, CmaStrategy, EmceeStrategy
-from holopy.scattering import Sphere
+from holopy.inference import (
+    AlphaModel, CmaStrategy, EmceeStrategy, NmpfitStrategy)
+from holopy.scattering import Sphere, Mie
 from holopy.scattering.errors import MissingParameter
 from holopy.core.metadata import detector_grid, update_metadata
-from holopy.core.tests.common import assert_read_matches_write
+from holopy.core.tests.common import (
+    assert_read_matches_write, get_example_data)
 
 
 DATA = update_metadata(detector_grid(shape=10, spacing=2), 1.33, 0.660, (0, 1))
@@ -63,6 +65,18 @@ class TestUncertainValue(unittest.TestCase):
 
 
 class TestFitResult(unittest.TestCase):
+    def _make_model(self):
+        sphere = Sphere(
+            center=(Uniform(0, 1e-5, guess=.567e-5),
+                    Uniform(0, 1e-5, .567e-5),
+                    Uniform(1e-5, 2e-5)),
+            r=Uniform(1e-8, 1e-5, 8.5e-7),
+            n=Uniform(1, 2, 1.59))
+
+        model = AlphaModel(
+            sphere, theory=Mie(False), alpha=Uniform(0.1, 1, 0.6))
+        return model
+
     @attr("fast")
     def test_failure_if_no_intervals(self):
         self.assertRaises(MissingParameter,
@@ -159,6 +173,35 @@ class TestFitResult(unittest.TestCase):
         np.testing.assert_equal(result.guess_hologram.values,
                                 guess_hologram.values)
         self.assertEqual(result.guess_hologram.attrs, guess_hologram.attrs)
+
+    @attr('medium')
+    def test_subset_data_fit_result_is_saveable(self):
+        model = self._make_model()
+        holo = get_example_data('image0001')
+
+        np.random.seed(40)
+        fitter = NmpfitStrategy(npixels=100, maxiter=1)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            # ignore not-converged warnings since we only do 2 iterations
+            fitted = fitter.fit(model, holo)
+
+        result = fitted  # was fix_flat(fitted)
+        assert_read_matches_write(result)
+
+    @attr('medium')
+    def test_subset_data_fit_result_stores_model(self):
+        model = self._make_model()
+        holo = get_example_data('image0001')
+
+        np.random.seed(40)
+        fitter = NmpfitStrategy(npixels=100, maxiter=1)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            # ignore not-converged warnings since we only do 2 iterations
+            fitted = fitter.fit(model, holo)
+
+        self.assertEqual(model, fitted.model)
 
 
 class TestIO(unittest.TestCase):

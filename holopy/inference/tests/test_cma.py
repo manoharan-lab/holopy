@@ -26,7 +26,9 @@ from holopy.inference.tests.common import SimpleModel
 
 
 def simplefunc(x):
-    return -np.array((x-0.5)**2).mean()
+    """Has a global minium at x = 0.5"""
+    return np.array((x - 0.5)**2).mean()
+
 
 def weightfunc(x, popsize):
     if x == popsize-1:
@@ -34,21 +36,29 @@ def weightfunc(x, popsize):
     return 1/(x+1)
 
 data = np.array(.5)
-tols = {'maxiter':2}
+tols = {'maxiter': 2}
 
-def test_run_cma():
+
+def test_run_cma_returns_reproducible_answer():
+    # If this test fails, it could be either a change in holopy code
+    # or a change in the cma package code.
     popsize = 10
-    pars = [prior.Uniform(0,1), prior.Uniform(0,1)]
+    pars = [prior.Uniform(0, 1), prior.Uniform(0, 1)]
     ndim = len(pars)
     p0 = np.linspace(0, 1, popsize*ndim).reshape((popsize, ndim))
+
     r = run_cma(simplefunc, pars, p0, weightfunc, tols, seed=1)
-    assert_allclose(r.logger.xrecent.mean(), 3, rtol=.01)
+    found = r.logger.xrecent.mean()
+    correct = 2.876866703907526
+    assert_allclose(found, correct, rtol=1e-3)
+
 
 def test_CmaStrategy():
     mod = SimpleModel()
     strat = CmaStrategy(seed=18, tols=tols, popsize=5)
     r = strat.fit(mod, data)
     assert_allclose(np.mean(r._parameters), .55, atol=.001)
+
 
 def test_default_popsize():
     npars = 2
