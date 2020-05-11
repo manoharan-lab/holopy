@@ -100,11 +100,14 @@ def unpack_attrs(a):
     if len(a) == 0:
         return a
     new_attrs={}
-    attr_ref=yaml.load(a[attr_coords], Loader=FullLoader)
+    attr_ref = yaml.load(a[attr_coords], Loader=FullLoader)
     attrs_to_ignore = ['spacing', 'name', '_dummy_channel', '_image_scaling']
     for attr in dict_without(attr_ref, attrs_to_ignore):
         if attr_ref[attr]:
-            new_attrs[attr] = xr.DataArray(a[attr], coords=attr_ref[attr],dims=list(attr_ref[attr].keys()))
+            new_attrs[attr] = xr.DataArray(
+                a[attr],
+                coords=attr_ref[attr],
+                dims=list(attr_ref[attr].keys()))
         elif attr in a:
             try:
                 new_attrs[attr] = yaml.safe_load(a[attr])
@@ -148,13 +151,15 @@ def load(inf, lazy=False):
             if not lazy:
                 ds = ds.load()
 
-            #loaded dataset potential contains multiple DataArrays. We need
-            #to find out their names and loop through them to unpack metadata
+            # loaded dataset potential contains multiple DataArrays. We
+            # need to find out their names and loop through them to unpack
+            # metadata
             data_vars = list(ds.data_vars.keys())
             for var in data_vars:
                 ds[var].attrs = unpack_attrs(ds[var].attrs)
 
-            #return either a single DataArray or a DataSet containing multiple DataArrays.
+            # return either a single DataArray or a DataSet containing
+            # multiple DataArrays.
             if len(data_vars)==1:
                 return ds[data_vars[0]]
             else:
@@ -441,18 +446,22 @@ def load_average(
     Parameters
     ----------
     filepath : string or list(string)
-        Directory or list of filenames or filepaths. If filename is a directory,
-        it will average all images matching image_glob.
+        Directory or list of filenames or filepaths. If filename is a
+        directory, it will average all images matching image_glob.
     refimg : xarray.DataArray
         reference image to provide spacing and metadata for the new image.
     spacing : float
-        Spacing between pixels in the images. Used preferentially over refimg value if both are provided.
+        Spacing between pixels in the images. Used preferentially over
+        refimg value if both are provided.
     medium_index : float
-        Refractive index of the medium in the images. Used preferentially over refimg value if both are provided.
+        Refractive index of the medium in the images. Used
+        preferentially over refimg value if both are provided.
     illum_wavelen : float
-        Wavelength of illumination in the images. Used preferentially over refimg value if both are provided.
+        Wavelength of illumination in the images. Used preferentially
+        over refimg value if both are provided.
     illum_polarization : list-like
-        Polarization of illumination in the images. Used preferentially over refimg value if both are provided.
+        Polarization of illumination in the images. Used preferentially
+        over refimg value if both are provided.
     image_glob : string
         Glob used to select images (if images is a directory)
 
@@ -460,7 +469,8 @@ def load_average(
     -------
     averaged_image : xarray.DataArray
         Image which is an average of images
-        noise_sd attribute contains average pixel stdev normalized by total image intensity
+        noise_sd attribute contains average pixel stdev normalized by
+        total image intensity
     """
     if normals is not None:
         raise ValueError(NORMALS_DEPRECATION_MESSAGE)
@@ -482,7 +492,9 @@ def load_average(
     # read colour channels from refimg
     channel_dict = {'0': 'red', '1': 'green', '2': 'blue'}
     if channel is None and refimg is not None and illumination in refimg.dims:
-        channel = [i for i, col in enumerate(['red','green','blue']) if col in refimg[illumination].values]
+        channel = [
+            i for i, col in enumerate(['red', 'green', 'blue'])
+            if col in refimg[illumination].values]
 
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
