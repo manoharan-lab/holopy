@@ -99,7 +99,7 @@ class Scatterer(HoloPyObject):
         index = np.ones_like(domains, dtype=dtype) * background
         for i, n in enumerate(ns):
             index[domains==i+1] = n
-        return xr.DataArray(index, attrs = {'_image_scaling':[0,self.n.max()], 'voxel':1})
+        return index
 
     @property
     def guess(self):

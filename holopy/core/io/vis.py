@@ -341,7 +341,7 @@ def show_scatterer_slices(scatterer, spacing):
         voxel spacing for the visualization
     """
     vol = scatterer.voxelate(spacing, 0)
-    Show2D(vol)
+    Show2D(display_image(vol))
 
 
 def check_display():
