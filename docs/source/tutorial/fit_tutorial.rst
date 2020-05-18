@@ -135,8 +135,9 @@ several physical quantities that could be varied independently are
 constrained to have the same (but non-constant) value. A common
 example involves fitting a model to a multi-particle hologram in which
 all of the particles are constrained to have the same refractive
-index, but the index is determined by the fitter.  This may be done by
-defining a parameter and using it in multiple places.
+index, but the index is determined by the fitter. This may be done by
+defining a parameter and using it in multiple places. Other tools for handling
+tied parameters are described in the user guide on :ref:`scatterers_user`.
 
 ..  testcode::
 

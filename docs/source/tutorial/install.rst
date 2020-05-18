@@ -34,7 +34,7 @@ Optional dependencies for certain calculations include:
 
 * `mayavi2 <http://docs.enthought.com/mayavi/mayavi/>`_ (if you want to do 3D plotting [experimental])
 
-..  _usage:
+.. _usage:
 
 Using HoloPy
 ~~~~~~~~~~~~

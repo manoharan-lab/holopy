@@ -134,6 +134,10 @@ amplitudes, which is the typical measurement in a light scattering experiment.
 More Complex Scatterers
 ~~~~~~~~~~~~~~~~~~~~~~~
 
+Let's proceed to a few examples with different :class:`.Scatterer` objects.
+You can find a more thorough desccription of all their functionality in the
+user guide on :ref:`scatterers_user`.
+
 Coated Spheres
 --------------
 
