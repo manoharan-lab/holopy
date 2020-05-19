@@ -122,7 +122,7 @@ Tied parameters
     - :attr:`~.Scatterers.raw_parameters`
       Dictionary of parameters ignoring ties
 
-There are two specific classes for working with collections of
+There are two specific composite scatterer classes for working with collections of
 spheres that have additional functionality:
 
 :class:`.Spheres`
