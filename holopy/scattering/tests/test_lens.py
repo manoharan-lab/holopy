@@ -3,6 +3,12 @@ import unittest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
+try:
+    import numexpr as ne
+    NUMEXPR_INSTALLED = True
+except ModuleNotFoundError:
+    NUMEXPR_INSTALLED = False
+
 from holopy.core import detector_points, update_metadata, detector_grid
 from holopy.scattering import calc_holo
 from holopy.scattering.theory import Mie, MieLens
@@ -179,6 +185,65 @@ class TestLens(unittest.TestCase):
         theory = Lens(LENS_ANGLE, Mie(), quad_npts_theta=8, quad_npts_phi=10)
         holo = calc_holo(pts, scatterer, theory=theory)
         self.assertTrue(True)
+
+    @unittest.skipUnless(NUMEXPR_INSTALLED, "numexpr package required")
+    def test_numexpr_integrand_prefactor1(self):
+        expr = LENSMIE.numexpr_integrand_prefactor1
+        # integrand_prefactor1 = 'exp(1j * krho_p * sinth * cos(phi - phi_p))'
+
+        krho_p, sinth, phi, phi_p = np.random.rand(4)
+
+        result_numpy = np.exp(1j * krho_p * sinth * np.cos(phi - phi_p))
+        result_numexpr = ne.evaluate(expr)
+        assert_equal(result_numpy, result_numexpr)
+
+    @unittest.skipUnless(NUMEXPR_INSTALLED, "numexpr package required")
+    def test_numexpr_integrand_prefactor2(self):
+        expr = LENSMIE.numexpr_integrand_prefactor2
+        # integrand_prefactor2 = 'exp(1j * kz_p * (1 - costh))'
+
+        kz_p, costh = np.random.rand(2)
+
+        result_numpy = np.exp(1j * kz_p * (1 - costh))
+        result_numexpr = ne.evaluate(expr)
+        assert_equal(result_numpy, result_numexpr)
+
+    @unittest.skipUnless(NUMEXPR_INSTALLED, "numexpr package required")
+    def test_numexpr_integrand_prefactor3(self):
+        expr = LENSMIE.numexpr_integrand_prefactor3
+        # integrand_prefactor3 = 'sqrt(costh) * sinth * dphi * dth'
+
+        costh, sinth, dphi, dth = np.random.rand(4)
+
+        result_numpy = np.sqrt(costh) * sinth * dphi * dth
+        result_numexpr = ne.evaluate(expr)
+        assert_equal(result_numpy, result_numexpr)
+
+    @unittest.skipUnless(NUMEXPR_INSTALLED, "numexpr package required")
+    def test_numexpr_integrandl(self):
+        expr = LENSMIE.numexpr_integrandl
+        # integrandl = ('prefactor * (cosphi * (cosphi * S2 + sinphi * S3) +'
+        #               + ' sinphi * (cosphi * S4 + sinphi * S1))')
+
+        prefactor, cosphi, sinphi, S1, S2, S3, S4 = np.random.rand(7)
+
+        result_numpy = prefactor * (cosphi * (cosphi * S2 + sinphi * S3)
+                                    + sinphi * (cosphi * S4 + sinphi * S1))
+        result_numexpr = ne.evaluate(expr)
+        assert_equal(result_numpy, result_numexpr)
+
+    @unittest.skipUnless(NUMEXPR_INSTALLED, "numexpr package required")
+    def test_numexpr_integrandr(self):
+        expr = LENSMIE.numexpr_integrandr
+        # integrandr = ('prefactor * (sinphi * (cosphi * S2 + sinphi * S3) -'
+        #                + ' cosphi * (cosphi * S4 + sinphi * S1))')
+
+        prefactor, cosphi, sinphi, S1, S2, S3, S4 = np.random.rand(7)
+
+        result_numpy = prefactor * (sinphi * (cosphi * S2 + sinphi * S3)
+                                    - cosphi * (cosphi * S4 + sinphi * S1))
+        result_numexpr = ne.evaluate(expr)
+        assert_equal(result_numpy, result_numexpr)
 
 
 def _setup_mielens_calculator(scatterer, medium_wavevec, medium_index):
