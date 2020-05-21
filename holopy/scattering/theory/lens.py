@@ -7,8 +7,8 @@ try:
     NUMEXPR_INSTALLED = True
 except ModuleNotFoundError:
     NUMEXPR_INSTALLED = False
-    warnings.warn("numexpr not found. Falling back to using numpy only. " +
-                  "Note that Lens class is faster with numexpr")
+    warnings.warn("numexpr not found. Falling back to using numpy only."
+                  + " Note that Lens class is faster with numexpr")
 
 from holopy.core import detector_points, update_metadata
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
@@ -20,13 +20,14 @@ class Lens(ScatteringTheory):
     """
     desired_coordinate_system = 'cylindrical'
 
-    numexpr_integrand_prefactor1 = 'exp(1j * krho_p * sinth * cos(phi - phi_p))'
+    numexpr_integrand_prefactor1 = ('exp(1j * krho_p * sinth * '
+                                    + 'cos(phi - phi_p))')
     numexpr_integrand_prefactor2 = 'exp(1j * kz_p * (1 - costh))'
     numexpr_integrand_prefactor3 = 'sqrt(costh) * sinth * dphi * dth'
     numexpr_integrandl = ('prefactor * (cosphi * (cosphi * S2 + sinphi * S3) +'
-                         + ' sinphi * (cosphi * S4 + sinphi * S1))')
+                          + ' sinphi * (cosphi * S4 + sinphi * S1))')
     numexpr_integrandr = ('prefactor * (sinphi * (cosphi * S2 + sinphi * S3) -'
-                         + ' cosphi * (cosphi * S4 + sinphi * S1))')
+                          + ' cosphi * (cosphi * S4 + sinphi * S1))')
 
     def __init__(self, lens_angle, theory, quad_npts_theta=100,
                  quad_npts_phi=100):
@@ -67,7 +68,8 @@ class Lens(ScatteringTheory):
                                                         medium_index,
                                                         illum_polarization)
 
-        fields = self._transform_integral_from_lr_to_xyz(integral_l, integral_r,
+        fields = self._transform_integral_from_lr_to_xyz(integral_l,
+                                                         integral_r,
                                                          illum_polarization)
 
         fields *= self._compute_field_prefactor(scatterer, medium_wavevec)
@@ -78,8 +80,8 @@ class Lens(ScatteringTheory):
         int_l, int_r = self._compute_integrand(positions, scatterer,
                                                medium_wavevec, medium_index,
                                                illum_polarization)
-        integral_l = np.sum(int_l, axis=(0,1))
-        integral_r = np.sum(int_r, axis=(0,1))
+        integral_l = np.sum(int_l, axis=(0, 1))
+        integral_r = np.sum(int_r, axis=(0, 1))
         return integral_l, integral_r
 
     def _compute_integrand(self, positions, scatterer, medium_wavevec,
@@ -109,7 +111,8 @@ class Lens(ScatteringTheory):
         prefactor = self._integrand_prefactor(sinth, costh, phi, dth, dphi,
                                               krho_p, phi_p, kz_p)
 
-        S1, S2, S3, S4 = self._calc_scattering_matrix(scatterer, medium_wavevec,
+        S1, S2, S3, S4 = self._calc_scattering_matrix(scatterer,
+                                                      medium_wavevec,
                                                       medium_index)
 
         integrand_l = self._integrand_prll(prefactor, cosphi, sinphi,
@@ -156,7 +159,7 @@ class Lens(ScatteringTheory):
             integrand_l = ne.evaluate(cls.numexpr_integrandl)
         else:
             integrand_l = prefactor * (cosphi * (cosphi * S2 + sinphi * S3)
-                                     + sinphi * (cosphi * S4 + sinphi * S1))
+                                       + sinphi * (cosphi * S4 + sinphi * S1))
         return integrand_l
 
     @classmethod
@@ -165,10 +168,11 @@ class Lens(ScatteringTheory):
             integrand_r = ne.evaluate(cls.numexpr_integrandr)
         else:
             integrand_r = prefactor * (sinphi * (cosphi * S2 + sinphi * S3)
-                                     - cosphi * (cosphi * S4 + sinphi * S1))
+                                       - cosphi * (cosphi * S4 + sinphi * S1))
         return integrand_r
 
-    def _transform_integral_from_lr_to_xyz(self, prll_component, perp_component,
+    def _transform_integral_from_lr_to_xyz(self, prll_component,
+                                           perp_component,
                                            illum_polarization):
         pol_angle = np.arctan2(illum_polarization.values[1],
                                illum_polarization.values[0])

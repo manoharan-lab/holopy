@@ -106,10 +106,9 @@ class TestLens(unittest.TestCase):
 
         theory = LENSMIE
 
-        theta, phi, s_matrix_new = _get_quad_pts_and_scattering_matrix(theory,
-                                                                       scatterer,
-                                                                       medium_wavevec,
-                                                                       medium_index)
+        theta, phi, s_matrix_new = _get_quad_pts_and_scattering_matrix(
+                               theory, scatterer, medium_wavevec, medium_index)
+
         sinphi = np.sin(phi)
         cosphi = np.cos(phi)
         mielens_calculator = _setup_mielens_calculator(scatterer,
@@ -144,9 +143,8 @@ class TestLens(unittest.TestCase):
         illum_polarization = detector.illum_polarization
 
         theory_old = MieLens(lens_angle=LENS_ANGLE)
-        pos_old = theory_old._transform_to_desired_coordinates(detector,
-                                                        scatterer.center,
-                                                        wavevec=medium_wavevec)
+        pos_old = theory_old._transform_to_desired_coordinates(
+                            detector, scatterer.center, wavevec=medium_wavevec)
 
         theory_new = LENSMIE
         pos_new = theory_new._transform_to_desired_coordinates(
