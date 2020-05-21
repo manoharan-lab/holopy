@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 try:
@@ -5,6 +7,8 @@ try:
     NUMEXPR_INSTALLED = True
 except ModuleNotFoundError:
     NUMEXPR_INSTALLED = False
+    warnings.warn("numexpr not found. Falling back to using numpy only. " +
+                  "Note that Lens class is faster with numexpr")
 
 from holopy.core import detector_points, update_metadata
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
