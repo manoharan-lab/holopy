@@ -183,9 +183,6 @@ class Lens(ScatteringTheory):
     def _compute_field_prefactor(self, scatterer, medium_wavevec):
         return -1. * np.exp(1j * medium_wavevec * scatterer.center[2])
 
-    def _raw_scat_matrs(self, *args, **kwargs):
-        return self.theory._raw_scat_matrs(*args, **kwargs)
-
 
 def gauss_legendre_pts_wts(a, b, npts=100):
     """Quadrature points for integration on interval [a, b]"""
