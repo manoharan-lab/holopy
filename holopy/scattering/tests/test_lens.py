@@ -14,6 +14,7 @@ LENS_ANGLE = 1.
 QLIM_TOL = {'atol': 1e-2, 'rtol': 1e-2}
 LENSMIE = Lens(lens_angle=LENS_ANGLE, theory=Mie(False, False))
 
+
 class TestLens(unittest.TestCase):
     def test_can_handle(self):
         theory = LENSMIE
@@ -42,15 +43,18 @@ class TestLens(unittest.TestCase):
         wts = LENSMIE._theta_wts
         func = np.cos
         integral = np.sum(func(pts) * wts)
-        expected_val = np.sin(LENSMIE.lens_angle) # analytic result
+        expected_val = np.sin(LENSMIE.lens_angle)  # analytic result
         assert_allclose(integral, expected_val)
 
     def test_integrate_over_phi_with_quad_points(self):
         pts = LENSMIE._phi_pts
         wts = LENSMIE._phi_wts
-        func = lambda x: np.cos(np.pi * x)
+
+        def func(x):
+            return np.cos(np.pi * x)
+
         integral = np.sum(func(pts) * wts)
-        expected_val = np.sin(2 * np.pi ** 2) /  np.pi # analytic result
+        expected_val = np.sin(2 * np.pi ** 2) / np.pi  # analytic result
         assert_allclose(integral, expected_val)
 
     def test_integrate_over_2D_with_quad_points(self):
@@ -63,9 +67,11 @@ class TestLens(unittest.TestCase):
         pts_theta, pts_phi = np.meshgrid(pts_theta, pts_phi)
         wts_theta, wts_phi = np.meshgrid(wts_theta, wts_phi)
 
-        func = lambda theta, phi: np.cos(theta) * np.cos(np.pi * phi)
+        def func(theta, phi):
+            return np.cos(theta) * np.cos(np.pi * phi)
+
         integral = np.sum(func(pts_theta, pts_phi) * wts_theta * wts_phi)
-        expected_val = np.sin(1.) * np.sin(2 * np.pi ** 2) /  np.pi
+        expected_val = np.sin(1.) * np.sin(2 * np.pi ** 2) / np.pi
         assert_allclose(integral, expected_val)
 
     def test_quadrature_scattering_matrix_size(self):
@@ -76,7 +82,7 @@ class TestLens(unittest.TestCase):
         theory = LENSMIE
 
         s_matrix = np.array(theory._calc_scattering_matrix(
-                            scatterer, medium_wavevec,medium_index))
+                            scatterer, medium_wavevec, medium_index))
 
         actual_size = s_matrix.size
         actual_shape = s_matrix.shape
@@ -84,8 +90,8 @@ class TestLens(unittest.TestCase):
         expected_size = 4 * theory.quad_npts_theta * theory.quad_npts_phi
         expected_shape = (4, theory.quad_npts_theta, theory.quad_npts_phi, 1)
 
-        self.assertTrue(actual_size==expected_size)
-        self.assertTrue(actual_shape==expected_shape)
+        self.assertTrue(actual_size == expected_size)
+        self.assertTrue(actual_shape == expected_shape)
 
     def test_quadrature_scattering_matrix_same_as_mielens(self):
         scatterer = test_common.sphere
@@ -95,10 +101,13 @@ class TestLens(unittest.TestCase):
         theory = LENSMIE
 
         theta, phi, s_matrix_new = _get_quad_pts_and_scattering_matrix(theory,
-                                       scatterer, medium_wavevec, medium_index)
+                                                                       scatterer,
+                                                                       medium_wavevec,
+                                                                       medium_index)
         sinphi = np.sin(phi)
         cosphi = np.cos(phi)
-        mielens_calculator = _setup_mielens_calculator(scatterer, medium_wavevec,
+        mielens_calculator = _setup_mielens_calculator(scatterer,
+                                                       medium_wavevec,
                                                        medium_index)
 
         s_perp = mielens_calculator._scat_perp_values.ravel()
@@ -122,30 +131,32 @@ class TestLens(unittest.TestCase):
         assert_allclose(s_prll_new, s_prll, rtol=5e-3)
 
     def test_raw_fields_similar_mielens(self):
-        detector = test_common.xschema
+        detector = test_common.xschema_lens
         scatterer = test_common.sphere
         medium_wavevec = 2 * np.pi / test_common.wavelen
         medium_index = test_common.index
         illum_polarization = detector.illum_polarization
 
         theory_old = MieLens(lens_angle=LENS_ANGLE)
-        pos_old = theory_old._transform_to_desired_coordinates(
-                                detector, scatterer.center, wavevec=medium_wavevec)
+        pos_old = theory_old._transform_to_desired_coordinates(detector,
+                                                        scatterer.center,
+                                                        wavevec=medium_wavevec)
 
         theory_new = LENSMIE
         pos_new = theory_new._transform_to_desired_coordinates(
-                                detector, scatterer.center, wavevec=medium_wavevec)
+                            detector, scatterer.center, wavevec=medium_wavevec)
 
-        f0x, f0y, f0z = theory_old._raw_fields(pos_old, scatterer, medium_wavevec, medium_index,
-                        illum_polarization)
-        fx, fy, fz = theory_new._raw_fields(pos_new, scatterer, medium_wavevec, medium_index,
-                        illum_polarization)
+        f0x, f0y, f0z = theory_old._raw_fields(pos_old, scatterer,
+                                               medium_wavevec, medium_index,
+                                               illum_polarization)
+        fx, fy, fz = theory_new._raw_fields(pos_new, scatterer, medium_wavevec,
+                                            medium_index, illum_polarization)
         assert_allclose(f0x, fx, atol=2e-3)
         assert_allclose(f0y, fy, atol=2e-3)
         assert_allclose(f0z, fz, atol=2e-3)
 
     def test_lens_plus_mie_fields_same_as_mielens(self):
-        detector = test_common.xschema
+        detector = test_common.xschema_lens
         scatterer = test_common.sphere
         medium_wavevec = 2 * np.pi / test_common.wavelen
         medium_index = test_common.index
@@ -165,9 +176,7 @@ class TestLens(unittest.TestCase):
         pts = update_metadata(pts, illum_wavelen=test_common.wavelen,
                               medium_index=test_common.index,
                               illum_polarization=test_common.xpolarization)
-        theory = Lens(LENS_ANGLE, Mie(),
-                                          quad_npts_theta=8,
-                                          quad_npts_phi=10)
+        theory = Lens(LENS_ANGLE, Mie(), quad_npts_theta=8, quad_npts_phi=10)
         holo = calc_holo(pts, scatterer, theory=theory)
         self.assertTrue(True)
 
@@ -183,17 +192,22 @@ def _setup_mielens_calculator(scatterer, medium_wavevec, medium_index):
                                    lens_angle=LENS_ANGLE)
     return calculator
 
+
 def _get_quad_pts_and_scattering_matrix(theory, scatterer, medium_wavevec,
-                                          medium_index):
-    theta, phi = cartesian(theory._theta_pts.ravel(), theory._phi_pts.ravel()).T
+                                        medium_index):
+    theta, phi = cartesian(theory._theta_pts.ravel(),
+                           theory._phi_pts.ravel()).T
     pts = detector_points(theta=theta, phi=phi)
     illum_wavelen = 2 * np.pi * medium_index / medium_wavevec
-    pts = update_metadata(pts, medium_index=medium_index, illum_wavelen=illum_wavelen)
+    pts = update_metadata(pts, medium_index=medium_index,
+                          illum_wavelen=illum_wavelen)
     matr = theory.theory.calculate_scattering_matrix(scatterer, pts)
     return theta, phi, np.conj(matr)
 
+
 def cartesian(*dims):
     return np.array(np.meshgrid(*dims, indexing='ij')).T.reshape(-1, len(dims))
+
 
 def _get_smatrix_theta_near_phi_is_zero(smatrix, cosphi, phi, theta):
     cp = cosphi[np.logical_and(cosphi == max(abs(cosphi)), phi < np.pi)]
