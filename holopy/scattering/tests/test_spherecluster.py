@@ -28,8 +28,8 @@ from holopy.core.tests.common import assert_obj_close
 from nose.plugins.attrib import attr
 from nose.tools import raises
 
-from ..scatterer import Sphere, Ellipsoid, Spheres, RigidCluster
-from ..errors import InvalidScatterer, OverlapWarning
+from holopy.scattering.scatterer import Sphere, Ellipsoid, Spheres, RigidCluster
+from holopy.scattering.errors import InvalidScatterer, OverlapWarning
 
 import warnings
 

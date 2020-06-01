@@ -22,8 +22,8 @@ Test file IO of scatterpy objects
 '''
 from nose.plugins.attrib import attr
 
-from ...core.tests.common import assert_read_matches_write
-from ..scatterer import Sphere, Spheres
+from holopy.core.tests.common import assert_read_matches_write
+from holopy.scattering import Sphere, Spheres
 
 
 @attr("fast")
