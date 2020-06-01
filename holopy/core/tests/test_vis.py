@@ -29,10 +29,12 @@ from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
 
 from holopy.core.metadata import data_grid, clean_concat, illumination as ILLUM
-from holopy.core.io.vis import display_image, show, save_plot
+from holopy.core.io.vis import (
+    display_image, show, save_plot, show_scatterer_slices)
 from holopy.core.io.io import get_example_data
 from holopy.core.tests.common import assert_obj_close
 from holopy.core.errors import BadImage
+from holopy.scattering import Sphere
 
 try:
     from matplotlib import pyplot as plt
@@ -303,6 +305,15 @@ class ShowTest(unittest.TestCase):
             warnings.simplefilter('ignore', (DeprecationWarning, UserWarning))
             with tempfile.TemporaryFile(suffix='.pdf') as filename:
                 plt.savefig(filename)
+
+    @attr("medium")
+    def test_scatterer_slices(self):
+        s = Sphere(r = .5, center = (0, 0, 0), n=1.5)
+        try:
+            show_scatterer_slices(s, 0.1)
+        except RuntimeError:
+            # this occurs on travis since there is no display
+            raise SkipTest()
 
 
 if __name__ == '__main__':
