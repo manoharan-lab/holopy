@@ -15,7 +15,11 @@
 
 import sys
 import os
+
 import holopy as hp
+
+import sphinx_rtd_theme
+from sphinx.ext import apidoc
 
 from unittest.mock import MagicMock
 
@@ -24,9 +28,28 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
             return MagicMock()
 
-MOCK_MODULES = ['mie_f']
+
+MOCK_MODULES = ['mie_f', 'tmatrix_f']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
+docs_root = os.path.join(os.path.dirname(__file__), '..')
+holopy_root = os.path.join(docs_root, '..', "holopy")
+
+
+def run_apidoc(_):
+    flags = ["-f",  # overwrite existing files
+             "-T",  # don't generate redundant table of contents
+             "-M",  # put module description before contents
+             "-E"]  # limit hierarchy levels
+    filepaths = ["-o",
+                 os.path.join(docs_root, 'source', 'reference'),  # destination
+                 holopy_root]  # codebase
+    exclusions = [os.path.join(holopy_root, '*', 'third_party', '*')]
+    apidoc.main(flags + filepaths + exclusions)
+
+
+def setup(app):
+    app.connect('builder-inited', run_apidoc)
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -97,7 +120,7 @@ exclude_patterns = []
 #default_role = None
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
-#add_function_parentheses = True
+add_function_parentheses = True
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
@@ -121,7 +144,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -182,7 +205,7 @@ html_domain_indices = False
 #html_split_index = False
 
 # If true, links to the reST sources are added to the pages.
-#html_show_sourcelink = True
+html_show_sourcelink = False
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
 #html_show_sphinx = True

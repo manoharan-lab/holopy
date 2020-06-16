@@ -214,7 +214,7 @@ class Show2D(object):
             as the number of images that are contained in this object.
         """
         if len(filenames) != len(self.im):
-            raise Error("Number of images and filenames does not match!")
+            raise ValueError("Number of images and filenames does not match!")
 
         for i, name in enumerate(filenames):
             self.i = i
@@ -341,7 +341,7 @@ def show_scatterer_slices(scatterer, spacing):
         voxel spacing for the visualization
     """
     vol = scatterer.voxelate(spacing, 0)
-    show2d(vol)
+    Show2D(display_image(vol))
 
 
 def check_display():
