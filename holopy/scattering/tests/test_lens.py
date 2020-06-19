@@ -142,35 +142,6 @@ class TestLens(unittest.TestCase):
         assert_allclose(s_perp_new, s_perp, rtol=5e-3)
         assert_allclose(s_prll_new, s_prll, rtol=5e-3)
 
-    @unittest.skip("known failure")
-    def test_raw_fields_exact_mielens(self):
-        detector = SMALL_DETECTOR
-        scatterer = test_common.sphere
-        medium_wavevec = 2 * np.pi / test_common.wavelen
-        medium_index = test_common.index
-        illum_polarization = detector.illum_polarization
-
-        theory_mielens = MieLens(
-            lens_angle=LENS_ANGLE,
-            calculator_accuracy_kwargs={'quad_npts': 400})
-        theory_lensmie = Lens(
-            lens_angle=LENS_ANGLE,
-            theory=Mie(False, False),
-            quad_npts_theta=400,
-            quad_npts_phi=400)
-
-        pos_mielens = theory_mielens._transform_to_desired_coordinates(
-            detector, scatterer.center, wavevec=medium_wavevec)
-        pos_lensmie = theory_lensmie._transform_to_desired_coordinates(
-            detector, scatterer.center, wavevec=medium_wavevec)
-
-        args = (scatterer, medium_wavevec, medium_index, illum_polarization)
-        fields_mielens = theory_mielens._raw_fields(pos_mielens, *args)
-        fields_lensmie = theory_lensmie._raw_fields(pos_lensmie, *args)
-        for fa, fb in zip(fields_mielens, fields_lensmie):
-            self.assertTrue(np.allclose(fa, fb, atol=1e-9, rtol=1e-9))
-        # The actual difference is in the 6e-5 range...
-
     def test_raw_fields_similar_mielens(self):
         detector = SMALL_DETECTOR
         scatterer = test_common.sphere
