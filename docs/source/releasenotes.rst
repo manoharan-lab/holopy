@@ -1,10 +1,44 @@
 .. _releasenotes:
 
+********************
+HoloPy Release Notes
+********************
 
-************************
-Holopy 3.3 Release Notes
-************************
 
+Current Development (Holopy 3.4)
+================================
+
+New Features
+------------
+- New :class:`.Lens` scattering theory to model the effect of an objective lens
+  can be applied to any other scattering theory.
+
+Improvements
+------------
+- DDA scattering theories no longer default to printing intermediate C output.
+- It is now possible to save all slices of a reconstruction stack as images.
+- Rearrangement of some Scatterer properties and methods so they are now
+  accessible by a broader group of classes.
+- New user guide on :ref:`scatterers_user`.
+
+Bugfixes
+--------
+- Fortran output no longer occasionaly leaks through the output supression
+  context manager used by multiple scattering theories.
+- Restored ability to visualize slices through a scatterer object
+
+Compatibility Notes
+--------------------
+- Holopy's hard dependencies are further streamlined, and there is improved
+  handling of missing optional dependencies.
+
+Developer Notes
+---------------
+- Documentation now automatically runs sphinx apidoc when building docs.
+
+
+Holopy 3.3
+==========
 
 New Features
 ------------
