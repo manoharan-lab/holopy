@@ -31,6 +31,7 @@ from numpy.testing import assert_equal, assert_allclose
 from nose.plugins import Plugin
 
 from holopy.core.io import load, save, get_example_data
+from holopy.core.errors import PerformanceWarning
 
 
 class HoloPyCatchWarnings(Plugin):
@@ -46,6 +47,7 @@ class HoloPyCatchWarnings(Plugin):
 
     def beforeTest(self, test):
         warnings.simplefilter("error")
+        warnings.simplefilter(action="ignore", category=PerformanceWarning)
 
 
 def assert_read_matches_write(original):
