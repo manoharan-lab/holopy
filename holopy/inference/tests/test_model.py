@@ -40,6 +40,8 @@ from holopy.inference import (prior, AlphaModel, ExactModel,
                               available_sampling_strategies)
 from holopy.inference.model import Model, PerfectLensModel
 from holopy.inference.tests.common import SimpleModel
+from holopy.scattering.tests.common import (
+    xschema_lens, sphere as SPHERE_IN_METERS)
 
 
 class TestModel(unittest.TestCase):
@@ -97,6 +99,7 @@ class TestModel(unittest.TestCase):
                 reloaded = take_yaml_round_trip(model)
                 self.assertEqual(reloaded, model)
 
+
 class TestModelFittingMethods(unittest.TestCase):
     @attr('fast')
     def test_default_fit_strategy_is_nmpfit(self):
@@ -152,6 +155,7 @@ class TestModelFittingMethods(unittest.TestCase):
         model_result = model.sample(data, strategy)
         model_result.time = None
         self.assertEqual(strategy_result, model_result)
+
 
 class TestAlphaModel(unittest.TestCase):
     @attr('fast')
@@ -213,6 +217,38 @@ class TestPerfectLensModel(unittest.TestCase):
         self.assertRaisesRegex(
             ValueError, error_regex, PerfectLensModel, sphere,
             lens_angle=lens_angle_xarray)
+
+    @attr('fast')
+    def test_accepts_lens_angle_as_prior(self):
+        scatterer = make_sphere()
+        lens_angle = prior.Uniform(0, 1.0)
+        model = PerfectLensModel(scatterer, lens_angle=lens_angle)
+        self.assertIsInstance(model.lens_angle, prior.Prior)
+
+    @attr('fast')
+    def test_accepts_alpha_as_prior(self):
+        scatterer = make_sphere()
+        lens_angle = prior.Uniform(0, 1.0)
+        alpha = prior.Uniform(0, 1.0)
+        model = PerfectLensModel(scatterer, alpha=alpha, lens_angle=lens_angle)
+        self.assertIsInstance(model.alpha, prior.Prior)
+
+    @attr('fast')
+    def test_forward_uses_alpha(self):
+        model = PerfectLensModel(
+            SPHERE_IN_METERS,
+            alpha=prior.Uniform(0, 1.0),
+            lens_angle=prior.Uniform(0, 1.0))
+        pars_common = {
+            'lens_angle': 0.3,
+            'n': 1.5,
+            'r': 0.5e-6,
+            }
+        pars_alpha0 = pars_common.copy()
+        pars_alpha0.update({'alpha': 0})
+
+        alpha0 = model.forward(pars_alpha0, xschema_lens)
+        self.assertLess(alpha0.values.std(), 1e-6)
 
 
 def make_sphere():
