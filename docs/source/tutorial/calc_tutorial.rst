@@ -81,7 +81,8 @@ Here, we choose to use a :class:`.Mie` theory, since Mie theory is what
 describes scattering by a sphere. `holopy` has multiple scattering theories
 which work for different types of scatterers and which describe particle
 scattering and interactions with the optical train in varying degrees of
-complexity, as described in the user guide on :ref:`theories_user`.
+complexity, as described further below and in the user guide on
+:ref:`theories_user`.
 
 Alternatively, we can let `holopy` choose a theory automatically, by specifying
 
@@ -297,33 +298,32 @@ in place of calling :func:`.detector_grid`.
 Scattering Theories in HoloPy
 -----------------------------
 
-HoloPy contains a number of scattering theories to model the scattering
-from different kinds of scatterers. By default, scattering from single
-spheres is calculated using Mie theory, which is the exact solution
-to Maxwell's equations for the scattered field from a spherical
-particle, originally derived by Gustav Mie and (independently) by
-Ludvig Lorenz in the early 1900s.
+HoloPy contains a number of scattering theories to model the scattering from
+different kinds of scatterers.
 
-A scatterer composed of multiple spheres can exhibit multiple scattering
-and coupling of the near-fields of neighbouring particles. Mie theory doesn't include
-these effects, so :class:`.Spheres` objects are by default calculated using the
-SCSMFO package from `Daniel Mackowski <http://www.eng.auburn.edu/~dmckwski/>`_.
-This calculation uses T-matrix methods to give the exact solution to Maxwell's equation
-for the scattering from an arbitrary arrangement of non-overlapping spheres.
+For single spheres, the default is to calculate scattering using Mie theory. Mie theory is the exact solution to Maxwell's equations
+for the scattered field from a spherical particle, originally derived by Gustav
+Mie and (independently) by Ludvig Lorenz in the early 1900s.
 
-Sometimes you might want to calculate scattering from multiple spheres
-using Mie theory if you are worried about computation time,
-if your spheres are widely separated (such that optical coupling between
-the spheres is negligible),
-or if you are
-using multi-layered spheres (HoloPy's implementation of the multisphere theory
-can't currently handle coated spheres). You can specify Mie theory manually when
-calling the :func:`.calc_holo` function:
+A scatterer composed of multiple spheres can exhibit multiple scattering and
+coupling of the near-fields of neighbouring particles. Mie theory doesn't
+include these effects, so :class:`.Spheres` objects are by default calculated
+using the SCSMFO package from `Daniel Mackowski
+<http://www.eng.auburn.edu/~dmckwski/>`_.  This calculation uses T-matrix
+methods to give the exact solution to Maxwell's equation for the scattering
+from an arbitrary arrangement of non-overlapping spheres.
+
+Sometimes you might want to calculate scattering from multiple spheres using
+Mie theory if you are worried about computation time, if your spheres are
+widely separated (such that optical coupling between the spheres is
+negligible), or if you are using multi-layered spheres (HoloPy's implementation
+of the multisphere theory can't currently handle coated spheres). You can
+specify Mie theory manually when calling the :func:`.calc_holo` function:
 
 ..  testcode::
 
     from holopy.scattering import Mie
-    holo = calc_holo(exp_img, collection, theory = Mie)
+    holo = calc_holo(exp_img, collection, theory=Mie)
 
 ..  testcode::
     :hide:
@@ -335,7 +335,17 @@ calling the :func:`.calc_holo` function:
 
     1.04802354...
 
-Similarly, HoloPy calculates scattering from cylindrical or spheroidal particles by using T-matrix code from `Michael Mishchenko <https://www.giss.nasa.gov/staff/mmishchenko/t_matrix.html>`_, but these scatterer types are not compatible with Mie theory.
+HoloPy also includes scattering theories that can calculate scattering from non-spherical particles. For cylindrical or spheriodal particles, HoloPy calculates scattering from cylindrical or spheroidal particles by using T-matrix code from `Michael Mishchenko <https://www.giss.nasa.gov/staff/mmishchenko/t_matrix.html>`_, using the :class:`.Tmatrix` theory:
+
+
+..  testcode::
+
+    from holopy.scattering.theory import Tmatrix
+    from holopy.scattering.scatterer import Spheroid
+
+    spheroid = Spheroid(n=1.59, r=(1., 2.), center=(4, 4, 5))
+    theory = Tmatrix()
+    holo = calc_holo(exp_img, spheroid, theory=theory)
 
 Holopy can also access a discrete dipole approximation (DDA) theory to model
 arbitrary non-spherical objects. See the :ref:`dda_tutorial` tutorial for more
@@ -343,6 +353,45 @@ details. It is fairly easy to add your own scattering theory to HoloPy. See
 :ref:`scat_theory` for details. If you think your new scattering theory may be
 useful for other users, please consider submitting a `pull request
 <https://github.com/manoharan-lab/holopy/pulls>`_.
+
+Most of the scattering theories in `holopy` treat the fields on the detector as
+a (magnified) image of the fields at the focal plane. While these theories
+usually provide a good description of holograms of particles far above the
+focus, when the particle is near near the focus subtle optical effects can
+cause deviations between the recorded hologram and theories which do not
+specifically describe the effects of the lens. To deal with this, HoloPy
+currently offers two scattering theories which describe the effects of a perfect
+lens on the recorded hologram. Both of these scattering theories need information about the lens to make predictions, specifically the acceptance angle of the lens. The acceptance angle :math:`\beta` is related to the numerical aperture or NA of the lens by :math:`NA = n_f \sin \beta`, where :math:`n_f` is the refractive of the immersion fluid. For more details on this, see our papers `here<https://www.osapublishing.org/oe/abstract.cfm?uri=oe-28-2-1061>`_ and `here<url>`_.
+
+The :class:`.Lens` theory allows `holopy` to include the effects of a perfect
+objective lens with any scattering theory. The Lens theory works by wrapping a
+normal scattering theory. For instance, to calculate the image of a sphere in
+an objective lens with an acceptance angle of 1.0, do
+
+..  testcode::
+
+    from holopy.scattering.theory import Lens, Mie
+    lens_angle = 1.0
+    theory = Lens(lens_angle, Mie())
+
+This theory can then be passed to `calc_holo` just like any other scattering
+theory. However, calculations with the :class:`.Lens` theory are very slow,
+orders of magnitude slower than calculations without the lens.
+
+To get around the slow speed of the :class:`.Lens` theory, `holopy` offers an
+additional theory, :class:`.MieLens`, specifically for spherical particles
+imaged with a perfect lens. For spherical particles, some analytical
+simplifications are possible which greatly speed up the description of the
+objective lens -- in fact, the :class:`.MieLens` theory's implementation is
+slightly faster than :class:`.Mie` theory's. The following code creates a
+MieLens theory, which can be based to `calc_hlo` just like any other scattering theory:
+
+..  testcode::
+
+    from holopy.scattering.theory import MieLens
+    lens_angle = 1.0
+    theory = MieLens(lens_angle)
+
 
 Detector Types in HoloPy
 ------------------------
