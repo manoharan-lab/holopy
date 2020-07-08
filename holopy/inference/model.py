@@ -325,12 +325,13 @@ class PerfectLensModel(Model):
     """
     theory_params = ['lens_angle']
 
-    def __init__(self, scatterer, lens_angle=1.0, noise_sd=None,
+    def __init__(self, scatterer, alpha=1.0, lens_angle=1.0, noise_sd=None,
                  medium_index=None, illum_wavelen=None, theory='auto',
                  illum_polarization=None, constraints=[]):
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
                          illum_polarization, theory, constraints)
-        additional_parameters_to_use = {'lens_angle': lens_angle}
+        additional_parameters_to_use = {
+            'alpha': alpha, 'lens_angle': lens_angle}
         self._use_parameters(additional_parameters_to_use)
         self._check_parameters_are_not_xarray(additional_parameters_to_use)
 
@@ -348,19 +349,14 @@ class PerfectLensModel(Model):
             detector if not given explicitly when instantiating self.
         """
         optics_kwargs, scatterer = self._optics_scatterer(pars, detector)
-        # We need the lens parameter(s) for the theory:
+        alpha = self._get_parameter('alpha', pars, detector)
         theory_kwargs = {name: self._get_parameter(name, pars, detector)
                          for name in self.theory_params}
         # FIXME would be nice to have access to the interpolator kwargs
         theory = MieLens(**theory_kwargs)
         try:
             return calc_holo(detector, scatterer, theory=theory,
-                             scaling=1.0, **optics_kwargs)
+                             scaling=alpha, **optics_kwargs)
         except InvalidScatterer:
             return -np.inf
 
-# TODO:
-# Make some unit tests for ExactModel, then for PerfectLensModel
-# It would be nice if some of the unittests for fitting were also
-# applicable to the inference models. This should be changed later,
-# when the two fitting approaches are unified.
