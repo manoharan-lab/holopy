@@ -22,6 +22,8 @@ Improvements
 - PerfectLensModel now accepts hologram scaling factor alpha as a parameter
   for inference.
 - New user guide on :ref:`scatterers_user`.
+- New user guide on :ref:`theories_user`.
+- More discussion of scattering theories in tutorial.
 
 Bugfixes
 --------
