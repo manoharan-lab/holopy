@@ -22,35 +22,42 @@ plane wave scattering from a microsphere.
    :scale: 300 %
    :alt: Calculated hologram of a single sphere.
 
-(You may need to call `matplotlib.pyplot.show()` if you can't see the hologram after running this code.) We'll examine each section of code in turn.  The first few lines :
+(You may need to call `matplotlib.pyplot.show()` if you can't see the hologram after running this code.)
+
+To calculate a hologram, `holopy` needs to know three things: the *scatterer* which is scattering the light, the *experimental setup* under which the hologram is recorded, and the *scattering theory* that can calculate the hologram from the scaterrer and the experimental setup. We'll examine each section of code in turn.
+
+The first few lines :
 
 ..  testcode::
 
     import holopy as hp
     from holopy.scattering import calc_holo, Sphere
+    from holopy.scattering.theory import Mie
 
 load the relevant modules from HoloPy that we'll need for doing our
-calculation.  The next line describes the scatterer we would like to model:
+calculation.
+
+The next line describes the *scatterer* we would like to model:
 
 ..  testcode::
 
-    sphere = Sphere(n = 1.59, r = .5, center = (4, 4, 5))
+    sphere = Sphere(n=1.59, r=0.5, center=(4, 4, 5))
 
-We will be scattering light off a :class:`.Scatterer` object,
-specifically a :class:`.Sphere`. A :class:`.Scatterer` object
+Scatterers are described in `holopy` by a :class:`.Scatterer` object. Here, we use a :class:`.Sphere` as the scatterer object. A :class:`.Scatterer` object
 contains information about the geometry (position, size, shape) and optical
 properties (refractive index) of the object that is scattering light. We've
 defined a spherical scatterer with radius 0.5 microns and index of refraction
-1.59. This refractive index is approximately that of polystyrene. Next, we need
-to describe how we are illuminating our sphere, and how that light will be
-detected:
+1.59. This refractive index is approximately that of polystyrene.
+
+Next, we need to describe the *experimental setup*, including how we are
+illuminating our sphere, and how that light will be detected:
 
 ..  testcode::
 
     medium_index = 1.33
     illum_wavelen = 0.66
-    illum_polarization = (1,0)
-    detector = hp.detector_grid(shape = 100, spacing = .1)
+    illum_polarization = (1, 0)
+    detector = hp.detector_grid(shape=100, spacing=0.1)
 
 We are going to be using red light (wavelength = 660 nm in vacuum) polarized in
 the x-direction to illuminate a sphere immersed in water (refractive index =
@@ -64,12 +71,33 @@ digital camera mounted onto a microscope.  We defined our detector as a 100 x
 computation time. The ``spacing`` argument tells HoloPy how far apart each
 pixel is. Both parameters affect the absolute size of the detector.
 
+Finally, we need to specify the *scattering theory* which knows how to calculate the hologram from the experimental setup and the scatterer:
+
+..  testcode::
+
+    theory = Mie()
+
+Here, we choose to use a :class:`.Mie` theory, since Mie theory is what
+describes scattering by a sphere. `holopy` has multiple scattering theories
+which work for different types of scatterers and which describe particle
+scattering and interactions with the optical train in varying degrees of
+complexity, as described in the user guide on :ref:`theories_user`.
+
+Alternatively, we can let `holopy` choose a theory automatically, by specifying
+
+..  testcode::
+
+    theory = "auto"
+
+If no theory is specified, `holopy` will automatically select a theory as well.
+
 
 After getting everything ready, the actual scattering calculation is straightforward:
 
 ..  testcode::
 
-    holo = calc_holo(detector, sphere, medium_index, illum_wavelen, illum_polarization)
+    holo = calc_holo(detector, sphere, medium_index, illum_wavelen,
+                     illum_polarization, theory=theory)
     hp.show(holo)
 
 Congratulations! You just calculated the in-line hologram generated at the
