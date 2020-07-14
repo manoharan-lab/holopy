@@ -29,21 +29,21 @@ available_fit_strategies = ALL_STRATEGIES['fit']
 available_sampling_strategies = ALL_STRATEGIES['sample']
 
 
-def sample(data, model):
+def sample(data, model, strategy=None):
     if isinstance(model, Model):
-        return model.sample(data)
+        return model.sample(data, strategy)
     else:
         msg = "Sampling model {} is not a HoloPy Model object.".format(model)
         raise ValueError(msg)
 
 
-def fit(data, model, parameters=None):
+def fit(data, model, parameters=None, strategy=None):
     if isinstance(model, Scatterer):
         model = make_default_model(model, parameters)
     elif parameters is not None:
         warnings.warn("Ignoring parameters {} in favour of model {}.".format(
                       parameters, model), UserWarning)
-    return model.fit(data)
+    return model.fit(data, strategy)
 
 
 def make_default_model(base_scatterer, fitting_parameters):

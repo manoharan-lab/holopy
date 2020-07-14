@@ -25,7 +25,8 @@ from nose.plugins.attrib import attr
 
 from holopy.core.metadata import data_grid
 from holopy.scattering import Sphere
-from holopy.inference import sample, fit, prior, AlphaModel, EmceeStrategy
+from holopy.inference import (sample, fit, prior, AlphaModel, EmceeStrategy,
+                              NmpfitStrategy, CmaStrategy, TemperedStrategy)
 from holopy.inference.interface import (
     make_default_model, parameterize_scatterer, rename_xyz, make_uniform)
 from holopy.inference.result import SamplingResult
@@ -90,6 +91,48 @@ class TestUserFacingFunctions(unittest.TestCase):
     def test_passing_model_and_parameters_gives_warning(self):
         model = make_default_model(SPHERE, None)
         self.assertWarns(UserWarning, fit, DATA, model, ['r', 'y'])
+
+    @attr('medium')
+    def test_fit_default_strategy_is_Nmpfit(self):
+        result = fit(DATA, SimpleModel())
+        self.assertEqual(result.strategy, NmpfitStrategy())
+
+    @attr('medium')
+    def test_fit_takes_strategy_object(self):
+        strategy = NmpfitStrategy(npixels=2, maxiter=2)
+        result = fit(DATA, SimpleModel(), strategy=strategy)
+        self.assertEqual(result.strategy, strategy)
+
+    @attr('medium')
+    def test_fit_takes_strategy_by_name(self):
+        result = fit(DATA, SimpleModel(), strategy='cma')
+        self.assertTrue(isinstance(result.strategy, CmaStrategy))
+
+    @attr('fast')
+    def test_fit_fails_with_sampling_strategy(self):
+        self.assertRaises(ValueError, fit,
+                          DATA, SimpleModel(), strategy=EmceeStrategy)
+
+    @attr('medium')
+    def test_sample_default_strategy_is_emcee(self):
+        result = sample(DATA, SimpleModel())
+        self.assertEqual(result.strategy, EmceeStrategy())
+
+    @attr('medium')
+    def test_sample_takes_strategy_object(self):
+        strategy = EmceeStrategy(nsamples=2)
+        result = sample(DATA, SimpleModel(), strategy=strategy)
+        self.assertEqual(result.strategy, strategy)
+
+    @attr('medium')
+    def test_sample_takes_strategy_by_name(self):
+        result = sample(DATA, SimpleModel(), strategy='subset tempering')
+        self.assertTrue(isinstance(result.strategy, TemperedStrategy))
+
+    @attr('fast')
+    def test_sample_fails_with_fitting_strategy(self):
+        self.assertRaises(ValueError, sample,
+                          DATA, SimpleModel(), strategy=NmpfitStrategy)
 
 
 class TestHelperFunctions(unittest.TestCase):
