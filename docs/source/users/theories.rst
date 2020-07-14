@@ -50,6 +50,11 @@ Lens-Free Scattering Theories
       implemented by ADDA.
     * Requires the ADDA package to be installed separately, as detailed in
       the :ref:`DDA section<_dda_tutorial>`
+    * Functions in two different ways, as controlled by the
+      `use_indicators` flag. If the `use_indicators` flag is `True`, the
+      scatterer is voxelated within HoloPy before passing to DDA. If the
+      flag is `False`, ADDA's built-in scatterer geometries are used for
+      things like spheres, cylinders, ellipsoids, etc.
 - :class:`.Mie`
     * Can handle :class:`.Sphere` objects, :class:`.LayeredSphere` objects, or
       :class:`.Spheres` through superposision.
