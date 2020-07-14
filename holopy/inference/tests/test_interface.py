@@ -52,14 +52,6 @@ class TestUserFacingFunctions(unittest.TestCase):
         self.assertTrue(hasattr(result, 'samples'))
 
     @attr('medium')
-    def test_fit_works_with_model(self):
-        function_result = fit(DATA, SimpleModel())
-        function_result.time = None
-        object_result = SimpleModel().fit(DATA)
-        object_result.time = None
-        self.assertEqual(function_result, object_result)
-
-    @attr('medium')
     def test_fit_works_with_scatterer(self):
         function_result = fit(DATA, SPHERE)
         function_result.time = None
