@@ -12,7 +12,7 @@ magnified image of the fields at the focal plane, and the
 :ref:`Lens<_with_lens>` theories which use a more detailed description of the
 effects of the objective lens. The lens-free theories usually do not need any
 additional parameters specified, whereas the lens theories need the lens's
-acceptance angle, which can be specified as either a fixed number of a
+acceptance angle, which can be specified as either a fixed number or a
 :class:`.Prior` object, representing an unknown value to be determined in an
 inference calculation.
 
@@ -48,10 +48,11 @@ Lens-Free Scattering Theories
     * Can handle every :class:`.Scatterer` object in HoloPy
     * Computes scattered fields using the discrete dipole approximation, as
       implemented by ADDA.
-    * Requires the DDA package to be installed separately.
+    * Requires the ADDA package to be installed separately, as detailed in
+      the :ref:`DDA section<_dda_tutorial>`
 - :class:`.Mie`
-    * Can handle :class:`.Sphere` objects, or :class:`.Spheres` through
-      superposision.
+    * Can handle :class:`.Sphere` objects, :class:`.LayeredSphere` objects, or
+      :class:`.Spheres` through superposision.
     * Computes scattered fields using Mie theory.
 - :class:`.Multisphere`
     * Can handle :class:`.Spheres` objects.
