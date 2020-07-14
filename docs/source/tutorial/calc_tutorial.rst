@@ -360,8 +360,16 @@ usually provide a good description of holograms of particles far above the
 focus, when the particle is near near the focus subtle optical effects can
 cause deviations between the recorded hologram and theories which do not
 specifically describe the effects of the lens. To deal with this, HoloPy
-currently offers two scattering theories which describe the effects of a perfect
-lens on the recorded hologram. Both of these scattering theories need information about the lens to make predictions, specifically the acceptance angle of the lens. The acceptance angle :math:`\beta` is related to the numerical aperture or NA of the lens by :math:`NA = n_f \sin \beta`, where :math:`n_f` is the refractive of the immersion fluid. For more details on this, see our papers `here<https://www.osapublishing.org/oe/abstract.cfm?uri=oe-28-2-1061>`_ and `here<url>`_.
+currently offers two scattering theories which describe the effects of a
+perfect lens on the recorded hologram. Both of these scattering theories
+need information about the lens to make predictions, specifically the
+acceptance angle of the lens. The acceptance angle :math:`\beta` is
+related to the numerical aperture or NA of the lens by :math:`\beta =
+\arcsin(NA / n_f)`, where :math:`n_f` is the refractive of the immersion
+fluid. For more details on the effect of the lens on the recorded
+hologram, see our papers
+`here<https://www.osapublishing.org/oe/abstract.cfm?uri=oe-28-2-1061>`_
+and `here<url>`_.
 
 The :class:`.Lens` theory allows `holopy` to include the effects of a perfect
 objective lens with any scattering theory. The Lens theory works by wrapping a
@@ -384,7 +392,7 @@ imaged with a perfect lens. For spherical particles, some analytical
 simplifications are possible which greatly speed up the description of the
 objective lens -- in fact, the :class:`.MieLens` theory's implementation is
 slightly faster than :class:`.Mie` theory's. The following code creates a
-MieLens theory, which can be based to `calc_hlo` just like any other scattering theory:
+MieLens theory, which can be based to `calc_holo` just like any other scattering theory:
 
 ..  testcode::
 
