@@ -53,24 +53,28 @@ class DDA(ScatteringTheory):
     extremely computationally intensive, particularly if the size of the
     scatterer is larger than the wavelength of light.  This model requires an
     external scattering code: `a-dda <http://code.google.com/p/a-dda/>`_
+
     Attributes
     ----------
     n_cpu : int (optional)
         Number of threads to use for the DDA calculation
     max_dpl_size : float (optional)
-        Force a maximum dipole size. This is useful for forcing extra dipoles if
-        necessary to resolve features in an object. This may make dda
-        calculations take much longer.
+        Force a maximum dipole size. This is useful for forcing extra
+        dipoles if necessary to resolve features in an object. This may
+        make dda calculations take much longer.
     use_indicators : bool
-        If true, a scatterer's indicators method will be used instead of its built-in adda definition
+        If true, a scatterer's indicators method will be used instead of
+        its built-in adda definition
     keep_raw_calculations : bool
-        If true, do not delete the temporary file we run ADDA in, instead print
-        its path so you can inspect its raw results
+        If true, do not delete the temporary file we run ADDA in,
+        instead print its path so you can inspect its raw results
+
     Notes
     -----
-    Does not handle near fields.  This introduces ~5% error at 10 microns.
-    This can in principle handle any scatterer, but in practice it will need
-    excessive memory or computation time for particularly large scatterers.
+    Does not handle near fields. This introduces ~5% error at 10
+    microns. This can in principle handle any scatterer, but in practice
+    it will need excessive memory or computation time for particularly
+    large scatterers.
     """
     def __init__(self, n_cpu = 1, max_dpl_size=None, use_indicators=True,
                  keep_raw_calculations=False, addacmd=[],
