@@ -261,7 +261,7 @@ class SamplingResult(FitResult):
     def _calc_intervals(self):
         P_LOW = 15.865525393145708  # 100*(1-scipy.special.erf(1/np.sqrt(2)))/2
         map_val = self.samples[np.unravel_index(
-                                    self.lnprobs.argmax(), self.lnprobs.shape)]
+                                    np.argmax(self.lnprobs), self.lnprobs.shape)]
         minus = map_val - self.samples.reduce(
             np.percentile, q=P_LOW, dim=['walker', 'chain'])
         plus = -map_val + self.samples.reduce(
