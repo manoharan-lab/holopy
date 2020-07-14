@@ -24,7 +24,7 @@ plane wave scattering from a microsphere.
 
 (You may need to call `matplotlib.pyplot.show()` if you can't see the hologram after running this code.)
 
-To calculate a hologram, `holopy` needs to know three things: the *scatterer* which is scattering the light, the *experimental setup* under which the hologram is recorded, and the *scattering theory* that can calculate the hologram from the scaterrer and the experimental setup. We'll examine each section of code in turn.
+To calculate a hologram, `holopy` needs to know three things: the *scatterer* that is scattering the light, the *experimental setup* under which the hologram is recorded, and the *scattering theory* that can calculate the hologram from the scaterrer and the experimental setup. We'll examine each section of code in turn.
 
 The first few lines :
 
