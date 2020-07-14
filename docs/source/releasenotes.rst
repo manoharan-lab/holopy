@@ -19,6 +19,8 @@ Improvements
 - It is now possible to save all slices of a reconstruction stack as images.
 - Rearrangement of some Scatterer properties and methods so they are now
   accessible by a broader group of classes.
+- PerfectLensModel now accepts hologram scaling factor alpha as a parameter
+  for inference.
 - New user guide on :ref:`scatterers_user`.
 
 Bugfixes
