@@ -108,4 +108,3 @@ def make_uniform(guesses, key):
         raise ValueError(msg)
     minval = 0 if key in ['n', 'r'] else -np.inf
     return Uniform(minval, np.inf, guess_value, key)
-
