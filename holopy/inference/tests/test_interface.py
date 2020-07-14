@@ -28,7 +28,8 @@ from holopy.scattering import Sphere
 from holopy.inference import (sample, fit, prior, AlphaModel, EmceeStrategy,
                               NmpfitStrategy, CmaStrategy, TemperedStrategy)
 from holopy.inference.interface import (
-    make_default_model, parameterize_scatterer, rename_xyz, make_uniform)
+    make_default_model, parameterize_scatterer, rename_xyz, make_uniform,
+    validate_strategy, available_sampling_strategies, available_fit_strategies)
 from holopy.inference.result import SamplingResult
 from holopy.inference.tests.common import SimpleModel
 
@@ -62,7 +63,7 @@ class TestUserFacingFunctions(unittest.TestCase):
         function_result = fit(DATA, SPHERE)
         function_result.time = None
         model = make_default_model(SPHERE, None)
-        object_result = model.fit(DATA)
+        object_result = fit(DATA, model)
         object_result.time = None
         self.assertEqual(function_result, object_result)
 
@@ -75,7 +76,7 @@ class TestUserFacingFunctions(unittest.TestCase):
         function_result = fit(DATA, SPHERE, ['n', 'x'])
         function_result.time = None
         model = make_default_model(SPHERE, ['n', 'x'])
-        object_result = model.fit(DATA)
+        object_result = fit(DATA, model)
         object_result.time = None
         self.assertEqual(function_result, object_result)
 
@@ -93,14 +94,65 @@ class TestUserFacingFunctions(unittest.TestCase):
         self.assertWarns(UserWarning, fit, DATA, model, ['r', 'y'])
 
     @attr('medium')
-    def test_fit_default_strategy_is_Nmpfit(self):
+    def test_fit_function_identical_to_strategy_method(self):
+        model = SimpleModel()
+        strategy = NmpfitStrategy(seed=123)
+        strategy_result = strategy.fit(model, DATA)
+        strategy_result.time = None
+        model_result = fit(DATA, model, strategy=strategy)
+        model_result.time = None
+        self.assertEqual(strategy_result, model_result)
+
+    @attr('medium')
+    def test_sample_function_identical_to_strategy_method(self):
+        model = SimpleModel()
+        strategy = EmceeStrategy(nwalkers=6, nsamples=10, seed=123)
+        strategy_result = strategy.sample(model, DATA)
+        strategy_result.time = None
+        model_result = sample(DATA, model, strategy)
+        model_result.time = None
+        self.assertEqual(strategy_result, model_result)
+
+
+class StrategyHandling(unittest.TestCase):
+    @attr('medium')
+    def test_default_fit_strategy_is_Nmpfit(self):
         result = fit(DATA, SimpleModel())
         self.assertEqual(result.strategy, NmpfitStrategy())
+
+    @attr('medium')
+    def test_default_sampling_strategy_is_emcee(self):
+        result = sample(DATA, SimpleModel())
+        self.assertTrue(isinstance(result.strategy, EmceeStrategy))
+
+    @attr('fast')
+    def test_fit_strategy_names(self):
+        for name, strategy in available_fit_strategies.items():
+            strategy_by_name = validate_strategy(name, 'fit')
+            self.assertEqual(strategy(), strategy_by_name)
+
+    @attr('fast')
+    def test_sample_strategy_names(self):
+        for name, strategy in available_sampling_strategies.items():
+            if strategy is not NotImplemented:
+                strategy_by_name = validate_strategy(name, 'sample')
+                self.assertEqual(strategy(), strategy_by_name)
+
+    @attr('fast')
+    def test_parallel_tempering_not_implemented(self):
+        self.assertRaises(ValueError, validate_strategy,
+                          'parallel tempering', 'sample')
 
     @attr('medium')
     def test_fit_takes_strategy_object(self):
         strategy = NmpfitStrategy(npixels=2, maxiter=2)
         result = fit(DATA, SimpleModel(), strategy=strategy)
+        self.assertEqual(result.strategy, strategy)
+
+    @attr('medium')
+    def test_sample_takes_strategy_object(self):
+        strategy = EmceeStrategy(nsamples=2)
+        result = sample(DATA, SimpleModel(), strategy)
         self.assertEqual(result.strategy, strategy)
 
     @attr('medium')
@@ -113,26 +165,10 @@ class TestUserFacingFunctions(unittest.TestCase):
         self.assertRaises(ValueError, fit,
                           DATA, SimpleModel(), strategy=EmceeStrategy)
 
-    @attr('medium')
-    def test_sample_default_strategy_is_emcee(self):
-        result = sample(DATA, SimpleModel())
-        self.assertEqual(result.strategy, EmceeStrategy())
-
-    @attr('medium')
-    def test_sample_takes_strategy_object(self):
-        strategy = EmceeStrategy(nsamples=2)
-        result = sample(DATA, SimpleModel(), strategy=strategy)
-        self.assertEqual(result.strategy, strategy)
-
-    @attr('medium')
-    def test_sample_takes_strategy_by_name(self):
-        result = sample(DATA, SimpleModel(), strategy='subset tempering')
-        self.assertTrue(isinstance(result.strategy, TemperedStrategy))
-
     @attr('fast')
     def test_sample_fails_with_fitting_strategy(self):
         self.assertRaises(ValueError, sample,
-                          DATA, SimpleModel(), strategy=NmpfitStrategy)
+                          DATA, SimpleModel(), NmpfitStrategy)
 
 
 class TestHelperFunctions(unittest.TestCase):

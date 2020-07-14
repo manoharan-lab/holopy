@@ -22,8 +22,20 @@ import numpy as np
 
 from holopy.scattering import Scatterer
 from holopy.scattering.scatterer import _interpret_parameters
-from holopy.inference.model import ALL_STRATEGIES, Model, AlphaModel
+from holopy.inference.model import Model, AlphaModel
 from holopy.inference.prior import Uniform
+from holopy.inference.nmpfit import NmpfitStrategy
+from holopy.inference.scipyfit import LeastSquaresScipyStrategy
+from holopy.inference.cmaes import CmaStrategy
+from holopy.inference.emcee import EmceeStrategy, TemperedStrategy
+
+DEFAULT_STRATEGY = {'fit': 'nmpfit', 'sample': 'emcee'}
+ALL_STRATEGIES = {'fit': {'nmpfit': NmpfitStrategy,
+                          'scipy lsq': LeastSquaresScipyStrategy,
+                          'cma': CmaStrategy},
+                  'sample': {'emcee': EmceeStrategy,
+                             'subset tempering': TemperedStrategy,
+                             'parallel tempering': NotImplemented}}
 
 available_fit_strategies = ALL_STRATEGIES['fit']
 available_sampling_strategies = ALL_STRATEGIES['sample']
@@ -31,7 +43,8 @@ available_sampling_strategies = ALL_STRATEGIES['sample']
 
 def sample(data, model, strategy=None):
     if isinstance(model, Model):
-        return model.sample(data, strategy)
+        strategy = validate_strategy(strategy, 'sample')
+        return strategy.sample(model, data)
     else:
         msg = "Sampling model {} is not a HoloPy Model object.".format(model)
         raise ValueError(msg)
@@ -43,7 +56,23 @@ def fit(data, model, parameters=None, strategy=None):
     elif parameters is not None:
         warnings.warn("Ignoring parameters {} in favour of model {}.".format(
                       parameters, model), UserWarning)
-    return model.fit(data, strategy)
+    strategy = validate_strategy(strategy, 'fit')
+    return strategy.fit(model, data)
+
+
+def validate_strategy(strategy, operation):
+    if strategy is None:
+        strategy = DEFAULT_STRATEGY[operation]
+    if isinstance(strategy, str):
+        strategy = ALL_STRATEGIES[operation][strategy]
+    if not hasattr(strategy, operation):
+        raise ValueError("Cannot {} with Strategy of type {}.".format(
+            operation, type(strategy).__name__))
+    try:
+        strategy = strategy()
+    except TypeError:
+        pass
+    return strategy
 
 
 def make_default_model(base_scatterer, fitting_parameters):
