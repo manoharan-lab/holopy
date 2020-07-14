@@ -16,9 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
-Calculates holograms of spheres using an analytical solution of
-the Mie scattered field imaged by a perfect lens.
-Uses superposition to calculate scattering from multiple spheres.
 
 .. moduleauthor:: Brian D. Leahy <bleahy@seas.harvard.edu>
 .. moduleauthor:: Ron Alexander <ralexander@g.harvard.edu>
@@ -32,9 +29,36 @@ from holopy.scattering.theory.mielensfunctions import MieLensCalculator
 
 
 class MieLens(ScatteringTheory):
+    """
+    Exact scattering from a sphere imaged through a perfect lens.
+
+    Calculates holograms of spheres using an analytical solution of the
+    Mie scattered field imaged by a perfect lens (see [Leahy2020]_). Can
+    use superposition to calculate scattering from multiple spheres.
+
+    See Also
+    --------
+    mielensfunctions.MieLensCalculator
+    """
+
     desired_coordinate_system = 'cylindrical'
 
     def __init__(self, lens_angle=1.0, calculator_accuracy_kwargs={}):
+        """
+        Parameters
+        ----------
+        lens_angle : float
+            Lens acceptance angle in radians.
+        calculator_accuracy_kwargs : dict
+            While the analytical calculation is exact, the numerical
+            implementation is approximate. Pass in any parameters to
+            increase or decrease the accuracy via
+            `calculator_accuracy_kwargs.` Valid keys are {`quad_npts`,
+            `interpolate_integrals`, `interpolator_window_size`,
+            `interpolator_degree`}, as explained in
+            mielensfunctions.MieLensCalculator.  The default calculation
+            accuracy is roughly 1e-12 relative accuracy.
+        """
         super(MieLens, self).__init__()
         self.lens_angle = lens_angle
         self.calculator_accuracy_kwargs = calculator_accuracy_kwargs
