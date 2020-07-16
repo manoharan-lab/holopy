@@ -20,6 +20,7 @@ import warnings
 
 import numpy as np
 
+from holopy.core.holopy_object import SerializableMetaclass
 from holopy.scattering import Scatterer
 from holopy.scattering.scatterer import _interpret_parameters
 from holopy.inference.model import Model, AlphaModel
@@ -68,10 +69,8 @@ def validate_strategy(strategy, operation):
     if not hasattr(strategy, operation):
         raise ValueError("Cannot {} with Strategy of type {}.".format(
             operation, type(strategy).__name__))
-    try:
+    if isinstance(strategy, SerializableMetaclass):
         strategy = strategy()
-    except TypeError:
-        pass
     return strategy
 
 
