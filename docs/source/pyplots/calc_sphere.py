@@ -9,8 +9,6 @@ illum_wavelen = 0.660
 illum_polarization = (1, 0)
 detector = hp.detector_grid(shape=100, spacing=0.1)
 
-theory = Mie()
-
 holo = calc_holo(detector, sphere, medium_index, illum_wavelen,
-                 illum_polarization, theory=theory)
+                 illum_polarization, theory='auto')
 hp.show(holo)
