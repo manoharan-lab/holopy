@@ -201,17 +201,19 @@ an objective lens with an acceptance angle of 1.0, do
     lens_angle = 1.0
     theory = Lens(lens_angle, Mie())
 
-This theory can then be passed to ``calc_holo`` just like any other scattering
-theory. However, calculations with the :class:`.Lens` theory are very slow,
-orders of magnitude slower than calculations without the lens.
+This theory can then be passed to :func:`.calc_holo` just like any other
+scattering theory. However, calculations with the :class:`.Lens` theory
+are very slow, orders of magnitude slower than calculations without the
+lens.
 
-To get around the slow speed of the :class:`.Lens` theory, HoloPy offers an
-additional theory, :class:`.MieLens`, specifically for spherical particles
-imaged with a perfect lens. For spherical particles, some analytical
-simplifications are possible which greatly speed up the description of the
-objective lens -- in fact, the :class:`.MieLens` theory's implementation is
-slightly faster than :class:`.Mie` theory's. The following code creates a
-MieLens theory, which can be based to ``calc_holo`` just like any other scattering theory:
+To get around the slow speed of the :class:`.Lens` theory, HoloPy offers
+an additional theory, :class:`.MieLens`, specifically for spherical
+particles imaged with a perfect lens. For spherical particles, some
+analytical simplifications are possible which greatly speed up the
+description of the objective lens -- in fact, the :class:`.MieLens`
+theory's implementation is slightly faster than :class:`.Mie` theory's.
+The following code creates a :class:`.MieLens` theory, which can be
+based to :func:`.calc_holo` just like any other scattering theory:
 
 ..  testcode::
 
