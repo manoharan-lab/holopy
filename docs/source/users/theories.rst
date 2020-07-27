@@ -7,9 +7,9 @@ Scattering Theories in Holopy
 The HoloPy :class:`.ScatteringTheory` classes know how to calculate scattered fields from detector and scatterer information. Each scattering theory is only able to work with certain specific scatterers.
 
 There are two broad classes of scattering theories in HoloPy: the
-:ref:`Lens-free<_lens_free>` theories which treat the recorded fields as the
+:ref:`Lens-free<lens_free>` theories which treat the recorded fields as the
 magnified image of the fields at the focal plane, and the
-:ref:`Lens<_with_lens>` theories which use a more detailed description of the
+:ref:`Lens<with_lens>` theories which use a more detailed description of the
 effects of the objective lens. The lens-free theories usually do not need any
 additional parameters specified, whereas the lens theories need the lens's
 acceptance angle, which can be specified as either a fixed number or a
@@ -18,7 +18,8 @@ inference calculation.
 
 All scattering theories in HoloPy inherit from the :class:`.ScatteringTheory` class.
 
-Not sure how to choose a scattering theory? See the :ref:`how_to_choose_theory` section.
+Not sure how to choose a scattering theory? See the
+:ref:`how_to_choose_theory` section.
 
 
 ScatteringTheory Methods
@@ -53,19 +54,22 @@ Lens-Free Scattering Theories
     * Requires the ADDA package to be installed separately, as detailed in
       the :ref:`DDA section<dda_tutorial>`
     * Functions in two different ways, as controlled by the
-      ``use_indicators`` flag. If the ``use_indicators`` flag is ``True``, the
-      scatterer is voxelated within HoloPy before passing to DDA. If the
-      flag is ``False``, ADDA's built-in scatterer geometries are used for
-      things like spheres, cylinders, ellipsoids, etc.
+      ``use_indicators`` flag. If the ``use_indicators`` flag is
+      ``True``, the scatterer is voxelated within HoloPy before passing
+      to ADDA. If the flag is ``False``, ADDA's built-in scatterer
+      geometries are used for things like spheres, cylinders,
+      ellipsoids, etc.
 - :class:`.Mie`
     * Can handle :class:`.Sphere` objects, :class:`.LayeredSphere` objects, or
       :class:`.Spheres` through superposition.
     * Computes scattered fields using Mie theory.
 - :class:`.Multisphere`
     * Can handle :class:`.Spheres` objects.
-    * Computes scattered fields using a matrix-based solution of scattering,
-      accounting for multiple scattering between spheres to find a
-      (numerically) exact solution.
+    * Cannot handle :class:`.Spheres` objects composed of layered
+      spheres.
+    * Computes scattered fields through a T-matrix-based solution of
+      scattering, accounting for multiple scattering between spheres to
+      find a (numerically) exact solution.
 - :class:`.Tmatrix`
     * Can handle :class:`.Sphere`, :class:`.Cylinder`, or :class:`.Spheroid`
       objects.
@@ -83,7 +87,8 @@ Lens-Free Scattering Theories
     * Create by including one of the :ref:`Lens-Free<lens_free>` theories.
     * Can handle whatever the additional included theory can handle.
     * Considerably slower than the normal scattering theory.
-    * Performance can be improved if the ``numexpr`` package is installed.
+    * Performance can be improved if the `numexpr
+      <https://pypi.org/project/numexpr/>`_ package is installed.
 - :class:`.MieLens`
     * Can handle :class:`.Sphere` objects, or :class:`.Spheres` through
       superposision.
@@ -98,7 +103,13 @@ Lens-Free Scattering Theories
 Which Scattering Theory should I use?
 -------------------------------------
 
-You should choose the scattering theory based off of (1) the scatterer that you are modeling, and (2) whether you want to describe the effect of the lens on the recorded hologram in detail.
+HoloPy chooses a default scattering theory based off the scatterer type,
+currently determined by the function
+:func:`.determine_default_theory_for`. If you're not satisfied with
+HoloPy's default scattering theory selection, you should choose the
+scattering theory based off of (1) the scatterer that you are modeling,
+and (2) whether you want to describe the effect of the lens on the
+recorded hologram in detail.
 
 
 An Individual Sphere
@@ -122,12 +133,12 @@ scattering by using the SCSMFO package from `Daniel Mackowski
 T-matrix methods to give the exact solution to Maxwell's equation for
 the scattering from an arbitrary arrangement of non-overlapping spheres.
 
-Sometimes you might want to calculate scattering from multiple spheres using
-Mie theory if you are worried about computation time, if your spheres are
-widely separated (such that optical coupling between the spheres is
-negligible), or if you are using multi-layered spheres (HoloPy's implementation
-of the multisphere theory can't currently handle coated spheres). You can
-specify Mie theory manually when calling the :func:`.calc_holo` function:
+Sometimes you might want to calculate scattering from multiple spheres
+using Mie theory if you are worried about computation time or if your
+spheres are widely separated (such that optical coupling between the
+spheres is negligible) You can specify Mie theory manually when calling
+the :func:`.calc_holo` function:
+
 
 ..  testcode::
 
@@ -144,6 +155,10 @@ specify Mie theory manually when calling the :func:`.calc_holo` function:
 
     1.04802354...
 
+
+Note that the multisphere theory does not work with collections of
+multi-layered spheres; in this case HoloPy defaults to using Mie theory
+with superposition.
 
 Non-spherical particles
 ~~~~~~~~~~~~~~~~~~~~~~~
