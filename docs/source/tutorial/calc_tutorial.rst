@@ -22,9 +22,9 @@ plane wave scattering from a microsphere.
    :scale: 300 %
    :alt: Calculated hologram of a single sphere.
 
-(You may need to call `matplotlib.pyplot.show()` if you can't see the hologram after running this code.)
+(You may need to call ``matplotlib.pyplot.show()`` if you can't see the hologram after running this code.)
 
-To calculate a hologram, `holopy` needs to know two things: the *scatterer* that is scattering the light and the *experimental setup* under which the hologram is recorded. With those two, `holopy` chooses an appropriate *scattering theory* that calculates the hologram from the scatterer and the experimental setup; advanced users may want to choose the theory themselves. We'll examine each section of code in turn.
+To calculate a hologram, HoloPy needs to know two things: the *scatterer* that is scattering the light and the *experimental setup* under which the hologram is recorded. With those two, HoloPy chooses an appropriate *scattering theory* that calculates the hologram from the scatterer and the experimental setup; advanced users may want to choose the theory themselves. We'll examine each section of code in turn.
 
 The first few lines :
 
@@ -42,7 +42,7 @@ The next line describes the *scatterer* we would like to model:
 
     sphere = Sphere(n=1.59, r=0.5, center=(4, 4, 5))
 
-Scatterers are described in `holopy` by a :class:`.Scatterer` object. Here, we use a :class:`.Sphere` as the scatterer object. A :class:`.Scatterer` object
+Scatterers are described in HoloPy by a :class:`.Scatterer` object. Here, we use a :class:`.Sphere` as the scatterer object. A :class:`.Scatterer` object
 contains information about the geometry (position, size, shape) and optical
 properties (refractive index) of the object that is scattering light. We've
 defined a spherical scatterer with radius 0.5 microns and index of refraction
@@ -70,7 +70,7 @@ digital camera mounted onto a microscope.  We defined our detector as a 100 x
 computation time. The ``spacing`` argument tells HoloPy how far apart each
 pixel is. Both parameters affect the absolute size of the detector.
 
-Finally, we need to specify the *scattering theory* which knows how to calculate the hologram from the experimental setup and the scatterer. By setting `theory='auto'`, we let `holopy` automatically select a theory. If no theory is specified, `holopy` will automatically select a theory as well.
+Finally, we need to specify the *scattering theory* which knows how to calculate the hologram from the experimental setup and the scatterer. By setting ``theory='auto'``, we let HoloPy automatically select a theory. If no theory is specified, HoloPy will automatically select a theory as well.
 
 After getting everything ready, the actual scattering calculation is straightforward:
 
@@ -277,25 +277,31 @@ Scattering Theories in HoloPy
 -----------------------------
 
 HoloPy contains a number of scattering theories to model the scattering from
-different kinds of scatterers. You can specifiy a scattering theory by setting the `theory` keyword to a :class:`.ScatteringTheory` object, rather than setting the theory to `'auto'`. For instance, to force `holopy` to calculate the hologram of a sphere using Mie theory (the theory which exactly describes scattering from a spherical particle), we set the `theory` keyword to an instance of the :class:`.Mie` class:
+different kinds of scatterers. You can specifiy a scattering theory by
+setting the ``theory`` keyword to a :class:`.ScatteringTheory` object,
+rather than setting the theory to ``'auto'``. For instance, to force
+HoloPy to calculate the hologram of a sphere using Mie theory (the
+theory which exactly describes scattering from a spherical particle), we
+set the ``theory`` keyword to an instance of the :class:`.Mie` class:
 
 
 ..  testcode::
 
+    from holopy.scattering.theory import Mie
     theory = Mie()
     holo = calc_holo(detector, sphere, medium_index, illum_wavelen,
                      illum_polarization, theory=theory)
 
-`holopy` has multiple scattering theories which work for different types
+HoloPy has multiple scattering theories which work for different types
 of scatterers and which describe particle scattering and interactions
-with the optical train in varying degrees of complexity. `holopy` has
+with the optical train in varying degrees of complexity. HoloPy has
 scattering theories that describe scattering from individual spheres,
 layered spheres, clusters of spheres, spheroids, cylinders, and
 arbitrary objects. Some of these scattering theories can take parameters
 to modify how the theory performs the calculation (by, *e.g.*, making
 certain approximations or specifying properties of the optical train).
 For a more thorough description of these scattering theories and how
-`holopy` chooses default scattering theories, see the user guide,
+HoloPy chooses default scattering theories, see the user guide,
 :ref:`theories_user`.
 
 
