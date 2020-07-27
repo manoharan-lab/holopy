@@ -16,10 +16,9 @@ acceptance angle, which can be specified as either a fixed number or a
 :class:`.Prior` object, representing an unknown value to be determined in an
 inference calculation.
 
-All scattering theories in holopy inherit from the :ref:`ScatteringTheory` class.
+All scattering theories in HoloPy inherit from the :class:`.ScatteringTheory` class.
 
-Not sure how to choose a scattering theory? See the :ref:`Which
-Scattering Theory should I use?<_how_to_choose_theory>` section.
+Not sure how to choose a scattering theory? See the :ref:`how_to_choose_theory` section.
 
 
 ScatteringTheory Methods
@@ -36,7 +35,7 @@ HoloPy Scattering theories calculate the scattered fields through one of the fol
     - :meth:`~.ScatteringTheory._can_handle`
       Checks if the theory is compatible with a given scatterer.
 
-If a theory is asked for the raw fields, but does not have a `_raw_fields` method, the scattering theory attempts to calculate them via the scattering matrices, as called by `_raw_scat_matrs`. More than one of these methods may be implemented for performance reasons.
+If a theory is asked for the raw fields, but does not have a ``_raw_fields`` method, the scattering theory attempts to calculate them via the scattering matrices, as called by ``_raw_scat_matrs``. More than one of these methods may be implemented for performance reasons.
 
 Be advised that the :class:`.ScatteringTheory` class is under active development, and these method names may change.
 
@@ -52,15 +51,15 @@ Lens-Free Scattering Theories
     * Computes scattered fields using the discrete dipole approximation, as
       implemented by ADDA.
     * Requires the ADDA package to be installed separately, as detailed in
-      the :ref:`DDA section<_dda_tutorial>`
+      the :ref:`DDA section<dda_tutorial>`
     * Functions in two different ways, as controlled by the
-      `use_indicators` flag. If the `use_indicators` flag is `True`, the
+      ``use_indicators`` flag. If the ``use_indicators`` flag is ``True``, the
       scatterer is voxelated within HoloPy before passing to DDA. If the
-      flag is `False`, ADDA's built-in scatterer geometries are used for
+      flag is ``False``, ADDA's built-in scatterer geometries are used for
       things like spheres, cylinders, ellipsoids, etc.
 - :class:`.Mie`
     * Can handle :class:`.Sphere` objects, :class:`.LayeredSphere` objects, or
-      :class:`.Spheres` through superposision.
+      :class:`.Spheres` through superposition.
     * Computes scattered fields using Mie theory.
 - :class:`.Multisphere`
     * Can handle :class:`.Spheres` objects.
@@ -81,17 +80,17 @@ Lens-Free Scattering Theories
 Lens-Free Scattering Theories
 -----------------------------
 - :class:`.Lens`
-    * Create by including one of the :ref:`Lens-Free<_lens_free>` theories.
+    * Create by including one of the :ref:`Lens-Free<lens_free>` theories.
     * Can handle whatever the additional included theory can handle.
     * Considerably slower than the normal scattering theory.
-    * Performance can be improved if the `numexpr` package is installed.
+    * Performance can be improved if the ``numexpr`` package is installed.
 - :class:`.MieLens`
     * Can handle :class:`.Sphere` objects, or :class:`.Spheres` through
       superposision.
     * Computes scattered fields using Mie theory, but incorporates diffractive
       effects of a perfect objective lens.
-    * Used for performance; `MieLens(lens_angle)` is much faster than calling
-      `Lens(lens_angle, Mie())` and slightly faster than `Mie()`.
+    * Used for performance; ``MieLens(lens_angle)`` is much faster than calling
+      ``Lens(lens_angle, Mie())`` and slightly faster than ``Mie()``.
 
 
 .. _how_to_choose_theory:
@@ -174,7 +173,7 @@ details.
 Including the effect of the lens
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Most of the scattering theories in `holopy` treat the fields on the detector as
+Most of the scattering theories in HoloPy treat the fields on the detector as
 a (magnified) image of the fields at the focal plane. While these theories
 usually provide a good description of holograms of particles far above the
 focus, when the particle is near near the focus subtle optical effects can
@@ -188,10 +187,10 @@ related to the numerical aperture or NA of the lens by :math:`\beta =
 \arcsin(NA / n_f)`, where :math:`n_f` is the refractive of the immersion
 fluid. For more details on the effect of the lens on the recorded
 hologram, see our papers
-`here<https://www.osapublishing.org/oe/abstract.cfm?uri=oe-28-2-1061>`_
-and `here<url>`_.
+`here <https://www.osapublishing.org/oe/abstract.cfm?uri=oe-28-2-1061>`_
+and `here <url>`_.
 
-The :class:`.Lens` theory allows `holopy` to include the effects of a perfect
+The :class:`.Lens` theory allows HoloPy to include the effects of a perfect
 objective lens with any scattering theory. The Lens theory works by wrapping a
 normal scattering theory. For instance, to calculate the image of a sphere in
 an objective lens with an acceptance angle of 1.0, do
@@ -202,17 +201,17 @@ an objective lens with an acceptance angle of 1.0, do
     lens_angle = 1.0
     theory = Lens(lens_angle, Mie())
 
-This theory can then be passed to `calc_holo` just like any other scattering
+This theory can then be passed to ``calc_holo`` just like any other scattering
 theory. However, calculations with the :class:`.Lens` theory are very slow,
 orders of magnitude slower than calculations without the lens.
 
-To get around the slow speed of the :class:`.Lens` theory, `holopy` offers an
+To get around the slow speed of the :class:`.Lens` theory, HoloPy offers an
 additional theory, :class:`.MieLens`, specifically for spherical particles
 imaged with a perfect lens. For spherical particles, some analytical
 simplifications are possible which greatly speed up the description of the
 objective lens -- in fact, the :class:`.MieLens` theory's implementation is
 slightly faster than :class:`.Mie` theory's. The following code creates a
-MieLens theory, which can be based to `calc_holo` just like any other scattering theory:
+MieLens theory, which can be based to ``calc_holo`` just like any other scattering theory:
 
 ..  testcode::
 
