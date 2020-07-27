@@ -1,5 +1,5 @@
-Concepts
-========
+Holopy Concepts
+===============
 
 .. _units:
 

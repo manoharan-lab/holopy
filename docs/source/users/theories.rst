@@ -1,8 +1,8 @@
 .. _theories_user:
 
 
-Scattering Theories in Holopy
-=============================
+The HoloPy Scattering Theories
+==============================
 
 The HoloPy :class:`.ScatteringTheory` classes know how to calculate scattered fields from detector and scatterer information. Each scattering theory is only able to work with certain specific scatterers.
 
