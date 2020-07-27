@@ -1,6 +1,6 @@
 import holopy as hp
 from holopy.scattering import calc_holo, Sphere
-from holopy.scattering.theory import Mie
+
 
 sphere = Sphere(n=1.59, r=0.5, center=(4, 4, 5))
 
