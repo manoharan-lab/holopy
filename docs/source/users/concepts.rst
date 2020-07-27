@@ -1,4 +1,4 @@
-Holopy Concepts
+HoloPy Concepts
 ===============
 
 .. _units:
