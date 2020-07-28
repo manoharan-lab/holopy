@@ -25,6 +25,8 @@ Improvements
   sample() functions, either by name or as a Strategy object. These functions
   are now accessible in the root HoloPy namespace as hp.fit() and hp.sample().
 - New user guide on :ref:`scatterers_user`.
+- New user guide on :ref:`theories_user`.
+- More discussion of scattering theories in tutorial.
 
 Deprecations
 ------------

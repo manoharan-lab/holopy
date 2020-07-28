@@ -11,5 +11,6 @@ and want to get started quickly.
    :maxdepth: 1
 
    scatterers
+   theories
    tools
    concepts
