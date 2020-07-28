@@ -6,15 +6,15 @@ The HoloPy Scattering Theories
 
 The HoloPy :class:`.ScatteringTheory` classes know how to calculate scattered fields from detector and scatterer information. Each scattering theory is only able to work with certain specific scatterers.
 
-There are two broad classes of scattering theories in HoloPy: the
-:ref:`Lens-free<lens_free>` theories which treat the recorded fields as the
-magnified image of the fields at the focal plane, and the
-:ref:`Lens<with_lens>` theories which use a more detailed description of the
-effects of the objective lens. The lens-free theories usually do not need any
-additional parameters specified, whereas the lens theories need the lens's
-acceptance angle, which can be specified as either a fixed number or a
-:class:`.Prior` object, representing an unknown value to be determined in an
-inference calculation.
+There are two broad classes of scattering theories in HoloPy:
+:ref:`lens-free<lens_free>` theories which treat the recorded fields as
+the magnified image of the fields at the focal plane, and
+:ref:`lens-based<with_lens>` theories which use a more detailed
+description of the effects of the objective lens. The lens-free theories
+usually do not need any additional parameters specified, whereas the
+lens theories need the lens's acceptance angle, which can be specified
+as either a fixed number or a :class:`.Prior` object, representing an
+unknown value to be determined in an inference calculation.
 
 All scattering theories in HoloPy inherit from the :class:`.ScatteringTheory` class.
 
@@ -81,8 +81,8 @@ Lens-Free Scattering Theories
 .. _with_lens:
 
 
-Lens-Free Scattering Theories
------------------------------
+Lens-Based Scattering Theories
+------------------------------
 - :class:`.Lens`
     * Create by including one of the :ref:`Lens-Free<lens_free>` theories.
     * Can handle whatever the additional included theory can handle.
