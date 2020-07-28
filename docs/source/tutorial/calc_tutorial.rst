@@ -22,7 +22,11 @@ plane wave scattering from a microsphere.
    :scale: 300 %
    :alt: Calculated hologram of a single sphere.
 
-(You may need to call `matplotlib.pyplot.show()` if you can't see the hologram after running this code.) We'll examine each section of code in turn.  The first few lines :
+(You may need to call ``matplotlib.pyplot.show()`` if you can't see the hologram after running this code.)
+
+To calculate a hologram, HoloPy needs to know two things: the *scatterer* that is scattering the light and the *experimental setup* under which the hologram is recorded. With those two, HoloPy chooses an appropriate *scattering theory* that calculates the hologram from the scatterer and the experimental setup; advanced users may want to choose the theory themselves. We'll examine each section of code in turn.
+
+The first few lines :
 
 ..  testcode::
 
@@ -30,27 +34,29 @@ plane wave scattering from a microsphere.
     from holopy.scattering import calc_holo, Sphere
 
 load the relevant modules from HoloPy that we'll need for doing our
-calculation.  The next line describes the scatterer we would like to model:
+calculation.
+
+The next line describes the *scatterer* we would like to model:
 
 ..  testcode::
 
-    sphere = Sphere(n = 1.59, r = .5, center = (4, 4, 5))
+    sphere = Sphere(n=1.59, r=0.5, center=(4, 4, 5))
 
-We will be scattering light off a :class:`.Scatterer` object,
-specifically a :class:`.Sphere`. A :class:`.Scatterer` object
+Scatterers are described in HoloPy by a :class:`.Scatterer` object. Here, we use a :class:`.Sphere` as the scatterer object. A :class:`.Scatterer` object
 contains information about the geometry (position, size, shape) and optical
 properties (refractive index) of the object that is scattering light. We've
 defined a spherical scatterer with radius 0.5 microns and index of refraction
-1.59. This refractive index is approximately that of polystyrene. Next, we need
-to describe how we are illuminating our sphere, and how that light will be
-detected:
+1.59. This refractive index is approximately that of polystyrene.
+
+Next, we need to describe the *experimental setup*, including how we are
+illuminating our sphere, and how that light will be detected:
 
 ..  testcode::
 
     medium_index = 1.33
     illum_wavelen = 0.66
-    illum_polarization = (1,0)
-    detector = hp.detector_grid(shape = 100, spacing = .1)
+    illum_polarization = (1, 0)
+    detector = hp.detector_grid(shape=100, spacing=0.1)
 
 We are going to be using red light (wavelength = 660 nm in vacuum) polarized in
 the x-direction to illuminate a sphere immersed in water (refractive index =
@@ -64,12 +70,14 @@ digital camera mounted onto a microscope.  We defined our detector as a 100 x
 computation time. The ``spacing`` argument tells HoloPy how far apart each
 pixel is. Both parameters affect the absolute size of the detector.
 
+Finally, we need to specify the *scattering theory* which knows how to calculate the hologram from the experimental setup and the scatterer. By setting ``theory='auto'``, we let HoloPy automatically select a theory. If no theory is specified, HoloPy will automatically select a theory as well.
 
 After getting everything ready, the actual scattering calculation is straightforward:
 
 ..  testcode::
 
-    holo = calc_holo(detector, sphere, medium_index, illum_wavelen, illum_polarization)
+    holo = calc_holo(detector, sphere, medium_index, illum_wavelen,
+                     illum_polarization, theory='auto')
     hp.show(holo)
 
 Congratulations! You just calculated the in-line hologram generated at the
@@ -135,7 +143,7 @@ More Complex Scatterers
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Let's proceed to a few examples with different :class:`.Scatterer` objects.
-You can find a more thorough desccription of all their functionality in the
+You can find a more thorough desccription of all their functionalities in the
 user guide on :ref:`scatterers_user`.
 
 Coated Spheres
@@ -163,8 +171,7 @@ list of refractive indices and outer radii corresponding to the layers
     0.97506085...
 
 If you prefer thinking in terms of the thickness of subsequent layers, instead
-of their distance from the center, you can use :class:`.LayeredSphere` to achieve
-the same result:
+of their distance from the center, you can use :class:`.LayeredSphere` to achieve the same result:
 
 ..  testcode::
 
@@ -238,8 +245,8 @@ Note that the hologram image is elongated in the horizontal direction since the 
 
 .. _custom_scat:
 
-Customizing Scattering Calculations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+More Complex Experimental Setups
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 While the examples above will be sufficient for most purposes, there are a few
 additional options that are useful in certain scenarios.
@@ -269,52 +276,34 @@ in place of calling :func:`.detector_grid`.
 Scattering Theories in HoloPy
 -----------------------------
 
-HoloPy contains a number of scattering theories to model the scattering
-from different kinds of scatterers. By default, scattering from single
-spheres is calculated using Mie theory, which is the exact solution
-to Maxwell's equations for the scattered field from a spherical
-particle, originally derived by Gustav Mie and (independently) by
-Ludvig Lorenz in the early 1900s.
+HoloPy contains a number of scattering theories to model the scattering from
+different kinds of scatterers. You can specifiy a scattering theory by
+setting the ``theory`` keyword to a :class:`.ScatteringTheory` object,
+rather than setting the theory to ``'auto'``. For instance, to force
+HoloPy to calculate the hologram of a sphere using Mie theory (the
+theory which exactly describes scattering from a spherical particle), we
+set the ``theory`` keyword to an instance of the :class:`.Mie` class:
 
-A scatterer composed of multiple spheres can exhibit multiple scattering
-and coupling of the near-fields of neighbouring particles. Mie theory doesn't include
-these effects, so :class:`.Spheres` objects are by default calculated using the
-SCSMFO package from `Daniel Mackowski <http://www.eng.auburn.edu/~dmckwski/>`_.
-This calculation uses T-matrix methods to give the exact solution to Maxwell's equation
-for the scattering from an arbitrary arrangement of non-overlapping spheres.
-
-Sometimes you might want to calculate scattering from multiple spheres
-using Mie theory if you are worried about computation time,
-if your spheres are widely separated (such that optical coupling between
-the spheres is negligible),
-or if you are
-using multi-layered spheres (HoloPy's implementation of the multisphere theory
-can't currently handle coated spheres). You can specify Mie theory manually when
-calling the :func:`.calc_holo` function:
 
 ..  testcode::
 
-    from holopy.scattering import Mie
-    holo = calc_holo(exp_img, collection, theory = Mie)
+    from holopy.scattering.theory import Mie
+    theory = Mie()
+    holo = calc_holo(detector, sphere, medium_index, illum_wavelen,
+                     illum_polarization, theory=theory)
 
-..  testcode::
-    :hide:
+HoloPy has multiple scattering theories which work for different types
+of scatterers and which describe particle scattering and interactions
+with the optical train in varying degrees of complexity. HoloPy has
+scattering theories that describe scattering from individual spheres,
+layered spheres, clusters of spheres, spheroids, cylinders, and
+arbitrary objects. Some of these scattering theories can take parameters
+to modify how the theory performs the calculation (by, *e.g.*, making
+certain approximations or specifying properties of the optical train).
+For a more thorough description of these scattering theories and how
+HoloPy chooses default scattering theories, see the user guide,
+:ref:`theories_user`.
 
-    print(holo[0,0,0].values)
-
-..  testoutput::
-    :hide:
-
-    1.04802354...
-
-Similarly, HoloPy calculates scattering from cylindrical or spheroidal particles by using T-matrix code from `Michael Mishchenko <https://www.giss.nasa.gov/staff/mmishchenko/t_matrix.html>`_, but these scatterer types are not compatible with Mie theory.
-
-Holopy can also access a discrete dipole approximation (DDA) theory to model
-arbitrary non-spherical objects. See the :ref:`dda_tutorial` tutorial for more
-details. It is fairly easy to add your own scattering theory to HoloPy. See
-:ref:`scat_theory` for details. If you think your new scattering theory may be
-useful for other users, please consider submitting a `pull request
-<https://github.com/manoharan-lab/holopy/pulls>`_.
 
 Detector Types in HoloPy
 ------------------------

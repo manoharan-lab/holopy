@@ -65,8 +65,8 @@ kernel and immediately enter the ``%matplotlib`` command before doing anything
 else. Sometimes a backend will be chosen for you (that cannot be changed later)
 as soon as you plot something, for example by running ``test_disp()`` or
 :func:`.show`. Trying to set to one of the above backends that is not installed
- will result in an error, but will also prevent you from setting 
-a different backend until you restart your kernel.
+will result in an error, but will also prevent you from setting a different
+backend until you restart your kernel.
 
 An additional option in Spyder is to change the backend through the menu: Tools
 > Preferences > IPython console > Graphics. It will not take effect until you

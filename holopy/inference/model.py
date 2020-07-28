@@ -25,24 +25,12 @@ from holopy.core.metadata import dict_to_array, make_subset_data
 from holopy.core.utils import ensure_array, ensure_listlike, ensure_scalar
 from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering.errors import (MultisphereFailure, TmatrixFailure,
-                                InvalidScatterer, MissingParameter)
+                                      InvalidScatterer, MissingParameter)
 from holopy.scattering.interface import calc_holo
 from holopy.scattering.theory import MieLens
 from holopy.scattering.scatterer import (_expand_parameters,
                                          _interpret_parameters)
 from holopy.inference.prior import Prior, Uniform, generate_guess
-from holopy.inference.nmpfit import NmpfitStrategy
-from holopy.inference.scipyfit import LeastSquaresScipyStrategy
-from holopy.inference.cmaes import CmaStrategy
-from holopy.inference.emcee import EmceeStrategy, TemperedStrategy
-
-DEFAULT_STRATEGY = {'fit': 'nmpfit', 'sample': 'emcee'}
-ALL_STRATEGIES = {'fit': {'nmpfit': NmpfitStrategy,
-                          'scipy lsq': LeastSquaresScipyStrategy,
-                          'cma': CmaStrategy},
-                  'sample': {'emcee': EmceeStrategy,
-                            'subset tempering': TemperedStrategy,
-                            'parallel tempering': NotImplemented}}
 
 
 class Model(HoloPyObject):
@@ -202,26 +190,18 @@ class Model(HoloPyObject):
         return log_likelihood
 
     def fit(self, data, strategy=None):
-        strategy = self.validate_strategy(strategy, 'fit')
+        from holopy.fitting import fit_warning
+        from holopy.inference.interface import validate_strategy
+        fit_warning('holopy.fit()', 'model.fit()')
+        strategy = validate_strategy(strategy, 'fit')
         return strategy.fit(self, data)
 
-    def sample(self, data, strategy = None):
-        strategy = self.validate_strategy(strategy, 'sample')
+    def sample(self, data, strategy=None):
+        from holopy.fitting import fit_warning
+        from holopy.inference.interface import validate_strategy
+        fit_warning('holopy.sample()', 'model.sample()')
+        strategy = validate_strategy(strategy, 'sample')
         return strategy.sample(self, data)
-
-    def validate_strategy(self, strategy, operation):
-        if strategy is None:
-            strategy = DEFAULT_STRATEGY[operation]
-        if isinstance(strategy, str):
-            strategy = ALL_STRATEGIES[operation][strategy]
-        if not hasattr(strategy, operation):
-            raise ValueError("Cannot {} with Strategy of type {}.".format(
-                operation, type(strategy).__name__))
-        try:
-            strategy = strategy()
-        except TypeError:
-            pass
-        return strategy
 
     def _check_parameters_are_not_xarray(self, parameters_to_use):
         for key, value in parameters_to_use.items():

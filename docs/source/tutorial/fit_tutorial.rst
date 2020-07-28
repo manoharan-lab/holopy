@@ -21,8 +21,7 @@ in the tutorial on :ref:`load_tutorial`.
     from holopy.core.io import get_example_data_path, load_average
     from holopy.core.process import bg_correct, subimage, normalize
     from holopy.scattering import Sphere, Spheres, calc_holo
-    from holopy.inference import (
-        fit, sample, prior, ExactModel, CmaStrategy, EmceeStrategy)
+    from holopy.inference import prior, ExactModel, CmaStrategy, EmceeStrategy
 
     # load an image
     imagepath = get_example_data_path('image01.jpg')
@@ -57,13 +56,14 @@ its radius, but hold its refractive index fixed.
 
 ..  testcode::
 
-    fit_result = fit(data_holo, guess_sphere, parameters=['x', 'y', 'z', 'r'])
+    parameters_to_fit = ['x', 'y', 'z', 'r']
+    fit_result = hp.fit(data_holo, guess_sphere, parameters=parameters_to_fit)
 
 The :func:`.fit` function automatically runs :func:`.calc_holo` on many
 different sets of parameter values to find the combination that gives the best
 match to the experimental ``data_holo``. We get back a :class:`.FitResult`
 object that knows how to summarize the results of the fitting calculation in
-various ways, and can be saved to a file with ``hp.save`` :
+various ways, and can be saved to a file with :func:`.hp.save`` :
 
 ..  testcode::
 
@@ -96,7 +96,7 @@ radius - here, with a mean of 0.5 and standard deviation of 0.05 micrometers.
     z = prior.Uniform(10, 20)
     par_sphere = Sphere(n=1.58, r=prior.Gaussian(0.5, 0.05), center=[x, y, z])
     model = ExactModel(scatterer=par_sphere, calc_func=calc_holo)
-    fit_result = fit(data_holo, model)
+    fit_result = hp.fit(data_holo, model)
 
 Here we have used an :class:`.ExactModel` which takes a function ``calc_func``
 to apply on the :class:`.Scatterer` (we have used :func:`.calc_holo` here).
@@ -190,8 +190,8 @@ Options for :func:`.sample` include the default without tempering
 (``strategy="subset tempering"``), or parallel tempered MCMC
 (``strategy="parallel tempering"``) [not currently implemented]. You can see
 the available strategies in your version of HoloPy by calling
-`hp.inference.available_fit_strategies` or
-`hp.inference.available_sampling_strategies`.
+``hp.inference.available_fit_strategies`` or
+``hp.inference.available_sampling_strategies``.
 
 Each of these algorithms runs with a set of default values, but these may need
 to be adjusted for your particular situation. For example, you may want to set
@@ -204,18 +204,16 @@ place during an interactive session. ::
     cma_fit_strategy = CmaStrategy(popsize=15, parallel=None)
     cma_fit_strategy.seed = 1234
     hp.save('cma_strategy_file.h5', cma_fit_strategy)
-    strategy_result = model.fit(data_holo, cma_fit_strategy)
+    strategy_result = fit(data_holo, model, cma_fit_strategy)
 
-Running the :meth:`.Model.fit` method is the same as calling
-:func:`.fit`, but with the option to customize how the algorithm runs through
-the :class:`.CmaStrategy` object. In the example above, we have adjusted
+In the example above, we have adjusted
 the ``popsize`` hyperparameter of the cma-es algorithm, prevented the
 calculation from running as a parallel computation, and set a random seed for
 reproducibility. The calculation returns a :class:`.FitResult` object, just
 like a direct call to :func:`.fit`.
 
 Similarly, we can customize a MCMC computation to sample a posterior by calling
-:meth:`.Model.sample` with a :class:`.EmceeStrategy` object. Here we perform a
+:func:`.sample` with a :class:`.EmceeStrategy` object. Here we perform a
 MCMC calculation that uses only 500 pixels from the image and runs 50 walkers
 each for 2000 samples. We set the initial walker distribution to be one tenth
 of the prior width.  In general, the burn-in time for a MCMC calculation will
@@ -229,7 +227,7 @@ initial guess to your :class:`.EmceeStrategy` object. ::
         emcee_strategy = EmceeStrategy(npixels=500, nwalkers=nwalkers,
             nsamples=2000, walker_initial_pos=initial_guess)
         hp.save('emcee_strategy_file.h5', emcee_strategy)
-        emcee_result = model.sample(data_holo, emcee_strategy)
+        emcee_result = hp.sample(data_holo, model, emcee_strategy)
 
 Random Subset Fitting
 ---------------------

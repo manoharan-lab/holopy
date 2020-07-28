@@ -21,7 +21,17 @@ Improvements
   accessible by a broader group of classes.
 - PerfectLensModel now accepts hologram scaling factor alpha as a parameter
   for inference.
+- It is now possible to pass an inference strategy to the high-level fit() and
+  sample() functions, either by name or as a Strategy object. These functions
+  are now accessible in the root HoloPy namespace as hp.fit() and hp.sample().
 - New user guide on :ref:`scatterers_user`.
+- New user guide on :ref:`theories_user`.
+- More discussion of scattering theories in tutorial.
+
+Deprecations
+------------
+- The model.fit() and model.sample() methods have been deprecated in favour of
+  the high-level hp.fit() and hp.sample functions()
 
 Bugfixes
 --------
