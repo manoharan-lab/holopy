@@ -137,12 +137,26 @@ Sometimes you might want to calculate scattering from multiple spheres
 using Mie theory if you are worried about computation time or if your
 spheres are widely separated (such that optical coupling between the
 spheres is negligible) You can specify Mie theory manually when calling
-the :func:`.calc_holo` function:
+the :func:`.calc_holo` function, as the following code snippet shows:
 
 
 ..  testcode::
 
-    from holopy.scattering import Mie
+    import holopy as hp
+    from holopy.core.io import get_example_data_path
+    from holopy.scattering import (
+        Sphere,
+        Spheres,
+        Mie,
+        calc_holo)
+
+    s1 = Sphere(center=(5, 5, 5), n = 1.59, r = .5)
+    s2 = Sphere(center=(4, 4, 5), n = 1.59, r = .5)
+    collection = Spheres([s1, s2])
+
+    imagepath = get_example_data_path('image0002.h5')
+    exp_img = hp.load(imagepath)
+
     holo = calc_holo(exp_img, collection, theory=Mie)
 
 ..  testcode::
