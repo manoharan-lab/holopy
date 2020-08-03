@@ -8,9 +8,8 @@ try:
 except ModuleNotFoundError:
     NUMEXPR_INSTALLED = False
     from holopy.core.errors import PerformanceWarning
-    msg = ("numexpr not found. Falling back to using numpy only." +
-           " Note that Lens class is faster with numexpr")
-    warnings.warn(msg, PerformanceWarning)
+    _LENS_WARNING = ("numexpr not found. Falling back to using numpy only." +
+                     " Note that Lens class is faster with numexpr")
 
 from holopy.core import detector_points, update_metadata
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
@@ -33,6 +32,8 @@ class Lens(ScatteringTheory):
 
     def __init__(self, lens_angle, theory, quad_npts_theta=100,
                  quad_npts_phi=100):
+        if not NUMEXPR_INSTALLED:
+            warnings.warn(_LENS_WARNING, PerformanceWarning)
         super(Lens, self).__init__()
         self.lens_angle = lens_angle
         self.theory = theory
