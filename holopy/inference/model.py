@@ -35,7 +35,7 @@ from holopy.inference.prior import Prior, Uniform, ComplexPrior, generate_guess
 
 def make_xarray(dim_name, keys, values):
     if isinstance(values[0], xr.DataArray):
-        new_dim = xr.DataArray(keys, dims=dim_name, name=dim_name)
+        new_dim = xr.DataArray(keys, dims=[dim_name], name=dim_name)
         return xr.concat(values, dim=new_dim)
     else:
         return xr.DataArray(np.array(values), coords=[keys], dims=dim_name)
@@ -144,7 +144,7 @@ class Model(HoloPyObject):
 
     def _map_xarray(self, parameter, name):
         dim_name = parameter.dims[0]
-        coord_keys = parameter.coords[dim_name].values
+        coord_keys = tuple(parameter.coords[dim_name].values)
         if len(parameter.dims) == 1:
             values = parameter.values
         else:

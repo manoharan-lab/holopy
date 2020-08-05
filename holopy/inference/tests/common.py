@@ -28,6 +28,7 @@ class SimpleModel(Model):
     def __init__(self, npars=2):
         self._parameters = [prior.Uniform(0, 1, name='x'),
                             prior.Uniform(0, 1, name='y')][:npars]
+        self._parameter_names = []
         self.constraints = []
         self.noise_sd = 1
 

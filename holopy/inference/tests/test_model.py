@@ -38,7 +38,8 @@ from holopy.inference import (prior, AlphaModel, ExactModel,
                               NmpfitStrategy, EmceeStrategy,
                               available_fit_strategies,
                               available_sampling_strategies)
-from holopy.inference.model import Model, PerfectLensModel
+from holopy.inference.model import (Model, PerfectLensModel,
+                                    make_xarray, read_map)
 from holopy.inference.tests.common import SimpleModel
 from holopy.scattering.tests.common import (
     xschema_lens, sphere as SPHERE_IN_METERS)
@@ -99,6 +100,164 @@ class TestModel(unittest.TestCase):
                 reloaded = take_yaml_round_trip(model)
                 self.assertEqual(reloaded, model)
 
+
+class TestParameterMapping(unittest.TestCase):
+    @attr("fast")
+    def test_map_value(self):
+        model = SimpleModel()
+        parameter = 14
+        parameter_map = model._convert_to_map(parameter)
+        expected = parameter
+        self.assertEqual(parameter_map, expected)
+
+    @attr("fast")
+    def test_map_prior(self):
+        model = SimpleModel()
+        parameter = prior.Uniform(0, 1)
+        position = len(model._parameters)
+        parameter_map = model._convert_to_map(parameter, 'new name')
+        expected = '_parameter_{}'.format(position)
+        self.assertEqual(parameter_map, expected)
+
+    @attr("fast")
+    def test_mapping_adds_to_model(self):
+        model = SimpleModel()
+        parameter = prior.Uniform(0, 1)
+        model._convert_to_map(parameter, 'new name')
+        self.assertEqual(model._parameters[-1], parameter)
+        self.assertEqual(model._parameter_names[-1], "new name")
+
+    @attr("fast")
+    def test_map_list(self):
+        model = SimpleModel()
+        parameter = [0, prior.Uniform(0, 1), prior.Uniform(2,3)]
+        position = len(model._parameters)
+        parameter_map = model._convert_to_map(parameter)
+        expected = (0, "_parameter_{}".format(position),
+                    "_parameter_{}".format(position + 1))
+        self.assertEqual(parameter_map, expected)
+
+    @attr("fast")
+    def test_list_compound_name(self):
+        model = SimpleModel()
+        parameter = [0, prior.Uniform(0, 1), prior.Uniform(2,3)]
+        model._convert_to_map(parameter, 'prefix')
+        self.assertEqual(model._parameter_names[-2], 'prefix.1')
+        self.assertEqual(model._parameter_names[-1], 'prefix.2')
+
+    @attr("fast")
+    def test_map_dictionary(self):
+        model = SimpleModel()
+        parameter = {'a': 0, 'b': 1, 'c': prior.Uniform(0, 1)}
+        position = len(model._parameters)
+        parameter_map = model._convert_to_map(parameter)
+        expected_placeholder = "_parameter_{}".format(position)
+        expected = (dict, [(('a', 0), ('b', 1), ('c', expected_placeholder))])
+        self.assertEqual(parameter_map, expected)
+
+    @attr("fast")
+    def test_dict_compound_name(self):
+        model = SimpleModel()
+        parameter = {'a': 0, 'b': 1, 'c': prior.Uniform(0, 1)}
+        model._convert_to_map(parameter, 'prefix')
+        self.assertEqual(model._parameter_names[-1], 'prefix.c')
+
+    @attr("fast")
+    def test_map_xarray(self):
+        model = SimpleModel()
+        parameter = xr.DataArray(np.zeros((3, 3)),
+                                 coords=[[10, 20, 30], ['a', 'b', 'c']],
+                                 dims=('tens', 'letters'))
+        parameter_map = model._convert_to_map(parameter)
+        expected_1D = (make_xarray, ('letters', ('a', 'b', 'c'), (0, 0, 0)))
+        expected = (make_xarray, ('tens', (10, 20, 30),
+                                  (expected_1D, expected_1D, expected_1D)))
+        self.assertEqual(parameter_map, expected)
+
+    @attr("fast")
+    def test_xarray_compound_name(self):
+        model = SimpleModel()
+        parameter = xr.DataArray(np.zeros((3, 3)),
+                                 coords=[[10, 20, 30], ['a', 'b', 'c']],
+                                 dims=('tens', 'letters')).astype('object')
+        parameter[-1, -1] = prior.Uniform(0, 1)
+        model._convert_to_map(parameter, 'prefix')
+        self.assertEqual(model._parameter_names[-1], 'prefix.30.c')
+
+    @attr("fast")
+    def test_map_complex(self):
+        model = SimpleModel()
+        parameter = prior.ComplexPrior(1, prior.Uniform(2, 3))
+        position = len(model._parameters)
+        parameter_map = model._convert_to_map(parameter)
+        expected = (complex, (1, "_parameter_{}".format(position)))
+        self.assertEqual(parameter_map, expected)
+
+    @attr("fast")
+    def test_complex_compound_name(self):
+        model = SimpleModel()
+        parameter = prior.ComplexPrior(prior.Uniform(0, 1),
+                                       prior.Uniform(2, 3))
+        model._convert_to_map(parameter, 'prefix')
+        self.assertEqual(model._parameter_names[-2], 'prefix.real')
+        self.assertEqual(model._parameter_names[-1], 'prefix.imag')
+
+    @attr("fast")
+    def test_map_composite_object(self):
+        model = SimpleModel()
+        parameter = [prior.ComplexPrior(0, 1), {'a': 2, 'b': [4, 5]}, 6]
+        parameter_map = model._convert_to_map(parameter)
+        expected = ((complex, (0, 1)), (dict, [(('a', 2), ('b', (4, 5)))]), 6)
+        self.assertEqual(parameter_map, expected)
+
+    @attr("fast")
+    def test_read_func_map(self):
+        parameter_map = (dict, [(('a', 0), ('b', 1), ('c', 2))])
+        expected = {'a': 0, 'b': 1, 'c': 2}
+        self.assertEqual(read_map(parameter_map, []), expected)
+
+    @attr("fast")
+    def test_read_placeholder_map(self):
+        parameter_map = (0, 1, "_parameter_2")
+        placeholders = [3, 4, 5]
+        expected = (0, 1, 5)
+        self.assertEqual(read_map(parameter_map, placeholders), expected)
+
+    @attr("fast")
+    def test_read_composite_map(self):
+        n_map = (dict, [(('red', ((complex, (1.5, "_parameter_2")),
+                                  (complex, (1.6, "_parameter_3")))),
+                         ('green', ((complex, (1.7, "_parameter_4")),
+                                    (complex, (1.8, "_parameter_5")))))])
+        parameter_map = (dict, [(('r', ("_parameter_0", "_parameter_1")),
+                                 ('n', n_map),
+                                 ('center', (10, 20, "_parameter_6")))])
+        placeholders = [0.5, 0.7, 0.01, 0.02, 0.03, 0.04, 30]
+        n_expected = {'red': (complex(1.5, 0.01), complex(1.6, 0.02)),
+                      'green': (complex(1.7, 0.03), complex(1.8, 0.04))}
+        expected = {'r': (0.5, 0.7), 'n': n_expected, 'center': (10, 20, 30)}
+        self.assertEqual(read_map(parameter_map, placeholders), expected)
+
+    @attr("fast")
+    def test_make_xarray_1D(self):
+        values = [1, 2, 3, 4, 5]
+        coords = [10, 20, 30, 40, 50]
+        dims = 'dimname'
+        constructed = make_xarray(dims, coords, values)
+        expected = xr.DataArray(values, coords=[coords], dims=[dims])
+        xr.testing.assert_equal(constructed, expected)
+
+    @attr("fast")
+    def test_make_xarray_slices(self):
+        shared_coords = [['a', 'b', 'c'], [10, 20, 30]]
+        shared_dims = ['letters', 'tens']
+        slice1 = xr.DataArray(np.ones((3, 3)), shared_coords, shared_dims)
+        slice2 = xr.DataArray(np.zeros((3, 3)), shared_coords, shared_dims)
+        new_coords = ['ones', 'zeros']
+        join_dim = xr.DataArray(new_coords, dims=['new'], name='new')
+        constructed = make_xarray('new', new_coords, [slice1, slice2])
+        expected = xr.concat([slice1, slice2], dim=join_dim)
+        xr.testing.assert_equal(constructed, expected)
 
 class TestAlphaModel(unittest.TestCase):
     @attr('fast')
