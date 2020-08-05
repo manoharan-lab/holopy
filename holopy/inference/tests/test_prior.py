@@ -39,6 +39,27 @@ class TestBasics(unittest.TestCase):
     def test_cannot_instantiate_baseclass(self):
         self.assertRaises(NotImplementedError, Prior)
 
+    @attr("fast")
+    def test_renamed_changes_name(self):
+        original = Uniform(0, 1, guess=0.7, name='old')
+        renamed = original.renamed('new')
+        self.assertEqual(renamed.name, 'new')
+
+    @attr("fast")
+    def test_renamed_changes_nothing_else(self):
+        original = Uniform(0, 1, guess=0.7, name='old')
+        renamed = original.renamed('new')
+        original.name = None
+        renamed.name = None
+        self.assertEqual(original, renamed)
+
+    @attr("fast")
+    def test_renamed_creates_new_object(self):
+        original = Uniform(0, 1, guess=0.7, name='old')
+        renamed = original.renamed('new')
+        self.assertEqual(original.name, 'old')
+        self.assertFalse(renamed == original)
+
 
 class TestUniform(unittest.TestCase):
     @attr("fast")

@@ -30,7 +30,29 @@ from holopy.scattering.interface import calc_holo
 from holopy.scattering.theory import MieLens
 from holopy.scattering.scatterer import (_expand_parameters,
                                          _interpret_parameters)
-from holopy.inference.prior import Prior, Uniform, generate_guess
+from holopy.inference.prior import Prior, Uniform, ComplexPrior, generate_guess
+
+
+def make_xarray(dim_name, keys, values):
+    if isinstance(values[0], xr.DataArray):
+        new_dim = xr.DataArray(keys, dims=dim_name, name=dim_name)
+        return xr.concat(values, dim=new_dim)
+    else:
+        return xr.DataArray(np.array(values), coords=[keys], dims=dim_name)
+
+
+def read_map(map_entry, parameter_values):
+    if isinstance(map_entry, str) and map_entry[:11] == '_parameter_':
+        return parameter_values[int(map_entry[11:])]
+    elif isinstance(map_entry, tuple):
+        if len(map_entry) == 2 and callable(map_entry[0]):
+            func, args = map_entry
+            return func(*[read_map(arg, parameter_values) for arg in args])
+        else:
+            return tuple(read_map(sub_entry, parameter_values)
+                         for sub_entry in map_entry)
+    else:
+        return map_entry
 
 
 class Model(HoloPyObject):
@@ -44,6 +66,12 @@ class Model(HoloPyObject):
                  constraints=[]):
         self.scatterer = scatterer
         self.constraints = ensure_listlike(constraints)
+        self._parameters = []
+        self._parameter_names = []
+        self.scatterers_map = self._convert_to_map(scatterer._dict)
+        self._parameters_new = [parameter.renamed(name)for parameter, name
+            in zip(self._parameters, self._parameter_names)]
+        del self._parameter_names
         self._parameters = []
         self._use_parameters(scatterer.parameters, False)
         if not (np.isscalar(noise_sd) or isinstance(noise_sd, (Prior, dict))):
@@ -85,6 +113,52 @@ class Model(HoloPyObject):
             if isinstance(val, Prior):
                 self._parameters.append(copy(val))
                 self._parameters[-1].name = key
+
+    def _convert_to_map(self, parameter, name=''):
+        if isinstance(parameter, (list, tuple, np.ndarray)):
+            mapped = self._iterate_mapping(name + '.', enumerate(parameter))
+        elif isinstance(parameter, dict):
+            mapped = self._map_dictionary(parameter, name)
+        elif isinstance(parameter, xr.DataArray):
+            mapped = self._map_xarray(parameter, name)
+        elif isinstance(parameter, ComplexPrior):
+            mapped = self._map_complex(parameter, name)
+        elif isinstance(parameter, Prior):
+            self._parameters.append(parameter)
+            self._parameter_names.append(name)
+            mapped = '_parameter_{}'.format(len(self._parameters) - 1)
+        else:
+            mapped = parameter
+        return mapped
+
+    def _iterate_mapping(self, prefix, pairs):
+        return tuple(self._convert_to_map(parameter, prefix + str(suffix))
+                     for suffix, parameter in pairs)
+
+    def _map_dictionary(self, parameter, name):
+        mapping = map(lambda x: x[::-1], parameter.items())
+        prefix = name + "." if len(name) > 0 else ""
+        values_map = self._iterate_mapping(prefix, parameter.items())
+        iterator = zip(parameter.keys(), values_map)
+        return (dict, [tuple(((key, val) for key, val in iterator))])
+
+    def _map_xarray(self, parameter, name):
+        dim_name = parameter.dims[0]
+        coord_keys = parameter.coords[dim_name].values
+        if len(parameter.dims) == 1:
+            values = parameter.values
+        else:
+            values = [parameter.loc[{dim_name: key}] for key in coord_keys]
+        values_map = self._iterate_mapping(name + '.', zip(coord_keys, values))
+        return (make_xarray, (dim_name, coord_keys, values_map))
+
+    def _map_complex(self, parameter, name):
+        mapping = ((key, getattr(parameter, key)) for key in ['real', 'imag'])
+        return (complex, self._iterate_mapping(name + '.', mapping))
+
+    def scatterer_from_parameters(self, pars):
+        # note assumes pars is a list like _parameters
+        return read_map(self.scatterer_map, pars)
 
     def _optics_scatterer(self, pars, schema):
         optics_keys = ['medium_index', 'illum_wavelen', 'illum_polarization']
