@@ -31,15 +31,12 @@ from nose.plugins.attrib import attr
 from holopy.scattering import Sphere, Spheres, calc_holo
 from holopy.scattering.interface import prep_schema
 from holopy.core.metadata import detector_grid, update_metadata, to_vector
-from holopy.inference import prior
+from holopy.inference import prior, AlphaModel
 from holopy.core.tests.common import (
     assert_equal, assert_obj_close, assert_allclose)
 
 
 class TestHologramCalculation(unittest.TestCase):
-    def setUp(self):
-        self.skipTest('select removed so this is broken')
-
     @attr("medium")
     def test_calc_holo_with_twocolor_index(self):
         indices = OrderedDict([('red',1.5),('green',2)])
@@ -94,11 +91,11 @@ class TestHologramCalculation(unittest.TestCase):
             'red': prior.Uniform(1.5, 1.6),
             'green': prior.Uniform(1.5, 1.6)}
         scatterer = Sphere(r=0.5, n=index, center=(2,2,2))
-
         alpha = {'red': prior.Uniform(0.6, 1), 'green': prior.Uniform(0.6, 1)}
-        result = calc_holo(
-            detector, scatterer, scaling=alpha, illum_polarization=(0, 1),
-            illum_wavelen={'red': 0.66, 'green': 0.52}, medium_index=1.33)
+        model = AlphaModel(scatterer, alpha, illum_polarization=(0, 1),
+                           illum_wavelen={'red': 0.66, 'green': 0.52},
+                           medium_index=1.33)
+        result = model.forward(model.initial_guess, detector)
         assert result is not None
 
 @attr("medium")

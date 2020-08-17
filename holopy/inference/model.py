@@ -333,7 +333,6 @@ class AlphaModel(Model):
         """
         alpha = self._get_parameter('alpha', pars, detector)
         optics, scatterer = self._optics_scatterer(pars, detector)
-        # alpha needs to be a xarray if multichannel for multiplication, not dict
         try:
             return calc_holo(detector, scatterer, theory=self.theory,
                              scaling=alpha, **optics)

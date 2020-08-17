@@ -29,7 +29,8 @@ import numpy as np
 
 from holopy.core.holopy_object import SerializableMetaclass
 from holopy.core.metadata import (
-    vector, illumination, update_metadata, to_vector, copy_metadata, from_flat)
+    vector, illumination, update_metadata, to_vector, copy_metadata, from_flat,
+    dict_to_array)
 from holopy.core.utils import dict_without, ensure_array
 from holopy.scattering.scatterer import (
     Sphere, Spheres, Spheroid, Cylinder, _expand_parameters,
@@ -194,6 +195,7 @@ def calc_holo(detector, scatterer, medium_index=None, illum_wavelen=None,
     theory = interpret_theory(scatterer, theory)
     uschema = prep_schema(
         detector, medium_index, illum_wavelen, illum_polarization)
+    scaling = dict_to_array(detector, scaling)
     scattered_field = theory.calculate_scattered_field(scatterer, uschema)
     reference_field = uschema.illum_polarization
     holo = scattered_field_to_hologram(
