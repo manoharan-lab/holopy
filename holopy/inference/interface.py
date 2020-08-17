@@ -21,7 +21,7 @@ import warnings
 import numpy as np
 
 from holopy.core.holopy_object import SerializableMetaclass
-from holopy.scattering import Scatterer
+from holopy.scattering import Scatterer, Scatterers
 from holopy.scattering.scatterer import _interpret_parameters
 from holopy.inference.model import Model, AlphaModel
 from holopy.inference.prior import Uniform
@@ -30,6 +30,7 @@ from holopy.inference.scipyfit import LeastSquaresScipyStrategy
 from holopy.inference.cmaes import CmaStrategy
 from holopy.inference.emcee import EmceeStrategy, TemperedStrategy
 
+COORD_KEYS = ['x', 'y', 'z']
 DEFAULT_STRATEGY = {'fit': 'nmpfit', 'sample': 'emcee'}
 ALL_STRATEGIES = {'fit': {'nmpfit': NmpfitStrategy,
                           'scipy lsq': LeastSquaresScipyStrategy,
@@ -76,34 +77,40 @@ def validate_strategy(strategy, operation):
 
 def make_default_model(base_scatterer, fitting_parameters):
     if fitting_parameters is None:
-        fitting_parameters = base_scatterer.parameters.keys()
+        fitting_parameters = list(base_scatterer.parameters.keys())
+    if 'center' in fitting_parameters:
+        fitting_parameters.remove('center')
+        fitting_parameters += COORD_KEYS
     scatterer = parameterize_scatterer(base_scatterer, fitting_parameters)
     alpha_prior = Uniform(0, 1, guess=0.7, name='alpha')
     return AlphaModel(scatterer, noise_sd=1, alpha=alpha_prior)
 
 
 def parameterize_scatterer(base_scatterer, fitting_parameters):
-    parameters = base_scatterer.guess.parameters
+    if isinstance(base_scatterer, Scatterers):
+        raise ValueError(
+            "Cannot parameterize composite scatterers. Define a model instead")
+    parameters = base_scatterer.parameters
     variable_parameters = {par_name: make_uniform(parameters, par_name)
-                           for par_name in rename_xyz(fitting_parameters)}
+                           for par_name in fitting_parameters}
     parameters.update(variable_parameters)
-    return type(base_scatterer)(**_interpret_parameters(parameters, True))
-
-
-def rename_xyz(parameters_list):
-    for i, key in enumerate(['x', 'y', 'z']):
-        new_key = 'center.{}'.format(i)
-        if key in parameters_list:
-            loc = parameters_list.index(key)
-            parameters_list[loc] = new_key
-    return parameters_list
+    for i, key in enumerate(COORD_KEYS):
+        try:
+            val = parameters.pop(key)
+        except KeyError:
+            continue
+        parameters['center'][i] = val
+    return base_scatterer.from_parameters(parameters)
 
 
 def make_uniform(guesses, key):
-    try:
-        guess_value = guesses[key]
-    except KeyError:
-        msg = 'Parameter {} not found in scatterer parameters.'.format(key)
-        raise ValueError(msg)
+    if key in COORD_KEYS:
+        guess_value = guesses['center'][COORD_KEYS.index(key)]
+    else:
+        try:
+            guess_value = guesses[key]
+        except KeyError:
+            msg = 'Parameter {} not found in scatterer parameters.'.format(key)
+            raise ValueError(msg)
     minval = 0 if key in ['n', 'r'] else -np.inf
     return Uniform(minval, np.inf, guess_value, key)

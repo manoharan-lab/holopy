@@ -24,7 +24,7 @@ The abstract base class for all scattering objects
 
 from collections import defaultdict
 from itertools import chain
-from copy import copy
+from copy import copy, deepcopy
 from numbers import Number
 
 import numpy as np
@@ -117,9 +117,9 @@ class Scatterer(HoloPyObject):
         # classes that have anything complicated happening with their variables
         # should override this, but for simple classes the variable self._dict
         # is the correct answer
-        return dict(_expand_parameters(self._dict.items()))
+        return deepcopy(self._dict)
 
-    def from_parameters(self, parameters, overwrite=False):
+    def from_parameters(self, parameters):
         """
         Create a Scatterer from a dictionary of parameters
 
@@ -128,9 +128,6 @@ class Scatterer(HoloPyObject):
         parameters: dict
             Parameters for a scatterer.  This should be of the form returned by
             Scatterer.parameters.
-        overwrite: boolean
-            If true, all parameters in self are replaced with parameters.
-            Otherwise only Prior objects are
         Returns
         -------
         scatterer: Scatterer class
@@ -138,51 +135,9 @@ class Scatterer(HoloPyObject):
         """
         # This will need to be overriden for subclasses that do anything
         # complicated with parameters
-        all_pars = copy(self.parameters)
-        for key in all_pars.keys():
-            if key in parameters.keys():
-                if not isinstance(all_pars[key], Number) or overwrite:
-                    all_pars[key] = parameters[key]
-        return type(self)(**_interpret_parameters(all_pars))
-
-    @property
-    def guess(self):
-        if hasattr(self, 'parameters'):
-            parameters = self.parameters
-            for key in parameters.keys():
-                try:
-                    parameters[key] = parameters[key].guess
-                except AttributeError:
-                    pass
-            return self.from_parameters(parameters)
-        else:
-            return self
-
-    def select(self, keys):
-        """
-        Select certain parts of a Scatterer with multiple parameter values
-
-        Parameters
-        ----------
-        parameters: dict
-            values to select. Should be of form {dim:val(s)}.
-
-        Returns
-        -------
-        scatterer: Scatterer class
-            A scatterer with only the values for each parameter specified.
-        """
-        params = _interpret_parameters(self.parameters)
-        for key in params.keys():
-            if isinstance(getattr(self, key), xr.DataArray):
-                params[key] = getattr(self, key).sel(**keys).item()
-            elif isinstance(params[key], dict):
-                for dimkeys in keys.values():
-                    params[key] = [params[key][dimkey]
-                                   for dimkey in ensure_array(dimkeys)]
-                    if len(params[key]) == 1:
-                        params[key] = params[key][0]
-        return type(self)(**params)
+        parameters = {key: parameters[key] if key in parameters else
+                      self.parameters[key] for key in self.parameters.keys()}
+        return type(self)(**parameters)
 
     def contains(self, points):
         return self.in_domain(points) > 0

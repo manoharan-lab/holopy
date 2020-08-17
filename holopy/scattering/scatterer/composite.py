@@ -88,13 +88,13 @@ class Scatterers(Scatterer):
         if scatterers is None:
             scatterers = []
         self.scatterers = scatterers
-        self._find_new_ties()
-        self._check_ties()
+        #self._find_new_ties()
+        #self._check_ties()
 
     def add(self, scatterer):
         self.scatterers.append(scatterer)
-        self._find_new_ties()
-        self._check_ties()
+        #self._find_new_ties()
+        #self._check_ties()
 
     def __getitem__(self, key):
         return self.scatterers[key]
@@ -163,7 +163,7 @@ class Scatterers(Scatterer):
         return sum(self.ties.values(), [])
 
     @property
-    def raw_parameters(self):
+    def parameters(self):
         parameters = {}
         for i, scatterer in enumerate(self.scatterers):
             single_scatterer_parameters = {'{0}:{1}'.format(i, key): val
@@ -171,18 +171,7 @@ class Scatterers(Scatterer):
             parameters.update(single_scatterer_parameters)
         return parameters
 
-    @property
-    def parameters(self):
-        self._check_ties()
-        raw_parameters = self.raw_parameters
-        parameters = {key: val for key, val in raw_parameters.items()
-                      if key not in self._all_ties}
-        ties = {tied_name: raw_parameters[raw_names[0]] for
-                tied_name, raw_names in self.ties.items()}
-        parameters.update(ties)
-        return parameters
-
-    def from_parameters(self, new_parameters, overwrite=False):
+    def from_parameters(self, new_parameters):
         '''
         Makes a new object similar to self with values as given in parameters.
         This returns a physical object, so any priors are replaced with their
@@ -198,19 +187,18 @@ class Scatterers(Scatterer):
         '''
         n_scatterers = len(self.scatterers)
         collected = [{} for i in range(n_scatterers)]
-        for tied_name, raw_names in self.ties.items():
-            try:
-                tied_val = new_parameters[tied_name]
-                new_parameters.update({name: tied_val for name in raw_names})
-            except KeyError:
-                pass
+        #for tied_name, raw_names in self.ties.items():
+        #    try:
+        #        tied_val = new_parameters[tied_name]
+        #        new_parameters.update({name: tied_val for name in raw_names})
+        #    except KeyError:
+        #        pass
         for key, val in new_parameters.items():
             parts = key.split(':', 1)
             if len(parts) == 2:
-                n = int(parts[0])
-                par = parts[1]
-                collected[n][par] = val
-        scatterers = [scat.from_parameters(pars, overwrite)
+                n, par = parts
+                collected[int(n)][par] = val
+        scatterers = [scat.from_parameters(pars)
                          for scat, pars in zip(self.scatterers, collected)]
         self_dict = dict(self._iteritems())
         self_dict['scatterers'] = scatterers
@@ -308,8 +296,3 @@ class Scatterers(Scatterer):
             return self.scatterers[self.in_domain(point)[0]].index_at(point)
         except TypeError:
             return None
-
-    def select(self, keys):
-        new = copy(self)
-        new.scatterers = [s.select(keys) for s in self.scatterers]
-        return new

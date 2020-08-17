@@ -68,12 +68,10 @@ class Model(HoloPyObject):
         self.constraints = ensure_listlike(constraints)
         self._parameters = []
         self._parameter_names = []
-        self.scatterers_map = self._convert_to_map(scatterer._dict)
-        self._parameters_new = [parameter.renamed(name)for parameter, name
+        self._scatterer_map = self._convert_to_map(scatterer.parameters)
+        self._parameters = [parameter.renamed(name) for parameter, name
             in zip(self._parameters, self._parameter_names)]
         del self._parameter_names
-        self._parameters = []
-        self._use_parameters(scatterer.parameters, False)
         if not (np.isscalar(noise_sd) or isinstance(noise_sd, (Prior, dict))):
             noise_sd = ensure_array(noise_sd)
         parameters_to_use = {
@@ -89,6 +87,10 @@ class Model(HoloPyObject):
     @property
     def parameters(self):
         return {par.name: par for par in self._parameters}
+
+    @property
+    def initial_guess(self):
+        return {par.name: par.guess for par in self._parameters}
 
     def _get_parameter(self, name, pars, schema=None):
         interpreted_pars = _interpret_parameters(pars)
@@ -130,6 +132,9 @@ class Model(HoloPyObject):
         else:
             mapped = parameter
         return mapped
+    # still needs to account for composite scatterers
+    # still needs to account for tied parameters
+    # still need to reconcile with user_parameters
 
     def _iterate_mapping(self, prefix, pairs):
         return tuple(self._convert_to_map(parameter, prefix + str(suffix))
@@ -157,14 +162,15 @@ class Model(HoloPyObject):
         return (complex, self._iterate_mapping(name + '.', mapping))
 
     def scatterer_from_parameters(self, pars):
-        # note assumes pars is a list like _parameters
-        return read_map(self.scatterer_map, pars)
+        pars = [pars[par.name] for par in self._parameters]
+        scatterer_parameters = read_map(self._scatterer_map, pars)
+        return self.scatterer.from_parameters(scatterer_parameters)
 
     def _optics_scatterer(self, pars, schema):
         optics_keys = ['medium_index', 'illum_wavelen', 'illum_polarization']
         optics = {key: self._get_parameter(key, pars, schema)
                   for key in optics_keys}
-        scatterer = self.scatterer.from_parameters(pars)
+        scatterer = self.scatterer_from_parameters(pars)
         return optics, scatterer
 
     def generate_guess(self, n=1, scaling=1, seed=None):
@@ -184,7 +190,7 @@ class Model(HoloPyObject):
         """
         if hasattr(self, 'scatterer'):
             try:
-                par_scat = self.scatterer.from_parameters(par_vals)
+                par_scat = self.scatterer_from_parameters(par_vals)
             except InvalidScatterer:
                 return -np.inf
 
@@ -327,6 +333,7 @@ class AlphaModel(Model):
         """
         alpha = self._get_parameter('alpha', pars, detector)
         optics, scatterer = self._optics_scatterer(pars, detector)
+        # alpha needs to be a xarray if multichannel for multiplication, not dict
         try:
             return calc_holo(detector, scatterer, theory=self.theory,
                              scaling=alpha, **optics)

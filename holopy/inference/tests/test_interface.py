@@ -28,7 +28,7 @@ from holopy.scattering import Sphere
 from holopy.inference import (sample, fit, prior, AlphaModel, EmceeStrategy,
                               NmpfitStrategy, CmaStrategy, TemperedStrategy)
 from holopy.inference.interface import (
-    make_default_model, parameterize_scatterer, rename_xyz, make_uniform,
+    make_default_model, parameterize_scatterer, make_uniform,
     validate_strategy, available_sampling_strategies, available_fit_strategies)
 from holopy.inference.result import SamplingResult
 from holopy.inference.tests.common import SimpleModel
@@ -168,9 +168,8 @@ class TestHelperFunctions(unittest.TestCase):
     @attr('fast')
     def test_make_default_model_with_no_parameters(self):
         model = make_default_model(SPHERE, None)
-        expected_parameters = SPHERE.parameters
-        expected_parameters['alpha'] = None
-        self.assertEqual(model.parameters.keys(), expected_parameters.keys())
+        expected = {'n', 'r', 'alpha', 'center.0', 'center.1', 'center.2'}
+        self.assertEqual(set(model.parameters.keys()), expected)
 
     @attr('fast')
     def test_make_default_model_with_parameters(self):
@@ -187,12 +186,6 @@ class TestHelperFunctions(unittest.TestCase):
     def test_parameterize_scatterer_makes_priors(self):
         scatterer = parameterize_scatterer(Sphere(), 'r')
         self.assertTrue(isinstance(scatterer.r, prior.Prior))
-
-    @attr('fast')
-    def test_rename_xyz(self):
-        parameters_list = ['x', 'p', 'y']
-        parameters_list = rename_xyz(parameters_list)
-        self.assertEqual(parameters_list, ['center.0', 'p', 'center.1'])
 
     @attr('fast')
     def test_make_uniform_fails_with_unexpected_parameters(self):

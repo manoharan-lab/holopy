@@ -10,6 +10,7 @@ from holopy.inference.prior import Uniform
 
 class TestBasicMethods(unittest.TestCase):
     @attr("fast")
+    @unittest.skip('ties removed from Scatterers class')
     def test_ties(self):
         n = Uniform(0, 1)
         r = Uniform(0, 1)
@@ -20,6 +21,7 @@ class TestBasicMethods(unittest.TestCase):
         self.assertEqual(spheres.ties, expected_ties)
 
     @attr("fast")
+    @unittest.skip('ties removed from Scatterers class')
     def test_reversed_ties(self):
         n = Uniform(0, 1)
         r = Uniform(0, 1)
@@ -30,6 +32,7 @@ class TestBasicMethods(unittest.TestCase):
         self.assertEqual(spheres._reversed_ties, expected_ties)
 
     @attr("fast")
+    @unittest.skip('ties removed from Scatterers class')
     def test_all_ties(self):
         n = Uniform(0, 1)
         r = Uniform(0, 1)
@@ -39,6 +42,7 @@ class TestBasicMethods(unittest.TestCase):
         self.assertEqual(spheres._all_ties, expected_ties)
 
     @attr("fast")
+    @unittest.skip('ties removed from Scatterers class')
     def test_raw_parameters(self):
         max_radius = np.sqrt(3) / 2.0
         spheres = [
@@ -69,6 +73,9 @@ class TestBasicMethods(unittest.TestCase):
         self.assertEqual(spheres.warn, "TEST")
 
 class TestBrokenTies(unittest.TestCase):
+    def setUp(self):
+        self.skipTest('ties removed from Scatterers class')
+
     @attr("fast")
     def test_unequal_ties(self):
         spheres = [Sphere(n=Uniform(0, i+1), r=Uniform(0, 1)) for i in range(3)]
@@ -95,6 +102,9 @@ class TestBrokenTies(unittest.TestCase):
 
 
 class TestTiedParameters(unittest.TestCase):
+    def setUp(self):
+        self.skipTest('ties removed from Scatterers class')
+
     @attr("fast")
     def test_tied_if_same_object(self):
         n = Uniform(0, 1)

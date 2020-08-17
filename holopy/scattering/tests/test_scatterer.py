@@ -102,9 +102,7 @@ def test_Sphere_parameters():
     assert_equal(
         s.parameters,
         dict([
-            ('center.0', 1e-6),
-            ('center.1', -1e-6),
-            ('center.2', 1e-5),
+            ('center', (1e-6, -1e-6, 1e-5)),
             ('n', 1.59+1e-4j),
             ('r', 5e-07)]))
 
@@ -114,42 +112,18 @@ def test_Sphere_parameters():
     assert_equal(s.center, sp.center)
 
 
-class TestParameterHandling(unittest.TestCase):
-    expanded = {'a': 0, 'b.0':0.5, 'b.1':1, 'b.2':2, 'c:c1':3, 'c:c2':4,
-                'd.real':5, 'd.imag':6, 'e:e1.real':7, 'e:e1.imag':8,
-                'e:e2.0':9, 'e:e2.1':10, 'f:Left:H':11, 'f:Left:He':12,
-                'f:Left:Li':13, 'f:Right:H':14, 'f:Right:He':15,
-                'f:Right:Li':16}
-
-    @attr("fast")
-    def test_expand_parameters(self):
-        array_f = xr.DataArray([[11,12,13], [14,15,16]], dims=['d2','d3'],
-            coords={'d3':['H','He','Li'],'d2':['Left','Right']})
-        compressed = {'a':0, 'b':[0.5, 1, 2], 'c':{'c1':3, 'c2':4},
-                      'd':ComplexPrior(5, 6),
-                      'e':{'e1':ComplexPrior(7, 8), 'e2':[9,10]},'f':array_f}
-        expansion = dict(_expand_parameters(compressed.items()))
-        self.assertTrue(expansion == self.expanded)
-
-    @attr("fast")
-    def test_interpret_parameters(self):
-        dict_f = {'Left': {'H': 11, 'He': 12, 'Li': 13},
-                  'Right': {'H': 14, 'He': 15, 'Li': 16}}
-        simple_compressed = {'a':0, 'b':[0.5, 1, 2], 'c':{'c1':3, 'c2':4},
-                             'd':5+6j, 'e':{'e1':7+8j, 'e2':[9,10]},'f':dict_f}
-        compression = _interpret_parameters(self.expanded)
-        self.assertTrue(compression == simple_compressed)
+def test_immutible_parameters():
+    sphere = Sphere(n=2, r=2, center=[2, 2, 2])
+    parameters = sphere.parameters
+    parameters['center'][1] = 3
+    assert_equal(sphere.parameters['center'][1], 2)
 
 
 def test_from_parameters():
     s_prior = Sphere(n=1.6, r=Uniform(0.5, 0.7), center=[10, 10, 10])
-    s_guess = Sphere(n=1.6, r=0.6, center=[10,10,10])
-    s_new_r = Sphere(n=1.6, r=0.7, center=[10,10,10])
     s_new_nr= Sphere(n=1.7, r=0.7, center=[10,10,10])
     pars = {'n':1.7, 'r':0.7}
-    assert_equal(s_prior.from_parameters({}), s_guess)
-    assert_equal(s_prior.from_parameters(pars, overwrite=False), s_new_r)
-    assert_equal(s_prior.from_parameters(pars, overwrite=True), s_new_nr)
+    assert_equal(s_prior.from_parameters(pars), s_new_nr)
 
 
 @attr('fast')
@@ -180,6 +154,7 @@ def test_Composite_construction():
     comp3 = Scatterers(scatterers=[comp2, cs])
 
 
+@unittest.skip('tying removed from Scatterers class')
 def test_Composite_tying():
     # tied parameters
     n1 = Uniform(1.59,1.6, guess=1.59)
@@ -189,16 +164,6 @@ def test_Composite_tying():
     assert_equal(len(sc.parameters), 9)
     assert_equal(sc.parameters['n'].guess, 1.59)
     assert_equal(sc.parameters['0:r'], sc.parameters['1:r'])
-
-
-@attr('fast')
-def test_like_me():
-    s = Sphere(n = 1.59, r = .5, center = (1, -1, 10))
-    s2 = s.like_me(center = (0, 2, 10))
-
-    assert_equal(s.r, s2.r)
-    assert_equal(s.n, s2.n)
-    assert_equal(s2.center, (0, 2, 10))
 
 
 @attr('fast')

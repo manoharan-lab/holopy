@@ -395,12 +395,12 @@ def test_multidim():
             [prior.Gaussian(0,1), prior.Uniform(-1,1), 0, 0],
             dims='alph', coords={'alph': ['a', 'b', 'c', 'd']}),
             center=[prior.Uniform(-1, 1), 0, 0])
-    params = {'n:r': 3, 'n:g': 4, 'n:b': 5, 'n:a': 6, 'r:a': 7, 'r:b': 8,
-              'r:c': 9, 'r:d': 10, 'center.0': 7, 'center.1': 8,
-              'center.2': 9}
+    params = {'n': {'r': 3, 'g': 4, 'b': 5, 'a': 6},
+              'r': {'a': 7, 'b': 8, 'c': 9, 'd': 10},
+              'center': (7, 8, 9)}
     out_s = Sphere(
-        n={'r':3, 'g':0, 'b':5, 'a':0},
-        r={'a':7, 'b':8, 'c':0, 'd':0}, center=[7, 0, 0])
+        n={'r': 3, 'g': 4, 'b': 5, 'a': 6},
+        r={'a': 7, 'b': 8, 'c': 9, 'd': 10}, center=[7, 8, 9])
     assert_obj_close(par_s.from_parameters(params), out_s)
 
     m = ExactModel(out_s, np.sum)
@@ -422,9 +422,10 @@ def test_pullingoutguess():
 
     s = Sphere(center = [.567e-5, .567e-5, 15e-6], n = 1.59 + 1e-4j, r = 8.5e-7)
 
-    assert_equal(s.n, model.scatterer.guess.n)
-    assert_equal(s.r, model.scatterer.guess.r)
-    assert_equal(s.center, model.scatterer.guess.center)
+    assert_equal(s.n, model.initial_guess['n.real'] + 1e-4j)
+    assert_equal(s.r, model.initial_guess['r'])
+    center = [model.initial_guess['center.{}'.format(i)] for i in range(3)]
+    assert_equal(s.center, center)
 
     g = Sphere(center = (prior.Uniform(0, 1e-5, guess=.567e-5),
                    prior.Uniform(0, 1e-5, .567e-5), prior.Uniform(1e-5, 2e-5, 15e-6)),
@@ -434,9 +435,10 @@ def test_pullingoutguess():
 
     s = Sphere(center = [.567e-5, .567e-5, 15e-6], n = 1.59 + 1e-4j, r = 8.5e-7)
 
-    assert_equal(s.n, model.scatterer.guess.n)
-    assert_equal(s.r, model.scatterer.guess.r)
-    assert_equal(s.center, model.scatterer.guess.center)
+    initial_guess = model.scatterer_from_parameters(model.initial_guess)
+    assert_equal(s.n, initial_guess.n)
+    assert_equal(s.r, initial_guess.r)
+    assert_equal(s.center, initial_guess.center)
 
 
 @attr('fast')

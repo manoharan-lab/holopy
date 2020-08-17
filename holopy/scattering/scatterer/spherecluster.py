@@ -155,26 +155,21 @@ class RigidCluster(Spheres):
 
     @property
     def parameters(self):
-        def expand(key, par):
-            return{'{0}.{1}'.format(key,p[0]):p[1] for p in enumerate(par)}
-
         d = self.spheres.parameters
-        d.update(expand('translation',self.translation))
-        d.update(expand('rotation', self.rotation))
+        d.update({'rotation': self.rotation, 'translation': self.translation})
         return d
 
-    def from_parameters(self, parameters, overwrite=False):
+    def from_parameters(self, parameters):
         parameters = copy(parameters)
-        keys = filter(lambda key : sum([key.startswith(op) for op in ['rotation', 'translation']]), self.parameters)
-        rigid_pars = {key:self.parameters[key] for key in keys}
 
-        for key in rigid_pars.keys():
-            if key in parameters.keys():
-                if not isinstance(rigid_pars[key], Number) or overwrite:
-                    rigid_pars[key] = parameters.pop(key)
+        def get_parameter(key):
+            try:
+                return parameters[key]
+            except KeyError:
+                return getattr(self, key)
 
-        translation = [rigid_pars['translation.{0}'.format(i)] for i in range(3)]
-        rotation = [rigid_pars['rotation.{0}'.format(i)] for i in range(3)]
-        spheres = self.spheres.from_parameters(parameters, overwrite)
+        rotation = get_parameter('rotation')
+        translation = get_parameter('translation')
+        spheres = self.spheres.from_parameters(parameters)
         return spheres.rotated(rotation).translated(translation)
 
