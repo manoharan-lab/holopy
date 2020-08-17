@@ -108,8 +108,3 @@ class HoloPyObject(Serializable):
             return self._dict == other._dict
         else:
             return False
-
-    def like_me(self, filter_none=True, **kwargs):
-        if filter_none:
-            kwargs={key: val for key, val in kwargs.items() if val is not None}
-        return self.__class__(**dict(self._dict, **kwargs))
