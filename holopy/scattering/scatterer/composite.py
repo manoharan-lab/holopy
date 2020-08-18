@@ -45,16 +45,11 @@ class Scatterers(Scatterer):
     ----------
     scatterers : list
         List of scatterers that make up this object
-    ties : dict or None (optional)
-        dict indicating parameters to tie of the form: {'r': '0:r', '1:r'}
 
     Methods
     -------
     parameters [property]
-        Dictionary of composite's unique parameters, accounting for ties.
-    raw_parameters [property]
-        Dictionary of all parameters in constituent scatterer objects. Does
-        not account for ties.
+        Dictionary of composite's parameters
     add(scatterer)
         Adds a new scatterer to the composite.
     from_parameters
@@ -88,13 +83,9 @@ class Scatterers(Scatterer):
         if scatterers is None:
             scatterers = []
         self.scatterers = scatterers
-        #self._find_new_ties()
-        #self._check_ties()
 
     def add(self, scatterer):
         self.scatterers.append(scatterer)
-        #self._find_new_ties()
-        #self._check_ties()
 
     def __getitem__(self, key):
         return self.scatterers[key]
@@ -108,66 +99,12 @@ class Scatterers(Scatterer):
                 components.append(s)
         return components
 
-    def add_tie(self, old_name, new_name):
-        if old_name in self.ties.keys():
-            self.ties[old_name].append(new_name)
-        elif old_name in self._all_ties:
-            tie_name = self._reversed_ties[old_name]
-            self.ties[tie_name].append(new_name)
-        else:
-            tie_name = new_name.split(':', 1)[1]
-            if tie_name in self.ties.keys():
-                tie_name = new_name
-            self.ties[tie_name] = [new_name, old_name]
-        self._check_ties()
-
-    def _find_new_ties(self):
-        reference_parameters = self.raw_parameters
-        for fullkey, par in reference_parameters.items():
-            if fullkey not in self._all_ties:
-                # not already in the list of ties, so check if it should be
-                for ref_key, ref_par in dict_without(
-                        reference_parameters, fullkey).items():
-                    # can't simply check par in parameters because then two
-                    # priors defined separately, but identically will match
-                    # whereas this way they are counted as separate objects.
-                    if par is ref_par and not isinstance(par, Number):
-                        self.add_tie(ref_key, fullkey)
-                        break
-
-    def _check_ties(self):
-        raw_parameters = self.raw_parameters
-        for tied_name, raw_names in self.ties.items():
-            for raw_name in raw_names:
-                if raw_name not in raw_parameters.keys():
-                    msg = ('Tied parameter {} not present in raw parameters '
-                           '{}.').format(raw_name, raw_parameters.keys())
-                    raise ValueError(msg)
-            tied_val = raw_parameters[raw_names[0]]
-            for raw_name in raw_names:
-                if not raw_parameters[raw_name] == tied_val:
-                    msg = ('Tied parameters {} and {} are not equal but have '
-                           'values {} and {}.').format(raw_name, raw_names[0],
-                           raw_parameters[raw_name], tied_val)
-                    raise ValueError(msg)
-
     @property
-    def _reversed_ties(self):
-        reversed_ties = {}
-        for tiename, ties in self.ties.items():
-            reversed_ties.update({tie: tiename for tie in ties})
-        return reversed_ties
-
-    @property
-    def _all_ties(self):
-        return sum(self.ties.values(), [])
-
-    @property
-    def parameters(self):
+    def _parameters(self):
         parameters = {}
         for i, scatterer in enumerate(self.scatterers):
             single_scatterer_parameters = {'{0}:{1}'.format(i, key): val
-                            for key, val in scatterer.parameters.items()}
+                            for key, val in scatterer._parameters.items()}
             parameters.update(single_scatterer_parameters)
         return parameters
 
@@ -187,12 +124,6 @@ class Scatterers(Scatterer):
         '''
         n_scatterers = len(self.scatterers)
         collected = [{} for i in range(n_scatterers)]
-        #for tied_name, raw_names in self.ties.items():
-        #    try:
-        #        tied_val = new_parameters[tied_name]
-        #        new_parameters.update({name: tied_val for name in raw_names})
-        #    except KeyError:
-        #        pass
         for key, val in new_parameters.items():
             parts = key.split(':', 1)
             if len(parts) == 2:

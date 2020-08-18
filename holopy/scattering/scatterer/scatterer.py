@@ -99,6 +99,13 @@ class Scatterer(HoloPyObject):
         return new
 
     @property
+    def _parameters(self):
+        # classes that have anything complicated happening with their variables
+        # should override this, but for simple classes the variable self._dict
+        # is the correct answer
+        return self._dict
+
+    @property
     def parameters(self):
         """
         Get a dictionary of this scatterer's parameters
@@ -114,10 +121,7 @@ class Scatterer(HoloPyObject):
             passed to Scatterer.from_parameters to make a copy of this
             scatterer
         """
-        # classes that have anything complicated happening with their variables
-        # should override this, but for simple classes the variable self._dict
-        # is the correct answer
-        return deepcopy(self._dict)
+        return deepcopy(self._parameters)
 
     def from_parameters(self, parameters):
         """

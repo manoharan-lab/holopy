@@ -119,6 +119,12 @@ def test_immutible_parameters():
     assert_equal(sphere.parameters['center'][1], 2)
 
 
+def test_underscore_parameter_identity():
+    sphere = Sphere(n=2, r=2, center=[2, 2, 2])
+    parameters = sphere._parameters
+    assert parameters['center'] is sphere.center
+
+
 def test_from_parameters():
     s_prior = Sphere(n=1.6, r=Uniform(0.5, 0.7), center=[10, 10, 10])
     s_new_nr= Sphere(n=1.7, r=0.7, center=[10,10,10])
@@ -152,18 +158,6 @@ def test_Composite_construction():
 
     # even more levels
     comp3 = Scatterers(scatterers=[comp2, cs])
-
-
-@unittest.skip('tying removed from Scatterers class')
-def test_Composite_tying():
-    # tied parameters
-    n1 = Uniform(1.59,1.6, guess=1.59)
-    sc = Spheres(
-        [Sphere(n=n1, r=Uniform(0.5, 0.7), center=np.array([10., 10., 20.])),
-         Sphere(n=n1, r=Uniform(0.5, 0.7), center=np.array([ 9., 11., 21.]))])
-    assert_equal(len(sc.parameters), 9)
-    assert_equal(sc.parameters['n'].guess, 1.59)
-    assert_equal(sc.parameters['0:r'], sc.parameters['1:r'])
 
 
 @attr('fast')

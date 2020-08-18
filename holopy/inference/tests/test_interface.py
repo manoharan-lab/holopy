@@ -79,7 +79,7 @@ class TestUserFacingFunctions(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', UserWarning)
             result = fit(DATA, model, ['r', 'y'])
-        self.assertEqual(result._names, ['n', 'center.0', 'alpha'])
+        self.assertEqual(result._names, ['n', 'x', 'alpha'])
 
     @attr('medium')
     def test_passing_model_and_parameters_gives_warning(self):
@@ -168,7 +168,7 @@ class TestHelperFunctions(unittest.TestCase):
     @attr('fast')
     def test_make_default_model_with_no_parameters(self):
         model = make_default_model(SPHERE, None)
-        expected = {'n', 'r', 'alpha', 'center.0', 'center.1', 'center.2'}
+        expected = {'n', 'r', 'alpha', 'x', 'y', 'z'}
         self.assertEqual(set(model.parameters.keys()), expected)
 
     @attr('fast')

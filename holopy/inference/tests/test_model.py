@@ -133,8 +133,8 @@ class TestParameterMapping(unittest.TestCase):
         parameter = [0, prior.Uniform(0, 1), prior.Uniform(2,3)]
         position = len(model._parameters)
         parameter_map = model._convert_to_map(parameter)
-        expected = (0, "_parameter_{}".format(position),
-                    "_parameter_{}".format(position + 1))
+        expected = [0, "_parameter_{}".format(position),
+                    "_parameter_{}".format(position + 1)]
         self.assertEqual(parameter_map, expected)
 
     @attr("fast")
@@ -152,7 +152,7 @@ class TestParameterMapping(unittest.TestCase):
         position = len(model._parameters)
         parameter_map = model._convert_to_map(parameter)
         expected_placeholder = "_parameter_{}".format(position)
-        expected = (dict, [(('a', 0), ('b', 1), ('c', expected_placeholder))])
+        expected = [dict, [[['a', 0], ['b', 1], ['c', expected_placeholder]]]]
         self.assertEqual(parameter_map, expected)
 
     @attr("fast")
@@ -169,9 +169,9 @@ class TestParameterMapping(unittest.TestCase):
                                  coords=[[10, 20, 30], ['a', 'b', 'c']],
                                  dims=('tens', 'letters'))
         parameter_map = model._convert_to_map(parameter)
-        expected_1D = (make_xarray, ('letters', ('a', 'b', 'c'), (0, 0, 0)))
-        expected = (make_xarray, ('tens', (10, 20, 30),
-                                  (expected_1D, expected_1D, expected_1D)))
+        expected_1D = [make_xarray, ['letters', ['a', 'b', 'c'], [0, 0, 0]]]
+        expected = [make_xarray, ['tens', [10, 20, 30],
+                                  [expected_1D, expected_1D, expected_1D]]]
         self.assertEqual(parameter_map, expected)
 
     @attr("fast")
@@ -190,7 +190,7 @@ class TestParameterMapping(unittest.TestCase):
         parameter = prior.ComplexPrior(1, prior.Uniform(2, 3))
         position = len(model._parameters)
         parameter_map = model._convert_to_map(parameter)
-        expected = (complex, (1, "_parameter_{}".format(position)))
+        expected = [complex, [1, "_parameter_{}".format(position)]]
         self.assertEqual(parameter_map, expected)
 
     @attr("fast")
@@ -207,35 +207,35 @@ class TestParameterMapping(unittest.TestCase):
         model = SimpleModel()
         parameter = [prior.ComplexPrior(0, 1), {'a': 2, 'b': [4, 5]}, 6]
         parameter_map = model._convert_to_map(parameter)
-        expected = ((complex, (0, 1)), (dict, [(('a', 2), ('b', (4, 5)))]), 6)
+        expected = [[complex, [0, 1]], [dict, [[['a', 2], ['b', [4, 5]]]]], 6]
         self.assertEqual(parameter_map, expected)
 
     @attr("fast")
     def test_read_func_map(self):
-        parameter_map = (dict, [(('a', 0), ('b', 1), ('c', 2))])
+        parameter_map =[dict, [[['a', 0], ['b', 1], ['c', 2]]]]
         expected = {'a': 0, 'b': 1, 'c': 2}
         self.assertEqual(read_map(parameter_map, []), expected)
 
     @attr("fast")
     def test_read_placeholder_map(self):
-        parameter_map = (0, 1, "_parameter_2")
+        parameter_map = [0, 1, "_parameter_2"]
         placeholders = [3, 4, 5]
-        expected = (0, 1, 5)
+        expected = [0, 1, 5]
         self.assertEqual(read_map(parameter_map, placeholders), expected)
 
     @attr("fast")
     def test_read_composite_map(self):
-        n_map = (dict, [(('red', ((complex, (1.5, "_parameter_2")),
-                                  (complex, (1.6, "_parameter_3")))),
-                         ('green', ((complex, (1.7, "_parameter_4")),
-                                    (complex, (1.8, "_parameter_5")))))])
-        parameter_map = (dict, [(('r', ("_parameter_0", "_parameter_1")),
-                                 ('n', n_map),
-                                 ('center', (10, 20, "_parameter_6")))])
+        n_map = [dict, [[['red', [[complex, [1.5, "_parameter_2"]],
+                                  [complex, [1.6, "_parameter_3"]]]],
+                         ['green', [[complex, [1.7, "_parameter_4"]],
+                                    [complex, [1.8, "_parameter_5"]]]]]]]
+        parameter_map = [dict, [[['r', ["_parameter_0", "_parameter_1"]],
+                                 ['n', n_map],
+                                 ['center', [10, 20, "_parameter_6"]]]]]
         placeholders = [0.5, 0.7, 0.01, 0.02, 0.03, 0.04, 30]
-        n_expected = {'red': (complex(1.5, 0.01), complex(1.6, 0.02)),
-                      'green': (complex(1.7, 0.03), complex(1.8, 0.04))}
-        expected = {'r': (0.5, 0.7), 'n': n_expected, 'center': (10, 20, 30)}
+        n_expected = {'red': [complex(1.5, 0.01), complex(1.6, 0.02)],
+                      'green': [complex(1.7, 0.03), complex(1.8, 0.04)]}
+        expected = {'r': [0.5, 0.7], 'n': n_expected, 'center': [10, 20, 30]}
         self.assertEqual(read_map(parameter_map, placeholders), expected)
 
     @attr("fast")
@@ -258,6 +258,153 @@ class TestParameterMapping(unittest.TestCase):
         constructed = make_xarray('new', new_coords, [slice1, slice2])
         expected = xr.concat([slice1, slice2], dim=join_dim)
         xr.testing.assert_equal(constructed, expected)
+
+
+class TestParameterTying(unittest.TestCase):
+    @attr('fast')
+    def test_parameters_list(self):
+        tied = prior.Uniform(0, 1)
+        scatterer = Sphere(n=tied, r=prior.Uniform(0.5, 1.5),
+                           center=[tied, 10, prior.Uniform(0, 10)])
+        model = AlphaModel(scatterer)
+        expected = [prior.Uniform(0, 1, name='n'),
+                    prior.Uniform(0.5, 1.5, name='r'),
+                    prior.Uniform(0, 10, name='center.2')]
+        self.assertEqual(model._parameters, expected)
+
+    @attr('fast')
+    def test_parameters_map(self):
+        tied = prior.Uniform(0, 1)
+        scatterer = Sphere(n=tied, r=prior.Uniform(0.5, 1.5),
+                           center=[tied, 10, prior.Uniform(0, 10)])
+        model = AlphaModel(scatterer)
+        expected = [dict, [[['n', '_parameter_0'], ['r', '_parameter_1'],
+                            ['center', ['_parameter_0', 10, '_parameter_2']]]]]
+        self.assertEqual(model._scatterer_map, expected)
+
+    @attr('fast')
+    def test_equal_not_identical(self):
+        scatterer = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
+                           center=[10, 10, prior.Uniform(1, 2)])
+        model = AlphaModel(scatterer)
+        expected = [prior.Uniform(1, 2, name='n'),
+                    prior.Uniform(1, 2, name='r'),
+                    prior.Uniform(1, 2, name='center.2')]
+        self.assertEqual(model._parameters, expected)
+
+    @attr('fast')
+    def test_tied_name(self):
+        tied = prior.Uniform(0, 1)
+        sphere1 = Sphere(n=prior.Uniform(1, 2), r=tied, center=[1, 1, 1])
+        sphere2 = Sphere(n=prior.Uniform(1, 2), r=tied, center=[1, 1, 1])
+        model = AlphaModel(Spheres([sphere1, sphere2]))
+        expected = [prior.Uniform(1, 2, name='0:n'),
+                    prior.Uniform(0, 1, name='r'),
+                    prior.Uniform(1, 2, name='1:n')]
+        self.assertEqual(model._parameters, expected)
+
+    @attr('fast')
+    def test_prior_name(self):
+        tied = prior.Uniform(-5, 5, name='xy')
+        sphere = Sphere(n=prior.Uniform(1, 2, name='index'), r=0.5,
+                        center=[tied, tied, prior.Uniform(0, 10, name='z')])
+        model = AlphaModel(sphere)
+        expected = [prior.Uniform(1, 2, name='index'), tied,
+                    prior.Uniform(0, 10, name='z')]
+        self.assertEqual(model._parameters, expected)
+
+    @attr('fast')
+    def test_duplicate_name(self):
+        tied = prior.Uniform(-5, 5, name='dummy')
+        sphere = Sphere(n=prior.Uniform(1, 2, name='dummy'), r=0.5,
+                        center=[tied, tied, prior.Uniform(0, 10, name='z')])
+        model = AlphaModel(sphere)
+        expected = [prior.Uniform(1, 2, name='dummy'),
+                    prior.Uniform(-5, 5, name='dummy_0'),
+                    prior.Uniform(0, 10, name='z')]
+        self.assertEqual(model._parameters, expected)
+
+
+    @attr('fast')
+    def test_triplicate_name(self):
+        tied = prior.Uniform(-5, 5, name='dummy')
+        sphere = Sphere(n=prior.Uniform(1, 2, name='dummy'),
+                        r=prior.Uniform(1, 2, name='dummy'),
+                        center=[tied, tied, prior.Uniform(0, 10, name='z')])
+        model = AlphaModel(sphere)
+        expected = [prior.Uniform(1, 2, name='dummy'),
+                    prior.Uniform(1, 2, name='dummy_0'),
+                    prior.Uniform(-5, 5, name='dummy_1'),
+                    prior.Uniform(0, 10, name='z')]
+        self.assertEqual(model._parameters, expected)
+
+    @attr('fast')
+    def test_add_missing_tie_fails(self):
+        sphere = Sphere(n=prior.Uniform(1,2), r=0.5, center=[10, 10, 10])
+        model = AlphaModel(sphere)
+        self.assertRaises(ValueError, model.add_tie, ['r', 'n'])
+
+    @attr('fast')
+    def test_add_unequal_tie_fails(self):
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1),
+                        center=[10, 10, 10])
+        model = AlphaModel(sphere)
+        self.assertRaises(ValueError, model.add_tie, ['r', 'n'])
+
+    @attr('fast')
+    def test_add_tie_updates_parameters(self):
+        tied = prior.Uniform(-5, 5)
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
+                        center=[tied, tied, 10])
+        model = AlphaModel(sphere)
+        model.add_tie(['r', 'n'])
+        expected = [prior.Uniform(1, 2, name='n'),
+                    prior.Uniform(-5, 5, name='center.0')]
+        self.assertEqual(model._parameters, expected)
+
+    @attr('fast')
+    def test_add_tie_updates_map(self):
+        tied = prior.Uniform(-5, 5)
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
+                        center=[tied, tied, 10])
+        model = AlphaModel(sphere)
+        model.add_tie(['r', 'n'])
+        expected = [dict, [[['n', '_parameter_0'],['r', '_parameter_0'],
+                            ['center', ['_parameter_1', '_parameter_1', 10]]]]]
+        self.assertEqual(model._scatterer_map, expected)
+
+    @attr('fast')
+    def test_add_tie_specify_name(self):
+        tied = prior.Uniform(-5, 5)
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
+                        center=[tied, tied, 10])
+        model = AlphaModel(sphere)
+        model.add_tie(['r', 'n'], new_name='dummy')
+        expected = [prior.Uniform(1, 2, name='dummy'),
+                    prior.Uniform(-5, 5, name='center.0')]
+        self.assertEqual(model._parameters, expected)
+
+    @attr('fast')
+    def test_add_3_way_tie(self):
+        tied = prior.Uniform(-5, 5)
+        n = prior.ComplexPrior(prior.Uniform(1, 2), prior.Uniform(0, 1))
+        sphere = Sphere(n=n, r=prior.Uniform(0.5, 1),
+                        center=[prior.Uniform(0, 1), prior.Uniform(0, 1),
+                                prior.Uniform(0, 10)])
+        model = AlphaModel(sphere)
+        model.add_tie(['center.0', 'n.imag', 'center.1'])
+        expected_map = [dict,
+            [[['n', [complex, ['_parameter_0', '_parameter_1']]],
+              ['r', '_parameter_2'],
+              ['center', ['_parameter_1', '_parameter_1', '_parameter_3']]]]]
+        expected_parameters = [
+            prior.Uniform(1, 2, name='n.real'),
+            prior.Uniform(0, 1, name='n.imag'),
+            prior.Uniform(0.5, 1, name='r'),
+            prior.Uniform(0, 10, name='center.2')]
+        self.assertEqual(model._scatterer_map, expected_map)
+        self.assertEqual(model._parameters, expected_parameters)
+
 
 class TestAlphaModel(unittest.TestCase):
     @attr('fast')

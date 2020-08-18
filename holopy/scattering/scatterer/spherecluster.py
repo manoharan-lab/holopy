@@ -154,8 +154,8 @@ class RigidCluster(Spheres):
         return self.spheres.rotated(self.rotation).translated(self.translation).scatterers
 
     @property
-    def parameters(self):
-        d = self.spheres.parameters
+    def _parameters(self):
+        d = self.spheres._parameters
         d.update({'rotation': self.rotation, 'translation': self.translation})
         return d
 

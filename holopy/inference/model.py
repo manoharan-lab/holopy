@@ -44,13 +44,29 @@ def make_xarray(dim_name, keys, values):
 def read_map(map_entry, parameter_values):
     if isinstance(map_entry, str) and map_entry[:11] == '_parameter_':
         return parameter_values[int(map_entry[11:])]
-    elif isinstance(map_entry, tuple):
+    elif isinstance(map_entry, list):
         if len(map_entry) == 2 and callable(map_entry[0]):
             func, args = map_entry
             return func(*[read_map(arg, parameter_values) for arg in args])
         else:
-            return tuple(read_map(sub_entry, parameter_values)
-                         for sub_entry in map_entry)
+            return [read_map(item, parameter_values) for item in map_entry]
+    else:
+        return map_entry
+
+
+def edit_map_indices(map_entry, indices):
+    if isinstance(map_entry, list):
+        return [edit_map_indices(item, indices) for item in map_entry]
+    elif isinstance(map_entry, str) and map_entry[:11] == '_parameter_':
+        old_index = int(map_entry.split("_")[-1])
+        if old_index in indices:
+            new_index = indices[0]
+        elif old_index < indices[0]:
+            new_index = old_index
+        else:
+            shift = (np.array(indices) < old_index).sum() - 1
+            new_index = old_index - shift
+        return '_parameter_{}'.format(new_index)
     else:
         return map_entry
 
@@ -86,10 +102,16 @@ class Model(HoloPyObject):
 
     @property
     def parameters(self):
+        """
+        dictionary of the model's parameters
+        """
         return {par.name: par for par in self._parameters}
 
     @property
     def initial_guess(self):
+        """
+        dictionary of initial guess value for each parameter
+        """
         return {par.name: par.guess for par in self._parameters}
 
     def _get_parameter(self, name, pars, schema=None):
@@ -126,42 +148,108 @@ class Model(HoloPyObject):
         elif isinstance(parameter, ComplexPrior):
             mapped = self._map_complex(parameter, name)
         elif isinstance(parameter, Prior):
-            self._parameters.append(parameter)
-            self._parameter_names.append(name)
-            mapped = '_parameter_{}'.format(len(self._parameters) - 1)
+            index = self._check_for_ties(parameter, name)
+            mapped = '_parameter_{}'.format(index)
         else:
             mapped = parameter
         return mapped
-    # still needs to account for composite scatterers
-    # still needs to account for tied parameters
-    # still need to reconcile with user_parameters
+    # still need to reconcile with use_parameters
 
     def _iterate_mapping(self, prefix, pairs):
-        return tuple(self._convert_to_map(parameter, prefix + str(suffix))
-                     for suffix, parameter in pairs)
+        return [self._convert_to_map(parameter, prefix + str(suffix))
+                for suffix, parameter in pairs]
 
     def _map_dictionary(self, parameter, name):
         mapping = map(lambda x: x[::-1], parameter.items())
         prefix = name + "." if len(name) > 0 else ""
         values_map = self._iterate_mapping(prefix, parameter.items())
         iterator = zip(parameter.keys(), values_map)
-        return (dict, [tuple(((key, val) for key, val in iterator))])
+        return [dict, [[[key, val] for key, val in iterator]]]
 
     def _map_xarray(self, parameter, name):
         dim_name = parameter.dims[0]
-        coord_keys = tuple(parameter.coords[dim_name].values)
+        coord_keys = list(parameter.coords[dim_name].values)
         if len(parameter.dims) == 1:
             values = parameter.values
         else:
             values = [parameter.loc[{dim_name: key}] for key in coord_keys]
         values_map = self._iterate_mapping(name + '.', zip(coord_keys, values))
-        return (make_xarray, (dim_name, coord_keys, values_map))
+        return [make_xarray, [dim_name, coord_keys, values_map]]
 
     def _map_complex(self, parameter, name):
         mapping = ((key, getattr(parameter, key)) for key in ['real', 'imag'])
-        return (complex, self._iterate_mapping(name + '.', mapping))
+        return [complex, self._iterate_mapping(name + '.', mapping)]
+
+    def _check_for_ties(self, parameter, name):
+        tied = False
+        for index, existing in enumerate(self._parameters):
+            # can't simply check parameter in self._parameters because
+            # then two priors defined separately, but identically will
+            # match whereas this way they are counted as separate objects.
+            if existing is parameter:
+                tied = True
+                shared_name = self._parameter_names[index].split(':', 1)[-1]
+                if shared_name not in self._parameter_names:
+                    self._parameter_names[index] = shared_name
+                break
+        if not tied:
+            index = len(self._parameters)
+            self._parameters.append(parameter)
+            if parameter.name is not None:
+                name = parameter.name
+            if name in self._parameter_names:
+                name += '_0'
+            while name in self._parameter_names:
+                counter, reversename = name[::-1].split("_", 1)
+                name = reversename[::-1] + "_" + str(int(counter[::-1]) + 1)
+            self._parameter_names.append(name)
+        return index
+
+    def add_tie(self, parameters_to_tie, new_name=None):
+        """
+        Defines new ties between model parameters
+
+        Parameters
+        ----------
+        parameters_to_tie: listlike
+            names of parameters to tie, as given by keys in model.parameters
+        new_name: string, optional
+            the name for the new tied parameter
+        """
+        indices = []
+        parameter_names = [par.name for par in self._parameters]
+        for par in parameters_to_tie:
+            if par not in parameter_names:
+                msg = ("Cannot tie parameter {}. It is not present in "
+                       "parameters {}").format(par, parameter_names)
+                raise ValueError(msg)
+            first_value = self.parameters[parameters_to_tie[0]].renamed(None)
+            if not self.parameters[par].renamed(None) == first_value:
+                msg = "Cannot tie unequal parameters {} and {}".format(
+                        par, parameters_to_tie[0])
+                raise ValueError(msg)
+            indices.append(parameter_names.index(par))
+        indices.sort()
+        for index in indices[:0:-1]:
+            del(self._parameters[index])
+        if new_name is not None:
+            self._parameters[indices[0]].name = new_name
+        self._scatterer_map = edit_map_indices(self._scatterer_map, indices)
+        # need to do any other maps here besides scatterer
 
     def scatterer_from_parameters(self, pars):
+        """
+        Creates a scatterer by setting values for model parameters
+
+        Parameters
+        ----------
+        pars: dict
+            values to create scatterer. Keys should match model.parameters
+
+        Returns
+        -------
+        scatterer
+        """
         pars = [pars[par.name] for par in self._parameters]
         scatterer_parameters = read_map(self._scatterer_map, pars)
         return self.scatterer.from_parameters(scatterer_parameters)

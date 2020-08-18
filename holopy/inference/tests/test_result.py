@@ -88,9 +88,9 @@ class TestFitResult(unittest.TestCase):
         self.assertEqual(result._parameters, [1.6, 0.6, 0.7])
         self.assertEqual(result._names, ['n', 'r', 'alpha'])
         self.assertEqual(result.parameters,
-                         {'r':0.6, 'n':1.6, 'alpha':0.7})
+                         {'r': 0.6, 'n': 1.6, 'alpha': 0.7})
         self.assertEqual(result.scatterer,
-                         Sphere(n=1.6, r=0.6, center=(10, 10, 10)))
+                         Sphere(n=1.6, r=0.6, center=[10, 10, 10]))
 
     @attr("medium")
     def test_hologram(self):
