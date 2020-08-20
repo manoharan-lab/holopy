@@ -44,11 +44,11 @@ class TestUserFacingFunctions(unittest.TestCase):
     def test_cannot_sample_without_model(self):
         self.assertRaises(ValueError, sample, DATA, Sphere())
 
-    @attr('slow')
+    @attr('fast')
     def test_sample_function_calls_model_sample(self):
-        result = sample(DATA, SimpleModel())
+        strategy = EmceeStrategy(nsamples=1)
+        result = sample(DATA, SimpleModel(), strategy=strategy)
         self.assertTrue(isinstance(result, SamplingResult))
-        self.assertTrue(isinstance(result.strategy, EmceeStrategy))
         self.assertTrue(hasattr(result, 'samples'))
 
     @attr('medium')
@@ -107,7 +107,7 @@ class TestUserFacingFunctions(unittest.TestCase):
         self.assertEqual(strategy_result, model_result)
 
 
-class StrategyHandling(unittest.TestCase):
+class TestStrategyHandling(unittest.TestCase):
     @attr('medium')
     def test_default_fit_strategy_is_Nmpfit(self):
         result = fit(DATA, SimpleModel())
