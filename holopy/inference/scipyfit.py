@@ -34,8 +34,8 @@ class LeastSquaresScipyStrategy(HoloPyObject):
 
     def unscale_pars_from_minimizer(self, parameters, values):
         assert len(parameters) == len(values)
-        return {par.name: par.unscale(value)
-                for par, value in zip(parameters, values)}
+        return {key: val.unscale(value)
+                for (key, val), value in zip(parameters.items(), values)}
 
     def fit(self, model, data):
         """
@@ -57,7 +57,7 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         # timing decorator...
         time_start = time.time()
 
-        parameters = model._parameters
+        parameters = model.parameters
         if len(parameters) == 0:
             raise MissingParameter('at least one parameter to fit')
 
@@ -65,8 +65,7 @@ class LeastSquaresScipyStrategy(HoloPyObject):
             data = flat(data)
         else:
             data = make_subset_data(data, pixels=self.npixels)
-        guess_lnprior = model.lnprior(
-            {par.name:par.guess for par in parameters})
+        guess_lnprior = model.lnprior(model.initial_guess)
 
         def residual(rescaled_values):
             unscaled_values = self.unscale_pars_from_minimizer(
@@ -91,8 +90,8 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         errors = self.unscale_pars_from_minimizer(parameters, errors_scaled)
         intervals = [
             UncertainValue(
-                fitted_pars[par.name], errors[par.name], name=par.name)
-            for err, par in zip(errors, parameters)]
+                fitted_pars[name], errors[name], name=name)
+            for err, name in zip(errors, model._parameter_names)]
 
         # timing decorator...
         d_time = time.time() - time_start
@@ -100,7 +99,8 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         return FitResult(data, model, self, d_time, kwargs)
 
     def minimize(self, parameters, residuals_function):
-        initial_parameter_guess = [par.scale(par.guess) for par in parameters]
+        initial_parameter_guess = [par.scale(par.guess)
+                                   for par in parameters.values()]
         fitresult = least_squares(residuals_function, initial_parameter_guess,
                                   **self._optimizer_kwargs)
         result_pars = self.unscale_pars_from_minimizer(parameters, fitresult.x)

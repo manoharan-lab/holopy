@@ -28,12 +28,17 @@ from holopy.scattering.errors import (MultisphereFailure, TmatrixFailure,
                                       InvalidScatterer, MissingParameter)
 from holopy.scattering.interface import calc_holo
 from holopy.scattering.theory import MieLens
-from holopy.scattering.scatterer import (_expand_parameters,
-                                         _interpret_parameters)
 from holopy.inference.prior import Prior, Uniform, ComplexPrior, generate_guess
 
 
+OPTICS_KEYS = ['medium_index', 'illum_wavelen',
+               'illum_polarization', 'noise_sd']
+
+
 def make_xarray(dim_name, keys, values):
+    '''
+    Packs values into xarray with new dim and coords (keys)
+    '''
     if isinstance(values[0], xr.DataArray):
         new_dim = xr.DataArray(keys, dims=[dim_name], name=dim_name)
         return xr.concat(values, dim=new_dim)
@@ -41,7 +46,24 @@ def make_xarray(dim_name, keys, values):
         return xr.DataArray(np.array(values), coords=[keys], dims=dim_name)
 
 
+def make_complex(real, imag):
+    if isinstance(real, Prior) or isinstance(imag, Prior):
+        return ComplexPrior(real, imag)
+    else:
+        return complex(real, imag)
+
+
 def read_map(map_entry, parameter_values):
+    '''
+    Reads a map to create an object
+
+    Parameters
+    ----------
+    map_entry:
+        map or subset of map created by model methods
+    parameter_values: listlike
+        values to replace map placeholders in final object
+    '''
     if isinstance(map_entry, str) and map_entry[:11] == '_parameter_':
         return parameter_values[int(map_entry[11:])]
     elif isinstance(map_entry, list):
@@ -55,6 +77,16 @@ def read_map(map_entry, parameter_values):
 
 
 def edit_map_indices(map_entry, indices):
+    '''
+    Adjusts a map to account for ties between parameters
+
+    Parameters
+    ----------
+    map_entry:
+        map or subset of map created by model methods
+    indices: listlike
+        indices of parameters to be tied
+    '''
     if isinstance(map_entry, list):
         return [edit_map_indices(item, indices) for item in map_entry]
     elif isinstance(map_entry, str) and map_entry[:11] == '_parameter_':
@@ -80,64 +112,18 @@ class Model(HoloPyObject):
     def __init__(self, scatterer, noise_sd=None, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
                  constraints=[]):
-        self.scatterer = scatterer
+        dummy_parameters = {key: [0, 0, 0] for key in scatterer.parameters}
+        self._dummy_scatterer = scatterer.from_parameters(dummy_parameters)
+        self.theory = theory
         self.constraints = ensure_listlike(constraints)
-        self._parameters = []
-        self._parameter_names = []
-        self._scatterer_map = self._convert_to_map(scatterer.parameters)
-        self._parameters = [parameter.renamed(name) for parameter, name
-            in zip(self._parameters, self._parameter_names)]
-        del self._parameter_names
         if not (np.isscalar(noise_sd) or isinstance(noise_sd, (Prior, dict))):
             noise_sd = ensure_array(noise_sd)
-        parameters_to_use = {
-            'medium_index': medium_index,
-            'illum_wavelen': illum_wavelen,
-            'illum_polarization': illum_polarization,
-            'theory': theory,
-            'noise_sd': noise_sd,
-            }
-        self._check_parameters_are_not_xarray(parameters_to_use)
-        self._use_parameters(parameters_to_use)
-
-    @property
-    def parameters(self):
-        """
-        dictionary of the model's parameters
-        """
-        return {par.name: par for par in self._parameters}
-
-    @property
-    def initial_guess(self):
-        """
-        dictionary of initial guess value for each parameter
-        """
-        return {par.name: par.guess for par in self._parameters}
-
-    def _get_parameter(self, name, pars, schema=None):
-        interpreted_pars = _interpret_parameters(pars)
-        if name in pars.keys():
-            return pars[name]
-        elif name in interpreted_pars.keys():
-            return interpreted_pars[name]
-        elif hasattr(self, name):
-            return getattr(self, name)
-        try:
-            return getattr(schema, name)
-        except:
-            raise MissingParameter(name)
-
-    def _use_parameters(self, parameters, as_attr=True):
-        if as_attr:
-            for name, par in parameters.items():
-                if par is not None:
-                    setattr(self, name, par)
-        parameters = dict(_expand_parameters(parameters.items()))
-        for key, val in parameters.items():
-            if isinstance(val, Prior):
-                self._parameters.append(copy(val))
-                self._parameters[-1].name = key
-
+        optics = [medium_index, illum_wavelen, illum_polarization, noise_sd]
+        optics_parameters = {key: val for key, val in zip(OPTICS_KEYS, optics)}
+        self._parameters = []
+        self._parameter_names = []
+        self._maps = {'scatterer': self._convert_to_map(scatterer.parameters),
+                      'optics': self._convert_to_map(optics_parameters)}
     def _convert_to_map(self, parameter, name=''):
         if isinstance(parameter, (list, tuple, np.ndarray)):
             mapped = self._iterate_mapping(name + '.', enumerate(parameter))
@@ -153,22 +139,21 @@ class Model(HoloPyObject):
         else:
             mapped = parameter
         return mapped
-    # still need to reconcile with use_parameters
 
     def _iterate_mapping(self, prefix, pairs):
         return [self._convert_to_map(parameter, prefix + str(suffix))
                 for suffix, parameter in pairs]
 
     def _map_dictionary(self, parameter, name):
-        mapping = map(lambda x: x[::-1], parameter.items())
         prefix = name + "." if len(name) > 0 else ""
         values_map = self._iterate_mapping(prefix, parameter.items())
         iterator = zip(parameter.keys(), values_map)
-        return [dict, [[[key, val] for key, val in iterator]]]
+        dict_args = [[key, val] for key, val in iterator if val is not None]
+        return [dict, [dict_args]]
 
     def _map_xarray(self, parameter, name):
         dim_name = parameter.dims[0]
-        coord_keys = list(parameter.coords[dim_name].values)
+        coord_keys = parameter.coords[dim_name].values.tolist()
         if len(parameter.dims) == 1:
             values = parameter.values
         else:
@@ -178,7 +163,7 @@ class Model(HoloPyObject):
 
     def _map_complex(self, parameter, name):
         mapping = ((key, getattr(parameter, key)) for key in ['real', 'imag'])
-        return [complex, self._iterate_mapping(name + '.', mapping)]
+        return [make_complex, self._iterate_mapping(name + '.', mapping)]
 
     def _check_for_ties(self, parameter, name):
         tied = False
@@ -217,25 +202,88 @@ class Model(HoloPyObject):
             the name for the new tied parameter
         """
         indices = []
-        parameter_names = [par.name for par in self._parameters]
         for par in parameters_to_tie:
-            if par not in parameter_names:
+            if par not in self._parameter_names:
                 msg = ("Cannot tie parameter {}. It is not present in "
-                       "parameters {}").format(par, parameter_names)
+                       "parameters {}").format(par, self._parameter_names)
                 raise ValueError(msg)
             first_value = self.parameters[parameters_to_tie[0]].renamed(None)
             if not self.parameters[par].renamed(None) == first_value:
                 msg = "Cannot tie unequal parameters {} and {}".format(
                         par, parameters_to_tie[0])
                 raise ValueError(msg)
-            indices.append(parameter_names.index(par))
+            indices.append(self._parameter_names.index(par))
         indices.sort()
         for index in indices[:0:-1]:
             del(self._parameters[index])
+            del(self._parameter_names[index])
         if new_name is not None:
-            self._parameters[indices[0]].name = new_name
-        self._scatterer_map = edit_map_indices(self._scatterer_map, indices)
-        # need to do any other maps here besides scatterer
+            self._parameter_names[indices[0]] = new_name
+        self._maps = {key: edit_map_indices(val, indices)
+                      for key, val in self._maps.items()}
+
+    def _iteritems(self):
+        keys = ['scatterer', 'theory', '_parameters',
+                '_parameter_names', '_maps']
+        for key in keys:
+            item = getattr(self, key)
+            if isinstance(item, np.ndarray) and item.ndim == 1:
+                item = list(item)
+            yield key, item
+
+    @classmethod
+    def from_yaml(cls, loader, node):
+        fields = loader.construct_mapping(node, deep=True)
+        dummy_scatterer = fields['scatterer']
+        parameters = [par.renamed(name) for par, name in
+                      zip(fields['_parameters'], fields['_parameter_names'])]
+        maps = fields['_maps']
+        scatterer_parameters = read_map(maps['scatterer'], parameters)
+        scatterer = dummy_scatterer.from_parameters(scatterer_parameters)
+        kwargs = {'scatterer': scatterer, 'theory': fields['theory']}
+        kwargs.update(read_map(maps['optics'], parameters))
+        if 'model' in maps:
+            kwargs.update(read_map(maps['model'], parameters))
+        if 'theory' in maps:
+            kwargs.update(read_map(maps['theory'], parameters))
+        return cls(**kwargs)
+
+    @property
+    def parameters(self):
+        """
+        dictionary of the model's parameters
+        """
+        return {name: par for name, par in zip(self._parameter_names,
+                                               self._parameters)}
+
+    @property
+    def initial_guess(self):
+        """
+        dictionary of initial guess value for each parameter
+        """
+        return {name: par.guess for name, par in zip(self._parameter_names,
+                                                     self._parameters)}
+
+    @property
+    def medium_index(self):
+        return self._find_optics(self.parameters, None)['medium_index']
+
+    @property
+    def illum_wavelen(self):
+        return self._find_optics(self.parameters, None)['illum_wavelen']
+
+    @property
+    def illum_polarization(self):
+        return self._find_optics(self.parameters, None)['illum_polarization']
+
+    @property
+    def noise_sd(self):
+        return self._find_noise(self.parameters, None)
+
+    @property
+    def scatterer(self):
+        parameters = read_map(self._maps['scatterer'], self._parameters)
+        return self._dummy_scatterer.from_parameters(parameters)
 
     def scatterer_from_parameters(self, pars):
         """
@@ -250,16 +298,56 @@ class Model(HoloPyObject):
         -------
         scatterer
         """
-        pars = [pars[par.name] for par in self._parameters]
-        scatterer_parameters = read_map(self._scatterer_map, pars)
-        return self.scatterer.from_parameters(scatterer_parameters)
+        pars = [pars[name] for name in self._parameter_names]
+        scatterer_parameters = read_map(self._maps['scatterer'], pars)
+        return self._dummy_scatterer.from_parameters(scatterer_parameters)
 
-    def _optics_scatterer(self, pars, schema):
-        optics_keys = ['medium_index', 'illum_wavelen', 'illum_polarization']
-        optics = {key: self._get_parameter(key, pars, schema)
-                  for key in optics_keys}
-        scatterer = self.scatterer_from_parameters(pars)
-        return optics, scatterer
+    def _find_optics(self, pars, schema):
+        """
+        Creates optics dictionary by setting values for model parameters
+
+        Parameters
+        ----------
+        pars: dict
+            values to create optics. Keys should match model.parameters
+        """
+        pars = [pars[name] for name in self._parameter_names]
+        mapped_optics = read_map(self._maps['optics'], pars)
+
+        def find_parameter(key):
+            if key in mapped_optics and mapped_optics[key] is not None:
+                val = mapped_optics[key]
+            elif hasattr(schema, key):
+                val = getattr(schema, key)
+            else:
+                raise MissingParameter(key)
+            return val
+        return {key: find_parameter(key) for key in OPTICS_KEYS[:-1]}
+
+    def _find_noise(self, pars, schema):
+        """
+        finds appropriate noise_sd for residuals calculations
+
+        Parameters
+        ----------
+        pars: dict
+            values to create noise_sd. Keys should match model.parameters
+        """
+        pars = [pars[name] for name in self._parameter_names]
+        optics_map = read_map(self._maps['optics'], pars)
+        key = 'noise_sd'
+        if 'noise_sd' in optics_map and optics_map['noise_sd'] is not None:
+            val = optics_map['noise_sd']
+        elif hasattr(schema,'noise_sd'):
+            val = schema.noise_sd
+        else:
+            raise MissingParameter(key)
+        if val is None:
+            if np.all([isinstance(par, Uniform) for par in self._parameters]):
+                val = 1
+            else:
+                raise MissingParameter('noise_sd for non-uniform priors')
+        return val
 
     def generate_guess(self, n=1, scaling=1, seed=None):
         return generate_guess(self._parameters, n, scaling, seed)
@@ -276,7 +364,7 @@ class Model(HoloPyObject):
         -------
         lnprior: float
         """
-        if hasattr(self, 'scatterer'):
+        if 'scatterer' in self._maps:
             try:
                 par_scat = self.scatterer_from_parameters(par_vals)
             except InvalidScatterer:
@@ -285,8 +373,8 @@ class Model(HoloPyObject):
         for constraint in self.constraints:
             if not constraint.check(par_scat):
                 return -np.inf
-
-        return sum([p.lnprob(par_vals[p.name]) for p in self._parameters])
+        return sum([p.lnprob(par_vals[name]) for p, name in
+                    zip(self._parameters, self._parameter_names)])
 
     def lnposterior(self, par_vals, data, pixels=None):
         """
@@ -319,16 +407,6 @@ class Model(HoloPyObject):
 
     def forward(self, pars, detector):
         raise NotImplementedError("Implement in subclass")
-
-    def _find_noise(self, pars, data):
-        noise = dict_to_array(
-            data, self._get_parameter('noise_sd', pars, data))
-        if noise is None:
-            if np.all([isinstance(par, Uniform) for par in self._parameters]):
-                noise = 1
-            else:
-                raise MissingParameter('noise_sd for non-uniform priors')
-        return noise
 
     def _residuals(self, pars, data, noise):
         forward_model = self.forward(pars, data)
@@ -401,9 +479,11 @@ class AlphaModel(Model):
                  constraints=[]):
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
                          illum_polarization, theory, constraints)
-        additional_parameters_to_use = {'alpha': alpha}
-        self._use_parameters(additional_parameters_to_use)
-        self._check_parameters_are_not_xarray(additional_parameters_to_use)
+        self._maps['model'] = self._convert_to_map({'alpha': alpha})
+
+    @property
+    def alpha(self):
+        return read_map(self._maps['model'], self._parameters)['alpha']
 
     def forward(self, pars, detector):
         """
@@ -419,8 +499,9 @@ class AlphaModel(Model):
             dimensions of the resulting hologram. Metadata taken from
             detector if not given explicitly when instantiating self.
         """
-        alpha = self._get_parameter('alpha', pars, detector)
-        optics, scatterer = self._optics_scatterer(pars, detector)
+        alpha = read_map(self._maps['model'], list(pars.values()))['alpha']
+        optics = self._find_optics(pars, detector)
+        scatterer = self.scatterer_from_parameters(pars)
         try:
             return calc_holo(detector, scatterer, theory=self.theory,
                              scaling=alpha, **optics)
@@ -460,7 +541,8 @@ class ExactModel(Model):
             dimensions of the resulting hologram. Metadata taken from
             detector if not given explicitly when instantiating self.
         """
-        optics, scatterer = self._optics_scatterer(pars, detector)
+        optics = self._find_optics(pars, detector)
+        scatterer = self.scatterer_from_parameters(pars)
         try:
             return self.calc_func(detector, scatterer, theory=self.theory, **optics)
         except (MultisphereFailure, InvalidScatterer):
@@ -471,17 +553,21 @@ class PerfectLensModel(Model):
     """
     Model of hologram image formation through a high-NA objective.
     """
-    theory_params = ['lens_angle']
-
     def __init__(self, scatterer, alpha=1.0, lens_angle=1.0, noise_sd=None,
                  medium_index=None, illum_wavelen=None, theory='auto',
                  illum_polarization=None, constraints=[]):
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
                          illum_polarization, theory, constraints)
-        additional_parameters_to_use = {
-            'alpha': alpha, 'lens_angle': lens_angle}
-        self._use_parameters(additional_parameters_to_use)
-        self._check_parameters_are_not_xarray(additional_parameters_to_use)
+        self._maps['model'] = self._convert_to_map({'alpha': alpha})
+        self._maps['theory'] = self._convert_to_map({'lens_angle': lens_angle})
+
+    @property
+    def alpha(self):
+        return read_map(self._maps['model'], self._parameters)['alpha']
+
+    @property
+    def lens_angle(self):
+        return read_map(self._maps['theory'], self._parameters)['lens_angle']
 
     def forward(self, pars, detector):
         """
@@ -496,10 +582,11 @@ class PerfectLensModel(Model):
             dimensions of the resulting hologram. Metadata taken from
             detector if not given explicitly when instantiating self.
         """
-        optics_kwargs, scatterer = self._optics_scatterer(pars, detector)
-        alpha = self._get_parameter('alpha', pars, detector)
-        theory_kwargs = {name: self._get_parameter(name, pars, detector)
-                         for name in self.theory_params}
+        pars_list = [pars[par_name] for par_name in self._parameter_names]
+        alpha = read_map(self._maps['model'], pars_list)['alpha']
+        optics_kwargs = self._find_optics(pars, detector)
+        scatterer = self.scatterer_from_parameters(pars)
+        theory_kwargs = read_map(self._maps['theory'], pars_list)
         # FIXME would be nice to have access to the interpolator kwargs
         theory = MieLens(**theory_kwargs)
         try:
@@ -507,4 +594,3 @@ class PerfectLensModel(Model):
                              scaling=alpha, **optics_kwargs)
         except InvalidScatterer:
             return -np.inf
-

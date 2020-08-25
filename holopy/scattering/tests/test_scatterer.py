@@ -31,8 +31,7 @@ from nose.plugins.attrib import attr
 from holopy.core import detector_grid
 from holopy.scattering import (
     Sphere, Spheres, Scatterer, Ellipsoid, Scatterers, calc_holo)
-from holopy.scattering.scatterer.scatterer import (
-    find_bounds, _expand_parameters, _interpret_parameters)
+from holopy.scattering.scatterer.scatterer import find_bounds
 from holopy.inference.prior import ComplexPrior, Uniform
 from holopy.scattering.errors import InvalidScatterer, MissingParameter
 

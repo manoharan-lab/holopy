@@ -26,8 +26,7 @@ as Clusters.
 '''
 
 
-from holopy.scattering.scatterer.scatterer import (Scatterer, Indicators,
-    _expand_parameters, _interpret_parameters)
+from holopy.scattering.scatterer.scatterer import Scatterer, Indicators
 from holopy.scattering.scatterer.sphere import Sphere, LayeredSphere
 from holopy.scattering.scatterer.composite import Scatterers
 from holopy.scattering.scatterer.spherecluster import Spheres, RigidCluster

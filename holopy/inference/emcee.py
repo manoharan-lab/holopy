@@ -81,7 +81,7 @@ class EmceeStrategy(HoloPyObject):
                                nsamples=self.nsamples, parallel=self.parallel,
                                seed=self.seed)
 
-        samples = emcee_samples_DataArray(sampler, model._parameters)
+        samples = emcee_samples_DataArray(sampler, model._parameter_names)
         lnprobs = emcee_lnprobs_DataArray(sampler)
 
         d_time = time.time() - time_start
@@ -131,7 +131,7 @@ class TemperedStrategy(EmceeStrategy):
         return TemperedSamplingResult(result, stage_results, self, d_time)
 
 
-def emcee_samples_DataArray(sampler, parameters):
+def emcee_samples_DataArray(sampler, parameter_names):
     acceptance_fraction = sampler.acceptance_fraction.mean()
     try:
         chain = sampler.get_chain()
@@ -140,7 +140,7 @@ def emcee_samples_DataArray(sampler, parameters):
         chain = sampler.chain
     return xr.DataArray(chain,
                         dims=['walker', 'chain', 'parameter'],
-                        coords={'parameter': [p.name for p in parameters]},
+                        coords={'parameter': [par for par in parameter_names]},
                         attrs={"acceptance_fraction": acceptance_fraction})
 
 

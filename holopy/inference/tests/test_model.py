@@ -31,7 +31,6 @@ from numpy.testing import assert_raises
 from holopy.core import detector_grid, update_metadata, holopy_object
 from holopy.core.tests.common import assert_equal, assert_obj_close
 from holopy.scattering import Sphere, Spheres, Mie, calc_holo
-from holopy.scattering.scatterer.scatterer import _interpret_parameters
 from holopy.scattering.errors import MissingParameter
 from holopy.core.tests.common import assert_read_matches_write
 from holopy.inference import (prior, AlphaModel, ExactModel,
@@ -39,7 +38,7 @@ from holopy.inference import (prior, AlphaModel, ExactModel,
                               available_fit_strategies,
                               available_sampling_strategies)
 from holopy.inference.model import (Model, PerfectLensModel,
-                                    make_xarray, read_map)
+                                    make_xarray, make_complex, read_map)
 from holopy.inference.tests.common import SimpleModel
 from holopy.scattering.tests.common import (
     xschema_lens, sphere as SPHERE_IN_METERS)
@@ -51,7 +50,6 @@ class TestModel(unittest.TestCase):
         'medium_index',
         'illum_wavelen',
         'illum_polarization',
-        'theory',
         ]
 
     @attr('fast')
@@ -59,20 +57,6 @@ class TestModel(unittest.TestCase):
         scatterer = make_sphere()
         model = Model(scatterer)
         self.assertTrue(model is not None)
-
-    @attr('fast')
-    def test_initializing_with_xarray_raises_error(self):
-        sphere = make_sphere()
-        for key in self.model_keywords:
-            value = xr.DataArray(
-                [1, 0.],
-                dims=['illumination'],
-                coords={'illumination': ['red', 'green']})
-            kwargs = {key: value}
-            error_regex = '{} cannot be an xarray'.format(key)
-            with self.subTest(key=key):
-                self.assertRaisesRegex(
-                    ValueError, error_regex, Model, sphere, **kwargs)
 
     @attr('fast')
     def test_yaml_round_trip_with_dict(self):
@@ -86,7 +70,6 @@ class TestModel(unittest.TestCase):
                 self.assertEqual(reloaded, model)
 
     @attr('fast')
-    @unittest.skip("There is a problem with saving yaml xarrays")
     def test_yaml_round_trip_with_xarray(self):
         sphere = make_sphere()
         for key in self.model_keywords:
@@ -190,7 +173,7 @@ class TestParameterMapping(unittest.TestCase):
         parameter = prior.ComplexPrior(1, prior.Uniform(2, 3))
         position = len(model._parameters)
         parameter_map = model._convert_to_map(parameter)
-        expected = [complex, [1, "_parameter_{}".format(position)]]
+        expected = [make_complex, [1, "_parameter_{}".format(position)]]
         self.assertEqual(parameter_map, expected)
 
     @attr("fast")
@@ -207,7 +190,8 @@ class TestParameterMapping(unittest.TestCase):
         model = SimpleModel()
         parameter = [prior.ComplexPrior(0, 1), {'a': 2, 'b': [4, 5]}, 6]
         parameter_map = model._convert_to_map(parameter)
-        expected = [[complex, [0, 1]], [dict, [[['a', 2], ['b', [4, 5]]]]], 6]
+        expected = [[make_complex, [0, 1]],
+                    [dict, [[['a', 2], ['b', [4, 5]]]]], 6]
         self.assertEqual(parameter_map, expected)
 
     @attr("fast")
@@ -224,11 +208,24 @@ class TestParameterMapping(unittest.TestCase):
         self.assertEqual(read_map(parameter_map, placeholders), expected)
 
     @attr("fast")
+    def test_read_complex_map_values(self):
+        parameter_map = [make_complex, ['_parameter_0', '_parameter_1']]
+        values = [0, 1]
+        self.assertEqual(read_map(parameter_map, values), complex(0, 1))
+
+    @attr("fast")
+    def test_read_complex_map_priors(self):
+        parameter_map = [make_complex, ['_parameter_0', '_parameter_1']]
+        priors = [prior.Uniform(0, 1), prior.Uniform(1, 2)]
+        expected = prior.ComplexPrior(priors[0], priors[1])
+        self.assertEqual(read_map(parameter_map, priors), expected)
+
+    @attr("fast")
     def test_read_composite_map(self):
-        n_map = [dict, [[['red', [[complex, [1.5, "_parameter_2"]],
-                                  [complex, [1.6, "_parameter_3"]]]],
-                         ['green', [[complex, [1.7, "_parameter_4"]],
-                                    [complex, [1.8, "_parameter_5"]]]]]]]
+        n_map = [dict, [[['red', [[make_complex, [1.5, "_parameter_2"]],
+                                  [make_complex, [1.6, "_parameter_3"]]]],
+                         ['green', [[make_complex, [1.7, "_parameter_4"]],
+                                    [make_complex, [1.8, "_parameter_5"]]]]]]]
         parameter_map = [dict, [[['r', ["_parameter_0", "_parameter_1"]],
                                  ['n', n_map],
                                  ['center', [10, 20, "_parameter_6"]]]]]
@@ -267,10 +264,19 @@ class TestParameterTying(unittest.TestCase):
         scatterer = Sphere(n=tied, r=prior.Uniform(0.5, 1.5),
                            center=[tied, 10, prior.Uniform(0, 10)])
         model = AlphaModel(scatterer)
-        expected = [prior.Uniform(0, 1, name='n'),
-                    prior.Uniform(0.5, 1.5, name='r'),
-                    prior.Uniform(0, 10, name='center.2')]
+        expected = [prior.Uniform(0, 1),
+                    prior.Uniform(0.5, 1.5),
+                    prior.Uniform(0, 10)]
         self.assertEqual(model._parameters, expected)
+
+    @attr('fast')
+    def test_parameters_names(self):
+        tied = prior.Uniform(0, 1)
+        scatterer = Sphere(n=tied, r=prior.Uniform(0.5, 1.5),
+                           center=[tied, 10, prior.Uniform(0, 10)])
+        model = AlphaModel(scatterer)
+        expected = ['n', 'r', 'center.2']
+        self.assertEqual(model._parameter_names, expected)
 
     @attr('fast')
     def test_parameters_map(self):
@@ -280,17 +286,19 @@ class TestParameterTying(unittest.TestCase):
         model = AlphaModel(scatterer)
         expected = [dict, [[['n', '_parameter_0'], ['r', '_parameter_1'],
                             ['center', ['_parameter_0', 10, '_parameter_2']]]]]
-        self.assertEqual(model._scatterer_map, expected)
+        self.assertEqual(model._maps['scatterer'], expected)
 
     @attr('fast')
     def test_equal_not_identical(self):
         scatterer = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
                            center=[10, 10, prior.Uniform(1, 2)])
         model = AlphaModel(scatterer)
-        expected = [prior.Uniform(1, 2, name='n'),
-                    prior.Uniform(1, 2, name='r'),
-                    prior.Uniform(1, 2, name='center.2')]
-        self.assertEqual(model._parameters, expected)
+        expected_priors = [prior.Uniform(1, 2),
+                           prior.Uniform(1, 2),
+                           prior.Uniform(1, 2)]
+        expected_names = ['n', 'r', 'center.2']
+        self.assertEqual(model._parameters, expected_priors)
+        self.assertEqual(model._parameter_names, expected_names)
 
     @attr('fast')
     def test_tied_name(self):
@@ -298,10 +306,8 @@ class TestParameterTying(unittest.TestCase):
         sphere1 = Sphere(n=prior.Uniform(1, 2), r=tied, center=[1, 1, 1])
         sphere2 = Sphere(n=prior.Uniform(1, 2), r=tied, center=[1, 1, 1])
         model = AlphaModel(Spheres([sphere1, sphere2]))
-        expected = [prior.Uniform(1, 2, name='0:n'),
-                    prior.Uniform(0, 1, name='r'),
-                    prior.Uniform(1, 2, name='1:n')]
-        self.assertEqual(model._parameters, expected)
+        expected_names = ['0:n', 'r', '1:n']
+        self.assertEqual(model._parameter_names, expected_names)
 
     @attr('fast')
     def test_prior_name(self):
@@ -309,9 +315,8 @@ class TestParameterTying(unittest.TestCase):
         sphere = Sphere(n=prior.Uniform(1, 2, name='index'), r=0.5,
                         center=[tied, tied, prior.Uniform(0, 10, name='z')])
         model = AlphaModel(sphere)
-        expected = [prior.Uniform(1, 2, name='index'), tied,
-                    prior.Uniform(0, 10, name='z')]
-        self.assertEqual(model._parameters, expected)
+        expected_names = ['index', tied.name, 'z']
+        self.assertEqual(model._parameter_names, expected_names)
 
     @attr('fast')
     def test_duplicate_name(self):
@@ -319,10 +324,8 @@ class TestParameterTying(unittest.TestCase):
         sphere = Sphere(n=prior.Uniform(1, 2, name='dummy'), r=0.5,
                         center=[tied, tied, prior.Uniform(0, 10, name='z')])
         model = AlphaModel(sphere)
-        expected = [prior.Uniform(1, 2, name='dummy'),
-                    prior.Uniform(-5, 5, name='dummy_0'),
-                    prior.Uniform(0, 10, name='z')]
-        self.assertEqual(model._parameters, expected)
+        expected = ['dummy', 'dummy_0', 'z']
+        self.assertEqual(model._parameter_names, expected)
 
 
     @attr('fast')
@@ -332,15 +335,12 @@ class TestParameterTying(unittest.TestCase):
                         r=prior.Uniform(1, 2, name='dummy'),
                         center=[tied, tied, prior.Uniform(0, 10, name='z')])
         model = AlphaModel(sphere)
-        expected = [prior.Uniform(1, 2, name='dummy'),
-                    prior.Uniform(1, 2, name='dummy_0'),
-                    prior.Uniform(-5, 5, name='dummy_1'),
-                    prior.Uniform(0, 10, name='z')]
-        self.assertEqual(model._parameters, expected)
+        expected = ['dummy', 'dummy_0', 'dummy_1', 'z']
+        self.assertEqual(model._parameter_names, expected)
 
     @attr('fast')
     def test_add_missing_tie_fails(self):
-        sphere = Sphere(n=prior.Uniform(1,2), r=0.5, center=[10, 10, 10])
+        sphere = Sphere(n=prior.Uniform(1, 2), r=0.5, center=[10, 10, 10])
         model = AlphaModel(sphere)
         self.assertRaises(ValueError, model.add_tie, ['r', 'n'])
 
@@ -358,9 +358,18 @@ class TestParameterTying(unittest.TestCase):
                         center=[tied, tied, 10])
         model = AlphaModel(sphere)
         model.add_tie(['r', 'n'])
-        expected = [prior.Uniform(1, 2, name='n'),
-                    prior.Uniform(-5, 5, name='center.0')]
+        expected = [prior.Uniform(1, 2), prior.Uniform(-5, 5)]
         self.assertEqual(model._parameters, expected)
+
+    @attr('fast')
+    def test_add_tie_updates_parameter_names(self):
+        tied = prior.Uniform(-5, 5)
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
+                        center=[tied, tied, 10])
+        model = AlphaModel(sphere)
+        model.add_tie(['r', 'n'])
+        expected = ['n', 'center.0']
+        self.assertEqual(model._parameter_names, expected)
 
     @attr('fast')
     def test_add_tie_updates_map(self):
@@ -371,7 +380,7 @@ class TestParameterTying(unittest.TestCase):
         model.add_tie(['r', 'n'])
         expected = [dict, [[['n', '_parameter_0'],['r', '_parameter_0'],
                             ['center', ['_parameter_1', '_parameter_1', 10]]]]]
-        self.assertEqual(model._scatterer_map, expected)
+        self.assertEqual(model._maps['scatterer'], expected)
 
     @attr('fast')
     def test_add_tie_specify_name(self):
@@ -380,9 +389,8 @@ class TestParameterTying(unittest.TestCase):
                         center=[tied, tied, 10])
         model = AlphaModel(sphere)
         model.add_tie(['r', 'n'], new_name='dummy')
-        expected = [prior.Uniform(1, 2, name='dummy'),
-                    prior.Uniform(-5, 5, name='center.0')]
-        self.assertEqual(model._parameters, expected)
+        expected = ['dummy', 'center.0']
+        self.assertEqual(model._parameter_names, expected)
 
     @attr('fast')
     def test_add_3_way_tie(self):
@@ -394,16 +402,15 @@ class TestParameterTying(unittest.TestCase):
         model = AlphaModel(sphere)
         model.add_tie(['center.0', 'n.imag', 'center.1'])
         expected_map = [dict,
-            [[['n', [complex, ['_parameter_0', '_parameter_1']]],
+            [[['n', [make_complex, ['_parameter_0', '_parameter_1']]],
               ['r', '_parameter_2'],
               ['center', ['_parameter_1', '_parameter_1', '_parameter_3']]]]]
-        expected_parameters = [
-            prior.Uniform(1, 2, name='n.real'),
-            prior.Uniform(0, 1, name='n.imag'),
-            prior.Uniform(0.5, 1, name='r'),
-            prior.Uniform(0, 10, name='center.2')]
-        self.assertEqual(model._scatterer_map, expected_map)
+        expected_parameters = [prior.Uniform(1, 2), prior.Uniform(0, 1),
+                               prior.Uniform(0.5, 1), prior.Uniform(0, 10)]
+        expected_names = ['n.real', 'n.imag', 'r', 'center.2']
+        self.assertEqual(model._maps['scatterer'], expected_map)
         self.assertEqual(model._parameters, expected_parameters)
+        self.assertEqual(model._parameter_names, expected_names)
 
 
 class TestAlphaModel(unittest.TestCase):
@@ -413,19 +420,7 @@ class TestAlphaModel(unittest.TestCase):
         model = AlphaModel(scatterer, alpha=0.6)
         self.assertTrue(model is not None)
 
-    @attr('fast')
-    def test_initializing_with_xarray_alpha_raises_error(self):
-        sphere = make_sphere()
-        alpha_xarray = xr.DataArray(
-            [1, 0.5],
-            dims=['illumination'],
-            coords={'illumination': ['red', 'green']})
-        error_regex = 'alpha cannot be an xarray'
-        self.assertRaisesRegex(
-            ValueError, error_regex, AlphaModel, sphere, alpha=alpha_xarray)
-
     @attr("fast")
-    @unittest.skip("There is a problem with saving yaml xarrays")
     def test_yaml_round_trip_with_xarray(self):
         alpha_xarray = xr.DataArray(
             [1, 0.5],
@@ -433,10 +428,8 @@ class TestAlphaModel(unittest.TestCase):
             coords={'illumination': ['red', 'green']})
         sphere = make_sphere()
         model = AlphaModel(sphere, alpha=alpha_xarray)
-
         reloaded = take_yaml_round_trip(model)
         self.assertEqual(reloaded, model)
-
 
     @attr("fast")
     def test_yaml_round_trip_with_dict(self):
@@ -454,18 +447,6 @@ class TestPerfectLensModel(unittest.TestCase):
         scatterer = make_sphere()
         model = PerfectLensModel(scatterer, lens_angle=0.6)
         self.assertTrue(model is not None)
-
-    @attr('fast')
-    def test_initializing_with_xarray_lens_angle_raises_error(self):
-        sphere = make_sphere()
-        lens_angle_xarray = xr.DataArray(
-            [0.6, 0.6],
-            dims=['illumination'],
-            coords={'illumination': ['red', 'green']})
-        error_regex = 'lens_angle cannot be an xarray'
-        self.assertRaisesRegex(
-            ValueError, error_regex, PerfectLensModel, sphere,
-            lens_angle=lens_angle_xarray)
 
     @attr('fast')
     def test_accepts_lens_angle_as_prior(self):
@@ -495,14 +476,13 @@ class TestPerfectLensModel(unittest.TestCase):
             }
         pars_alpha0 = pars_common.copy()
         pars_alpha0.update({'alpha': 0})
-
         alpha0 = model.forward(pars_alpha0, xschema_lens)
         self.assertLess(alpha0.values.std(), 1e-6)
 
 
 def make_sphere():
-    index = prior.Uniform(1.4, 1.6)
-    radius = prior.Uniform(0.2, 0.8)
+    index = prior.Uniform(1.4, 1.6, name='n')
+    radius = prior.Uniform(0.2, 0.8, name='r')
     return Sphere(n=index, r=radius)
 
 
@@ -523,40 +503,6 @@ def take_yaml_round_trip(model):
     object_string = yaml.dump(model)
     loaded = yaml.load(object_string, Loader=holopy_object.FullLoader)
     return loaded
-
-
-@attr('fast')
-def test_ComplexPrior():
-    parm = Sphere(n=prior.ComplexPrior(real=prior.Uniform(1.58,1.59), imag=.001))
-    model = AlphaModel(parm, alpha=prior.Uniform(.6, 1, .7))
-    assert_equal(model.parameters['n.real'].name, 'n.real')
-    interpreted_pars = {'alpha':.7, 'n':{'real':1.585}}
-    assert_equal(_interpret_parameters(model.parameters), interpreted_pars)
-
-
-@attr('fast')
-def test_multidim():
-    par_s = Sphere(
-        n={'r': prior.Uniform(-1,1), 'g': 0, 'b': prior.Gaussian(0,1),'a':0},
-        r=xr.DataArray(
-            [prior.Gaussian(0,1), prior.Uniform(-1,1), 0, 0],
-            dims='alph', coords={'alph': ['a', 'b', 'c', 'd']}),
-            center=[prior.Uniform(-1, 1), 0, 0])
-    params = {'n': {'r': 3, 'g': 4, 'b': 5, 'a': 6},
-              'r': {'a': 7, 'b': 8, 'c': 9, 'd': 10},
-              'center': (7, 8, 9)}
-    out_s = Sphere(
-        n={'r': 3, 'g': 4, 'b': 5, 'a': 6},
-        r={'a': 7, 'b': 8, 'c': 9, 'd': 10}, center=[7, 8, 9])
-    assert_obj_close(par_s.from_parameters(params), out_s)
-
-    m = ExactModel(out_s, np.sum)
-    parletters = {'r':prior.Uniform(-1,1),'g':0,'b':prior.Gaussian(0,1),'a':0}
-    parcount = xr.DataArray([prior.Gaussian(0,1),prior.Uniform(-1,1),0,0],dims='numbers',coords={'numbers':['one', 'two', 'three', 'four']})
-
-    m._use_parameters({'letters':parletters, 'count':parcount})
-    expected_params = {'letters:r':prior.Uniform(-1,1, 0, 'letters:r'),'letters:b':prior.Gaussian(0,1,'letters:b'),'count:one':prior.Gaussian(0,1, 'count:one'),'count:two':prior.Uniform(-1,1, 0,'count:two')}
-    assert_equal(m.parameters, expected_params)
 
 
 @attr('fast')
@@ -590,19 +536,16 @@ def test_pullingoutguess():
 
 @attr('fast')
 def test_find_noise():
-    noise=0.5
-    s = Sphere(n=prior.Uniform(1.5, 1.7), r=2, center=[1,2,3])
+    noise = 0.5
+    s = Sphere(n=prior.Uniform(1.5, 1.7), r=2, center=[1, 2, 3])
     data_base = detector_grid(10, spacing=0.5)
     data_noise = update_metadata(data_base, noise_sd=noise)
-    model_u = AlphaModel(s, alpha=prior.Uniform(0.7,0.9))
+    model_u = AlphaModel(s, alpha=prior.Uniform(0.7, 0.9))
     model_g = AlphaModel(s, alpha=prior.Gaussian(0.8, 0.1))
-    pars = {'n':1.6, 'alpha':0.8}
+    pars = {'n': 1.6, 'alpha': 0.8}
     assert_equal(model_u._find_noise(pars, data_noise), noise)
-    assert_equal(model_g._find_noise(pars, data_noise), noise)
     assert_equal(model_u._find_noise(pars, data_base), 1)
     assert_raises(MissingParameter, model_g._find_noise, pars, data_base)
-    pars.update({'noise_sd':noise})
-    assert_equal(model_g._find_noise(pars, data_base), noise)
 
 
 @attr('fast')

@@ -32,9 +32,7 @@ from holopy.core.metadata import (
     vector, illumination, update_metadata, to_vector, copy_metadata, from_flat,
     dict_to_array)
 from holopy.core.utils import dict_without, ensure_array
-from holopy.scattering.scatterer import (
-    Sphere, Spheres, Spheroid, Cylinder, _expand_parameters,
-    _interpret_parameters)
+from holopy.scattering.scatterer import Sphere, Spheres, Spheroid, Cylinder
 from holopy.scattering.errors import AutoTheoryFailed, MissingParameter
 from holopy.scattering.theory import Mie, Multisphere
 from holopy.scattering.theory import Tmatrix

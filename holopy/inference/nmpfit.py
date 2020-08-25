@@ -92,8 +92,8 @@ class NmpfitStrategy(HoloPyObject):
 
     def unscale_pars_from_minimizer(self, parameters, values):
         assert len(parameters) == len(values)
-        return {par.name: par.unscale(value)
-                for par, value in zip(parameters, values)}
+        return {key: val.unscale(value)
+                for (key, val), value in zip(parameters.items(), values)}
 
     def fit(self, model, data):
         """
@@ -114,14 +114,13 @@ class NmpfitStrategy(HoloPyObject):
             about the fit
         """
         time_start = time.time()
-        parameters = model._parameters
+        parameters = model.parameters
         if len(parameters) == 0:
             raise MissingParameter('at least one parameter to fit')
 
         if self.npixels is not None:
             data = make_subset_data(data, pixels = self.npixels, seed=self.seed)
-
-        guess_prior = model.lnprior({par.name:par.guess for par in parameters})
+        guess_prior = model.lnprior(model.initial_guess)
         def residual(par_vals):
             noise = model._find_noise(par_vals, data)
             residuals = model._residuals(par_vals, data, noise).flatten()
@@ -152,9 +151,9 @@ class NmpfitStrategy(HoloPyObject):
 
     def minimize(self, parameters, obj_func):
         nmp_pars = []
-        for par in parameters:
-            d = {'parname':par.name, 'value':par.scale(par.guess),
-                'limited':[False, False], 'limits':[np.NaN, np.NaN]}
+        for name, par in parameters.items():
+            d = {'parname': name, 'value': par.scale(par.guess),
+                 'limited': [False, False], 'limits': [np.NaN, np.NaN]}
             if hasattr(par, "lower_bound") and par.lower_bound > -np.inf:
                 d['limited'][0] = True
                 d['limits'][0] = par.scale(par.lower_bound)

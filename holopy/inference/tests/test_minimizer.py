@@ -49,9 +49,9 @@ def test_minimizer():
         return a*x**2 + b*x + c - y
 
     # test basic usage
-    parameters = [prior.Uniform(-np.inf, np.inf, name='a', guess = 5, ),
-                 prior.Uniform(-np.inf, np.inf, name='b', guess = -2),
-                 prior.Uniform(-np.inf, np.inf, name='c', guess = 3)]
+    parameters = {'a': prior.Uniform(-np.inf, np.inf, name='a', guess=5, ),
+                  'b': prior.Uniform(-np.inf, np.inf, name='b', guess=-2),
+                  'c': prior.Uniform(-np.inf, np.inf, name='c', guess=3)}
     minimizer = Nmpfit()
     result, minimization_details = minimizer.minimize(parameters, cost_func)
     assert_obj_close(gold_dict, result, context = 'basic_minimized_parameters')
