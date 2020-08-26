@@ -255,8 +255,9 @@ class TestBoundedGaussian(unittest.TestCase):
 
     @attr("fast")
     def test_sample(self):
-        n_samples = 10
+        n_samples = 1000
         bound = 0.1
+        np.random.seed(1502)
         bg = BoundedGaussian(0, 1, -bound, bound)
         samples = bg.sample(n_samples)
         self.assertTrue(np.all(samples > -bound) and np.all(samples < bound))
