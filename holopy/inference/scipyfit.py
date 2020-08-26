@@ -34,8 +34,8 @@ class LeastSquaresScipyStrategy(HoloPyObject):
 
     def unscale_pars_from_minimizer(self, parameters, values):
         assert len(parameters) == len(values)
-        return {key: val.unscale(value)
-                for (key, val), value in zip(parameters.items(), values)}
+        return [val.unscale(value)
+                for val, value in zip(parameters, values)]
 
     def fit(self, model, data):
         """
@@ -57,7 +57,7 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         # timing decorator...
         time_start = time.time()
 
-        parameters = model.parameters
+        parameters = model._parameters
         if len(parameters) == 0:
             raise MissingParameter('at least one parameter to fit')
 
@@ -88,10 +88,9 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         noise = model._find_noise(fitted_pars, data)
         errors_scaled = noise * unit_errors
         errors = self.unscale_pars_from_minimizer(parameters, errors_scaled)
-        intervals = [
-            UncertainValue(
-                fitted_pars[name], errors[name], name=name)
-            for err, name in zip(errors, model._parameter_names)]
+        intervals = [UncertainValue(par, err, name=name)
+                     for par, err, name in 
+                     zip(fitted_pars, errors, model._parameter_names)]
 
         # timing decorator...
         d_time = time.time() - time_start
@@ -99,8 +98,7 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         return FitResult(data, model, self, d_time, kwargs)
 
     def minimize(self, parameters, residuals_function):
-        initial_parameter_guess = [par.scale(par.guess)
-                                   for par in parameters.values()]
+        initial_parameter_guess = [par.scale(par.guess) for par in parameters]
         fitresult = least_squares(residuals_function, initial_parameter_guess,
                                   **self._optimizer_kwargs)
         result_pars = self.unscale_pars_from_minimizer(parameters, fitresult.x)

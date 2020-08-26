@@ -90,10 +90,10 @@ class NmpfitStrategy(HoloPyObject):
         self.npixels = npixels
         self.seed = seed
 
-    def unscale_pars_from_minimizer(self, parameters, values):
-        assert len(parameters) == len(values)
-        return {key: val.unscale(value)
-                for (key, val), value in zip(parameters.items(), values)}
+    def unscale_pars_from_minimizer(self, values):
+        assert len(values) == len(self._parameters)
+        return [val.unscale(value) for val, value in zip(self._parameters,
+                                                         values)]
 
     def fit(self, model, data):
         """
@@ -114,8 +114,8 @@ class NmpfitStrategy(HoloPyObject):
             about the fit
         """
         time_start = time.time()
-        parameters = model.parameters
-        if len(parameters) == 0:
+        self._parameters = model._parameters
+        if len(self._parameters) == 0:
             raise MissingParameter('at least one parameter to fit')
 
         if self.npixels is not None:
@@ -128,7 +128,7 @@ class NmpfitStrategy(HoloPyObject):
             residuals = np.append(residuals, prior)
             return residuals
 
-        fitted_pars, minimizer_info = self.minimize(parameters, residual)
+        fitted_pars, minimizer_info = self.minimize(model.parameters, residual)
 
         if minimizer_info.status == 5:
             setattr(minimizer_info, 'converged', False)
@@ -140,16 +140,18 @@ class NmpfitStrategy(HoloPyObject):
         # Getting errors:
         errors_rescaled = minimizer_info.perror
         if errors_rescaled is None:
-            errors_rescaled = [0] * len(parameters)
-        errors = self.unscale_pars_from_minimizer(parameters, errors_rescaled)
-        intervals = [
-            UncertainValue(fitted_pars[name], errors[name], name=name)
-            for name in errors.keys()]
+            errors_rescaled = [0] * len(self._parameters)
+        errors = self.unscale_pars_from_minimizer(errors_rescaled)
+        intervals = [UncertainValue(par, err, name=name) for par, err, name in
+                     zip(fitted_pars, errors, model._parameter_names)]
         d_time = time.time() - time_start
+        del self._parameters
         return FitResult(data, model, self, d_time,
                      {'intervals': intervals, 'mpfit_details':minimizer_info})
 
     def minimize(self, parameters, obj_func):
+        if not hasattr(self, "_parameters"):
+            self._parameters = list(parameters.values())
         nmp_pars = []
         for name, par in parameters.items():
             d = {'parname': name, 'value': par.scale(par.guess),
@@ -164,7 +166,7 @@ class NmpfitStrategy(HoloPyObject):
 
         def resid_wrapper(p, fjac=None):
             status = 0
-            out = obj_func(self.unscale_pars_from_minimizer(parameters, p))
+            out = obj_func(self.unscale_pars_from_minimizer(p))
             return [status, out]
 
         # now fit it
@@ -175,8 +177,7 @@ class NmpfitStrategy(HoloPyObject):
                 xtol = self.xtol, gtol = self.gtol, damp = self.damp,
                 maxiter = self.maxiter, quiet = self.quiet)
 
-        result_pars = self.unscale_pars_from_minimizer(
-            parameters, fitresult.params)
+        result_pars = self.unscale_pars_from_minimizer(fitresult.params)
 
         return result_pars, fitresult
 

@@ -37,15 +37,13 @@ def test_minimizer():
     a = 5.3
     b = -1.8
     c = 3.4
-    gold_dict = dict((('a', a), ('b', b), ('c', c)))
+    gold_list = [a, b, c]
     y = a*x**2 + b*x + c
 
     # This test does NOT handle scaling correctly -- we would need a Model
     # which knows the parameters to properly handle the scaling/unscaling
     def cost_func(pars):
-        a = pars['a']
-        b = pars['b']
-        c = pars['c']
+        a, b, c = pars
         return a*x**2 + b*x + c - y
 
     # test basic usage
@@ -54,7 +52,7 @@ def test_minimizer():
                   'c': prior.Uniform(-np.inf, np.inf, name='c', guess=3)}
     minimizer = Nmpfit()
     result, minimization_details = minimizer.minimize(parameters, cost_func)
-    assert_obj_close(gold_dict, result, context = 'basic_minimized_parameters')
+    assert_obj_close(result, gold_list, context='basic_minimized_parameters')
 
     # now test limiting minimizer iterations
     minimizer = Nmpfit(maxiter=1)

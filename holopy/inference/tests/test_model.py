@@ -96,10 +96,18 @@ class TestModel(unittest.TestCase):
         self.assertEqual(model.scatterer.warn, False)
 
     @attr('fast')
-    def test_scatterer_from_parameters(self):
+    def test_scatterer_from_parameters_dict(self):
         sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
         model = AlphaModel(sphere)
         pars={'r': 0.8, 'n': 1.6}
+        expected = Sphere(n=1.6, r=0.8)
+        self.assertEqual(model.scatterer_from_parameters(pars), expected)
+
+    @attr('fast')
+    def test_scatterer_from_parameters_list(self):
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
+        model = AlphaModel(sphere)
+        pars = [1.6, 0.8]
         expected = Sphere(n=1.6, r=0.8)
         self.assertEqual(model.scatterer_from_parameters(pars), expected)
 
@@ -108,7 +116,7 @@ class TestModel(unittest.TestCase):
         sphere = Sphere(n=prior.Uniform(1, 2),
                         r=prior.Uniform(0, 1, guess=0.8))
         model = AlphaModel(sphere)
-        self.assertEqual(model.initial_guess, {'r': 0.8, 'n': 1.5})
+        self.assertEqual(model.initial_guess, [1.5, 0.8])
 
     @attr('fast')
     def test_yaml_preserves_parameter_names(self):
@@ -475,7 +483,7 @@ class TestFindOptics(unittest.TestCase):
     def test_reads_noise_map(self):
         noise = {'red': 0.5, 'green': prior.Uniform(0, 1)}
         model = AlphaModel(Sphere(), noise_sd=noise)
-        found_noise = model._find_noise({'noise_sd.green': 0.7}, None)
+        found_noise = model._find_noise([0.7], None)
         self.assertEqual(found_noise, {'red': 0.5, 'green': 0.7})
 
     @attr('fast')
@@ -483,7 +491,7 @@ class TestFindOptics(unittest.TestCase):
         model = AlphaModel(Sphere(), noise_sd=None)
         schema = detector_grid(2, 2)
         schema.attrs['noise_sd'] = 0.5
-        found_noise = model._find_noise({'noise_sd': 1}, schema)
+        found_noise = model._find_noise([], schema)
         self.assertEqual(found_noise, 0.5)
 
     @attr('fast')
@@ -491,7 +499,7 @@ class TestFindOptics(unittest.TestCase):
         model = AlphaModel(Sphere(), noise_sd=0.8)
         schema = detector_grid(2, 2)
         schema.attrs['noise_sd'] = 0.5
-        found_noise = model._find_noise({'noise_sd': 1}, schema)
+        found_noise = model._find_noise([], schema)
         self.assertEqual(found_noise, 0.8)
 
     @attr('fast')
@@ -499,7 +507,7 @@ class TestFindOptics(unittest.TestCase):
         sphere = Sphere(r=prior.Uniform(0, 1), n=prior.Uniform(1, 2))
         model = AlphaModel(sphere)
         schema = detector_grid(2, 2)
-        found_noise = model._find_noise({'r': 0.5, 'n': 0.5}, schema)
+        found_noise = model._find_noise([0.5, 0.5], schema)
         self.assertEqual(found_noise, 1)
 
     @attr('fast')
@@ -507,7 +515,7 @@ class TestFindOptics(unittest.TestCase):
         sphere = Sphere(r=prior.Gaussian(0, 1), n=prior.Uniform(1, 2))
         model = AlphaModel(sphere)
         schema = detector_grid(2, 2)
-        pars = {'r': 0.5, 'n': 0.5}
+        pars = [0.5, 0.5]
         self.assertRaises(MissingParameter, model._find_noise, pars, schema)
 
     @attr('fast')
@@ -517,8 +525,7 @@ class TestFindOptics(unittest.TestCase):
         pol = [1, prior.Uniform(0.5, 1.5)]
         model = AlphaModel(Sphere(), medium_index=med_n, 
                            illum_wavelen=wl, illum_polarization=pol)
-        pars = {'medium_index.imag': 0.01, 'illum_wavelen.green': 0.6,
-                'illum_polarization.1': 1}
+        pars = [0.01, 0.6, 1]
         found_optics = model._find_optics(pars, None)
         expected = {'medium_index': complex(1.5, 0.01),
                     'illum_wavelen': {'red': 0.5, 'green': 0.6},
@@ -531,7 +538,7 @@ class TestFindOptics(unittest.TestCase):
         schema = detector_grid(2, 2)
         schema.attrs['illum_wavelen'] = 0.6
         schema.attrs['illum_polarization'] = [1, 0]
-        found_optics = model._find_optics({'medium_index': 1.5}, schema)
+        found_optics = model._find_optics([1.5], schema)
         expected = {'medium_index': 1.5, 'illum_wavelen': 0.6,
                     'illum_polarization': [1, 0]}
         self.assertEqual(found_optics, expected)
@@ -542,7 +549,7 @@ class TestFindOptics(unittest.TestCase):
         schema = detector_grid(2, 2)
         schema.attrs['illum_wavelen'] = 0.6
         schema.attrs['illum_polarization'] = [1, 0]
-        found_optics = model._find_optics({}, schema)
+        found_optics = model._find_optics([], schema)
         expected = {'medium_index': 1.5, 'illum_wavelen': 0.8,
                     'illum_polarization': [1, 0]}
         self.assertEqual(found_optics, expected)
@@ -552,7 +559,7 @@ class TestFindOptics(unittest.TestCase):
         model = AlphaModel(Sphere(), medium_index=1.5, illum_wavelen=0.8)
         schema = detector_grid(2, 2)
         schema.attrs['illum_wavelen'] = 0.6
-        self.assertRaises(MissingParameter, model._find_optics, {}, schema)
+        self.assertRaises(MissingParameter, model._find_optics, [], schema)
 
 
 class TestAlphaModel(unittest.TestCase):
@@ -645,35 +652,6 @@ def take_yaml_round_trip(model):
     object_string = yaml.dump(model)
     loaded = yaml.load(object_string, Loader=holopy_object.FullLoader)
     return loaded
-
-
-@attr('fast')
-def test_pullingoutguess():
-    g = Sphere(center = (prior.Uniform(0, 1e-5, guess=.567e-5),
-                   prior.Uniform(0, 1e-5, .567e-5), prior.Uniform(1e-5, 2e-5, 15e-6)),
-         r = prior.Uniform(1e-8, 1e-5, 8.5e-7), n = prior.ComplexPrior(prior.Uniform(1, 2, 1.59),1e-4))
-
-    model = ExactModel(g, calc_holo)
-
-    s = Sphere(center = [.567e-5, .567e-5, 15e-6], n = 1.59 + 1e-4j, r = 8.5e-7)
-
-    assert_equal(s.n, model.initial_guess['n.real'] + 1e-4j)
-    assert_equal(s.r, model.initial_guess['r'])
-    center = [model.initial_guess['center.{}'.format(i)] for i in range(3)]
-    assert_equal(s.center, center)
-
-    g = Sphere(center = (prior.Uniform(0, 1e-5, guess=.567e-5),
-                   prior.Uniform(0, 1e-5, .567e-5), prior.Uniform(1e-5, 2e-5, 15e-6)),
-         r = prior.Uniform(1e-8, 1e-5, 8.5e-7), n = 1.59 + 1e-4j)
-
-    model = ExactModel(g, calc_holo)
-
-    s = Sphere(center = [.567e-5, .567e-5, 15e-6], n = 1.59 + 1e-4j, r = 8.5e-7)
-
-    initial_guess = model.scatterer_from_parameters(model.initial_guess)
-    assert_equal(s.n, initial_guess.n)
-    assert_equal(s.r, initial_guess.r)
-    assert_equal(s.center, initial_guess.center)
 
 
 @attr('fast')

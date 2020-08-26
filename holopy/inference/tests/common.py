@@ -38,7 +38,7 @@ class SimpleModel(Model):
     def lnposterior(self, par_vals, data, dummy):
         x = par_vals
         data = np.array(data)
-        return -((x[self._parameter_names[-1]] - data)**2).sum()
+        return -((x[-1] - data)**2).sum()
 
     def sample(self, data, strategy=None):
         strategy = self.validate_strategy(strategy, 'sample')
