@@ -48,9 +48,6 @@ class Spheres(Scatterers):
     ----------
     spheres : list of Spheres
         Spheres which will make up the cluster
-    ties : dict or None (optional)
-       dict indicating tied parameters of the form {'r': '0:r', '1:r'} to tie
-       radius of first 2 spheres
     warn : bool
        if True, overlapping spheres raise warnings.
 
@@ -58,7 +55,7 @@ class Spheres(Scatterers):
     -----
     '''
 
-    def __init__(self, scatterers, ties=None, warn=True):
+    def __init__(self, scatterers, warn=True):
         scatterers = ensure_listlike(scatterers)
         self.warn = warn
         for s in ensure_listlike(scatterers):
@@ -67,7 +64,7 @@ class Spheres(Scatterers):
                         "Spheres expects all component " +
                         "scatterers to be Spheres.\n" +
                         repr(s) + " is not a Sphere")
-        super().__init__(scatterers, ties)
+        super().__init__(scatterers)
 
 
         if self.overlaps and self.warn:

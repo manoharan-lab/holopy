@@ -68,18 +68,13 @@ class Scatterers(Scatterer):
     # http://stackoverflow.com/questions/1175110/python-classes-for-simple-gtd-app
     # for a python example
 
-    def __init__(self, scatterers=None, ties=None):
+    def __init__(self, scatterers=None):
         '''
         Parameters
         ----------
         scatterers : list
             List of scatterers that make up this object
-        ties : dict or None (optional)
-            dict indicating parameters to tie of the form: {'r': '0:r', '1:r'}
         '''
-        if ties is None:
-            ties = {}
-        self.ties = ties
         if scatterers is None:
             scatterers = []
         self.scatterers = scatterers
