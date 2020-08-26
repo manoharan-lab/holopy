@@ -22,7 +22,6 @@ import numpy as np
 
 from holopy.core.holopy_object import SerializableMetaclass
 from holopy.scattering import Scatterer, Scatterers
-from holopy.scattering.scatterer import _interpret_parameters
 from holopy.inference.model import Model, AlphaModel
 from holopy.inference.prior import Uniform
 from holopy.inference.nmpfit import NmpfitStrategy
@@ -75,42 +74,59 @@ def validate_strategy(strategy, operation):
     return strategy
 
 
-def make_default_model(base_scatterer, fitting_parameters):
+def make_default_model(base_scatterer, fitting_parameters=None):
     if fitting_parameters is None:
         fitting_parameters = list(base_scatterer.parameters.keys())
-    if 'center' in fitting_parameters:
-        fitting_parameters.remove('center')
-        fitting_parameters += COORD_KEYS
     scatterer = parameterize_scatterer(base_scatterer, fitting_parameters)
     alpha_prior = Uniform(0, 1, guess=0.7, name='alpha')
     return AlphaModel(scatterer, noise_sd=1, alpha=alpha_prior)
 
 
 def parameterize_scatterer(base_scatterer, fitting_parameters):
-    if isinstance(base_scatterer, Scatterers):
-        raise ValueError(
-            "Cannot parameterize composite scatterers. Define a model instead")
+    if isinstance(fitting_parameters, str):
+        fitting_parameters = [fitting_parameters]
     parameters = base_scatterer.parameters
     variable_parameters = {par_name: make_uniform(parameters, par_name)
                            for par_name in fitting_parameters}
     parameters.update(variable_parameters)
     for i, key in enumerate(COORD_KEYS):
-        try:
-            val = parameters.pop(key)
-        except KeyError:
-            continue
-        parameters['center'][i] = val
+        if isinstance(base_scatterer, Scatterers):
+            for j in range(len(base_scatterer.scatterers)):
+                replace_center(parameters, "{}:{}".format(j, key))
+        else:
+            replace_center(parameters, key)
     return base_scatterer.from_parameters(parameters)
 
 
+def replace_center(parameters, key):
+    index = COORD_KEYS.index(key[-1])
+    prefix = key[:-1]
+    try:
+        val = parameters.pop(key)
+    except KeyError:
+        pass
+    else:
+        parameters[prefix + 'center'][index] = val
+
+
 def make_uniform(guesses, key):
-    if key in COORD_KEYS:
-        guess_value = guesses['center'][COORD_KEYS.index(key)]
+    suffix = key.split(":")[-1]
+    prefix = key[:-len(suffix)]
+    if suffix in COORD_KEYS:
+        guess_value = guesses[prefix + 'center'][COORD_KEYS.index(suffix)]
     else:
         try:
             guess_value = guesses[key]
         except KeyError:
             msg = 'Parameter {} not found in scatterer parameters.'.format(key)
             raise ValueError(msg)
-    minval = 0 if key in ['n', 'r'] else -np.inf
-    return Uniform(minval, np.inf, guess_value, key)
+    minval = 0 if suffix in ['n', 'r'] else -np.inf
+    if isinstance(guess_value, (list, tuple, np.ndarray)):
+        if suffix == 'center':
+            subkeys = COORD_KEYS
+        else:
+            subkeys = [suffix + '.' + str(i) for i in range(len(guess_value))]
+        return [Uniform(minval, np.inf, guess_val, prefix + subkey)
+                for guess_val, subkey in zip(guess_value, subkeys)]
+    else:
+        return Uniform(minval, np.inf, guess_value, key)
