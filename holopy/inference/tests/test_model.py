@@ -83,6 +83,55 @@ class TestModel(unittest.TestCase):
                 reloaded = take_yaml_round_trip(model)
                 self.assertEqual(reloaded, model)
 
+    @attr('fast')
+    def test_scatterer_is_parameterized(self):
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
+        model = AlphaModel(sphere)
+        self.assertEqual(model.scatterer, sphere)
+
+    @attr('fast')
+    def test_scatterers_maintain_attrs(self):
+        spheres = Spheres([Sphere(), Sphere()], warn=False)
+        model = AlphaModel(spheres)
+        self.assertEqual(model.scatterer.warn, False)
+
+    @attr('fast')
+    def test_scatterer_from_parameters(self):
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
+        model = AlphaModel(sphere)
+        pars={'r': 0.8, 'n': 1.6}
+        expected = Sphere(n=1.6, r=0.8)
+        self.assertEqual(model.scatterer_from_parameters(pars), expected)
+
+    @attr('fast')
+    def test_initial_guess(self):
+        sphere = Sphere(n=prior.Uniform(1, 2),
+                        r=prior.Uniform(0, 1, guess=0.8))
+        model = AlphaModel(sphere)
+        self.assertEqual(model.initial_guess, {'r': 0.8, 'n': 1.5})
+
+    @attr('fast')
+    def test_yaml_preserves_parameter_names(self):
+        n = prior.ComplexPrior(prior.Uniform(1, 2), prior.Uniform(0, 0.1))
+        sphere = Sphere(n=n, r=prior.Uniform(0, 1.5, name='radius'),
+                        center=[1, 1, prior.Uniform(10, 20)])
+        alpha = {'r': 0.6, 'g': prior.Uniform(0.6, 1.0)}
+        model = AlphaModel(sphere, alpha=alpha)
+        pre_names = model._parameter_names
+        post_names = take_yaml_round_trip(model)._parameter_names
+        self.assertEqual(pre_names, post_names)
+
+    @attr('fast')
+    def test_yaml_preserves_parameter_ties(self):
+        tied = prior.Uniform(0, 1)
+        sphere = Sphere(n=tied, r=prior.Uniform(0.6, 1, name='radius'),
+                        center=[prior.Uniform(0.6, 1), tied, 10])
+        alpha = {'r': 0.6, 'g': prior.Uniform(0.8, 0.9)}
+        model = AlphaModel(sphere, alpha=alpha)
+        model.add_tie(['radius', 'center.0'])
+        post_model = take_yaml_round_trip(model)
+        self.assertEqual(model.parameters, post_model.parameters)
+
 
 class TestParameterMapping(unittest.TestCase):
     @attr("fast")
@@ -136,6 +185,14 @@ class TestParameterMapping(unittest.TestCase):
         parameter_map = model._convert_to_map(parameter)
         expected_placeholder = "_parameter_{}".format(position)
         expected = [dict, [[['a', 0], ['b', 1], ['c', expected_placeholder]]]]
+        self.assertEqual(parameter_map, expected)
+
+    @attr("fast")
+    def test_map_dictionary_ignores_none(self):
+        model = SimpleModel()
+        parameter = {'a': 0, 'b': 1, 'c': None}
+        parameter_map = model._convert_to_map(parameter)
+        expected = [dict, [[['a', 0], ['b', 1]]]]
         self.assertEqual(parameter_map, expected)
 
     @attr("fast")
@@ -413,6 +470,91 @@ class TestParameterTying(unittest.TestCase):
         self.assertEqual(model._parameter_names, expected_names)
 
 
+class TestFindOptics(unittest.TestCase):
+    @attr('fast')
+    def test_reads_noise_map(self):
+        noise = {'red': 0.5, 'green': prior.Uniform(0, 1)}
+        model = AlphaModel(Sphere(), noise_sd=noise)
+        found_noise = model._find_noise({'noise_sd.green': 0.7}, None)
+        self.assertEqual(found_noise, {'red': 0.5, 'green': 0.7})
+
+    @attr('fast')
+    def test_noise_from_schema(self):
+        model = AlphaModel(Sphere(), noise_sd=None)
+        schema = detector_grid(2, 2)
+        schema.attrs['noise_sd'] = 0.5
+        found_noise = model._find_noise({'noise_sd': 1}, schema)
+        self.assertEqual(found_noise, 0.5)
+
+    @attr('fast')
+    def test_model_noise_takes_precedence(self):
+        model = AlphaModel(Sphere(), noise_sd=0.8)
+        schema = detector_grid(2, 2)
+        schema.attrs['noise_sd'] = 0.5
+        found_noise = model._find_noise({'noise_sd': 1}, schema)
+        self.assertEqual(found_noise, 0.8)
+
+    @attr('fast')
+    def test_no_noise_if_all_uniform(self):
+        sphere = Sphere(r=prior.Uniform(0, 1), n=prior.Uniform(1, 2))
+        model = AlphaModel(sphere)
+        schema = detector_grid(2, 2)
+        found_noise = model._find_noise({'r': 0.5, 'n': 0.5}, schema)
+        self.assertEqual(found_noise, 1)
+
+    @attr('fast')
+    def test_require_noise_if_nonuniform(self):
+        sphere = Sphere(r=prior.Gaussian(0, 1), n=prior.Uniform(1, 2))
+        model = AlphaModel(sphere)
+        schema = detector_grid(2, 2)
+        pars = {'r': 0.5, 'n': 0.5}
+        self.assertRaises(MissingParameter, model._find_noise, pars, schema)
+
+    @attr('fast')
+    def test_reads_optics_from_map(self):
+        med_n = prior.ComplexPrior(1.5, prior.Uniform(0, 0.1))
+        wl = {'red': 0.5, 'green': prior.Uniform(0, 1)}
+        pol = [1, prior.Uniform(0.5, 1.5)]
+        model = AlphaModel(Sphere(), medium_index=med_n, 
+                           illum_wavelen=wl, illum_polarization=pol)
+        pars = {'medium_index.imag': 0.01, 'illum_wavelen.green': 0.6,
+                'illum_polarization.1': 1}
+        found_optics = model._find_optics(pars, None)
+        expected = {'medium_index': complex(1.5, 0.01),
+                    'illum_wavelen': {'red': 0.5, 'green': 0.6},
+                    'illum_polarization': [1, 1]}
+        self.assertEqual(found_optics, expected)
+
+    @attr('fast')
+    def test_optics_from_schema(self):
+        model = AlphaModel(Sphere(), medium_index=prior.Uniform(1, 2))
+        schema = detector_grid(2, 2)
+        schema.attrs['illum_wavelen'] = 0.6
+        schema.attrs['illum_polarization'] = [1, 0]
+        found_optics = model._find_optics({'medium_index': 1.5}, schema)
+        expected = {'medium_index': 1.5, 'illum_wavelen': 0.6,
+                    'illum_polarization': [1, 0]}
+        self.assertEqual(found_optics, expected)
+
+    @attr('fast')
+    def test_model_optics_take_precedence(self):
+        model = AlphaModel(Sphere(), medium_index=1.5, illum_wavelen=0.8)
+        schema = detector_grid(2, 2)
+        schema.attrs['illum_wavelen'] = 0.6
+        schema.attrs['illum_polarization'] = [1, 0]
+        found_optics = model._find_optics({}, schema)
+        expected = {'medium_index': 1.5, 'illum_wavelen': 0.8,
+                    'illum_polarization': [1, 0]}
+        self.assertEqual(found_optics, expected)
+
+    @attr('fast')
+    def test_missing_optics(self):
+        model = AlphaModel(Sphere(), medium_index=1.5, illum_wavelen=0.8)
+        schema = detector_grid(2, 2)
+        schema.attrs['illum_wavelen'] = 0.6
+        self.assertRaises(MissingParameter, model._find_optics, {}, schema)
+
+
 class TestAlphaModel(unittest.TestCase):
     @attr('fast')
     def test_initializable(self):
@@ -532,20 +674,6 @@ def test_pullingoutguess():
     assert_equal(s.n, initial_guess.n)
     assert_equal(s.r, initial_guess.r)
     assert_equal(s.center, initial_guess.center)
-
-
-@attr('fast')
-def test_find_noise():
-    noise = 0.5
-    s = Sphere(n=prior.Uniform(1.5, 1.7), r=2, center=[1, 2, 3])
-    data_base = detector_grid(10, spacing=0.5)
-    data_noise = update_metadata(data_base, noise_sd=noise)
-    model_u = AlphaModel(s, alpha=prior.Uniform(0.7, 0.9))
-    model_g = AlphaModel(s, alpha=prior.Gaussian(0.8, 0.1))
-    pars = {'n': 1.6, 'alpha': 0.8}
-    assert_equal(model_u._find_noise(pars, data_noise), noise)
-    assert_equal(model_u._find_noise(pars, data_base), 1)
-    assert_raises(MissingParameter, model_g._find_noise, pars, data_base)
 
 
 @attr('fast')

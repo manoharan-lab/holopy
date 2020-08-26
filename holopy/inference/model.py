@@ -124,6 +124,7 @@ class Model(HoloPyObject):
         self._parameter_names = []
         self._maps = {'scatterer': self._convert_to_map(scatterer.parameters),
                       'optics': self._convert_to_map(optics_parameters)}
+
     def _convert_to_map(self, parameter, name=''):
         if isinstance(parameter, (list, tuple, np.ndarray)):
             mapped = self._iterate_mapping(name + '.', enumerate(parameter))
@@ -234,18 +235,23 @@ class Model(HoloPyObject):
     @classmethod
     def from_yaml(cls, loader, node):
         fields = loader.construct_mapping(node, deep=True)
-        dummy_scatterer = fields['scatterer']
-        parameters = [par.renamed(name) for par, name in
-                      zip(fields['_parameters'], fields['_parameter_names'])]
-        maps = fields['_maps']
-        scatterer_parameters = read_map(maps['scatterer'], parameters)
-        scatterer = dummy_scatterer.from_parameters(scatterer_parameters)
-        kwargs = {'scatterer': scatterer, 'theory': fields['theory']}
-        kwargs.update(read_map(maps['optics'], parameters))
-        if 'model' in maps:
-            kwargs.update(read_map(maps['model'], parameters))
-        if 'theory' in maps:
-            kwargs.update(read_map(maps['theory'], parameters))
+        try:
+            parameters = fields['_parameters']
+            maps = fields['_maps']
+        except KeyError:
+            from holopy.fitting import fit_warning
+            fit_warning('newly saved model object', 'the old one')
+            kwargs = fields
+        else:
+            dummy_scatterer = fields['scatterer']
+            scatterer_parameters = read_map(maps['scatterer'], parameters)
+            scatterer = dummy_scatterer.from_parameters(scatterer_parameters)
+            kwargs = {'scatterer': scatterer, 'theory': fields['theory']}
+            kwargs.update(read_map(maps['optics'], parameters))
+            if 'model' in maps:
+                kwargs.update(read_map(maps['model'], parameters))
+            if 'theory' in maps:
+                kwargs.update(read_map(maps['theory'], parameters))
         return cls(**kwargs)
 
     @property
@@ -317,7 +323,7 @@ class Model(HoloPyObject):
         def find_parameter(key):
             if key in mapped_optics and mapped_optics[key] is not None:
                 val = mapped_optics[key]
-            elif hasattr(schema, key):
+            elif hasattr(schema, key) and getattr(schema, key) is not None:
                 val = getattr(schema, key)
             else:
                 raise MissingParameter(key)
@@ -335,7 +341,6 @@ class Model(HoloPyObject):
         """
         pars = [pars[name] for name in self._parameter_names]
         optics_map = read_map(self._maps['optics'], pars)
-        key = 'noise_sd'
         if 'noise_sd' in optics_map and optics_map['noise_sd'] is not None:
             val = optics_map['noise_sd']
         elif hasattr(schema,'noise_sd'):
