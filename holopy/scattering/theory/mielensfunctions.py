@@ -313,8 +313,8 @@ class MieScatteringMatrix(object):
             self._true_pts, self._true_values)
 
     def _default_max_l(self):
-        """An empirically good value for ~1e-7 accuracy"""
-        return np.ceil(4 * self.size_parameter).astype('int')
+        """An empirically good value for ~1e-6 accuracy"""
+        return np.ceil(25 + 1.1 * self.size_parameter).astype('int')
 
     def _default_npts(self):
         # Since tau_l(theta), pi_l(theta) ~ d/dx P_l^1, there are O(l)
