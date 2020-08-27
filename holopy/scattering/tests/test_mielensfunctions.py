@@ -395,6 +395,18 @@ class TestMieScatteringMatrix(unittest.TestCase):
         is_ok = np.allclose(exact / rescale, approx / rescale, **MEDTOLS)
         self.assertTrue(is_ok)
 
+    @attr('medium')
+    def test_works_when_large_size_parameter(self):
+        theta = np.linspace(0, 1.5, 11)
+        interpolator_low_l = mielensfunctions.MieScatteringMatrix(
+            index_ratio=1.1,
+            size_parameter=1000.0,  # roughly 80 um sphere
+            parallel_or_perpendicular='perpendicular',
+            lazy=True)
+
+        out = interpolator_low_l._eval(theta)
+        self.assertFalse(np.any(np.isnan(out)))
+
 
 class TestGaussQuad(unittest.TestCase):
     @attr("fast")
