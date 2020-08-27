@@ -272,8 +272,12 @@ class MieLensCalculator(object):
 
 
 class MieScatteringMatrix(object):
-    def __init__(self, parallel_or_perpendicular='perpendicular',
-                 index_ratio=1.1, size_parameter=1.0, max_l=None, npts=None,
+    def __init__(self,
+                 parallel_or_perpendicular='perpendicular',
+                 index_ratio=None,
+                 size_parameter=None,
+                 max_l=None,
+                 npts=None,
                  lazy=False):
         """Calculations of Mie far-field scattering matrices.
 
@@ -289,11 +293,17 @@ class MieScatteringMatrix(object):
             Index contrast of the particle.
         size_parameter : float
             Size of the sphere in units of 1/k = 1/wavevector
-        max_l : int > 0
-        npts : int > 0
-        lazy : bool
+        max_l : int > 0, optional
+            The maximum order of the series to sum to. Defaults to a
+            good value that trades off numerical accuracy (more terms)
+            and lack-of-errors (less terms).
+        npts : int > 0, optional
+            The number of points for interpolation. Defaults to a good
+            value.
+        lazy : bool, optional
             Whether or not to set up the interpolator right away or
-            to wait until it is called.
+            to wait until it is called. Default is False (i.e. set up an
+            interpolator.)
         """
         self.parallel_or_perpendicular = parallel_or_perpendicular
         self.index_ratio = index_ratio

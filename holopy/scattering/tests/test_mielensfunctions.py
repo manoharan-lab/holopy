@@ -332,23 +332,27 @@ class TestMieLensCalculator(unittest.TestCase):
 
 
 class TestMieScatteringMatrix(unittest.TestCase):
+    default_kwargs = {'index_ratio': 1.1, 'size_parameter': 10.0}
+
     @attr("fast")
     def test_raises_error_on_nans(self):
         theta = np.array([np.nan])
         interpolator = mielensfunctions.MieScatteringMatrix(
-            parallel_or_perpendicular='perpendicular')
+            parallel_or_perpendicular='perpendicular', **self.default_kwargs)
         self.assertRaises(RuntimeError, interpolator._eval, theta)
 
     @attr("fast")
     def test_lazy_eval_sets_up_interpolator(self):
         theta = np.linspace(0, 1.5, 10)
         interpolator = mielensfunctions.MieScatteringMatrix(
-            parallel_or_perpendicular='perpendicular', lazy=True)
+            parallel_or_perpendicular='perpendicular', lazy=True,
+            **self.default_kwargs)
         assert (interpolator._interp is None)
         approx = interpolator(theta)
 
         other = mielensfunctions.MieScatteringMatrix(
-            parallel_or_perpendicular='perpendicular', lazy=False)
+            parallel_or_perpendicular='perpendicular', lazy=False,
+            **self.default_kwargs)
         self.assertEqual(type(interpolator._interp), type(other._interp))
         self.assertTrue(interpolator._interp is not None)
 
@@ -356,7 +360,7 @@ class TestMieScatteringMatrix(unittest.TestCase):
     def test_perpendicular_interpolator_accuracy(self):
         theta = np.linspace(0, 1.5, 1000)
         interpolator = mielensfunctions.MieScatteringMatrix(
-            parallel_or_perpendicular='perpendicular')
+            parallel_or_perpendicular='perpendicular', **self.default_kwargs)
 
         exact = interpolator._eval(theta)
         approx = interpolator(theta)
@@ -369,7 +373,7 @@ class TestMieScatteringMatrix(unittest.TestCase):
     def test_parallel_interpolator_accuracy(self):
         theta = np.linspace(0, 1.5, 1000)
         interpolator = mielensfunctions.MieScatteringMatrix(
-            parallel_or_perpendicular='parallel')
+            parallel_or_perpendicular='parallel', **self.default_kwargs)
 
         exact = interpolator._eval(theta)
         approx = interpolator(theta)
@@ -382,11 +386,12 @@ class TestMieScatteringMatrix(unittest.TestCase):
     def test_interpolator_maxl_accuracy(self):
         theta = np.linspace(0, 1.5, 1000)
         interpolator_low_l = mielensfunctions.MieScatteringMatrix(
-            parallel_or_perpendicular='perpendicular')
+            parallel_or_perpendicular='perpendicular', **self.default_kwargs)
 
         higher_l = np.ceil(interpolator_low_l.size_parameter * 8).astype('int')
         interpolator_higher_l = mielensfunctions.MieScatteringMatrix(
-            parallel_or_perpendicular='perpendicular', max_l=higher_l)
+            parallel_or_perpendicular='perpendicular', max_l=higher_l,
+            **self.default_kwargs)
 
         exact = interpolator_low_l._eval(theta)
         approx = interpolator_higher_l._eval(theta)
