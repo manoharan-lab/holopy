@@ -354,9 +354,6 @@ def j2(x):
     return 2. / clipped * j1(clipped) - j0(clipped)
 
 
-# FIXME h1n, h2n return nan's for negative z, which they get called with
-# when the index ratio is negative... either fix this or ensure that
-# scatterers do not get created with negative indices.
 def spherical_h1n(n, z, derivative=False):
     """Spherical Hankel function H_n(z) or its derivative"""
     return spherical_jn(n, z, derivative) + 1j * spherical_yn(n, z, derivative)
@@ -401,16 +398,16 @@ class AlBlFunctions(object):
 
     where :math:`\psi_l` and :math:`\\xi_l` are the Riccati-Bessel
     functions of the first and third kinds, respectively. The
-    definitions used here follow those of van der Hulst [1]_, which
+    definitions used here follow those of van de Hulst [1]_, which
     differ from those used in Bohren and Huffman [2]_.
 
     References
     ----------
-        .. [1] H. C. van der Hulst, "Light Scattering by Small Particles",
-               Dover (1981), pg 123.
-        .. [2] C. F. Bohren and Donald R. Huffman, "Absorption and
-               Scattering of Light by Small Particles", Wiley (2004),
-               pg 101.
+    .. [1] H. C. van de Hulst, "Light Scattering by Small Particles",
+           Dover (1981), pg 123.
+    .. [2] C. F. Bohren and Donald R. Huffman, "Absorption and
+           Scattering of Light by Small Particles", Wiley (2004),
+           pg 101.
     """
 
     @staticmethod
@@ -429,7 +426,6 @@ class AlBlFunctions(object):
         Returns
         -------
         a_l, b_l : numpy.ndarray
-
         """
         psi_nx = AlBlFunctions.riccati_psin(
             l, index_ratio * size_parameter)
