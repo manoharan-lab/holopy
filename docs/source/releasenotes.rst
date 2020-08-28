@@ -38,6 +38,8 @@ Bugfixes
 - Fortran output no longer occasionaly leaks through the output supression
   context manager used by multiple scattering theories.
 - Restored ability to visualize slices through a scatterer object
+- The :class:`.MieLens` scattering theory now works for both large and
+  small spheres.
 
 Compatibility Notes
 --------------------
