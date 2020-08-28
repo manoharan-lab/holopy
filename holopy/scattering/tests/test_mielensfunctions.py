@@ -342,21 +342,6 @@ class TestMieScatteringMatrix(unittest.TestCase):
         self.assertRaises(RuntimeError, interpolator._eval, theta)
 
     @attr("fast")
-    def test_lazy_eval_sets_up_interpolator(self):
-        theta = np.linspace(0, 1.5, 10)
-        interpolator = mielensfunctions.MieScatteringMatrix(
-            parallel_or_perpendicular='perpendicular', lazy=True,
-            **self.default_kwargs)
-        assert (interpolator._interp is None)
-        approx = interpolator(theta)
-
-        other = mielensfunctions.MieScatteringMatrix(
-            parallel_or_perpendicular='perpendicular', lazy=False,
-            **self.default_kwargs)
-        self.assertEqual(type(interpolator._interp), type(other._interp))
-        self.assertTrue(interpolator._interp is not None)
-
-    @attr("fast")
     def test_perpendicular_interpolator_accuracy(self):
         theta = np.linspace(0, 1.5, 1000)
         interpolator = mielensfunctions.MieScatteringMatrix(
@@ -406,8 +391,7 @@ class TestMieScatteringMatrix(unittest.TestCase):
         interpolator_low_l = mielensfunctions.MieScatteringMatrix(
             index_ratio=1.1,
             size_parameter=1000.0,  # roughly 80 um sphere
-            parallel_or_perpendicular='perpendicular',
-            lazy=True)
+            parallel_or_perpendicular='perpendicular')
 
         out = interpolator_low_l._eval(theta)
         self.assertFalse(np.any(np.isnan(out)))

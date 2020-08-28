@@ -192,9 +192,9 @@ class MieLensCalculator(object):
                   'size_parameter': self.size_parameter,
                   }
         scat_s_evaluator = MieScatteringMatrix(
-            parallel_or_perpendicular='perpendicular', lazy=True, **kwargs)
+            parallel_or_perpendicular='perpendicular', **kwargs)
         scat_p_evaluator = MieScatteringMatrix(
-            parallel_or_perpendicular='parallel', lazy=True, **kwargs)
+            parallel_or_perpendicular='parallel', **kwargs)
         self._scat_perp_values = np.reshape(
             scat_s_evaluator._eval(self._theta_pts), (-1, 1))
         self._scat_prll_values = np.reshape(
@@ -276,9 +276,7 @@ class MieScatteringMatrix(object):
                  parallel_or_perpendicular='perpendicular',
                  index_ratio=None,
                  size_parameter=None,
-                 max_l=None,
-                 npts=None,
-                 lazy=False):
+                 max_l=None):
         """Calculations of Mie far-field scattering matrices.
 
         These work by summing the Mie series naively; for large sizes
@@ -297,41 +295,15 @@ class MieScatteringMatrix(object):
             The maximum order of the series to sum to. Defaults to a
             good value that trades off numerical accuracy (more terms)
             and lack-of-errors (less terms).
-        npts : int > 0, optional
-            The number of points for interpolation. Defaults to a good
-            value.
-        lazy : bool, optional
-            Whether or not to set up the interpolator right away or
-            to wait until it is called. Default is False (i.e. set up an
-            interpolator.)
         """
         self.parallel_or_perpendicular = parallel_or_perpendicular
         self.index_ratio = index_ratio
         self.size_parameter = size_parameter
         self.max_l = self._default_max_l() if max_l is None else max_l
-        self.npts = self._default_npts() if npts is None else npts
-        self.lazy = lazy
-        if not lazy:
-            self._setup_interpolator()
-        else:
-            self._interp = None
-
-    def _setup_interpolator(self):
-        self._true_pts = np.linspace(0, 0.5 * np.pi, self.npts)
-        self._true_values = self._eval(self._true_pts)
-        self._interp = interpolate.CubicSpline(
-            self._true_pts, self._true_values)
 
     def _default_max_l(self):
         """An empirically good value for ~1e-6 accuracy"""
         return np.ceil(25 + 1.1 * self.size_parameter).astype('int')
-
-    def _default_npts(self):
-        # Since tau_l(theta), pi_l(theta) ~ d/dx P_l^1, there are O(l)
-        # maxima / minima / zeros in the highest term, so we expect
-        # structure on the scale of ~1/l. So we take 10 * l points:
-        # This empirically works as well
-        return 10 * self.max_l
 
     def _eval(self, theta):
         """Evaluate S_parallel, perpendicular(theta) directly"""
@@ -352,10 +324,7 @@ class MieScatteringMatrix(object):
         return ans
 
     def __call__(self, theta):
-        # call the interpolator
-        if self._interp is None:
-            self._setup_interpolator()
-        return self._interp(theta)
+        return self._eval(theta)
 
 
 def j2(x):
