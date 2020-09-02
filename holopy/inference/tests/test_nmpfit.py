@@ -119,16 +119,6 @@ class TestRandomSubsetFitting(unittest.TestCase):
         assert_obj_close(result.scatterer, gold_sphere, rtol=1e-2)
 
 
-def test_n():
-    sph = Sphere(.5, 1.6, (5,5,5))
-    sch = detector_grid(shape=[100, 100], spacing=[0.1, 0.1])
-
-    model = ExactModel(sph, calc_holo, medium_index=1.33, illum_wavelen=.66, illum_polarization=(1, 0))
-    initial_guess = model.scatterer_from_parameters(model.initial_guess)
-    holo = calc_holo(sch, initial_guess, 1.33, .66, (1, 0))
-    assert_allclose(model._residuals({'n' : .5}, holo, 1).sum(), 0)
-
-
 @attr('medium')
 def test_serialization():
     par_s = Sphere(center = (Uniform(0, 1e-5, guess=.567e-5),
@@ -180,7 +170,7 @@ def test_constraint():
         spheres = Spheres([Sphere(r=.5, center=(0,0,0)),
                            Sphere(r=.5, center=(0,0,.2))])
         model = ExactModel(spheres, calc_holo, constraints=LimitOverlaps())
-        cost = model.lnprior({'1:Sphere.center[2]' : .2})
+        cost = model.lnprior([])
         assert_equal(cost, -np.inf)
 
 

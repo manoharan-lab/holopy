@@ -201,7 +201,7 @@ class TestHelperFunctions(unittest.TestCase):
     @attr('fast')
     def test_parameterize_scatterer_spheres(self):
         sphere = Sphere(r=0.5, n=1, center=[0, 0, 0])
-        model = make_default_model(Spheres([sphere, sphere]))
+        model = make_default_model(Spheres([sphere, sphere], warn=False))
         expected = {'0:n', '1:n', '0:r', '1:r', 'alpha',
                     '0:x', '0:y', '0:z', '1:x', '1:y', '1:z'}
         self.assertEqual(set(model.parameters.keys()), expected)
@@ -209,7 +209,7 @@ class TestHelperFunctions(unittest.TestCase):
     @attr('fast')
     def test_parameterize_scatterer_spheres_minval(self):
         sphere = Sphere(r=0.5, n=1, center=[0, 0, 0])
-        model = make_default_model(Spheres([sphere, sphere]))
+        model = make_default_model(Spheres([sphere, sphere], warn=False))
         self.assertEqual(model.parameters['0:n'].lower_bound, 0)
         self.assertEqual(model.parameters['1:n'].lower_bound, 0)
 

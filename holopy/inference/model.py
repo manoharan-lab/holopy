@@ -302,15 +302,30 @@ class Model(HoloPyObject):
         -------
         scatterer
         """
-        pars = self.ensure_parameters_are_listlike(pars)
+        pars = self._ensure_parameters_are_listlike(pars)
         scatterer_parameters = read_map(self._maps['scatterer'], pars)
         return self._dummy_scatterer.from_parameters(scatterer_parameters)
 
-    def ensure_parameters_are_listlike(self, pars):
+    def parameters_list_from_dict(self, pars):
+        """
+        Uses a dictionary with keys matching self.parameters to create a list
+        of parameters for passing into self.forward, self.lnposterior, etc.
+
+        Parameters
+        ----------
+        pars: dict
+
+        Returns
+        -------
+        pars: list
+        """
+        return [pars[name] for name in self._parameter_names]
+
+    def _ensure_parameters_are_listlike(self, pars):
         if isinstance(pars, dict):
             from holopy.fitting import fit_warning
             fit_warning('list', 'a dictionary of parameters')
-            pars = [pars[name] for name in self._parameter_names]
+            pars = self.parameters_list_from_dict(pars)
         return pars
 
     def _find_optics(self, pars, schema):
@@ -372,7 +387,7 @@ class Model(HoloPyObject):
         -------
         lnprior: float
         """
-        par_vals = self.ensure_parameters_are_listlike(par_vals)
+        par_vals = self._ensure_parameters_are_listlike(par_vals)
         if 'scatterer' in self._maps:
             try:
                 par_scat = self.scatterer_from_parameters(par_vals)
@@ -436,7 +451,7 @@ class Model(HoloPyObject):
         --------
         lnlike: float
         """
-        pars = self.ensure_parameters_are_listlike(pars)
+        pars = self._ensure_parameters_are_listlike(pars)
         noise_sd = self._find_noise(pars, data)
         N = data.size
         log_likelihood = ensure_scalar(
@@ -501,7 +516,7 @@ class AlphaModel(Model):
             dimensions of the resulting hologram. Metadata taken from
             detector if not given explicitly when instantiating self.
         """
-        pars = self.ensure_parameters_are_listlike(pars)
+        pars = self._ensure_parameters_are_listlike(pars)
         alpha = read_map(self._maps['model'], pars)['alpha']
         optics = self._find_optics(pars, detector)
         scatterer = self.scatterer_from_parameters(pars)
@@ -544,7 +559,7 @@ class ExactModel(Model):
             dimensions of the resulting hologram. Metadata taken from
             detector if not given explicitly when instantiating self.
         """
-        pars = self.ensure_parameters_are_listlike(pars)
+        pars = self._ensure_parameters_are_listlike(pars)
         optics = self._find_optics(pars, detector)
         scatterer = self.scatterer_from_parameters(pars)
         try:
@@ -586,7 +601,7 @@ class PerfectLensModel(Model):
             dimensions of the resulting hologram. Metadata taken from
             detector if not given explicitly when instantiating self.
         """
-        pars = self.ensure_parameters_are_listlike(pars)
+        pars = self._ensure_parameters_are_listlike(pars)
         alpha = read_map(self._maps['model'], pars)['alpha']
         optics_kwargs = self._find_optics(pars, detector)
         scatterer = self.scatterer_from_parameters(pars)

@@ -19,6 +19,7 @@
 
 import unittest
 import tempfile
+import warnings
 
 import yaml
 import numpy as np
@@ -42,6 +43,7 @@ from holopy.inference.model import (Model, PerfectLensModel,
 from holopy.inference.tests.common import SimpleModel
 from holopy.scattering.tests.common import (
     xschema_lens, sphere as SPHERE_IN_METERS)
+from holopy.fitting import fit_warning
 
 
 class TestModel(unittest.TestCase):
@@ -99,9 +101,12 @@ class TestModel(unittest.TestCase):
     def test_scatterer_from_parameters_dict(self):
         sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
         model = AlphaModel(sphere)
-        pars={'r': 0.8, 'n': 1.6}
+        pars = {'r': 0.8, 'n': 1.6}
         expected = Sphere(n=1.6, r=0.8)
-        self.assertEqual(model.scatterer_from_parameters(pars), expected)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            out_scatterer = model.scatterer_from_parameters(pars)
+        self.assertEqual(out_scatterer, expected)
 
     @attr('fast')
     def test_scatterer_from_parameters_list(self):
@@ -139,6 +144,15 @@ class TestModel(unittest.TestCase):
         model.add_tie(['radius', 'center.0'])
         post_model = take_yaml_round_trip(model)
         self.assertEqual(model.parameters, post_model.parameters)
+
+    @attr('fast')
+    def test_parameters_list_from_dict(self):
+        sphere = Sphere(r=prior.Uniform(0, 1), n=prior.Uniform(1, 2))
+        model = AlphaModel(sphere, alpha=prior.Uniform(0.5, 1))
+        pars = {'alpha': 0.8, 'r': 1.2, 'n': 1.5}
+        expected = [1.5, 1.2, 0.8]
+        self.assertEqual(model.parameters_list_from_dict(pars), expected)
+
 
 
 class TestParameterMapping(unittest.TestCase):
@@ -625,6 +639,7 @@ class TestPerfectLensModel(unittest.TestCase):
             }
         pars_alpha0 = pars_common.copy()
         pars_alpha0.update({'alpha': 0})
+        pars_alpha0 = model.parameters_list_from_dict(pars_alpha0)
         alpha0 = model.forward(pars_alpha0, xschema_lens)
         self.assertLess(alpha0.values.std(), 1e-6)
 

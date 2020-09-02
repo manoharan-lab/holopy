@@ -108,9 +108,8 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
         result = fitter.fit(model, data)
         uncertainties = pack_uncertainties_into_dict(result)
 
-        parameters_best = result.parameters
-        parameters_1sig = {'alpha': result.parameters['alpha'] +
-                                    uncertainties['alpha']}
+        parameters_best = result._parameters
+        parameters_1sig = [result._parameters[0] + uncertainties['alpha']]
         loglikelihood_best = model.lnposterior(parameters_best, data)
         loglikelihood_1sig = model.lnposterior(parameters_1sig, data)
         delta_loglikelihood = loglikelihood_best - loglikelihood_1sig
