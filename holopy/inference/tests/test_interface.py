@@ -113,7 +113,7 @@ class TestStrategyHandling(unittest.TestCase):
         result = fit(DATA, SimpleModel())
         self.assertEqual(result.strategy, NmpfitStrategy())
 
-    @attr('medium')
+    @attr('slow')
     def test_default_sampling_strategy_is_emcee(self):
         result = sample(DATA, SimpleModel())
         self.assertTrue(isinstance(result.strategy, EmceeStrategy))
