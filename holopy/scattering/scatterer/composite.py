@@ -98,8 +98,9 @@ class Scatterers(Scatterer):
     def _parameters(self):
         parameters = {}
         for i, scatterer in enumerate(self.scatterers):
-            single_scatterer_parameters = {'{0}:{1}'.format(i, key): val
-                            for key, val in scatterer._parameters.items()}
+            single_scatterer_parameters = {
+                '{0}:{1}'.format(i, key): val for key, val in
+                scatterer._parameters.items()}
             parameters.update(single_scatterer_parameters)
         return parameters
 

@@ -194,7 +194,8 @@ class TestHelperFunctions(unittest.TestCase):
 
     @attr('fast')
     def test_parameterize_scatterer_center(self):
-        scatterer = parameterize_scatterer(Sphere(center=[0, 0, 0]), ['center'])
+        fit_pars = ['center']
+        scatterer = parameterize_scatterer(Sphere(center=[0, 0, 0]), fit_pars)
         expected = prior.Uniform(-np.inf, np.inf, 0, 'x')
         self.assertEqual(scatterer.center[0], expected)
 

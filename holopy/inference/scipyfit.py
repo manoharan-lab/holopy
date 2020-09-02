@@ -89,7 +89,7 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         errors_scaled = noise * unit_errors
         errors = self.unscale_pars_from_minimizer(parameters, errors_scaled)
         intervals = [UncertainValue(par, err, name=name)
-                     for par, err, name in 
+                     for par, err, name in
                      zip(fitted_pars, errors, model._parameter_names)]
 
         # timing decorator...

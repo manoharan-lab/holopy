@@ -361,7 +361,7 @@ class Model(HoloPyObject):
         optics_map = read_map(self._maps['optics'], pars)
         if 'noise_sd' in optics_map and optics_map['noise_sd'] is not None:
             val = optics_map['noise_sd']
-        elif hasattr(schema,'noise_sd'):
+        elif hasattr(schema, 'noise_sd'):
             val = schema.noise_sd
         else:
             raise MissingParameter(key)

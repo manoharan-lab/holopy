@@ -154,7 +154,6 @@ class TestModel(unittest.TestCase):
         self.assertEqual(model.parameters_list_from_dict(pars), expected)
 
 
-
 class TestParameterMapping(unittest.TestCase):
     @attr("fast")
     def test_map_value(self):
@@ -184,7 +183,7 @@ class TestParameterMapping(unittest.TestCase):
     @attr("fast")
     def test_map_list(self):
         model = SimpleModel()
-        parameter = [0, prior.Uniform(0, 1), prior.Uniform(2,3)]
+        parameter = [0, prior.Uniform(0, 1), prior.Uniform(2, 3)]
         position = len(model._parameters)
         parameter_map = model._convert_to_map(parameter)
         expected = [0, "_parameter_{}".format(position),
@@ -194,7 +193,7 @@ class TestParameterMapping(unittest.TestCase):
     @attr("fast")
     def test_list_compound_name(self):
         model = SimpleModel()
-        parameter = [0, prior.Uniform(0, 1), prior.Uniform(2,3)]
+        parameter = [0, prior.Uniform(0, 1), prior.Uniform(2, 3)]
         model._convert_to_map(parameter, 'prefix')
         self.assertEqual(model._parameter_names[-2], 'prefix.1')
         self.assertEqual(model._parameter_names[-1], 'prefix.2')
@@ -275,7 +274,7 @@ class TestParameterMapping(unittest.TestCase):
 
     @attr("fast")
     def test_read_func_map(self):
-        parameter_map =[dict, [[['a', 0], ['b', 1], ['c', 2]]]]
+        parameter_map = [dict, [[['a', 0], ['b', 1], ['c', 2]]]]
         expected = {'a': 0, 'b': 1, 'c': 2}
         self.assertEqual(read_map(parameter_map, []), expected)
 
@@ -406,7 +405,6 @@ class TestParameterTying(unittest.TestCase):
         expected = ['dummy', 'dummy_0', 'z']
         self.assertEqual(model._parameter_names, expected)
 
-
     @attr('fast')
     def test_triplicate_name(self):
         tied = prior.Uniform(-5, 5, name='dummy')
@@ -457,7 +455,7 @@ class TestParameterTying(unittest.TestCase):
                         center=[tied, tied, 10])
         model = AlphaModel(sphere)
         model.add_tie(['r', 'n'])
-        expected = [dict, [[['n', '_parameter_0'],['r', '_parameter_0'],
+        expected = [dict, [[['n', '_parameter_0'], ['r', '_parameter_0'],
                             ['center', ['_parameter_1', '_parameter_1', 10]]]]]
         self.assertEqual(model._maps['scatterer'], expected)
 
@@ -480,7 +478,8 @@ class TestParameterTying(unittest.TestCase):
                                 prior.Uniform(0, 10)])
         model = AlphaModel(sphere)
         model.add_tie(['center.0', 'n.imag', 'center.1'])
-        expected_map = [dict,
+        expected_map = [
+            dict,
             [[['n', [make_complex, ['_parameter_0', '_parameter_1']]],
               ['r', '_parameter_2'],
               ['center', ['_parameter_1', '_parameter_1', '_parameter_3']]]]]
@@ -537,7 +536,7 @@ class TestFindOptics(unittest.TestCase):
         med_n = prior.ComplexPrior(1.5, prior.Uniform(0, 0.1))
         wl = {'red': 0.5, 'green': prior.Uniform(0, 1)}
         pol = [1, prior.Uniform(0.5, 1.5)]
-        model = AlphaModel(Sphere(), medium_index=med_n, 
+        model = AlphaModel(Sphere(), medium_index=med_n,
                            illum_wavelen=wl, illum_polarization=pol)
         pars = [0.01, 0.6, 1]
         found_optics = model._find_optics(pars, None)
