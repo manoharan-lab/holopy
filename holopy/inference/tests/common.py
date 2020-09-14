@@ -35,7 +35,7 @@ class SimpleModel(Model):
     def _residuals(self, pars, data, noise):
         return self.lnposterior(pars, data, None)
 
-    def lnposterior(self, par_vals, data, dummy):
+    def _lnposterior(self, par_vals, data, dummy):
         x = par_vals
         data = np.array(data)
         return -((x[-1] - data)**2).sum()

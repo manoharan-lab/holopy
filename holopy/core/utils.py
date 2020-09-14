@@ -188,7 +188,7 @@ class LnpostWrapper(HoloPyObject):
     def __init__(self, model, data, new_pixels=None, minus=False):
         self.data = data
         self.pixels = new_pixels
-        self.func = model.lnposterior
+        self.func = model._lnposterior
         self.prefactor = -1 if minus else 1
 
     def evaluate(self, par_vals):

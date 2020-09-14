@@ -265,9 +265,10 @@ class Model(HoloPyObject):
     @property
     def initial_guess(self):
         """
-        list of initial guess value for each parameter
+        dictionary of initial guess values for each parameter
         """
-        return [par.guess for par in self._parameters]
+        return {name: par.guess for name, par in zip(self._parameter_names,
+                                                     self._parameters)}
 
     @property
     def medium_index(self):
@@ -287,8 +288,7 @@ class Model(HoloPyObject):
 
     @property
     def scatterer(self):
-        parameters = read_map(self._maps['scatterer'], self._parameters)
-        return self._dummy_scatterer.from_parameters(parameters)
+        return self._scatterer_from_parameters(self._parameters)
 
     def scatterer_from_parameters(self, pars):
         """
@@ -296,36 +296,26 @@ class Model(HoloPyObject):
 
         Parameters
         ----------
-        pars: list
-
+        pars: dict or list
+            list - values for each parameter in the order of self._parameters
+            dict - keys should match self.parameters
         Returns
         -------
         scatterer
         """
-        pars = self._ensure_parameters_are_listlike(pars)
+        pars = self.ensure_parameters_are_listlike(pars)
+        return self._scatterer_from_parameters(pars)
+
+    def _scatterer_from_parameters(self, pars):
+        """
+        Internal function taking pars as a list only
+        """
         scatterer_parameters = read_map(self._maps['scatterer'], pars)
         return self._dummy_scatterer.from_parameters(scatterer_parameters)
 
-    def parameters_list_from_dict(self, pars):
-        """
-        Uses a dictionary with keys matching self.parameters to create a list
-        of parameters for passing into self.forward, self.lnposterior, etc.
-
-        Parameters
-        ----------
-        pars: dict
-
-        Returns
-        -------
-        pars: list
-        """
-        return [pars[name] for name in self._parameter_names]
-
-    def _ensure_parameters_are_listlike(self, pars):
+    def ensure_parameters_are_listlike(self, pars):
         if isinstance(pars, dict):
-            from holopy.fitting import fit_warning
-            fit_warning('list', 'a dictionary of parameters')
-            pars = self.parameters_list_from_dict(pars)
+            pars = [pars[name] for name in self._parameter_names]
         return pars
 
     def _find_optics(self, pars, schema):
@@ -364,7 +354,7 @@ class Model(HoloPyObject):
         elif hasattr(schema, 'noise_sd'):
             val = schema.noise_sd
         else:
-            raise MissingParameter(key)
+            raise MissingParameter('noise_sd')
         if val is None:
             if np.all([isinstance(par, Uniform) for par in self._parameters]):
                 val = 1
@@ -375,22 +365,29 @@ class Model(HoloPyObject):
     def generate_guess(self, n=1, scaling=1, seed=None):
         return generate_guess(self._parameters, n, scaling, seed)
 
-    def lnprior(self, par_vals):
+    def lnprior(self, pars):
         """
-        Compute the log-prior probability of par_vals
+        Compute the log-prior probability of pars
 
         Parameters
         -----------
-        par_vals: list
-            values for each parameter in the order of self._parameters
+        pars: dict or list
+            list - values for each parameter in the order of self._parameters
+            dict - keys should match self.parameters
         Returns
         -------
         lnprior: float
         """
-        par_vals = self._ensure_parameters_are_listlike(par_vals)
+        pars = self.ensure_parameters_are_listlike(pars)
+        return self._lnprior(pars)
+
+    def _lnprior(self, pars):
+        """
+        Internal function taking pars as a list only
+        """
         if 'scatterer' in self._maps:
             try:
-                par_scat = self.scatterer_from_parameters(par_vals)
+                par_scat = self._scatterer_from_parameters(pars)
             except InvalidScatterer:
                 return -np.inf
 
@@ -398,16 +395,17 @@ class Model(HoloPyObject):
             if not constraint.check(par_scat):
                 return -np.inf
         return sum([p.lnprob(val) for p, val in
-                    zip(self._parameters, par_vals)])
+                    zip(self._parameters, pars)])
 
-    def lnposterior(self, par_vals, data, pixels=None):
+    def lnposterior(self, pars, data, pixels=None):
         """
         Compute the log-posterior probability of pars given data
 
         Parameters
         -----------
-        pars: list
-            values for each parameter in the order of self._parameters
+        pars: dict or list
+            list - values for each parameter in the order of self._parameters
+            dict - keys should match self.parameters
         data: xarray
             The data to compute posterior against
         pixels: int(optional)
@@ -417,7 +415,14 @@ class Model(HoloPyObject):
         --------
         lnposterior: float
         """
-        lnprior = self.lnprior(par_vals)
+        pars = self.ensure_parameters_are_listlike(pars)
+        return self._lnposterior(pars, data, pixels)
+
+    def _lnposterior(self, pars, data, pixels=None):
+        """
+        Internal function taking pars as a list only
+        """
+        lnprior = self._lnprior(pars)
         # prior is sometimes used to forbid thing like negative radius
         # which will fail if you attempt to compute a hologram of, so
         # don't try to compute likelihood where the prior already
@@ -427,13 +432,17 @@ class Model(HoloPyObject):
         else:
             if pixels is not None:
                 data = make_subset_data(data, pixels=pixels)
-            return lnprior + self.lnlike(par_vals, data)
+            return lnprior + self._lnlike(pars, data)
 
     def forward(self, pars, detector):
+        pars = self.ensure_parameters_are_listlike(pars)
+        return self._forward(pars, detector)
+
+    def _forward(self, pars, detector):
         raise NotImplementedError("Implement in subclass")
 
     def _residuals(self, pars, data, noise):
-        forward_model = self.forward(pars, data)
+        forward_model = self._forward(pars, data)
         return ((forward_model - data) / noise).values
 
     def lnlike(self, pars, data):
@@ -442,8 +451,9 @@ class Model(HoloPyObject):
 
         Parameters
         -----------
-        pars: list
-            Values for each parameter in the order of self._parameters
+        pars: dict or list
+            list - values for each parameter in the order of self._parameters
+            dict - keys should match self.parameters
         data: xarray
             The data to compute likelihood against
 
@@ -451,7 +461,13 @@ class Model(HoloPyObject):
         --------
         lnlike: float
         """
-        pars = self._ensure_parameters_are_listlike(pars)
+        pars = self.ensure_parameters_are_listlike(pars)
+        return self._lnlike(pars, data)
+
+    def _lnlike(self, pars, data):
+        """
+        Internal function taking pars as a list only
+        """
         noise_sd = self._find_noise(pars, data)
         N = data.size
         log_likelihood = ensure_scalar(
@@ -473,6 +489,7 @@ class Model(HoloPyObject):
         fit_warning('holopy.sample()', 'model.sample()')
         strategy = validate_strategy(strategy, 'sample')
         return strategy.sample(self, data)
+
 
 class LimitOverlaps(HoloPyObject):
     """
@@ -502,7 +519,7 @@ class AlphaModel(Model):
     def alpha(self):
         return read_map(self._maps['model'], self._parameters)['alpha']
 
-    def forward(self, pars, detector):
+    def _forward(self, pars, detector):
         """
         Compute a hologram from pars with dimensions and metadata of detector,
         scaled by self.alpha.
@@ -516,10 +533,9 @@ class AlphaModel(Model):
             dimensions of the resulting hologram. Metadata taken from
             detector if not given explicitly when instantiating self.
         """
-        pars = self._ensure_parameters_are_listlike(pars)
         alpha = read_map(self._maps['model'], pars)['alpha']
         optics = self._find_optics(pars, detector)
-        scatterer = self.scatterer_from_parameters(pars)
+        scatterer = self._scatterer_from_parameters(pars)
         try:
             return calc_holo(detector, scatterer, theory=self.theory,
                              scaling=alpha, **optics)
@@ -546,7 +562,7 @@ class ExactModel(Model):
                          illum_polarization, theory, constraints)
         self.calc_func = calc_func
 
-    def forward(self, pars, detector):
+    def _forward(self, pars, detector):
         """
         Compute a forward model (the hologram)
 
@@ -559,9 +575,8 @@ class ExactModel(Model):
             dimensions of the resulting hologram. Metadata taken from
             detector if not given explicitly when instantiating self.
         """
-        pars = self._ensure_parameters_are_listlike(pars)
         optics = self._find_optics(pars, detector)
-        scatterer = self.scatterer_from_parameters(pars)
+        scatterer = self._scatterer_from_parameters(pars)
         try:
             return self.calc_func(detector, scatterer, theory=self.theory, **optics)
         except (MultisphereFailure, InvalidScatterer):
@@ -588,7 +603,7 @@ class PerfectLensModel(Model):
     def lens_angle(self):
         return read_map(self._maps['theory'], self._parameters)['lens_angle']
 
-    def forward(self, pars, detector):
+    def _forward(self, pars, detector):
         """
         Compute a forward model (the hologram)
 
@@ -601,10 +616,9 @@ class PerfectLensModel(Model):
             dimensions of the resulting hologram. Metadata taken from
             detector if not given explicitly when instantiating self.
         """
-        pars = self._ensure_parameters_are_listlike(pars)
         alpha = read_map(self._maps['model'], pars)['alpha']
         optics_kwargs = self._find_optics(pars, detector)
-        scatterer = self.scatterer_from_parameters(pars)
+        scatterer = self._scatterer_from_parameters(pars)
         theory_kwargs = read_map(self._maps['theory'], pars)
         # FIXME would be nice to have access to the interpolator kwargs
         theory = MieLens(**theory_kwargs)

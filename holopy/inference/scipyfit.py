@@ -72,7 +72,7 @@ class LeastSquaresScipyStrategy(HoloPyObject):
                 parameters, rescaled_values)
             noise = model._find_noise(unscaled_values, data)
             residuals = model._residuals(unscaled_values, data, noise)
-            ln_prior = model.lnprior(unscaled_values) - guess_lnprior
+            ln_prior = model._lnprior(unscaled_values) - guess_lnprior
             zscore_prior = np.sqrt(2 * -ln_prior)
             np.append(residuals, zscore_prior)
             return residuals

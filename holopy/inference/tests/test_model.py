@@ -103,9 +103,7 @@ class TestModel(unittest.TestCase):
         model = AlphaModel(sphere)
         pars = {'r': 0.8, 'n': 1.6}
         expected = Sphere(n=1.6, r=0.8)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
-            out_scatterer = model.scatterer_from_parameters(pars)
+        out_scatterer = model.scatterer_from_parameters(pars)
         self.assertEqual(out_scatterer, expected)
 
     @attr('fast')
@@ -117,11 +115,26 @@ class TestModel(unittest.TestCase):
         self.assertEqual(model.scatterer_from_parameters(pars), expected)
 
     @attr('fast')
+    def test_internal_scatterer_from_parameters_dict_fails(self):
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
+        model = AlphaModel(sphere)
+        pars = {'r': 0.8, 'n': 1.6}
+        self.assertRaises(KeyError, model._scatterer_from_parameters, pars)
+
+    @attr('fast')
+    def test_internal_scatterer_from_parameters_list(self):
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
+        model = AlphaModel(sphere)
+        pars = [1.6, 0.8]
+        expected = Sphere(n=1.6, r=0.8)
+        self.assertEqual(model._scatterer_from_parameters(pars), expected)
+
+    @attr('fast')
     def test_initial_guess(self):
         sphere = Sphere(n=prior.Uniform(1, 2),
                         r=prior.Uniform(0, 1, guess=0.8))
         model = AlphaModel(sphere)
-        self.assertEqual(model.initial_guess, [1.5, 0.8])
+        self.assertEqual(model.initial_guess, {'n': 1.5, 'r': 0.8})
 
     @attr('fast')
     def test_yaml_preserves_parameter_names(self):
@@ -146,12 +159,13 @@ class TestModel(unittest.TestCase):
         self.assertEqual(model.parameters, post_model.parameters)
 
     @attr('fast')
-    def test_parameters_list_from_dict(self):
+    def test_ensure_parameters_are_listlike(self):
         sphere = Sphere(r=prior.Uniform(0, 1), n=prior.Uniform(1, 2))
         model = AlphaModel(sphere, alpha=prior.Uniform(0.5, 1))
-        pars = {'alpha': 0.8, 'r': 1.2, 'n': 1.5}
-        expected = [1.5, 1.2, 0.8]
-        self.assertEqual(model.parameters_list_from_dict(pars), expected)
+        as_dict = {'alpha': 0.8, 'r': 1.2, 'n': 1.5}
+        as_list = [1.5, 1.2, 0.8]
+        self.assertEqual(model.ensure_parameters_are_listlike(as_dict), as_list)
+        self.assertEqual(model.ensure_parameters_are_listlike(as_list), as_list)
 
 
 class TestParameterMapping(unittest.TestCase):
@@ -367,7 +381,7 @@ class TestParameterTying(unittest.TestCase):
         self.assertEqual(model._maps['scatterer'], expected)
 
     @attr('fast')
-    def test_equal_not_identical(self):
+    def test_equal_not_identical_do_not_tie(self):
         scatterer = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
                            center=[10, 10, prior.Uniform(1, 2)])
         model = AlphaModel(scatterer)
@@ -598,7 +612,6 @@ class TestAlphaModel(unittest.TestCase):
         alpha_dict = {'red': 1, 'green': 0.5}
         sphere = make_sphere()
         model = AlphaModel(sphere, alpha=alpha_dict)
-
         reloaded = take_yaml_round_trip(model)
         self.assertEqual(reloaded, model)
 
@@ -638,7 +651,6 @@ class TestPerfectLensModel(unittest.TestCase):
             }
         pars_alpha0 = pars_common.copy()
         pars_alpha0.update({'alpha': 0})
-        pars_alpha0 = model.parameters_list_from_dict(pars_alpha0)
         alpha0 = model.forward(pars_alpha0, xschema_lens)
         self.assertLess(alpha0.values.std(), 1e-6)
 
