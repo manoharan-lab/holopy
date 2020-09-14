@@ -158,6 +158,14 @@ class TestModel(unittest.TestCase):
         post_model = take_yaml_round_trip(model)
         self.assertEqual(model.parameters, post_model.parameters)
 
+    def test_yaml_preserves_parameter_names(self):
+        sphere = Sphere(r=prior.Uniform(0, 1), n=prior.Uniform(1, 2, name='a'))
+        model = AlphaModel(sphere)
+        model._parameter_names = ['b', 'c']
+        post_model = take_yaml_round_trip(model)
+        self.assertEqual(post_model._parameter_names, ['b', 'c'])
+        self.assertEqual(post_model._parameters[0].name, 'a')
+
     @attr('fast')
     def test_ensure_parameters_are_listlike(self):
         sphere = Sphere(r=prior.Uniform(0, 1), n=prior.Uniform(1, 2))

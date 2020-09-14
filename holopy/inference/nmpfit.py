@@ -165,9 +165,9 @@ class NmpfitStrategy(HoloPyObject):
                 d['limits'][1] = par.scale(par.upper_bound)
             nmp_pars.append(d)
 
-        def resid_wrapper(p, fjac=None):
+        def resid_wrapper(parameters, fjac=None):
             status = 0
-            out = obj_func(self.unscale_pars_from_minimizer(p))
+            out = obj_func(self.unscale_pars_from_minimizer(parameters))
             return [status, out]
 
         # now fit it

@@ -17,6 +17,7 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 from copy import copy
+import warnings
 
 import numpy as np
 import xarray as xr
@@ -135,7 +136,7 @@ class Model(HoloPyObject):
         elif isinstance(parameter, ComplexPrior):
             mapped = self._map_complex(parameter, name)
         elif isinstance(parameter, Prior):
-            index = self._check_for_ties(parameter, name)
+            index = self._get_parameter_index(parameter, name)
             mapped = '_parameter_{}'.format(index)
         else:
             mapped = parameter
@@ -166,30 +167,35 @@ class Model(HoloPyObject):
         mapping = ((key, getattr(parameter, key)) for key in ['real', 'imag'])
         return [make_complex, self._iterate_mapping(name + '.', mapping)]
 
-    def _check_for_ties(self, parameter, name):
-        tied = False
+    def _get_parameter_index(self, parameter, name):
+        index = self._check_for_ties(parameter)
+        if index is None:
+            index = len(self._parameters)
+            self._add_parameter(parameter, name)
+        else:
+            shared_name = self._parameter_names[index].split(':', 1)[-1]
+            if shared_name not in self._parameter_names:
+                self._parameter_names[index] = shared_name
+        return index
+
+    def _check_for_ties(self, parameter):
         for index, existing in enumerate(self._parameters):
             # can't simply check parameter in self._parameters because
             # then two priors defined separately, but identically will
             # match whereas this way they are counted as separate objects.
             if existing is parameter:
-                tied = True
-                shared_name = self._parameter_names[index].split(':', 1)[-1]
-                if shared_name not in self._parameter_names:
-                    self._parameter_names[index] = shared_name
-                break
-        if not tied:
-            index = len(self._parameters)
-            self._parameters.append(parameter)
-            if parameter.name is not None:
-                name = parameter.name
-            if name in self._parameter_names:
-                name += '_0'
-            while name in self._parameter_names:
-                counter, reversename = name[::-1].split("_", 1)
-                name = reversename[::-1] + "_" + str(int(counter[::-1]) + 1)
-            self._parameter_names.append(name)
-        return index
+                return index
+
+    def _add_parameter(self, parameter, name):
+        self._parameters.append(parameter)
+        if parameter.name is not None:
+            name = parameter.name
+        if name in self._parameter_names:
+            name += '_0'
+        while name in self._parameter_names:
+            counter, reversename = name[::-1].split("_", 1)
+            name = reversename[::-1] + "_" + str(int(counter[::-1]) + 1)
+        self._parameter_names.append(name)
 
     def add_tie(self, parameters_to_tie, new_name=None):
         """
@@ -242,6 +248,7 @@ class Model(HoloPyObject):
             from holopy.fitting import fit_warning
             fit_warning('newly saved model object', 'the old one')
             kwargs = fields
+            return cls(**kwargs)
         else:
             dummy_scatterer = fields['scatterer']
             scatterer_parameters = read_map(maps['scatterer'], parameters)
@@ -252,7 +259,14 @@ class Model(HoloPyObject):
                 kwargs.update(read_map(maps['model'], parameters))
             if 'theory' in maps:
                 kwargs.update(read_map(maps['theory'], parameters))
-        return cls(**kwargs)
+        model = cls(**kwargs)
+        if model._parameters == parameters:
+            model._parameter_names = fields['_parameter_names']
+        else:
+            msg = ("Detected inconsistencies when reloading Model. "
+                   "It may differ from previously saved object")
+            warnings.warn(msg, UserWarning)
+        return model
 
     @property
     def parameters(self):

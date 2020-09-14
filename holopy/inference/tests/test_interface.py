@@ -196,8 +196,9 @@ class TestHelperFunctions(unittest.TestCase):
     def test_parameterize_scatterer_center(self):
         fit_pars = ['center']
         scatterer = parameterize_scatterer(Sphere(center=[0, 0, 0]), fit_pars)
-        expected = prior.Uniform(-np.inf, np.inf, 0, 'x')
-        self.assertEqual(scatterer.center[0], expected)
+        for i, coord in enumerate('xyz'):
+            expected = prior.Uniform(-np.inf, np.inf, 0, coord)
+        self.assertEqual(scatterer.center[i], expected)
 
     @attr('fast')
     def test_parameterize_scatterer_spheres(self):

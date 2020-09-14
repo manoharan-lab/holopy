@@ -76,7 +76,7 @@ def validate_strategy(strategy, operation):
 
 def make_default_model(base_scatterer, fitting_parameters=None):
     if fitting_parameters is None:
-        fitting_parameters = list(base_scatterer.parameters.keys())
+        fitting_parameters = base_scatterer.parameters.keys()
     scatterer = parameterize_scatterer(base_scatterer, fitting_parameters)
     alpha_prior = Uniform(0, 1, guess=0.7, name='alpha')
     return AlphaModel(scatterer, noise_sd=1, alpha=alpha_prior)
