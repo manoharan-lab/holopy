@@ -50,8 +50,6 @@ Deprecations
   the high-level hp.fit() and hp.sample functions().
 - Adjustments to saving of Model objects (and Results objects containing them).
   Backwards compatibility is supported for now, but be sure to save new copies!
-- Model methods that use parameters (forward, lnposterior, lnlike, etc.) now
-  expect a list of parameter values instead of a dictionary.
 - Scatterer.guess no longer exists. Instead, you must define a model and use:
   ``model.scatterer_from_parameters(model.initial_guess)``.
 - Scatterer.from_parameters() is no longer guaranteed to return a
