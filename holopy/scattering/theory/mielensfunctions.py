@@ -192,9 +192,9 @@ class MieLensCalculator(object):
                   'size_parameter': self.size_parameter,
                   }
         scat_s_evaluator = MieScatteringMatrix(
-            parallel_or_perpendicular='perpendicular', lazy=True, **kwargs)
+            parallel_or_perpendicular='perpendicular', **kwargs)
         scat_p_evaluator = MieScatteringMatrix(
-            parallel_or_perpendicular='parallel', lazy=True, **kwargs)
+            parallel_or_perpendicular='parallel', **kwargs)
         self._scat_perp_values = np.reshape(
             scat_s_evaluator._eval(self._theta_pts), (-1, 1))
         self._scat_prll_values = np.reshape(
@@ -272,9 +272,11 @@ class MieLensCalculator(object):
 
 
 class MieScatteringMatrix(object):
-    def __init__(self, parallel_or_perpendicular='perpendicular',
-                 index_ratio=1.1, size_parameter=1.0, max_l=None, npts=None,
-                 lazy=False):
+    def __init__(self,
+                 parallel_or_perpendicular='perpendicular',
+                 index_ratio=None,
+                 size_parameter=None,
+                 max_l=None):
         """Calculations of Mie far-field scattering matrices.
 
         These work by summing the Mie series naively; for large sizes
@@ -289,39 +291,19 @@ class MieScatteringMatrix(object):
             Index contrast of the particle.
         size_parameter : float
             Size of the sphere in units of 1/k = 1/wavevector
-        max_l : int > 0
-        npts : int > 0
-        lazy : bool
-            Whether or not to set up the interpolator right away or
-            to wait until it is called.
+        max_l : int > 0, optional
+            The maximum order of the series to sum to. Defaults to a
+            good value that trades off numerical accuracy (more terms)
+            and lack-of-errors (less terms).
         """
         self.parallel_or_perpendicular = parallel_or_perpendicular
         self.index_ratio = index_ratio
         self.size_parameter = size_parameter
         self.max_l = self._default_max_l() if max_l is None else max_l
-        self.npts = self._default_npts() if npts is None else npts
-        self.lazy = lazy
-        if not lazy:
-            self._setup_interpolator()
-        else:
-            self._interp = None
-
-    def _setup_interpolator(self):
-        self._true_pts = np.linspace(0, 0.5 * np.pi, self.npts)
-        self._true_values = self._eval(self._true_pts)
-        self._interp = interpolate.CubicSpline(
-            self._true_pts, self._true_values)
 
     def _default_max_l(self):
-        """An empirically good value for ~1e-7 accuracy"""
-        return np.ceil(4 * self.size_parameter).astype('int')
-
-    def _default_npts(self):
-        # Since tau_l(theta), pi_l(theta) ~ d/dx P_l^1, there are O(l)
-        # maxima / minima / zeros in the highest term, so we expect
-        # structure on the scale of ~1/l. So we take 10 * l points:
-        # This empirically works as well
-        return 10 * self.max_l
+        """An empirically good value for ~1e-6 accuracy"""
+        return np.ceil(25 + 1.1 * self.size_parameter).astype('int')
 
     def _eval(self, theta):
         """Evaluate S_parallel, perpendicular(theta) directly"""
@@ -342,10 +324,7 @@ class MieScatteringMatrix(object):
         return ans
 
     def __call__(self, theta):
-        # call the interpolator
-        if self._interp is None:
-            self._setup_interpolator()
-        return self._interp(theta)
+        return self._eval(theta)
 
 
 def j2(x):
@@ -354,9 +333,6 @@ def j2(x):
     return 2. / clipped * j1(clipped) - j0(clipped)
 
 
-# FIXME h1n, h2n return nan's for negative z, which they get called with
-# when the index ratio is negative... either fix this or ensure that
-# scatterers do not get created with negative indices.
 def spherical_h1n(n, z, derivative=False):
     """Spherical Hankel function H_n(z) or its derivative"""
     return spherical_jn(n, z, derivative) + 1j * spherical_yn(n, z, derivative)
@@ -401,16 +377,16 @@ class AlBlFunctions(object):
 
     where :math:`\psi_l` and :math:`\\xi_l` are the Riccati-Bessel
     functions of the first and third kinds, respectively. The
-    definitions used here follow those of van der Hulst [1]_, which
+    definitions used here follow those of van de Hulst [1]_, which
     differ from those used in Bohren and Huffman [2]_.
 
     References
     ----------
-        .. [1] H. C. van der Hulst, "Light Scattering by Small Particles",
-               Dover (1981), pg 123.
-        .. [2] C. F. Bohren and Donald R. Huffman, "Absorption and
-               Scattering of Light by Small Particles", Wiley (2004),
-               pg 101.
+    .. [1] H. C. van de Hulst, "Light Scattering by Small Particles",
+           Dover (1981), pg 123.
+    .. [2] C. F. Bohren and Donald R. Huffman, "Absorption and
+           Scattering of Light by Small Particles", Wiley (2004),
+           pg 101.
     """
 
     @staticmethod
@@ -429,7 +405,6 @@ class AlBlFunctions(object):
         Returns
         -------
         a_l, b_l : numpy.ndarray
-
         """
         psi_nx = AlBlFunctions.riccati_psin(
             l, index_ratio * size_parameter)

@@ -65,6 +65,8 @@ Bugfixes
 - Restored ability to visualize slices through a scatterer object
 - Now possible to fit only some elements of a list, eg. Scatterer center
 - Models can now include xarray parameters and still support saving/loading.
+- The :class:`.MieLens` scattering theory now works for both large and
+  small spheres.
 
 Compatibility Notes
 --------------------
