@@ -115,8 +115,15 @@ class TestStrategyHandling(unittest.TestCase):
 
     @attr('slow')
     def test_default_sampling_strategy_is_emcee(self):
+        # for speed, we monkey-patch emcee.default_nsamples
+        # FIXME this is maybe not the best way to do this.
+        put_back = EmceeStrategy._default_nsamples * 1
+        EmceeStrategy._default_nsamples = 1
         result = sample(DATA, SimpleModel())
         self.assertTrue(isinstance(result.strategy, EmceeStrategy))
+        # and put it back!!
+        EmceeStrategy._default_nsamples = put_back
+        self.assertNotEqual(EmceeStrategy._default_nsamples, 1)
 
     @attr('fast')
     def test_fit_strategy_names(self):
