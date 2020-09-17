@@ -51,10 +51,10 @@ from holopy.core.math import chisq, rsq
 from holopy.core.metadata import make_subset_data
 
 def fit_warning(correct_obj, obselete_obj):
-        msg = ("HoloPy's fitting API is deprecated. "
-        "Use a {} object instead of {}.".format(correct_obj, obselete_obj))
-        warnings.warn(msg, UserWarning)
-        pass
+    msg = ("HoloPy's inference API has changed. "
+    "Use a {} object instead of {}.".format(correct_obj, obselete_obj))
+    warnings.warn(msg, UserWarning)
+    pass
 
 class Parameter():
     def __new__(self,guess=None, limit=None, name=None, **kwargs):

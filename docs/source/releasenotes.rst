@@ -22,8 +22,24 @@ Improvements
 - PerfectLensModel now accepts hologram scaling factor alpha as a parameter
   for inference.
 - It is now possible to pass an inference strategy to the high-level fit() and
-  sample() functions, either by name or as a Strategy object. These functions
-  are now accessible in the root HoloPy namespace as hp.fit() and hp.sample().
+  sample() functions, either by name or as a Strategy object.
+- High level inference functions fit() and sample() are now accessible in the
+  root HoloPy namespace as hp.fit() and hp.sample().
+- Scatterer.parameters() now matches the arguments to create the scatterer
+  instead of deconstructing composite objects.
+- New prior.renamed() method to create an identical prior with a new name.
+- New way to easily construct scatterers from model parameters with 
+  ``model.scatterer_from_parameters()``.
+- New ``model.initial_guess`` attribute which can be used to evaluate initial
+  guess by psasing into ``model.scatterer_from_parameters()`` or
+  ``model.forward()`` methods.
+- Model parameters now use the names of their prior objects if present.
+- Standardized parameter naming
+- Any model parameters can now be tied, not just specific combinations within
+  Scatterers objects.
+
+Documentation
+-------------
 - New user guide on :ref:`scatterers_user`.
 - New user guide on :ref:`theories_user`.
 - More discussion of scattering theories in tutorial.
@@ -31,13 +47,24 @@ Improvements
 Deprecations
 ------------
 - The model.fit() and model.sample() methods have been deprecated in favour of
-  the high-level hp.fit() and hp.sample functions()
+  the high-level hp.fit() and hp.sample functions().
+- Adjustments to saving of Model objects (and Results objects containing them).
+  Backwards compatibility is supported for now, but be sure to save new copies!
+- Scatterer.guess no longer exists. Instead, you must define a model and use:
+  ``model.scatterer_from_parameters(model.initial_guess)``.
+- Scatterer.from_parameters() is no longer guaranteed to return a
+  definite object.
+- Composite scatterers no longer keep track of tied parameters.
+- Scattering interface functions like calc_holo() now require a definite
+  scatterer without priors.
 
 Bugfixes
 --------
 - Fortran output no longer occasionaly leaks through the output supression
   context manager used by multiple scattering theories.
 - Restored ability to visualize slices through a scatterer object
+- Now possible to fit only some elements of a list, eg. Scatterer center
+- Models can now include xarray parameters and still support saving/loading.
 - The :class:`.MieLens` scattering theory now works for both large and
   small spheres.
 
@@ -49,6 +76,8 @@ Compatibility Notes
 Developer Notes
 ---------------
 - Documentation now automatically runs sphinx apidoc when building docs.
+- New Scatterer attribute ``_parameters`` provides a view into the scatterer
+  and supports editing.
 
 
 Holopy 3.3

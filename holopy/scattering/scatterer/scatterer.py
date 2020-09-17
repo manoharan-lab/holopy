@@ -24,7 +24,7 @@ The abstract base class for all scattering objects
 
 from collections import defaultdict
 from itertools import chain
-from copy import copy
+from copy import copy, deepcopy
 from numbers import Number
 
 import numpy as np
@@ -99,6 +99,13 @@ class Scatterer(HoloPyObject):
         return new
 
     @property
+    def _parameters(self):
+        # classes that have anything complicated happening with their variables
+        # should override this, but for simple classes the variable self._dict
+        # is the correct answer
+        return self._dict
+
+    @property
     def parameters(self):
         """
         Get a dictionary of this scatterer's parameters
@@ -114,12 +121,9 @@ class Scatterer(HoloPyObject):
             passed to Scatterer.from_parameters to make a copy of this
             scatterer
         """
-        # classes that have anything complicated happening with their variables
-        # should override this, but for simple classes the variable self._dict
-        # is the correct answer
-        return dict(_expand_parameters(self._dict.items()))
+        return deepcopy(self._parameters)
 
-    def from_parameters(self, parameters, overwrite=False):
+    def from_parameters(self, parameters):
         """
         Create a Scatterer from a dictionary of parameters
 
@@ -128,9 +132,6 @@ class Scatterer(HoloPyObject):
         parameters: dict
             Parameters for a scatterer.  This should be of the form returned by
             Scatterer.parameters.
-        overwrite: boolean
-            If true, all parameters in self are replaced with parameters.
-            Otherwise only Prior objects are
         Returns
         -------
         scatterer: Scatterer class
@@ -138,51 +139,9 @@ class Scatterer(HoloPyObject):
         """
         # This will need to be overriden for subclasses that do anything
         # complicated with parameters
-        all_pars = copy(self.parameters)
-        for key in all_pars.keys():
-            if key in parameters.keys():
-                if not isinstance(all_pars[key], Number) or overwrite:
-                    all_pars[key] = parameters[key]
-        return type(self)(**_interpret_parameters(all_pars))
-
-    @property
-    def guess(self):
-        if hasattr(self, 'parameters'):
-            parameters = self.parameters
-            for key in parameters.keys():
-                try:
-                    parameters[key] = parameters[key].guess
-                except AttributeError:
-                    pass
-            return self.from_parameters(parameters)
-        else:
-            return self
-
-    def select(self, keys):
-        """
-        Select certain parts of a Scatterer with multiple parameter values
-
-        Parameters
-        ----------
-        parameters: dict
-            values to select. Should be of form {dim:val(s)}.
-
-        Returns
-        -------
-        scatterer: Scatterer class
-            A scatterer with only the values for each parameter specified.
-        """
-        params = _interpret_parameters(self.parameters)
-        for key in params.keys():
-            if isinstance(getattr(self, key), xr.DataArray):
-                params[key] = getattr(self, key).sel(**keys).item()
-            elif isinstance(params[key], dict):
-                for dimkeys in keys.values():
-                    params[key] = [params[key][dimkey]
-                                   for dimkey in ensure_array(dimkeys)]
-                    if len(params[key]) == 1:
-                        params[key] = params[key][0]
-        return type(self)(**params)
+        parameters = {key: parameters[key] if key in parameters else
+                      self.parameters[key] for key in self.parameters.keys()}
+        return type(self)(**parameters)
 
     def contains(self, points):
         return self.in_domain(points) > 0
@@ -276,74 +235,6 @@ class CenteredScatterer(Scatterer):
                    "center should be specified as (x, y, z)".format(center))
             raise InvalidScatterer(self, msg)
         self.center = center
-
-
-def _interpret_parameters(raw_pars, keep_priors=False):
-    # doesn't really have anything to do with scatterer - shouldn't be here
-    out_dict = {}
-    subkeys = set(
-        [key.split('.', 1)[0].split(':', 1)[0] for key in raw_pars.keys()])
-    for subkey in subkeys:
-        if subkey in raw_pars.keys():
-            val = raw_pars[subkey]
-            if hasattr(val, 'guess') and not keep_priors:
-                val = val.guess
-            out_dict[subkey] = val
-        else:
-            clip = len(subkey)
-            for delimchar in '.:':
-                subset = {key[clip+1:]: val
-                          for key, val in raw_pars.items()
-                          if key.startswith(subkey + delimchar)}
-                if len(subset) > 0:
-                    break
-            if delimchar is ':':
-                # dict or xarray, but we don't know dim names
-                # so we always return dict
-                out_dict[subkey] = _interpret_parameters(subset, keep_priors)
-            elif delimchar is '.':
-                dictform = _interpret_parameters(subset, keep_priors)
-                if '0' in dictform.keys():
-                    # this might fail if called on model.parameters created
-                    # from a scatterer containing an array with some fixed,
-                    # and some varying parameters, e.g. hold x,y fit z only.
-                    out_dict[subkey] = [
-                        dictform[str(i)] for i in range(len(dictform))]
-                elif set(dictform.keys()) == {'real', 'imag'}:
-                    out_dict[subkey] = (1.0 * dictform['real'] +
-                                        1.0j * dictform['imag'])
-                else:
-                    # not array or complex, just return as dict
-                    out_dict[subkey] = dictform
-        if subkey not in out_dict.keys():
-            msg = "Cannot interpret parameter {0}.".format(subkey)
-            raise ParameterSpecificationError(msg)
-    return out_dict
-
-
-def _expand_parameters(pairs, basekey=''):
-    # doesn't really have anything to do with scatterer - shouldn't be here
-    subs = []
-    for subkey, par in pairs:
-        key = basekey + str(subkey)
-        def add_pars(newpairs, delimiter):
-            subs.append(_expand_parameters(newpairs, key + delimiter))
-        if isinstance(par, (list, tuple, np.ndarray)):
-            add_pars(enumerate(par), '.')
-        elif isinstance(par, dict):
-            add_pars(par.items(), ':')
-        elif isinstance(par, xr.DataArray):
-            subkeys = [coord.item() for coord in par.coords[par.dims[0]]]
-            subvals = [par.loc[subkey] for subkey in subkeys]
-            if len(par.dims) == 1:
-                subvals = [subval.item() for subval in subvals]
-            add_pars(zip(subkeys, subvals), ':')
-        elif hasattr(par, 'name') and hasattr(par, 'imag'):
-            # prior.ComplexPrior
-            add_pars(zip(['real', 'imag'], [par.real, par.imag]), '.')
-        else:
-            subs.append([(key, par)])
-    return chain(*subs)
 
 
 def find_bounds(indicator):

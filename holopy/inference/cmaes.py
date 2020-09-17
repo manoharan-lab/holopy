@@ -91,6 +91,7 @@ class CmaStrategy(HoloPyObject):
 
     def fit(self, model, data):
         parameters = model._parameters
+        par_names = model._parameter_names
         time_start = time.time()
         if self.npixels is not None and self.new_pixels is None:
             data = make_subset_data(data, pixels=self.npixels, seed=self.seed)
@@ -109,12 +110,12 @@ class CmaStrategy(HoloPyObject):
         xrecent = sampler.logger.data['xrecent']
         samples = xr.DataArray(
             [xrecent[:, 5:]], dims=['walker', 'chain', 'parameter'],
-            coords={'parameter': [p.name for p in parameters]})
+            coords={'parameter': par_names})
         lnprobs = xr.DataArray([-xrecent[:, 4]], dims=['walker', 'chain'])
         best_vals = sampler.best.get()[0]
         diffs = sampler.result.stds
-        intervals = [UncertainValue(best_val, diff, name=par.name) for
-                     best_val, diff, par in zip(best_vals, diffs, parameters)]
+        intervals = [UncertainValue(best_val, diff, name=par) for
+                     best_val, diff, par in zip(best_vals, diffs, par_names)]
         stop = dict(sampler.stop())
         d_time = time.time() - time_start
         kwargs = {'lnprobs': lnprobs, 'samples': samples,

@@ -186,16 +186,13 @@ class LnpostWrapper(HoloPyObject):
     calculations with python multiprocessing. This class solves both issues.
     '''
     def __init__(self, model, data, new_pixels=None, minus=False):
-        self.parameters = model._parameters
         self.data = data
         self.pixels = new_pixels
-        self.func = model.lnposterior
+        self.func = model._lnposterior
         self.prefactor = -1 if minus else 1
 
     def evaluate(self, par_vals):
-        pars_dict = {par.name: val for par, val in zip(self.parameters,
-                                                       par_vals)}
-        return self.prefactor * self.func(pars_dict, self.data, self.pixels)
+        return self.prefactor * self.func(par_vals, self.data, self.pixels)
 
 
 def choose_pool(parallel):

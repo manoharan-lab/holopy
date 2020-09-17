@@ -88,7 +88,7 @@ class TestFitResult(unittest.TestCase):
         self.assertEqual(result._parameters, [1.6, 0.6, 0.7])
         self.assertEqual(result._names, ['n', 'r', 'alpha'])
         self.assertEqual(result.parameters,
-                         {'r':0.6, 'n':1.6, 'alpha':0.7})
+                         {'r': 0.6, 'n': 1.6, 'alpha': 0.7})
         self.assertEqual(result.scatterer,
                          Sphere(n=1.6, r=0.6, center=[10, 10, 10]))
 
@@ -166,8 +166,8 @@ class TestFitResult(unittest.TestCase):
         model = result.model
         guess_parameters = {key: val.guess
                             for key, val in model.parameters.items()}
-        guess_scatterer = model.scatterer.from_parameters(model.parameters)
-        guess_hologram = model.forward(model.parameters, result.data)
+        guess_scatterer = model.scatterer_from_parameters(model.initial_guess)
+        guess_hologram = model.forward(model.initial_guess, result.data)
         self.assertEqual(result.guess_parameters, guess_parameters)
         self.assertEqual(result.guess_scatterer, guess_scatterer)
         np.testing.assert_equal(result.guess_hologram.values,

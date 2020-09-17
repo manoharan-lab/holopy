@@ -453,11 +453,6 @@ def dict_to_array(schema, inval):
         msg = ("Dictionary could not be converted to DataArray because " +
                "reference grid has no dimensions with matching coords")
         raise ValueError()
-    elif hasattr(inval, 'from_parameters'):
-        # inval is a Scatterer object
-        pars = inval.parameters
-        pars = {key: dict_to_array(schema, val) for key, val in pars.items()}
-        return inval.from_parameters(pars)
     else:
         return inval
 

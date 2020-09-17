@@ -90,10 +90,10 @@ class NmpfitStrategy(HoloPyObject):
         self.npixels = npixels
         self.seed = seed
 
-    def unscale_pars_from_minimizer(self, parameters, values):
-        assert len(parameters) == len(values)
-        return {par.name: par.unscale(value)
-                for par, value in zip(parameters, values)}
+    def unscale_pars_from_minimizer(self, values):
+        assert len(values) == len(self._parameters)
+        return [val.unscale(value) for val, value in zip(self._parameters,
+                                                         values)]
 
     def fit(self, model, data):
         """
@@ -114,22 +114,22 @@ class NmpfitStrategy(HoloPyObject):
             about the fit
         """
         time_start = time.time()
-        parameters = model._parameters
-        if len(parameters) == 0:
+        self._parameters = model._parameters
+        if len(self._parameters) == 0:
             raise MissingParameter('at least one parameter to fit')
 
         if self.npixels is not None:
-            data = make_subset_data(data, pixels = self.npixels, seed=self.seed)
-
-        guess_prior = model.lnprior({par.name:par.guess for par in parameters})
+            data = make_subset_data(data, pixels=self.npixels, seed=self.seed)
+        guess_prior = model.lnprior(model.initial_guess)
         def residual(par_vals):
             noise = model._find_noise(par_vals, data)
             residuals = model._residuals(par_vals, data, noise).flatten()
-            prior = np.sqrt(guess_prior - model.lnprior(par_vals))
+            prior = np.sqrt(guess_prior - model._lnprior(par_vals))
             residuals = np.append(residuals, prior)
             return residuals
 
-        fitted_pars, minimizer_info = self.minimize(parameters, residual)
+        fitted_pars, minimizer_info = self.minimize(model._parameters,
+                                                    residual)
 
         if minimizer_info.status == 5:
             setattr(minimizer_info, 'converged', False)
@@ -141,20 +141,22 @@ class NmpfitStrategy(HoloPyObject):
         # Getting errors:
         errors_rescaled = minimizer_info.perror
         if errors_rescaled is None:
-            errors_rescaled = [0] * len(parameters)
-        errors = self.unscale_pars_from_minimizer(parameters, errors_rescaled)
-        intervals = [
-            UncertainValue(fitted_pars[name], errors[name], name=name)
-            for name in errors.keys()]
+            errors_rescaled = [0] * len(self._parameters)
+        errors = self.unscale_pars_from_minimizer(errors_rescaled)
+        intervals = [UncertainValue(par, err, name=name) for par, err, name in
+                     zip(fitted_pars, errors, model._parameter_names)]
         d_time = time.time() - time_start
+        del self._parameters
         return FitResult(data, model, self, d_time,
                      {'intervals': intervals, 'mpfit_details':minimizer_info})
 
     def minimize(self, parameters, obj_func):
+        if not hasattr(self, "_parameters"):
+            self._parameters = parameters
         nmp_pars = []
         for par in parameters:
-            d = {'parname':par.name, 'value':par.scale(par.guess),
-                'limited':[False, False], 'limits':[np.NaN, np.NaN]}
+            d = {'parname': par.name, 'value': par.scale(par.guess),
+                 'limited': [False, False], 'limits': [np.NaN, np.NaN]}
             if hasattr(par, "lower_bound") and par.lower_bound > -np.inf:
                 d['limited'][0] = True
                 d['limits'][0] = par.scale(par.lower_bound)
@@ -163,9 +165,9 @@ class NmpfitStrategy(HoloPyObject):
                 d['limits'][1] = par.scale(par.upper_bound)
             nmp_pars.append(d)
 
-        def resid_wrapper(p, fjac=None):
+        def resid_wrapper(parameters, fjac=None):
             status = 0
-            out = obj_func(self.unscale_pars_from_minimizer(parameters, p))
+            out = obj_func(self.unscale_pars_from_minimizer(parameters))
             return [status, out]
 
         # now fit it
@@ -176,8 +178,7 @@ class NmpfitStrategy(HoloPyObject):
                 xtol = self.xtol, gtol = self.gtol, damp = self.damp,
                 maxiter = self.maxiter, quiet = self.quiet)
 
-        result_pars = self.unscale_pars_from_minimizer(
-            parameters, fitresult.params)
+        result_pars = self.unscale_pars_from_minimizer(fitresult.params)
 
         return result_pars, fitresult
 

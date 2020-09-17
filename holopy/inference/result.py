@@ -94,28 +94,28 @@ class FitResult(HoloPyObject):
 
     @property
     def scatterer(self):
-        return self.model.scatterer.from_parameters(self.parameters)
+        return self.model.scatterer_from_parameters(self._parameters)
 
     @property
     def guess_scatterer(self):
-        return self.model.scatterer.from_parameters(self.model.parameters)
+        return self.model.scatterer_from_parameters(self.model.initial_guess)
 
     @property
     def hologram(self):
         def calculation():
-            return self.forward(self.parameters)
+            return self.forward(self._parameters)
         return self._calculate_first_time("_hologram", calculation)
 
     @property
     def guess_hologram(self):
         def calculation():
-            return self.forward(self.model.parameters)
+            return self.forward(self.model.initial_guess)
         return self._calculate_first_time("_guess_hologram", calculation)
 
     @property
     def max_lnprob(self):
         def calculation():
-            return self.model.lnposterior(self.parameters, self.data)
+            return self.model.lnposterior(self._parameters, self.data)
         return self._calculate_first_time("_max_lnprob", calculation)
 
     def _calculate_first_time(self, attr_name, long_calculation):
