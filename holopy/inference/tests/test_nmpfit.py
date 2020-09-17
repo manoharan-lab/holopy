@@ -119,15 +119,6 @@ class TestRandomSubsetFitting(unittest.TestCase):
         assert_obj_close(result.scatterer, gold_sphere, rtol=1e-2)
 
 
-def test_n():
-    sph = Sphere(.5, 1.6, (5,5,5))
-    sch = detector_grid(shape=[100, 100], spacing=[0.1, 0.1])
-
-    model = ExactModel(sph, calc_holo, medium_index=1.33, illum_wavelen=.66, illum_polarization=(1, 0))
-    holo = calc_holo(sch, model.scatterer.guess, 1.33, .66, (1, 0))
-    assert_allclose(model._residuals({'n' : .5}, holo, 1).sum(), 0)
-
-
 @attr('medium')
 def test_serialization():
     par_s = Sphere(center = (Uniform(0, 1e-5, guess=.567e-5),
@@ -141,7 +132,8 @@ def test_serialization():
 
     model = AlphaModel(par_s, medium_index=schema.medium_index, illum_wavelen=schema.illum_wavelen, alpha=alpha)
 
-    holo = calc_holo(schema, model.scatterer.guess, scaling=model.alpha.guess)
+    initial_guess = model.scatterer_from_parameters(model.initial_guess)
+    holo = calc_holo(schema, initial_guess, scaling=model.alpha.guess)
 
     result = NmpfitStrategy().fit(model, holo)
     temp = tempfile.NamedTemporaryFile(suffix = '.h5', delete=False)
@@ -168,7 +160,8 @@ def test_integer_correctness():
 def test_model_guess():
     ps = Sphere(n=Uniform(1.5, 1.7, 1.59), r = .5, center=(5,5,5))
     m = ExactModel(ps, calc_holo)
-    assert_obj_close(m.scatterer.guess, Sphere(n=1.59, r=0.5, center=[5, 5, 5]))
+    initial_guess = m.scatterer_from_parameters(m.initial_guess)
+    assert_obj_close(initial_guess, Sphere(n=1.59, r=0.5, center=[5, 5, 5]))
 
 
 def test_constraint():
@@ -177,7 +170,7 @@ def test_constraint():
         spheres = Spheres([Sphere(r=.5, center=(0,0,0)),
                            Sphere(r=.5, center=(0,0,.2))])
         model = ExactModel(spheres, calc_holo, constraints=LimitOverlaps())
-        cost = model.lnprior({'1:Sphere.center[2]' : .2})
+        cost = model.lnprior([])
         assert_equal(cost, -np.inf)
 
 

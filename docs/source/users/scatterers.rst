@@ -33,21 +33,14 @@ General manipulation
       Components of scatterer center
     - :meth:`~.Scatterer.translated`
       New scatterer with location coordinates shifted by a vector
-    - :meth:`~.Scatterer.select`
-      New scatterer with the given quantities taking only the subset specified,
-      e.g. refractive index at two wavelengths to refractive index at one
-      wavelength only
 
 Inference calculations
     - :attr:`~.Scatterer.parameters`
-      Dictionary of all numerical values needed to describe the scatterer.
+      Dictionary of all values needed to describe the scatterer.
       Values described as :class:`.Prior` objects will appear that way here as
       well.
-    - :attr:`~.Scatterer.guess`
-      New scatterer with all varying parameter values fixed to their best guess
     - :meth:`~.Scatterer.from_parameters()`
-      New scatterer built from a dictionary of parameters, with an option to
-      replace only varying parameters or overwrite fixed values too
+      New scatterer built from a dictionary of parameters
 
 Discretization
     - :class:`indicators<.Indicators>`
@@ -110,17 +103,6 @@ Component scatterer handling
     - :meth:`~.Scatterers.rotated()`
       New scatterer rotated about its center according to
       :ref:`HoloPy rotation conventions<rotations>`
-
-Tied parameters
-    - Varying parameters shared between component scatterers that are the same
-      python object are automatically tied together. Tied parameters appear as
-      a single entry in :attr:`.Scatterers.parameters`.
-    - :attr:`~.Scatterers.ties`
-      Dictionary of all tied parameters, with keys indicating the shared name
-    - :meth:`~.Scatterers.add_tie`
-      Manually tie parameters together
-    - :attr:`~.Scatterers.raw_parameters`
-      Dictionary of parameters ignoring ties
 
 There are two specific composite scatterer classes for working with collections of
 spheres that have additional functionality:

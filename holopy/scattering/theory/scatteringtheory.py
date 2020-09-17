@@ -137,8 +137,9 @@ class ScatteringTheory(HoloPyObject):
                     schema.illum_wavelen.sel(illumination=illum).values)[0],
                 illum_polarization=ensure_array(
                     schema.illum_polarization.sel(illumination=illum).values))
+            this_scatterer = select_scatterer_by_illumination(scatterer, illum)
             this_field = self._calculate_single_color_scattered_field(
-                scatterer.select({illumination: illum}), this_schema)
+                this_scatterer, this_schema)
             field.append(this_field)
         field = clean_concat(field, dim=schema.illum_wavelen.illumination)
         return field
@@ -277,3 +278,17 @@ class ScatteringTheory(HoloPyObject):
             cls.desired_coordinate_system)
         return method(original_coordinate_values)
 
+
+def select_scatterer_by_illumination(scatterer, illum):
+    select_parameters = {}
+    for key, val in scatterer.parameters.items():
+        selected_val = val
+        if isinstance(val, dict) and illum in val.keys():
+            selected_val = val[illum]
+        elif isinstance(val, xr.DataArray):
+            try:
+                selected_val = val.sel(illumination=illum).values
+            except (KeyError, ValueError):
+                pass
+        select_parameters[key] = selected_val
+    return scatterer.from_parameters(select_parameters)

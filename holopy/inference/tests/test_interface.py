@@ -24,11 +24,11 @@ import numpy as np
 from nose.plugins.attrib import attr
 
 from holopy.core.metadata import data_grid
-from holopy.scattering import Sphere
+from holopy.scattering import Sphere, Spheres
 from holopy.inference import (sample, fit, prior, AlphaModel, EmceeStrategy,
                               NmpfitStrategy, CmaStrategy, TemperedStrategy)
 from holopy.inference.interface import (
-    make_default_model, parameterize_scatterer, rename_xyz, make_uniform,
+    make_default_model, parameterize_scatterer, make_uniform,
     validate_strategy, available_sampling_strategies, available_fit_strategies)
 from holopy.inference.result import SamplingResult
 from holopy.inference.tests.common import SimpleModel
@@ -79,7 +79,7 @@ class TestUserFacingFunctions(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', UserWarning)
             result = fit(DATA, model, ['r', 'y'])
-        self.assertEqual(result._names, ['n', 'center.0', 'alpha'])
+        self.assertEqual(result._names, ['n', 'x', 'alpha'])
 
     @attr('medium')
     def test_passing_model_and_parameters_gives_warning(self):
@@ -113,7 +113,7 @@ class TestStrategyHandling(unittest.TestCase):
         result = fit(DATA, SimpleModel())
         self.assertEqual(result.strategy, NmpfitStrategy())
 
-    @attr('medium')
+    @attr('slow')
     def test_default_sampling_strategy_is_emcee(self):
         result = sample(DATA, SimpleModel())
         self.assertTrue(isinstance(result.strategy, EmceeStrategy))
@@ -168,9 +168,8 @@ class TestHelperFunctions(unittest.TestCase):
     @attr('fast')
     def test_make_default_model_with_no_parameters(self):
         model = make_default_model(SPHERE, None)
-        expected_parameters = SPHERE.parameters
-        expected_parameters['alpha'] = None
-        self.assertEqual(model.parameters.keys(), expected_parameters.keys())
+        expected = {'n', 'r', 'alpha', 'x', 'y', 'z'}
+        self.assertEqual(set(model.parameters.keys()), expected)
 
     @attr('fast')
     def test_make_default_model_with_parameters(self):
@@ -185,14 +184,47 @@ class TestHelperFunctions(unittest.TestCase):
 
     @attr('fast')
     def test_parameterize_scatterer_makes_priors(self):
-        scatterer = parameterize_scatterer(Sphere(), 'r')
+        scatterer = parameterize_scatterer(Sphere(), ['r'])
         self.assertTrue(isinstance(scatterer.r, prior.Prior))
 
     @attr('fast')
-    def test_rename_xyz(self):
-        parameters_list = ['x', 'p', 'y']
-        parameters_list = rename_xyz(parameters_list)
-        self.assertEqual(parameters_list, ['center.0', 'p', 'center.1'])
+    def test_parameterize_scatterer_xyz(self):
+        scatterer = parameterize_scatterer(Sphere(center=[0, 0, 0]), ['x'])
+        self.assertTrue(isinstance(scatterer.center[0], prior.Prior))
+
+    @attr('fast')
+    def test_parameterize_scatterer_center(self):
+        fit_pars = ['center']
+        scatterer = parameterize_scatterer(Sphere(center=[0, 0, 0]), fit_pars)
+        for i, coord in enumerate('xyz'):
+            expected = prior.Uniform(-np.inf, np.inf, 0, coord)
+        self.assertEqual(scatterer.center[i], expected)
+
+    @attr('fast')
+    def test_parameterize_scatterer_spheres(self):
+        sphere = Sphere(r=0.5, n=1, center=[0, 0, 0])
+        model = make_default_model(Spheres([sphere, sphere], warn=False))
+        expected = {'0:n', '1:n', '0:r', '1:r', 'alpha',
+                    '0:x', '0:y', '0:z', '1:x', '1:y', '1:z'}
+        self.assertEqual(set(model.parameters.keys()), expected)
+
+    @attr('fast')
+    def test_parameterize_scatterer_spheres_minval(self):
+        sphere = Sphere(r=0.5, n=1, center=[0, 0, 0])
+        model = make_default_model(Spheres([sphere, sphere], warn=False))
+        self.assertEqual(model.parameters['0:n'].lower_bound, 0)
+        self.assertEqual(model.parameters['1:n'].lower_bound, 0)
+
+    @attr('fast')
+    def test_parameterize_scatterer_spheres_by_given(self):
+        s1 = Sphere(r=0.5, n=1, center=[0, 0, 0])
+        s2 = Sphere(r=0.5, n=1, center=[1, 1, 1])
+        model = make_default_model(Spheres([s1, s2]), ['0:r', '1:x'])
+        e1 = Sphere(r=prior.Uniform(0, np.inf, 0.5, '0:r'),
+                    n=1, center=[0, 0, 0])
+        e2 = Sphere(r=0.5, n=1,
+                    center=[prior.Uniform(-np.inf, np.inf, 1, '1:x'), 1, 1])
+        self.assertEqual(model.scatterer, Spheres([e1, e2]))
 
     @attr('fast')
     def test_make_uniform_fails_with_unexpected_parameters(self):

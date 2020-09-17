@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
+from copy import copy
+
 import numpy as np
 from numpy import random
 from numbers import Number, Real
@@ -80,6 +82,11 @@ class Prior(HoloPyObject):
 
     def unscale(self, scaled):
         return scaled * self.scale_factor
+
+    def renamed(self, name):
+        like_me = copy(self)
+        like_me.name = name
+        return like_me
 
 
 class Uniform(Prior):

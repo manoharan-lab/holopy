@@ -34,8 +34,8 @@ class LeastSquaresScipyStrategy(HoloPyObject):
 
     def unscale_pars_from_minimizer(self, parameters, values):
         assert len(parameters) == len(values)
-        return {par.name: par.unscale(value)
-                for par, value in zip(parameters, values)}
+        return [val.unscale(value)
+                for val, value in zip(parameters, values)]
 
     def fit(self, model, data):
         """
@@ -65,15 +65,14 @@ class LeastSquaresScipyStrategy(HoloPyObject):
             data = flat(data)
         else:
             data = make_subset_data(data, pixels=self.npixels)
-        guess_lnprior = model.lnprior(
-            {par.name:par.guess for par in parameters})
+        guess_lnprior = model.lnprior(model.initial_guess)
 
         def residual(rescaled_values):
             unscaled_values = self.unscale_pars_from_minimizer(
                 parameters, rescaled_values)
             noise = model._find_noise(unscaled_values, data)
             residuals = model._residuals(unscaled_values, data, noise)
-            ln_prior = model.lnprior(unscaled_values) - guess_lnprior
+            ln_prior = model._lnprior(unscaled_values) - guess_lnprior
             zscore_prior = np.sqrt(2 * -ln_prior)
             np.append(residuals, zscore_prior)
             return residuals
@@ -89,10 +88,9 @@ class LeastSquaresScipyStrategy(HoloPyObject):
         noise = model._find_noise(fitted_pars, data)
         errors_scaled = noise * unit_errors
         errors = self.unscale_pars_from_minimizer(parameters, errors_scaled)
-        intervals = [
-            UncertainValue(
-                fitted_pars[par.name], errors[par.name], name=par.name)
-            for err, par in zip(errors, parameters)]
+        intervals = [UncertainValue(par, err, name=name)
+                     for par, err, name in
+                     zip(fitted_pars, errors, model._parameter_names)]
 
         # timing decorator...
         d_time = time.time() - time_start
