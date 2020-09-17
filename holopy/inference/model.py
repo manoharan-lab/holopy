@@ -19,6 +19,7 @@
 from copy import copy
 import warnings
 
+import yaml
 import numpy as np
 import xarray as xr
 
@@ -34,6 +35,24 @@ from holopy.inference.prior import Prior, Uniform, ComplexPrior, generate_guess
 
 OPTICS_KEYS = ['medium_index', 'illum_wavelen',
                'illum_polarization', 'noise_sd']
+
+
+def _purge_ties(node):
+    '''
+    Temporary function to purge ties when reloading Scatterers saved pre-3.4
+    '''
+    if isinstance(node, yaml.MappingNode):
+        value = [(scalar, _purge_ties(mapping)) for scalar, mapping in
+                 node.value if scalar.value != 'ties']
+        if value != node.value:
+            from holopy.fitting import fit_warning
+            tie_msg = ('. Ignoring previously defined ties. '
+                        'Use Model.add_tie() to reassign them')
+            fit_warning('newly saved model', 'the old one' + tie_msg)
+        node.value = value
+    elif isinstance(node, yaml.SequenceNode):
+        node.value = [_purge_ties(val) for val in node.value]
+    return node
 
 
 def make_xarray(dim_name, keys, values):
@@ -240,13 +259,14 @@ class Model(HoloPyObject):
 
     @classmethod
     def from_yaml(cls, loader, node):
+        node = _purge_ties(node)
         fields = loader.construct_mapping(node, deep=True)
         try:
             parameters = fields['_parameters']
             maps = fields['_maps']
         except KeyError:
             from holopy.fitting import fit_warning
-            fit_warning('newly saved model object', 'the old one')
+            fit_warning('newly saved model', 'the old one')
             kwargs = fields
             return cls(**kwargs)
         else:
