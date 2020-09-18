@@ -48,9 +48,13 @@ def sample_one_sigma_gaussian(result):
 
 
 class EmceeStrategy(HoloPyObject):
-    def __init__(self, nwalkers=100, nsamples=1000, npixels=None,
+    _default_nsamples = 1000
+
+    def __init__(self, nwalkers=100, nsamples=None, npixels=None,
                  walker_initial_pos=None, parallel='auto', seed=None):
         self.nwalkers = nwalkers
+        if nsamples is None:
+            nsamples = self._default_nsamples
         self.nsamples = nsamples
         self.npixels = npixels
         self.walker_initial_pos = walker_initial_pos
