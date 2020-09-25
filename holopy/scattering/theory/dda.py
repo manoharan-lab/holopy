@@ -76,8 +76,8 @@ class DDA(ScatteringTheory):
     it will need excessive memory or computation time for particularly
     large scatterers.
     """
-    def __init__(self, n_cpu = 1, use_gpu = False, gpu_id = None, max_dpl_size=None, use_indicators=True,
-                 keep_raw_calculations=False, addacmd=[],
+    def __init__(self, n_cpu=1, use_gpu=False, gpu_id=None, max_dpl_size=None,
+                 use_indicators=True, keep_raw_calculations=False, addacmd=[],
                  suppress_C_output=True):
 
         # Check that adda is present and able to run
@@ -107,9 +107,9 @@ class DDA(ScatteringTheory):
 
     def _run_adda(self, scatterer, medium_wavevec, medium_index, temp_dir):
         medium_wavelen = 2*np.pi/medium_wavevec
-        if self.use_gpu == True:
+        if self.use_gpu:
             cmd = ['adda_ocl']
-            if not (self.gpu_id is None): cmd.extend(['-gpu '+str(self.gpu_id)])
+            if self.gpu_id is not None: cmd.extend(['-gpu '+str(self.gpu_id)])
         elif self.n_cpu == 1:
             cmd = ['adda']
         elif self.n_cpu > 1:
