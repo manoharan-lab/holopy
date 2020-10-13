@@ -1,7 +1,9 @@
 import unittest
 
 import numpy as np
+import xarray as xr
 from numpy.testing import assert_allclose, assert_equal
+from nose.plugins.attrib import attr
 
 try:
     import numexpr as ne
@@ -10,8 +12,8 @@ except ModuleNotFoundError:
     NUMEXPR_INSTALLED = False
 
 from holopy.core import detector_points, update_metadata, detector_grid
-from holopy.scattering import calc_holo
-from holopy.scattering.theory import Mie, MieLens
+from holopy.scattering import calc_holo, Sphere, Spheres
+from holopy.scattering.theory import Mie, MieLens, Multisphere
 from holopy.scattering.theory.lens import Lens
 from holopy.scattering.theory.mielensfunctions import MieLensCalculator
 import holopy.scattering.tests.common as test_common
@@ -142,12 +144,12 @@ class TestLens(unittest.TestCase):
         assert_allclose(s_perp_new, s_perp, rtol=5e-3)
         assert_allclose(s_prll_new, s_prll, rtol=5e-3)
 
-    def test_raw_fields_similar_mielens(self):
+    def test_raw_fields_similar_mielens_xpolarization(self):
         detector = SMALL_DETECTOR
         scatterer = test_common.sphere
         medium_wavevec = 2 * np.pi / test_common.wavelen
         medium_index = test_common.index
-        illum_polarization = detector.illum_polarization
+        illum_polarization = xr.DataArray([1.0, 0, 0])
 
         theory_old = MieLens(lens_angle=LENS_ANGLE)
         pos_old = theory_old._transform_to_desired_coordinates(
@@ -247,6 +249,37 @@ class TestLens(unittest.TestCase):
                                     - cosphi * (cosphi * S4 + sinphi * S1))
         result_numexpr = ne.evaluate(expr)
         assert_equal(result_numpy, result_numexpr)
+
+    @attr('medium')
+    def test_polarization_rotation_produces_small_changes_to_image(self):
+        # we test that, for two sphere, rotating the polarization is
+        # does not drastically change the image
+        # We place the two spheres along the line phi = 0
+
+        z_um = 3.0
+        s1 = Sphere(r=0.5, center=(1.0, 0.0, z_um), n=1.59)
+        s2 = Sphere(r=0.5, center=(2.5, 0.0, z_um), n=1.59)
+        scatterer = Spheres([s1, s2])
+
+        medium_wavevec = 2 * np.pi * 1.33 / 0.66
+        medium_index = test_common.index
+        theory = Lens(LENS_ANGLE, Multisphere())
+        args = (scatterer, medium_wavevec, medium_index)
+
+        rho_um = np.linspace(0, 5, 26)
+        krho = medium_wavevec * rho_um
+        phi = np.zeros(krho.size)
+        kz = np.zeros(krho.size) + medium_wavevec * z_um
+        pos = np.array([krho, phi, kz])
+
+        fields_xpol = theory._raw_fields(pos, *args, xr.DataArray([1, 0, 0]))
+        fields_ypol = theory._raw_fields(pos, *args, xr.DataArray([0, 1, 0]))
+
+        intensity_xpol = np.linalg.norm(fields_xpol, axis=0)**2
+        intensity_ypol = np.linalg.norm(fields_ypol, axis=0)**2
+
+        tols = {'atol': 1e-3, 'rtol': 1e-3}
+        self.assertTrue(np.allclose(intensity_xpol, intensity_ypol, **tols))
 
 
 def _setup_mielens_calculator(scatterer, medium_wavevec, medium_index):
