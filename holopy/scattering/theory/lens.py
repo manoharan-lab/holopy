@@ -90,9 +90,6 @@ class Lens(ScatteringTheory):
     def _compute_integrand(self, positions, scatterer, medium_wavevec,
                            medium_index, illum_polarization):
         krho_p, phi_p, kz_p = positions
-        pol_angle = np.arctan2(illum_polarization[1], illum_polarization[0])
-        phi_p += pol_angle.values
-        phi_p %= (2 * np.pi)
 
         theta_shape = (self.quad_npts_theta, 1, 1)
         th = self._theta_pts.reshape(theta_shape)
