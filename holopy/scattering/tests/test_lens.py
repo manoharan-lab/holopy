@@ -166,6 +166,28 @@ class TestLens(unittest.TestCase):
         assert_allclose(f0y, fy, atol=2e-3)
         assert_allclose(f0z, fz, atol=2e-3)
 
+    def test_raw_fields_similar_mielens_ypolarization(self):
+        detector = SMALL_DETECTOR
+        scatterer = test_common.sphere
+        medium_wavevec = 2 * np.pi / test_common.wavelen
+        medium_index = test_common.index
+        illum_polarization = xr.DataArray([0, 1.0, 0])
+
+        theory_old = MieLens(lens_angle=LENS_ANGLE)
+        pos_old = theory_old._transform_to_desired_coordinates(
+            detector, scatterer.center, wavevec=medium_wavevec)
+
+        theory_new = LENSMIE
+        pos_new = theory_new._transform_to_desired_coordinates(
+            detector, scatterer.center, wavevec=medium_wavevec)
+
+        args = (scatterer, medium_wavevec, medium_index, illum_polarization)
+        f0x, f0y, f0z = theory_old._raw_fields(pos_old, *args)
+        fx, fy, fz = theory_new._raw_fields(pos_new, *args)
+        assert_allclose(f0x, fx, atol=2e-3)
+        assert_allclose(f0y, fy, atol=2e-3)
+        assert_allclose(f0z, fz, atol=2e-3)
+
     def test_lens_plus_mie_fields_same_as_mielens(self):
         detector = test_common.xschema_lens
         scatterer = test_common.sphere
