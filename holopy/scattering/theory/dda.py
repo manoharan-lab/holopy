@@ -76,8 +76,8 @@ class DDA(ScatteringTheory):
     it will need excessive memory or computation time for particularly
     large scatterers.
     """
-    def __init__(self, n_cpu = 1, max_dpl_size=None, use_indicators=True,
-                 keep_raw_calculations=False, addacmd=[],
+    def __init__(self, n_cpu=1, use_gpu=False, gpu_id=None, max_dpl_size=None,
+                 use_indicators=True, keep_raw_calculations=False, addacmd=[],
                  suppress_C_output=True):
 
         # Check that adda is present and able to run
@@ -90,11 +90,14 @@ class DDA(ScatteringTheory):
                 "the command 'adda' from a terminal.")
 
         self.n_cpu = n_cpu
+        self.use_gpu = use_gpu
+        self.gpu_id = gpu_id
         self.max_dpl_size = max_dpl_size
         self.use_indicators = use_indicators
         self.keep_raw_calculations = keep_raw_calculations
         self.addacmd = addacmd
         self.suppress_C_output = suppress_C_output
+        if use_gpu and n_cpu>1: warnings.warn("Adda cannot run on multiple CPUs, when running on GPU. 1 CPU will be used.")
         super().__init__()
 
     def _can_handle(self, scatterer):
@@ -105,9 +108,12 @@ class DDA(ScatteringTheory):
 
     def _run_adda(self, scatterer, medium_wavevec, medium_index, temp_dir):
         medium_wavelen = 2*np.pi/medium_wavevec
-        if self.n_cpu == 1:
+        if self.use_gpu:
+            cmd = ['adda_ocl']
+            if self.gpu_id is not None: cmd.extend(['-gpu',str(self.gpu_id)])
+        elif self.n_cpu == 1:
             cmd = ['adda']
-        if self.n_cpu > 1:
+        elif self.n_cpu > 1:
             cmd = ['mpiexec', '-n', str(self.n_cpu), 'adda_mpi']
         cmd.extend(['-scat_matr', 'ampl'])
         cmd.extend(['-store_scat_grid'])
@@ -141,7 +147,7 @@ class DDA(ScatteringTheory):
         return cmd
 
     def _adda_discretized(self, scatterer, medium_wavelen, medium_index, temp_dir):
-        spacing = self.required_spacing(medium_wavelen, medium_index, scatterer.n)
+        spacing = self.required_spacing(scatterer.bounds, medium_wavelen, medium_index, scatterer.n)
         outf = tempfile.NamedTemporaryFile(dir = temp_dir, delete=False)
 
         vox = scatterer.voxelate_domains(spacing)
@@ -162,7 +168,7 @@ class DDA(ScatteringTheory):
         cmd = []
         cmd.extend(['-shape', 'read', outf.name])
         cmd.extend(
-            ['-dpl', str(self._dpl(medium_wavelen, medium_index, scatterer.n))])
+            ['-dpl', str(self._dpl(scatterer.bounds, medium_wavelen, medium_index, scatterer.n))])
         cmd.extend(['-m'])
         for n in ns:
             m = n.real/medium_index
@@ -172,21 +178,24 @@ class DDA(ScatteringTheory):
             cmd.extend([str(m), str(n.imag/medium_index)])
         return cmd
 
-    def _dpl(self, medium_wavelen, medium_index, n):
+    def _dpl(self, bounds, medium_wavelen, medium_index, n):
+        # for objects much smaller than wavelength we should use
+        # at least 10 dipoles per smallest dimension
+        dpl = 10*medium_wavelen / min([np.abs(b[1]-b[0]) for b in bounds])
         # if the object has multiple domains, we need to pick the
         # largest required dipole number
         n = np.abs(n)
         if not np.isscalar(n):
             n = max(n)
-        dpl = 10*(n/medium_index)
+        dpl = max(dpl, 10*(n/medium_index))
         # This allows you to fix a largest allowable dipole size (ie
         # so you can resolve features in an object)
         if self.max_dpl_size is not None:
             dpl = max(dpl, medium_wavelen / self.max_dpl_size)
         return dpl
 
-    def required_spacing(self, medium_wavelen, medium_index, n):
-        return medium_wavelen / self._dpl(medium_wavelen, medium_index, n)
+    def required_spacing(self, bounds, medium_wavelen, medium_index, n):
+        return medium_wavelen / self._dpl(bounds, medium_wavelen, medium_index, n)
 
     def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
         angles = pos.T[:, 1:] * 180/np.pi
@@ -239,4 +248,3 @@ _get_predefined_shape = {
         Cylinder: lambda s: (s.h/2, ['cylinder', str(s.h/s.d)]),
         Bisphere: lambda s: ((s.h+s.d)/2, ['bisphere', str(s.h/s.d)]),
         Sphere: lambda s: (s.r, ['sphere'])}
-
