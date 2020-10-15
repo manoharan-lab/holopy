@@ -108,6 +108,42 @@ class TestLens(unittest.TestCase):
         self.assertTrue(actual_size == expected_size)
         self.assertTrue(actual_shape == expected_shape)
 
+    def test_transforms_correctly_with_polarization_rotation(self):
+        # We test that rotating the lab frame correctly rotates
+        # the polarization.
+        # If we rotate (x0, y0) -> (y1, -x1), then the polarization
+        # in the new coordinates should be
+        # E1x = E0y, E1y = -E1x
+        scatterer = test_common.sphere
+        medium_wavevec = 2 * np.pi / test_common.wavelen
+        medium_index = test_common.index
+        theory = Lens(
+            lens_angle=LENS_ANGLE,
+            theory=Mie(False, False),
+            quad_npts_theta=200,
+            quad_npts_phi=200,
+            )
+
+        krho = np.linspace(0, 100, 11)
+        phi_0 = 0 * krho
+        phi_1 = np.full_like(krho, -np.pi / 2)
+        kz = np.full_like(krho, 20.0)
+
+        pol_0 = xr.DataArray([1.0, 0, 0])
+        pos_0 = np.array([krho, phi_0, kz])
+
+        pol_1 = xr.DataArray([0, -1.0, 0])
+        pos_1 = np.array([krho, phi_1, kz])
+
+        args = (scatterer, medium_wavevec, medium_index)
+
+        fields_0 = theory._raw_fields(pos_0, *args, pol_0)
+        fields_1 = theory._raw_fields(pos_1, *args, pol_1)
+
+        tols = {'atol': 1e-5, 'rtol': 1e-5}
+        assert_allclose(fields_1[0],  fields_0[1], **tols)
+        assert_allclose(fields_1[1], -fields_0[0], **tols)
+
     def test_calc_holo_theta_npts_not_equal_phi_npts(self):
         scatterer = test_common.sphere
         pts = detector_grid(shape=4, spacing=test_common.pixel_scale)
