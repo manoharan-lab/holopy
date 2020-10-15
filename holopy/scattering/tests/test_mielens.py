@@ -25,6 +25,7 @@ import os
 import unittest
 
 import numpy as np
+import xarray as xr
 from nose.plugins.attrib import attr
 
 from holopy.core.metadata import detector_grid
@@ -43,13 +44,6 @@ SOFTTOLS = {"atol": 1e-3, "rtol": 1e-3}
 
 
 class TestMieLens(unittest.TestCase):
-    @attr("medium")
-    def test_does_not_crash(self):
-        theory = MieLens()
-        holo = calc_holo(xschema, sphere, index, wavelen, xpolarization,
-                         theory=theory)
-        self.assertTrue(holo is not None)
-
     @attr("fast")
     def test_raises_error_if_multiple_z_values(self):
         theory = MieLens()
@@ -186,6 +180,37 @@ class TestMieLens(unittest.TestCase):
                          theory=theory)
         self.assertTrue(holo is not None)
         self.assertTrue(holo.values.std() > 0)
+
+    @attr('fast')
+    def test_transforms_correctly_with_polarization_rotation(self):
+        # We test that rotating the lab frame correctly rotates
+        # the polarization.
+        # If we rotate (x0, y0) -> (y1, -x1), then the polarization
+        # in the new coordinates should be
+        # E1x = E0y, E1y = -E1x
+        scatterer = sphere
+        medium_wavevec = 2 * np.pi / wavelen
+        medium_index = index
+        theory = MieLens()
+
+        krho = np.linspace(0, 100, 11)
+        phi_0 = 0 * krho + np.pi / 180.0  # a small component along y
+        phi_1 = phi_0 -np.pi / 2
+        kz = np.full_like(krho, 20.0)
+
+        pol_0 = xr.DataArray([1.0, 0, 0])
+        pos_0 = np.array([krho, phi_0, kz])
+
+        pol_1 = xr.DataArray([0, -1.0, 0])
+        pos_1 = np.array([krho, phi_1, kz])
+
+        args = (scatterer, medium_wavevec, medium_index)
+
+        fields_0 = theory._raw_fields(pos_0, *args, pol_0)
+        fields_1 = theory._raw_fields(pos_1, *args, pol_1)
+
+        self.assertTrue(np.allclose(fields_1[0],  fields_0[1], **TOLS))
+        self.assertTrue(np.allclose(fields_1[1], -fields_0[0], **TOLS))
 
 
 def calculate_central_lobe_at(zs):
