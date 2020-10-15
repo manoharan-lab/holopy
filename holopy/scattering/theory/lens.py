@@ -50,8 +50,8 @@ class Lens(ScatteringTheory):
         """
         quad_theta_pts, quad_theta_wts = gauss_legendre_pts_wts(
              0, self.lens_angle, npts=self.quad_npts_theta)
-        quad_phi_pts, quad_phi_wts = gauss_legendre_pts_wts(
-             0, 2 * np.pi, npts=self.quad_npts_phi)
+        quad_phi_pts, quad_phi_wts = pts_wts_for_phi_integrals(
+            self.quad_npts_phi)
 
         self._theta_pts = quad_theta_pts
         self._costheta_pts = np.cos(self._theta_pts)
@@ -194,4 +194,15 @@ def gauss_legendre_pts_wts(a, b, npts=100):
     pts = pts_raw * (b - a) * 0.5
     wts = wts_raw * (b - a) * 0.5
     pts += 0.5 * (a + b)
+    return pts, wts
+
+
+def pts_wts_for_phi_integrals(npts):
+    """Quadrature points for integration on the periodic interval [0, pi]
+
+    Since this interval is periodic, we use equally-spaced points with
+    equal weights.
+    """
+    pts = np.linspace(0, 2 * np.pi, npts + 1)[:-1].copy()
+    wts = np.full_like(pts, 2 * np.pi / pts.size)
     return pts, wts

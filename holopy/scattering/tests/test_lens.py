@@ -4,6 +4,7 @@ import numpy as np
 import xarray as xr
 from numpy.testing import assert_allclose, assert_equal
 from nose.plugins.attrib import attr
+from scipy.special import iv
 
 try:
     import numexpr as ne
@@ -66,10 +67,10 @@ class TestLens(unittest.TestCase):
         wts = LENSMIE._phi_wts
 
         def func(x):
-            return np.cos(np.pi * x)
+            return np.exp(-3 * np.sin(x))
 
         integral = np.sum(func(pts) * wts)
-        expected_val = np.sin(2 * np.pi ** 2) / np.pi  # analytic result
+        expected_val = 2 * np.pi * iv(0, 3)  # analytic result
         assert_allclose(integral, expected_val)
 
     def test_integrate_over_2D_with_quad_points(self):
@@ -83,10 +84,10 @@ class TestLens(unittest.TestCase):
         wts_theta, wts_phi = np.meshgrid(wts_theta, wts_phi)
 
         def func(theta, phi):
-            return np.cos(theta) * np.cos(np.pi * phi)
+            return np.cos(theta) * np.exp(-3 * np.sin(phi))
 
         integral = np.sum(func(pts_theta, pts_phi) * wts_theta * wts_phi)
-        expected_val = np.sin(1.) * np.sin(2 * np.pi ** 2) / np.pi
+        expected_val = np.sin(LENS_ANGLE) * 2 * np.pi * iv(0, 3)
         assert_allclose(integral, expected_val)
 
     def test_quadrature_scattering_matrix_size(self):
