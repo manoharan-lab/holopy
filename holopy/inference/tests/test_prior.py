@@ -25,8 +25,9 @@ from numpy.testing import assert_equal, assert_allclose
 import numpy as np
 from nose.plugins.attrib import attr
 
-from holopy.inference.prior import (Prior, Gaussian, Uniform, BoundedGaussian,
-    ComplexPrior, make_center_priors, updated, generate_guess)
+from holopy.inference.prior import (
+    Prior, Gaussian, Uniform, BoundedGaussian, ComplexPrior, TransformedPrior,
+    make_center_priors, updated, generate_guess)
 from holopy.inference.result import UncertainValue
 from holopy.core.metadata import data_grid
 from holopy.scattering.errors import ParameterSpecificationError
@@ -363,6 +364,87 @@ class TestComplexPrior(unittest.TestCase):
         self.assertTrue(np.all(samples.real > real.lower_bound))
         self.assertTrue(np.all(samples.imag == imag))
 
+
+class TestTransformedPrior(unittest.TestCase):
+    @attr("fast")
+    def test_all_base_priors_are_Priors(self):
+        base_prior = [Uniform(0, 2), 1]
+        self.assertRaises(TypeError, TransformedPrior, np.sqrt, base_prior)
+
+    @attr("fast")
+    def test_single_base_prior_becomes_list(self):
+        base_prior = Uniform(0, 2)
+        transformed = TransformedPrior(np.sqrt, base_prior)
+        self.assertEqual(transformed.base_prior, [base_prior])
+
+    @attr('fast')
+    def test_transformation_must_be_function(self):
+        transform = Uniform(0, 2)
+        base_prior = Uniform(1, 3)
+        self.assertRaises(TypeError, TransformedPrior, transform, base_prior)
+
+    @attr('fast')
+    def test_no_inverse_on_multiple_priors(self):
+        base_priors = [Uniform(0, 10, guess=4), Uniform(0, 2, guess=1)]
+        self.assertRaises(ValueError, TransformedPrior, np.maximum,
+                          base_priors, np.minimum)
+
+    @attr('fast')
+    def test_probability_fails_without_inverse(self):
+        transform = TransformedPrior(np.sqrt, Uniform(3, 5))
+        self.assertRaises(NotImplementedError, transform.prob, 2)
+        self.assertRaises(NotImplementedError, transform.lnprob, 2)
+
+    @attr('fast')
+    def test_probability_works_with_inverse(self):
+        transform = TransformedPrior(np.sqrt, Uniform(3, 5), np.square)
+        self.assertEqual(transform.prob(2), 0.5)
+        self.assertEqual(transform.lnprob(2), -np.log(2))
+        self.assertEqual(transform.prob(4), 0)
+
+    @attr('fast')
+    def test_sample_single_prior_once(self):
+        transformed = TransformedPrior(np.sqrt, Uniform(81, 100))
+        sample = transformed.sample()
+        self.assertTrue(9 < sample < 10)
+
+    @attr('fast')
+    def test_sample_single_prior_with_size(self):
+        transformed = TransformedPrior(np.sqrt, Uniform(81, 100))
+        sample = transformed.sample(100)
+        self.assertEqual(len(sample), 100)
+        self.assertTrue(isinstance(sample, np.ndarray))
+        self.assertTrue((9 < sample).all() and (sample < 10).all())
+        self.assertNotEqual(sample[0], sample[1])
+
+    @attr('fast')
+    def test_sample_multiple_priors_once(self):
+        base_prior = [Uniform(0, 1), Uniform(2, 3)]
+        transformed = TransformedPrior(np.maximum, base_prior)
+        sample = transformed.sample()
+        self.assertTrue(2 < sample < 3)
+
+    @attr('fast')
+    def test_sample_multiple_priors_with_size(self):
+        base_prior = [Uniform(0, 1), Uniform(2, 3)]
+        transformed = TransformedPrior(np.maximum, base_prior)
+        sample = transformed.sample(100)
+        self.assertEqual(len(sample), 100)
+        self.assertTrue(isinstance(sample, np.ndarray))
+        self.assertTrue((2 < sample).all() and (sample < 3).all())
+        self.assertNotEqual(sample[0], sample[1])
+
+    @attr("fast")
+    def test_guess_with_single_prior(self):
+        base_prior = Uniform(0, 10, guess=4)
+        transformed = TransformedPrior(np.sqrt, base_prior)
+        self.assertEqual(transformed.guess, 2)
+
+    @attr('fast')
+    def test_guess_with_multiple_priors(self):
+        base_priors = [Uniform(0, 10, guess=4), Uniform(0, 2, guess=1)]
+        transformed = TransformedPrior(np.maximum, base_priors)
+        self.assertEqual(transformed.guess, 4)
 
 def test_scale_factor():
     p1 = Gaussian(3, 1)

@@ -24,6 +24,7 @@ from numbers import Number, Real
 from scipy import stats
 
 from holopy.core.metadata import get_extents, get_spacing
+from holopy.core.utils import ensure_listlike
 from holopy.core.process import center_find
 from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering.errors import ParameterSpecificationError
@@ -386,6 +387,56 @@ class ComplexPrior(Prior):
     def __neg__(self):
         return ComplexPrior(-self.real, -self.imag, self.name)
 
+
+class TransformedPrior(Prior):
+    def __init__(self, transformation, base_prior, inverse=None, name=None):
+        base_prior = ensure_listlike(base_prior)
+        if all([isinstance(bp, Prior) for bp in base_prior]):
+            self.base_prior = base_prior
+        else:
+            msg = 'base_prior must be a Prior object or list of Prior objects'
+            raise TypeError(msg)
+        if callable(transformation):
+            self.transformation = transformation
+        else:
+            msg = 'transformation must be function of one or more base priors'
+            raise TypeError(msg)
+        if len(base_prior) > 1 and inverse is not None:
+            msg = ('Cannot apply inverse function to multiple base priors. '
+                   'Define a subclass defining your specific use case.')
+            raise ValueError(msg)
+        else:
+            self.inverse = inverse
+        self.name = name
+
+    def _try_probability_calculation(self, prob_func, p):
+        if self.inverse is None:
+            base_names = [bp.name for bp in self.base_prior]
+            msg = ("Cannot calculate probability of {}. Use base "
+                   "priors {}.").format(type(self).__name__, base_names)
+            raise NotImplementedError(msg)
+        else:
+            prob_func = getattr(self.base_prior[0], prob_func)
+            return prob_func(self.inverse(p))
+
+    def prob(self, p):
+        return self._try_probability_calculation('prob', p)
+
+    def lnprob(self, p):
+        return self._try_probability_calculation('lnprob', p)
+
+    def sample(self, size=None):
+        test_vals = [bp.sample(size) for bp in self.base_prior]
+        if size is None:
+            return self.transformation(*test_vals)
+        else:
+            return np.array([self.transformation(*sample_set)
+                             for sample_set in zip(*test_vals)])
+
+    @property
+    def guess(self):
+        guess_vals = [bp.guess for bp in self.base_prior]
+        return self.transformation(*guess_vals)
 
 def updated(prior, v, extra_uncertainty=0):
     """
