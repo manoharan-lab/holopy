@@ -38,7 +38,7 @@ from holopy.inference import (prior, AlphaModel, ExactModel,
                               NmpfitStrategy, EmceeStrategy,
                               available_fit_strategies,
                               available_sampling_strategies)
-from holopy.inference.model import (Model, PerfectLensModel,
+from holopy.inference.model import (Model, PerfectLensModel, transformed_prior,
                                     make_xarray, make_complex, read_map)
 from holopy.inference.tests.common import SimpleModel
 from holopy.scattering.tests.common import (
@@ -285,6 +285,14 @@ class TestParameterMapping(unittest.TestCase):
         self.assertEqual(model._parameter_names[-2], 'prefix.real')
         self.assertEqual(model._parameter_names[-1], 'prefix.imag')
 
+    @attr('fast')
+    def test_map_transformed_prior(self):
+        model = SimpleModel()
+        transformed = prior.TransformedPrior(np.sqrt, prior.Uniform(0, 2),
+                                             name='sqrt')
+        parameter_map = model._convert_to_map(transformed)
+        expected = [transformed_prior, [np.sqrt, ["_parameter_0"]]]
+
     @attr("fast")
     def test_map_composite_object(self):
         model = SimpleModel()
@@ -318,6 +326,19 @@ class TestParameterMapping(unittest.TestCase):
         parameter_map = [make_complex, ['_parameter_0', '_parameter_1']]
         priors = [prior.Uniform(0, 1), prior.Uniform(1, 2)]
         expected = prior.ComplexPrior(priors[0], priors[1])
+        self.assertEqual(read_map(parameter_map, priors), expected)
+
+    @attr('fast')
+    def test_read_transformed_prior_map_values(self):
+        parameter_map = [transformed_prior, [np.sqrt, ['_parameter_0']]]
+        values = [4]
+        self.assertEqual(read_map(parameter_map, values), 2)
+
+    @attr('fast')
+    def test_read_transformed_prior_map_priors(self):
+        parameter_map = [transformed_prior, [np.sqrt, ['_parameter_0']]]
+        priors = [prior.Uniform(0, 1)]
+        expected = prior.TransformedPrior(np.sqrt, priors)
         self.assertEqual(read_map(parameter_map, priors), expected)
 
     @attr("fast")
@@ -397,6 +418,18 @@ class TestParameterTying(unittest.TestCase):
                            prior.Uniform(1, 2),
                            prior.Uniform(1, 2)]
         expected_names = ['n', 'r', 'center.2']
+        self.assertEqual(model._parameters, expected_priors)
+        self.assertEqual(model._parameter_names, expected_names)
+
+    @attr('fast')
+    def test_transformed_priors_are_tied(self):
+        base_prior = prior.Uniform(0, 2, name='x')
+        transformed = prior.TransformedPrior(np.sqrt, base_prior, name='y')
+        scatterer = Sphere(n=1.5, r=0.5, center=[base_prior, transformed,
+                                                 prior.Uniform(5, 10)])
+        model = AlphaModel(scatterer)
+        expected_priors = [base_prior, prior.Uniform(5, 10)]
+        expected_names = ['x', 'center.2']
         self.assertEqual(model._parameters, expected_priors)
         self.assertEqual(model._parameter_names, expected_names)
 

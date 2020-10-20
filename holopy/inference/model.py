@@ -30,7 +30,8 @@ from holopy.scattering.errors import (MultisphereFailure, TmatrixFailure,
                                       InvalidScatterer, MissingParameter)
 from holopy.scattering.interface import calc_holo
 from holopy.scattering.theory import MieLens
-from holopy.inference.prior import Prior, Uniform, ComplexPrior, generate_guess
+from holopy.inference.prior import (Prior, Uniform, ComplexPrior,
+                                    TransformedPrior, generate_guess)
 
 
 OPTICS_KEYS = ['medium_index', 'illum_wavelen',
@@ -71,6 +72,13 @@ def make_complex(real, imag):
         return ComplexPrior(real, imag)
     else:
         return complex(real, imag)
+
+
+def transformed_prior(transformation, base_priors):
+    if any([isinstance(bp, Prior) for bp in base_priors]):
+        return TransformedPrior(transformation, base_priors)
+    else:
+        return transformation(*base_priors)
 
 
 def read_map(map_entry, parameter_values):
@@ -154,6 +162,8 @@ class Model(HoloPyObject):
             mapped = self._map_xarray(parameter, name)
         elif isinstance(parameter, ComplexPrior):
             mapped = self._map_complex(parameter, name)
+        elif isinstance(parameter, TransformedPrior):
+            mapped = self._map_transformed_prior(parameter, name)
         elif isinstance(parameter, Prior):
             index = self._get_parameter_index(parameter, name)
             mapped = '_parameter_{}'.format(index)
@@ -185,6 +195,11 @@ class Model(HoloPyObject):
     def _map_complex(self, parameter, name):
         mapping = ((key, getattr(parameter, key)) for key in ['real', 'imag'])
         return [make_complex, self._iterate_mapping(name + '.', mapping)]
+
+    def _map_transformed_prior(self, parameter, name):
+        mapped_priors = self._iterate_mapping(name + '.',
+                                              enumerate(parameter.base_prior))
+        return [transformed_prior, [parameter.transformation, mapped_priors]]
 
     def _get_parameter_index(self, parameter, name):
         index = self._check_for_ties(parameter)
