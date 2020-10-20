@@ -446,6 +446,19 @@ class TestTransformedPrior(unittest.TestCase):
         transformed = TransformedPrior(np.maximum, base_priors)
         self.assertEqual(transformed.guess, 4)
 
+    @attr('fast')
+    def test_hierarchical_transformed_prior(self):
+        base_prior = Uniform(10, 20, guess=16)
+        transform = TransformedPrior(np.sqrt, base_prior, inverse=np.square)
+        double = TransformedPrior(np.sqrt, transform, inverse=np.square)
+        samples = double.sample(100)
+        self.assertEqual(double.guess, 2)
+        self.assertEqual(double.prob(2), 0.1)
+        self.assertEqual(double.prob(15), 0)
+        self.assertTrue(all(samples < np.sqrt(np.sqrt(20))) and
+                        all(samples > np.sqrt(np.sqrt(10))))
+
+
 def test_scale_factor():
     p1 = Gaussian(3, 1)
     assert_equal(p1.scale_factor, 3)

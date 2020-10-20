@@ -290,8 +290,30 @@ class TestParameterMapping(unittest.TestCase):
         model = SimpleModel()
         transformed = prior.TransformedPrior(np.sqrt, prior.Uniform(0, 2),
                                              name='sqrt')
+        position = len(model._parameters)
         parameter_map = model._convert_to_map(transformed)
-        expected = [transformed_prior, [np.sqrt, ["_parameter_0"]]]
+        placeholder = "_parameter_{}".format(position)
+        expected = [transformed_prior, [np.sqrt, [placeholder]]]
+        self.assertEqual(parameter_map, expected)
+
+    @attr('fast')
+    def test_map_transformed_prior_names(self):
+        model = SimpleModel()
+        base_prior = [prior.Uniform(0, 2, name='first'), prior.Uniform(1, 2)]
+        transformed = {'trans': prior.TransformedPrior(np.maximum, base_prior)}
+        parameter_map = model._convert_to_map(transformed)
+        self.assertEqual(model._parameter_names[-2:], ['first', 'trans.1'])
+
+    @attr('fast')
+    def test_map_hierarchical_transformed_prior(self):
+        model = SimpleModel()
+        inner = prior.TransformedPrior(np.sqrt, prior.Uniform(0, 2))
+        full = prior.TransformedPrior(np.maximum, [inner, prior.Uniform(0, 1)])
+        position = len(model._parameters)
+        parameter_map = model._convert_to_map(full)
+        placeholder = ['_parameter_{}'.format(position + i) for i in range(2)]
+        submap = [transformed_prior, [np.sqrt, [placeholder[0]]]]
+        expected = [transformed_prior, [np.maximum, [submap, placeholder[1]]]]
 
     @attr("fast")
     def test_map_composite_object(self):
@@ -340,6 +362,20 @@ class TestParameterMapping(unittest.TestCase):
         priors = [prior.Uniform(0, 1)]
         expected = prior.TransformedPrior(np.sqrt, priors)
         self.assertEqual(read_map(parameter_map, priors), expected)
+
+    @attr('fast')
+    def test_read_hierarchical_transformed(self):
+        inner_map = [transformed_prior, [np.sqrt, ['_parameter_0']]]
+        parameter_map = [transformed_prior, [np.maximum, ['_parameter_1',
+                                                          inner_map]]]
+        priors = [prior.Uniform(0, 1), prior.Uniform(1, 2)]
+        expected_base = [prior.Uniform(1, 2),
+                         prior.TransformedPrior(np.sqrt, prior.Uniform(0, 1))]
+        expected_full = prior.TransformedPrior(np.maximum, expected_base)
+        self.assertEqual(read_map(parameter_map, priors), expected_full)
+        values = [25, 7]
+        self.assertEqual(read_map(inner_map, values), 5)
+        self.assertEqual(read_map(parameter_map, values), 7)
 
     @attr("fast")
     def test_read_composite_map(self):
