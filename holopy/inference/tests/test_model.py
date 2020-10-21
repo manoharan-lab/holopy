@@ -39,7 +39,7 @@ from holopy.inference import (prior, AlphaModel, ExactModel,
                               available_fit_strategies,
                               available_sampling_strategies)
 from holopy.inference.model import (Model, PerfectLensModel, transformed_prior,
-                                    make_xarray, make_complex, read_map)
+                                    make_xarray, read_map)
 from holopy.inference.tests.common import SimpleModel
 from holopy.scattering.tests.common import (
     xschema_lens, sphere as SPHERE_IN_METERS)
@@ -273,7 +273,8 @@ class TestParameterMapping(unittest.TestCase):
         parameter = prior.ComplexPrior(1, prior.Uniform(2, 3))
         position = len(model._parameters)
         parameter_map = model._convert_to_map(parameter)
-        expected = [make_complex, [1, "_parameter_{}".format(position)]]
+        placeholder = "_parameter_{}".format(position)
+        expected = [transformed_prior, [complex, [1, placeholder]]]
         self.assertEqual(parameter_map, expected)
 
     @attr("fast")
@@ -320,7 +321,7 @@ class TestParameterMapping(unittest.TestCase):
         model = SimpleModel()
         parameter = [prior.ComplexPrior(0, 1), {'a': 2, 'b': [4, 5]}, 6]
         parameter_map = model._convert_to_map(parameter)
-        expected = [[make_complex, [0, 1]],
+        expected = [[transformed_prior, [complex, [0, 1]]],
                     [dict, [[['a', 2], ['b', [4, 5]]]]], 6]
         self.assertEqual(parameter_map, expected)
 
@@ -339,15 +340,17 @@ class TestParameterMapping(unittest.TestCase):
 
     @attr("fast")
     def test_read_complex_map_values(self):
-        parameter_map = [make_complex, ['_parameter_0', '_parameter_1']]
+        parameter_map = [transformed_prior, [complex, ['_parameter_0',
+                                                       '_parameter_1']]]
         values = [0, 1]
         self.assertEqual(read_map(parameter_map, values), complex(0, 1))
 
     @attr("fast")
     def test_read_complex_map_priors(self):
-        parameter_map = [make_complex, ['_parameter_0', '_parameter_1']]
+        parameter_map = [transformed_prior, [complex, ['_parameter_0',
+                                                       '_parameter_1']]]
         priors = [prior.Uniform(0, 1), prior.Uniform(1, 2)]
-        expected = prior.ComplexPrior(priors[0], priors[1])
+        expected = prior.TransformedPrior(complex, [priors[0], priors[1]])
         self.assertEqual(read_map(parameter_map, priors), expected)
 
     @attr('fast')
@@ -379,10 +382,10 @@ class TestParameterMapping(unittest.TestCase):
 
     @attr("fast")
     def test_read_composite_map(self):
-        n_map = [dict, [[['red', [[make_complex, [1.5, "_parameter_2"]],
-                                  [make_complex, [1.6, "_parameter_3"]]]],
-                         ['green', [[make_complex, [1.7, "_parameter_4"]],
-                                    [make_complex, [1.8, "_parameter_5"]]]]]]]
+        n_map = [dict, [[['red', [[transformed_prior, [complex, [1.5, "_parameter_2"]]],
+                                  [transformed_prior, [complex, [1.6, "_parameter_3"]]]]],
+                         ['green', [[transformed_prior, [complex, [1.7, "_parameter_4"]]],
+                                    [transformed_prior, [complex, [1.8, "_parameter_5"]]]]]]]]
         parameter_map = [dict, [[['r', ["_parameter_0", "_parameter_1"]],
                                  ['n', n_map],
                                  ['center', [10, 20, "_parameter_6"]]]]]
@@ -571,7 +574,8 @@ class TestParameterTying(unittest.TestCase):
         model.add_tie(['center.0', 'n.imag', 'center.1'])
         expected_map = [
             dict,
-            [[['n', [make_complex, ['_parameter_0', '_parameter_1']]],
+            [[['n', [transformed_prior, [complex, ['_parameter_0',
+                                                   '_parameter_1']]]],
               ['r', '_parameter_2'],
               ['center', ['_parameter_1', '_parameter_1', '_parameter_3']]]]]
         expected_parameters = [prior.Uniform(1, 2), prior.Uniform(0, 1),

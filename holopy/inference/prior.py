@@ -277,84 +277,6 @@ class BoundedGaussian(Gaussian):
         return val
 
 
-class ComplexPrior(Prior):
-    """
-    A complex free parameter
-
-    ComplexPrior has a real and imaginary part which can (potentially)
-    vary separately.
-
-    Parameters
-    ----------
-    real, imag : float or :class:`Prior`
-        The real and imaginary parts of this parameter.  Assign floats to fix
-        that portion or parameters to allow it to vary.  The parameters must be
-        purely real.  You should omit names for the parameters;
-        ComplexPrior will name them
-    name : string
-        Short descriptive name of the ComplexPrior.  Do not provide this if
-        using a ParameterizedScatterer, a name will be assigned based its
-        position within the scatterer.
-    """
-    def __init__(self, real, imag, name=None):
-        '''
-        real and imag may be scalars or Priors. If Priors, they must be
-        pure real.
-        '''
-        self.real = real
-        self.imag = imag
-        self.name = name
-
-    @property
-    def guess(self):
-        def get_val(val):
-            try:
-                return val.guess
-            except AttributeError:
-                return val
-        return get_val(self.real) + 1.0j * get_val(self.imag)
-
-    def lnprob(self, p):
-        try:
-            realprob = self.real.lnprob(np.real(p))
-        except AttributeError:
-            realprob = 0
-        try:
-            imagprob = self.imag.lnprob(np.imag(p))
-        except AttributeError:
-            imagprob = 0
-        return realprob + imagprob
-
-    def prob(self, p):
-        return np.exp(self.lnprob(p))
-
-    def sample(self, size=None):
-        def get_val(val):
-            try:
-                return val.sample(size)
-            except AttributeError:
-                return val
-        return get_val(self.real) + 1.0j * get_val(self.imag)
-
-    def __add__(self, value):
-        if isinstance(self, ComplexPrior) and isinstance(value, ComplexPrior):
-            return self._add(value)
-        else:
-            return super().__add__(value)
-
-    def _add(self, value):
-        real = self.real + np.real(value)
-        imag = self.imag + np.imag(value)
-        return ComplexPrior(real, imag, self.name)
-
-    def _multiply(self, value):
-        # doesn't work for complex 'value' but they are caught in Prior.__mul__
-        return ComplexPrior(self.real * value, self.imag * value, self.name)
-
-    def __neg__(self):
-        return ComplexPrior(-self.real, -self.imag, self.name)
-
-
 class TransformedPrior(Prior):
     def __init__(self, transformation, base_prior, name=None):
         self.base_prior = ensure_listlike(base_prior)
@@ -394,6 +316,65 @@ class TransformedPrior(Prior):
         guess_vals = [bp.guess if isinstance(bp, Prior) else bp
                       for bp in self.base_prior]
         return self.transformation(*guess_vals)
+
+    @property
+    def map_keys(self):
+        return enumerate(self.base_prior)
+
+
+class ComplexPrior(TransformedPrior):
+    """
+    A complex free parameter
+
+    ComplexPrior has a real and imaginary part which can (potentially)
+    vary separately.
+
+    Parameters
+    ----------
+    real, imag : float or :class:`Prior`
+        The real and imaginary parts of this parameter.  Assign floats to fix
+        that portion or parameters to allow it to vary.  The parameters must be
+        purely real.  You should omit names for the parameters;
+        ComplexPrior will name them
+    name : string
+        Short descriptive name of the ComplexPrior.  Do not provide this if
+        using a ParameterizedScatterer, a name will be assigned based its
+        position within the scatterer.
+    """
+    def __init__(self, real, imag, name=None):
+        '''
+        real and imag may be scalars or Priors. If Priors, they must be
+        pure real.
+        '''
+        self.transformation = complex
+        self.base_prior = [real, imag]
+        self.name = name
+
+    @property
+    def real(self):
+        return self.base_prior[0]
+
+    @property
+    def imag(self):
+        return self.base_prior[1]
+
+    def lnprob(self, p):
+        try:
+            realprob = self.real.lnprob(np.real(p))
+        except AttributeError:
+            realprob = 0
+        try:
+            imagprob = self.imag.lnprob(np.imag(p))
+        except AttributeError:
+            imagprob = 0
+        return realprob + imagprob
+
+    def prob(self, p):
+        return np.exp(self.lnprob(p))
+
+    @property
+    def map_keys(self):
+        return ((key, getattr(self, key)) for key in ['real', 'imag'])
 
 
 def updated(prior, v, extra_uncertainty=0):
