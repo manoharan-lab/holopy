@@ -17,6 +17,7 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 from copy import copy
+import operator
 
 import numpy as np
 from numpy import random
@@ -32,6 +33,10 @@ from holopy.scattering.errors import ParameterSpecificationError
 EPS = 1e-6
 
 
+def _reciprocal(val):
+    return 1 / val
+
+
 class Prior(HoloPyObject):
     """Base class for Bayesian priors in holopy."""
 
@@ -40,8 +45,11 @@ class Prior(HoloPyObject):
                                   "distribution method prob and/or lnprob.")
 
     def __add__(self, value):
-        if isinstance(value, Number):
-            return self._add(value)
+        if isinstance(value, (Number, Prior)):
+            if value == 0:
+                return self
+            else:
+                return TransformedPrior(operator.add, [self, value])
         elif isinstance(value, np.ndarray):
             return np.array([self + val for val in value])
         else:
@@ -49,13 +57,13 @@ class Prior(HoloPyObject):
                 "Cannot add prior to objects of type {}".format(type(value)))
 
     def __mul__(self, value):
-        if isinstance(value, Real):
-            if value > 0:
-                return self._multiply(value)
-            elif value < 0:
-                return -self._multiply(-value)
-            else:
+        if isinstance(value, (Real, Prior)):
+            if value == 0:
                 raise TypeError("Cannot multiply a prior by 0")
+            elif value == 1:
+                return self
+            else:
+                return TransformedPrior(operator.mul, [self, value])
         elif isinstance(value, np.ndarray):
             return np.array([self * val for val in value])
         else:
@@ -77,6 +85,12 @@ class Prior(HoloPyObject):
 
     def __truediv__(self, value):
         return self * (1/value)
+
+    def __rtruediv__(self, value):
+        return value * TransformedPrior(_reciprocal, self)
+
+    def __neg__(self):
+        return self * -1
 
     def scale(self, physical):
         return physical / self.scale_factor
@@ -161,18 +175,6 @@ class Uniform(Prior):
     def sample(self, size=None):
         return random.uniform(self.lower_bound, self.upper_bound, size)
 
-    def _add(self, value):
-        return Uniform(self.lower_bound+value, self.upper_bound+value,
-                       self.guess+value, name=self.name)
-
-    def _multiply(self, value):
-        return Uniform(self.lower_bound*value, self.upper_bound*value,
-                       self.guess*value, self.name)
-
-    def __neg__(self):
-        return Uniform(-self.upper_bound, -self.lower_bound, -self.guess,
-                       self.name)
-
 
 class Gaussian(Prior):
     def __init__(self, mu, sd, name=None):
@@ -217,28 +219,6 @@ class Gaussian(Prior):
 
     def sample(self, size=None):
         return random.normal(self.mu, self.sd, size=size)
-
-    def __add__(self, value):
-        if (isinstance(value, Gaussian)
-                and not isinstance(value, BoundedGaussian)
-                and not isinstance(self, BoundedGaussian)):
-            new_sd = np.sqrt(self.sd**2 + value.sd**2)
-            if self.name == value.name:
-                new_name = self.name
-            else:
-                new_name = "GaussianSum"
-            return Gaussian(self.mu + value.mu, new_sd, new_name)
-        else:
-            return super().__add__(value)
-
-    def _add(self, value):
-        return Gaussian(self.mu+value, self.sd, self.name)
-
-    def _multiply(self, value):
-        return Gaussian(self.mu*value, self.sd*value, self.name)
-
-    def __neg__(self):
-        return Gaussian(-self.mu, self.sd, self.name)
 
 
 class BoundedGaussian(Gaussian):
@@ -295,19 +275,6 @@ class BoundedGaussian(Gaussian):
             out = np.where(out)
             val[out] = super().sample(len(out[0]))
         return val
-
-    def _add(self, value):
-        return BoundedGaussian(self.mu+value, self.sd, self.lower_bound+value,
-                               self.upper_bound+value, self.name)
-
-    def _multiply(self, value):
-        return BoundedGaussian(self.mu*value, self.sd*value,
-                               self.lower_bound*value, self.upper_bound*value,
-                               self.name)
-
-    def __neg__(self):
-        return BoundedGaussian(-self.mu, self.sd, -self.upper_bound,
-                               -self.lower_bound, self.name)
 
 
 class ComplexPrior(Prior):
@@ -389,54 +356,45 @@ class ComplexPrior(Prior):
 
 
 class TransformedPrior(Prior):
-    def __init__(self, transformation, base_prior, inverse=None, name=None):
-        base_prior = ensure_listlike(base_prior)
-        if all([isinstance(bp, Prior) for bp in base_prior]):
-            self.base_prior = base_prior
-        else:
-            msg = 'base_prior must be a Prior object or list of Prior objects'
-            raise TypeError(msg)
+    def __init__(self, transformation, base_prior, name=None):
+        self.base_prior = ensure_listlike(base_prior)
         if callable(transformation):
             self.transformation = transformation
         else:
             msg = 'transformation must be function of one or more base priors'
             raise TypeError(msg)
-        if len(base_prior) > 1 and inverse is not None:
-            msg = ('Cannot apply inverse function to multiple base priors. '
-                   'Define a subclass defining your specific use case.')
-            raise ValueError(msg)
-        else:
-            self.inverse = inverse
         self.name = name
 
-    def _try_probability_calculation(self, prob_func, p):
-        if self.inverse is None:
-            base_names = [bp.name for bp in self.base_prior]
-            msg = ("Cannot calculate probability of {}. Use base "
-                   "priors {}.").format(type(self).__name__, base_names)
-            raise NotImplementedError(msg)
-        else:
-            prob_func = getattr(self.base_prior[0], prob_func)
-            return prob_func(self.inverse(p))
-
     def prob(self, p):
-        return self._try_probability_calculation('prob', p)
+        msg = "Cannot calculate probability. Use base priors {}.".format(
+            self.base_names)
+        raise NotImplementedError(msg)
 
     def lnprob(self, p):
-        return self._try_probability_calculation('lnprob', p)
+        msg = "Cannot calculate probability. Use base priors {}.".format(
+            self.base_names)
+        raise NotImplementedError(msg)
 
     def sample(self, size=None):
-        test_vals = [bp.sample(size) for bp in self.base_prior]
         if size is None:
-            return self.transformation(*test_vals)
+            repeat = lambda x: x
+        else:
+            repeat = lambda x: np.repeat(x,size)
+        raw_samples = [bp.sample(size) if isinstance(bp, Prior) else repeat(bp)
+                       for bp in self.base_prior]
+        if size is None:
+            return self.transformation(*raw_samples)
         else:
             return np.array([self.transformation(*sample_set)
-                             for sample_set in zip(*test_vals)])
+                             for sample_set in zip(*raw_samples)])
+        return samples
 
     @property
     def guess(self):
-        guess_vals = [bp.guess for bp in self.base_prior]
+        guess_vals = [bp.guess if isinstance(bp, Prior) else bp
+                      for bp in self.base_prior]
         return self.transformation(*guess_vals)
+
 
 def updated(prior, v, extra_uncertainty=0):
     """
