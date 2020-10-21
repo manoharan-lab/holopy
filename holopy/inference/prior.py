@@ -292,6 +292,19 @@ class BoundedGaussian(Gaussian):
 
 class TransformedPrior(Prior):
     def __init__(self, transformation, base_prior, name=None):
+        """Composite prior composed of one or more base priors transformed by
+        a function. Note there are no `prob` and `lnprob` methods since those
+        just depend on the probabilities of the underlying base priors.
+
+        Parameters
+        ----------
+        transformation : func
+            Function to apply to base prior to get transformed value
+        base_prior : Prior object or listlike containing Priors
+            Values to be passed into transformation function
+        name : string or None, optional
+            The name of the parameter.
+        """
         self.base_prior = tuple(ensure_listlike(base_prior))
         if callable(transformation):
             self.transformation = transformation
