@@ -367,10 +367,10 @@ class TestComplexPrior(unittest.TestCase):
 
 class TestTransformedPrior(unittest.TestCase):
     @attr("fast")
-    def test_single_base_prior_becomes_list(self):
+    def test_single_base_prior_becomes_tuple(self):
         base_prior = Uniform(0, 2)
         transformed = TransformedPrior(np.sqrt, base_prior)
-        self.assertEqual(transformed.base_prior, [base_prior])
+        self.assertEqual(transformed.base_prior, (base_prior,))
 
     @attr('fast')
     def test_transformation_must_be_function(self):
@@ -553,6 +553,33 @@ class TestPriorMath(unittest.TestCase):
         for arr in [sum_array, product_array]:
             self.assertTrue(isinstance(arr, np.ndarray))
             self.assertTrue(all([isinstance(p, Prior) for p in arr]))
+
+    @attr("fast")
+    def test_single_arg_numpy_ufunc(self):
+        base_prior = Uniform(2, 3)
+        transformed = TransformedPrior(np.sqrt, base_prior)
+        self.assertEqual(np.sqrt(base_prior), transformed)
+
+    @attr("fast")
+    def test_two_arg_numpy_ufunc_with_const(self):
+        base_prior = Uniform(2, 4)
+        transformed = TransformedPrior(np.maximum, [base_prior, 3])
+        self.assertEqual(np.maximum(base_prior, 3), transformed)
+
+    @attr("fast")
+    def test_two_arg_numpy_ufunc_with_both_priors(self):
+        prior_1 = Uniform(2, 4)
+        prior_2 = Uniform(1, 3)
+        transformed = TransformedPrior(np.maximum, [prior_1, prior_2])
+        self.assertEqual(np.maximum(prior_1, prior_2), transformed)
+
+    @attr('fast')
+    def test_pow_rpow(self):
+        prior = Uniform(1, 4, guess=3)
+        power = prior ** 2
+        rpower = 2 ** prior
+        self.assertEqual(power.guess, 9)
+        self.assertEqual(rpower.guess, 8)
 
 
 def test_generate_guess():

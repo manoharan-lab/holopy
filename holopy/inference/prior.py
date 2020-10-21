@@ -92,6 +92,19 @@ class Prior(HoloPyObject):
     def __neg__(self):
         return self * -1
 
+    def __pow__(self, value):
+        return TransformedPrior(operator.pow, [self, value])
+
+    def __rpow__(self, value):
+        return TransformedPrior(operator.pow, [value, self])
+
+    def __array_ufunc__(self, ufunc, method, *args, **kwargs):
+        if method == "__call__" and len(kwargs) == 0:
+            return TransformedPrior(ufunc, args)
+        else:
+            raise TypeError('Could not apply numpy ufunc to Prior object. '
+                            'Use TransformedPrior.')
+
     def scale(self, physical):
         return physical / self.scale_factor
 
@@ -279,7 +292,7 @@ class BoundedGaussian(Gaussian):
 
 class TransformedPrior(Prior):
     def __init__(self, transformation, base_prior, name=None):
-        self.base_prior = ensure_listlike(base_prior)
+        self.base_prior = tuple(ensure_listlike(base_prior))
         if callable(transformation):
             self.transformation = transformation
         else:
