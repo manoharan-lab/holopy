@@ -300,10 +300,10 @@ class TestLensVsMielens(unittest.TestCase):
 
         args = (scatterer, medium_wavevec, medium_index, illum_polarization)
         f0x, f0y, f0z = theory_old._raw_fields(pos_old, *args)
-        fx, fy, fz = theory_new._raw_fields(pos_new, *args)
-        assert_allclose(f0x, fx, atol=2e-3)
-        assert_allclose(f0y, fy, atol=2e-3)
-        assert_allclose(f0z, fz, atol=2e-3)
+        f1x, f1y, f1z = theory_new._raw_fields(pos_new, *args)
+        assert_allclose(f0x, f1x, atol=2e-3)
+        assert_allclose(f0y, f1y, atol=2e-3)
+        assert_allclose(f0z, f1z, atol=2e-3)
 
     def test_raw_fields_similar_mielens_ypolarization(self):
         detector = SMALL_DETECTOR
