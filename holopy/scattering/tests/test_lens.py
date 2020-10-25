@@ -242,7 +242,9 @@ class TestLens(unittest.TestCase):
         intensity_xpol = np.linalg.norm(fields_xpol, axis=0)**2
         intensity_ypol = np.linalg.norm(fields_ypol, axis=0)**2
 
-        tols = {'atol': 1e-3, 'rtol': 1e-3}
+        # We are just trying to cehck that rotating the polarization
+        # does not rotate the image, so we can afford soft tolerances:
+        tols = {'atol': 5e-2, 'rtol': 5e-2}
         self.assertTrue(np.allclose(intensity_xpol, intensity_ypol, **tols))
 
 
