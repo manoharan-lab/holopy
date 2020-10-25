@@ -195,7 +195,7 @@ class TestMieLens(unittest.TestCase):
 
         krho = np.linspace(0, 100, 11)
         phi_0 = 0 * krho + np.pi / 180.0  # a small component along y
-        phi_1 = phi_0 -np.pi / 2
+        phi_1 = phi_0 - np.pi / 2
         kz = np.full_like(krho, 20.0)
 
         pol_0 = xr.DataArray([1.0, 0, 0])
