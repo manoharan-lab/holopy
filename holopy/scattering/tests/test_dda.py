@@ -127,6 +127,7 @@ def test_DDA_coated():
     dda_holo = calc_holo(schema, cs, index, wavelen, theory=DDA)
     assert_allclose(lmie_holo, dda_holo, rtol = 5e-4)
 
+
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_Ellipsoid_dda():
     e = Ellipsoid(1.5, r = (.5, .1, .1), center = (1, -1, 10))
@@ -139,9 +140,10 @@ def test_Ellipsoid_dda():
         cmdlist = ['-eq_rad', '0.5', '-shape', 'ellipsoid', '0.2', '0.2', '-m',
                '1.1278195488721805', '0.0', '-orient', '0.0', '0.0', '0.0']
         assert_equal(cmd, cmdlist)
-        verify(h, 'ellipsoid_dda')
+        verify(h, 'ellipsoid_dda', rtol=3e-4, atol=3e-4)
     except DependencyMissing:
         raise SkipTest()
+
 
 @attr('slow')
 def test_predefined_scatterers():
@@ -179,4 +181,4 @@ def test_csg_dda():
 
     rotated_pac = pacman.rotated(np.pi/2, 0, 0)
     hr = calc_holo(sch, rotated_pac, 1.33, .66, illum_polarization=(0, 1))
-    verify(h/hr, 'dda_csg_rotated_div')
+    verify(h/hr, 'dda_csg_rotated_div', rtol=1e-3, atol=1e-3)
