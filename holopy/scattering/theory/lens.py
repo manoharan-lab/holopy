@@ -62,35 +62,35 @@ class Lens(ScatteringTheory):
 
         self._phi_pts = quad_phi_pts.reshape(1, -1, 1)
         self._phi_wts = quad_phi_wts.reshape(1, -1, 1)
-        self._cosphi = np.cos(self._phi_pts)
-        self._sinphi = np.sin(self._phi_pts)
 
     def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
+        pol_angle = np.arctan2(illum_polarization.values[1],
+                               illum_polarization.values[0])
         integral_l, integral_r = self._compute_integral(positions, scatterer,
                                                         medium_wavevec,
                                                         medium_index,
-                                                        illum_polarization)
+                                                        pol_angle)
 
         fields = self._transform_integral_from_lr_to_xyz(integral_l,
                                                          integral_r,
-                                                         illum_polarization)
+                                                         pol_angle)
 
         particle_kz = positions[2, 0]  # we assume a fixed z
-        fields *= self._compute_field_prefactor(particle_kz)
+        fields *= self._compute_field_phase(particle_kz)
         return fields
 
     def _compute_integral(self, positions, scatterer, medium_wavevec,
-                          medium_index, illum_polarization):
+                          medium_index, pol_angle):
         int_l, int_r = self._compute_integrand(positions, scatterer,
                                                medium_wavevec, medium_index,
-                                               illum_polarization)
+                                               pol_angle)
         integral_l = np.sum(int_l, axis=(0, 1))
         integral_r = np.sum(int_r, axis=(0, 1))
         return integral_l, integral_r
 
     def _compute_integrand(self, positions, scatterer, medium_wavevec,
-                           medium_index, illum_polarization):
+                           medium_index, pol_angle):
         krho_p, phi_p, kz_p = positions
         pos_shape = (1, 1, len(kz_p))
         krho_p = krho_p.reshape(pos_shape)
@@ -99,11 +99,11 @@ class Lens(ScatteringTheory):
 
         prefactor = self._integrand_prefactor(krho_p, phi_p, kz_p)
 
-        S1, S2, S3, S4 = self._calc_scattering_matrix(scatterer,
+        scat_matrix = self._calc_scattering_matrix(scatterer,
                                                       medium_wavevec,
                                                       medium_index)
-        integrand_l = self._integrand_prll(prefactor, S1, S2, S3, S4)
-        integrand_r = self._integrand_perp(prefactor, S1, S2, S3, S4)
+        integrand_l = self._integrand_prll(prefactor, pol_angle, *scat_matrix)
+        integrand_r = self._integrand_perp(prefactor, pol_angle, *scat_matrix)
         return integrand_l, integrand_r
 
     def _integrand_prefactor(self, krho_p, phi_p, kz_p):
@@ -137,9 +137,9 @@ class Lens(ScatteringTheory):
         S4 = S[:, :, 1, 0].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
         return S1, S2, S3, S4
 
-    def _integrand_prll(self, prefactor, S1, S2, S3, S4):
-        cosphi = self._cosphi
-        sinphi = self._sinphi
+    def _integrand_prll(self, prefactor, pol_angle, S1, S2, S3, S4):
+        cosphi = np.cos(self._phi_pts - pol_angle)
+        sinphi = np.sin(self._phi_pts - pol_angle)
         if NUMEXPR_INSTALLED:
             integrand_l = ne.evaluate(cls.numexpr_integrandl)
         else:
@@ -147,9 +147,9 @@ class Lens(ScatteringTheory):
                                        + sinphi * (cosphi * S4 + sinphi * S1))
         return integrand_l
 
-    def _integrand_perp(self, prefactor, S1, S2, S3, S4):
-        cosphi = self._cosphi
-        sinphi = self._sinphi
+    def _integrand_perp(self, prefactor, pol_angle, S1, S2, S3, S4):
+        cosphi = np.cos(self._phi_pts - pol_angle)
+        sinphi = np.sin(self._phi_pts - pol_angle)
         if NUMEXPR_INSTALLED:
             integrand_r = ne.evaluate(cls.numexpr_integrandr)
         else:
@@ -159,9 +159,7 @@ class Lens(ScatteringTheory):
 
     def _transform_integral_from_lr_to_xyz(self, prll_component,
                                            perp_component,
-                                           illum_polarization):
-        pol_angle = np.arctan2(illum_polarization.values[1],
-                               illum_polarization.values[0])
+                                           pol_angle):
         parallel = np.array([      np.cos(pol_angle), np.sin(pol_angle)])
         perpendicular = np.array([-np.sin(pol_angle), np.cos(pol_angle)])
         xyz = np.zeros([3, prll_component.size], dtype='complex')
@@ -170,7 +168,13 @@ class Lens(ScatteringTheory):
             xyz[i, :] += perp_component * perpendicular[i]
         return xyz
 
-    def _compute_field_prefactor(self, particle_kz):
+    def _compute_field_phase(self, particle_kz):
+        # This includes 2 effects:
+        # 1. The phase shift of the beam at the particle's position
+        #    relative to that at the focal plane (e^ikz), and
+        # 2. The factor of -1 from the Gouy phase shift of the
+        #    *incident* beam, which we include here since holopy assumes
+        #    that the incident beam is unshifted.
         return -1. * np.exp(1j * particle_kz)
 
 
