@@ -216,7 +216,7 @@ class TestLens(unittest.TestCase):
 
     @attr('medium')
     def test_polarization_rotation_produces_small_changes_to_image(self):
-        # we test that, for two sphere, rotating the polarization is
+        # we test that, for two sphere, rotating the polarization
         # does not drastically change the image
         # We place the two spheres along the line phi = 0
 
@@ -242,7 +242,7 @@ class TestLens(unittest.TestCase):
         intensity_xpol = np.linalg.norm(fields_xpol, axis=0)**2
         intensity_ypol = np.linalg.norm(fields_ypol, axis=0)**2
 
-        # We are just trying to cehck that rotating the polarization
+        # We are just trying to check that rotating the polarization
         # does not rotate the image, so we can afford soft tolerances:
         tols = {'atol': 5e-2, 'rtol': 5e-2}
         self.assertTrue(np.allclose(intensity_xpol, intensity_ypol, **tols))

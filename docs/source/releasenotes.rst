@@ -28,7 +28,7 @@ Improvements
 - Scatterer.parameters() now matches the arguments to create the scatterer
   instead of deconstructing composite objects.
 - New prior.renamed() method to create an identical prior with a new name.
-- New way to easily construct scatterers from model parameters with 
+- New way to easily construct scatterers from model parameters with
   ``model.scatterer_from_parameters()``.
 - New ``model.initial_guess`` attribute which can be used to evaluate initial
   guess by psasing into ``model.scatterer_from_parameters()`` or
@@ -67,6 +67,9 @@ Bugfixes
 - Models can now include xarray parameters and still support saving/loading.
 - The :class:`.MieLens` scattering theory now works for both large and
   small spheres.
+- The :class:`Lens` theory works for arbitrary linear polarization of
+  the incoming light. This bug was not present on any releases, only on
+  the development branch.
 
 Compatibility Notes
 --------------------
