@@ -323,7 +323,7 @@ class TestLensVsMielens(unittest.TestCase):
         assert_allclose(f0y, fy, atol=2e-3)
         assert_allclose(f0z, fz, atol=2e-3)
 
-    def test_lens_plus_mie_fields_same_as_mielens(self):
+    def test_calculate_scattered_field_lensmie_same_as_mielens(self):
         detector = test_common.xschema_lens
         scatterer = test_common.sphere
         medium_wavevec = 2 * np.pi / test_common.wavelen
