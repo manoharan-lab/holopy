@@ -6,15 +6,10 @@ from numpy.testing import assert_allclose, assert_equal
 from nose.plugins.attrib import attr
 from scipy.special import iv
 
-try:
-    import numexpr as ne
-    NUMEXPR_INSTALLED = True
-except ModuleNotFoundError:
-    NUMEXPR_INSTALLED = False
-
 from holopy.core import detector_points, update_metadata, detector_grid
 from holopy.scattering import calc_holo, Sphere, Spheres
 from holopy.scattering.theory import Mie, MieLens, Multisphere
+from holopy.scattering.theory import lens
 from holopy.scattering.theory.lens import Lens
 from holopy.scattering.theory.mielensfunctions import MieLensCalculator
 import holopy.scattering.tests.common as test_common
@@ -155,64 +150,63 @@ class TestLens(unittest.TestCase):
         holo = calc_holo(pts, scatterer, theory=theory)
         self.assertTrue(True)
 
-    @unittest.skipUnless(NUMEXPR_INSTALLED, "numexpr package required")
-    def test_numexpr_integrand_prefactor1(self):
-        expr = LENSMIE.numexpr_integrand_prefactor1
-        # integrand_prefactor1 = 'exp(1j * krho_p * sinth * cos(phi - phi_p))'
+    @unittest.skipUnless(lens.NUMEXPR_INSTALLED, "numexpr package required")
+    def test_integrand_prefactor_same_with_numexpr_as_without(self):
+        np.random.seed(1649)
+        krho, phi, kz = np.random.randn(3, 101)
 
-        krho_p, sinth, phi, phi_p = np.random.rand(4)
+        prefactor_numexpr = LENSMIE._integrand_prefactor(krho, phi, kz)
 
-        result_numpy = np.exp(1j * krho_p * sinth * np.cos(phi - phi_p))
-        result_numexpr = ne.evaluate(expr)
-        assert_equal(result_numpy, result_numexpr)
+        # Monkey-patch lens to use the numpy pathway:
+        lens.NUMEXPR_INSTALLED = False
+        prefactor_numpy = LENSMIE._integrand_prefactor(krho, phi, kz)
+        lens.NUMEXPR_INSTALLED = True
+        # and put it back:
+        assert lens.NUMEXPR_INSTALLED
 
-    @unittest.skipUnless(NUMEXPR_INSTALLED, "numexpr package required")
-    def test_numexpr_integrand_prefactor2(self):
-        expr = LENSMIE.numexpr_integrand_prefactor2
-        # integrand_prefactor2 = 'exp(1j * kz_p * (1 - costh))'
+        self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
 
-        kz_p, costh = np.random.rand(2)
+    @unittest.skipUnless(lens.NUMEXPR_INSTALLED, "numexpr package required")
+    def test_integrand_parallel_same_with_numexpr_as_without(self):
+        np.random.seed(1659)
+        krho, phi, kz = np.random.randn(3, 10)
+        prefactor = LENSMIE._integrand_prefactor(krho, phi, kz)
+        pol_angle = np.random.rand() * 2 * np.pi
+        shape = (LENSMIE.quad_npts_theta, LENSMIE.quad_npts_phi, 1)
+        scat_matrix = np.random.randn(4, *shape)
 
-        result_numpy = np.exp(1j * kz_p * (1 - costh))
-        result_numexpr = ne.evaluate(expr)
-        assert_equal(result_numpy, result_numexpr)
+        prefactor_numexpr = LENSMIE._integrand_prll(
+            prefactor, pol_angle, *scat_matrix)
+        # Monkey-patch lens to use the numpy pathway:
+        lens.NUMEXPR_INSTALLED = False
+        prefactor_numpy = LENSMIE._integrand_prll(
+            prefactor, pol_angle, *scat_matrix)
+        # and put it back:
+        lens.NUMEXPR_INSTALLED = True
+        assert lens.NUMEXPR_INSTALLED
 
-    @unittest.skipUnless(NUMEXPR_INSTALLED, "numexpr package required")
-    def test_numexpr_integrand_prefactor3(self):
-        expr = LENSMIE.numexpr_integrand_prefactor3
-        # integrand_prefactor3 = 'sqrt(costh) * sinth * dphi * dth'
+        self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
 
-        costh, sinth, dphi, dth = np.random.rand(4)
+    @unittest.skipUnless(lens.NUMEXPR_INSTALLED, "numexpr package required")
+    def test_integrand_perpendicular_same_with_numexpr_as_without(self):
+        np.random.seed(1659)
+        krho, phi, kz = np.random.randn(3, 10)
+        prefactor = LENSMIE._integrand_prefactor(krho, phi, kz)
+        pol_angle = np.random.rand() * 2 * np.pi
+        shape = (LENSMIE.quad_npts_theta, LENSMIE.quad_npts_phi, 1)
+        scat_matrix = np.random.randn(4, *shape)
 
-        result_numpy = np.sqrt(costh) * sinth * dphi * dth
-        result_numexpr = ne.evaluate(expr)
-        assert_equal(result_numpy, result_numexpr)
+        prefactor_numexpr = LENSMIE._integrand_perp(
+            prefactor, pol_angle, *scat_matrix)
+        # Monkey-patch lens to use the numpy pathway:
+        lens.NUMEXPR_INSTALLED = False
+        prefactor_numpy = LENSMIE._integrand_perp(
+            prefactor, pol_angle, *scat_matrix)
+        # and put it back:
+        lens.NUMEXPR_INSTALLED = True
+        assert lens.NUMEXPR_INSTALLED
 
-    @unittest.skipUnless(NUMEXPR_INSTALLED, "numexpr package required")
-    def test_numexpr_integrandl(self):
-        expr = LENSMIE.numexpr_integrandl
-        # integrandl = ('prefactor * (cosphi * (cosphi * S2 + sinphi * S3) +'
-        #               + ' sinphi * (cosphi * S4 + sinphi * S1))')
-
-        prefactor, cosphi, sinphi, S1, S2, S3, S4 = np.random.rand(7)
-
-        result_numpy = prefactor * (cosphi * (cosphi * S2 + sinphi * S3)
-                                    + sinphi * (cosphi * S4 + sinphi * S1))
-        result_numexpr = ne.evaluate(expr)
-        assert_equal(result_numpy, result_numexpr)
-
-    @unittest.skipUnless(NUMEXPR_INSTALLED, "numexpr package required")
-    def test_numexpr_integrandr(self):
-        expr = LENSMIE.numexpr_integrandr
-        # integrandr = ('prefactor * (sinphi * (cosphi * S2 + sinphi * S3) -'
-        #                + ' cosphi * (cosphi * S4 + sinphi * S1))')
-
-        prefactor, cosphi, sinphi, S1, S2, S3, S4 = np.random.rand(7)
-
-        result_numpy = prefactor * (sinphi * (cosphi * S2 + sinphi * S3)
-                                    - cosphi * (cosphi * S4 + sinphi * S1))
-        result_numexpr = ne.evaluate(expr)
-        assert_equal(result_numpy, result_numexpr)
+        self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
 
     @attr('medium')
     def test_polarization_rotation_produces_small_changes_to_image(self):
