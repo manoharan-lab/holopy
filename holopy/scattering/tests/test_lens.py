@@ -17,6 +17,8 @@ import holopy.scattering.tests.common as test_common
 LENS_ANGLE = 1.
 QLIM_TOL = {'atol': 1e-2, 'rtol': 1e-2}
 LENSMIE = Lens(lens_angle=LENS_ANGLE, theory=Mie(False, False))
+LENSMIE_NO_NE = Lens(
+    lens_angle=LENS_ANGLE, theory=Mie(False, False), use_numexpr=False)
 
 
 SMALL_DETECTOR = update_metadata(
@@ -156,13 +158,7 @@ class TestLens(unittest.TestCase):
         krho, phi, kz = np.random.randn(3, 101)
 
         prefactor_numexpr = LENSMIE._integrand_prefactor(krho, phi, kz)
-
-        # Monkey-patch lens to use the numpy pathway:
-        lens.NUMEXPR_INSTALLED = False
-        prefactor_numpy = LENSMIE._integrand_prefactor(krho, phi, kz)
-        lens.NUMEXPR_INSTALLED = True
-        # and put it back:
-        assert lens.NUMEXPR_INSTALLED
+        prefactor_numpy = LENSMIE_NO_NE._integrand_prefactor(krho, phi, kz)
 
         self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
 
@@ -177,13 +173,8 @@ class TestLens(unittest.TestCase):
 
         prefactor_numexpr = LENSMIE._integrand_prll(
             prefactor, pol_angle, *scat_matrix)
-        # Monkey-patch lens to use the numpy pathway:
-        lens.NUMEXPR_INSTALLED = False
-        prefactor_numpy = LENSMIE._integrand_prll(
+        prefactor_numpy = LENSMIE_NO_NE._integrand_prll(
             prefactor, pol_angle, *scat_matrix)
-        # and put it back:
-        lens.NUMEXPR_INSTALLED = True
-        assert lens.NUMEXPR_INSTALLED
 
         self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
 
@@ -198,13 +189,8 @@ class TestLens(unittest.TestCase):
 
         prefactor_numexpr = LENSMIE._integrand_perp(
             prefactor, pol_angle, *scat_matrix)
-        # Monkey-patch lens to use the numpy pathway:
-        lens.NUMEXPR_INSTALLED = False
-        prefactor_numpy = LENSMIE._integrand_perp(
+        prefactor_numpy = LENSMIE_NO_NE._integrand_perp(
             prefactor, pol_angle, *scat_matrix)
-        # and put it back:
-        lens.NUMEXPR_INSTALLED = True
-        assert lens.NUMEXPR_INSTALLED
 
         self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
 

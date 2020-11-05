@@ -32,14 +32,17 @@ class Lens(ScatteringTheory):
                           + ' cosphi * (cosphi * S4 + sinphi * S1))')
 
     def __init__(self, lens_angle, theory, quad_npts_theta=100,
-                 quad_npts_phi=100):
+                 quad_npts_phi=100, use_numexpr=True):
         if not NUMEXPR_INSTALLED:
             warnings.warn(_LENS_WARNING, PerformanceWarning)
+            use_numexpr = False
         super(Lens, self).__init__()
         self.lens_angle = lens_angle
         self.theory = theory
         self.quad_npts_theta = quad_npts_theta
         self.quad_npts_phi = quad_npts_phi
+
+        self.use_numexpr = use_numexpr
         self._setup_quadrature()
 
     def _can_handle(self, scatterer):
@@ -112,7 +115,7 @@ class Lens(ScatteringTheory):
         phi_relative = self._phi_pts - phi_p
         phi_wts = self._phi_wts
         theta_wts = self._theta_wts
-        if NUMEXPR_INSTALLED:
+        if self.use_numexpr:
             prefactor = ne.evaluate(self.numexpr_integrand_prefactor1)
             prefactor *= ne.evaluate(self.numexpr_integrand_prefactor2)
             prefactor *= ne.evaluate(self.numexpr_integrand_prefactor3)
@@ -145,7 +148,7 @@ class Lens(ScatteringTheory):
     def _integrand_prll(self, prefactor, pol_angle, S1, S2, S3, S4):
         cosphi = np.cos(self._phi_pts - pol_angle)
         sinphi = np.sin(self._phi_pts - pol_angle)
-        if NUMEXPR_INSTALLED:
+        if self.use_numexpr:
             integrand_l = ne.evaluate(self.numexpr_integrandl)
         else:
             integrand_l = prefactor * (cosphi * (cosphi * S2 + sinphi * S3)
@@ -155,7 +158,7 @@ class Lens(ScatteringTheory):
     def _integrand_perp(self, prefactor, pol_angle, S1, S2, S3, S4):
         cosphi = np.cos(self._phi_pts - pol_angle)
         sinphi = np.sin(self._phi_pts - pol_angle)
-        if NUMEXPR_INSTALLED:
+        if self.use_numexpr:
             integrand_r = ne.evaluate(self.numexpr_integrandr)
         else:
             integrand_r = prefactor * (sinphi * (cosphi * S2 + sinphi * S3)
