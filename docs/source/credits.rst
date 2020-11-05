@@ -31,6 +31,7 @@ application.
 
 .. [Fung2011] Fung, Jerome, K. Eric Martin, Rebecca W. Perry, David M. Kaz, Ryan McGorty, and Vinothan N. Manoharan. “Measuring Translational, Rotational, and Vibrational Dynamics in Colloids with Digital Holographic Microscopy.” Optics Express 19, no. 9 (April 25, 2011): 8051–65. doi:10.1364/OE.19.008051.
 
+.. [Leahy2020] Leahy, Brian, Ronald Alexander, Caroline Martin, Solomon Barkley, and Vinothan N. Manoharan. "Large depth-of-field tracking of colloidal spheres in holographic microscopy by modeling the objective lens." Optics Express 28, no. 2 (2020): 1061-1075. doi:10.1364/OE.382159
 
 Ovryn and Izen and Lee and coworkers were the first to develop methods to fit scattering models to digital holograms:
 

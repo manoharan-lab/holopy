@@ -37,17 +37,17 @@ def fft(data, shift=True):
     More convenient Fast Fourier Transform
 
     An easier to use fft function, it will pick the correct fft to do
-    based on the shape of the xarray, and do the fftshift for you. This
+    based on the shape of the array, and do the fftshift for you. This
     is intended for working with images, and thus for dimensions greater
     than 2 does slicewise transforms of each "image" in a
     multidimensional stack
 
     Parameters
     ----------
-    data : ndarray
+    data : ndarray or xarray
        The array to transform
     shift : bool
-       Whether to preform an fftshift on the Marry to give low
+       Whether to preform an fftshift on the array to give low
        frequences near the center as you probably expect.  Default is
        to do the fftshift.
 
@@ -80,17 +80,17 @@ def ifft(data, shift=True):
     More convenient Inverse Fast Fourier Transform
 
     An easier to use ifft function, it will pick the correct ifft to
-    do based on the shape of the Marry, and do the fftshift for you.
+    do based on the shape of the array, and do the fftshift for you.
     This is intended for working with images, and thus for dimensions
     greater than 2 does slicewise transforms of each "image" in a
     multidimensional stack
 
     Parameters
     ----------
-    data : ndarray
+    data : ndarray or xarray
        The array to transform
     shift : bool
-       Whether to preform an fftshift on the Marry to give low
+       Whether to preform an fftshift on the array to give low
        frequences near the center as you probably expect.  Default is to
        do the fftshift.
 

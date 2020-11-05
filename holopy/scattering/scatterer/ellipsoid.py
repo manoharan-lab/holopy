@@ -25,19 +25,8 @@ Defines ellipsoidal scatterers.
 
 import numpy as np
 
-from .scatterer import CenteredScatterer, Indicators
-from ..errors import InvalidScatterer
-from functools import reduce
-
-def isnumber(x):
-    try:
-        x + 1
-        return True
-    except TypeError:
-        return False
-
-def all_numbers(x):
-    return reduce(lambda rest, i: isnumber(i) and rest, x, True)
+from holopy.scattering.scatterer.scatterer import CenteredScatterer, Indicators
+from holopy.scattering.errors import InvalidScatterer
 
 
 class Ellipsoid(CenteredScatterer):
@@ -53,26 +42,21 @@ class Ellipsoid(CenteredScatterer):
     center : 3-tuple, list or numpy array
         specifies coordinates of center of the scatterer
     rotation : 3-tuple, list or numpy.array
-        specifies the Euler angles (alpha, beta, gamma) in radians 
+        specifies the Euler angles (alpha, beta, gamma) in radians
         defined in a-dda manual section 8.1
     """
 
-    def __init__(self, n=None, r=None, center=None,rotation=(0,0,0)):
+    def __init__(self, n=None, r=None, center=None, rotation=(0, 0, 0)):
         self.n = n
-
         if np.isscalar(r) or len(r) != 3:
-            raise InvalidScatterer(self,"r specified as {0}; "
-                                           "r should be "
-                                           "specified as (r_x, r_y, r_z)"
-                                           "".format(center))
-
+            msg = ("r specified as {0}; "
+                   "r should be specified as (r_x, r_y, r_z)".format(center))
+            raise InvalidScatterer(self, msg)
         self.r = r
-
         if np.isscalar(rotation) or len(rotation) != 3:
-            raise InvalidScatterer(self,"rotation specified as {0}; "
-                                           "rotation should be "
-                                           "specified as (alpha, beta, gamma)"
-                                           "".format(rotation))
+            msg = ("rotation specified as {0}; rotation should be "
+                   "specified as (alpha, beta, gamma)".format(rotation))
+            raise InvalidScatterer(self, msg)
         self.rotation = rotation
         super().__init__(center)
 
@@ -83,5 +67,4 @@ class Ellipsoid(CenteredScatterer):
         """
         return Indicators(lambda point: ((point / self.r) ** 2).sum(-1) < 1,
                           [[-self.r[0], self.r[0]], [-self.r[1], self.r[1]],
-                            [-self.r[2], self.r[2]]])
-
+                           [-self.r[2], self.r[2]]])

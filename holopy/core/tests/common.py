@@ -31,6 +31,7 @@ from numpy.testing import assert_equal, assert_allclose
 from nose.plugins import Plugin
 
 from holopy.core.io import load, save, get_example_data
+from holopy.core.errors import PerformanceWarning
 
 
 class HoloPyCatchWarnings(Plugin):
@@ -46,18 +47,20 @@ class HoloPyCatchWarnings(Plugin):
 
     def beforeTest(self, test):
         warnings.simplefilter("error")
+        warnings.simplefilter(action="ignore", category=PerformanceWarning)
 
 
-def assert_read_matches_write(o):
+def assert_read_matches_write(original):
     with tempfile.NamedTemporaryFile(suffix='.h5') as tempf:
-        save(tempf.name, o)
+        save(tempf.name, original)
         loaded = load(tempf.name)
-    # For now our code for writing xarrays to hdf5 ends up with them picking up
-    # a name attribute that their predecessor may not have, so correct for that
-    # if it is true.
-    if hasattr(loaded, 'name') and o.name is None:
+    # For now our code for writing xarrays to hdf5 ends up with them
+    # picking up a name attribute that their predecessor may not have,
+    # so correct for that if it is true.
+    if hasattr(loaded, 'name') and original.name is None:
         loaded.name = None
-    assert_obj_close(o, loaded)
+    assert_obj_close(original, loaded)
+
 
 def assert_pickle_roundtrip(o, cPickle_only=False):
     # TODO: Our pickling code currently works for cPickle but fails in

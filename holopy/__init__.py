@@ -35,6 +35,7 @@ from holopy import core, scattering, fitting, inference
 from holopy.core import (load, save, load_image, save_image, show,
                          check_display, detector_grid, detector_points)
 from holopy.propagation import propagate
+from holopy.inference import fit, sample
 
-__version__ = '3.3.2'
-__version_info__ = tuple([ int(num) for num in __version__.split('.')])
+__version__ = '3.4.0'
+__version_info__ = tuple([int(num) for num in __version__.split('.')])

@@ -86,16 +86,6 @@ class Sphere(CenteredScatterer):
         else:
             return 0
 
-    def like_me(self, **overrides):
-        if 'center' in overrides:
-            return super().like_me(**overrides)
-        for i, coord in enumerate(('x', 'y', 'z')):
-            if coord in overrides:
-                overrides['center[{}]'.format(i)] = overrides[coord]
-                del overrides[coord]
-
-        return self.from_parameters(updated(self.parameters, overrides))
-
 
 class LayeredSphere(Sphere):
     """

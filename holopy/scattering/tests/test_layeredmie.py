@@ -29,10 +29,10 @@ import yaml
 import os
 from nose.plugins.attrib import attr
 
-from ...core import detector_grid
-from ...core.tests.common import verify
-from ..theory.mie_f import multilayer_sphere_lib, miescatlib
-from .. import Sphere, calc_holo, Mie
+from holopy.core import detector_grid
+from holopy.core.tests.common import verify
+from holopy.scattering.theory.mie_f import multilayer_sphere_lib, miescatlib
+from holopy.scattering import Sphere, calc_holo, Mie
 
 @attr('medium')
 def test_Shell():

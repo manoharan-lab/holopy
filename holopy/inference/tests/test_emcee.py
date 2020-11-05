@@ -42,7 +42,7 @@ class testEmcee(unittest.TestCase):
         mod = Model(scat, noise_sd=0.1)
         # Desired: log(sqrt(0.5/pi))-1/2
         desired_sigma = -1.4189385332
-        assert_obj_close(mod.lnprior({'n': 0, 'r': 0}), desired_sigma * 2)
+        assert_obj_close(mod.lnprior([0, 0]), desired_sigma * 2)
 
     @attr("medium")
     def test_sample_emcee(self):

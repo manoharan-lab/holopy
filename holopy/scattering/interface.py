@@ -32,9 +32,7 @@ from holopy.core.metadata import (
     vector, illumination, update_metadata, to_vector, copy_metadata, from_flat,
     dict_to_array)
 from holopy.core.utils import dict_without, ensure_array
-from holopy.scattering.scatterer import (
-    Sphere, Spheres, Spheroid, Cylinder, _expand_parameters,
-    _interpret_parameters)
+from holopy.scattering.scatterer import Sphere, Spheres, Spheroid, Cylinder
 from holopy.scattering.errors import AutoTheoryFailed, MissingParameter
 from holopy.scattering.theory import Mie, Multisphere
 from holopy.scattering.theory import Tmatrix
@@ -88,7 +86,7 @@ def prep_schema(detector, medium_index, illum_wavelen, illum_polarization):
 
 def interpret_theory(scatterer, theory='auto'):
     if isinstance(theory, str) and theory == 'auto':
-        theory = determine_default_theory_for(scatterer.guess)
+        theory = determine_default_theory_for(scatterer)
     if isinstance(theory, SerializableMetaclass):
         theory = theory()
     return theory
@@ -195,17 +193,8 @@ def calc_holo(detector, scatterer, medium_index=None, illum_wavelen=None,
     theory = interpret_theory(scatterer, theory)
     uschema = prep_schema(
         detector, medium_index, illum_wavelen, illum_polarization)
-
-    # Massage scaling into an xarray with color channels if needed
-    scaling = dict(_expand_parameters({'alpha': scaling}.items()))
-    for key in scaling.keys():
-        if hasattr(scaling[key], 'guess'):
-            scaling[key] = scaling[key].guess
-    scaling = _interpret_parameters(scaling)['alpha']
     scaling = dict_to_array(detector, scaling)
-
-    scattered_field = theory.calculate_scattered_field(
-        scatterer.guess, uschema)
+    scattered_field = theory.calculate_scattered_field(scatterer, uschema)
     reference_field = uschema.illum_polarization
     holo = scattered_field_to_hologram(
         scattered_field * scaling, reference_field)
@@ -241,7 +230,7 @@ def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None,
     """
     theory = interpret_theory(scatterer, theory)
     cross_section = theory.calculate_cross_sections(
-        scatterer=scatterer.guess,
+        scatterer=scatterer,
         medium_wavevec=2*np.pi/(illum_wavelen/medium_index),
         medium_index=medium_index,
         illum_polarization=to_vector(illum_polarization))
@@ -281,7 +270,7 @@ def calc_scat_matrix(detector, scatterer, medium_index=None, illum_wavelen=None,
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=False)
-    result = theory.calculate_scattering_matrix(scatterer.guess, uschema)
+    result = theory.calculate_scattering_matrix(scatterer, uschema)
     return finalize(uschema, result)
 
 
@@ -318,7 +307,7 @@ def calc_field(detector, scatterer, medium_index=None, illum_wavelen=None,
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=illum_polarization)
-    result = theory.calculate_scattered_field(scatterer.guess, uschema)
+    result = theory.calculate_scattered_field(scatterer, uschema)
     return finalize(uschema, result)
 
 

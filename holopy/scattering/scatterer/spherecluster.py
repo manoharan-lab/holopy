@@ -48,9 +48,6 @@ class Spheres(Scatterers):
     ----------
     spheres : list of Spheres
         Spheres which will make up the cluster
-    ties : dict or None (optional)
-       dict indicating tied parameters of the form {'r': '0:r', '1:r'} to tie
-       radius of first 2 spheres
     warn : bool
        if True, overlapping spheres raise warnings.
 
@@ -58,7 +55,7 @@ class Spheres(Scatterers):
     -----
     '''
 
-    def __init__(self, scatterers, ties=None, warn=True):
+    def __init__(self, scatterers, warn=True):
         scatterers = ensure_listlike(scatterers)
         self.warn = warn
         for s in ensure_listlike(scatterers):
@@ -67,7 +64,7 @@ class Spheres(Scatterers):
                         "Spheres expects all component " +
                         "scatterers to be Spheres.\n" +
                         repr(s) + " is not a Sphere")
-        super().__init__(scatterers, ties)
+        super().__init__(scatterers)
 
 
         if self.overlaps and self.warn:
@@ -154,27 +151,22 @@ class RigidCluster(Spheres):
         return self.spheres.rotated(self.rotation).translated(self.translation).scatterers
 
     @property
-    def parameters(self):
-        def expand(key, par):
-            return{'{0}.{1}'.format(key,p[0]):p[1] for p in enumerate(par)}
-
-        d = self.spheres.parameters
-        d.update(expand('translation',self.translation))
-        d.update(expand('rotation', self.rotation))
+    def _parameters(self):
+        d = self.spheres._parameters
+        d.update({'rotation': self.rotation, 'translation': self.translation})
         return d
 
-    def from_parameters(self, parameters, overwrite=False):
+    def from_parameters(self, parameters):
         parameters = copy(parameters)
-        keys = filter(lambda key : sum([key.startswith(op) for op in ['rotation', 'translation']]), self.parameters)
-        rigid_pars = {key:self.parameters[key] for key in keys}
 
-        for key in rigid_pars.keys():
-            if key in parameters.keys():
-                if not isinstance(rigid_pars[key], Number) or overwrite:
-                    rigid_pars[key] = parameters.pop(key)
+        def get_parameter(key):
+            try:
+                return parameters[key]
+            except KeyError:
+                return getattr(self, key)
 
-        translation = [rigid_pars['translation.{0}'.format(i)] for i in range(3)]
-        rotation = [rigid_pars['rotation.{0}'.format(i)] for i in range(3)]
-        spheres = self.spheres.from_parameters(parameters, overwrite)
+        rotation = get_parameter('rotation')
+        translation = get_parameter('translation')
+        spheres = self.spheres.from_parameters(parameters)
         return spheres.rotated(rotation).translated(translation)
 

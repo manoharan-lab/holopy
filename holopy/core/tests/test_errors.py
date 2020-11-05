@@ -1,8 +1,10 @@
 import unittest
+import warnings
 
 from nose.plugins.attrib import attr
 
 from holopy.core.errors import *
+
 
 class TestErrors(unittest.TestCase):
     @attr("fast")
@@ -25,8 +27,17 @@ class TestErrors(unittest.TestCase):
     def test_DependencyMissing(self):
         self.assertRaises(DependencyMissing, _raise, DependencyMissing('', ''))
 
+    @attr('fast')
+    def test_PerformanceWarning(self):
+        self.assertWarns(PerformanceWarning, _warn, PerformanceWarning)
+
+
 def _raise(error):
     raise error
+
+
+def _warn(warning_class):
+    warnings.warn('', warning_class)
 
 if __name__ == '__main__':
     unittest.main()
