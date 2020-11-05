@@ -5,8 +5,8 @@ HoloPy Release Notes
 ********************
 
 
-Current Development (Holopy 3.4)
-================================
+Holopy 3.4
+==========
 
 New Features
 ------------
