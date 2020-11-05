@@ -82,7 +82,7 @@ class DDA(ScatteringTheory):
 
         # Check that adda is present and able to run
         try:
-            with SuppressOutput():
+            with SuppressOutput(suppress_output=suppress_C_output):
                 subprocess.check_call(['adda', '-V'])
         except (subprocess.CalledProcessError, OSError):
             raise DependencyMissing('adda', "adda is not included with HoloPy "

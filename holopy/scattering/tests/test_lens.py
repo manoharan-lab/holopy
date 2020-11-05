@@ -1,17 +1,15 @@
 import unittest
 
 import numpy as np
+import xarray as xr
 from numpy.testing import assert_allclose, assert_equal
-
-try:
-    import numexpr as ne
-    NUMEXPR_INSTALLED = True
-except ModuleNotFoundError:
-    NUMEXPR_INSTALLED = False
+from nose.plugins.attrib import attr
+from scipy.special import iv
 
 from holopy.core import detector_points, update_metadata, detector_grid
-from holopy.scattering import calc_holo
-from holopy.scattering.theory import Mie, MieLens
+from holopy.scattering import calc_holo, Sphere, Spheres
+from holopy.scattering.theory import Mie, MieLens, Multisphere
+from holopy.scattering.theory import lens
 from holopy.scattering.theory.lens import Lens
 from holopy.scattering.theory.mielensfunctions import MieLensCalculator
 import holopy.scattering.tests.common as test_common
@@ -19,6 +17,8 @@ import holopy.scattering.tests.common as test_common
 LENS_ANGLE = 1.
 QLIM_TOL = {'atol': 1e-2, 'rtol': 1e-2}
 LENSMIE = Lens(lens_angle=LENS_ANGLE, theory=Mie(False, False))
+LENSMIE_NO_NE = Lens(
+    lens_angle=LENS_ANGLE, theory=Mie(False, False), use_numexpr=False)
 
 
 SMALL_DETECTOR = update_metadata(
@@ -64,10 +64,10 @@ class TestLens(unittest.TestCase):
         wts = LENSMIE._phi_wts
 
         def func(x):
-            return np.cos(np.pi * x)
+            return np.exp(-3 * np.sin(x))
 
         integral = np.sum(func(pts) * wts)
-        expected_val = np.sin(2 * np.pi ** 2) / np.pi  # analytic result
+        expected_val = 2 * np.pi * iv(0, 3)  # analytic result
         assert_allclose(integral, expected_val)
 
     def test_integrate_over_2D_with_quad_points(self):
@@ -81,10 +81,10 @@ class TestLens(unittest.TestCase):
         wts_theta, wts_phi = np.meshgrid(wts_theta, wts_phi)
 
         def func(theta, phi):
-            return np.cos(theta) * np.cos(np.pi * phi)
+            return np.cos(theta) * np.exp(-3 * np.sin(phi))
 
         integral = np.sum(func(pts_theta, pts_phi) * wts_theta * wts_phi)
-        expected_val = np.sin(1.) * np.sin(2 * np.pi ** 2) / np.pi
+        expected_val = np.sin(LENS_ANGLE) * 2 * np.pi * iv(0, 3)
         assert_allclose(integral, expected_val)
 
     def test_quadrature_scattering_matrix_size(self):
@@ -106,6 +106,129 @@ class TestLens(unittest.TestCase):
         self.assertTrue(actual_size == expected_size)
         self.assertTrue(actual_shape == expected_shape)
 
+    def test_transforms_correctly_with_polarization_rotation(self):
+        # We test that rotating the lab frame correctly rotates
+        # the polarization.
+        # If we rotate (x0, y0) -> (y1, -x1), then the polarization
+        # in the new coordinates should be
+        # E1x = E0y, E1y = -E1x
+        scatterer = test_common.sphere
+        medium_wavevec = 2 * np.pi / test_common.wavelen
+        medium_index = test_common.index
+        theory = Lens(
+            lens_angle=LENS_ANGLE,
+            theory=Mie(False, False),
+            quad_npts_theta=200,
+            quad_npts_phi=200,
+            )
+
+        krho = np.linspace(0, 100, 11)
+        phi_0 = 0 * krho
+        phi_1 = np.full_like(krho, -np.pi / 2)
+        kz = np.full_like(krho, 20.0)
+
+        pol_0 = xr.DataArray([1.0, 0, 0])
+        pos_0 = np.array([krho, phi_0, kz])
+
+        pol_1 = xr.DataArray([0, -1.0, 0])
+        pos_1 = np.array([krho, phi_1, kz])
+
+        args = (scatterer, medium_wavevec, medium_index)
+
+        fields_0 = theory._raw_fields(pos_0, *args, pol_0)
+        fields_1 = theory._raw_fields(pos_1, *args, pol_1)
+
+        tols = {'atol': 1e-5, 'rtol': 1e-5}
+        assert_allclose(fields_1[0],  fields_0[1], **tols)
+        assert_allclose(fields_1[1], -fields_0[0], **tols)
+
+    def test_calc_holo_theta_npts_not_equal_phi_npts(self):
+        scatterer = test_common.sphere
+        pts = detector_grid(shape=4, spacing=test_common.pixel_scale)
+        pts = update_metadata(pts, illum_wavelen=test_common.wavelen,
+                              medium_index=test_common.index,
+                              illum_polarization=test_common.xpolarization)
+        theory = Lens(LENS_ANGLE, Mie(), quad_npts_theta=8, quad_npts_phi=10)
+        holo = calc_holo(pts, scatterer, theory=theory)
+        self.assertTrue(True)
+
+    @unittest.skipUnless(lens.NUMEXPR_INSTALLED, "numexpr package required")
+    def test_integrand_prefactor_same_with_numexpr_as_without(self):
+        np.random.seed(1649)
+        krho, phi, kz = np.random.randn(3, 101)
+
+        prefactor_numexpr = LENSMIE._integrand_prefactor(krho, phi, kz)
+        prefactor_numpy = LENSMIE_NO_NE._integrand_prefactor(krho, phi, kz)
+
+        self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
+
+    @unittest.skipUnless(lens.NUMEXPR_INSTALLED, "numexpr package required")
+    def test_integrand_parallel_same_with_numexpr_as_without(self):
+        np.random.seed(1659)
+        krho, phi, kz = np.random.randn(3, 10)
+        prefactor = LENSMIE._integrand_prefactor(krho, phi, kz)
+        pol_angle = np.random.rand() * 2 * np.pi
+        shape = (LENSMIE.quad_npts_theta, LENSMIE.quad_npts_phi, 1)
+        scat_matrix = np.random.randn(4, *shape)
+
+        prefactor_numexpr = LENSMIE._integrand_prll(
+            prefactor, pol_angle, *scat_matrix)
+        prefactor_numpy = LENSMIE_NO_NE._integrand_prll(
+            prefactor, pol_angle, *scat_matrix)
+
+        self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
+
+    @unittest.skipUnless(lens.NUMEXPR_INSTALLED, "numexpr package required")
+    def test_integrand_perpendicular_same_with_numexpr_as_without(self):
+        np.random.seed(1659)
+        krho, phi, kz = np.random.randn(3, 10)
+        prefactor = LENSMIE._integrand_prefactor(krho, phi, kz)
+        pol_angle = np.random.rand() * 2 * np.pi
+        shape = (LENSMIE.quad_npts_theta, LENSMIE.quad_npts_phi, 1)
+        scat_matrix = np.random.randn(4, *shape)
+
+        prefactor_numexpr = LENSMIE._integrand_perp(
+            prefactor, pol_angle, *scat_matrix)
+        prefactor_numpy = LENSMIE_NO_NE._integrand_perp(
+            prefactor, pol_angle, *scat_matrix)
+
+        self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
+
+    @attr('medium')
+    def test_polarization_rotation_produces_small_changes_to_image(self):
+        # we test that, for two sphere, rotating the polarization
+        # does not drastically change the image
+        # We place the two spheres along the line phi = 0
+
+        z_um = 3.0
+        s1 = Sphere(r=0.5, center=(1.0, 0.0, z_um), n=1.59)
+        s2 = Sphere(r=0.5, center=(2.5, 0.0, z_um), n=1.59)
+        scatterer = Spheres([s1, s2])
+
+        medium_wavevec = 2 * np.pi * 1.33 / 0.66
+        medium_index = test_common.index
+        theory = Lens(LENS_ANGLE, Multisphere())
+        args = (scatterer, medium_wavevec, medium_index)
+
+        rho_um = np.linspace(0, 5, 26)
+        krho = medium_wavevec * rho_um
+        phi = np.zeros(krho.size)
+        kz = np.zeros(krho.size) + medium_wavevec * z_um
+        pos = np.array([krho, phi, kz])
+
+        fields_xpol = theory._raw_fields(pos, *args, xr.DataArray([1, 0, 0]))
+        fields_ypol = theory._raw_fields(pos, *args, xr.DataArray([0, 1, 0]))
+
+        intensity_xpol = np.linalg.norm(fields_xpol, axis=0)**2
+        intensity_ypol = np.linalg.norm(fields_ypol, axis=0)**2
+
+        # We are just trying to check that rotating the polarization
+        # does not rotate the image, so we can afford soft tolerances:
+        tols = {'atol': 5e-2, 'rtol': 5e-2}
+        self.assertTrue(np.allclose(intensity_xpol, intensity_ypol, **tols))
+
+
+class TestLensVsMielens(unittest.TestCase):
     def test_quadrature_scattering_matrix_same_as_mielens(self):
         scatterer = test_common.sphere
         medium_wavevec = 2 * np.pi / test_common.wavelen
@@ -142,12 +265,34 @@ class TestLens(unittest.TestCase):
         assert_allclose(s_perp_new, s_perp, rtol=5e-3)
         assert_allclose(s_prll_new, s_prll, rtol=5e-3)
 
-    def test_raw_fields_similar_mielens(self):
+    def test_raw_fields_similar_mielens_xpolarization(self):
         detector = SMALL_DETECTOR
         scatterer = test_common.sphere
         medium_wavevec = 2 * np.pi / test_common.wavelen
         medium_index = test_common.index
-        illum_polarization = detector.illum_polarization
+        illum_polarization = xr.DataArray([1.0, 0, 0])
+
+        theory_old = MieLens(lens_angle=LENS_ANGLE)
+        pos_old = theory_old._transform_to_desired_coordinates(
+            detector, scatterer.center, wavevec=medium_wavevec)
+
+        theory_new = LENSMIE
+        pos_new = theory_new._transform_to_desired_coordinates(
+            detector, scatterer.center, wavevec=medium_wavevec)
+
+        args = (scatterer, medium_wavevec, medium_index, illum_polarization)
+        f0x, f0y, f0z = theory_old._raw_fields(pos_old, *args)
+        f1x, f1y, f1z = theory_new._raw_fields(pos_new, *args)
+        assert_allclose(f0x, f1x, atol=2e-3)
+        assert_allclose(f0y, f1y, atol=2e-3)
+        assert_allclose(f0z, f1z, atol=2e-3)
+
+    def test_raw_fields_similar_mielens_ypolarization(self):
+        detector = SMALL_DETECTOR
+        scatterer = test_common.sphere
+        medium_wavevec = 2 * np.pi / test_common.wavelen
+        medium_index = test_common.index
+        illum_polarization = xr.DataArray([0, 1.0, 0])
 
         theory_old = MieLens(lens_angle=LENS_ANGLE)
         pos_old = theory_old._transform_to_desired_coordinates(
@@ -164,7 +309,7 @@ class TestLens(unittest.TestCase):
         assert_allclose(f0y, fy, atol=2e-3)
         assert_allclose(f0z, fz, atol=2e-3)
 
-    def test_lens_plus_mie_fields_same_as_mielens(self):
+    def test_calculate_scattered_field_lensmie_same_as_mielens(self):
         detector = test_common.xschema_lens
         scatterer = test_common.sphere
         medium_wavevec = 2 * np.pi / test_common.wavelen
@@ -178,75 +323,6 @@ class TestLens(unittest.TestCase):
         fields_new = theory_new.calculate_scattered_field(scatterer, detector)
 
         assert_allclose(fields_old, fields_new, atol=5e-3)
-
-    def test_calc_holo_theta_npts_not_equal_phi_npts(self):
-        scatterer = test_common.sphere
-        pts = detector_grid(shape=4, spacing=test_common.pixel_scale)
-        pts = update_metadata(pts, illum_wavelen=test_common.wavelen,
-                              medium_index=test_common.index,
-                              illum_polarization=test_common.xpolarization)
-        theory = Lens(LENS_ANGLE, Mie(), quad_npts_theta=8, quad_npts_phi=10)
-        holo = calc_holo(pts, scatterer, theory=theory)
-        self.assertTrue(True)
-
-    @unittest.skipUnless(NUMEXPR_INSTALLED, "numexpr package required")
-    def test_numexpr_integrand_prefactor1(self):
-        expr = LENSMIE.numexpr_integrand_prefactor1
-        # integrand_prefactor1 = 'exp(1j * krho_p * sinth * cos(phi - phi_p))'
-
-        krho_p, sinth, phi, phi_p = np.random.rand(4)
-
-        result_numpy = np.exp(1j * krho_p * sinth * np.cos(phi - phi_p))
-        result_numexpr = ne.evaluate(expr)
-        assert_equal(result_numpy, result_numexpr)
-
-    @unittest.skipUnless(NUMEXPR_INSTALLED, "numexpr package required")
-    def test_numexpr_integrand_prefactor2(self):
-        expr = LENSMIE.numexpr_integrand_prefactor2
-        # integrand_prefactor2 = 'exp(1j * kz_p * (1 - costh))'
-
-        kz_p, costh = np.random.rand(2)
-
-        result_numpy = np.exp(1j * kz_p * (1 - costh))
-        result_numexpr = ne.evaluate(expr)
-        assert_equal(result_numpy, result_numexpr)
-
-    @unittest.skipUnless(NUMEXPR_INSTALLED, "numexpr package required")
-    def test_numexpr_integrand_prefactor3(self):
-        expr = LENSMIE.numexpr_integrand_prefactor3
-        # integrand_prefactor3 = 'sqrt(costh) * sinth * dphi * dth'
-
-        costh, sinth, dphi, dth = np.random.rand(4)
-
-        result_numpy = np.sqrt(costh) * sinth * dphi * dth
-        result_numexpr = ne.evaluate(expr)
-        assert_equal(result_numpy, result_numexpr)
-
-    @unittest.skipUnless(NUMEXPR_INSTALLED, "numexpr package required")
-    def test_numexpr_integrandl(self):
-        expr = LENSMIE.numexpr_integrandl
-        # integrandl = ('prefactor * (cosphi * (cosphi * S2 + sinphi * S3) +'
-        #               + ' sinphi * (cosphi * S4 + sinphi * S1))')
-
-        prefactor, cosphi, sinphi, S1, S2, S3, S4 = np.random.rand(7)
-
-        result_numpy = prefactor * (cosphi * (cosphi * S2 + sinphi * S3)
-                                    + sinphi * (cosphi * S4 + sinphi * S1))
-        result_numexpr = ne.evaluate(expr)
-        assert_equal(result_numpy, result_numexpr)
-
-    @unittest.skipUnless(NUMEXPR_INSTALLED, "numexpr package required")
-    def test_numexpr_integrandr(self):
-        expr = LENSMIE.numexpr_integrandr
-        # integrandr = ('prefactor * (sinphi * (cosphi * S2 + sinphi * S3) -'
-        #                + ' cosphi * (cosphi * S4 + sinphi * S1))')
-
-        prefactor, cosphi, sinphi, S1, S2, S3, S4 = np.random.rand(7)
-
-        result_numpy = prefactor * (sinphi * (cosphi * S2 + sinphi * S3)
-                                    - cosphi * (cosphi * S4 + sinphi * S1))
-        result_numexpr = ne.evaluate(expr)
-        assert_equal(result_numpy, result_numexpr)
 
 
 def _setup_mielens_calculator(scatterer, medium_wavevec, medium_index):

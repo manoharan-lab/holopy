@@ -429,3 +429,6 @@ class TestChoosePool(unittest.TestCase):
         auto_pool = choose_pool('auto')
         self.assertTrue(isinstance(auto_pool, (pool.BasePool, mp.pool.Pool)))
 
+
+if __name__ == '__main__':
+    unittest.main()
