@@ -40,7 +40,7 @@ class ImageFormation(HoloPyObject):
 
     def calculate_cross_sections(
             self, scatterer, medium_wavevec, medium_index, illum_polarization):
-        raw_sections = self.scattering_theory._raw_cross_sections(
+        raw_sections = self.scattering_theory.raw_cross_sections(
             scatterer=scatterer, medium_wavevec=medium_wavevec,
             medium_index=medium_index, illum_polarization=illum_polarization)
         return xr.DataArray(raw_sections, dims=['cross_section'],

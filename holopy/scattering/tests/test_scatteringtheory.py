@@ -81,7 +81,7 @@ class TestScatteringTheory(unittest.TestCase):
         theory = ScatteringTheory()
         args = (None,) * 4  # 4 positional arguments....
         self.assertRaises(
-            NotImplementedError, theory._raw_cross_sections, *args)
+            NotImplementedError, theory.raw_cross_sections, *args)
 
 
 class TestMockTheory(unittest.TestCase):

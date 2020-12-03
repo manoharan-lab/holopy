@@ -122,7 +122,7 @@ class Mie(ScatteringTheory):
             positions, scatterer.n, scat_coeffs, illum_polarization)
         return fields
 
-    def _raw_cross_sections(
+    def raw_cross_sections(
             self, scatterer, medium_wavevec, medium_index, illum_polarization):
         """
         Calculate scattering, absorption, and extinction cross
