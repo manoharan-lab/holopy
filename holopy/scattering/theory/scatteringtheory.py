@@ -43,30 +43,36 @@ class ScatteringTheory(HoloPyObject):
 
     Notes
     -----
-    A subclasses that do the work of computing scattering should do it
-    by implementing raw_fields and/or raw_scat_matrs and (optionally)
-    raw_cross_sections. raw_cross_sections is needed only for
-    calc_cross_sections. Either of raw_fields or raw_scat_matrs will
-    give you calc_holo, calc_field, and calc_intensity. Obviously
-    calc_scat_matrix will only work if you implement raw_cross_sections.
-    So the simplest thing is to just implement raw_scat_matrs. You only
-    need to do raw_fields there is a way to compute it more efficently
-    and you care about that speed, or if it is easier and you don't care
-    about matrices.
+    Subclasses should implement the following methods to create a
+    scatteringtheory that works for the following user-facing methods:
+    * `calc_holo`:              `raw_fields` or `raw_scat_matrs`
+    * `calc_intensity`:         `raw_fields` or `raw_scat_matrs`
+    * `calc_field`:             `raw_fields` or `raw_scat_matrs`
+    * `calc_scat_matrix`:       `raw_scat_matrs`
+    * `calc_cross_sections`:    `raw_cross_sections`
+
+    By default, ScatteringTheories computer `raw_fields` from the
+    `raw_scat_matrs`; over-ride the `raw_fields` method to compute the
+    fields in a different way.
     """
     desired_coordinate_system = 'spherical'
 
     def can_handle(self, scatterer):
+        """Given a scatterer, returns a bool"""
         raise NotImplementedError
 
     def raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
+        """Given a (3, N) array `pos` etc, returns an (N, 2, 2) array"""
         raise NotImplementedError
 
-    def raw_cross_sections(self, *args, **kwargs):
+    def raw_cross_sections(
+            self, scatterer, medium_wavevec, medium_index, illum_polarization):
+        """Returns cross-sections, as an array [cscat, cabs, cext, asym]"""
         raise NotImplementedError
 
     def raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
+        """Given a (3, N) array `pos`, etc, returns a (3, N) array"""
         scat_matr = self.raw_scat_matrs(
             scatterer, pos, medium_wavevec=medium_wavevec,
             medium_index=medium_index)
