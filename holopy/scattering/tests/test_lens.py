@@ -136,8 +136,8 @@ class TestLens(unittest.TestCase):
 
         args = (scatterer, medium_wavevec, medium_index)
 
-        fields_0 = theory._raw_fields(pos_0, *args, pol_0)
-        fields_1 = theory._raw_fields(pos_1, *args, pol_1)
+        fields_0 = theory.raw_fields(pos_0, *args, pol_0)
+        fields_1 = theory.raw_fields(pos_1, *args, pol_1)
 
         tols = {'atol': 1e-5, 'rtol': 1e-5}
         assert_allclose(fields_1[0],  fields_0[1], **tols)
@@ -217,8 +217,8 @@ class TestLens(unittest.TestCase):
         kz = np.zeros(krho.size) + medium_wavevec * z_um
         pos = np.array([krho, phi, kz])
 
-        fields_xpol = theory._raw_fields(pos, *args, xr.DataArray([1, 0, 0]))
-        fields_ypol = theory._raw_fields(pos, *args, xr.DataArray([0, 1, 0]))
+        fields_xpol = theory.raw_fields(pos, *args, xr.DataArray([1, 0, 0]))
+        fields_ypol = theory.raw_fields(pos, *args, xr.DataArray([0, 1, 0]))
 
         intensity_xpol = np.linalg.norm(fields_xpol, axis=0)**2
         intensity_ypol = np.linalg.norm(fields_ypol, axis=0)**2
@@ -283,8 +283,8 @@ class TestLensVsMielens(unittest.TestCase):
             detector, scatterer.center, wavevec=medium_wavevec)
 
         args = (scatterer, medium_wavevec, medium_index, illum_polarization)
-        f0x, f0y, f0z = theory_old._raw_fields(pos_old, *args)
-        f1x, f1y, f1z = theory_new._raw_fields(pos_new, *args)
+        f0x, f0y, f0z = theory_old.raw_fields(pos_old, *args)
+        f1x, f1y, f1z = theory_new.raw_fields(pos_new, *args)
         assert_allclose(f0x, f1x, atol=2e-3)
         assert_allclose(f0y, f1y, atol=2e-3)
         assert_allclose(f0z, f1z, atol=2e-3)
@@ -305,8 +305,8 @@ class TestLensVsMielens(unittest.TestCase):
             detector, scatterer.center, wavevec=medium_wavevec)
 
         args = (scatterer, medium_wavevec, medium_index, illum_polarization)
-        f0x, f0y, f0z = theory_old._raw_fields(pos_old, *args)
-        fx, fy, fz = theory_new._raw_fields(pos_new, *args)
+        f0x, f0y, f0z = theory_old.raw_fields(pos_old, *args)
+        fx, fy, fz = theory_new.raw_fields(pos_new, *args)
         assert_allclose(f0x, fx, atol=2e-3)
         assert_allclose(f0y, fy, atol=2e-3)
         assert_allclose(f0z, fz, atol=2e-3)

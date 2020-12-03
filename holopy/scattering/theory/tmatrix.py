@@ -132,7 +132,7 @@ class Tmatrix(ScatteringTheory):
         return scat_matr
 
 
-    def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
+    def raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
         if not (np.array(illum_polarization)[:2] == np.array([1,0])).all():
             raise ValueError("Our implementation of Tmatrix scattering can only handle [1,0] polarization. Adjust your reference frame accordingly.")

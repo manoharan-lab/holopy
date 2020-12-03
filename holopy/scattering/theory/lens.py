@@ -16,7 +16,7 @@ from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 
 
 class Lens(ScatteringTheory):
-    """ Wraps a ScatteringTheory and overrides the _raw_fields to include the
+    """ Wraps a ScatteringTheory and overrides the raw_fields to include the
     effect of an objective lens.
     """
     desired_coordinate_system = 'cylindrical'
@@ -65,7 +65,7 @@ class Lens(ScatteringTheory):
         self._phi_pts = quad_phi_pts.reshape(1, -1, 1)
         self._phi_wts = quad_phi_wts.reshape(1, -1, 1)
 
-    def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index,
+    def raw_fields(self, positions, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
         pol_angle = np.arctan2(illum_polarization.values[1],
                                illum_polarization.values[0])

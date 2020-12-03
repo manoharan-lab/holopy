@@ -128,7 +128,7 @@ class ImageFormation(HoloPyObject):
         positions = self._transform_to_desired_coordinates(
             schema, scatterer.center, wavevec=wavevector)
         scattered_field = np.transpose(
-            self.scattering_theory._raw_fields(
+            self.scattering_theory.raw_fields(
                 positions,
                 scatterer,
                 medium_wavevec=wavevector,

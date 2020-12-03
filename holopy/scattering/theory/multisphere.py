@@ -211,7 +211,7 @@ class Multisphere(ScatteringTheory):
 
         return amn, lmax
 
-    def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index,
+    def raw_fields(self, positions, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
         amn, lmax = self._scsmfo_setup(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index)
         fields = mieangfuncs.tmatrix_fields(positions, amn, lmax, 0,

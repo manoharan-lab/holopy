@@ -345,7 +345,7 @@ def test_raw_fields():
     imageformer = ImageFormation(Mie())
     pos = imageformer._transform_to_desired_coordinates(
         sch, (10, 10, 5), wavevec=wavevec)
-    rf = Mie()._raw_fields(
+    rf = Mie().raw_fields(
         pos, sp, medium_wavevec=wavevec, medium_index=index,
         illum_polarization=pol)
     assert_allclose(rf, [[(0.0015606995428858754-0.0019143174710834162j),

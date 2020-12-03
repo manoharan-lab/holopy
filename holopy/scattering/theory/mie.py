@@ -103,7 +103,7 @@ class Mie(ScatteringTheory):
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
-    def _raw_fields(
+    def raw_fields(
             self, positions, scatterer, medium_wavevec, medium_index,
             illum_polarization):
         scat_coeffs = self._scat_coeffs(scatterer, medium_wavevec, medium_index)

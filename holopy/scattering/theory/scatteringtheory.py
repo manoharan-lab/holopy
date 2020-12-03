@@ -38,19 +38,19 @@ class ScatteringTheory(HoloPyObject):
 
     Subclasses must implement:
     * can_handle
-    * _raw_fields or _raw_scat_matrs or both.
+    * raw_fields or _raw_scat_matrs or both.
     * (optionally) _raw_cross_sections,
 
     Notes
     -----
     A subclasses that do the work of computing scattering should do it
-    by implementing _raw_fields and/or _raw_scat_matrs and (optionally)
+    by implementing raw_fields and/or _raw_scat_matrs and (optionally)
     _raw_cross_sections. _raw_cross_sections is needed only for
-    calc_cross_sections. Either of _raw_fields or _raw_scat_matrs will
+    calc_cross_sections. Either of raw_fields or _raw_scat_matrs will
     give you calc_holo, calc_field, and calc_intensity. Obviously
     calc_scat_matrix will only work if you implement _raw_cross_sections.
     So the simplest thing is to just implement _raw_scat_matrs. You only
-    need to do _raw_fields there is a way to compute it more efficently
+    need to do raw_fields there is a way to compute it more efficently
     and you care about that speed, or if it is easier and you don't care
     about matrices.
     """
@@ -65,7 +65,7 @@ class ScatteringTheory(HoloPyObject):
     def _raw_cross_sections(self, *args, **kwargs):
         raise NotImplementedError
 
-    def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
+    def raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
         scat_matr = self._raw_scat_matrs(
             scatterer, pos, medium_wavevec=medium_wavevec,

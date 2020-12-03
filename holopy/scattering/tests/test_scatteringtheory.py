@@ -38,7 +38,7 @@ class MockTheory(ScatteringTheory):
     def can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
 
-    def _raw_fields(self, positions, *args, **kwargs):
+    def raw_fields(self, positions, *args, **kwargs):
         return np.ones(positions.shape, dtype='complex128')
 
 
@@ -108,7 +108,7 @@ class TestMockTheory(unittest.TestCase):
         medium_wavevec = 1  # doesn't matter
         medium_index = 1.33  # doesn't matter
         illum_polarization = (1, 0)  # doesn't matter
-        fields = theory._raw_fields(
+        fields = theory.raw_fields(
             positions, SPHERE, medium_wavevec, medium_index,
             illum_polarization)
 
@@ -122,7 +122,7 @@ class TestMockTheory(unittest.TestCase):
         medium_wavevec = 1  # doesn't matter
         medium_index = 1.33  # doesn't matter
         illum_polarization = (1, 0)  # doesn't matter
-        fields = theory._raw_fields(
+        fields = theory.raw_fields(
             positions, SPHERE, medium_wavevec, medium_index,
             illum_polarization)
 
@@ -136,7 +136,7 @@ class TestMockTheory(unittest.TestCase):
         medium_wavevec = 1  # doesn't matter
         medium_index = 1.33  # doesn't matter
         illum_polarization = (1, 0)  # doesn't matter
-        fields = theory._raw_fields(
+        fields = theory.raw_fields(
             positions, SPHERE, medium_wavevec, medium_index,
             illum_polarization)
 
