@@ -45,7 +45,7 @@ class ImageFormation(HoloPyObject):
 
     def calculate_cross_sections(
             self, scatterer, medium_wavevec, medium_index, illum_polarization):
-        raw_sections = self._raw_cross_sections(
+        raw_sections = self.scattering_theory._raw_cross_sections(
             scatterer=scatterer, medium_wavevec=medium_wavevec,
             medium_index=medium_index, illum_polarization=illum_polarization)
         return xr.DataArray(raw_sections, dims=['cross_section'],
@@ -114,7 +114,7 @@ class ImageFormation(HoloPyObject):
             field = self._calculate_scattered_field_from_superposition(
                 scatterer.get_component_list(), schema)
         else:
-            raise TheoryNotCompatibleError(self, scatterer)
+            raise TheoryNotCompatibleError(self.scattering_theory, scatterer)
         return self._pack_field_into_xarray(field, schema)
 
     def _get_field_from(self, scatterer, schema):

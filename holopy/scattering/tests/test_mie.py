@@ -33,6 +33,7 @@ from nose.plugins.attrib import attr
 from holopy.scattering.scatterer import (
     Sphere, Spheres, Ellipsoid, LayeredSphere)
 from holopy.scattering.theory import Mie
+from holopy.scattering.imageformation import ImageFormation
 from holopy.scattering.errors import TheoryNotCompatibleError, InvalidScatterer
 from holopy.core.metadata import (
     detector_grid, detector_points, to_vector, update_metadata)
@@ -341,7 +342,8 @@ def test_raw_fields():
     pol = to_vector((0, 1))
     sch = detector_grid(3, .1)
     wavevec=2*np.pi/(wavelen/index)
-    pos = Mie._transform_to_desired_coordinates(
+    imageformer = ImageFormation(Mie())
+    pos = imageformer._transform_to_desired_coordinates(
         sch, (10, 10, 5), wavevec=wavevec)
     rf = Mie()._raw_fields(
         pos, sp, medium_wavevec=wavevec, medium_index=index,

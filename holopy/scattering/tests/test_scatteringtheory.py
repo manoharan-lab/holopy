@@ -73,8 +73,15 @@ class TestScatteringTheory(unittest.TestCase):
     @attr('fast')
     def test_raw_scat_matrs_not_implemented(self):
         theory = ScatteringTheory()
-        args = (None,) * 5  # 5 positional arguments....
+        args = (None,) * 4  # 4 positional arguments....
         self.assertRaises(NotImplementedError, theory._raw_scat_matrs, *args)
+
+    @attr('fast')
+    def test_raw_cross_sections_not_implemented(self):
+        theory = ScatteringTheory()
+        args = (None,) * 4  # 4 positional arguments....
+        self.assertRaises(
+            NotImplementedError, theory._raw_cross_sections, *args)
 
 
 class TestMockTheory(unittest.TestCase):

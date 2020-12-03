@@ -59,7 +59,10 @@ class ScatteringTheory(HoloPyObject):
     def _can_handle(self, scatterer):
         raise NotImplementedError
 
-    def _raw_scat_matrs(self, *args, **kwargs):
+    def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
+        raise NotImplementedError
+
+    def _raw_cross_sections(self, *args, **kwargs):
         raise NotImplementedError
 
     def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
