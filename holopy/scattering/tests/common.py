@@ -31,7 +31,7 @@ xschema = update_metadata(detector_grid(shape=128, spacing=pixel_scale),
                           illum_polarization=xpolarization)
 yschema = update_metadata(xschema, illum_polarization=ypolarization)
 
-xschema_lens = update_metadata(detector_grid(shape=64, spacing=pixel_scale),
+xschema_lens = update_metadata(detector_grid(shape=32, spacing=pixel_scale),
                                illum_wavelen=wavelen, medium_index=index,
                                illum_polarization=xpolarization)
 

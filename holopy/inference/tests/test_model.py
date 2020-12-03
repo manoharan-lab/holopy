@@ -38,8 +38,8 @@ from holopy.inference import (prior, AlphaModel, ExactModel,
                               NmpfitStrategy, EmceeStrategy,
                               available_fit_strategies,
                               available_sampling_strategies)
-from holopy.inference.model import (Model, PerfectLensModel,
-                                    make_xarray, make_complex, read_map)
+from holopy.inference.model import (Model, PerfectLensModel, transformed_prior,
+                                    make_xarray, read_map)
 from holopy.inference.tests.common import SimpleModel
 from holopy.scattering.tests.common import (
     xschema_lens, sphere as SPHERE_IN_METERS)
@@ -273,7 +273,8 @@ class TestParameterMapping(unittest.TestCase):
         parameter = prior.ComplexPrior(1, prior.Uniform(2, 3))
         position = len(model._parameters)
         parameter_map = model._convert_to_map(parameter)
-        expected = [make_complex, [1, "_parameter_{}".format(position)]]
+        placeholder = "_parameter_{}".format(position)
+        expected = [transformed_prior, [complex, [1, placeholder]]]
         self.assertEqual(parameter_map, expected)
 
     @attr("fast")
@@ -285,12 +286,42 @@ class TestParameterMapping(unittest.TestCase):
         self.assertEqual(model._parameter_names[-2], 'prefix.real')
         self.assertEqual(model._parameter_names[-1], 'prefix.imag')
 
+    @attr('fast')
+    def test_map_transformed_prior(self):
+        model = SimpleModel()
+        transformed = prior.TransformedPrior(np.sqrt, prior.Uniform(0, 2),
+                                             name='sqrt')
+        position = len(model._parameters)
+        parameter_map = model._convert_to_map(transformed)
+        placeholder = "_parameter_{}".format(position)
+        expected = [transformed_prior, [np.sqrt, [placeholder]]]
+        self.assertEqual(parameter_map, expected)
+
+    @attr('fast')
+    def test_map_transformed_prior_names(self):
+        model = SimpleModel()
+        base_prior = [prior.Uniform(0, 2, name='first'), prior.Uniform(1, 2)]
+        transformed = {'trans': prior.TransformedPrior(np.maximum, base_prior)}
+        parameter_map = model._convert_to_map(transformed)
+        self.assertEqual(model._parameter_names[-2:], ['first', 'trans.1'])
+
+    @attr('fast')
+    def test_map_hierarchical_transformed_prior(self):
+        model = SimpleModel()
+        inner = prior.TransformedPrior(np.sqrt, prior.Uniform(0, 2))
+        full = prior.TransformedPrior(np.maximum, [inner, prior.Uniform(0, 1)])
+        position = len(model._parameters)
+        parameter_map = model._convert_to_map(full)
+        placeholder = ['_parameter_{}'.format(position + i) for i in range(2)]
+        submap = [transformed_prior, [np.sqrt, [placeholder[0]]]]
+        expected = [transformed_prior, [np.maximum, [submap, placeholder[1]]]]
+
     @attr("fast")
     def test_map_composite_object(self):
         model = SimpleModel()
         parameter = [prior.ComplexPrior(0, 1), {'a': 2, 'b': [4, 5]}, 6]
         parameter_map = model._convert_to_map(parameter)
-        expected = [[make_complex, [0, 1]],
+        expected = [[transformed_prior, [complex, [0, 1]]],
                     [dict, [[['a', 2], ['b', [4, 5]]]]], 6]
         self.assertEqual(parameter_map, expected)
 
@@ -309,23 +340,52 @@ class TestParameterMapping(unittest.TestCase):
 
     @attr("fast")
     def test_read_complex_map_values(self):
-        parameter_map = [make_complex, ['_parameter_0', '_parameter_1']]
+        parameter_map = [transformed_prior, [complex, ['_parameter_0',
+                                                       '_parameter_1']]]
         values = [0, 1]
         self.assertEqual(read_map(parameter_map, values), complex(0, 1))
 
     @attr("fast")
     def test_read_complex_map_priors(self):
-        parameter_map = [make_complex, ['_parameter_0', '_parameter_1']]
+        parameter_map = [transformed_prior, [complex, ['_parameter_0',
+                                                       '_parameter_1']]]
         priors = [prior.Uniform(0, 1), prior.Uniform(1, 2)]
-        expected = prior.ComplexPrior(priors[0], priors[1])
+        expected = prior.TransformedPrior(complex, [priors[0], priors[1]])
         self.assertEqual(read_map(parameter_map, priors), expected)
+
+    @attr('fast')
+    def test_read_transformed_prior_map_values(self):
+        parameter_map = [transformed_prior, [np.sqrt, ['_parameter_0']]]
+        values = [4]
+        self.assertEqual(read_map(parameter_map, values), 2)
+
+    @attr('fast')
+    def test_read_transformed_prior_map_priors(self):
+        parameter_map = [transformed_prior, [np.sqrt, ['_parameter_0']]]
+        priors = [prior.Uniform(0, 1)]
+        expected = prior.TransformedPrior(np.sqrt, priors)
+        self.assertEqual(read_map(parameter_map, priors), expected)
+
+    @attr('fast')
+    def test_read_hierarchical_transformed(self):
+        inner_map = [transformed_prior, [np.sqrt, ['_parameter_0']]]
+        parameter_map = [transformed_prior, [np.maximum, ['_parameter_1',
+                                                          inner_map]]]
+        priors = [prior.Uniform(0, 1), prior.Uniform(1, 2)]
+        expected_base = [prior.Uniform(1, 2),
+                         prior.TransformedPrior(np.sqrt, prior.Uniform(0, 1))]
+        expected_full = prior.TransformedPrior(np.maximum, expected_base)
+        self.assertEqual(read_map(parameter_map, priors), expected_full)
+        values = [25, 7]
+        self.assertEqual(read_map(inner_map, values), 5)
+        self.assertEqual(read_map(parameter_map, values), 7)
 
     @attr("fast")
     def test_read_composite_map(self):
-        n_map = [dict, [[['red', [[make_complex, [1.5, "_parameter_2"]],
-                                  [make_complex, [1.6, "_parameter_3"]]]],
-                         ['green', [[make_complex, [1.7, "_parameter_4"]],
-                                    [make_complex, [1.8, "_parameter_5"]]]]]]]
+        n_map = [dict, [[['red', [[transformed_prior, [complex, [1.5, "_parameter_2"]]],
+                                  [transformed_prior, [complex, [1.6, "_parameter_3"]]]]],
+                         ['green', [[transformed_prior, [complex, [1.7, "_parameter_4"]]],
+                                    [transformed_prior, [complex, [1.8, "_parameter_5"]]]]]]]]
         parameter_map = [dict, [[['r', ["_parameter_0", "_parameter_1"]],
                                  ['n', n_map],
                                  ['center', [10, 20, "_parameter_6"]]]]]
@@ -397,6 +457,18 @@ class TestParameterTying(unittest.TestCase):
                            prior.Uniform(1, 2),
                            prior.Uniform(1, 2)]
         expected_names = ['n', 'r', 'center.2']
+        self.assertEqual(model._parameters, expected_priors)
+        self.assertEqual(model._parameter_names, expected_names)
+
+    @attr('fast')
+    def test_transformed_priors_are_tied(self):
+        base_prior = prior.Uniform(0, 2, name='x')
+        transformed = prior.TransformedPrior(np.sqrt, base_prior, name='y')
+        scatterer = Sphere(n=1.5, r=0.5, center=[base_prior, transformed,
+                                                 prior.Uniform(5, 10)])
+        model = AlphaModel(scatterer)
+        expected_priors = [base_prior, prior.Uniform(5, 10)]
+        expected_names = ['x', 'center.2']
         self.assertEqual(model._parameters, expected_priors)
         self.assertEqual(model._parameter_names, expected_names)
 
@@ -502,7 +574,8 @@ class TestParameterTying(unittest.TestCase):
         model.add_tie(['center.0', 'n.imag', 'center.1'])
         expected_map = [
             dict,
-            [[['n', [make_complex, ['_parameter_0', '_parameter_1']]],
+            [[['n', [transformed_prior, [complex, ['_parameter_0',
+                                                   '_parameter_1']]]],
               ['r', '_parameter_2'],
               ['center', ['_parameter_1', '_parameter_1', '_parameter_3']]]]]
         expected_parameters = [prior.Uniform(1, 2), prior.Uniform(0, 1),

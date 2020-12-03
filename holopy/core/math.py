@@ -93,7 +93,7 @@ def rotation_matrix(alpha, beta, gamma, radians = True):
 
 def transform_cartesian_to_spherical(x_y_z):
     x, y, z = x_y_z
-    r = np.linalg.norm(x_y_z, axis=0)
+    r = np.sqrt(x*x + y*y + z*z)
     theta = np.arctan2(np.sqrt(x**2 + y**2), z)
     phi = np.arctan2(y, x) % (2*np.pi)
     return np.array([r, theta, phi])
@@ -111,6 +111,7 @@ def transform_cartesian_to_cylindrical(x_y_z):
     x, y, z = x_y_z
     rho = np.sqrt(x**2 + y**2)
     phi = np.arctan2(y, x) % (2*np.pi)
+    z = (np.full(rho.size, z) if np.size(z) == 1 else z)
     return np.array([rho, phi, z])
 
 
@@ -118,6 +119,7 @@ def transform_cylindrical_to_cartesian(rho_phi_z):
     rho, phi, z = rho_phi_z
     x = rho * np.cos(phi)
     y = rho * np.sin(phi)
+    z = (np.full(x.size, z) if np.size(z) == 1 else z)
     return np.array([x, y, z])
 
 

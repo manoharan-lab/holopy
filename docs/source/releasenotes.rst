@@ -5,13 +5,15 @@ HoloPy Release Notes
 ********************
 
 
-Current Development (Holopy 3.4)
-================================
+Holopy 3.4
+==========
 
 New Features
 ------------
 - New :class:`.Lens` scattering theory to model the effect of an objective lens
   can be applied to any other scattering theory.
+- New :class:`.TransformedPrior` that applies a function to one or multiple
+  component :class:`.Prior` objects and maintains ties in a :class:`.Model`.
 
 Improvements
 ------------
@@ -28,15 +30,19 @@ Improvements
 - Scatterer.parameters() now matches the arguments to create the scatterer
   instead of deconstructing composite objects.
 - New prior.renamed() method to create an identical prior with a new name.
-- New way to easily construct scatterers from model parameters with 
+- New way to easily construct scatterers from model parameters with
   ``model.scatterer_from_parameters()``.
 - New ``model.initial_guess`` attribute which can be used to evaluate initial
   guess by psasing into ``model.scatterer_from_parameters()`` or
   ``model.forward()`` methods.
 - Model parameters now use the names of their prior objects if present.
-- Standardized parameter naming
+- Standardized parameter naming across composite objects (eg. list, dict).
 - Any model parameters can now be tied, not just specific combinations within
   Scatterers objects.
+- Expanded math operations of :class:`.Prior` objects, including numpy ufuncs.
+- Math operations on :class:`Prior` objects now use :class:`.TransformedPrior`
+  to maintain ties when used in a :class:`.Model`.
+ 
 
 Documentation
 -------------
@@ -55,7 +61,7 @@ Deprecations
 - Scatterer.from_parameters() is no longer guaranteed to return a
   definite object.
 - Composite scatterers no longer keep track of tied parameters.
-- Scattering interface functions like calc_holo() now require a definite
+- Scattering interface functions such as calc_holo() now require a definite
   scatterer without priors.
 
 Bugfixes
@@ -67,6 +73,9 @@ Bugfixes
 - Models can now include xarray parameters and still support saving/loading.
 - The :class:`.MieLens` scattering theory now works for both large and
   small spheres.
+- The :class:`Lens` theory works for arbitrary linear polarization of
+  the incoming light. This bug was not present on any releases, only on
+  the development branch.
 
 Compatibility Notes
 --------------------
@@ -78,6 +87,8 @@ Developer Notes
 - Documentation now automatically runs sphinx apidoc when building docs.
 - New Scatterer attribute ``_parameters`` provides a view into the scatterer
   and supports editing.
+- :class:`.ComplexPrior` now inherits from :class:`.TransformedPrior`, but
+  Model maps don't keep track of this, e.g. in `model.scatterer`.
 
 
 Holopy 3.3
