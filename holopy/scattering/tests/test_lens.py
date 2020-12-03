@@ -8,6 +8,7 @@ from scipy.special import iv
 
 from holopy.core import detector_points, update_metadata, detector_grid
 from holopy.scattering import calc_holo, Sphere, Spheres
+from holopy.scattering.imageformation import ImageFormation
 from holopy.scattering.theory import Mie, MieLens, Multisphere
 from holopy.scattering.theory import lens
 from holopy.scattering.theory.lens import Lens
@@ -237,7 +238,7 @@ class TestLensVsMielens(unittest.TestCase):
         theory = LENSMIE
 
         theta, phi, s_matrix_new = _get_quad_pts_and_scattering_matrix(
-                               theory, scatterer, medium_wavevec, medium_index)
+            theory, scatterer, medium_wavevec, medium_index)
 
         sinphi = np.sin(phi)
         cosphi = np.cos(phi)
@@ -273,11 +274,12 @@ class TestLensVsMielens(unittest.TestCase):
         illum_polarization = xr.DataArray([1.0, 0, 0])
 
         theory_old = MieLens(lens_angle=LENS_ANGLE)
-        pos_old = theory_old._transform_to_desired_coordinates(
+        pos_old = ImageFormation(theory_old)._transform_to_desired_coordinates(
             detector, scatterer.center, wavevec=medium_wavevec)
 
         theory_new = LENSMIE
-        pos_new = theory_new._transform_to_desired_coordinates(
+        imageformer_new = ImageFormation(theory_new)
+        pos_new = ImageFormation(theory_new)._transform_to_desired_coordinates(
             detector, scatterer.center, wavevec=medium_wavevec)
 
         args = (scatterer, medium_wavevec, medium_index, illum_polarization)
@@ -295,11 +297,11 @@ class TestLensVsMielens(unittest.TestCase):
         illum_polarization = xr.DataArray([0, 1.0, 0])
 
         theory_old = MieLens(lens_angle=LENS_ANGLE)
-        pos_old = theory_old._transform_to_desired_coordinates(
+        pos_old = ImageFormation(theory_old)._transform_to_desired_coordinates(
             detector, scatterer.center, wavevec=medium_wavevec)
 
         theory_new = LENSMIE
-        pos_new = theory_new._transform_to_desired_coordinates(
+        pos_new = ImageFormation(theory_new)._transform_to_desired_coordinates(
             detector, scatterer.center, wavevec=medium_wavevec)
 
         args = (scatterer, medium_wavevec, medium_index, illum_polarization)
@@ -316,11 +318,13 @@ class TestLensVsMielens(unittest.TestCase):
         medium_index = test_common.index
         illum_polarization = test_common.xpolarization
 
-        theory_old = MieLens(lens_angle=LENS_ANGLE)
-        theory_new = LENSMIE
+        imageformer_old = ImageFormation(MieLens(lens_angle=LENS_ANGLE))
+        imageformer_new = ImageFormation(LENSMIE)
 
-        fields_old = theory_old.calculate_scattered_field(scatterer, detector)
-        fields_new = theory_new.calculate_scattered_field(scatterer, detector)
+        fields_old = imageformer_old.calculate_scattered_field(
+            scatterer, detector)
+        fields_new = imageformer_new.calculate_scattered_field(
+            scatterer, detector)
 
         assert_allclose(fields_old, fields_new, atol=5e-3)
 
@@ -345,7 +349,8 @@ def _get_quad_pts_and_scattering_matrix(theory, scatterer, medium_wavevec,
     illum_wavelen = 2 * np.pi * medium_index / medium_wavevec
     pts = update_metadata(pts, medium_index=medium_index,
                           illum_wavelen=illum_wavelen)
-    matr = theory.theory.calculate_scattering_matrix(scatterer, pts)
+    matr = ImageFormation(theory.theory).calculate_scattering_matrix(
+        scatterer, pts)
     return theta, phi, np.conj(matr)
 
 
