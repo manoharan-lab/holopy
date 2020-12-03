@@ -354,7 +354,7 @@ class Multisphere(ScatteringTheory):
         asym = integral / medium_wavevec**2 # need to divide by cscat
         return asym
 
-    def calculate_cross_sections(
+    def _raw_cross_sections(
             self, scatterer, medium_wavevec, medium_index, illum_polarization):
         """
         Calculate scattering, absorption, and extinction cross
