@@ -46,7 +46,7 @@ class ImageFormation(HoloPyObject):
         coords = {'cross_section': ['scattering', 'absorbtion',
                                     'extinction', 'assymetry']}
         dims = ['cross_section']
-        return  xr.DataArray(raw_sections, dims=dims, coords=coords)
+        return xr.DataArray(raw_sections, dims=dims, coords=coords)
 
     def calculate_scattering_matrix(self, scatterer, schema):
         """
