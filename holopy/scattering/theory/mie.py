@@ -87,7 +87,7 @@ class Mie(ScatteringTheory):
     def can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
 
-    def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
+    def raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
         '''
         Returns far-field amplitude scattering matrices (with theta and phi
         dependence only) -- assume spherical wave asymptotic r dependence

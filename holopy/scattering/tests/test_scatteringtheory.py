@@ -52,7 +52,7 @@ class MockScatteringMatrixBasedTheory(ScatteringTheory):
     def can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
 
-    def _raw_scat_matrs(self, scatterer, positions, *args, **kwargs):
+    def raw_scat_matrs(self, scatterer, positions, *args, **kwargs):
         strength = scatterer.n * scatterer.r
         scattering_matrix = np.array(
             [np.eye(2) for _ in range(positions.shape[1])])
@@ -74,7 +74,7 @@ class TestScatteringTheory(unittest.TestCase):
     def test_raw_scat_matrs_not_implemented(self):
         theory = ScatteringTheory()
         args = (None,) * 4  # 4 positional arguments....
-        self.assertRaises(NotImplementedError, theory._raw_scat_matrs, *args)
+        self.assertRaises(NotImplementedError, theory.raw_scat_matrs, *args)
 
     @attr('fast')
     def test_raw_cross_sections_not_implemented(self):
@@ -163,14 +163,14 @@ class TestMockScatteringMatrixBasedTheory(unittest.TestCase):
     def test_raw_scat_matrs_returns_correct_shape(self):
         theory = MockScatteringMatrixBasedTheory()
         positions = np.random.randn(3, 65)
-        scattering_matrices = theory._raw_scat_matrs(SPHERE, positions)
+        scattering_matrices = theory.raw_scat_matrs(SPHERE, positions)
         self.assertTrue(scattering_matrices.shape == (positions.shape[1], 2, 2))
 
     @attr("fast")
     def test_raw_scat_matrs_returns_eyes(self):
         theory = MockScatteringMatrixBasedTheory()
         positions = np.random.randn(3, 65)
-        scattering_matrices = theory._raw_scat_matrs(SPHERE, positions)
+        scattering_matrices = theory.raw_scat_matrs(SPHERE, positions)
         eye = np.eye(2)
         each_is_eye = [
             np.isclose(np.diag(m).std(), 0, **TOLS)
@@ -181,7 +181,7 @@ class TestMockScatteringMatrixBasedTheory(unittest.TestCase):
     def test_raw_fields_returns_dtype_complex(self):
         theory = MockScatteringMatrixBasedTheory()
         positions = np.random.randn(3, 65)
-        scattering_matrices = theory._raw_scat_matrs(SPHERE, positions)
+        scattering_matrices = theory.raw_scat_matrs(SPHERE, positions)
         self.assertTrue(scattering_matrices.dtype.name == 'complex128')
 
 

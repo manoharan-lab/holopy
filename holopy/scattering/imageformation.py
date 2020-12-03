@@ -72,7 +72,7 @@ class ImageFormation(HoloPyObject):
         """
         positions = self._transform_to_desired_coordinates(
             schema, scatterer.center)
-        scat_matrs = self.scattering_theory._raw_scat_matrs(
+        scat_matrs = self.scattering_theory.raw_scat_matrs(
             scatterer, positions, medium_wavevec=get_wavevec_from(schema),
             medium_index=schema.medium_index)
         return self._pack_scattering_matrix_into_xarray(

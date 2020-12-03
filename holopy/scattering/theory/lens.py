@@ -132,7 +132,7 @@ class Lens(ScatteringTheory):
         theta, phi = np.meshgrid(self._theta_pts, self._phi_pts)
         illum_wavelen = 2 * np.pi * medium_index / medium_wavevec
         pos = np.array([0 * theta, theta, phi]).reshape(3, -1)
-        S = self.theory._raw_scat_matrs(
+        S = self.theory.raw_scat_matrs(
             scatterer, pos, medium_wavevec, medium_index)
         S = np.conj(S).reshape(self.quad_npts_theta, self.quad_npts_phi, 2, 2)
         S = np.swapaxes(S, 0, 1)

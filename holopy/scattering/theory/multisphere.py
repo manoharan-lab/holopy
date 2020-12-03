@@ -256,7 +256,7 @@ class Multisphere(ScatteringTheory):
         cext = 4. * np.pi / medium_wavevec**2 * np.dot(pol, ascat_sph).real
         return cext
 
-    def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
+    def raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
         '''
         Calculate far-field amplitude scattering matrices at multiple
         positions

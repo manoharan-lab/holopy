@@ -197,7 +197,7 @@ class DDA(ScatteringTheory):
     def required_spacing(self, bounds, medium_wavelen, medium_index, n):
         return medium_wavelen / self._dpl(bounds, medium_wavelen, medium_index, n)
 
-    def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
+    def raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
         angles = pos.T[:, 1:] * 180/np.pi
         temp_dir = tempfile.mkdtemp()
 

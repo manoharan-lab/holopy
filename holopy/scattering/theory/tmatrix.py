@@ -67,7 +67,7 @@ class Tmatrix(ScatteringTheory):
             or isinstance(scatterer, Spheroid)
 
     # FIXME why is S (scatterer, pos, ...) but fields are (pos, scatterer, ...)?
-    def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
+    def raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
         args = self._parse_args(scatterer, pos, medium_wavevec, medium_index)
         s = self._run_tmat(args)
         return s
@@ -137,7 +137,7 @@ class Tmatrix(ScatteringTheory):
         if not (np.array(illum_polarization)[:2] == np.array([1,0])).all():
             raise ValueError("Our implementation of Tmatrix scattering can only handle [1,0] polarization. Adjust your reference frame accordingly.")
 
-        scat_matr = self._raw_scat_matrs(scatterer, pos,
+        scat_matr = self.raw_scat_matrs(scatterer, pos,
                     medium_wavevec=medium_wavevec, medium_index=medium_index)
         fields = np.zeros_like(pos.T, dtype = scat_matr.dtype)
 

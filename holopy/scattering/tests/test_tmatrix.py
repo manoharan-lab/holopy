@@ -169,8 +169,8 @@ class TestTMatrix(unittest.TestCase):
         pos = np.array([10, 0, 0])[:,None]
         s = Sphere(n=1.59, r=0.9, center=(2, 2, 80))
 
-        s_mie = theory_mie._raw_scat_matrs(s, pos, 2*np.pi/.660, 1.33)
-        s_tmat = theory_tmat._raw_scat_matrs(s, pos, 2*np.pi/.660, 1.33)
+        s_mie = theory_mie.raw_scat_matrs(s, pos, 2*np.pi/.660, 1.33)
+        s_tmat = theory_tmat.raw_scat_matrs(s, pos, 2*np.pi/.660, 1.33)
         self.assertTrue(np.allclose(s_mie, s_tmat))
 
     @attr("fast")
