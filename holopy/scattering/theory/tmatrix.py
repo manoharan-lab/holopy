@@ -62,7 +62,7 @@ class Tmatrix(ScatteringTheory):
                                     " of HoloPy through f2py.")
         super().__init__()
 
-    def _can_handle(self, scatterer):
+    def can_handle(self, scatterer):
         return isinstance(scatterer, Sphere) or isinstance(scatterer, Cylinder) \
             or isinstance(scatterer, Spheroid)
 

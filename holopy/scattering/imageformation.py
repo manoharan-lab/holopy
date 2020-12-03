@@ -14,11 +14,6 @@ class ImageFormation(HoloPyObject):
     """
     Calculates fields, holograms, intensities, etc.
     """
-    # desired_coordinate_system = 'spherical'
-    # _can_handle
-    # _raw_fields
-    # _raw_scat_matrs
-
     def __init__(self, scattering_theory):
         self.scattering_theory = scattering_theory
 
@@ -108,7 +103,7 @@ class ImageFormation(HoloPyObject):
         return field
 
     def _calculate_single_color_scattered_field(self, scatterer, schema):
-        if self.scattering_theory._can_handle(scatterer):
+        if self.scattering_theory.can_handle(scatterer):
             field = self._get_field_from(scatterer, schema)
         elif isinstance(scatterer, Scatterers):
             field = self._calculate_scattered_field_from_superposition(

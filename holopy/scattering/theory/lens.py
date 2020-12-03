@@ -45,8 +45,8 @@ class Lens(ScatteringTheory):
         self.use_numexpr = use_numexpr
         self._setup_quadrature()
 
-    def _can_handle(self, scatterer):
-        return self.theory._can_handle(scatterer)
+    def can_handle(self, scatterer):
+        return self.theory.can_handle(scatterer)
 
     def _setup_quadrature(self):
         """Calculate quadrature points and weights for 2D integration over lens

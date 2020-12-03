@@ -102,7 +102,7 @@ def finalize(detector, result):
 # Some comments on why `determine_default_theory_for` exists, rather than each
 # Scatterer class knowing what a good default theory is.
 # The problem is that the theories (Mie etc) import Sphere to see if
-# the theory can handle the scatterer, in the _can_handle method and
+# the theory can handle the scatterer, in the can_handle method and
 # others. Worse, since the DDA theory calls an external DDA library
 # with specially-defined DDA objects, the DDA theory has a switch statement
 # for basically every holopy scatterer. So right now the scatterers can't
@@ -120,7 +120,7 @@ def determine_default_theory_for(scatterer):
             theory = Mie()
     elif isinstance(scatterer, Spheroid) or isinstance(scatterer, Cylinder):
         theory = Tmatrix()
-    elif DDA()._can_handle(scatterer):
+    elif DDA().can_handle(scatterer):
         theory = DDA()
     else:
         raise AutoTheoryFailed(scatterer)

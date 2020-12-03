@@ -32,7 +32,7 @@ SMALL_DETECTOR = update_metadata(
 class TestLens(unittest.TestCase):
     def test_can_handle(self):
         theory = LENSMIE
-        self.assertTrue(theory._can_handle(test_common.sphere))
+        self.assertTrue(theory.can_handle(test_common.sphere))
 
     def test_theta_quad_pts_min(self):
         assert_allclose(np.min(LENSMIE._theta_pts), 0., **QLIM_TOL)

@@ -35,7 +35,7 @@ class MockTheory(ScatteringTheory):
     def __init__(*args, **kwargs):
         pass  # an init is necessary for the repr
 
-    def _can_handle(self, scatterer):
+    def can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
 
     def _raw_fields(self, positions, *args, **kwargs):
@@ -49,7 +49,7 @@ class MockScatteringMatrixBasedTheory(ScatteringTheory):
     def __init__(*args, **kwargs):
         pass  # an init is necessary for the repr
 
-    def _can_handle(self, scatterer):
+    def can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
 
     def _raw_scat_matrs(self, scatterer, positions, *args, **kwargs):
@@ -68,7 +68,7 @@ class TestScatteringTheory(unittest.TestCase):
     @attr('fast')
     def test_can_handle_not_implemented(self):
         theory = ScatteringTheory()
-        self.assertRaises(NotImplementedError, theory._can_handle, SPHERE)
+        self.assertRaises(NotImplementedError, theory.can_handle, SPHERE)
 
     @attr('fast')
     def test_raw_scat_matrs_not_implemented(self):
@@ -93,12 +93,12 @@ class TestMockTheory(unittest.TestCase):
     @attr("fast")
     def test_can_handle_sphere(self):
         theory = MockTheory()
-        self.assertTrue(theory._can_handle(SPHERE))
+        self.assertTrue(theory.can_handle(SPHERE))
 
     @attr("fast")
     def test_cannot_handle_spheres(self):
         theory = MockTheory()
-        self.assertFalse(theory._can_handle(SPHERES))
+        self.assertFalse(theory.can_handle(SPHERES))
 
     @attr("fast")
     def test_raw_fields_returns_correct_shape(self):
@@ -152,12 +152,12 @@ class TestMockScatteringMatrixBasedTheory(unittest.TestCase):
     @attr("fast")
     def test_can_handle_sphere(self):
         theory = MockScatteringMatrixBasedTheory()
-        self.assertTrue(theory._can_handle(SPHERE))
+        self.assertTrue(theory.can_handle(SPHERE))
 
     @attr("fast")
     def test_cannot_handle_spheres(self):
         theory = MockScatteringMatrixBasedTheory()
-        self.assertFalse(theory._can_handle(SPHERES))
+        self.assertFalse(theory.can_handle(SPHERES))
 
     @attr("fast")
     def test_raw_scat_matrs_returns_correct_shape(self):

@@ -63,7 +63,7 @@ class MieLens(ScatteringTheory):
         self.lens_angle = lens_angle
         self.calculator_accuracy_kwargs = calculator_accuracy_kwargs
 
-    def _can_handle(self, scatterer):
+    def can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
 
     def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index,

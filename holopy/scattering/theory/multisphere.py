@@ -139,7 +139,7 @@ class Multisphere(ScatteringTheory):
         # call base class constructor
         super().__init__()
 
-    def _can_handle(self, scatterer):
+    def can_handle(self, scatterer):
         return (isinstance(scatterer, Spheres) or isinstance(scatterer, Sphere))
 
     def _scsmfo_setup(self, scatterer, medium_wavevec, medium_index):

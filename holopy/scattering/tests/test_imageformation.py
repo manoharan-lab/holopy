@@ -101,7 +101,7 @@ class TestImageFormation(unittest.TestCase):
     @attr("fast")
     def test_calc_singlecolor_raises_error_for_cant_handle(self):
         imageformer = make_imageformer()
-        assert not imageformer.scattering_theory._can_handle(ELLIPSOID)
+        assert not imageformer.scattering_theory.can_handle(ELLIPSOID)
         self.assertRaises(
             TheoryNotCompatibleError,
             imageformer._calculate_single_color_scattered_field,

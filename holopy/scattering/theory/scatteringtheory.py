@@ -37,7 +37,7 @@ class ScatteringTheory(HoloPyObject):
     Defines common interface for all scattering theories.
 
     Subclasses must implement:
-    * _can_handle
+    * can_handle
     * _raw_fields or _raw_scat_matrs or both.
     * (optionally) _raw_cross_sections,
 
@@ -56,7 +56,7 @@ class ScatteringTheory(HoloPyObject):
     """
     desired_coordinate_system = 'spherical'
 
-    def _can_handle(self, scatterer):
+    def can_handle(self, scatterer):
         raise NotImplementedError
 
     def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):

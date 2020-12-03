@@ -84,7 +84,7 @@ class Mie(ScatteringTheory):
                                     " of HoloPy through f2py.")
         super().__init__()
 
-    def _can_handle(self, scatterer):
+    def can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
 
     def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
@@ -92,7 +92,7 @@ class Mie(ScatteringTheory):
         Returns far-field amplitude scattering matrices (with theta and phi
         dependence only) -- assume spherical wave asymptotic r dependence
         '''
-        if self._can_handle(scatterer):
+        if self.can_handle(scatterer):
             scat_coeffs = self._scat_coeffs(
                 scatterer, medium_wavevec, medium_index)
 
