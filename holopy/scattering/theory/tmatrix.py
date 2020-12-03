@@ -131,11 +131,13 @@ class Tmatrix(ScatteringTheory):
         scat_matr = np.array([[s11, s12], [s21, s22]]).transpose()
         return scat_matr
 
-
     def raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
         if not (np.array(illum_polarization)[:2] == np.array([1,0])).all():
-            raise ValueError("Our implementation of Tmatrix scattering can only handle [1,0] polarization. Adjust your reference frame accordingly.")
+            msg = ("Our implementation of Tmatrix scattering can only " +
+                   "handle [1,0] polarization. Adjust your reference " +
+                   "frame accordingly.")
+            raise ValueError(msg)
 
         scat_matr = self.raw_scat_matrs(scatterer, pos,
                     medium_wavevec=medium_wavevec, medium_index=medium_index)

@@ -43,10 +43,9 @@ class ImageFormation(HoloPyObject):
         raw_sections = self.scattering_theory.raw_cross_sections(
             scatterer=scatterer, medium_wavevec=medium_wavevec,
             medium_index=medium_index, illum_polarization=illum_polarization)
-        return xr.DataArray(raw_sections, dims=['cross_section'],
-                            coords={'cross_section':
-                                ['scattering', 'absorbtion',
-                                 'extinction', 'assymetry']})
+        coords = {'cross_section': ['scattering', 'absorbtion',
+                                    'extinction', 'assymetry']}
+        out = xr.DataArray(raw_sections, dims=['cross_section'], coords=coords)
 
     def calculate_scattering_matrix(self, scatterer, schema):
         """
@@ -166,9 +165,9 @@ class ImageFormation(HoloPyObject):
 
         coords = {point_or_flat: flattened_schema.coords[point_or_flat]}
         coords.update({
-            'r': (point_or_flat, r_theta_phi[ 0]),
-            'theta': (point_or_flat, r_theta_phi[ 1]),
-            'phi': (point_or_flat, r_theta_phi[ 2]),
+            'r': (point_or_flat, r_theta_phi[0]),
+            'theta': (point_or_flat, r_theta_phi[1]),
+            'phi': (point_or_flat, r_theta_phi[2]),
             'Epar': ['S2', 'S3'],
             'Eperp': ['S4', 'S1'],
             })
