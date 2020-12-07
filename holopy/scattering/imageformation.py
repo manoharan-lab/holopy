@@ -61,14 +61,6 @@ class ImageFormation(HoloPyObject):
         -------
         scat_matr : :mod:`.Marray`
             Scattering matrices at specified positions
-
-        Notes
-        -----
-        calc_* functions can be called on either a theory class or a
-        theory object. If called on a theory class, they use a default
-        theory object which is correct for the vast majority of
-        situations. You only need to instantiate a theory object if it
-        has adjustable parameters and you want to use non-default values.
         """
         positions = self._transform_to_desired_coordinates(
             schema, scatterer.center)
