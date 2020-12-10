@@ -16,7 +16,7 @@ from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 
 
 class Lens(ScatteringTheory):
-    """ Wraps a ScatteringTheory and overrides the _raw_fields to include the
+    """ Wraps a ScatteringTheory and overrides the raw_fields to include the
     effect of an objective lens.
     """
     desired_coordinate_system = 'cylindrical'
@@ -45,8 +45,8 @@ class Lens(ScatteringTheory):
         self.use_numexpr = use_numexpr
         self._setup_quadrature()
 
-    def _can_handle(self, scatterer):
-        return self.theory._can_handle(scatterer)
+    def can_handle(self, scatterer):
+        return self.theory.can_handle(scatterer)
 
     def _setup_quadrature(self):
         """Calculate quadrature points and weights for 2D integration over lens
@@ -65,7 +65,7 @@ class Lens(ScatteringTheory):
         self._phi_pts = quad_phi_pts.reshape(1, -1, 1)
         self._phi_wts = quad_phi_wts.reshape(1, -1, 1)
 
-    def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index,
+    def raw_fields(self, positions, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
         pol_angle = np.arctan2(illum_polarization.values[1],
                                illum_polarization.values[0])
@@ -130,14 +130,11 @@ class Lens(ScatteringTheory):
 
     def _calc_scattering_matrix(self, scatterer, medium_wavevec, medium_index):
         theta, phi = np.meshgrid(self._theta_pts, self._phi_pts)
-        pts = detector_points(theta=theta.ravel(), phi=phi.ravel())
         illum_wavelen = 2 * np.pi * medium_index / medium_wavevec
-
-        pts = update_metadata(pts, medium_index=medium_index,
-                              illum_wavelen=illum_wavelen)
-        S = self.theory.calculate_scattering_matrix(scatterer, pts)
-        S = np.conj(S.values.reshape(self.quad_npts_theta,
-                                     self.quad_npts_phi, 2, 2))
+        pos = np.array([0 * theta, theta, phi]).reshape(3, -1)
+        S = self.theory.raw_scat_matrs(
+            scatterer, pos, medium_wavevec, medium_index)
+        S = np.conj(S).reshape(self.quad_npts_theta, self.quad_npts_phi, 2, 2)
         S = np.swapaxes(S, 0, 1)
         S1 = S[:, :, 1, 1].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
         S2 = S[:, :, 0, 0].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)

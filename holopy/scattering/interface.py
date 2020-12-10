@@ -35,6 +35,7 @@ from holopy.core.utils import dict_without, ensure_array
 from holopy.scattering.scatterer import Sphere, Spheres, Spheroid, Cylinder
 from holopy.scattering.errors import AutoTheoryFailed, MissingParameter
 from holopy.scattering.theory import Mie, Multisphere
+from holopy.scattering.imageformation import ImageFormation
 from holopy.scattering.theory import Tmatrix
 from holopy.scattering.theory.dda import DDA
 
@@ -101,7 +102,7 @@ def finalize(detector, result):
 # Some comments on why `determine_default_theory_for` exists, rather than each
 # Scatterer class knowing what a good default theory is.
 # The problem is that the theories (Mie etc) import Sphere to see if
-# the theory can handle the scatterer, in the _can_handle method and
+# the theory can handle the scatterer, in the can_handle method and
 # others. Worse, since the DDA theory calls an external DDA library
 # with specially-defined DDA objects, the DDA theory has a switch statement
 # for basically every holopy scatterer. So right now the scatterers can't
@@ -119,7 +120,7 @@ def determine_default_theory_for(scatterer):
             theory = Mie()
     elif isinstance(scatterer, Spheroid) or isinstance(scatterer, Cylinder):
         theory = Tmatrix()
-    elif DDA()._can_handle(scatterer):
+    elif DDA().can_handle(scatterer):
         theory = DDA()
     else:
         raise AutoTheoryFailed(scatterer)
@@ -194,7 +195,8 @@ def calc_holo(detector, scatterer, medium_index=None, illum_wavelen=None,
     uschema = prep_schema(
         detector, medium_index, illum_wavelen, illum_polarization)
     scaling = dict_to_array(detector, scaling)
-    scattered_field = theory.calculate_scattered_field(scatterer, uschema)
+    imageformer = ImageFormation(theory)
+    scattered_field = imageformer.calculate_scattered_field(scatterer, uschema)
     reference_field = uschema.illum_polarization
     holo = scattered_field_to_hologram(
         scattered_field * scaling, reference_field)
@@ -229,7 +231,8 @@ def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None,
         cross sections, and <cos theta>
     """
     theory = interpret_theory(scatterer, theory)
-    cross_section = theory.calculate_cross_sections(
+    imageformer = ImageFormation(theory)
+    cross_section = imageformer.calculate_cross_sections(
         scatterer=scatterer,
         medium_wavevec=2*np.pi/(illum_wavelen/medium_index),
         medium_index=medium_index,
@@ -270,7 +273,8 @@ def calc_scat_matrix(detector, scatterer, medium_index=None, illum_wavelen=None,
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=False)
-    result = theory.calculate_scattering_matrix(scatterer, uschema)
+    imageformer = ImageFormation(theory)
+    result = imageformer.calculate_scattering_matrix(scatterer, uschema)
     return finalize(uschema, result)
 
 
@@ -307,7 +311,8 @@ def calc_field(detector, scatterer, medium_index=None, illum_wavelen=None,
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=illum_polarization)
-    result = theory.calculate_scattered_field(scatterer, uschema)
+    imageformer = ImageFormation(theory)
+    result = imageformer.calculate_scattered_field(scatterer, uschema)
     return finalize(uschema, result)
 
 

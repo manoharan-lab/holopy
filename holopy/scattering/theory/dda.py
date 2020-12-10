@@ -100,7 +100,7 @@ class DDA(ScatteringTheory):
         if use_gpu and n_cpu>1: warnings.warn("Adda cannot run on multiple CPUs, when running on GPU. 1 CPU will be used.")
         super().__init__()
 
-    def _can_handle(self, scatterer):
+    def can_handle(self, scatterer):
         # For now DDA is our most general theory, eventually this will have to
         # change if we add other theorys that can compute things ADDA can't (or
         # shouldn't, because it would take crazy long)
@@ -197,7 +197,7 @@ class DDA(ScatteringTheory):
     def required_spacing(self, bounds, medium_wavelen, medium_index, n):
         return medium_wavelen / self._dpl(bounds, medium_wavelen, medium_index, n)
 
-    def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
+    def raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
         angles = pos.T[:, 1:] * 180/np.pi
         temp_dir = tempfile.mkdtemp()
 
