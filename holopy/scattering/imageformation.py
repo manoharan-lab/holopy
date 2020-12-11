@@ -1,31 +1,3 @@
-# Copyright 2011-2016, Vinothan N. Manoharan, Thomas G. Dimiduk,
-# Rebecca W. Perry, Jerome Fung, Ryan McGorty, Anna Wang, Solomon Barkley
-#
-# This file is part of HoloPy.
-#
-# HoloPy is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# HoloPy is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-"""
-Base class for scattering theories.  Implements python-based
-calc_intensity and calc_holo, based on subclass's calc_field
-.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
-.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
-.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
-.. moduleauthor:: Brian Leahy <bleahy@g.harvard.edu>
-"""
-
-from warnings import warn
-
 import numpy as np
 import xarray as xr
 
@@ -36,39 +8,17 @@ from holopy.scattering.errors import TheoryNotCompatibleError, MissingParameter
 from holopy.core.metadata import (
     vector, illumination, flat, update_metadata, clean_concat)
 from holopy.core.utils import ensure_array
-try:
-    from holopy.scattering.theory.mie_f import mieangfuncs
-except ImportError:
-    pass
 
 
-def get_wavevec_from(schema):
-    return 2 * np.pi / (schema.illum_wavelen / schema.medium_index)
-
-
-class ScatteringTheory(HoloPyObject):
+class ImageFormation(HoloPyObject):
     """
-    Defines common interface for all scattering theories.
-
-    Notes
-    -----
-    A subclasses that do the work of computing scattering should do it
-    by implementing _raw_fields and/or _raw_scat_matrs and (optionally)
-    _raw_cross_sections. _raw_cross_sections is needed only for
-    calc_cross_sections. Either of _raw_fields or _raw_scat_matrs will
-    give you calc_holo, calc_field, and calc_intensity. Obviously
-    calc_scat_matrix will only work if you implement _raw_cross_sections.
-    So the simplest thing is to just implement _raw_scat_matrs. You only
-    need to do _raw_fields there is a way to compute it more efficently
-    and you care about that speed, or if it is easier and you don't care
-    about matrices.
+    Calculates fields, holograms, intensities, etc.
     """
-    desired_coordinate_system = 'spherical'
+    def __init__(self, scattering_theory):
+        self.scattering_theory = scattering_theory
 
     def calculate_scattered_field(self, scatterer, schema):
         """
-        Implemented in derived classes only.
-
         Parameters
         ----------
         scatterer : :mod:`.scatterer` object
@@ -90,13 +40,13 @@ class ScatteringTheory(HoloPyObject):
 
     def calculate_cross_sections(
             self, scatterer, medium_wavevec, medium_index, illum_polarization):
-        raw_sections = self._raw_cross_sections(
+        raw_sections = self.scattering_theory.raw_cross_sections(
             scatterer=scatterer, medium_wavevec=medium_wavevec,
             medium_index=medium_index, illum_polarization=illum_polarization)
-        return xr.DataArray(raw_sections, dims=['cross_section'],
-                            coords={'cross_section':
-                                ['scattering', 'absorbtion',
-                                 'extinction', 'assymetry']})
+        coords = {'cross_section': ['scattering', 'absorbtion',
+                                    'extinction', 'assymetry']}
+        dims = ['cross_section']
+        return xr.DataArray(raw_sections, dims=dims, coords=coords)
 
     def calculate_scattering_matrix(self, scatterer, schema):
         """
@@ -111,18 +61,10 @@ class ScatteringTheory(HoloPyObject):
         -------
         scat_matr : :mod:`.Marray`
             Scattering matrices at specified positions
-
-        Notes
-        -----
-        calc_* functions can be called on either a theory class or a
-        theory object. If called on a theory class, they use a default
-        theory object which is correct for the vast majority of
-        situations. You only need to instantiate a theory object if it
-        has adjustable parameters and you want to use non-default values.
         """
         positions = self._transform_to_desired_coordinates(
             schema, scatterer.center)
-        scat_matrs = self._raw_scat_matrs(
+        scat_matrs = self.scattering_theory.raw_scat_matrs(
             scatterer, positions, medium_wavevec=get_wavevec_from(schema),
             medium_index=schema.medium_index)
         return self._pack_scattering_matrix_into_xarray(
@@ -153,13 +95,13 @@ class ScatteringTheory(HoloPyObject):
         return field
 
     def _calculate_single_color_scattered_field(self, scatterer, schema):
-        if self._can_handle(scatterer):
+        if self.scattering_theory.can_handle(scatterer):
             field = self._get_field_from(scatterer, schema)
         elif isinstance(scatterer, Scatterers):
             field = self._calculate_scattered_field_from_superposition(
                 scatterer.get_component_list(), schema)
         else:
-            raise TheoryNotCompatibleError(self, scatterer)
+            raise TheoryNotCompatibleError(self.scattering_theory, scatterer)
         return self._pack_field_into_xarray(field, schema)
 
     def _get_field_from(self, scatterer, schema):
@@ -178,7 +120,7 @@ class ScatteringTheory(HoloPyObject):
         positions = self._transform_to_desired_coordinates(
             schema, scatterer.center, wavevec=wavevector)
         scattered_field = np.transpose(
-            self._raw_fields(
+            self.scattering_theory.raw_fields(
                 positions,
                 scatterer,
                 medium_wavevec=wavevector,
@@ -216,9 +158,9 @@ class ScatteringTheory(HoloPyObject):
 
         coords = {point_or_flat: flattened_schema.coords[point_or_flat]}
         coords.update({
-            'r': (point_or_flat, r_theta_phi[ 0]),
-            'theta': (point_or_flat, r_theta_phi[ 1]),
-            'phi': (point_or_flat, r_theta_phi[ 2]),
+            'r': (point_or_flat, r_theta_phi[0]),
+            'theta': (point_or_flat, r_theta_phi[1]),
+            'phi': (point_or_flat, r_theta_phi[2]),
             'Epar': ['S2', 'S3'],
             'Eperp': ['S4', 'S1'],
             })
@@ -226,20 +168,6 @@ class ScatteringTheory(HoloPyObject):
         packed = xr.DataArray(
             scat_matrs, dims=dims, coords=coords, attrs=schema.attrs)
         return packed
-
-    def _raw_fields(self, pos, scatterer, medium_wavevec, medium_index,
-                    illum_polarization):
-        scat_matr = self._raw_scat_matrs(
-            scatterer, pos, medium_wavevec=medium_wavevec,
-            medium_index=medium_index)
-
-        fields = np.zeros_like(pos.T, dtype=np.array(scat_matr).dtype)
-        for i, point in enumerate(pos.T):
-            kr, theta, phi = point
-            escat_sph = mieangfuncs.calc_scat_field(
-                kr, phi, scat_matr[i], illum_polarization.values[:2])
-            fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
-        return fields.T
 
     @classmethod
     def _is_detector_view_point_or_flat(cls, detector_view):
@@ -254,8 +182,7 @@ class ScatteringTheory(HoloPyObject):
             raise ValueError(msg)
         return point_or_flat
 
-    @classmethod
-    def _transform_to_desired_coordinates(cls, detector, origin, wavevec=1):
+    def _transform_to_desired_coordinates(self, detector, origin, wavevec=1):
         if hasattr(detector, 'theta') and hasattr(detector, 'phi'):
             original_coordinate_system = 'spherical'
             original_coordinate_values = [
@@ -275,7 +202,7 @@ class ScatteringTheory(HoloPyObject):
                 ]
         method = find_transformation_function(
             original_coordinate_system,
-            cls.desired_coordinate_system)
+            self.scattering_theory.desired_coordinate_system)
         return method(original_coordinate_values)
 
 
@@ -292,3 +219,7 @@ def select_scatterer_by_illumination(scatterer, illum):
                 pass
         select_parameters[key] = selected_val
     return scatterer.from_parameters(select_parameters)
+
+
+def get_wavevec_from(schema):
+    return 2 * np.pi / (schema.illum_wavelen / schema.medium_index)
