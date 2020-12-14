@@ -4,6 +4,18 @@
 HoloPy Release Notes
 ********************
 
+Current Development (Holopy 3.5)
+================================
+
+Developer Notes
+---------------
+- The :class:`.ScatteringTheory` now performs scattering calculations
+  only, as its single responsibility. This should make it easier to
+  implement new scattering theories. Code that was previously in
+  :class:`.ScatteringTheory` that calculated deterimed at which points
+  the scattering matrices or scattered fields needed to be calculated is
+  now in `holopy.scattering.imageformation`.
+
 
 Holopy 3.4
 ==========
