@@ -106,9 +106,9 @@ class Prior(HoloPyObject):
     def __rpow__(self, value):
         return TransformedPrior(operator.pow, [value, self])
 
-    def __array_ufunc__(self, ufunc, method, *args, **kwargs):
+    def __array_ufunc__(self, ufunc, method, *args, name=None, **kwargs):
         if method == "__call__" and len(kwargs) == 0:
-            return TransformedPrior(ufunc, args)
+            return TransformedPrior(ufunc, args, name)
         else:
             raise TypeError('Could not apply numpy ufunc to Prior object. '
                             'Use TransformedPrior.')
@@ -353,7 +353,10 @@ class TransformedPrior(Prior):
 
     @property
     def map_keys(self):
-        return enumerate(self.base_prior)
+        if len(self.base_prior) == 1:
+            return [('',) + self.base_prior]
+        else:
+            return enumerate(self.base_prior)
 
 
 class ComplexPrior(TransformedPrior):

@@ -7,6 +7,12 @@ HoloPy Release Notes
 Current Development (Holopy 3.5)
 ================================
 
+Improvements
+------------
+- Calling a numpy ufunc on a Prior object with name kwarg gives the resulting
+  TransformedPrior object that name, e.g. clip_x = np.min(x, name='clipped')
+- Cleaned up model parameter names created from TransformedPrior objects
+
 Developer Notes
 ---------------
 - The :class:`.ScatteringTheory` now performs scattering calculations
