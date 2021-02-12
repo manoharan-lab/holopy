@@ -12,6 +12,15 @@ Improvements
 - Calling a numpy ufunc on a Prior object with name kwarg gives the resulting
   TransformedPrior object that name, e.g. clip_x = np.min(x, name='clipped')
 - Cleaned up model parameter names created from TransformedPrior objects
+- CmaStrategy now scales first step size based on initial population, not prior
+
+Bugfixes
+--------
+- NmpfitStrategy now correctly accounts for non-uniform priors when optimizing
+
+Compatibility Notes
+--------------------
+- HoloPy now assumes dictionaries are ordered, so it requires python>=3.7.
 
 Developer Notes
 ---------------
