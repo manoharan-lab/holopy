@@ -49,7 +49,7 @@ def test_run_cma_returns_reproducible_answer():
 
     r = run_cma(simplefunc, pars, p0, weightfunc, tols, seed=1)
     found = r.logger.xrecent.mean()
-    correct = 2.876866703907526
+    correct = 2.871557
     assert_allclose(found, correct, rtol=1e-3)
 
 
@@ -57,7 +57,7 @@ def test_CmaStrategy():
     mod = SimpleModel()
     strat = CmaStrategy(seed=18, tols=tols, popsize=5)
     r = strat.fit(mod, data)
-    assert_allclose(np.mean(r._parameters), .55, atol=.001)
+    assert_allclose(np.mean(r._parameters), .522794, atol=.001)
 
 
 def test_default_popsize():
