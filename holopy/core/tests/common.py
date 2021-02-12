@@ -24,7 +24,6 @@ import inspect
 import yaml
 import shutil
 import pickle
-from collections import OrderedDict
 
 import xarray as xr
 import numpy as np
@@ -89,7 +88,7 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
         desired._indexes = actual._indexes
 
     # if None, let some things that are functially equivalent to None pass
-    nonelike = [None, OrderedDict()]
+    nonelike = [None, {}]
     if actual is None or desired is None:
         if actual in nonelike and desired in nonelike:
             return

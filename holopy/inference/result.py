@@ -21,7 +21,6 @@ Results of sampling
 .. moduleauthor:: Thomas G. Dimiduk <tom@dimiduk.net>
 """
 from copy import copy
-from collections import OrderedDict
 from warnings import warn
 
 import yaml

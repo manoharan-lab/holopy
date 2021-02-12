@@ -22,7 +22,6 @@ calc_intensity and calc_holo, based on subclass's calc_field
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 import unittest
-from collections import OrderedDict
 
 import numpy as np
 import xarray as xr
@@ -39,10 +38,10 @@ from holopy.core.tests.common import (
 class TestHologramCalculation(unittest.TestCase):
     @attr("medium")
     def test_calc_holo_with_twocolor_index(self):
-        indices = OrderedDict([('red',1.5),('green',2)])
+        indices = dict([('red',1.5),('green',2)])
         radius = 0.5
         center = (1, 1, 1)
-        illum_wavelen = OrderedDict([('red', 0.66), ('green', 0.52)])
+        illum_wavelen = dict([('red', 0.66), ('green', 0.52)])
 
         sphere_red = Sphere(n=indices['red'], r=radius, center=center)
         sphere_green = Sphere(n=indices['green'], r=radius, center=center)
@@ -105,11 +104,11 @@ def test_prep_schema():
 
     wl_f = 0.5
     wl_l = [0.5,0.6,0.7]
-    wl_d = OrderedDict([('red', 0.5), ('green', 0.6), ('blue', 0.7)])
+    wl_d = dict([('red', 0.5), ('green', 0.6), ('blue', 0.7)])
     wl_x = xr.DataArray([0.5,0.6,0.7],dims='illumination',coords={'illumination':['red','green','blue']})
 
     pol_f = (0,1)
-    pol_d = OrderedDict([('red', (0,1)), ('green', (1,0)), ('blue', (0.5,0.5))])
+    pol_d = dict([('red', (0,1)), ('green', (1,0)), ('blue', (0.5,0.5))])
 
     pol_x = xr.concat([to_vector((0,1)),to_vector((1,0)),to_vector((0.5,0.5))], wl_x.illumination)
 

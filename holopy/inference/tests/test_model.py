@@ -24,7 +24,6 @@ import warnings
 import yaml
 import numpy as np
 import xarray as xr
-from collections import OrderedDict
 
 from nose.plugins.attrib import attr
 from numpy.testing import assert_raises

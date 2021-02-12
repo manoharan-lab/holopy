@@ -23,7 +23,6 @@ Classes for defining metadata about experimental or calculated results.
 """
 
 from warnings import warn
-from collections import OrderedDict
 
 import yaml
 import numpy as np
@@ -59,9 +58,9 @@ def detector_grid(shape, spacing, normals=None, name=None, extra_dims=None):
         If array_like, \ *spacing*\ [0] between adjacent rows and
         \ *spacing*\ [1] between adjacent columns.
     name : string, optional
-    extra_dims : dict or OrderedDict, optional
+    extra_dims : dict, optional
         extra dimension(s) to add to the empty detector grid as
-        {dimname: [coords]}. Cast internally to an OrderedDict.
+        {dimname: [coords]}.
 
     Returns
     -------
@@ -81,7 +80,6 @@ def detector_grid(shape, spacing, normals=None, name=None, extra_dims=None):
         shape = list(shape)
 
     if extra_dims is not None:
-        extra_dims = OrderedDict(extra_dims)
         for val in extra_dims.values():
             shape.append(len(val))
     d = np.zeros(shape)
@@ -360,7 +358,7 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None,
         arr = np.expand_dims(arr, axis=0)
     coords = make_coords(arr.shape, spacing, z)
     if extra_dims is None:
-        extra_dims = OrderedDict()
+        extra_dims = {}
     else:
         coords.update(extra_dims)
     dims = ['z', 'x', 'y'] + list(extra_dims.keys())
@@ -427,7 +425,7 @@ def make_coords(shape, spacing, z=0):
         shape = np.repeat(shape, 2)
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
-    to_return = OrderedDict([
+    to_return = dict([
         ('z', ensure_array(z)),
         ('x', np.arange(shape[1]) * spacing[0]),
         ('y', np.arange(shape[2]) * spacing[1]),

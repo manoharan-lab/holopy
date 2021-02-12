@@ -22,7 +22,6 @@ Tests non-spherical T-matrix code calculations against Mie code
 .. moduleauthor:: Ron Alexander <ralex0@users.noreply.github.com>
 '''
 import unittest
-from collections import OrderedDict
 
 from numpy.testing import assert_raises, assert_allclose
 import numpy as np
@@ -45,7 +44,7 @@ SCHEMA = update_metadata(
     detector_grid(shape=20, spacing=0.1),
     illum_wavelen=.660, medium_index=1.33, illum_polarization=[1, 0])
 
-MISHCHENKO_PARAMS = OrderedDict((
+MISHCHENKO_PARAMS = dict((
     ('axi', 10.0),
     ('rat', 0.1),
     ('lam', 2 * np.pi),
