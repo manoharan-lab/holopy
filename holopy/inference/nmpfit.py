@@ -132,14 +132,16 @@ class NmpfitStrategy(HoloPyObject):
         if self.npixels is not None:
             data = make_subset_data(data, pixels=self.npixels, seed=self.seed)
         self._data = data
-        self._guess_lnprior = self._model.lnprior(self._model.initial_guess)
+        self._guess_lnpriors = np.array([par.lnprob(par.guess)
+                                        for par in self._parameters])
 
     def calc_residuals(self, par_vals):
         noise = self._model._find_noise(par_vals, self._data)
         data_residuals = self._model._residuals(par_vals, self._data, noise)
         data_residuals = data_residuals.flatten()
-        current_lnprior = self._model.lnprior(par_vals)
-        prior_residuals = np.sqrt(self._guess_lnprior - current_lnprior)
+        current_lnpriors = np.array([par.lnprob(val) for par, val in
+                                     zip(self._parameters, par_vals)])
+        prior_residuals = np.sqrt(self._guess_lnpriors - current_lnpriors)
         residuals = np.append(data_residuals, prior_residuals)
         return residuals
 
@@ -162,7 +164,7 @@ class NmpfitStrategy(HoloPyObject):
         del self._model
         del self._parameters
         del self._data
-        del self._guess_lnprior
+        del self._guess_lnpriors
 
     def minimize(self, parameters, obj_func):
         if not hasattr(self, "_parameters"):
