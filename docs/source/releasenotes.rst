@@ -18,6 +18,8 @@ Bugfixes
 --------
 - NmpfitStrategy now correctly accounts for non-uniform priors when optimizing
 - Functional fitting interface no longer lets alpha go to zero
+- More helpful errors when calling scattering functions (e.g. calc_holo) with
+  parameterized scatterers, which is unsupported as of HoloPy 3.4
 
 Compatibility Notes
 --------------------

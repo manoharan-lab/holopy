@@ -33,6 +33,7 @@ from holopy.core import detector_grid
 from holopy.core.tests.common import assert_obj_close
 from holopy.scattering.interface import *
 from holopy.scattering.errors import MissingParameter
+from holopy.inference import prior
 
 import xarray as xr
 
@@ -193,6 +194,13 @@ class TestInterpretTheory(unittest.TestCase):
         theory = interpret_theory(SCATTERER, theory=Mie)
         theory_ok = type(theory) == Mie
         self.assertTrue(theory_ok)
+
+
+class TestValidateScatterer(unittest.TestCase):
+    @attr('fast')
+    def test_ValueError_if_prior_in_scatterer(self):
+        scatterer = Sphere(r=prior.Uniform(0.5, 0.6), n=1.5, center=[5, 5, 5])
+        self.assertRaises(ValueError, calc_holo, LOCATIONS, scatterer)
 
 if __name__ == '__main__':
     unittest.main()
