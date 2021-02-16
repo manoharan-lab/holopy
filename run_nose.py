@@ -31,11 +31,11 @@ t.extend(['--process-timeout=120'])
 
 print((' '.join(t)))
 returncode = call(t)
-if returncode is not 0:
+if returncode != 0:
     sys.exit(returncode)
 
 doctest = ['sphinx-build', '-b', 'doctest', './docs/source', './docs/build']
 print((' '.join(doctest)))
 returncode = call(doctest)
-if returncode is not 0:
+if returncode != 0:
     sys.exit(returncode)
