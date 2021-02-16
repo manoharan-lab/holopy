@@ -52,7 +52,8 @@ guess for `z` with :func:`.propagate`.
 
 Finally, we can adjust the parameters of the sphere in order to get a good fit
 to the data. Here we adjust the center coordinates (x, y, z) of the sphere and
-its radius, but hold its refractive index fixed.
+its radius, but hold its refractive index fixed. By default :func:`.fit` will
+adjust all parameters, so we can omit the argument if that is what we want.
 
 ..  testcode::
 
@@ -156,7 +157,7 @@ observed hologram. This is best expressed as a Bayesian posterior distribution,
 which we can sample with a Markov Chain Monte Carlo (MCMC) algorithm. The
 approach and formalism used by HoloPy are described in more detail in
 [Dimiduk2016]_. For more information on Bayesian inference in general,
-see [Gregory2005]_.
+see [Gregory2010]_.
 
 A sampling calculation uses the same model and data as the fitting calculation
 in the preceding section, but we replace the function :func:`.fit` with
@@ -198,8 +199,8 @@ to be adjusted for your particular situation. For example, you may want to set
 a random seed, control parallel computations, customize an initial guess, or
 specify hyperparameters of the algorithm. To use non-default settings, you must
 define a *Strategy* object for the algorithm you would like to use. You can
-save the strategy to a file for use in future calculations or modify it in
-place during an interactive session. ::
+save the strategy to a file for use in future calculations or modify it during
+an interactive session. ::
 
     cma_fit_strategy = CmaStrategy(popsize=15, parallel=None)
     cma_fit_strategy.seed = 1234
@@ -216,7 +217,7 @@ Similarly, we can customize a MCMC computation to sample a posterior by calling
 :func:`.sample` with a :class:`.EmceeStrategy` object. Here we perform a
 MCMC calculation that uses only 500 pixels from the image and runs 50 walkers
 each for 2000 samples. We set the initial walker distribution to be one tenth
-of the prior width.  In general, the burn-in time for a MCMC calculation will
+of the prior width. In general, the burn-in time for a MCMC calculation will
 be reduced if you provide an initial guess position and width that is as close
 as possible to the eventual posterior distribution. You can use
 :meth:`.Model.generate_guess` to generate an initial sampling to pass in as an

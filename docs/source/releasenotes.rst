@@ -14,6 +14,10 @@ Improvements
 - Cleaned up model parameter names created from TransformedPrior objects
 - CmaStrategy now scales first step size based on initial population, not prior
 
+Documentation
+-------------
+- Updated inference tutorial
+
 Bugfixes
 --------
 - NmpfitStrategy now correctly accounts for non-uniform priors when optimizing

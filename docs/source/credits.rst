@@ -61,6 +61,10 @@ Bohren & Huffman. We generally follow their conventions except where noted.
 
 .. [Bohren1983] C\. F\. Bohren and D\. R\. Huffman, *Absorption and Scattering of Light by Small Particles*, Wiley (1983).
 
+For an introduction to Bayesian analysis of experimental data, we recommend
+
+.. [Gregory2010] P\. Gregory, *Bayesian Logical Data Analysis for the Physical Sciences*, Cambridge University Press (2010)
+
 The package includes code from several sources. We thank Daniel Mackowski for
 allowing us to include his T-Matrix code, which computes scattering from
 clusters of spheres: SCSMFO1B_.
