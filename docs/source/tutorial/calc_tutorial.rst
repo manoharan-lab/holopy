@@ -420,7 +420,7 @@ omit the ``detector`` argument entirely:
 ..  testoutput::
     :hide:
 
-    [1.93274 0.         1.93274 0.91620]
+    [ 1.93274 -0.       1.93274  0.9162 ]
 
 x_sec returns an array containing four elements. The first element is the
 scattering cross section, specified in terms of the same units as wavelength and
