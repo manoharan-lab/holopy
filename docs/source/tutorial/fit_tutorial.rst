@@ -149,6 +149,8 @@ tied parameters are described in the user guide on :ref:`scatterers_user`.
     Sphere(n = n1, r = 0.5, center = [9., 11., 21.])])
 
 
+.. _transformed_priors:
+
 Transforming Priors
 ~~~~~~~~~~~~~~~~~~~
 Sometimes you might want to apply mathematical operations to transform one
