@@ -18,6 +18,7 @@ in the tutorial on :ref:`load_tutorial`.
 ..  testcode::
 
     import holopy as hp
+    import numpy as np
     from holopy.core.io import get_example_data_path, load_average
     from holopy.core.process import bg_correct, subimage, normalize
     from holopy.scattering import Sphere, Spheres, calc_holo
@@ -146,6 +147,79 @@ tied parameters are described in the user guide on :ref:`scatterers_user`.
     sphere_cluster = Spheres([
     Sphere(n = n1, r = 0.5, center = [10., 10., 20.]),
     Sphere(n = n1, r = 0.5, center = [9., 11., 21.])])
+
+
+Transforming Priors
+~~~~~~~~~~~~~~~~~~~
+Sometimes you might want to apply mathematical operations to transform one
+prior into another, for example in the following use cases:
+
+* You want two parameters to vary together with values that are related but
+  unequal, such as the length and radius of a cylinder with known aspect ratio,
+  or the z-coordinates of two vertically stacked particles.
+
+* You want a parameter that is distrbuted according to some other distribution,
+  such as a cylinder axis evenly distributed in spherical coordinates or a
+  sphere with uniformly distributed volume (not radius).
+
+* You want to reparamaterize a problem to reduce covariances between fitting
+  parameters, such as finding the separation distance between two closely
+  interacting particles or to find the positions of particles confined to a
+  plane with a slight tilt as compared to the x-y plane.
+
+If you have an explicit transformation function you can use it to define a
+:class:`.TransformedPrior` object, for example to define a polar angle with
+the appropriate distribution we might do:
+
+..  testcode::
+
+    def uniform2polar(u):
+        # we want polar angle \theta distributed according to sin(\theta)
+        # Use inverse transform sampling, correct for \theta in [0, pi]
+        symmetric_polar = np.arcsin(u)
+        return symmetric_polar + np.pi/2
+    director = prior.Uniform(-1, 1, name='director')
+    polar_angle = prior.TransformedPrior(uniform2polar, director, name='polar')
+
+You can use :class:`.TransformedPrior` objects when defining a
+:class:`.Scatterer`scatterer just regular priors. They share some attributes
+with basic priors as well, such as the :meth:`.TransformedPrior.sample` method,
+but you cannot directly calculate probabilities or log-probabilities of a
+:class`.TransformedPrior` taking on a particular value.
+
+Besides explicitly defining them, you can also create
+:class:`.TransformedPrior` objects by using numpy ufuncs and built-in operators
+on priors:
+
+..  testcode::
+
+    sphere_area = prior.Uniform(1, 2, name='base_area')
+    diameter = np.sqrt(sphere_area / np.pi)
+    radius = diameter / 2
+    shell = radius + 0.1
+
+All of our derived objects are :class:`.TransformedPrior` objects, even though
+we didn't explicitly define them that way. If we use more than one of
+``sphere_area``, ``diameter``, ``radius``, or ``shell`` in a fitting or
+inference calculation, they will all be derived from a single parameter
+(``sphere_area`` in this case) even though they take on different values. Note
+that we could have expressed ``shell`` in one line if we didn't care about the
+intermediate values:
+
+..  testcode::
+
+    shell = np.sqrt(prior.Uniform(1, 2, name='base_area')) / 2 + 0.1
+    shell.name = 'shell'
+
+It's always a good idea to assign your priors names when working with
+:class:`.TransformedPrior` objects to keep track of their relationships.
+Parameter names will be generated if none are provided but they might not be
+very informative. To help with naming, you can even assign names to
+:class:`.TransformedPrior` objects when using numpy ufuncs!
+
+..  testcode::
+
+    diameter = np.sqrt(sphere_area / np.pi, name='diameter')
 
 
 Bayesian Parameter Estimation

@@ -322,13 +322,11 @@ class TransformedPrior(Prior):
         self.name = name
 
     def prob(self, p):
-        msg = "Cannot calculate probability. Use base priors {}.".format(
-            self.base_names)
+        msg = "Cannot calculate probability. Use base priors."
         raise NotImplementedError(msg)
 
     def lnprob(self, p):
-        msg = "Cannot calculate probability. Use base priors {}.".format(
-            self.base_names)
+        msg = "Cannot calculate probability. Use base priors."
         raise NotImplementedError(msg)
 
     def sample(self, size=None):
