@@ -17,6 +17,7 @@ Improvements
 Bugfixes
 --------
 - NmpfitStrategy now correctly accounts for non-uniform priors when optimizing
+- Functional fitting interface no longer lets alpha go to zero
 
 Compatibility Notes
 --------------------
