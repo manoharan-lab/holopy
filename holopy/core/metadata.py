@@ -407,7 +407,7 @@ def get_values(a):
 
 
 def default_norms(coords, n):
-    if n is 'auto':
+    if n == 'auto':
         if 'x' in coords:
             n = (0, 0, 1)
         elif 'theta' in coords:
