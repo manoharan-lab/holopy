@@ -48,6 +48,7 @@ class HoloPyCatchWarnings(Plugin):
     def beforeTest(self, test):
         warnings.simplefilter("error")
         warnings.simplefilter(action="ignore", category=PerformanceWarning)
+        warnings.simplefilter(action="ignore", category=FutureWarning)
 
 
 def assert_read_matches_write(original):
