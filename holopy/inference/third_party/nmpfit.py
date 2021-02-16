@@ -1479,7 +1479,7 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
         test = default
         if (type(default) == list): test=default[0]
         if (type(test) == int):
-            values = numpy.asarray(values, dtype=numpy.int)
+            values = numpy.asarray(values, dtype=int)
         elif (type(test) == float):
             values = numpy.asarray(values, dtype=float)
         return(values)
