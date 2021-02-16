@@ -185,7 +185,7 @@ You can use :class:`.TransformedPrior` objects when defining a
 :class:`.Scatterer` just like regular priors. They share some attributes with
 basic priors as well, such as the :meth:`.TransformedPrior.sample` method, but
 you cannot directly calculate probabilities or log-probabilities of a
-:class`.TransformedPrior` taking on a particular value.
+:class:`.TransformedPrior` taking on a particular value.
 
 Besides explicitly defining them, you can also create
 :class:`.TransformedPrior` objects by using numpy ufuncs and built-in operators
