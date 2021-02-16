@@ -182,9 +182,9 @@ the appropriate distribution we might do:
     polar_angle = prior.TransformedPrior(uniform2polar, director, name='polar')
 
 You can use :class:`.TransformedPrior` objects when defining a
-:class:`.Scatterer`scatterer just regular priors. They share some attributes
-with basic priors as well, such as the :meth:`.TransformedPrior.sample` method,
-but you cannot directly calculate probabilities or log-probabilities of a
+:class:`.Scatterer` just like regular priors. They share some attributes with
+basic priors as well, such as the :meth:`.TransformedPrior.sample` method, but
+you cannot directly calculate probabilities or log-probabilities of a
 :class`.TransformedPrior` taking on a particular value.
 
 Besides explicitly defining them, you can also create
