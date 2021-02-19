@@ -7,6 +7,11 @@ HoloPy Release Notes
 Current Development (Holopy 3.5)
 ================================
 
+New Features
+------------
+- New :class:`.AberratedMieLens` allows for calculating holograms of spheres
+  as imaged through a lens with spherical aberrations.
+
 Improvements
 ------------
 - Calling a numpy ufunc on a Prior object with name kwarg gives the resulting
@@ -76,7 +81,7 @@ Improvements
 - Expanded math operations of :class:`.Prior` objects, including numpy ufuncs.
 - Math operations on :class:`Prior` objects now use :class:`.TransformedPrior`
   to maintain ties when used in a :class:`.Model`.
- 
+
 
 Documentation
 -------------
