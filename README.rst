@@ -1,8 +1,9 @@
 Holography and Light Scattering in Python
 =========================================
 
-.. image:: https://travis-ci.org/manoharan-lab/holopy.png
-    :target: http://travis-ci.org/manoharan-lab/holopy
+.. image:: https://travis-ci.com/manoharan-lab/holopy.svg?branch=develop
+    :target: https://travis-ci.com/github/manoharan-lab/holopy
+    :alt: Development Branch Build Status
 
 .. image:: https://readthedocs.org/projects/holopy/badge/?version=latest
     :target: http://holopy.readthedocs.io/en/latest/?badge=latest
@@ -12,21 +13,21 @@ Holography and Light Scattering in Python
 tool for working with digital holograms and light scattering. HoloPy
 can:
 
-* `Load <http://holopy.readthedocs.io/en/latest/users/load_tutorial.html#loading-and-viewing-a-hologram>`_ images, associate them with experimental
-  `metadata <http://holopy.readthedocs.io/en/latest/users/load_tutorial.html#telling-holopy-about-your-experimental-setup>`_, and visualize loaded or calculated images.
+* `Load <http://holopy.readthedocs.io/en/latest/tutorial/load_tutorial.html#loading-and-viewing-a-hologram>`_ images, associate them with experimental
+  `metadata <http://holopy.readthedocs.io/en/latest/tutorial/load_tutorial.html#telling-holopy-about-your-experimental-setup>`_, and visualize loaded or calculated images.
 
-* `Reconstruct <http://holopy.readthedocs.io/en/latest/users/recon_tutorial.html>`_ 3D volumes from digital holograms
+* `Reconstruct <http://holopy.readthedocs.io/en/latest/tutorial/recon_tutorial.html>`_ 3D volumes from digital holograms
 
-* Do `Scattering Calculations <http://holopy.readthedocs.io/en/latest/users/calc_tutorial.html>`_
+* Do `Scattering Calculations <http://holopy.readthedocs.io/en/latest/tutorial/calc_tutorial.html>`_
 
   * **Compute** Holograms, electric fields, scattered intensity,
     cross sections, ...
 
   * **From** spheres, clusters of spheres, and arbitrary structures
-    (using `DDA <http://holopy.readthedocs.io/en/latest/users/dda_tutorial.html>`_)
+    (using `DDA <http://holopy.readthedocs.io/en/latest/tutorial/dda_tutorial.html>`_)
 
 * Make precise measurements by `fitting scattering models
-  <http://holopy.readthedocs.io/en/latest/users/fit_tutorial.html>`_ (based on the above structures) to experimental
+  <http://holopy.readthedocs.io/en/latest/tutorial/fit_tutorial.html>`_ (based on the above structures) to experimental
   data.
 
 HoloPy provides a powerful and user-friendly interface to scattering
@@ -35,7 +36,7 @@ objects that make it easy to describe and analyze data from complex
 experiments or simulations.
 
 The easiest way to see what HoloPy is all about is to jump to the
-examples in our `user guide <http://holopy.readthedocs.io/en/latest/users/index.html>`_.
+examples in our `user guide <http://holopy.readthedocs.io/en/latest/tutorial/index.html>`_.
 
 HoloPy started as a project in the `Manoharan Lab at Harvard
 University <http://manoharan.seas.harvard.edu/>`_. If you use HoloPy,

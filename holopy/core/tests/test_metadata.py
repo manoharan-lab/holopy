@@ -1,5 +1,4 @@
 import unittest
-from collections import OrderedDict
 
 import numpy as np
 from nose.plugins.attrib import attr
@@ -51,11 +50,11 @@ class TestDetectorGrid(unittest.TestCase):
         self.assertEqual(detector.name, name)
 
     @attr("fast")
-    def test_extra_dims_when_ordereddict(self):
+    def test_extra_dims_when_ordered_dict(self):
         shape = (2, 2)
         extra_dims_sizes = (1, 2, 3, 4, 5, 6, 7, 8)  # ends up as 1.3 MB
         extra_dims_names = 'abcdefgh'
-        extra_dims = OrderedDict()
+        extra_dims = {}
         for k, v in zip(extra_dims_names, extra_dims_sizes):
             extra_dims.update({k: np.arange(v)})
 

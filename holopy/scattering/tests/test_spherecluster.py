@@ -28,8 +28,8 @@ from holopy.core.tests.common import assert_obj_close
 from nose.plugins.attrib import attr
 from nose.tools import raises
 
-from ..scatterer import Sphere, Ellipsoid, Spheres, RigidCluster
-from ..errors import InvalidScatterer, OverlapWarning
+from holopy.scattering.scatterer import Sphere, Ellipsoid, Spheres, RigidCluster
+from holopy.scattering.errors import InvalidScatterer, OverlapWarning
 
 import warnings
 
@@ -81,11 +81,10 @@ def test_Spheres_parameters():
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
     sc = Spheres(scatterers = [s1, s2])
 
-    assert_equal(sc.parameters, dict([('0:center.0',
-    1e-6), ('0:center.1', -1e-6),
-    ('0:center.2', 1.0e-05), ('0:n', 1.59),  ('0:r',
-    5e-07), ('1:center.0', 0), ('1:center.1', 0),
-    ('1:center.2', 0), ('1:n', 1.59), ('1:r', 1e-06)]))
+    assert_equal(sc.parameters, dict([('0:center', [1e-6, -1e-6, 1.0e-05]),
+                                      ('0:n', 1.59), ('0:r', 5e-07),
+                                      ('1:center', [0, 0, 0]),
+                                      ('1:n', 1.59), ('1:r', 1e-06)]))
 
     sc2 = sc.from_parameters(sc.parameters)
 
@@ -149,6 +148,5 @@ def test_RigidCluster():
     trc = RigidCluster(base, rotation=(np.pi/4,np.pi/2,np.pi/2),translation=(1,2,3))
     assert_obj_close(trc.scatterers,trans.scatterers)
 
-    # test guess, parameters, from_parameters
-    assert_obj_close(trc.guess, trans)
+    # test parameters, from_parameters
     assert_obj_close(trc.from_parameters(trc.parameters), trans)

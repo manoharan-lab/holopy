@@ -25,19 +25,20 @@ from holopy.inference.emcee import EmceeStrategy
 from holopy.scattering import Sphere
 
 class SimpleModel(Model):
-    def __init__(self, npars=2):
-        self._parameters = [prior.Uniform(0, 1, name='x'),
-                            prior.Uniform(0, 1, name='y')][:npars]
+    def __init__(self, npars=2, noise_sd=1):
+        self._parameters = [prior.Uniform(0, 1),
+                            prior.Uniform(0, 1)][:npars]
+        self._parameter_names = ['x', 'y'][:npars]
         self.constraints = []
-        self.noise_sd = 1
+        self._maps = {'optics': {}}
 
     def _residuals(self, pars, data, noise):
         return self.lnposterior(pars, data, None)
 
-    def lnposterior(self, par_vals, data, dummy):
+    def _lnposterior(self, par_vals, data, dummy):
         x = par_vals
         data = np.array(data)
-        return -((x[self._parameters[-1].name] - data)**2).sum()
+        return -((x[-1] - data)**2).sum()
 
     def sample(self, data, strategy=None):
         strategy = self.validate_strategy(strategy, 'sample')

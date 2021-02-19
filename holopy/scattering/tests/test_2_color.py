@@ -22,7 +22,6 @@ calc_intensity and calc_holo, based on subclass's calc_field
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 import unittest
-from collections import OrderedDict
 
 import numpy as np
 import xarray as xr
@@ -31,7 +30,7 @@ from nose.plugins.attrib import attr
 from holopy.scattering import Sphere, Spheres, calc_holo
 from holopy.scattering.interface import prep_schema
 from holopy.core.metadata import detector_grid, update_metadata, to_vector
-from holopy.inference import prior
+from holopy.inference import prior, AlphaModel
 from holopy.core.tests.common import (
     assert_equal, assert_obj_close, assert_allclose)
 
@@ -39,10 +38,10 @@ from holopy.core.tests.common import (
 class TestHologramCalculation(unittest.TestCase):
     @attr("medium")
     def test_calc_holo_with_twocolor_index(self):
-        indices = OrderedDict([('red',1.5),('green',2)])
+        indices = dict([('red',1.5),('green',2)])
         radius = 0.5
         center = (1, 1, 1)
-        illum_wavelen = OrderedDict([('red', 0.66), ('green', 0.52)])
+        illum_wavelen = dict([('red', 0.66), ('green', 0.52)])
 
         sphere_red = Sphere(n=indices['red'], r=radius, center=center)
         sphere_green = Sphere(n=indices['green'], r=radius, center=center)
@@ -91,22 +90,12 @@ class TestHologramCalculation(unittest.TestCase):
             'red': prior.Uniform(1.5, 1.6),
             'green': prior.Uniform(1.5, 1.6)}
         scatterer = Sphere(r=0.5, n=index, center=(2,2,2))
-
         alpha = {'red': prior.Uniform(0.6, 1), 'green': prior.Uniform(0.6, 1)}
-        result = calc_holo(
-            detector, scatterer, scaling=alpha, illum_polarization=(0, 1),
-            illum_wavelen={'red': 0.66, 'green': 0.52}, medium_index=1.33)
+        model = AlphaModel(scatterer, alpha, illum_polarization=(0, 1),
+                           illum_wavelen={'red': 0.66, 'green': 0.52},
+                           medium_index=1.33)
+        result = model.forward(model.initial_guess, detector)
         assert result is not None
-
-
-@attr("fast")
-def test_select():
-    s = Sphere(n=xr.DataArray([1.5,1.7],dims='ill',coords={'ill':['r','g']}),center=[0,0,0],r=0.5)
-    assert_equal(s.select({'ill':'g'}),Sphere(n=1.7,center=[0,0,0],r=0.5))
-
-    ss = Spheres([s, s.translated([1,1,1])])
-    assert_equal(ss.select({'ill':'g'}),Spheres([Sphere(n=1.7,center=[0,0,0],r=0.5),Sphere(n=1.7,center=[1,1,1],r=0.5)]))
-
 
 @attr("medium")
 def test_prep_schema():
@@ -115,11 +104,11 @@ def test_prep_schema():
 
     wl_f = 0.5
     wl_l = [0.5,0.6,0.7]
-    wl_d = OrderedDict([('red', 0.5), ('green', 0.6), ('blue', 0.7)])
+    wl_d = dict([('red', 0.5), ('green', 0.6), ('blue', 0.7)])
     wl_x = xr.DataArray([0.5,0.6,0.7],dims='illumination',coords={'illumination':['red','green','blue']})
 
     pol_f = (0,1)
-    pol_d = OrderedDict([('red', (0,1)), ('green', (1,0)), ('blue', (0.5,0.5))])
+    pol_d = dict([('red', (0,1)), ('green', (1,0)), ('blue', (0.5,0.5))])
 
     pol_x = xr.concat([to_vector((0,1)),to_vector((1,0)),to_vector((0.5,0.5))], wl_x.illumination)
 

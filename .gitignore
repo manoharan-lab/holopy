@@ -5,6 +5,8 @@
 dist
 build
 docs/build
+docs/*.h5
+docs/source/reference
 holopy/propagation/tests/gold/full_data/*.yaml
 holopy/scattering/tests/gold/full_data/*.yaml
 holopy/scattering/theory/tmatrix_f/S
@@ -14,6 +16,7 @@ holopy/scattering/theory/tmatrix_f/S
 *.swp
 *.eggs
 .ipynb_checkpoints
+.vscode
 HoloPy.egg-info
 .DS_Store
 docs/.DS_Store

@@ -26,20 +26,25 @@ NORMALS_DEPRECATION_MESSAGE = (
     "`normals` are deprecated in holopy. Their old implementation was" +
     " incorrect and cannot really be corrected.")
 
+
 class LoadError(Exception):
     def __init__(self, filename, message):
         super().__init__("Error loading file %r: %s" % (filename, message))
 
+
 class BadImage(Exception):
     pass
+
 
 class NoMetadata(Exception):
     def __str__(self):
         return "File without metadata detected. To load raw images, use hp.load_image()"
 
+
 class CoordSysError(Exception):
     def __str__(self):
         return "Could not interpret your points. Use either Cartesian or spherical coordinates"
+
 
 class DependencyMissing(Exception):
     def __init__(self, dependency, message=""):
@@ -48,3 +53,7 @@ class DependencyMissing(Exception):
     def __str__(self):
         return "Calculation requires {} but it could not be found. {}".format(
                 self.dependency, self.message)
+
+
+class PerformanceWarning(UserWarning):
+    pass

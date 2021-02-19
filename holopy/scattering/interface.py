@@ -26,19 +26,21 @@ from warnings import warn
 
 import xarray as xr
 import numpy as np
+import yaml
 
 from holopy.core.holopy_object import SerializableMetaclass
 from holopy.core.metadata import (
     vector, illumination, update_metadata, to_vector, copy_metadata, from_flat,
     dict_to_array)
 from holopy.core.utils import dict_without, ensure_array
-from holopy.scattering.scatterer import (
-    Sphere, Spheres, Spheroid, Cylinder, _expand_parameters,
-    _interpret_parameters)
+from holopy.scattering.scatterer import Sphere, Spheres, Spheroid, Cylinder
 from holopy.scattering.errors import AutoTheoryFailed, MissingParameter
 from holopy.scattering.theory import Mie, Multisphere
+from holopy.scattering.imageformation import ImageFormation
 from holopy.scattering.theory import Tmatrix
 from holopy.scattering.theory.dda import DDA
+
+PRIOR_TYPES = ['Uniform', 'Gaussian', 'BoundedGaussian', 'TransformedPrior']
 
 
 def prep_schema(detector, medium_index, illum_wavelen, illum_polarization):
@@ -88,10 +90,21 @@ def prep_schema(detector, medium_index, illum_wavelen, illum_polarization):
 
 def interpret_theory(scatterer, theory='auto'):
     if isinstance(theory, str) and theory == 'auto':
-        theory = determine_default_theory_for(scatterer.guess)
+        theory = determine_default_theory_for(scatterer)
     if isinstance(theory, SerializableMetaclass):
         theory = theory()
     return theory
+
+
+def validate_scatterer(scatterer):
+    yaml_scatterer = yaml.dump(scatterer)
+    # need to make sure there are no priors, but they could be hidden in
+    # hierarchical data structures, so we check yaml serialization
+    for prior_type in PRIOR_TYPES:
+        if '!' + prior_type in yaml_scatterer:
+            msg = ('Scattering calculations require fixed values'
+                   ' but scatterer contains {} prior.'.format(prior_type))
+            raise ValueError(msg)
 
 
 def finalize(detector, result):
@@ -103,7 +116,7 @@ def finalize(detector, result):
 # Some comments on why `determine_default_theory_for` exists, rather than each
 # Scatterer class knowing what a good default theory is.
 # The problem is that the theories (Mie etc) import Sphere to see if
-# the theory can handle the scatterer, in the _can_handle method and
+# the theory can handle the scatterer, in the can_handle method and
 # others. Worse, since the DDA theory calls an external DDA library
 # with specially-defined DDA objects, the DDA theory has a switch statement
 # for basically every holopy scatterer. So right now the scatterers can't
@@ -121,7 +134,7 @@ def determine_default_theory_for(scatterer):
             theory = Mie()
     elif isinstance(scatterer, Spheroid) or isinstance(scatterer, Cylinder):
         theory = Tmatrix()
-    elif DDA()._can_handle(scatterer):
+    elif DDA().can_handle(scatterer):
         theory = DDA()
     else:
         raise AutoTheoryFailed(scatterer)
@@ -193,19 +206,12 @@ def calc_holo(detector, scatterer, medium_index=None, illum_wavelen=None,
         Calculated hologram from the given distribution of spheres
     """
     theory = interpret_theory(scatterer, theory)
+    validate_scatterer(scatterer)
     uschema = prep_schema(
         detector, medium_index, illum_wavelen, illum_polarization)
-
-    # Massage scaling into an xarray with color channels if needed
-    scaling = dict(_expand_parameters({'alpha': scaling}.items()))
-    for key in scaling.keys():
-        if hasattr(scaling[key], 'guess'):
-            scaling[key] = scaling[key].guess
-    scaling = _interpret_parameters(scaling)['alpha']
     scaling = dict_to_array(detector, scaling)
-
-    scattered_field = theory.calculate_scattered_field(
-        scatterer.guess, uschema)
+    imageformer = ImageFormation(theory)
+    scattered_field = imageformer.calculate_scattered_field(scatterer, uschema)
     reference_field = uschema.illum_polarization
     holo = scattered_field_to_hologram(
         scattered_field * scaling, reference_field)
@@ -240,8 +246,10 @@ def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None,
         cross sections, and <cos theta>
     """
     theory = interpret_theory(scatterer, theory)
-    cross_section = theory.calculate_cross_sections(
-        scatterer=scatterer.guess,
+    validate_scatterer(scatterer)
+    imageformer = ImageFormation(theory)
+    cross_section = imageformer.calculate_cross_sections(
+        scatterer=scatterer,
         medium_wavevec=2*np.pi/(illum_wavelen/medium_index),
         medium_index=medium_index,
         illum_polarization=to_vector(illum_polarization))
@@ -278,10 +286,12 @@ def calc_scat_matrix(detector, scatterer, medium_index=None, illum_wavelen=None,
 
     """
     theory = interpret_theory(scatterer, theory)
+    validate_scatterer(scatterer)
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=False)
-    result = theory.calculate_scattering_matrix(scatterer.guess, uschema)
+    imageformer = ImageFormation(theory)
+    result = imageformer.calculate_scattering_matrix(scatterer, uschema)
     return finalize(uschema, result)
 
 
@@ -315,10 +325,12 @@ def calc_field(detector, scatterer, medium_index=None, illum_wavelen=None,
         Calculated hologram from the given distribution of spheres
     """
     theory = interpret_theory(scatterer, theory)
+    validate_scatterer(scatterer)
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=illum_polarization)
-    result = theory.calculate_scattered_field(scatterer.guess, uschema)
+    imageformer = ImageFormation(theory)
+    result = imageformer.calculate_scattered_field(scatterer, uschema)
     return finalize(uschema, result)
 
 

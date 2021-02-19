@@ -31,6 +31,7 @@ application.
 
 .. [Fung2011] Fung, Jerome, K. Eric Martin, Rebecca W. Perry, David M. Kaz, Ryan McGorty, and Vinothan N. Manoharan. “Measuring Translational, Rotational, and Vibrational Dynamics in Colloids with Digital Holographic Microscopy.” Optics Express 19, no. 9 (April 25, 2011): 8051–65. doi:10.1364/OE.19.008051.
 
+.. [Leahy2020] Leahy, Brian, Ronald Alexander, Caroline Martin, Solomon Barkley, and Vinothan N. Manoharan. "Large depth-of-field tracking of colloidal spheres in holographic microscopy by modeling the objective lens." Optics Express 28, no. 2 (2020): 1061-1075. doi:10.1364/OE.382159
 
 Ovryn and Izen and Lee and coworkers were the first to develop methods to fit scattering models to digital holograms:
 
@@ -59,6 +60,10 @@ For scattering calculations and formalism, we draw heavily on the treatise of
 Bohren & Huffman. We generally follow their conventions except where noted.
 
 .. [Bohren1983] C\. F\. Bohren and D\. R\. Huffman, *Absorption and Scattering of Light by Small Particles*, Wiley (1983).
+
+For an introduction to Bayesian analysis of experimental data, we recommend
+
+.. [Gregory2010] P\. Gregory, *Bayesian Logical Data Analysis for the Physical Sciences*, Cambridge University Press (2010)
 
 The package includes code from several sources. We thank Daniel Mackowski for
 allowing us to include his T-Matrix code, which computes scattering from

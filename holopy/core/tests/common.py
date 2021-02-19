@@ -24,13 +24,14 @@ import inspect
 import yaml
 import shutil
 import pickle
-from collections import OrderedDict
 
 import xarray as xr
+import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 from nose.plugins import Plugin
 
 from holopy.core.io import load, save, get_example_data
+from holopy.core.errors import PerformanceWarning
 
 
 class HoloPyCatchWarnings(Plugin):
@@ -46,18 +47,21 @@ class HoloPyCatchWarnings(Plugin):
 
     def beforeTest(self, test):
         warnings.simplefilter("error")
+        warnings.simplefilter(action="ignore", category=PerformanceWarning)
+        warnings.simplefilter(action="ignore", category=FutureWarning)
 
 
-def assert_read_matches_write(o):
+def assert_read_matches_write(original):
     with tempfile.NamedTemporaryFile(suffix='.h5') as tempf:
-        save(tempf.name, o)
+        save(tempf.name, original)
         loaded = load(tempf.name)
-    # For now our code for writing xarrays to hdf5 ends up with them picking up
-    # a name attribute that their predecessor may not have, so correct for that
-    # if it is true.
-    if hasattr(loaded, 'name') and o.name is None:
+    # For now our code for writing xarrays to hdf5 ends up with them
+    # picking up a name attribute that their predecessor may not have,
+    # so correct for that if it is true.
+    if hasattr(loaded, 'name') and original.name is None:
         loaded.name = None
-    assert_obj_close(o, loaded)
+    assert_obj_close(original, loaded)
+
 
 def assert_pickle_roundtrip(o, cPickle_only=False):
     # TODO: Our pickling code currently works for cPickle but fails in
@@ -75,10 +79,8 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
     # it fails it probably gives more useful error messages than later options,
     # and catching NotImplementedError and TypeError should cause this to
     # silently fall through for other types
-    try:
+    if isinstance(actual, np.ndarray) and isinstance(desired, np.ndarray):
         assert_allclose(actual, desired, rtol = rtol, atol = atol, err_msg=context)
-    except (NotImplementedError, TypeError):
-        pass
 
     if (isinstance(desired, xr.DataArray) and isinstance(actual, xr.DataArray)
             and hasattr(actual, "_indexes")):
@@ -87,7 +89,7 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
         desired._indexes = actual._indexes
 
     # if None, let some things that are functially equivalent to None pass
-    nonelike = [None, OrderedDict()]
+    nonelike = [None, {}]
     if actual is None or desired is None:
         if actual in nonelike and desired in nonelike:
             return

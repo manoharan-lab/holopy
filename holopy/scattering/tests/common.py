@@ -21,13 +21,19 @@ from holopy.core import detector_grid, update_metadata
 from holopy.scattering.scatterer import Sphere
 
 wavelen = 658e-9
-ypolarization = [0., 1.0] # y-polarized
-xpolarization = [1.0, 0.] # x-polarized
+ypolarization = [0., 1.0]  # y-polarized
+xpolarization = [1.0, 0.]  # x-polarized
 pixel_scale = [.1151e-6, .1151e-6]
 index = 1.33
 
-xschema = update_metadata(detector_grid(shape = 128, spacing=pixel_scale), illum_wavelen=wavelen, medium_index=index, illum_polarization=xpolarization)
+xschema = update_metadata(detector_grid(shape=128, spacing=pixel_scale),
+                          illum_wavelen=wavelen, medium_index=index,
+                          illum_polarization=xpolarization)
 yschema = update_metadata(xschema, illum_polarization=ypolarization)
+
+xschema_lens = update_metadata(detector_grid(shape=32, spacing=pixel_scale),
+                               illum_wavelen=wavelen, medium_index=index,
+                               illum_polarization=xpolarization)
 
 scaling_alpha = .6
 radius = .85e-6
@@ -39,4 +45,4 @@ y = .576e-05
 z = 15e-6
 
 sphere = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius,
-                    center =(x, y, z))
+                center=(x, y, z))

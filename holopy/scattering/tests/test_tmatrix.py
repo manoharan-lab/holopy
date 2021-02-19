@@ -22,7 +22,6 @@ Tests non-spherical T-matrix code calculations against Mie code
 .. moduleauthor:: Ron Alexander <ralex0@users.noreply.github.com>
 '''
 import unittest
-from collections import OrderedDict
 
 from numpy.testing import assert_raises, assert_allclose
 import numpy as np
@@ -45,7 +44,7 @@ SCHEMA = update_metadata(
     detector_grid(shape=20, spacing=0.1),
     illum_wavelen=.660, medium_index=1.33, illum_polarization=[1, 0])
 
-MISHCHENKO_PARAMS = OrderedDict((
+MISHCHENKO_PARAMS = dict((
     ('axi', 10.0),
     ('rat', 0.1),
     ('lam', 2 * np.pi),
@@ -169,8 +168,8 @@ class TestTMatrix(unittest.TestCase):
         pos = np.array([10, 0, 0])[:,None]
         s = Sphere(n=1.59, r=0.9, center=(2, 2, 80))
 
-        s_mie = theory_mie._raw_scat_matrs(s, pos, 2*np.pi/.660, 1.33)
-        s_tmat = theory_tmat._raw_scat_matrs(s, pos, 2*np.pi/.660, 1.33)
+        s_mie = theory_mie.raw_scat_matrs(s, pos, 2*np.pi/.660, 1.33)
+        s_tmat = theory_tmat.raw_scat_matrs(s, pos, 2*np.pi/.660, 1.33)
         self.assertTrue(np.allclose(s_mie, s_tmat))
 
     @attr("fast")
@@ -182,8 +181,8 @@ class TestTMatrix(unittest.TestCase):
         s = Sphere(n=1.59, r=0.9, center=(2, 2, 80))
         pol = pd.Series([1, 0])
 
-        fields_mie = theory_mie._raw_fields(pos, s, 2*np.pi/.660, 1.33, pol)
-        fields_tmat = theory_tmat._raw_fields(pos, s, 2*np.pi/.660, 1.33, pol)
+        fields_mie = theory_mie.raw_fields(pos, s, 2*np.pi/.660, 1.33, pol)
+        fields_tmat = theory_tmat.raw_fields(pos, s, 2*np.pi/.660, 1.33, pol)
         self.assertTrue(np.allclose(fields_mie, fields_tmat))
 
 

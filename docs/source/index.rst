@@ -11,7 +11,7 @@ holograms and light scattering. HoloPy can be used to analyze holograms in two c
     * This approach requires no prior knowledge about the scatterer
 
 * Forward propagation of light from a :ref:`scattering calculation <calc_tutorial>` of a predetermined scatterer.
-    * Comparison to a measured hologram with :ref:`Bayesian inference <infer_tutorial>` allows precise measurement of scatterer properties and position.
+    * Comparison to a measured hologram with :ref:`Bayesian inference <fit_tutorial>` allows precise measurement of scatterer properties and position.
 
 HoloPy provides a powerful and user-friendly python interface to fast scattering
 and optical propagation theories implemented in Fortran and C code. It also provides a set of flexible
@@ -22,14 +22,15 @@ HoloPy started as a project in the `Manoharan Lab at Harvard
 University <http://manoharan.seas.harvard.edu/holopy>`_. If you use HoloPy,
 you may wish to cite one or more of the sources listed in
 :ref:`credits`. We also encourage you to sign up for our `User Mailing
-List <https://groups.google.com/d/forum/holopy-users>`_ or join us on `GitHub`
-<https://github.com/manoharan-lab/holopy> to keep up to date on releases, 
+List <https://groups.google.com/d/forum/holopy-users>`_ or join us on `GitHub
+<https://github.com/manoharan-lab/holopy>`_ to keep up to date on releases, 
 answer questions, and benefit from other users' questions.
 
 .. toctree::
    :maxdepth: 2
 
    releasenotes
+   tutorial/index
    users/index
    reference/holopy
    credits

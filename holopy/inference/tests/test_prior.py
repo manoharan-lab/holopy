@@ -18,18 +18,19 @@
 
 
 import unittest
-from collections import OrderedDict
 
 from scipy.stats import kstest
 from numpy.testing import assert_equal, assert_allclose
 import numpy as np
 from nose.plugins.attrib import attr
 
-from holopy.inference.prior import (Prior, Gaussian, Uniform, BoundedGaussian,
-    ComplexPrior, make_center_priors, updated, generate_guess)
+from holopy.inference.prior import (
+    Prior, Gaussian, Uniform, BoundedGaussian, ComplexPrior, TransformedPrior,
+    make_center_priors, updated, generate_guess)
 from holopy.inference.result import UncertainValue
 from holopy.core.metadata import data_grid
 from holopy.scattering.errors import ParameterSpecificationError
+from holopy.inference.tests.common import SimpleModel
 
 GOLD_SIGMA = -1.4189385332  # log(sqrt(0.5/pi))-1/2
 
@@ -39,11 +40,32 @@ class TestBasics(unittest.TestCase):
     def test_cannot_instantiate_baseclass(self):
         self.assertRaises(NotImplementedError, Prior)
 
+    @attr("fast")
+    def test_renamed_changes_name(self):
+        original = Uniform(0, 1, guess=0.7, name='old')
+        renamed = original.renamed('new')
+        self.assertEqual(renamed.name, 'new')
+
+    @attr("fast")
+    def test_renamed_changes_nothing_else(self):
+        original = Uniform(0, 1, guess=0.7, name='old')
+        renamed = original.renamed('new')
+        original.name = None
+        renamed.name = None
+        self.assertEqual(original, renamed)
+
+    @attr("fast")
+    def test_renamed_creates_new_object(self):
+        original = Uniform(0, 1, guess=0.7, name='old')
+        renamed = original.renamed('new')
+        self.assertEqual(original.name, 'old')
+        self.assertFalse(renamed == original)
+
 
 class TestUniform(unittest.TestCase):
     @attr("fast")
     def test_construction_when_relying_argument_order(self):
-        parameters = OrderedDict([
+        parameters = dict([
             ('lower_bound', 1),
             ('upper_bound', 3),
             ('guess', 2),
@@ -234,8 +256,9 @@ class TestBoundedGaussian(unittest.TestCase):
 
     @attr("fast")
     def test_sample(self):
-        n_samples = 10
+        n_samples = 1000
         bound = 0.1
+        np.random.seed(1502)
         bg = BoundedGaussian(0, 1, -bound, bound)
         samples = bg.sample(n_samples)
         self.assertTrue(np.all(samples > -bound) and np.all(samples < bound))
@@ -342,6 +365,97 @@ class TestComplexPrior(unittest.TestCase):
         self.assertTrue(np.all(samples.imag == imag))
 
 
+class TestTransformedPrior(unittest.TestCase):
+    @attr("fast")
+    def test_single_base_prior_becomes_tuple(self):
+        base_prior = Uniform(0, 2)
+        transformed = TransformedPrior(np.sqrt, base_prior)
+        self.assertEqual(transformed.base_prior, (base_prior,))
+
+    @attr('fast')
+    def test_transformation_must_be_function(self):
+        transform = Uniform(0, 2)
+        base_prior = Uniform(1, 3)
+        self.assertRaises(TypeError, TransformedPrior, transform, base_prior)
+
+    @attr('fast')
+    def test_sample_single_prior_once(self):
+        transformed = TransformedPrior(np.sqrt, Uniform(81, 100))
+        sample = transformed.sample()
+        self.assertTrue(9 < sample < 10)
+
+    @attr('fast')
+    def test_sample_single_prior_with_size(self):
+        transformed = TransformedPrior(np.sqrt, Uniform(81, 100))
+        sample = transformed.sample(100)
+        self.assertEqual(len(sample), 100)
+        self.assertTrue(isinstance(sample, np.ndarray))
+        self.assertTrue((9 < sample).all() and (sample < 10).all())
+        self.assertNotEqual(sample[0], sample[1])
+
+    @attr('fast')
+    def test_sample_multiple_priors_once(self):
+        base_prior = [Uniform(0, 1), Uniform(2, 3)]
+        transformed = TransformedPrior(np.maximum, base_prior)
+        sample = transformed.sample()
+        self.assertTrue(2 < sample < 3)
+
+    @attr('fast')
+    def test_sample_multiple_priors_with_size(self):
+        base_prior = [Uniform(0, 1), Uniform(2, 3)]
+        transformed = TransformedPrior(np.maximum, base_prior)
+        sample = transformed.sample(100)
+        self.assertEqual(len(sample), 100)
+        self.assertTrue(isinstance(sample, np.ndarray))
+        self.assertTrue((2 < sample).all() and (sample < 3).all())
+        self.assertNotEqual(sample[0], sample[1])
+
+    @attr("fast")
+    def test_guess_with_single_prior(self):
+        base_prior = Uniform(0, 10, guess=4)
+        transformed = TransformedPrior(np.sqrt, base_prior)
+        self.assertEqual(transformed.guess, 2)
+
+    @attr('fast')
+    def test_guess_with_multiple_priors(self):
+        base_priors = [Uniform(0, 10, guess=4), Uniform(0, 2, guess=1)]
+        transformed = TransformedPrior(np.maximum, base_priors)
+        self.assertEqual(transformed.guess, 4)
+
+    @attr('fast')
+    def test_hierarchical_transformed_prior(self):
+        base_prior = Uniform(10, 20, guess=16)
+        transform = TransformedPrior(np.sqrt, base_prior)
+        double = TransformedPrior(np.sqrt, transform)
+        samples = double.sample(100)
+        self.assertEqual(double.guess, 2)
+        self.assertTrue(all(samples < np.sqrt(np.sqrt(20))) and
+                        all(samples > np.sqrt(np.sqrt(10))))
+
+    @attr('fast')
+    def test_transformation_by_constant(self):
+        base_prior = [Uniform(0, 5, guess=3), 2]
+        transform = TransformedPrior(np.maximum, base_prior)
+        samples = transform.sample(100)
+        self.assertEqual(transform.guess, 3)
+        self.assertTrue(all(samples < 5))
+        self.assertTrue(all(samples >= 2))
+
+    @attr('fast')
+    def test_map_keys_indexing(self):
+        base_priors = [Uniform(0, 10, guess=4), Uniform(0, 2, guess=1)]
+        transformed = TransformedPrior(np.maximum, base_priors)
+        model = SimpleModel()
+        model._iterate_mapping('root', transformed.map_keys)
+        self.assertEqual(model._parameter_names[-2:], ['root0', 'root1'])
+
+    @attr('fast')
+    def test_map_keys_single_prior(self):
+        transformed = TransformedPrior(np.sqrt, Uniform(0, 2))
+        model = SimpleModel()
+        model._iterate_mapping('root', transformed.map_keys)
+        self.assertEqual(model._parameter_names[-1], 'root')
+
 def test_scale_factor():
     p1 = Gaussian(3, 1)
     assert_equal(p1.scale_factor, 3)
@@ -392,14 +506,6 @@ class TestPriorMath(unittest.TestCase):
             self.u * 0
 
     @attr("fast")
-    def test_name_is_preserved(self):
-        name = 'dummy_name'
-        u = Uniform(0, 1, name=name)
-        self.assertEqual((u + 1).name, name)
-        self.assertEqual((u * 2).name, name)
-        self.assertEqual((-u).name, name)
-
-    @attr("fast")
     def test_guess_is_adjusted(self):
         u = Uniform(0, 1, 1)
         self.assertEqual((u + 1).guess, 2)
@@ -407,78 +513,94 @@ class TestPriorMath(unittest.TestCase):
         self.assertEqual((-u).guess, -1)
 
     @attr("fast")
-    def test_uniform_addition(self):
-        self.assertEqual(self.u + 1, Uniform(2, 3))
-        self.assertEqual(1 + self.u, Uniform(2, 3))
-        self.assertEqual(-self.u, Uniform(-2, -1))
-        self.assertEqual(1 - self.u, Uniform(-1, 0))
-        self.assertEqual(self.u - 1, Uniform(0, 1))
+    def test_addition_identities(self):
+        self.assertEqual(1 + self.u, self.u + 1)
+        self.assertEqual(self.u - 1, self.u + (-1))
+
+    @attr('fast')
+    def test_addition_sampling(self):
+        self.assertTrue(2 < (1 + self.u).sample() < 3)
 
     @attr("fast")
-    def test_uniform_multiplication(self):
-        self.assertEqual(2 * self.u, Uniform(2, 4))
-        self.assertEqual(self.u * 2, Uniform(2, 4))
-        self.assertEqual(self.u / 2, Uniform(0.5, 1))
-        self.assertEqual(-1 * self.u, Uniform(-2, -1))
-        self.assertEqual(self.u * (-1), Uniform(-2, -1))
+    def test_multiplication_identities(self):
+        self.assertEqual(2 * self.u, self.u * 2)
+        self.assertEqual(self.u / 2, self.u * 0.5)
+        self.assertEqual(-1 * self.u, -self.u)
 
-    @attr("fast")
-    def test_gaussian_constant_addition(self):
-        self.assertEqual(self.g + 1., Gaussian(2, 2.))
-        self.assertEqual(-self.g, Gaussian(-1, 2))
+    @attr('fast')
+    def test_multiplication_sampling(self):
+        self.assertTrue(2 < (2 * self.u).sample() < 4)
 
-    @attr("fast")
-    def test_gaussian_multiplication(self):
-        self.assertEqual(2 * self.g, Gaussian(2, 4))
-        self.assertEqual(self.g * 2, Gaussian(2, 4))
-        self.assertEqual(self.g / 2, Gaussian(0.5, 1))
-        self.assertEqual(-1 * self.g, Gaussian(-1, 2))
-        self.assertEqual(self.g * (-1), Gaussian(-1, 2))
+    @attr('fast')
+    def test_rdiv(self):
+        uniform = Uniform(1, 4, guess=3)
+        reciprocal = 1 / uniform
+        samples = reciprocal.sample(100)
+        self.assertEqual(reciprocal.guess, 1/uniform.guess)
+        self.assertEqual(2 * reciprocal, 2/uniform)
+        self.assertTrue(all(samples < 1) and all(samples > 1/4))
 
-    @attr("fast")
-    def test_adding_2_gaussians(self):
-        self.assertEqual(self.g + self.g, Gaussian(2, np.sqrt(8)))
-        diff_name_sum = Gaussian(1, 2, 'a') + Gaussian(1, 2, 'b')
-        self.assertEqual(diff_name_sum.name, 'GaussianSum')
+    @attr('fast')
+    def test_add_two_priors(self):
+        composite = self.u + self.g
+        self.assertEqual(composite.guess, self.u.guess + self.g.guess)
 
-    @attr("fast")
-    def test_bounded_gaussian(self):
-        self.assertEqual(self.b + 1., BoundedGaussian(2., 2, 1., 4.))
-        self.assertEqual(-self.b, BoundedGaussian(-1, 2, -3, 0))
-        self.assertEqual(2 * self.b, BoundedGaussian(2, 4, 0, 6))
+    @attr('fast')
+    def test_multiply_two_priors(self):
+        composite = self.u * self.g
+        self.assertEqual(composite.guess, self.u.guess * self.g.guess)
 
-    @attr("fast")
-    def test_complex_prior(self):
-        self.assertEqual(self.c + 2 + 1j, ComplexPrior(self.u + 2, self.g + 1))
-        self.assertEqual(self.c + 2, ComplexPrior(self.u + 2, self.g))
-        self.assertEqual(self.c * 2, ComplexPrior(self.u * 2, self.g * 2))
-        self.assertEqual(-self.c, ComplexPrior(-self.u, -self.g))
-        cp = ComplexPrior(2, self.g)
-        self.assertEqual(self.c + cp, ComplexPrior(self.u+2, self.g + self.g))
+    @attr('fast')
+    def test_subtract_two_priors(self):
+        composite = self.u - self.g
+        self.assertEqual(composite.guess, self.u.guess - self.g.guess)
+
+    @attr('fast')
+    def test_divide_two_priors(self):
+        composite = self.u / self.g
+        self.assertEqual(composite.guess, self.u.guess / self.g.guess)
 
     @attr("fast")
     def test_prior_array_math(self):
-        expected_sum = np.array([Gaussian(1, 2), Gaussian(2, 2)])
-        expected_product = np.array([Gaussian(1, 2), Gaussian(2, 4)])
-        self.assertTrue(np.all(self.g + np.array([0, 1]) == expected_sum))
-        self.assertTrue(np.all(self.g * np.array([1, 2]) == expected_product))
+        sum_array = self.g + np.array([0, 1])
+        product_array = self.g * np.array([1, 2])
+        for arr in [sum_array, product_array]:
+            self.assertTrue(isinstance(arr, np.ndarray))
+            self.assertTrue(all([isinstance(p, Prior) for p in arr]))
 
     @attr("fast")
-    def test_invalid_math(self):
-        with self.assertRaises(TypeError):
-            self.u + self.u
-        with self.assertRaises(TypeError):
-            self.g + self.b
-        with self.assertRaises(TypeError):
-            self.g + [0, 1]
-        with self.assertRaises(TypeError):
-            self.c + self.u
-        with self.assertRaises(TypeError):
-            self.c + self.g
-        with self.assertRaises(TypeError):
-            self.c * (1 + 1j)
-        with self.assertRaises(TypeError):
-            self.g * self.g
+    def test_single_arg_numpy_ufunc(self):
+        base_prior = Uniform(2, 3)
+        transformed = TransformedPrior(np.sqrt, base_prior)
+        self.assertEqual(np.sqrt(base_prior), transformed)
+
+    @attr("fast")
+    def test_two_arg_numpy_ufunc_with_const(self):
+        base_prior = Uniform(2, 4)
+        transformed = TransformedPrior(np.maximum, [base_prior, 3])
+        self.assertEqual(np.maximum(base_prior, 3), transformed)
+
+    @attr("fast")
+    def test_two_arg_numpy_ufunc_with_both_priors(self):
+        prior_1 = Uniform(2, 4)
+        prior_2 = Uniform(1, 3)
+        transformed = TransformedPrior(np.maximum, [prior_1, prior_2])
+        self.assertEqual(np.maximum(prior_1, prior_2), transformed)
+
+    @attr("fast")
+    def test_numpy_ufunc_passes_through_name(self):
+        prior_1 = Uniform(2, 8, name='unused')
+        new_name = 'name_from_numpy'
+        transformed = np.sqrt(prior_1, name=new_name)
+        self.assertEqual(transformed.name, new_name)
+
+    @attr('fast')
+    def test_pow_rpow(self):
+        prior = Uniform(1, 4, guess=3)
+        power = prior ** 2
+        rpower = 2 ** prior
+        self.assertEqual(power.guess, 9)
+        self.assertEqual(rpower.guess, 8)
 
 
 def test_generate_guess():

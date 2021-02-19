@@ -23,6 +23,7 @@ Misc utility functions to make coding more convenient
 
 
 import os
+import io
 import sys
 import shutil
 import errno
@@ -43,22 +44,34 @@ from holopy.core.holopy_object import HoloPyObject
 
 # FIXME this is difficult to test, since it works on the file level
 # perhaps make this capture the output rather than writing it to devnull?
-class SuppressOutput(object):
-    STD_OUT = 1
+class SuppressOutput():
     def __init__(self, suppress_output=True):
         self.suppress_output = suppress_output
+        try:
+            self.std_out = sys.stdout.fileno()
+        except io.UnsupportedOperation:
+            self.stdout_behaves_normally = False  # ie running on travis
+            self.std_out = 1
+        else:
+            self.stdout_behaves_normally = True
+
+    def _redirect_stdout(self, destination_fileno):
+        if self.stdout_behaves_normally:
+            sys.stdout.close()
+        os.dup2(destination_fileno, self.std_out)
+        if self.stdout_behaves_normally:
+            sys.stdout = io.TextIOWrapper(os.fdopen(self.std_out, 'wb'))
 
     def __enter__(self):
         if self.suppress_output:
-            #store default (current) stdout
-            self.default_stdout = os.dup(self.STD_OUT)
+            # store default (current) stdout
+            self.default_stdout = os.dup(self.std_out)
             self.devnull = os.open(os.devnull, os.O_WRONLY)
-            os.dup2(self.devnull, self.STD_OUT)
-        return self
+            self._redirect_stdout(self.devnull)
 
     def __exit__(self, *args):
         if self.suppress_output:
-            os.dup2(self.default_stdout, self.STD_OUT)
+            self._redirect_stdout(self.default_stdout)
             os.close(self.devnull)
             os.close(self.default_stdout)
 
@@ -74,11 +87,12 @@ def ensure_array(x):
         x = np.array(x)
     if x.shape == ():
         # len() and indexing will fail. Need to expand to 1-D
-        if isinstance(x, xr.DataArray) and len(x.coords)>0:
+        if isinstance(x, xr.DataArray) and len(x.coords) > 0:
             x = x.expand_dims(list(x.coords))
         else:
             x = np.array([x])
     return x
+
 
 def ensure_listlike(x):
     if x is None:
@@ -89,8 +103,10 @@ def ensure_listlike(x):
     except TypeError:
         return [x]
 
+
 def ensure_scalar(x):
     return ensure_array(x).item()
+
 
 def mkdir_p(path):
     '''
@@ -101,9 +117,8 @@ def mkdir_p(path):
     try:
         os.makedirs(path)
     except OSError as exc:
-        if exc.errno == errno.EEXIST:
-            pass
-        else: raise # pragma: no cover
+        assert exc.errno == errno.EEXIST
+
 
 def dict_without(d, keys):
     """
@@ -129,6 +144,7 @@ def dict_without(d, keys):
             pass
     return d
 
+
 def updated(d, update={}, filter_none=True, **kwargs):
     """Return a dictionary updated with keys from update
 
@@ -145,22 +161,22 @@ def updated(d, update={}, filter_none=True, **kwargs):
     """
     d = copy(d)
     for key, val in itertools.chain(update.items(), kwargs.items()):
-        if val is not None or filter_none is False:
+        if val is not None or not filter_none:
             d[key] = val
     return d
 
-def repeat_sing_dims(indict, keys = 'all'):
+
+def repeat_sing_dims(indict, keys='all'):
     if keys == 'all':
         subdict = indict
     else:
-       subdict = {key: indict[key] for key in keys}
-
+        subdict = {key: indict[key] for key in keys}
     subdict = {key: ensure_array(val) for key, val in subdict.items()}
     maxlen = max([len(val) for val in subdict.values()])
-
-    subdict={key:np.repeat(val, maxlen) for key, val in subdict.items() if len(val)==1}
-
+    subdict = {key: np.repeat(val, maxlen)
+               for key, val in subdict.items() if len(val) == 1}
     return updated(indict, subdict)
+
 
 class LnpostWrapper(HoloPyObject):
     '''
@@ -170,20 +186,18 @@ class LnpostWrapper(HoloPyObject):
     calculations with python multiprocessing. This class solves both issues.
     '''
     def __init__(self, model, data, new_pixels=None, minus=False):
-        self.parameters = model._parameters
         self.data = data
         self.pixels = new_pixels
-        self.func = model.lnposterior
+        self.func = model._lnposterior
         self.prefactor = -1 if minus else 1
 
     def evaluate(self, par_vals):
-        pars_dict = {par.name:val for par, val in zip(self.parameters, par_vals)}
-        return self.prefactor * self.func(pars_dict, self.data, self.pixels)
+        return self.prefactor * self.func(par_vals, self.data, self.pixels)
 
 
 def choose_pool(parallel):
     """
-    This is a remake of schwimmbad.choose_pool with a single argument that has more options.
+    This is a remake of schwimmbad.choose_pool with a single argument.
     """
     # TODO: This function should be refactored as a factory class with methods
     #       to enable more thorough testing of imports, MPI behaviour, etc.
@@ -202,16 +216,16 @@ def choose_pool(parallel):
             "pass in parallel=None.")
     elif isinstance(parallel, int):
         pool = schwimmbad.MultiPool(parallel)
-    elif parallel is 'all':
+    elif parallel == 'all':
         threads = os.cpu_count()
         pool = choose_pool(threads)
-    elif parallel is 'mpi':
+    elif parallel == 'mpi':
         pool = schwimmbad.MPIPool()
         # need to kill all non-master instances of currently running script
         if not pool.is_master():
             pool.wait()
             sys.exit(0)
-    elif parallel is 'auto':
+    elif parallel == 'auto':
         # try mpi, otherwise go for multiprocessing
         if schwimmbad.MPIPool.enabled():
             pool = choose_pool('mpi')
@@ -223,8 +237,10 @@ def choose_pool(parallel):
                         "object with 'map' method.")
     return pool
 
+
 class NonePool():
     def map(self, function, arguments):
         return map(function, arguments)
+
     def close(self):
         pass

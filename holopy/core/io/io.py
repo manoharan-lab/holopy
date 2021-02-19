@@ -30,7 +30,6 @@ from PIL import Image as pilimage
 import xarray as xr
 import numpy as np
 import importlib
-from collections import OrderedDict
 
 from holopy.core.io import serialize
 from holopy.core.io.vis import display_image
@@ -83,7 +82,7 @@ def pack_attrs(a, do_spacing=False):
 
     for attr, val in a.attrs.items():
         if isinstance(val, xr.DataArray):
-            new_attrs[attr_coords][attr] = OrderedDict()
+            new_attrs[attr_coords][attr] = {}
             for dim in val.dims:
                 new_attrs[attr_coords][attr][str(dim)]=val[dim].values
             new_attrs[attr]=list(ensure_array(val.values))
@@ -100,11 +99,14 @@ def unpack_attrs(a):
     if len(a) == 0:
         return a
     new_attrs={}
-    attr_ref=yaml.load(a[attr_coords], Loader=FullLoader)
+    attr_ref = yaml.load(a[attr_coords], Loader=FullLoader)
     attrs_to_ignore = ['spacing', 'name', '_dummy_channel', '_image_scaling']
     for attr in dict_without(attr_ref, attrs_to_ignore):
         if attr_ref[attr]:
-            new_attrs[attr] = xr.DataArray(a[attr], coords=attr_ref[attr],dims=list(attr_ref[attr].keys()))
+            new_attrs[attr] = xr.DataArray(
+                a[attr],
+                coords=attr_ref[attr],
+                dims=list(attr_ref[attr].keys()))
         elif attr in a:
             try:
                 new_attrs[attr] = yaml.safe_load(a[attr])
@@ -148,13 +150,15 @@ def load(inf, lazy=False):
             if not lazy:
                 ds = ds.load()
 
-            #loaded dataset potential contains multiple DataArrays. We need
-            #to find out their names and loop through them to unpack metadata
+            # loaded dataset potential contains multiple DataArrays. We
+            # need to find out their names and loop through them to unpack
+            # metadata
             data_vars = list(ds.data_vars.keys())
             for var in data_vars:
                 ds[var].attrs = unpack_attrs(ds[var].attrs)
 
-            #return either a single DataArray or a DataSet containing multiple DataArrays.
+            # return either a single DataArray or a DataSet containing
+            # multiple DataArrays.
             if len(data_vars)==1:
                 return ds[data_vars[0]]
             else:
@@ -323,12 +327,12 @@ def save_image(filename, im, scaling='auto', depth=8):
 
     Parameters
     ----------
-    im : ndarray or :class:`holopy.image.Image`
-        image to save.
     filename : basestring
         filename in which to save image. If im is an image the
         function should default to the image's name field if no
         filename is specified
+    im : ndarray or :class:`holopy.image.Image`
+        image to save.
     scaling : 'auto', None, or (Int, Int)
         How the image should be scaled for saving. Ignored for float
         output. It defaults to auto, use the full range of the output
@@ -342,29 +346,80 @@ def save_image(filename, im, scaling='auto', depth=8):
 
     """
     im = display_image(im, scaling)
+    _save_im(filename, im, depth)
 
+
+def save_images(filenames, ims, scaling='auto', depth=8):
+    """
+    Saves a volume as separate images (think of reconstruction volumes).
+
+    Parameters
+    ----------
+    filenames : list
+        List of filenames. There have to be the same number of filenames as of
+        images to save. Each image will be saved in the corresponding file with
+        the same index.
+    ims : ndarray or :class:`holopy.image.Image`
+        Images to save, with separate z-coordinates from which they each will
+        be selected.
+    scaling : 'auto', None, or (Int, Int)
+        How the images should be scaled for saving. Ignored for float output.
+        It defaults to auto, use the full range of the output format. Other
+        options are None, meaning no scaling, or a pair of integers specifying
+        the values which should be set to the maximum and minimum values of the
+        image format.
+    depth : 8, 16 or 'float'
+        What type of image to save. Options other than 8bit may not be
+        supported for many image types. You probably don't want to save 8bit
+        images without some kind of scaling.
+    """
+    if len(ims) != len(filenames):
+        raise ValueError("Not enough filenames or images provided.")
+
+    for image_raw, filename in zip(ims, filenames):
+        image_displayed = display_image(image_raw, scaling)
+        _save_im(filename, image_displayed, depth)
+
+
+def _save_im(filename, im, depth=8):
+    """
+    Internal single-image-save-method to be used in save_images. Maybe it can
+    be merged with save_image.
+
+    Parameters
+    ----------
+    filename : basestring
+        Filename in which to save image. If im is an image the function should
+        default to the image's name field if no filename is specified
+    im : ndarray or :class:`holopy.image.Image`
+        Image to save.
+    depth : 8, 16 or 'float'
+        What type of image to save. Options other than 8bit may not be
+        supported for many image types. You probably don't want to save 8bit
+        images without some kind of scaling.
+    """
     # if we don't have an extension, default to tif
-    if os.path.splitext(filename)[1] is '':
-        filename += '.tif'
+    if os.path.splitext(filename)[1] == '': filename += '.tif'
 
-    metadat=False
+    metadat = False
     if os.path.splitext(filename)[1] in tiflist:
-        if im.name is None:
-            im.name=os.path.splitext(os.path.split(filename)[-1])[0]
-        metadat = pack_attrs(im, do_spacing = True)
+        if im.name == None:
+            im.name = os.path.splitext(os.path.split(filename)[-1])[0]
+        metadat = pack_attrs(im, do_spacing=True)
         # import ifd2 - hidden here since it doesn't play nice in some cases.
         from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
         tiffinfo = ifd2()
         # place metadata in the 'imagedescription' field of the tiff metadata
         tiffinfo[270] = yaml.dump(metadat, default_flow_style=True)
 
-    im = im.values[0]
+    im = im.values
+    if im.ndim > 2: im = im[0]
 
-    if depth is not 'float':
-        if depth is 8:
+    if depth != 'float':
+        if depth == 8:
             depth = 8
             typestr = 'uint8'
-        elif depth is 16 or depth is 32:
+        elif depth == 16 or depth == 32:
             depth = depth-1
             typestr = 'int' + str(depth)
         else:
@@ -390,18 +445,22 @@ def load_average(
     Parameters
     ----------
     filepath : string or list(string)
-        Directory or list of filenames or filepaths. If filename is a directory,
-        it will average all images matching image_glob.
+        Directory or list of filenames or filepaths. If filename is a
+        directory, it will average all images matching image_glob.
     refimg : xarray.DataArray
         reference image to provide spacing and metadata for the new image.
     spacing : float
-        Spacing between pixels in the images. Used preferentially over refimg value if both are provided.
+        Spacing between pixels in the images. Used preferentially over
+        refimg value if both are provided.
     medium_index : float
-        Refractive index of the medium in the images. Used preferentially over refimg value if both are provided.
+        Refractive index of the medium in the images. Used
+        preferentially over refimg value if both are provided.
     illum_wavelen : float
-        Wavelength of illumination in the images. Used preferentially over refimg value if both are provided.
+        Wavelength of illumination in the images. Used preferentially
+        over refimg value if both are provided.
     illum_polarization : list-like
-        Polarization of illumination in the images. Used preferentially over refimg value if both are provided.
+        Polarization of illumination in the images. Used preferentially
+        over refimg value if both are provided.
     image_glob : string
         Glob used to select images (if images is a directory)
 
@@ -409,7 +468,8 @@ def load_average(
     -------
     averaged_image : xarray.DataArray
         Image which is an average of images
-        noise_sd attribute contains average pixel stdev normalized by total image intensity
+        noise_sd attribute contains average pixel stdev normalized by
+        total image intensity
     """
     if normals is not None:
         raise ValueError(NORMALS_DEPRECATION_MESSAGE)
@@ -431,7 +491,9 @@ def load_average(
     # read colour channels from refimg
     channel_dict = {'0': 'red', '1': 'green', '2': 'blue'}
     if channel is None and refimg is not None and illumination in refimg.dims:
-        channel = [i for i, col in enumerate(['red','green','blue']) if col in refimg[illumination].values]
+        channel = [
+            i for i, col in enumerate(['red', 'green', 'blue'])
+            if col in refimg[illumination].values]
 
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
@@ -508,4 +570,3 @@ class Accumulator:
             return None
         else:
             return np.sqrt(self._running_var / (self._n))
-

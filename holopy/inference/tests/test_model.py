@@ -19,11 +19,11 @@
 
 import unittest
 import tempfile
+import warnings
 
 import yaml
 import numpy as np
 import xarray as xr
-from collections import OrderedDict
 
 from nose.plugins.attrib import attr
 from numpy.testing import assert_raises
@@ -31,15 +31,18 @@ from numpy.testing import assert_raises
 from holopy.core import detector_grid, update_metadata, holopy_object
 from holopy.core.tests.common import assert_equal, assert_obj_close
 from holopy.scattering import Sphere, Spheres, Mie, calc_holo
-from holopy.scattering.scatterer.scatterer import _interpret_parameters
 from holopy.scattering.errors import MissingParameter
 from holopy.core.tests.common import assert_read_matches_write
 from holopy.inference import (prior, AlphaModel, ExactModel,
                               NmpfitStrategy, EmceeStrategy,
                               available_fit_strategies,
                               available_sampling_strategies)
-from holopy.inference.model import Model, PerfectLensModel
+from holopy.inference.model import (Model, PerfectLensModel, transformed_prior,
+                                    make_xarray, read_map)
 from holopy.inference.tests.common import SimpleModel
+from holopy.scattering.tests.common import (
+    xschema_lens, sphere as SPHERE_IN_METERS)
+from holopy.fitting import fit_warning
 
 
 class TestModel(unittest.TestCase):
@@ -48,7 +51,6 @@ class TestModel(unittest.TestCase):
         'medium_index',
         'illum_wavelen',
         'illum_polarization',
-        'theory',
         ]
 
     @attr('fast')
@@ -56,20 +58,6 @@ class TestModel(unittest.TestCase):
         scatterer = make_sphere()
         model = Model(scatterer)
         self.assertTrue(model is not None)
-
-    @attr('fast')
-    def test_initializing_with_xarray_raises_error(self):
-        sphere = make_sphere()
-        for key in self.model_keywords:
-            value = xr.DataArray(
-                [1, 0.],
-                dims=['illumination'],
-                coords={'illumination': ['red', 'green']})
-            kwargs = {key: value}
-            error_regex = '{} cannot be an xarray'.format(key)
-            with self.subTest(key=key):
-                self.assertRaisesRegex(
-                    ValueError, error_regex, Model, sphere, **kwargs)
 
     @attr('fast')
     def test_yaml_round_trip_with_dict(self):
@@ -83,7 +71,6 @@ class TestModel(unittest.TestCase):
                 self.assertEqual(reloaded, model)
 
     @attr('fast')
-    @unittest.skip("There is a problem with saving yaml xarrays")
     def test_yaml_round_trip_with_xarray(self):
         sphere = make_sphere()
         for key in self.model_keywords:
@@ -97,61 +84,609 @@ class TestModel(unittest.TestCase):
                 reloaded = take_yaml_round_trip(model)
                 self.assertEqual(reloaded, model)
 
-class TestModelFittingMethods(unittest.TestCase):
     @attr('fast')
-    def test_default_fit_strategy_is_nmpfit(self):
-        model = Model(Sphere())
-        default_strategy = model.validate_strategy(None, 'fit')
-        self.assertEqual(NmpfitStrategy(), default_strategy)
+    def test_scatterer_is_parameterized(self):
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
+        model = AlphaModel(sphere)
+        self.assertEqual(model.scatterer, sphere)
 
     @attr('fast')
-    def test_default_sampling_strategy_is_emcee(self):
-        model = Model(Sphere())
-        default_strategy = model.validate_strategy(None, 'sample')
-        self.assertTrue(isinstance(default_strategy, EmceeStrategy))
+    def test_scatterers_maintain_attrs(self):
+        spheres = Spheres([Sphere(), Sphere()], warn=False)
+        model = AlphaModel(spheres)
+        self.assertEqual(model.scatterer.warn, False)
 
     @attr('fast')
-    def test_fit_strategy_names(self):
-        model = Model(Sphere())
-        for name, strategy in available_fit_strategies.items():
-            strategy_by_name = model.validate_strategy(name, 'fit')
-            self.assertEqual(strategy(), strategy_by_name)
+    def test_scatterer_from_parameters_dict(self):
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
+        model = AlphaModel(sphere)
+        pars = {'r': 0.8, 'n': 1.6}
+        expected = Sphere(n=1.6, r=0.8)
+        out_scatterer = model.scatterer_from_parameters(pars)
+        self.assertEqual(out_scatterer, expected)
 
     @attr('fast')
-    def test_sample_strategy_names(self):
-        model = Model(Sphere())
-        for name, strategy in available_sampling_strategies.items():
-            if strategy is not NotImplemented:
-                strategy_by_name = model.validate_strategy(name, 'sample')
-                self.assertEqual(strategy(), strategy_by_name)
+    def test_scatterer_from_parameters_list(self):
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
+        model = AlphaModel(sphere)
+        pars = [1.6, 0.8]
+        expected = Sphere(n=1.6, r=0.8)
+        self.assertEqual(model.scatterer_from_parameters(pars), expected)
 
     @attr('fast')
-    def test_parallel_tempering_not_implemented(self):
-        model = Model(Sphere())
-        self.assertRaises(ValueError, model.validate_strategy,
-                          'parallel tempering', 'sample')
+    def test_internal_scatterer_from_parameters_dict_fails(self):
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
+        model = AlphaModel(sphere)
+        pars = {'r': 0.8, 'n': 1.6}
+        self.assertRaises(KeyError, model._scatterer_from_parameters, pars)
 
-    @attr('medium')
-    def test_model_fit_method_identical_to_strategy_method(self):
+    @attr('fast')
+    def test_internal_scatterer_from_parameters_list(self):
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
+        model = AlphaModel(sphere)
+        pars = [1.6, 0.8]
+        expected = Sphere(n=1.6, r=0.8)
+        self.assertEqual(model._scatterer_from_parameters(pars), expected)
+
+    @attr('fast')
+    def test_initial_guess(self):
+        sphere = Sphere(n=prior.Uniform(1, 2),
+                        r=prior.Uniform(0, 1, guess=0.8))
+        model = AlphaModel(sphere)
+        self.assertEqual(model.initial_guess, {'n': 1.5, 'r': 0.8})
+
+    @attr('fast')
+    def test_yaml_preserves_parameter_names(self):
+        n = prior.ComplexPrior(prior.Uniform(1, 2), prior.Uniform(0, 0.1))
+        sphere = Sphere(n=n, r=prior.Uniform(0, 1.5, name='radius'),
+                        center=[1, 1, prior.Uniform(10, 20)])
+        alpha = {'r': 0.6, 'g': prior.Uniform(0.6, 1.0)}
+        model = AlphaModel(sphere, alpha=alpha)
+        pre_names = model._parameter_names
+        post_names = take_yaml_round_trip(model)._parameter_names
+        self.assertEqual(pre_names, post_names)
+
+    @attr('fast')
+    def test_yaml_preserves_parameter_ties(self):
+        tied = prior.Uniform(0, 1)
+        sphere = Sphere(n=tied, r=prior.Uniform(0.6, 1, name='radius'),
+                        center=[prior.Uniform(0.6, 1), tied, 10])
+        alpha = {'r': 0.6, 'g': prior.Uniform(0.8, 0.9)}
+        model = AlphaModel(sphere, alpha=alpha)
+        model.add_tie(['radius', 'center.0'])
+        post_model = take_yaml_round_trip(model)
+        self.assertEqual(model.parameters, post_model.parameters)
+
+    def test_yaml_preserves_parameter_names(self):
+        sphere = Sphere(r=prior.Uniform(0, 1), n=prior.Uniform(1, 2, name='a'))
+        model = AlphaModel(sphere)
+        model._parameter_names = ['b', 'c']
+        post_model = take_yaml_round_trip(model)
+        self.assertEqual(post_model._parameter_names, ['b', 'c'])
+        self.assertEqual(post_model._parameters[0].name, 'a')
+
+    @attr('fast')
+    def test_ensure_parameters_are_listlike(self):
+        sphere = Sphere(r=prior.Uniform(0, 1), n=prior.Uniform(1, 2))
+        model = AlphaModel(sphere, alpha=prior.Uniform(0.5, 1))
+        as_dict = {'alpha': 0.8, 'r': 1.2, 'n': 1.5}
+        as_list = [1.5, 1.2, 0.8]
+        self.assertEqual(model.ensure_parameters_are_listlike(as_dict), as_list)
+        self.assertEqual(model.ensure_parameters_are_listlike(as_list), as_list)
+
+
+class TestParameterMapping(unittest.TestCase):
+    @attr("fast")
+    def test_map_value(self):
         model = SimpleModel()
-        strategy = NmpfitStrategy(seed = 123)
-        data = np.array(.5)
-        strategy_result = strategy.fit(model, data)
-        strategy_result.time = None
-        model_result = model.fit(data, strategy)
-        model_result.time = None
-        self.assertEqual(strategy_result, model_result)
+        parameter = 14
+        parameter_map = model._convert_to_map(parameter)
+        expected = parameter
+        self.assertEqual(parameter_map, expected)
 
-    @attr('medium')
-    def test_model_sample_method_identical_to_strategy_method(self):
+    @attr("fast")
+    def test_map_prior(self):
         model = SimpleModel()
-        strategy = EmceeStrategy(nwalkers=6, nsamples=10, seed=123)
-        data = np.array(.5)
-        strategy_result = strategy.sample(model, data)
-        strategy_result.time = None
-        model_result = model.sample(data, strategy)
-        model_result.time = None
-        self.assertEqual(strategy_result, model_result)
+        parameter = prior.Uniform(0, 1)
+        position = len(model._parameters)
+        parameter_map = model._convert_to_map(parameter, 'new name')
+        expected = '_parameter_{}'.format(position)
+        self.assertEqual(parameter_map, expected)
+
+    @attr("fast")
+    def test_mapping_adds_to_model(self):
+        model = SimpleModel()
+        parameter = prior.Uniform(0, 1)
+        model._convert_to_map(parameter, 'new name')
+        self.assertEqual(model._parameters[-1], parameter)
+        self.assertEqual(model._parameter_names[-1], "new name")
+
+    @attr("fast")
+    def test_map_list(self):
+        model = SimpleModel()
+        parameter = [0, prior.Uniform(0, 1), prior.Uniform(2, 3)]
+        position = len(model._parameters)
+        parameter_map = model._convert_to_map(parameter)
+        expected = [0, "_parameter_{}".format(position),
+                    "_parameter_{}".format(position + 1)]
+        self.assertEqual(parameter_map, expected)
+
+    @attr("fast")
+    def test_list_compound_name(self):
+        model = SimpleModel()
+        parameter = [0, prior.Uniform(0, 1), prior.Uniform(2, 3)]
+        model._convert_to_map(parameter, 'prefix')
+        self.assertEqual(model._parameter_names[-2], 'prefix.1')
+        self.assertEqual(model._parameter_names[-1], 'prefix.2')
+
+    @attr("fast")
+    def test_map_dictionary(self):
+        model = SimpleModel()
+        parameter = {'a': 0, 'b': 1, 'c': prior.Uniform(0, 1)}
+        position = len(model._parameters)
+        parameter_map = model._convert_to_map(parameter)
+        expected_placeholder = "_parameter_{}".format(position)
+        expected = [dict, [[['a', 0], ['b', 1], ['c', expected_placeholder]]]]
+        self.assertEqual(parameter_map, expected)
+
+    @attr("fast")
+    def test_map_dictionary_ignores_none(self):
+        model = SimpleModel()
+        parameter = {'a': 0, 'b': 1, 'c': None}
+        parameter_map = model._convert_to_map(parameter)
+        expected = [dict, [[['a', 0], ['b', 1]]]]
+        self.assertEqual(parameter_map, expected)
+
+    @attr("fast")
+    def test_dict_compound_name(self):
+        model = SimpleModel()
+        parameter = {'a': 0, 'b': 1, 'c': prior.Uniform(0, 1)}
+        model._convert_to_map(parameter, 'prefix')
+        self.assertEqual(model._parameter_names[-1], 'prefix.c')
+
+    @attr("fast")
+    def test_map_xarray(self):
+        model = SimpleModel()
+        parameter = xr.DataArray(np.zeros((3, 3)),
+                                 coords=[[10, 20, 30], ['a', 'b', 'c']],
+                                 dims=('tens', 'letters'))
+        parameter_map = model._convert_to_map(parameter)
+        expected_1D = [make_xarray, ['letters', ['a', 'b', 'c'], [0, 0, 0]]]
+        expected = [make_xarray, ['tens', [10, 20, 30],
+                                  [expected_1D, expected_1D, expected_1D]]]
+        self.assertEqual(parameter_map, expected)
+
+    @attr("fast")
+    def test_xarray_compound_name(self):
+        model = SimpleModel()
+        parameter = xr.DataArray(np.zeros((3, 3)),
+                                 coords=[[10, 20, 30], ['a', 'b', 'c']],
+                                 dims=('tens', 'letters')).astype('object')
+        parameter[-1, -1] = prior.Uniform(0, 1)
+        model._convert_to_map(parameter, 'prefix')
+        self.assertEqual(model._parameter_names[-1], 'prefix.30.c')
+
+    @attr("fast")
+    def test_map_complex(self):
+        model = SimpleModel()
+        parameter = prior.ComplexPrior(1, prior.Uniform(2, 3))
+        position = len(model._parameters)
+        parameter_map = model._convert_to_map(parameter)
+        placeholder = "_parameter_{}".format(position)
+        expected = [transformed_prior, [complex, [1, placeholder]]]
+        self.assertEqual(parameter_map, expected)
+
+    @attr("fast")
+    def test_complex_compound_name(self):
+        model = SimpleModel()
+        parameter = prior.ComplexPrior(prior.Uniform(0, 1),
+                                       prior.Uniform(2, 3))
+        model._convert_to_map(parameter, 'prefix')
+        self.assertEqual(model._parameter_names[-2], 'prefix.real')
+        self.assertEqual(model._parameter_names[-1], 'prefix.imag')
+
+    @attr('fast')
+    def test_map_transformed_prior(self):
+        model = SimpleModel()
+        transformed = prior.TransformedPrior(np.sqrt, prior.Uniform(0, 2),
+                                             name='sqrt')
+        position = len(model._parameters)
+        parameter_map = model._convert_to_map(transformed)
+        placeholder = "_parameter_{}".format(position)
+        expected = [transformed_prior, [np.sqrt, [placeholder]]]
+        self.assertEqual(parameter_map, expected)
+
+    @attr('fast')
+    def test_map_transformed_prior_names(self):
+        model = SimpleModel()
+        base_prior = [prior.Uniform(0, 2, name='first'), prior.Uniform(1, 2)]
+        transformed = {'trans': prior.TransformedPrior(np.maximum, base_prior)}
+        parameter_map = model._convert_to_map(transformed)
+        self.assertEqual(model._parameter_names[-2:], ['first', 'trans.1'])
+
+    @attr('fast')
+    def test_named_transformed_prior(self):
+        model = SimpleModel()
+        base_prior = [prior.Uniform(0, 2, name='first'), prior.Uniform(1, 2)]
+        transform = prior.TransformedPrior(np.maximum, base_prior, name='real')
+        transform = {'fake': transform}
+        parameter_map = model._convert_to_map(transform)
+        self.assertEqual(model._parameter_names[-2:], ['first', 'real.1'])
+
+    @attr('fast')
+    def test_map_hierarchical_transformed_prior(self):
+        model = SimpleModel()
+        inner = prior.TransformedPrior(np.sqrt, prior.Uniform(0, 2))
+        full = prior.TransformedPrior(np.maximum, [inner, prior.Uniform(0, 1)])
+        position = len(model._parameters)
+        parameter_map = model._convert_to_map(full)
+        placeholder = ['_parameter_{}'.format(position + i) for i in range(2)]
+        submap = [transformed_prior, [np.sqrt, [placeholder[0]]]]
+        expected = [transformed_prior, [np.maximum, [submap, placeholder[1]]]]
+
+    @attr("fast")
+    def test_map_composite_object(self):
+        model = SimpleModel()
+        parameter = [prior.ComplexPrior(0, 1), {'a': 2, 'b': [4, 5]}, 6]
+        parameter_map = model._convert_to_map(parameter)
+        expected = [[transformed_prior, [complex, [0, 1]]],
+                    [dict, [[['a', 2], ['b', [4, 5]]]]], 6]
+        self.assertEqual(parameter_map, expected)
+
+    @attr("fast")
+    def test_read_func_map(self):
+        parameter_map = [dict, [[['a', 0], ['b', 1], ['c', 2]]]]
+        expected = {'a': 0, 'b': 1, 'c': 2}
+        self.assertEqual(read_map(parameter_map, []), expected)
+
+    @attr("fast")
+    def test_read_placeholder_map(self):
+        parameter_map = [0, 1, "_parameter_2"]
+        placeholders = [3, 4, 5]
+        expected = [0, 1, 5]
+        self.assertEqual(read_map(parameter_map, placeholders), expected)
+
+    @attr("fast")
+    def test_read_complex_map_values(self):
+        parameter_map = [transformed_prior, [complex, ['_parameter_0',
+                                                       '_parameter_1']]]
+        values = [0, 1]
+        self.assertEqual(read_map(parameter_map, values), complex(0, 1))
+
+    @attr("fast")
+    def test_read_complex_map_priors(self):
+        parameter_map = [transformed_prior, [complex, ['_parameter_0',
+                                                       '_parameter_1']]]
+        priors = [prior.Uniform(0, 1), prior.Uniform(1, 2)]
+        expected = prior.TransformedPrior(complex, [priors[0], priors[1]])
+        self.assertEqual(read_map(parameter_map, priors), expected)
+
+    @attr('fast')
+    def test_read_transformed_prior_map_values(self):
+        parameter_map = [transformed_prior, [np.sqrt, ['_parameter_0']]]
+        values = [4]
+        self.assertEqual(read_map(parameter_map, values), 2)
+
+    @attr('fast')
+    def test_read_transformed_prior_map_priors(self):
+        parameter_map = [transformed_prior, [np.sqrt, ['_parameter_0']]]
+        priors = [prior.Uniform(0, 1)]
+        expected = prior.TransformedPrior(np.sqrt, priors)
+        self.assertEqual(read_map(parameter_map, priors), expected)
+
+    @attr('fast')
+    def test_read_hierarchical_transformed(self):
+        inner_map = [transformed_prior, [np.sqrt, ['_parameter_0']]]
+        parameter_map = [transformed_prior, [np.maximum, ['_parameter_1',
+                                                          inner_map]]]
+        priors = [prior.Uniform(0, 1), prior.Uniform(1, 2)]
+        expected_base = [prior.Uniform(1, 2),
+                         prior.TransformedPrior(np.sqrt, prior.Uniform(0, 1))]
+        expected_full = prior.TransformedPrior(np.maximum, expected_base)
+        self.assertEqual(read_map(parameter_map, priors), expected_full)
+        values = [25, 7]
+        self.assertEqual(read_map(inner_map, values), 5)
+        self.assertEqual(read_map(parameter_map, values), 7)
+
+    @attr("fast")
+    def test_read_composite_map(self):
+        n_map = [dict, [[['red', [[transformed_prior, [complex, [1.5, "_parameter_2"]]],
+                                  [transformed_prior, [complex, [1.6, "_parameter_3"]]]]],
+                         ['green', [[transformed_prior, [complex, [1.7, "_parameter_4"]]],
+                                    [transformed_prior, [complex, [1.8, "_parameter_5"]]]]]]]]
+        parameter_map = [dict, [[['r', ["_parameter_0", "_parameter_1"]],
+                                 ['n', n_map],
+                                 ['center', [10, 20, "_parameter_6"]]]]]
+        placeholders = [0.5, 0.7, 0.01, 0.02, 0.03, 0.04, 30]
+        n_expected = {'red': [complex(1.5, 0.01), complex(1.6, 0.02)],
+                      'green': [complex(1.7, 0.03), complex(1.8, 0.04)]}
+        expected = {'r': [0.5, 0.7], 'n': n_expected, 'center': [10, 20, 30]}
+        self.assertEqual(read_map(parameter_map, placeholders), expected)
+
+    @attr("fast")
+    def test_make_xarray_1D(self):
+        values = [1, 2, 3, 4, 5]
+        coords = [10, 20, 30, 40, 50]
+        dims = 'dimname'
+        constructed = make_xarray(dims, coords, values)
+        expected = xr.DataArray(values, coords=[coords], dims=[dims])
+        xr.testing.assert_equal(constructed, expected)
+
+    @attr("fast")
+    def test_make_xarray_slices(self):
+        shared_coords = [['a', 'b', 'c'], [10, 20, 30]]
+        shared_dims = ['letters', 'tens']
+        slice1 = xr.DataArray(np.ones((3, 3)), shared_coords, shared_dims)
+        slice2 = xr.DataArray(np.zeros((3, 3)), shared_coords, shared_dims)
+        new_coords = ['ones', 'zeros']
+        join_dim = xr.DataArray(new_coords, dims=['new'], name='new')
+        constructed = make_xarray('new', new_coords, [slice1, slice2])
+        expected = xr.concat([slice1, slice2], dim=join_dim)
+        xr.testing.assert_equal(constructed, expected)
+
+
+class TestParameterTying(unittest.TestCase):
+    @attr('fast')
+    def test_parameters_list(self):
+        tied = prior.Uniform(0, 1)
+        scatterer = Sphere(n=tied, r=prior.Uniform(0.5, 1.5),
+                           center=[tied, 10, prior.Uniform(0, 10)])
+        model = AlphaModel(scatterer)
+        expected = [prior.Uniform(0, 1),
+                    prior.Uniform(0.5, 1.5),
+                    prior.Uniform(0, 10)]
+        self.assertEqual(model._parameters, expected)
+
+    @attr('fast')
+    def test_parameters_names(self):
+        tied = prior.Uniform(0, 1)
+        scatterer = Sphere(n=tied, r=prior.Uniform(0.5, 1.5),
+                           center=[tied, 10, prior.Uniform(0, 10)])
+        model = AlphaModel(scatterer)
+        expected = ['n', 'r', 'center.2']
+        self.assertEqual(model._parameter_names, expected)
+
+    @attr('fast')
+    def test_parameters_map(self):
+        tied = prior.Uniform(0, 1)
+        scatterer = Sphere(n=tied, r=prior.Uniform(0.5, 1.5),
+                           center=[tied, 10, prior.Uniform(0, 10)])
+        model = AlphaModel(scatterer)
+        expected = [dict, [[['n', '_parameter_0'], ['r', '_parameter_1'],
+                            ['center', ['_parameter_0', 10, '_parameter_2']]]]]
+        self.assertEqual(model._maps['scatterer'], expected)
+
+    @attr('fast')
+    def test_equal_not_identical_do_not_tie(self):
+        scatterer = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
+                           center=[10, 10, prior.Uniform(1, 2)])
+        model = AlphaModel(scatterer)
+        expected_priors = [prior.Uniform(1, 2),
+                           prior.Uniform(1, 2),
+                           prior.Uniform(1, 2)]
+        expected_names = ['n', 'r', 'center.2']
+        self.assertEqual(model._parameters, expected_priors)
+        self.assertEqual(model._parameter_names, expected_names)
+
+    @attr('fast')
+    def test_transformed_priors_are_tied(self):
+        base_prior = prior.Uniform(0, 2, name='x')
+        transformed = prior.TransformedPrior(np.sqrt, base_prior, name='y')
+        scatterer = Sphere(n=1.5, r=0.5, center=[base_prior, transformed,
+                                                 prior.Uniform(5, 10)])
+        model = AlphaModel(scatterer)
+        expected_priors = [base_prior, prior.Uniform(5, 10)]
+        expected_names = ['x', 'center.2']
+        self.assertEqual(model._parameters, expected_priors)
+        self.assertEqual(model._parameter_names, expected_names)
+
+    @attr('fast')
+    def test_tied_name(self):
+        tied = prior.Uniform(0, 1)
+        sphere1 = Sphere(n=prior.Uniform(1, 2), r=tied, center=[1, 1, 1])
+        sphere2 = Sphere(n=prior.Uniform(1, 2), r=tied, center=[1, 1, 1])
+        model = AlphaModel(Spheres([sphere1, sphere2]))
+        expected_names = ['0:n', 'r', '1:n']
+        self.assertEqual(model._parameter_names, expected_names)
+
+    @attr('fast')
+    def test_no_tied_name_if_not_shared_between_scatterers(self):
+        s0_r = prior.Gaussian(0.5, 0.1)
+        s1_r = prior.Gaussian(0.5, 0.1)
+        s0 = Sphere(r=s0_r, n=1.5, center=[0, 3, 4])
+        s1 = Sphere(r=s1_r, n=1.5, center=[s0_r + s1_r, 3, 4])
+        model = AlphaModel(Spheres([s0, s1]))
+        expected_names = ['0:r', '1:r']
+        self.assertEqual(model._parameter_names, expected_names)
+
+    @attr('fast')
+    def test_prior_name(self):
+        tied = prior.Uniform(-5, 5, name='xy')
+        sphere = Sphere(n=prior.Uniform(1, 2, name='index'), r=0.5,
+                        center=[tied, tied, prior.Uniform(0, 10, name='z')])
+        model = AlphaModel(sphere)
+        expected_names = ['index', tied.name, 'z']
+        self.assertEqual(model._parameter_names, expected_names)
+
+    @attr('fast')
+    def test_duplicate_name(self):
+        tied = prior.Uniform(-5, 5, name='dummy')
+        sphere = Sphere(n=prior.Uniform(1, 2, name='dummy'), r=0.5,
+                        center=[tied, tied, prior.Uniform(0, 10, name='z')])
+        model = AlphaModel(sphere)
+        expected = ['dummy', 'dummy_0', 'z']
+        self.assertEqual(model._parameter_names, expected)
+
+    @attr('fast')
+    def test_triplicate_name(self):
+        tied = prior.Uniform(-5, 5, name='dummy')
+        sphere = Sphere(n=prior.Uniform(1, 2, name='dummy'),
+                        r=prior.Uniform(1, 2, name='dummy'),
+                        center=[tied, tied, prior.Uniform(0, 10, name='z')])
+        model = AlphaModel(sphere)
+        expected = ['dummy', 'dummy_0', 'dummy_1', 'z']
+        self.assertEqual(model._parameter_names, expected)
+
+    @attr('fast')
+    def test_add_missing_tie_fails(self):
+        sphere = Sphere(n=prior.Uniform(1, 2), r=0.5, center=[10, 10, 10])
+        model = AlphaModel(sphere)
+        self.assertRaises(ValueError, model.add_tie, ['r', 'n'])
+
+    @attr('fast')
+    def test_add_unequal_tie_fails(self):
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1),
+                        center=[10, 10, 10])
+        model = AlphaModel(sphere)
+        self.assertRaises(ValueError, model.add_tie, ['r', 'n'])
+
+    @attr('fast')
+    def test_add_tie_updates_parameters(self):
+        tied = prior.Uniform(-5, 5)
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
+                        center=[tied, tied, 10])
+        model = AlphaModel(sphere)
+        model.add_tie(['r', 'n'])
+        expected = [prior.Uniform(1, 2), prior.Uniform(-5, 5)]
+        self.assertEqual(model._parameters, expected)
+
+    @attr('fast')
+    def test_add_tie_updates_parameter_names(self):
+        tied = prior.Uniform(-5, 5)
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
+                        center=[tied, tied, 10])
+        model = AlphaModel(sphere)
+        model.add_tie(['r', 'n'])
+        expected = ['n', 'center.0']
+        self.assertEqual(model._parameter_names, expected)
+
+    @attr('fast')
+    def test_add_tie_updates_map(self):
+        tied = prior.Uniform(-5, 5)
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
+                        center=[tied, tied, 10])
+        model = AlphaModel(sphere)
+        model.add_tie(['r', 'n'])
+        expected = [dict, [[['n', '_parameter_0'], ['r', '_parameter_0'],
+                            ['center', ['_parameter_1', '_parameter_1', 10]]]]]
+        self.assertEqual(model._maps['scatterer'], expected)
+
+    @attr('fast')
+    def test_add_tie_specify_name(self):
+        tied = prior.Uniform(-5, 5)
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
+                        center=[tied, tied, 10])
+        model = AlphaModel(sphere)
+        model.add_tie(['r', 'n'], new_name='dummy')
+        expected = ['dummy', 'center.0']
+        self.assertEqual(model._parameter_names, expected)
+
+    @attr('fast')
+    def test_add_3_way_tie(self):
+        tied = prior.Uniform(-5, 5)
+        n = prior.ComplexPrior(prior.Uniform(1, 2), prior.Uniform(0, 1))
+        sphere = Sphere(n=n, r=prior.Uniform(0.5, 1),
+                        center=[prior.Uniform(0, 1), prior.Uniform(0, 1),
+                                prior.Uniform(0, 10)])
+        model = AlphaModel(sphere)
+        model.add_tie(['center.0', 'n.imag', 'center.1'])
+        expected_map = [
+            dict,
+            [[['n', [transformed_prior, [complex, ['_parameter_0',
+                                                   '_parameter_1']]]],
+              ['r', '_parameter_2'],
+              ['center', ['_parameter_1', '_parameter_1', '_parameter_3']]]]]
+        expected_parameters = [prior.Uniform(1, 2), prior.Uniform(0, 1),
+                               prior.Uniform(0.5, 1), prior.Uniform(0, 10)]
+        expected_names = ['n.real', 'n.imag', 'r', 'center.2']
+        self.assertEqual(model._maps['scatterer'], expected_map)
+        self.assertEqual(model._parameters, expected_parameters)
+        self.assertEqual(model._parameter_names, expected_names)
+
+
+class TestFindOptics(unittest.TestCase):
+    @attr('fast')
+    def test_reads_noise_map(self):
+        noise = {'red': 0.5, 'green': prior.Uniform(0, 1)}
+        model = AlphaModel(Sphere(), noise_sd=noise)
+        found_noise = model._find_noise([0.7], None)
+        self.assertEqual(found_noise, {'red': 0.5, 'green': 0.7})
+
+    @attr('fast')
+    def test_noise_from_schema(self):
+        model = AlphaModel(Sphere(), noise_sd=None)
+        schema = detector_grid(2, 2)
+        schema.attrs['noise_sd'] = 0.5
+        found_noise = model._find_noise([], schema)
+        self.assertEqual(found_noise, 0.5)
+
+    @attr('fast')
+    def test_model_noise_takes_precedence(self):
+        model = AlphaModel(Sphere(), noise_sd=0.8)
+        schema = detector_grid(2, 2)
+        schema.attrs['noise_sd'] = 0.5
+        found_noise = model._find_noise([], schema)
+        self.assertEqual(found_noise, 0.8)
+
+    @attr('fast')
+    def test_no_noise_if_all_uniform(self):
+        sphere = Sphere(r=prior.Uniform(0, 1), n=prior.Uniform(1, 2))
+        model = AlphaModel(sphere)
+        schema = detector_grid(2, 2)
+        found_noise = model._find_noise([0.5, 0.5], schema)
+        self.assertEqual(found_noise, 1)
+
+    @attr('fast')
+    def test_require_noise_if_nonuniform(self):
+        sphere = Sphere(r=prior.Gaussian(0, 1), n=prior.Uniform(1, 2))
+        model = AlphaModel(sphere)
+        schema = detector_grid(2, 2)
+        pars = [0.5, 0.5]
+        self.assertRaises(MissingParameter, model._find_noise, pars, schema)
+
+    @attr('fast')
+    def test_reads_optics_from_map(self):
+        med_n = prior.ComplexPrior(1.5, prior.Uniform(0, 0.1))
+        wl = {'red': 0.5, 'green': prior.Uniform(0, 1)}
+        pol = [1, prior.Uniform(0.5, 1.5)]
+        model = AlphaModel(Sphere(), medium_index=med_n,
+                           illum_wavelen=wl, illum_polarization=pol)
+        pars = [0.01, 0.6, 1]
+        found_optics = model._find_optics(pars, None)
+        expected = {'medium_index': complex(1.5, 0.01),
+                    'illum_wavelen': {'red': 0.5, 'green': 0.6},
+                    'illum_polarization': [1, 1]}
+        self.assertEqual(found_optics, expected)
+
+    @attr('fast')
+    def test_optics_from_schema(self):
+        model = AlphaModel(Sphere(), medium_index=prior.Uniform(1, 2))
+        schema = detector_grid(2, 2)
+        schema.attrs['illum_wavelen'] = 0.6
+        schema.attrs['illum_polarization'] = [1, 0]
+        found_optics = model._find_optics([1.5], schema)
+        expected = {'medium_index': 1.5, 'illum_wavelen': 0.6,
+                    'illum_polarization': [1, 0]}
+        self.assertEqual(found_optics, expected)
+
+    @attr('fast')
+    def test_model_optics_take_precedence(self):
+        model = AlphaModel(Sphere(), medium_index=1.5, illum_wavelen=0.8)
+        schema = detector_grid(2, 2)
+        schema.attrs['illum_wavelen'] = 0.6
+        schema.attrs['illum_polarization'] = [1, 0]
+        found_optics = model._find_optics([], schema)
+        expected = {'medium_index': 1.5, 'illum_wavelen': 0.8,
+                    'illum_polarization': [1, 0]}
+        self.assertEqual(found_optics, expected)
+
+    @attr('fast')
+    def test_missing_optics(self):
+        model = AlphaModel(Sphere(), medium_index=1.5, illum_wavelen=0.8)
+        schema = detector_grid(2, 2)
+        schema.attrs['illum_wavelen'] = 0.6
+        self.assertRaises(MissingParameter, model._find_optics, [], schema)
+
 
 class TestAlphaModel(unittest.TestCase):
     @attr('fast')
@@ -160,19 +695,7 @@ class TestAlphaModel(unittest.TestCase):
         model = AlphaModel(scatterer, alpha=0.6)
         self.assertTrue(model is not None)
 
-    @attr('fast')
-    def test_initializing_with_xarray_alpha_raises_error(self):
-        sphere = make_sphere()
-        alpha_xarray = xr.DataArray(
-            [1, 0.5],
-            dims=['illumination'],
-            coords={'illumination': ['red', 'green']})
-        error_regex = 'alpha cannot be an xarray'
-        self.assertRaisesRegex(
-            ValueError, error_regex, AlphaModel, sphere, alpha=alpha_xarray)
-
     @attr("fast")
-    @unittest.skip("There is a problem with saving yaml xarrays")
     def test_yaml_round_trip_with_xarray(self):
         alpha_xarray = xr.DataArray(
             [1, 0.5],
@@ -180,17 +703,14 @@ class TestAlphaModel(unittest.TestCase):
             coords={'illumination': ['red', 'green']})
         sphere = make_sphere()
         model = AlphaModel(sphere, alpha=alpha_xarray)
-
         reloaded = take_yaml_round_trip(model)
         self.assertEqual(reloaded, model)
-
 
     @attr("fast")
     def test_yaml_round_trip_with_dict(self):
         alpha_dict = {'red': 1, 'green': 0.5}
         sphere = make_sphere()
         model = AlphaModel(sphere, alpha=alpha_dict)
-
         reloaded = take_yaml_round_trip(model)
         self.assertEqual(reloaded, model)
 
@@ -203,21 +723,40 @@ class TestPerfectLensModel(unittest.TestCase):
         self.assertTrue(model is not None)
 
     @attr('fast')
-    def test_initializing_with_xarray_lens_angle_raises_error(self):
-        sphere = make_sphere()
-        lens_angle_xarray = xr.DataArray(
-            [0.6, 0.6],
-            dims=['illumination'],
-            coords={'illumination': ['red', 'green']})
-        error_regex = 'lens_angle cannot be an xarray'
-        self.assertRaisesRegex(
-            ValueError, error_regex, PerfectLensModel, sphere,
-            lens_angle=lens_angle_xarray)
+    def test_accepts_lens_angle_as_prior(self):
+        scatterer = make_sphere()
+        lens_angle = prior.Uniform(0, 1.0)
+        model = PerfectLensModel(scatterer, lens_angle=lens_angle)
+        self.assertIsInstance(model.lens_angle, prior.Prior)
+
+    @attr('fast')
+    def test_accepts_alpha_as_prior(self):
+        scatterer = make_sphere()
+        lens_angle = prior.Uniform(0, 1.0)
+        alpha = prior.Uniform(0, 1.0)
+        model = PerfectLensModel(scatterer, alpha=alpha, lens_angle=lens_angle)
+        self.assertIsInstance(model.alpha, prior.Prior)
+
+    @attr('fast')
+    def test_forward_uses_alpha(self):
+        model = PerfectLensModel(
+            SPHERE_IN_METERS,
+            alpha=prior.Uniform(0, 1.0),
+            lens_angle=prior.Uniform(0, 1.0))
+        pars_common = {
+            'lens_angle': 0.3,
+            'n': 1.5,
+            'r': 0.5e-6,
+            }
+        pars_alpha0 = pars_common.copy()
+        pars_alpha0.update({'alpha': 0})
+        alpha0 = model.forward(pars_alpha0, xschema_lens)
+        self.assertLess(alpha0.values.std(), 1e-6)
 
 
 def make_sphere():
-    index = prior.Uniform(1.4, 1.6)
-    radius = prior.Uniform(0.2, 0.8)
+    index = prior.Uniform(1.4, 1.6, name='n')
+    radius = prior.Uniform(0.2, 0.8, name='r')
     return Sphere(n=index, r=radius)
 
 
@@ -238,84 +777,6 @@ def take_yaml_round_trip(model):
     object_string = yaml.dump(model)
     loaded = yaml.load(object_string, Loader=holopy_object.FullLoader)
     return loaded
-
-
-@attr('fast')
-def test_ComplexPrior():
-    parm = Sphere(n=prior.ComplexPrior(real=prior.Uniform(1.58,1.59), imag=.001))
-    model = AlphaModel(parm, alpha=prior.Uniform(.6, 1, .7))
-    assert_equal(model.parameters['n.real'].name, 'n.real')
-    interpreted_pars = {'alpha':.7, 'n':{'real':1.585}}
-    assert_equal(_interpret_parameters(model.parameters), interpreted_pars)
-
-
-@attr('fast')
-def test_multidim():
-    par_s = Sphere(
-        n={'r': prior.Uniform(-1,1), 'g': 0, 'b': prior.Gaussian(0,1),'a':0},
-        r=xr.DataArray(
-            [prior.Gaussian(0,1), prior.Uniform(-1,1), 0, 0],
-            dims='alph', coords={'alph': ['a', 'b', 'c', 'd']}),
-            center=[prior.Uniform(-1, 1), 0, 0])
-    params = {'n:r': 3, 'n:g': 4, 'n:b': 5, 'n:a': 6, 'r:a': 7, 'r:b': 8,
-              'r:c': 9, 'r:d': 10, 'center.0': 7, 'center.1': 8,
-              'center.2': 9}
-    out_s = Sphere(
-        n={'r':3, 'g':0, 'b':5, 'a':0},
-        r={'a':7, 'b':8, 'c':0, 'd':0}, center=[7, 0, 0])
-    assert_obj_close(par_s.from_parameters(params), out_s)
-
-    m = ExactModel(out_s, np.sum)
-    parletters = {'r':prior.Uniform(-1,1),'g':0,'b':prior.Gaussian(0,1),'a':0}
-    parcount = xr.DataArray([prior.Gaussian(0,1),prior.Uniform(-1,1),0,0],dims='numbers',coords={'numbers':['one', 'two', 'three', 'four']})
-
-    m._use_parameters({'letters':parletters, 'count':parcount})
-    expected_params = {'letters:r':prior.Uniform(-1,1, 0, 'letters:r'),'letters:b':prior.Gaussian(0,1,'letters:b'),'count:one':prior.Gaussian(0,1, 'count:one'),'count:two':prior.Uniform(-1,1, 0,'count:two')}
-    assert_equal(m.parameters, expected_params)
-
-
-@attr('fast')
-def test_pullingoutguess():
-    g = Sphere(center = (prior.Uniform(0, 1e-5, guess=.567e-5),
-                   prior.Uniform(0, 1e-5, .567e-5), prior.Uniform(1e-5, 2e-5, 15e-6)),
-         r = prior.Uniform(1e-8, 1e-5, 8.5e-7), n = prior.ComplexPrior(prior.Uniform(1, 2, 1.59),1e-4))
-
-    model = ExactModel(g, calc_holo)
-
-    s = Sphere(center = [.567e-5, .567e-5, 15e-6], n = 1.59 + 1e-4j, r = 8.5e-7)
-
-    assert_equal(s.n, model.scatterer.guess.n)
-    assert_equal(s.r, model.scatterer.guess.r)
-    assert_equal(s.center, model.scatterer.guess.center)
-
-    g = Sphere(center = (prior.Uniform(0, 1e-5, guess=.567e-5),
-                   prior.Uniform(0, 1e-5, .567e-5), prior.Uniform(1e-5, 2e-5, 15e-6)),
-         r = prior.Uniform(1e-8, 1e-5, 8.5e-7), n = 1.59 + 1e-4j)
-
-    model = ExactModel(g, calc_holo)
-
-    s = Sphere(center = [.567e-5, .567e-5, 15e-6], n = 1.59 + 1e-4j, r = 8.5e-7)
-
-    assert_equal(s.n, model.scatterer.guess.n)
-    assert_equal(s.r, model.scatterer.guess.r)
-    assert_equal(s.center, model.scatterer.guess.center)
-
-
-@attr('fast')
-def test_find_noise():
-    noise=0.5
-    s = Sphere(n=prior.Uniform(1.5, 1.7), r=2, center=[1,2,3])
-    data_base = detector_grid(10, spacing=0.5)
-    data_noise = update_metadata(data_base, noise_sd=noise)
-    model_u = AlphaModel(s, alpha=prior.Uniform(0.7,0.9))
-    model_g = AlphaModel(s, alpha=prior.Gaussian(0.8, 0.1))
-    pars = {'n':1.6, 'alpha':0.8}
-    assert_equal(model_u._find_noise(pars, data_noise), noise)
-    assert_equal(model_g._find_noise(pars, data_noise), noise)
-    assert_equal(model_u._find_noise(pars, data_base), 1)
-    assert_raises(MissingParameter, model_g._find_noise, pars, data_base)
-    pars.update({'noise_sd':noise})
-    assert_equal(model_g._find_noise(pars, data_base), noise)
 
 
 @attr('fast')

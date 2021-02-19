@@ -1,10 +1,132 @@
 .. _releasenotes:
 
+********************
+HoloPy Release Notes
+********************
 
-************************
-Holopy 3.3 Release Notes
-************************
+Current Development (Holopy 3.5)
+================================
 
+Improvements
+------------
+- Calling a numpy ufunc on a Prior object with name kwarg gives the resulting
+  TransformedPrior object that name, e.g. clip_x = np.min(x, name='clipped')
+- Cleaned up model parameter names created from TransformedPrior objects
+- CmaStrategy now scales first step size based on initial population, not prior
+
+Documentation
+-------------
+- Updated inference tutorial
+
+Bugfixes
+--------
+- NmpfitStrategy now correctly accounts for non-uniform priors when optimizing
+- Functional fitting interface no longer lets alpha go to zero
+- More helpful errors when calling scattering functions (e.g. calc_holo) with
+  parameterized scatterers, which is unsupported as of HoloPy 3.4
+
+Compatibility Notes
+--------------------
+- HoloPy now assumes dictionaries are ordered, so it requires python>=3.7.
+
+Developer Notes
+---------------
+- The :class:`.ScatteringTheory` now performs scattering calculations
+  only, as its single responsibility. This should make it easier to
+  implement new scattering theories. Code that was previously in
+  :class:`.ScatteringTheory` that calculated deterimed at which points
+  the scattering matrices or scattered fields needed to be calculated is
+  now in `holopy.scattering.imageformation`.
+
+
+Holopy 3.4
+==========
+
+New Features
+------------
+- New :class:`.Lens` scattering theory to model the effect of an objective lens
+  can be applied to any other scattering theory.
+- New :class:`.TransformedPrior` that applies a function to one or multiple
+  component :class:`.Prior` objects and maintains ties in a :class:`.Model`.
+
+Improvements
+------------
+- DDA scattering theories no longer default to printing intermediate C output.
+- It is now possible to save all slices of a reconstruction stack as images.
+- Rearrangement of some Scatterer properties and methods so they are now
+  accessible by a broader group of classes.
+- PerfectLensModel now accepts hologram scaling factor alpha as a parameter
+  for inference.
+- It is now possible to pass an inference strategy to the high-level fit() and
+  sample() functions, either by name or as a Strategy object.
+- High level inference functions fit() and sample() are now accessible in the
+  root HoloPy namespace as hp.fit() and hp.sample().
+- Scatterer.parameters() now matches the arguments to create the scatterer
+  instead of deconstructing composite objects.
+- New prior.renamed() method to create an identical prior with a new name.
+- New way to easily construct scatterers from model parameters with
+  ``model.scatterer_from_parameters()``.
+- New ``model.initial_guess`` attribute which can be used to evaluate initial
+  guess by psasing into ``model.scatterer_from_parameters()`` or
+  ``model.forward()`` methods.
+- Model parameters now use the names of their prior objects if present.
+- Standardized parameter naming across composite objects (eg. list, dict).
+- Any model parameters can now be tied, not just specific combinations within
+  Scatterers objects.
+- Expanded math operations of :class:`.Prior` objects, including numpy ufuncs.
+- Math operations on :class:`Prior` objects now use :class:`.TransformedPrior`
+  to maintain ties when used in a :class:`.Model`.
+ 
+
+Documentation
+-------------
+- New user guide on :ref:`scatterers_user`.
+- New user guide on :ref:`theories_user`.
+- More discussion of scattering theories in tutorial.
+
+Deprecations
+------------
+- The model.fit() and model.sample() methods have been deprecated in favour of
+  the high-level hp.fit() and hp.sample functions().
+- Adjustments to saving of Model objects (and Results objects containing them).
+  Backwards compatibility is supported for now, but be sure to save new copies!
+- Scatterer.guess no longer exists. Instead, you must define a model and use:
+  ``model.scatterer_from_parameters(model.initial_guess)``.
+- Scatterer.from_parameters() is no longer guaranteed to return a
+  definite object.
+- Composite scatterers no longer keep track of tied parameters.
+- Scattering interface functions such as calc_holo() now require a definite
+  scatterer without priors.
+
+Bugfixes
+--------
+- Fortran output no longer occasionaly leaks through the output supression
+  context manager used by multiple scattering theories.
+- Restored ability to visualize slices through a scatterer object
+- Now possible to fit only some elements of a list, eg. Scatterer center
+- Models can now include xarray parameters and still support saving/loading.
+- The :class:`.MieLens` scattering theory now works for both large and
+  small spheres.
+- The :class:`Lens` theory works for arbitrary linear polarization of
+  the incoming light. This bug was not present on any releases, only on
+  the development branch.
+
+Compatibility Notes
+--------------------
+- Holopy's hard dependencies are further streamlined, and there is improved
+  handling of missing optional dependencies.
+
+Developer Notes
+---------------
+- Documentation now automatically runs sphinx apidoc when building docs.
+- New Scatterer attribute ``_parameters`` provides a view into the scatterer
+  and supports editing.
+- :class:`.ComplexPrior` now inherits from :class:`.TransformedPrior`, but
+  Model maps don't keep track of this, e.g. in `model.scatterer`.
+
+
+Holopy 3.3
+==========
 
 New Features
 ------------

@@ -84,15 +84,15 @@ class Mie(ScatteringTheory):
                                     " of HoloPy through f2py.")
         super().__init__()
 
-    def _can_handle(self, scatterer):
+    def can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
 
-    def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
+    def raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
         '''
         Returns far-field amplitude scattering matrices (with theta and phi
         dependence only) -- assume spherical wave asymptotic r dependence
         '''
-        if self._can_handle(scatterer):
+        if self.can_handle(scatterer):
             scat_coeffs = self._scat_coeffs(
                 scatterer, medium_wavevec, medium_index)
 
@@ -103,7 +103,7 @@ class Mie(ScatteringTheory):
         else:
             raise TheoryNotCompatibleError(self, scatterer)
 
-    def _raw_fields(
+    def raw_fields(
             self, positions, scatterer, medium_wavevec, medium_index,
             illum_polarization):
         scat_coeffs = self._scat_coeffs(scatterer, medium_wavevec, medium_index)
@@ -122,7 +122,7 @@ class Mie(ScatteringTheory):
             positions, scatterer.n, scat_coeffs, illum_polarization)
         return fields
 
-    def _raw_cross_sections(
+    def raw_cross_sections(
             self, scatterer, medium_wavevec, medium_index, illum_polarization):
         """
         Calculate scattering, absorption, and extinction cross
