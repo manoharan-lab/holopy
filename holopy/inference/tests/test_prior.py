@@ -18,7 +18,6 @@
 
 
 import unittest
-from collections import OrderedDict
 
 from scipy.stats import kstest
 from numpy.testing import assert_equal, assert_allclose
@@ -31,6 +30,7 @@ from holopy.inference.prior import (
 from holopy.inference.result import UncertainValue
 from holopy.core.metadata import data_grid
 from holopy.scattering.errors import ParameterSpecificationError
+from holopy.inference.tests.common import SimpleModel
 
 GOLD_SIGMA = -1.4189385332  # log(sqrt(0.5/pi))-1/2
 
@@ -65,7 +65,7 @@ class TestBasics(unittest.TestCase):
 class TestUniform(unittest.TestCase):
     @attr("fast")
     def test_construction_when_relying_argument_order(self):
-        parameters = OrderedDict([
+        parameters = dict([
             ('lower_bound', 1),
             ('upper_bound', 3),
             ('guess', 2),
@@ -441,6 +441,20 @@ class TestTransformedPrior(unittest.TestCase):
         self.assertTrue(all(samples < 5))
         self.assertTrue(all(samples >= 2))
 
+    @attr('fast')
+    def test_map_keys_indexing(self):
+        base_priors = [Uniform(0, 10, guess=4), Uniform(0, 2, guess=1)]
+        transformed = TransformedPrior(np.maximum, base_priors)
+        model = SimpleModel()
+        model._iterate_mapping('root', transformed.map_keys)
+        self.assertEqual(model._parameter_names[-2:], ['root0', 'root1'])
+
+    @attr('fast')
+    def test_map_keys_single_prior(self):
+        transformed = TransformedPrior(np.sqrt, Uniform(0, 2))
+        model = SimpleModel()
+        model._iterate_mapping('root', transformed.map_keys)
+        self.assertEqual(model._parameter_names[-1], 'root')
 
 def test_scale_factor():
     p1 = Gaussian(3, 1)
@@ -572,6 +586,13 @@ class TestPriorMath(unittest.TestCase):
         prior_2 = Uniform(1, 3)
         transformed = TransformedPrior(np.maximum, [prior_1, prior_2])
         self.assertEqual(np.maximum(prior_1, prior_2), transformed)
+
+    @attr("fast")
+    def test_numpy_ufunc_passes_through_name(self):
+        prior_1 = Uniform(2, 8, name='unused')
+        new_name = 'name_from_numpy'
+        transformed = np.sqrt(prior_1, name=new_name)
+        self.assertEqual(transformed.name, new_name)
 
     @attr('fast')
     def test_pow_rpow(self):

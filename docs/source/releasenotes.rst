@@ -7,6 +7,28 @@ HoloPy Release Notes
 Current Development (Holopy 3.5)
 ================================
 
+Improvements
+------------
+- Calling a numpy ufunc on a Prior object with name kwarg gives the resulting
+  TransformedPrior object that name, e.g. clip_x = np.min(x, name='clipped')
+- Cleaned up model parameter names created from TransformedPrior objects
+- CmaStrategy now scales first step size based on initial population, not prior
+
+Documentation
+-------------
+- Updated inference tutorial
+
+Bugfixes
+--------
+- NmpfitStrategy now correctly accounts for non-uniform priors when optimizing
+- Functional fitting interface no longer lets alpha go to zero
+- More helpful errors when calling scattering functions (e.g. calc_holo) with
+  parameterized scatterers, which is unsupported as of HoloPy 3.4
+
+Compatibility Notes
+--------------------
+- HoloPy now assumes dictionaries are ordered, so it requires python>=3.7.
+
 Developer Notes
 ---------------
 - The :class:`.ScatteringTheory` now performs scattering calculations

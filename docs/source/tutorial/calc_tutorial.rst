@@ -415,12 +415,12 @@ omit the ``detector`` argument entirely:
 ..  testcode::
     :hide:
 
-    print(x_sec.values)
+    print(np.around(x_sec.values, 5))
 
 ..  testoutput::
     :hide:
 
-    [1.93274289 0.         1.93274289 0.91619823]
+    [ 1.93274 -0.       1.93274  0.9162 ]
 
 x_sec returns an array containing four elements. The first element is the
 scattering cross section, specified in terms of the same units as wavelength and

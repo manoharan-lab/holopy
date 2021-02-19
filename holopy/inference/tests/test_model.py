@@ -24,7 +24,6 @@ import warnings
 import yaml
 import numpy as np
 import xarray as xr
-from collections import OrderedDict
 
 from nose.plugins.attrib import attr
 from numpy.testing import assert_raises
@@ -306,6 +305,15 @@ class TestParameterMapping(unittest.TestCase):
         self.assertEqual(model._parameter_names[-2:], ['first', 'trans.1'])
 
     @attr('fast')
+    def test_named_transformed_prior(self):
+        model = SimpleModel()
+        base_prior = [prior.Uniform(0, 2, name='first'), prior.Uniform(1, 2)]
+        transform = prior.TransformedPrior(np.maximum, base_prior, name='real')
+        transform = {'fake': transform}
+        parameter_map = model._convert_to_map(transform)
+        self.assertEqual(model._parameter_names[-2:], ['first', 'real.1'])
+
+    @attr('fast')
     def test_map_hierarchical_transformed_prior(self):
         model = SimpleModel()
         inner = prior.TransformedPrior(np.sqrt, prior.Uniform(0, 2))
@@ -479,6 +487,16 @@ class TestParameterTying(unittest.TestCase):
         sphere2 = Sphere(n=prior.Uniform(1, 2), r=tied, center=[1, 1, 1])
         model = AlphaModel(Spheres([sphere1, sphere2]))
         expected_names = ['0:n', 'r', '1:n']
+        self.assertEqual(model._parameter_names, expected_names)
+
+    @attr('fast')
+    def test_no_tied_name_if_not_shared_between_scatterers(self):
+        s0_r = prior.Gaussian(0.5, 0.1)
+        s1_r = prior.Gaussian(0.5, 0.1)
+        s0 = Sphere(r=s0_r, n=1.5, center=[0, 3, 4])
+        s1 = Sphere(r=s1_r, n=1.5, center=[s0_r + s1_r, 3, 4])
+        model = AlphaModel(Spheres([s0, s1]))
+        expected_names = ['0:r', '1:r']
         self.assertEqual(model._parameter_names, expected_names)
 
     @attr('fast')

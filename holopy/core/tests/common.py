@@ -24,9 +24,9 @@ import inspect
 import yaml
 import shutil
 import pickle
-from collections import OrderedDict
 
 import xarray as xr
+import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 from nose.plugins import Plugin
 
@@ -48,6 +48,7 @@ class HoloPyCatchWarnings(Plugin):
     def beforeTest(self, test):
         warnings.simplefilter("error")
         warnings.simplefilter(action="ignore", category=PerformanceWarning)
+        warnings.simplefilter(action="ignore", category=FutureWarning)
 
 
 def assert_read_matches_write(original):
@@ -78,10 +79,8 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
     # it fails it probably gives more useful error messages than later options,
     # and catching NotImplementedError and TypeError should cause this to
     # silently fall through for other types
-    try:
+    if isinstance(actual, np.ndarray) and isinstance(desired, np.ndarray):
         assert_allclose(actual, desired, rtol = rtol, atol = atol, err_msg=context)
-    except (NotImplementedError, TypeError):
-        pass
 
     if (isinstance(desired, xr.DataArray) and isinstance(actual, xr.DataArray)
             and hasattr(actual, "_indexes")):
@@ -90,7 +89,7 @@ def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_obj
         desired._indexes = actual._indexes
 
     # if None, let some things that are functially equivalent to None pass
-    nonelike = [None, OrderedDict()]
+    nonelike = [None, {}]
     if actual is None or desired is None:
         if actual in nonelike and desired in nonelike:
             return

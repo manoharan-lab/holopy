@@ -16,6 +16,7 @@ holopy/scattering/theory/tmatrix_f/S
 *.swp
 *.eggs
 .ipynb_checkpoints
+.vscode
 HoloPy.egg-info
 .DS_Store
 docs/.DS_Store
