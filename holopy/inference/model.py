@@ -184,7 +184,9 @@ class Model(HoloPyObject):
         return [make_xarray, [dim_name, coord_keys, values_map]]
 
     def _map_transformed_prior(self, parameter, name):
-        mapped_priors = self._iterate_mapping(name + '.', parameter.map_keys)
+        name = name if parameter.name is None else parameter.name
+        name = name + '.' if len(parameter.base_prior) > 1 else name
+        mapped_priors = self._iterate_mapping(name, parameter.map_keys)
         return [transformed_prior, [parameter.transformation, mapped_priors]]
 
     def _get_parameter_index(self, parameter, name):
@@ -194,7 +196,8 @@ class Model(HoloPyObject):
             self._add_parameter(parameter, name)
         else:
             shared_name = self._parameter_names[index].split(':', 1)[-1]
-            if shared_name not in self._parameter_names:
+            really_shared = name.split(':', 1)[-1] == shared_name
+            if really_shared and shared_name not in self._parameter_names:
                 self._parameter_names[index] = shared_name
         return index
 

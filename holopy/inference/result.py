@@ -21,15 +21,13 @@ Results of sampling
 .. moduleauthor:: Thomas G. Dimiduk <tom@dimiduk.net>
 """
 from copy import copy
-from collections import OrderedDict
 from warnings import warn
 
 import yaml
 import xarray as xr
 import pandas as pd
 import numpy as np
-import scipy.special
-import h5py
+
 
 from holopy.core.metadata import detector_grid, copy_metadata
 from holopy.core.holopy_object import HoloPyObject, FullLoader

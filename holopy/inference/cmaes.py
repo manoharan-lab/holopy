@@ -151,8 +151,7 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
         raise DependencyMissing('cma', "Install it with \'pip install cma\'.")
 
     popsize = len(initial_population)
-    stds = [par.sd if isinstance(par, prior.Gaussian)
-            else par.interval/4 for par in parameters]
+    stds = np.std(initial_population, axis=0, ddof=1)
     weights = [weight_function(i, popsize) for i in range(popsize)]
     if weights[-1] > 0:
         weights[-1] = 0

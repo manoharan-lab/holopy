@@ -73,7 +73,7 @@ copyreg.pickle(types.MethodType, _pickle_method, _unpickle_method)
 def ignore_aliases(data):
     try:
         # numpy arrays no longer want to be compared to None, so instead check for a none by looking for if it is an instance of NoneType
-        if data is None or data is ():
+        if data is None or len(data) == 0:
             return True
         if isinstance(data, (str, bool, int, float)):
             return True

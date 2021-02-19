@@ -50,7 +50,7 @@ class TestMieLens(unittest.TestCase):
         np.random.seed(10)
         positions = np.random.randn(3, 10)  # the zs will differ by chance
         self.assertRaises(
-            ValueError, theory._raw_fields, positions, sphere, 1.0, 1.33,
+            ValueError, theory.raw_fields, positions, sphere, 1.0, 1.33,
             xschema.illum_polarization)
 
     @attr("fast")
@@ -206,8 +206,8 @@ class TestMieLens(unittest.TestCase):
 
         args = (scatterer, medium_wavevec, medium_index)
 
-        fields_0 = theory._raw_fields(pos_0, *args, pol_0)
-        fields_1 = theory._raw_fields(pos_1, *args, pol_1)
+        fields_0 = theory.raw_fields(pos_0, *args, pol_0)
+        fields_1 = theory.raw_fields(pos_1, *args, pol_1)
 
         self.assertTrue(np.allclose(fields_1[0],  fields_0[1], **TOLS))
         self.assertTrue(np.allclose(fields_1[1], -fields_0[0], **TOLS))

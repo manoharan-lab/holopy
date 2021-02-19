@@ -30,7 +30,6 @@ from PIL import Image as pilimage
 import xarray as xr
 import numpy as np
 import importlib
-from collections import OrderedDict
 
 from holopy.core.io import serialize
 from holopy.core.io.vis import display_image
@@ -83,7 +82,7 @@ def pack_attrs(a, do_spacing=False):
 
     for attr, val in a.attrs.items():
         if isinstance(val, xr.DataArray):
-            new_attrs[attr_coords][attr] = OrderedDict()
+            new_attrs[attr_coords][attr] = {}
             for dim in val.dims:
                 new_attrs[attr_coords][attr][str(dim)]=val[dim].values
             new_attrs[attr]=list(ensure_array(val.values))
