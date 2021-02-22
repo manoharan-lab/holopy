@@ -145,10 +145,10 @@ class MieLens(ScatteringTheory):
 class AberratedMieLens(MieLens):
     def __init__(self, spherical_aberration=0.0, lens_angle=1.0,
                  calculator_accuracy_kwargs={}):
-        super(AberratedMieLens, self).__init__()
-        self.lens_angle = lens_angle
+        super(AberratedMieLens, self).__init__(
+            lens_angle=lens_angle,
+            calculator_accuracy_kwargs=calculator_accuracy_kwargs)
         self.spherical_aberration = spherical_aberration
-        self.calculator_accuracy_kwargs = calculator_accuracy_kwargs
 
     def _create_calculator(
             self, particle_kz=None, index_ratio=None, size_parameter=None):
