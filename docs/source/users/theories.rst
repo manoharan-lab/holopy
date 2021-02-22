@@ -91,14 +91,14 @@ Lens-Based Scattering Theories
       <https://pypi.org/project/numexpr/>`_ package is installed.
 - :class:`.MieLens`
     * Can handle :class:`.Sphere` objects, or :class:`.Spheres` through
-      superposision.
+      superposition.
     * Computes scattered fields using Mie theory, but incorporates diffractive
       effects of a perfect objective lens.
     * Used for performance; ``MieLens(lens_angle)`` is much faster than calling
       ``Lens(lens_angle, Mie())`` and slightly faster than ``Mie()``.
 - :class:`.AberratedMieLens`
     * Can handle :class:`.Sphere` objects, or :class:`.Spheres` through
-      superposision.
+      superposition.
     * Computes scattered fields using Mie theory, but incorporates both
       diffractive effects of an objective lens and arbitrary-order
       spherical aberration.
