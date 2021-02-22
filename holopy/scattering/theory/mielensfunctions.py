@@ -4,6 +4,7 @@ from numpy.polynomial.legendre import legval
 from scipy.special import j0, j1, spherical_jn, spherical_yn
 from scipy import interpolate
 
+from holopy.scattering.errors import MissingParameter
 
 NPTS = 100
 LEGGAUSS_PTS_WTS_NPTS = np.polynomial.legendre.leggauss(NPTS)
@@ -270,7 +271,7 @@ class MieLensCalculator(object):
     def _check_parameters(self):
         if any([getattr(self, p) is None for p in self.must_be_specified]):
             msg = "{} must be specified.".format(self.must_be_specified)
-            raise ValueError(msg)
+            raise MissingParameter(msg)
 
 
 class AberratedMieLensCalculator(MieLensCalculator):

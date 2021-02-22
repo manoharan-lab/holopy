@@ -7,6 +7,7 @@ from scipy.special import jn_zeros
 from nose.plugins.attrib import attr
 
 from holopy.scattering.theory import mielensfunctions
+from holopy.scattering.errors import MissingParameter
 
 
 TOLS = {'atol': 1e-12, 'rtol': 1e-12}
@@ -17,7 +18,7 @@ SOFTTOLS = {'atol': 1e-3, 'rtol': 1e-3}
 class TestMieLensCalculator(unittest.TestCase):
     @attr("fast")
     def test_raises_error_when_no_params_are_specified(self):
-        self.assertRaises(ValueError, mielensfunctions.MieLensCalculator)
+        self.assertRaises(MissingParameter, mielensfunctions.MieLensCalculator)
 
     @attr("fast")
     def test_raises_error_when_any_params_isnt_specified(self):
@@ -33,7 +34,7 @@ class TestMieLensCalculator(unittest.TestCase):
         for key in kwargs.keys():
             value = kwargs[key]  # popping it out
             kwargs[key] = None
-            self.assertRaises(ValueError, create_calculator, **kwargs)
+            self.assertRaises(MissingParameter, create_calculator, **kwargs)
             kwargs[key] = value  # putting it back
 
     @attr("fast")
@@ -340,7 +341,7 @@ class TestAberratedMieLensCalculator(unittest.TestCase):
     @attr("fast")
     def test_raises_error_when_no_params_are_specified(self):
         self.assertRaises(
-            ValueError, mielensfunctions.AberratedMieLensCalculator)
+            MissingParameter, mielensfunctions.AberratedMieLensCalculator)
 
     @attr("fast")
     def test_raises_error_when_any_params_isnt_specified(self):
@@ -357,7 +358,7 @@ class TestAberratedMieLensCalculator(unittest.TestCase):
         for key in kwargs.keys():
             value = kwargs[key]  # popping it out
             kwargs[key] = None
-            self.assertRaises(ValueError, create_calculator, **kwargs)
+            self.assertRaises(MissingParameter, create_calculator, **kwargs)
             kwargs[key] = value  # putting it back
 
     @attr("fast")
