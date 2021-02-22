@@ -338,6 +338,23 @@ class TestAberratedMieLens(unittest.TestCase):
 
         self.assertFalse(np.allclose(holo_unaberrated, holo_aberrated, **TOLS))
 
+    @attr("medium")
+    def test_aberratedmielens_accepts_arbitrary_order_aberration(self):
+        np.random.seed(1017)
+        lens_angle = np.random.rand()
+        aberrations = 10 * np.random.randn(10)
+        theory_low = AberratedMieLens(
+            lens_angle=lens_angle, spherical_aberration=aberrations[0])
+        theory_hi = AberratedMieLens(
+            lens_angle=lens_angle, spherical_aberration=aberrations)
+
+        holo_low = calc_holo(
+            xschema, sphere, index, wavelen, xpolarization, theory=theory_low)
+        holo_hi = calc_holo(
+            xschema, sphere, index, wavelen, xpolarization, theory=theory_hi)
+
+        self.assertFalse(np.allclose(holo_low, holo_hi, **TOLS))
+
 
 def calculate_central_lobe_at(zs):
     illum_wavelength = 0.66  # 660 nm red light
