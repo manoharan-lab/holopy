@@ -242,7 +242,7 @@ analytical simplifications are possible which greatly speed up the
 description of the objective lens -- in fact, the :class:`.MieLens`
 theory's implementation is slightly faster than :class:`.Mie` theory's.
 The following code creates a :class:`.MieLens` theory, which can be
-based to :func:`.calc_holo` just like any other scattering theory:
+passed to :func:`.calc_holo` just like any other scattering theory:
 
 ..  testcode::
 
