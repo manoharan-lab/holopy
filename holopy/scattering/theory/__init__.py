@@ -29,7 +29,7 @@ All theories have a common interface defined by
 '''
 
 from holopy.scattering.theory.mie import Mie
-from holopy.scattering.theory.mielens import MieLens
+from holopy.scattering.theory.mielens import MieLens, AberratedMieLens
 from holopy.scattering.theory.multisphere import Multisphere
 from holopy.scattering.theory.lens import Lens
 from holopy.scattering.theory.dda import DDA

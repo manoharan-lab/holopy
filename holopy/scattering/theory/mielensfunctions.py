@@ -1,8 +1,10 @@
 import numpy as np
 from numpy.polynomial.chebyshev import Chebyshev
+from numpy.polynomial.legendre import legval
 from scipy.special import j0, j1, spherical_jn, spherical_yn
 from scipy import interpolate
 
+from holopy.scattering.errors import MissingParameter
 
 NPTS = 100
 LEGGAUSS_PTS_WTS_NPTS = np.polynomial.legendre.leggauss(NPTS)
@@ -13,6 +15,9 @@ LEGGAUSS_PTS_WTS_NPTS = np.polynomial.legendre.leggauss(NPTS)
 
 
 class MieLensCalculator(object):
+    must_be_specified = [
+        'particle_kz', 'index_ratio', 'size_parameter', 'lens_angle']
+
     def __init__(self, particle_kz=None, index_ratio=None, size_parameter=None,
                  lens_angle=None, quad_npts=100, interpolate_integrals='check',
                  interpolator_window_size=30.0, interpolator_degree=32):
@@ -151,10 +156,6 @@ class MieLensCalculator(object):
     def calculate_total_field(self, krho, phi):
         """The total (incident + scattered) field at the detector
         """
-        # Uses the incident field as
-        #   E_in = E_0 \hat{x} * 4 pi * (f1 / f2) * e^{ik(f1 + f2)} * i
-        # which is more-or-less from the brightfield writeups.
-        # return 1j - 0.25 * mielens_field(krho, phi, **kwargs)
         scattered_x, scattered_y = self.calculate_scattered_field(krho, phi)
         incident_x, incident_y = self.calculate_incident_field()
         return incident_x + scattered_x, incident_y + scattered_y
@@ -165,10 +166,10 @@ class MieLensCalculator(object):
 
     def calculate_incident_field(self):
         """This is here so
-            (i)  Any corrections in the theory to the scattered field
-                 have an easy place to enter, and
-            (ii) Other packages can consistently use the same scattered
-                 field as this package.
+        (i)  Any corrections in the theory to the scattered field
+             have an easy place to enter, and
+        (ii) Other modules can consistently use the same scattered
+             field as this module.
         """
         return -1, 0
 
@@ -246,9 +247,9 @@ class MieLensCalculator(object):
         # from cos(lens_angle) to 1.0:
         # Placing things in order [quadrature points, rho-z values]
         rr = krho.reshape(1, -1)
-        integrand = (np.exp(1j * self.particle_kz * (1 - self._quad_pts)) *
-                     scatmatrix_values * ji(rr * self._sintheta_pts) *
-                     np.sqrt(self._quad_pts))
+        phase = self._calculate_phase()
+        integrand = (np.exp(1j * phase) * scatmatrix_values *
+                     ji(rr * self._sintheta_pts) * np.sqrt(self._quad_pts))
         answer_flat = np.sum(integrand * self._quad_wts, axis=0)
         return answer_flat.reshape(krho.shape)
 
@@ -264,11 +265,60 @@ class MieLensCalculator(object):
             window_breakpoints=window_breakpoints)
         return interpolator(krho)
 
+    def _calculate_phase(self):
+        return self.particle_kz * (1 - self._quad_pts)
+
     def _check_parameters(self):
-        must_be_specified = ['particle_kz', 'index_ratio',
-                             'size_parameter', 'lens_angle']
-        if any([getattr(self, p) is None for p in must_be_specified]):
-            raise ValueError("{} must be specified.".format(must_be_specified))
+        if any([getattr(self, p) is None for p in self.must_be_specified]):
+            msg = "{} must be specified.".format(self.must_be_specified)
+            raise MissingParameter(msg)
+
+
+class AberratedMieLensCalculator(MieLensCalculator):
+    must_be_specified = [
+        'particle_kz', 'index_ratio', 'size_parameter', 'lens_angle',
+        'spherical_aberration']
+
+    def __init__(self, spherical_aberration=None, **kwargs):
+        """
+        See `MieLensCalculator` for a more complete docstring.
+
+        Parameters
+        ----------
+        spherical_aberration : float or array-like of floats
+            The spherical aberration, up to arbitrary order. If a float,
+            just the coefficient of the 3rd-order aberration (4th-order
+            in wavefront). When an array, the coefficients of
+            aberrations in ascending order (3rd, 5th, 7th, etc), where
+            the wavefront distortion for the nth-order aberration is of
+            the form (cos(theta) - 1)^(n+1), where n = 3, 5, 7, etc
+            Default is None, which raises an error.
+
+        Other Parameters
+        ----------------
+        See MieLensCalculator
+        """
+        self.spherical_aberration = spherical_aberration
+        super(AberratedMieLensCalculator, self).__init__(**kwargs)
+
+    def _calculate_phase(self):
+        unaberrated_phase = (
+            super(AberratedMieLensCalculator, self)._calculate_phase())
+        aberrated_phase = self._calculate_aberrated_phase()
+        return unaberrated_phase + aberrated_phase
+
+    def _calculate_aberrated_phase(self):
+        coeffs_high_to_low = np.reshape(self.spherical_aberration, -1)
+        aberrated_phase = (
+            self._pupil_x_squared**2 *
+            legval(self._pupil_x_squared, coeffs_high_to_low))
+        return aberrated_phase
+
+    @property
+    def _pupil_x_squared(self):
+        # Actually (cos(theta) - 1) instead of theta^2. Making this
+        # choice since this corresponds to the defocus from the particle
+        return (self._quad_pts - 1)
 
 
 class MieScatteringMatrix(object):

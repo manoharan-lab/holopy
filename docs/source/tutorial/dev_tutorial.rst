@@ -99,21 +99,26 @@ define a new scattering theory class and implement one or two methods to compute
 the raw scattering values::
 
   class YourTheory(ScatteringTheory):
-    def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index, illum_polarization):
+    def can_handle(self, scatterer):
       # Your code here
 
-    def _raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
+    def raw_fields(self, positions, scatterer, medium_wavevec, medium_index, illum_polarization):
       # Your code here
 
-    def _raw_cross_sections(self, scatterer, medium_wavevec, medium_index, illum_polarization):
+    def raw_scat_matrs(self, scatterer, pos, medium_wavevec, medium_index):
       # Your code here
 
-You can get away with just defining one of _raw_scat_matrs or _raw_fields if you
-just want holograms, fields, or intensities. If you want scattering matrices
-you will need to implement _raw_scat_matrs, and if you want cross sections, you
-will need to implement _raw_cross_sections. We seperate out _raw_fields from
-_raw_scat_matrs because we want to provide a faster fields implementation for
-mie and multisphere (and you might want to for your theory).
+    def raw_cross_sections(self, scatterer, medium_wavevec, medium_index, illum_polarization):
+      # Your code here
+
+You can get away with just defining one of either ``raw_scat_matrs`` or
+``raw_fields`` if you just want holograms, fields, or intensities. If
+you want scattering matrices you will need to implement
+``raw_scat_matrs``, and if you want cross sections, you will need to
+implement ``raw_cross_sections``. We separate out ``raw_fields`` from
+``raw_scat_matrs`` to allow for faster fields calculation for specific
+cases, such as the Mie, MieLens, and Multisphere theories (and you might
+want to do so for your theory as well).
 
 You can look at the Mie theory in HoloPy for an example of calling Fortran
 functions to compute scattering (C functions will look similar from the python

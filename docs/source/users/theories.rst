@@ -91,11 +91,20 @@ Lens-Based Scattering Theories
       <https://pypi.org/project/numexpr/>`_ package is installed.
 - :class:`.MieLens`
     * Can handle :class:`.Sphere` objects, or :class:`.Spheres` through
-      superposision.
+      superposition.
     * Computes scattered fields using Mie theory, but incorporates diffractive
       effects of a perfect objective lens.
     * Used for performance; ``MieLens(lens_angle)`` is much faster than calling
       ``Lens(lens_angle, Mie())`` and slightly faster than ``Mie()``.
+- :class:`.AberratedMieLens`
+    * Can handle :class:`.Sphere` objects, or :class:`.Spheres` through
+      superposition.
+    * Computes scattered fields using Mie theory, but incorporates both
+      diffractive effects of an objective lens and arbitrary-order
+      spherical aberration.
+    * :class:`.AberratedMieLens` and :class:`.MieLens` have the same
+      computational cost, although :class:`.AberratedMieLens` requires
+      more parameters for fitting.
 
 
 .. _how_to_choose_theory:
@@ -242,13 +251,30 @@ analytical simplifications are possible which greatly speed up the
 description of the objective lens -- in fact, the :class:`.MieLens`
 theory's implementation is slightly faster than :class:`.Mie` theory's.
 The following code creates a :class:`.MieLens` theory, which can be
-based to :func:`.calc_holo` just like any other scattering theory:
+passed to :func:`.calc_holo` just like any other scattering theory:
 
 ..  testcode::
 
     from holopy.scattering.theory import MieLens
     lens_angle = 1.0
     theory = MieLens(lens_angle)
+
+In addition, `holopy` supports the calculation of holograms of spherical
+particles when the imaging objective lens has spherical aberrations of
+arbitrary order. Currently only spherical aberrations are supported, and
+only for the image of spherical scatterers. The following code creates
+a :class:`.AberratedMieLens` theory with aberrations up to 8th order in
+the phase. This theory can be passed to :func:`.calc_holo` just like any
+other scattering theory:
+
+..  testcode::
+
+    from holopy.scattering.theory import AberratedMieLens
+    aberration_coefficients = [1.0, 2.0, 3.0]
+    lens_angle = 1.0
+    theory = AberratedMieLens(
+        spherical_aberration=aberration_coefficients,
+        lens_angle=lens_angle)
 
 
 My Scattering theory isn't here?!?!
