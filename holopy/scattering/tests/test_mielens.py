@@ -29,7 +29,8 @@ import xarray as xr
 from nose.plugins.attrib import attr
 
 from holopy.core.metadata import detector_grid
-from holopy.scattering.theory import Mie, MieLens, mielensfunctions
+from holopy.scattering.theory import (
+    Mie, MieLens, AberratedMieLens, mielensfunctions)
 from holopy.scattering.scatterer import Sphere, Spheres
 from holopy.scattering.interface import calc_holo
 
@@ -56,6 +57,23 @@ class TestMieLens(unittest.TestCase):
     @attr("fast")
     def test_desired_coordinate_system_is_cylindrical(self):
         self.assertTrue(MieLens.desired_coordinate_system == 'cylindrical')
+
+    @attr("fast")
+    def test_create_calculator(self):
+        lens_angle = 0.948
+        kwargs = {
+            "particle_kz": 10.0,
+            "index_ratio": 1.4,
+            "size_parameter": 5.0,
+            }
+
+        theory = MieLens(lens_angle=lens_angle)
+        calculator = theory._create_calculator(**kwargs)
+        kwargs.update({"lens_angle": lens_angle})
+
+        self.assertIsInstance(calculator, mielensfunctions.MieLensCalculator)
+        for key, value in kwargs.items():
+            self.assertEqual(getattr(calculator, key), value)
 
     @attr("medium")
     def test_can_calculate_for_positive_and_negative_z(self):
@@ -211,6 +229,131 @@ class TestMieLens(unittest.TestCase):
 
         self.assertTrue(np.allclose(fields_1[0],  fields_0[1], **TOLS))
         self.assertTrue(np.allclose(fields_1[1], -fields_0[0], **TOLS))
+
+
+class TestAberratedMieLens(unittest.TestCase):
+    @attr("fast")
+    def test_init_stores_params(self):
+        np.random.seed(1007)
+        kwargs = {
+            'lens_angle': np.random.rand(),
+            'spherical_aberration': np.random.randn(),
+            }
+        theory = AberratedMieLens(**kwargs)
+        for key, value in kwargs.items():
+            self.assertTrue(hasattr(theory, key))
+            self.assertEqual(getattr(theory, key), value)
+
+    @attr("fast")
+    def test_create_calculator(self):
+        np.random.seed(1011)
+        init_kwargs = {
+            'lens_angle': np.random.rand(),
+            'spherical_aberration': np.random.randn(),
+            }
+        calc_kwargs = {
+            "particle_kz": 10.0,
+            "index_ratio": 1.4,
+            "size_parameter": 5.0,
+            }
+        theory = AberratedMieLens(**init_kwargs)
+        calculator = theory._create_calculator(**calc_kwargs)
+
+        self.assertIsInstance(calculator, mielensfunctions.MieLensCalculator)
+        for kwargs in [init_kwargs, calc_kwargs]:
+            for key, value in kwargs.items():
+                self.assertEqual(getattr(calculator, key), value)
+
+    @attr("fast")
+    def test_holopy_hologram_equal_to_exact_calculation(self):
+        np.random.seed(1023)
+        theory_kwargs = {
+            'lens_angle': np.random.rand(),
+            'spherical_aberration': 5 * np.random.randn()}
+        theory_aberrated = AberratedMieLens(**theory_kwargs)
+
+        illum_wavelength = 0.66  # 660 nm red light
+        k = 2 * np.pi / illum_wavelength
+        center = (10, 10, 5.)
+        calculator_kwargs = theory_kwargs.copy()
+        calculator_kwargs.update({
+            'particle_kz': center[2] * k,
+            'index_ratio': 1.2,
+            'size_parameter': 0.5 * k,
+            })
+        detector = detector_grid(10, 2.0)
+        x = detector.x.values.reshape(-1, 1) - center[0]
+        y = detector.y.values.reshape(1, -1) - center[1]
+
+        rho = np.sqrt(x**2 + y**2)
+        phi = np.arctan2(y, x)
+
+        calculator = mielensfunctions.AberratedMieLensCalculator(
+            **calculator_kwargs)
+        scatterer = Sphere(n=calculator_kwargs['index_ratio'],
+                           r=calculator_kwargs['size_parameter'] / k,
+                           center=center)
+
+        holo_calculate = calculator.calculate_total_intensity(k * rho, phi)
+        holo_holopy = calc_holo(
+            detector, scatterer, illum_wavelen=illum_wavelength,
+            medium_index=1., illum_polarization=(1, 0),
+            theory=theory_aberrated)
+
+        is_ok = np.allclose(
+            holo_calculate, holo_holopy.values.squeeze(), **TOLS)
+        self.assertTrue(is_ok)
+
+    @attr('medium')
+    def test_aberratedmielens_is_same_as_mielens_when_unaberrated(self):
+        np.random.seed(1017)
+        lens_angle = np.random.rand()
+        theory_unaberrated = MieLens(lens_angle=lens_angle)
+        theory_aberrated = AberratedMieLens(
+            lens_angle=lens_angle, spherical_aberration=0)
+
+        holo_unaberrated = calc_holo(
+            xschema, sphere, index, wavelen, xpolarization,
+            theory=theory_unaberrated)
+        holo_aberrated = calc_holo(
+            xschema, sphere, index, wavelen, xpolarization,
+            theory=theory_aberrated)
+
+        self.assertTrue(np.allclose(holo_unaberrated, holo_aberrated, **TOLS))
+
+    @attr("medium")
+    def test_aberratedmielens_differs_from_mielens_when_aberrated(self):
+        np.random.seed(1017)
+        lens_angle = np.random.rand()
+        theory_unaberrated = MieLens(lens_angle=lens_angle)
+        theory_aberrated = AberratedMieLens(
+            lens_angle=lens_angle, spherical_aberration=1.0)
+
+        holo_unaberrated = calc_holo(
+            xschema, sphere, index, wavelen, xpolarization,
+            theory=theory_unaberrated)
+        holo_aberrated = calc_holo(
+            xschema, sphere, index, wavelen, xpolarization,
+            theory=theory_aberrated)
+
+        self.assertFalse(np.allclose(holo_unaberrated, holo_aberrated, **TOLS))
+
+    @attr("medium")
+    def test_aberratedmielens_accepts_arbitrary_order_aberration(self):
+        np.random.seed(1017)
+        lens_angle = np.random.rand()
+        aberrations = 10 * np.random.randn(10)
+        theory_low = AberratedMieLens(
+            lens_angle=lens_angle, spherical_aberration=aberrations[0])
+        theory_hi = AberratedMieLens(
+            lens_angle=lens_angle, spherical_aberration=aberrations)
+
+        holo_low = calc_holo(
+            xschema, sphere, index, wavelen, xpolarization, theory=theory_low)
+        holo_hi = calc_holo(
+            xschema, sphere, index, wavelen, xpolarization, theory=theory_hi)
+
+        self.assertFalse(np.allclose(holo_low, holo_hi, **TOLS))
 
 
 def calculate_central_lobe_at(zs):
