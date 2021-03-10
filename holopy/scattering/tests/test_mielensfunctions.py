@@ -1,3 +1,4 @@
+import warnings
 import unittest
 import itertools
 
@@ -439,6 +440,26 @@ class TestMieScatteringMatrix(unittest.TestCase):
         interpolator = mielensfunctions.MieScatteringMatrix(
             parallel_or_perpendicular='perpendicular', **self.default_kwargs)
         self.assertRaises(RuntimeError, interpolator._eval, theta)
+
+    @attr('fast')
+    def test_clips_high_max_l_to_avoid_nans(self):
+        theta = np.array([0.3])
+
+        msm_highl = mielensfunctions.MieScatteringMatrix(
+            parallel_or_perpendicular='perpendicular', max_l=1000,
+            **self.default_kwargs)
+        with warnings.catch_warnings(record=True) as recorded_warnings:
+            warnings.simplefilter('always')
+            s_theta = msm_highl._eval(theta)
+
+        self.assertFalse(np.isnan(s_theta))
+        # Then we check that this test actually worked, and that there
+        # was a nan warning raised:
+        messages = [str(r.message) for r in recorded_warnings]
+        should_be_warned = 'invalid value encountered in cdouble_scalars'
+        present = [should_be_warned in message for message in messages]
+        self.assertTrue(any(present), msg=f'This test is broken: {messages}')
+
 
     @attr("fast")
     def test_perpendicular_interpolator_accuracy(self):
