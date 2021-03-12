@@ -374,6 +374,33 @@ class TestAberratedMieLens(unittest.TestCase):
 
         self.assertFalse(np.allclose(holo_low, holo_hi, **TOLS))
 
+    @attr('fast')
+    def test_parameters_returns_correct_keys_and_values(self):
+        np.random.seed(1707)
+        lens_angle = np.random.rand()
+        sph_ab = np.random.randn(5)
+        theory = AberratedMieLens(
+            lens_angle=lens_angle,
+            spherical_aberration=sph_ab)
+
+        parameters = theory.parameters
+        correct_keys = {'lens_angle', 'spherical_aberration'}
+        self.assertEqual(correct_keys, set(parameters.keys()))
+        self.assertEqual(parameters['lens_angle'], lens_angle)
+        self.assertEqual(
+            sph_ab.tolist(),
+            parameters['spherical_aberration'].tolist())
+
+    @attr('fast')
+    def test_from_parameters_correctly_sets_parameters(self):
+        np.random.seed(1709)
+        lens_angle = np.random.rand()
+        parameters = {'lens_angle': lens_angle}
+
+        theory = MieLens.from_parameters(parameters)
+        self.assertIsInstance(theory, MieLens)
+        self.assertEqual(theory.lens_angle, lens_angle)
+
 
 def calculate_central_lobe_at(zs):
     illum_wavelength = 0.66  # 660 nm red light

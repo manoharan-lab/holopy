@@ -165,3 +165,6 @@ class AberratedMieLens(MieLens):
             **self.calculator_accuracy_kwargs)
         return field_calculator
 
+    @property
+    def parameters(self):
+        return {'lens_angle': self.lens_angle, 'spherical_aberration': self.spherical_aberration}
