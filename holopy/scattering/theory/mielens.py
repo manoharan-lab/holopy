@@ -43,6 +43,7 @@ class MieLens(ScatteringTheory):
     """
 
     desired_coordinate_system = 'cylindrical'
+    parameter_names = ('lens_angle',)
 
     def __init__(self, lens_angle=1.0, calculator_accuracy_kwargs={}):
         """
@@ -131,10 +132,6 @@ class MieLens(ScatteringTheory):
         field_xyz *= np.exp(1j * particle_kz) / incident_field_x
         return field_xyz
 
-    @property
-    def parameters(self):
-        return {'lens_angle': self.lens_angle}
-
     def _create_calculator(
             self, particle_kz=None, index_ratio=None, size_parameter=None):
         field_calculator = MieLensCalculator(
@@ -147,6 +144,8 @@ class MieLens(ScatteringTheory):
 
 
 class AberratedMieLens(MieLens):
+    parameter_names = ('lens_angle', 'spherical_aberration')
+
     def __init__(self, spherical_aberration=0.0, lens_angle=1.0,
                  calculator_accuracy_kwargs={}):
         super(AberratedMieLens, self).__init__(
@@ -165,6 +164,3 @@ class AberratedMieLens(MieLens):
             **self.calculator_accuracy_kwargs)
         return field_calculator
 
-    @property
-    def parameters(self):
-        return {'lens_angle': self.lens_angle, 'spherical_aberration': self.spherical_aberration}

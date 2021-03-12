@@ -54,6 +54,7 @@ class ScatteringTheory(HoloPyObject):
     fields in a different way.
     """
     desired_coordinate_system = 'spherical'
+    parameter_names = tuple()
 
     def can_handle(self, scatterer):
         """Given a scatterer, returns a bool"""
@@ -85,7 +86,7 @@ class ScatteringTheory(HoloPyObject):
 
     @property
     def parameters(self):
-        return dict()
+        return {k: getattr(self, k) for k in self.parameter_names}
 
     @classmethod
     def from_parameters(cls, parameters):
