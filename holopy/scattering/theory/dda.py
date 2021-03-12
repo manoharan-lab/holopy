@@ -100,11 +100,12 @@ class DDA(ScatteringTheory):
         if use_gpu and n_cpu>1: warnings.warn("Adda cannot run on multiple CPUs, when running on GPU. 1 CPU will be used.")
         super().__init__()
 
-    def can_handle(self, scatterer):
+    @classmethod
+    def can_handle(cls, scatterer):
         # For now DDA is our most general theory, eventually this will have to
         # change if we add other theorys that can compute things ADDA can't (or
         # shouldn't, because it would take crazy long)
-        return True
+        return isinstance(scatterer, Scatterer)
 
     def _run_adda(self, scatterer, medium_wavevec, medium_index, temp_dir):
         medium_wavelen = 2*np.pi/medium_wavevec

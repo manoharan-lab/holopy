@@ -20,7 +20,7 @@ Tests adda based DDA calculations
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
-
+import unittest
 
 from numpy.testing import assert_almost_equal, assert_allclose, assert_equal
 import numpy as np
@@ -53,6 +53,18 @@ def setup_optics():
 def teardown_optics():
     global schema
     del schema
+
+
+class TestDDA(unittest.TestCase):
+    @attr('fast')
+    def test_can_handle_class_method(self):
+        self.assertTrue(DDA.can_handle(Sphere()))
+
+    @attr('fast')
+    def test_cannot_handle_things_that_are_not_scatterers(self):
+        not_a_scatterer = 'not_a_scatterer'
+        self.assertFalse(DDA.can_handle(not_a_scatterer))
+
 
 def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
               **kwargs):
