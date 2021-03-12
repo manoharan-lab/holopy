@@ -31,6 +31,7 @@ from numpy.testing import assert_raises
 from holopy.core import detector_grid, update_metadata, holopy_object
 from holopy.core.tests.common import assert_equal, assert_obj_close
 from holopy.scattering import Sphere, Spheres, Mie, calc_holo
+from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 from holopy.scattering.errors import MissingParameter
 from holopy.core.tests.common import assert_read_matches_write
 from holopy.inference import (prior, AlphaModel, ExactModel,
@@ -173,6 +174,19 @@ class TestModel(unittest.TestCase):
         as_list = [1.5, 1.2, 0.8]
         self.assertEqual(model.ensure_parameters_are_listlike(as_dict), as_list)
         self.assertEqual(model.ensure_parameters_are_listlike(as_list), as_list)
+
+    @attr('fast')
+    def test_theory_casts_from_auto(self):
+        sphere = Sphere()
+        model = AlphaModel(sphere, theory='auto')
+        self.assertIsInstance(model.theory, ScatteringTheory)
+
+    @attr('fast')
+    def test_theory_casts_correctly_when_not_auto(self):
+        sphere = Sphere()
+        model = AlphaModel(sphere, theory=Mie())
+        self.assertIsInstance(model.theory, ScatteringTheory)
+
 
 
 class TestParameterMapping(unittest.TestCase):

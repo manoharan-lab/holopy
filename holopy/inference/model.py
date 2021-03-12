@@ -28,7 +28,7 @@ from holopy.core.utils import ensure_array, ensure_listlike, ensure_scalar
 from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering.errors import (MultisphereFailure, TmatrixFailure,
                                       InvalidScatterer, MissingParameter)
-from holopy.scattering.interface import calc_holo
+from holopy.scattering.interface import calc_holo, interpret_theory
 from holopy.scattering.theory import MieLens
 from holopy.inference.prior import (Prior, Uniform, TransformedPrior,
                                     generate_guess)
@@ -135,7 +135,7 @@ class Model(HoloPyObject):
                  constraints=[]):
         dummy_parameters = {key: [0, 0, 0] for key in scatterer.parameters}
         self._dummy_scatterer = scatterer.from_parameters(dummy_parameters)
-        self.theory = theory
+        self.theory = interpret_theory(theory)
         self.constraints = ensure_listlike(constraints)
         if not (np.isscalar(noise_sd) or isinstance(noise_sd, (Prior, dict))):
             noise_sd = ensure_array(noise_sd)
