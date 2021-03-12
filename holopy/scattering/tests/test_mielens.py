@@ -230,6 +230,25 @@ class TestMieLens(unittest.TestCase):
         self.assertTrue(np.allclose(fields_1[0],  fields_0[1], **TOLS))
         self.assertTrue(np.allclose(fields_1[1], -fields_0[0], **TOLS))
 
+    @attr('fast')
+    def test_parameters_returns_correct_keys_and_values(self):
+        np.random.seed(1707)
+        lens_angle = np.random.rand()
+        theory = MieLens(lens_angle=lens_angle)
+
+        correct = {'lens_angle': lens_angle}
+        self.assertEqual(theory.parameters, correct)
+
+    @attr('fast')
+    def test_from_parameters_correctly_sets_parameters(self):
+        np.random.seed(1709)
+        lens_angle = np.random.rand()
+        parameters = {'lens_angle': lens_angle}
+
+        theory = MieLens.from_parameters(parameters)
+        self.assertIsInstance(theory, MieLens)
+        self.assertEqual(theory.lens_angle, lens_angle)
+
 
 class TestAberratedMieLens(unittest.TestCase):
     @attr("fast")

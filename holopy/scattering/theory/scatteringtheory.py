@@ -89,5 +89,5 @@ class ScatteringTheory(HoloPyObject):
 
     @classmethod
     def from_parameters(cls, parameters):
-        return cls()
+        return cls(**parameters)
 

@@ -131,6 +131,10 @@ class MieLens(ScatteringTheory):
         field_xyz *= np.exp(1j * particle_kz) / incident_field_x
         return field_xyz
 
+    @property
+    def parameters(self):
+        return {'lens_angle': self.lens_angle}
+
     def _create_calculator(
             self, particle_kz=None, index_ratio=None, size_parameter=None):
         field_calculator = MieLensCalculator(
