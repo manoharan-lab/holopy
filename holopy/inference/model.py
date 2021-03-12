@@ -135,7 +135,7 @@ class Model(HoloPyObject):
                  constraints=[]):
         dummy_parameters = {key: [0, 0, 0] for key in scatterer.parameters}
         self._dummy_scatterer = scatterer.from_parameters(dummy_parameters)
-        self.theory = interpret_theory(theory)
+        self.theory = interpret_theory(scatterer, theory)
         self.constraints = ensure_listlike(constraints)
         if not (np.isscalar(noise_sd) or isinstance(noise_sd, (Prior, dict))):
             noise_sd = ensure_array(noise_sd)
