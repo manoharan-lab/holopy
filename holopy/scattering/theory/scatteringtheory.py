@@ -83,3 +83,11 @@ class ScatteringTheory(HoloPyObject):
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
         return fields.T
 
+    @property
+    def parameters(self):
+        return dict()
+
+    @classmethod
+    def from_parameters(cls, parameters):
+        return cls()
+
