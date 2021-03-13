@@ -235,7 +235,6 @@ class TestLens(unittest.TestCase):
         kwargs = {
             'quad_npts_theta': np.random.randint(200),
             'quad_npts_phi': np.random.randint(200),
-            'use_numexpr': np.random.choice([True, False]),
              }
         theory_in = Lens(1.0, Mie(False, True), **kwargs)
 

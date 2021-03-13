@@ -78,7 +78,10 @@ class TestDDA(unittest.TestCase):
             'addacmd': [],
             'suppress_C_output': np.random.choice([True, False]),
             }
-        theory_in = DDA(**kwargs)
+        try:
+            theory_in = DDA(**kwargs)
+        except DependencyMissing:
+            raise SkipTest()
         pars = {}
         theory_out = theory_in.from_parameters(pars)
 
