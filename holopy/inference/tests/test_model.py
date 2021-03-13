@@ -31,7 +31,7 @@ from numpy.testing import assert_raises
 from holopy.core import detector_grid, update_metadata, holopy_object
 from holopy.core.tests.common import assert_equal, assert_obj_close
 from holopy.scattering import (
-    Sphere, Spheres, Mie, MieLens, calc_holo, Multisphere)
+    Sphere, Spheres, Mie, MieLens, AberratedMieLens, calc_holo, Multisphere)
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 from holopy.scattering.errors import MissingParameter
 from holopy.core.tests.common import assert_read_matches_write
@@ -831,6 +831,40 @@ class TestAlphaModel(unittest.TestCase):
 
         self.assertTrue(np.all(from_model.values == correct.values))
 
+    @attr('fast')
+    def test_forward_correctly_creates_aberratedmielens_theory(self):
+        n_ab_params = 4
+        theory_parameterized = AberratedMieLens(
+            lens_angle=prior.Uniform(0., 1.0),
+            spherical_aberration=[
+                prior.Uniform(-10, 10) for _ in range(n_ab_params)])
+        model = AlphaModel(
+            SPHERE_IN_METERS,
+            theory=theory_parameterized,
+            alpha=prior.Uniform(0, 1.0))
+
+        np.random.seed(1032)
+        lens_angle = np.random.rand()
+        spherical_aberration = np.random.rand(n_ab_params) * 20 - 10
+        alpha = np.random.rand()
+        pars = {
+            'n': 1.5,
+            'r': 0.5e-6,
+            'alpha': alpha,
+            'lens_angle': lens_angle,
+            }
+        for i, v in enumerate(spherical_aberration):
+            pars.update({f'spherical_aberration.{i}': v})
+
+        from_model = model.forward(pars, xschema_lens)
+
+        theory = AberratedMieLens(
+            lens_angle=lens_angle, spherical_aberration=spherical_aberration)
+        scatterer = model.scatterer_from_parameters(pars)
+        correct = calc_holo(
+            xschema_lens, scatterer, theory=theory, scaling=alpha)
+
+        self.assertTrue(np.all(from_model.values == correct.values))
 
 
 class TestPerfectLensModel(unittest.TestCase):
