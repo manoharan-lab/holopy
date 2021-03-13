@@ -115,6 +115,20 @@ class TestModel(unittest.TestCase):
         self.assertEqual(model.scatterer_from_parameters(pars), expected)
 
     @attr('fast')
+    def test_theory_from_parameters(self):
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
+        theory_in = MieLens(lens_angle=prior.Uniform(0, 1.0))
+        model = Model(sphere, theory=theory_in)
+
+        np.random.seed(1021)
+        lens_angle = np.random.rand()
+        pars = {'lens_angle': lens_angle, 'n': 1.59, 'r': 0.5}
+        theory_out = model.theory_from_parameters(pars)
+
+        self.assertIsInstance(theory_out, theory_in.__class__)
+        self.assertEqual(theory_out.lens_angle, lens_angle)
+
+    @attr('fast')
     def test_internal_scatterer_from_parameters_dict_fails(self):
         sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
         model = AlphaModel(sphere)
@@ -713,6 +727,31 @@ class TestFindOptics(unittest.TestCase):
         self.assertRaises(MissingParameter, model._find_optics, [], schema)
 
 
+class TestExactModel(unittest.TestCase):
+    @attr('fast')
+    def test_forward_correctly_creates_mielens_theory(self):
+        model = ExactModel(
+            SPHERE_IN_METERS,
+            theory=MieLens(prior.Uniform(0., 1.0)))
+
+        np.random.seed(1032)
+        lens_angle = np.random.rand()
+        pars = {
+            'n': 1.5,
+            'r': 0.5e-6,
+            'lens_angle': lens_angle,
+            }
+
+        from_model = model.forward(pars, xschema_lens)
+
+        theory = MieLens(lens_angle=lens_angle)
+        scatterer = model.scatterer_from_parameters(pars)
+        correct = calc_holo(
+            xschema_lens, scatterer, theory=theory, scaling=1.0)
+
+        self.assertTrue(np.all(from_model.values == correct.values))
+
+
 class TestAlphaModel(unittest.TestCase):
     @attr('fast')
     def test_initializable(self):
@@ -738,6 +777,47 @@ class TestAlphaModel(unittest.TestCase):
         model = AlphaModel(sphere, alpha=alpha_dict)
         reloaded = take_yaml_round_trip(model)
         self.assertEqual(reloaded, model)
+
+    @attr('fast')
+    def test_forward_uses_alpha(self):
+        # we check that, if alpha = 0, the hologram is constant
+        model = AlphaModel(
+            SPHERE_IN_METERS,
+            alpha=prior.Uniform(0, 1.0))
+        pars = {
+            'n': 1.5,
+            'r': 0.5e-6,
+            'alpha': 0,
+            }
+        holo = model.forward(pars, xschema_lens)
+        self.assertLess(holo.values.std(), 1e-6)
+
+    @attr('fast')
+    def test_forward_correctly_creates_mielens_theory(self):
+        model = AlphaModel(
+            SPHERE_IN_METERS,
+            theory=MieLens(prior.Uniform(0., 1.0)),
+            alpha=prior.Uniform(0, 1.0))
+
+        np.random.seed(1032)
+        lens_angle = np.random.rand()
+        alpha = np.random.rand()
+        pars = {
+            'n': 1.5,
+            'r': 0.5e-6,
+            'alpha': alpha,
+            'lens_angle': lens_angle,
+            }
+
+        from_model = model.forward(pars, xschema_lens)
+
+        theory = MieLens(lens_angle=lens_angle)
+        scatterer = model.scatterer_from_parameters(pars)
+        correct = calc_holo(
+            xschema_lens, scatterer, theory=theory, scaling=alpha)
+
+        self.assertTrue(np.all(from_model.values == correct.values))
+
 
 
 class TestPerfectLensModel(unittest.TestCase):

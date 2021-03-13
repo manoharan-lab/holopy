@@ -329,6 +329,11 @@ class Model(HoloPyObject):
     def scatterer(self):
         return self._scatterer_from_parameters(self._parameters)
 
+    def theory_from_parameters(self, pars):
+        pars = self.ensure_parameters_are_listlike(pars)
+        formatted = read_map(self._maps['theory'], pars)
+        return self.theory.from_parameters(formatted)
+
     def scatterer_from_parameters(self, pars):
         """
         Creates a scatterer by setting values for model parameters
@@ -433,8 +438,7 @@ class Model(HoloPyObject):
         for constraint in self.constraints:
             if not constraint.check(par_scat):
                 return -np.inf
-        return sum([p.lnprob(val) for p, val in
-                    zip(self._parameters, pars)])
+        return sum([p.lnprob(val) for p, val in zip(self._parameters, pars)])
 
     def lnposterior(self, pars, data, pixels=None):
         """
@@ -575,8 +579,9 @@ class AlphaModel(Model):
         alpha = read_map(self._maps['model'], pars)['alpha']
         optics = self._find_optics(pars, detector)
         scatterer = self._scatterer_from_parameters(pars)
+        theory = self.theory_from_parameters(pars)
         try:
-            return calc_holo(detector, scatterer, theory=self.theory,
+            return calc_holo(detector, scatterer, theory=theory,
                              scaling=alpha, **optics)
         except (MultisphereFailure, TmatrixFailure, InvalidScatterer):
             return -np.inf
@@ -616,8 +621,9 @@ class ExactModel(Model):
         """
         optics = self._find_optics(pars, detector)
         scatterer = self._scatterer_from_parameters(pars)
+        theory = self.theory_from_parameters(pars)
         try:
-            return self.calc_func(detector, scatterer, theory=self.theory, **optics)
+            return self.calc_func(detector, scatterer, theory=theory, **optics)
         except (MultisphereFailure, InvalidScatterer):
             return -np.inf
 
