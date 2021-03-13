@@ -599,14 +599,6 @@ class AlphaModel(Model):
             return -np.inf
 
 
-# TODO: Change the default theory (when it is "auto") to be
-# selected by the model.
-# -- this is a little trickier than it sounds, because
-# hlopy.scattering.determine_theory picks based off of whether the
-# object is 1 sphere or a collection of spheres etc. So you can't
-# pass MieLens as a theory
-# For now it would be OK since PerfectLensModel only works with single
-# spheres or superpositions, but let's leave this for later.
 class ExactModel(Model):
     """
     Model of arbitrary scattering function given by calc_func.
