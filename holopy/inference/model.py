@@ -133,9 +133,8 @@ class Model(HoloPyObject):
     def __init__(self, scatterer, noise_sd=None, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
                  constraints=[]):
-        dummy_parameters = {key: [0, 0, 0] for key in scatterer.parameters}
-        self._dummy_scatterer = scatterer.from_parameters(dummy_parameters)
-        self.theory = interpret_theory(scatterer, theory)
+        self._dummy_scatterer = self._create_dummy_scatterer(scatterer)
+        self.theory = interpret_theory(self._dummy_scatterer, theory)
         self.constraints = ensure_listlike(constraints)
         if not (np.isscalar(noise_sd) or isinstance(noise_sd, (Prior, dict))):
             noise_sd = ensure_array(noise_sd)
@@ -356,6 +355,19 @@ class Model(HoloPyObject):
         """
         scatterer_parameters = read_map(self._maps['scatterer'], pars)
         return self._dummy_scatterer.from_parameters(scatterer_parameters)
+
+    @classmethod
+    def _create_dummy_scatterer(cls, scatterer):
+        # this assumes that scatterer parameters are 1D list-likes or scalars
+        # if they are not, this method needs to be changed.
+        dummy_parameters = dict()
+        for key, value in scatterer.parameters.items():
+            parameter_is_1d_group = hasattr(value, '__len__')
+            if parameter_is_1d_group:
+                dummy_parameters[key] = [0 for _ in value]
+            else:
+                dummy_parameters[key] = 0
+        return scatterer.from_parameters(dummy_parameters)
 
     def ensure_parameters_are_listlike(self, pars):
         if isinstance(pars, dict):
