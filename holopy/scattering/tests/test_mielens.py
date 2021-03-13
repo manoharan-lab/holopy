@@ -245,9 +245,27 @@ class TestMieLens(unittest.TestCase):
         lens_angle = np.random.rand()
         parameters = {'lens_angle': lens_angle}
 
-        theory = MieLens.from_parameters(parameters)
+        theory = MieLens().from_parameters(parameters)
         self.assertIsInstance(theory, MieLens)
         self.assertEqual(theory.lens_angle, lens_angle)
+
+    @attr('fast')
+    def test_theory_from_parameters_respects_nonfittable_options(self):
+        pars = {'lens_angle': 0.6}
+        # Since the theory doesn't actually construct a calculator until
+        # the hologram is generated, we can pass in nonsense calculator
+        # accuracy kwargs
+        correct = {
+            'some': 123,
+            'additional': True,
+            'kwargs': 42,
+            'structure': 'check',
+            }
+        theory_in = MieLens(
+            lens_angle=1.0,
+            calculator_accuracy_kwargs=correct)
+        theory_out = theory_in.from_parameters(pars)
+        self.assertEqual(theory_out.calculator_accuracy_kwargs, correct)
 
 
 class TestAberratedMieLens(unittest.TestCase):
@@ -397,7 +415,7 @@ class TestAberratedMieLens(unittest.TestCase):
         lens_angle = np.random.rand()
         parameters = {'lens_angle': lens_angle}
 
-        theory = MieLens.from_parameters(parameters)
+        theory = MieLens().from_parameters(parameters)
         self.assertIsInstance(theory, MieLens)
         self.assertEqual(theory.lens_angle, lens_angle)
 

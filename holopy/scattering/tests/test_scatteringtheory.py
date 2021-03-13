@@ -91,7 +91,7 @@ class TestScatteringTheory(unittest.TestCase):
     @attr('fast')
     def test_from_parameters_callable_by_default(self):
         tmp = ScatteringTheory()
-        theory = ScatteringTheory.from_parameters(tmp.parameters)
+        theory = tmp.from_parameters(tmp.parameters)
         self.assertIsInstance(theory, ScatteringTheory)
 
 

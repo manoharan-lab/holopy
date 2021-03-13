@@ -20,6 +20,7 @@
 import unittest
 import tempfile
 import warnings
+import itertools
 
 import yaml
 import numpy as np
@@ -128,6 +129,21 @@ class TestModel(unittest.TestCase):
 
         self.assertIsInstance(theory_out, theory_in.__class__)
         self.assertEqual(theory_out.lens_angle, lens_angle)
+
+    @attr('fast')
+    def test_theory_from_parameters_respects_nonfittable_options_mie(self):
+        # tests for other theories are done in the scattering tests suite
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
+        pars = {'n': 1.59, 'r': 0.5}
+
+        for c, f in itertools.product([True, False], [True, False]):
+            theory_in = Mie(
+                compute_escat_radial=c,
+                full_radial_dependence=f)
+            model = Model(sphere, theory=theory_in)
+            theory_out = model.theory_from_parameters(pars)
+            self.assertEqual(theory_out.compute_escat_radial, c)
+            self.assertEqual(theory_out.full_radial_dependence, f)
 
     @attr('fast')
     def test_auto_theory_from_parameters_when_spheres_gives_multisphere(self):

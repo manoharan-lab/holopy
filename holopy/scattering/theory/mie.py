@@ -61,6 +61,12 @@ class Mie(ScatteringTheory):
     Currently, in calculating the Lorenz-Mie scattering coefficients,
     the maximum size parameter x = ka is limited to 1000.
     """
+    unfittable_attributes = (
+        'compute_escat_radial',
+        'full_radial_dependence',
+         'eps1',
+         'eps2',
+         )
 
     def __init__(self, compute_escat_radial=True, full_radial_dependence=True,
                  eps1=1e-2, eps2=1e-16):

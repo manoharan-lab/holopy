@@ -55,6 +55,7 @@ class ScatteringTheory(HoloPyObject):
     """
     desired_coordinate_system = 'spherical'
     parameter_names = tuple()
+    unfittable_attributes = tuple()
 
     def can_handle(self, scatterer):
         """Given a scatterer, returns a bool"""
@@ -88,7 +89,22 @@ class ScatteringTheory(HoloPyObject):
     def parameters(self):
         return {k: getattr(self, k) for k in self.parameter_names}
 
-    @classmethod
-    def from_parameters(cls, parameters):
-        return cls(**parameters)
+    def from_parameters(self, parameters):
+        """Creates a ScatteringTheory like the current one, but with different
+        parameters. Used for fitting
+
+        Parameters
+        ----------
+        dict
+            keys should be valid `self.parameter_names` fields, values
+            should be the corresponding kwargs
+
+        Returns
+        -------
+        ScatteringTheory instance, of the same class as `self`
+        """
+        kwargs = parameters
+        for k in self.unfittable_attributes:
+            kwargs.update({k: getattr(self, k)})
+        return self.__class__(**kwargs)
 

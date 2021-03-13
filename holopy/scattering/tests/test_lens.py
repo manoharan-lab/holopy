@@ -228,6 +228,26 @@ class TestLens(unittest.TestCase):
         tols = {'atol': 5e-2, 'rtol': 5e-2}
         self.assertTrue(np.allclose(intensity_xpol, intensity_ypol, **tols))
 
+    @attr('fast')
+    def test_theory_from_parameters(self):
+        np.random.seed(1323)
+        lens_angle_0 = np.random.rand()
+        kwargs = {
+            'quad_npts_theta': np.random.randint(200),
+            'quad_npts_phi': np.random.randint(200),
+            'use_numexpr': np.random.choice([True, False]),
+             }
+        theory_in = Lens(1.0, Mie(False, True), **kwargs)
+
+        lens_angle_1 = np.random.rand()
+        pars = {'lens_angle': lens_angle_1}
+        theory_out = theory_in.from_parameters(pars)
+
+        self.assertEqual(theory_out.lens_angle, lens_angle_1)
+        self.assertEqual(theory_out.theory, theory_in.theory)
+        for k, v in kwargs.items():
+            self.assertEqual(getattr(theory_out, k), v)
+
 
 class TestLensVsMielens(unittest.TestCase):
     def test_quadrature_scattering_matrix_same_as_mielens(self):

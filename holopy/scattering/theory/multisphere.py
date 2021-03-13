@@ -120,6 +120,15 @@ class Multisphere(ScatteringTheory):
        DOI: 10.1016/j.jqsrt.2011.02.019.
 
     """
+    unfittable_attributes = (
+        'niter',
+        'eps',
+        'meth',
+        'qeps1',
+        'qeps2',
+        'compute_escat_radial',
+        'suppress_fortran_output',
+        )
 
     def __init__(self, niter=200, eps=1e-6, meth=1, qeps1=1e-5, qeps2=1e-8,
                  compute_escat_radial=False, suppress_fortran_output=True):

@@ -65,6 +65,26 @@ class TestDDA(unittest.TestCase):
         not_a_scatterer = 'not_a_scatterer'
         self.assertFalse(DDA.can_handle(not_a_scatterer))
 
+    @attr('fast', 'dda')
+    def test_theory_from_parameters(self):
+        np.random.seed(1332)
+        kwargs = {
+            'n_cpu': np.random.randint(8),
+            'use_gpu': np.random.choice([True, False]),
+            'gpu_id': None,
+            'max_dpl_size': None,
+            'use_indicators': np.random.choice([True, False]),
+            'keep_raw_calculations': np.random.choice([True, False]),
+            'addacmd': [],
+            'suppress_C_output': np.random.choice([True, False]),
+            }
+        theory_in = DDA(**kwargs)
+        pars = {}
+        theory_out = theory_in.from_parameters(pars)
+
+        for k, v in kwargs.items():
+            self.assertEqual(getattr(theory_out, k), v)
+
 
 def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
               **kwargs):
