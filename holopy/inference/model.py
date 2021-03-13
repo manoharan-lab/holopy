@@ -144,6 +144,7 @@ class Model(HoloPyObject):
         self._parameters = []
         self._parameter_names = []
         self._maps = {'scatterer': self._convert_to_map(scatterer.parameters),
+                      'theory': self._convert_to_map(self.theory.parameters),
                       'optics': self._convert_to_map(optics_parameters)}
 
     def _convert_to_map(self, parameter, name=''):

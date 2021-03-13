@@ -30,7 +30,7 @@ from numpy.testing import assert_raises
 
 from holopy.core import detector_grid, update_metadata, holopy_object
 from holopy.core.tests.common import assert_equal, assert_obj_close
-from holopy.scattering import Sphere, Spheres, Mie, calc_holo
+from holopy.scattering import Sphere, Spheres, Mie, MieLens, calc_holo
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 from holopy.scattering.errors import MissingParameter
 from holopy.core.tests.common import assert_read_matches_write
@@ -187,6 +187,17 @@ class TestModel(unittest.TestCase):
         model = AlphaModel(sphere, theory=Mie())
         self.assertIsInstance(model.theory, ScatteringTheory)
 
+    @attr('fast')
+    def test_init_maps_theory_parameters(self):
+        sphere = Sphere()
+        theory = MieLens()
+        model = AlphaModel(sphere, theory=theory)
+
+        maps = model._maps
+        self.assertIn('theory', maps)
+        # raise ValueError(maps['scatterer'], sphere.parameters)
+        theory_map = [dict, [[['lens_angle', 1.0]]]]
+        self.assertEqual(maps['theory'], theory_map)
 
 
 class TestParameterMapping(unittest.TestCase):
