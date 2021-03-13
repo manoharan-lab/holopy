@@ -30,7 +30,8 @@ from numpy.testing import assert_raises
 
 from holopy.core import detector_grid, update_metadata, holopy_object
 from holopy.core.tests.common import assert_equal, assert_obj_close
-from holopy.scattering import Sphere, Spheres, Mie, MieLens, calc_holo
+from holopy.scattering import (
+    Sphere, Spheres, Mie, MieLens, calc_holo, Multisphere)
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 from holopy.scattering.errors import MissingParameter
 from holopy.core.tests.common import assert_read_matches_write
@@ -127,6 +128,18 @@ class TestModel(unittest.TestCase):
 
         self.assertIsInstance(theory_out, theory_in.__class__)
         self.assertEqual(theory_out.lens_angle, lens_angle)
+
+    @attr('fast')
+    def test_auto_theory_from_parameters_when_spheres_gives_multisphere(self):
+        """testing a bug where the theory would always be Mie for spheres"""
+        index = prior.Uniform(1, 2)
+        radius = prior.Uniform(0, 1)
+        sphere1 = Sphere(n=index, r=radius, center=[1, 2, 3])
+        sphere2 = Sphere(n=index, r=radius, center=[1, 1, 1])
+        spheres = Spheres([sphere1, sphere2])
+        model = Model(spheres, theory='auto')
+
+        self.assertIsInstance(model.theory, Multisphere)
 
     @attr('fast')
     def test_internal_scatterer_from_parameters_dict_fails(self):
