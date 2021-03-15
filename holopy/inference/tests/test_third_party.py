@@ -102,6 +102,7 @@ def residfunct(p, fjac = None):
 
     return([status, get_values(flat(derivates))])
 
+
 @attr('slow')
 def test_nmpfit():
     fitresult = nmpfit.mpfit(residfunct, parinfo = parinfo, ftol = ftol,

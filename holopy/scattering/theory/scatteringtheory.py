@@ -110,4 +110,3 @@ class ScatteringTheory(HoloPyObject):
         kwargs = self._dict
         kwargs.update(parameters)
         return self.__class__(**kwargs)
-

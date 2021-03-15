@@ -97,6 +97,7 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
     except DependencyMissing:
         raise SkipTest()
 
+
 @attr('medium', "dda")
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_sphere():
@@ -105,6 +106,7 @@ def test_DDA_sphere():
     mie_holo = calc_holo(schema, sc, index, wavelen)
     dda_holo = calc_holo(schema, sc, index, wavelen, theory=DDA)
     assert_allclose(mie_holo, dda_holo, rtol=.0015)
+
 
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 @attr('slow', 'dda')
@@ -130,6 +132,7 @@ def in_sphere(r):
         return (point**2).sum() < rsq
     return test
 
+
 @attr('medium', 'dda')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_indicator():
@@ -141,6 +144,7 @@ def test_DDA_indicator():
     s = Scatterer(Sphere(r=r, center = (0, 0, 0)).contains, n, center)
     gen_holo = calc_holo(schema, s, index, wavelen, theory=DDA)
     assert_allclose(sphere_holo, gen_holo, rtol=2e-3)
+
 
 @attr('fast', 'dda')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
