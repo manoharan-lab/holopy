@@ -250,6 +250,18 @@ class TestMieLens(unittest.TestCase):
         self.assertEqual(theory.lens_angle, lens_angle)
 
     @attr('fast')
+    def test_from_parameters_leaves_original_theory_alone(self):
+        np.random.seed(1709)
+        lens_angle_original = np.random.rand()
+        theory = MieLens(lens_angle=lens_angle_original)
+
+        lens_angle_new = np.random.rand()
+        parameters = {'lens_angle': lens_angle_new}
+        _ = theory.from_parameters(parameters)
+
+        self.assertEqual(theory.lens_angle, lens_angle_original)
+
+    @attr('fast')
     def test_theory_from_parameters_respects_nonfittable_options(self):
         pars = {'lens_angle': 0.6}
         # Since the theory doesn't actually construct a calculator until
