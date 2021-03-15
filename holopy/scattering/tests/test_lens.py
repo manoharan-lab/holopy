@@ -229,14 +229,14 @@ class TestLens(unittest.TestCase):
         self.assertTrue(np.allclose(intensity_xpol, intensity_ypol, **tols))
 
     @attr('fast')
-    def test_theory_from_parameters(self):
+    def test_from_parameters(self):
         np.random.seed(1323)
         lens_angle_0 = np.random.rand()
         kwargs = {
             'quad_npts_theta': np.random.randint(200),
             'quad_npts_phi': np.random.randint(200),
              }
-        theory_in = Lens(1.0, Mie(False, True), **kwargs)
+        theory_in = Lens(lens_angle_0, Mie(False, True), **kwargs)
 
         lens_angle_1 = np.random.rand()
         pars = {'lens_angle': lens_angle_1}
@@ -246,6 +246,12 @@ class TestLens(unittest.TestCase):
         self.assertEqual(theory_out.theory, theory_in.theory)
         for k, v in kwargs.items():
             self.assertEqual(getattr(theory_out, k), v)
+
+    @attr('fast')
+    def test_parameters_has_correct_keys(self):
+        np.random.seed(1323)
+        theory = Lens(np.random.rand(), Mie(False, True))
+        self.assertEqual(set(theory.parameters.keys()), {'lens_angle'})
 
 
 class TestLensVsMielens(unittest.TestCase):
