@@ -76,17 +76,6 @@ class DDA(ScatteringTheory):
     it will need excessive memory or computation time for particularly
     large scatterers.
     """
-    unfittable_attributes = (
-            'n_cpu',
-            'use_gpu',
-            'gpu_id',
-            'max_dpl_size',
-            'use_indicators',
-            'keep_raw_calculations',
-            'addacmd',
-            'suppress_C_output',
-            )
-
     def __init__(self, n_cpu=1, use_gpu=False, gpu_id=None, max_dpl_size=None,
                  use_indicators=True, keep_raw_calculations=False, addacmd=[],
                  suppress_C_output=True):

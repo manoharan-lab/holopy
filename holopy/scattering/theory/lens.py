@@ -20,9 +20,7 @@ class Lens(ScatteringTheory):
     effect of an objective lens.
     """
     desired_coordinate_system = 'cylindrical'
-    parameter_names = ('lens_angle',)
-    unfittable_attributes = (
-        'theory', 'quad_npts_theta', 'quad_npts_phi', 'use_numexpr')
+    parameter_names = ('lens_angle',)  # FIXME test
 
     numexpr_integrand_prefactor1 = (
         'exp(1j * krho_p * sintheta * cos(phi_relative))')

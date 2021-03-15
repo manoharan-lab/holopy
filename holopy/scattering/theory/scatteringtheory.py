@@ -55,7 +55,11 @@ class ScatteringTheory(HoloPyObject):
     """
     desired_coordinate_system = 'spherical'
     parameter_names = tuple()
-    unfittable_attributes = tuple()
+
+    def __init__(self):
+        # holopy's yaml functionality inspects the code, so we need an
+        # init, even though it is empty.
+        pass
 
     def can_handle(self, scatterer):
         """Given a scatterer, returns a bool"""
@@ -103,8 +107,7 @@ class ScatteringTheory(HoloPyObject):
         -------
         ScatteringTheory instance, of the same class as `self`
         """
-        kwargs = parameters
-        for k in self.unfittable_attributes:
-            kwargs.update({k: getattr(self, k)})
+        kwargs = self._dict
+        kwargs.update(parameters)
         return self.__class__(**kwargs)
 

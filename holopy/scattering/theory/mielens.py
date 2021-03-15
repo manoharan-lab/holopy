@@ -44,7 +44,6 @@ class MieLens(ScatteringTheory):
 
     desired_coordinate_system = 'cylindrical'
     parameter_names = ('lens_angle',)
-    unfittable_attributes = ('calculator_accuracy_kwargs',)
 
     def __init__(self, lens_angle=1.0, calculator_accuracy_kwargs={}):
         """
