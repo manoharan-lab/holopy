@@ -18,6 +18,8 @@ Improvements
   TransformedPrior object that name, e.g. clip_x = np.min(x, name='clipped')
 - Cleaned up model parameter names created from TransformedPrior objects
 - CmaStrategy now scales first step size based on initial population, not prior
+- Inference models work with scattering theories that require
+  parameters. See more in the user guide :ref:`scatterers_user`.
 
 Documentation
 -------------
@@ -43,6 +45,11 @@ Developer Notes
   the scattering matrices or scattered fields needed to be calculated is
   now in `holopy.scattering.imageformation`.
 
+Deprecations
+------------
+- PerfectLensModel is now deprecated; lens models are now directly
+  fittable with either AlphaModel or ExactModel. To do so, pass in a
+  :class:`holopy.prior.Prior` object as the `lens_angle`.
 
 Holopy 3.4
 ==========
