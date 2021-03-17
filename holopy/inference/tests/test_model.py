@@ -889,19 +889,6 @@ def make_sphere():
     return Sphere(n=index, r=radius)
 
 
-def make_model_kwargs():
-    kwargs = {
-        'noise_sd': 0.05,
-        'medium_index': 1.33,
-        'illum_wavelen': 0.66,
-        'illum_polarization': (1, 0),
-        'theory': 'auto',
-        # constraints?
-        # FIXME need to test alpha, lens_angle for other models
-        }
-    return kwargs
-
-
 def take_yaml_round_trip(model):
     object_string = yaml.dump(model)
     loaded = yaml.load(object_string, Loader=holopy_object.FullLoader)
