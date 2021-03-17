@@ -140,7 +140,7 @@ class TestTMatrix(unittest.TestCase):
         std_ok = np.allclose(test_values['std'], np.std(holo.values), rtol=1e-6)
         self.assertTrue(all([min_ok, max_ok, mean_ok, std_ok]))
 
-    @attr("slow")
+    @attr("slow", "dda")
     def test_vs_dda(self):
         s = Spheroid(n=1.5, r=[.4, 1.],
                      rotation=(0, np.pi/2, np.pi/2), center=(5, 5, 50))

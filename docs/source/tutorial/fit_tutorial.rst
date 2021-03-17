@@ -105,11 +105,13 @@ to apply on the :class:`.Scatterer` (we have used :func:`.calc_holo` here).
 The :class:`.ExactModel` isn't actually the default when we call :func:`.fit`
 directly. Instead, HoloPy uses an :class:`.AlphaModel`, which includes an
 additional fitting parameter to control the hologram contrast intensity - the
-same as calling :func:`.calc_holo` with a `scaling` argument. HoloPy also
-includes a :class:`.PerfectLensModel`, which is a more sophisticated
-description of hologram image formation and depends on the acceptance angle of
-the objective lens. You can fit for the extra parameters in these models by
-defining them as :class:`.Prior` objects.
+same as calling :func:`.calc_holo` with a `scaling` argument. You can
+fit for the extra parameters in these models by defining them as
+:class:`.Prior` objects. Likewise, if the scattering theory you are
+using requires fittable parameters (such as the `lens_angle` for the
+:class:`.MieLens` theory or the `spherical_aberration` for the
+:class:`.AberratedMieLens` theory), you can fit for these by defining
+them as :class:`.Prior` objects as well.
 
 The model in our example has read in some metadata from ``data_holo``
 (illumination wavelength & polarization, medium refractive index, and image

@@ -56,7 +56,7 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
             np.isclose(result.parameters['alpha'], CORRECT_ALPHA, rtol=0.1))
         self.assertEqual(model, result.model)
 
-    @attr('medium')
+    @attr('slow')
     def test_fitted_parameters_similar_to_nmpfit(self):
         data = make_fake_data()
         model = make_model()

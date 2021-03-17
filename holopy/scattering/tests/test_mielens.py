@@ -230,6 +230,55 @@ class TestMieLens(unittest.TestCase):
         self.assertTrue(np.allclose(fields_1[0],  fields_0[1], **TOLS))
         self.assertTrue(np.allclose(fields_1[1], -fields_0[0], **TOLS))
 
+    @attr('fast')
+    def test_parameters_returns_correct_keys_and_values(self):
+        np.random.seed(1707)
+        lens_angle = np.random.rand()
+        theory = MieLens(lens_angle=lens_angle)
+
+        correct = {'lens_angle': lens_angle}
+        self.assertEqual(theory.parameters, correct)
+
+    @attr('fast')
+    def test_from_parameters_correctly_sets_parameters(self):
+        np.random.seed(1709)
+        lens_angle = np.random.rand()
+        parameters = {'lens_angle': lens_angle}
+
+        theory = MieLens().from_parameters(parameters)
+        self.assertIsInstance(theory, MieLens)
+        self.assertEqual(theory.lens_angle, lens_angle)
+
+    @attr('fast')
+    def test_from_parameters_leaves_original_theory_alone(self):
+        np.random.seed(1709)
+        lens_angle_original = np.random.rand()
+        theory = MieLens(lens_angle=lens_angle_original)
+
+        lens_angle_new = np.random.rand()
+        parameters = {'lens_angle': lens_angle_new}
+        _ = theory.from_parameters(parameters)
+
+        self.assertEqual(theory.lens_angle, lens_angle_original)
+
+    @attr('fast')
+    def test_theory_from_parameters_respects_nonfittable_options(self):
+        pars = {'lens_angle': 0.6}
+        # Since the theory doesn't actually construct a calculator until
+        # the hologram is generated, we can pass in nonsense calculator
+        # accuracy kwargs
+        correct = {
+            'some': 123,
+            'additional': True,
+            'kwargs': 42,
+            'structure': 'check',
+            }
+        theory_in = MieLens(
+            lens_angle=1.0,
+            calculator_accuracy_kwargs=correct)
+        theory_out = theory_in.from_parameters(pars)
+        self.assertEqual(theory_out.calculator_accuracy_kwargs, correct)
+
 
 class TestAberratedMieLens(unittest.TestCase):
     @attr("fast")
@@ -354,6 +403,33 @@ class TestAberratedMieLens(unittest.TestCase):
             xschema, sphere, index, wavelen, xpolarization, theory=theory_hi)
 
         self.assertFalse(np.allclose(holo_low, holo_hi, **TOLS))
+
+    @attr('fast')
+    def test_parameters_returns_correct_keys_and_values(self):
+        np.random.seed(1707)
+        lens_angle = np.random.rand()
+        sph_ab = np.random.randn(5)
+        theory = AberratedMieLens(
+            lens_angle=lens_angle,
+            spherical_aberration=sph_ab)
+
+        parameters = theory.parameters
+        correct_keys = {'lens_angle', 'spherical_aberration'}
+        self.assertEqual(correct_keys, set(parameters.keys()))
+        self.assertEqual(parameters['lens_angle'], lens_angle)
+        self.assertEqual(
+            sph_ab.tolist(),
+            parameters['spherical_aberration'].tolist())
+
+    @attr('fast')
+    def test_from_parameters_correctly_sets_parameters(self):
+        np.random.seed(1709)
+        lens_angle = np.random.rand()
+        parameters = {'lens_angle': lens_angle}
+
+        theory = MieLens().from_parameters(parameters)
+        self.assertIsInstance(theory, MieLens)
+        self.assertEqual(theory.lens_angle, lens_angle)
 
 
 def calculate_central_lobe_at(zs):

@@ -134,7 +134,7 @@ def determine_default_theory_for(scatterer):
             theory = Mie()
     elif isinstance(scatterer, Spheroid) or isinstance(scatterer, Cylinder):
         theory = Tmatrix()
-    elif DDA().can_handle(scatterer):
+    elif DDA.can_handle(scatterer):
         theory = DDA()
     else:
         raise AutoTheoryFailed(scatterer)

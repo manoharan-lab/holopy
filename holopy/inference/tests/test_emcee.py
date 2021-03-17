@@ -27,9 +27,9 @@ from nose.plugins.attrib import attr
 from holopy.inference import prior, TemperedStrategy
 from holopy.core.process import normalize
 from holopy.core.tests.common import assert_obj_close, get_example_data
-from holopy.scattering import Sphere, Mie
+from holopy.scattering import Sphere, Mie, MieLens
 from holopy.inference import prior
-from holopy.inference.model import AlphaModel, Model, PerfectLensModel
+from holopy.inference.model import AlphaModel, Model
 from holopy.inference.emcee import sample_emcee, EmceeStrategy
 from holopy.inference.tests.common import SimpleModel
 
@@ -90,8 +90,9 @@ class TestSubsetTempering(unittest.TestCase):
     def test_perfectlens_subset_tempering(self):
         data = normalize(get_example_data('image0001'))
         scatterer = Sphere(r=0.65e-6, n=1.58, center=[5.5e-6, 5.8e-6, 14e-6])
-        model = PerfectLensModel(
-            scatterer, noise_sd=.1, lens_angle=prior.Gaussian(0.7, 0.1))
+        model = AlphaModel(
+            scatterer, noise_sd=.1,
+            theory=MieLens(lens_angle=prior.Gaussian(0.7, 0.1)))
         strat = TemperedStrategy(nwalkers=4, nsamples=10, stages=1,
                                  stage_len=10, parallel=None, seed=40)
         with warnings.catch_warnings():

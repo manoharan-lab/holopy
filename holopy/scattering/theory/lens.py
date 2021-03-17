@@ -20,6 +20,7 @@ class Lens(ScatteringTheory):
     effect of an objective lens.
     """
     desired_coordinate_system = 'cylindrical'
+    parameter_names = ('lens_angle',)
 
     numexpr_integrand_prefactor1 = (
         'exp(1j * krho_p * sintheta * cos(phi_relative))')

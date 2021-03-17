@@ -118,12 +118,24 @@ you want scattering matrices you will need to implement
 implement ``raw_cross_sections``. We separate out ``raw_fields`` from
 ``raw_scat_matrs`` to allow for faster fields calculation for specific
 cases, such as the Mie, MieLens, and Multisphere theories (and you might
-want to do so for your theory as well).
+want to do so for your theory as well); the base
+:class:`.ScatteringTheory` class calculates the fields from the
+scattering matrices by default.
 
 You can look at the Mie theory in HoloPy for an example of calling Fortran
 functions to compute scattering (C functions will look similar from the python
 side) or DDA for an an example of calling out to an external command line tool
 by generating files and reading output files.
+
+If you want to fit parameters in your scattering theory, you also need
+to define a class attribute `parameter_names` that contains the fittable
+attributes of the scattering theory. Once you do this, fitting should
+work natively with your new scattering theory: you should be able to
+specify the parameters as a :class:`prior.Prior` object and `holopy`'s
+inference :class:`Model` will auto-detect them as fittable parameters.
+For an example of this, see the :class:`.Lens`, :class:`.MieLens`, or
+:class:`.AberratedMieLens` classes.
+
 
 .. _infer_model:
 

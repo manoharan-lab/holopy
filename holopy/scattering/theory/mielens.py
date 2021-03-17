@@ -43,6 +43,7 @@ class MieLens(ScatteringTheory):
     """
 
     desired_coordinate_system = 'cylindrical'
+    parameter_names = ('lens_angle',)
 
     def __init__(self, lens_angle=1.0, calculator_accuracy_kwargs={}):
         """
@@ -143,6 +144,8 @@ class MieLens(ScatteringTheory):
 
 
 class AberratedMieLens(MieLens):
+    parameter_names = ('lens_angle', 'spherical_aberration')
+
     def __init__(self, spherical_aberration=0.0, lens_angle=1.0,
                  calculator_accuracy_kwargs={}):
         super(AberratedMieLens, self).__init__(
