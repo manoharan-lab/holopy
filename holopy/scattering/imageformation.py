@@ -154,15 +154,15 @@ class ImageFormation(HoloPyObject):
             self, scat_matrs, r_theta_phi, schema):
         flattened_schema = flat(schema)
         point_or_flat = self._is_detector_view_point_or_flat(flattened_schema)
-        dims = [point_or_flat, 'Epar', 'Eperp']
+        dims = [point_or_flat, 'E_out', 'E_in']
 
         coords = {point_or_flat: flattened_schema.coords[point_or_flat]}
         coords.update({
             'r': (point_or_flat, r_theta_phi[0]),
             'theta': (point_or_flat, r_theta_phi[1]),
             'phi': (point_or_flat, r_theta_phi[2]),
-            'Epar': ['S2', 'S3'],
-            'Eperp': ['S4', 'S1'],
+            'E_out': ['parallel', 'perpendicular'],
+            'E_in': ['parallel', 'perpendicular'],
             })
 
         packed = xr.DataArray(
