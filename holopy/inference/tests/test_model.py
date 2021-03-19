@@ -180,6 +180,16 @@ class TestModel(unittest.TestCase):
         self.assertEqual(model.initial_guess, {'n': 1.5, 'r': 0.8})
 
     @attr('fast')
+    def test_initial_guess_scatterer(self):
+        sphere = Sphere(n=prior.Uniform(1, 2),
+                        r=prior.Uniform(0, 1, guess=0.8),
+                        center=[2, 2, 2])
+        model = AlphaModel(sphere)
+        expected = Sphere(n=1.5, r=0.8, center=[2, 2, 2])
+        self.assertEqual(model.initial_guess_scatterer, expected)
+
+
+    @attr('fast')
     def test_yaml_preserves_parameter_names(self):
         n = prior.ComplexPrior(prior.Uniform(1, 2), prior.Uniform(0, 0.1))
         sphere = Sphere(n=n, r=prior.Uniform(0, 1.5, name='radius'),
