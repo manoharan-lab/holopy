@@ -23,6 +23,7 @@ import unittest
 import tempfile
 
 import numpy as np
+import xarray as xr
 from numpy.testing import assert_allclose, assert_raises, assert_equal
 from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
@@ -153,6 +154,16 @@ class TestDisplayImage(unittest.TestCase):
         # should be exactly the same and not just close:
         is_ok = np.all(displayed.values == xarray_4d.values)
         self.assertTrue(is_ok)
+
+    @attr('fast')
+    def test_z_in_coords_but_not_dims(self):
+        data = xr.DataArray(data=np.zeros((2, 2, 2)),
+                            dims=['x', 'y', 'z'],
+                            coords={'x': [0, 1], 'y': [0, 1], 'z': [0, 1]})
+        data = data.sel(z=1)
+        values = display_image(data, scaling=None).values
+        self.assertEqual(values.shape, (1, 2, 2))
+        self.assertTrue(np.all(values == 0))
 
     @attr("fast")
     def test_interpet_axes_for_numpy_arrays(self):
