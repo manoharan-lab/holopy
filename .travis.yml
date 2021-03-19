@@ -4,7 +4,7 @@ python:
   - 3.8
 
 env:
-  - DEPS="scipy pyyaml pillow pandas h5py sphinx matplotlib nose emcee cma schwimmbad numpy<1.20 xarray<0.17.0 h5netcdf yaml sphinx_rtd_theme"
+  - DEPS="scipy pyyaml pillow pandas h5py sphinx matplotlib nose emcee cma schwimmbad numpy<1.20 xarray h5netcdf yaml sphinx_rtd_theme"
 
 branches:
   except:

@@ -273,10 +273,7 @@ class SamplingResult(FitResult):
     def burn_in(self, sample_number):
 
         def cut_start(array):
-            if len(array.chain.coords) == 0:
-                array['chain'] = ('chain', array.chain)
-                array.set_index(chain='chain')
-            return array.sel(chain=slice(sample_number, None))
+            return array.isel(chain=slice(sample_number, None))
 
         burned_in = copy(self)
         burned_in.samples = cut_start(burned_in.samples)
