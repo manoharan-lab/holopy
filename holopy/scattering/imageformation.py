@@ -164,7 +164,11 @@ class ImageFormation(HoloPyObject):
             'E_out': ['parallel', 'perpendicular'],
             'E_in': ['parallel', 'perpendicular'],
             })
-
+        # Bohren and Huffman (1998) define the following:
+        # S1: E_out perpendicular, E_in perpendicular
+        # S2: E_out parallel,      E_in parallel
+        # S3: E_out paralell,      E_in perpendicular
+        # S4: E_out perpendicular, E_in parallel
         packed = xr.DataArray(
             scat_matrs, dims=dims, coords=coords, attrs=schema.attrs)
         return packed

@@ -114,13 +114,21 @@ def numpy_int_representer(dumper, data):
 yaml.add_representer(np.int64, numpy_int_representer)
 yaml.add_representer(np.int32, numpy_int_representer)
 
+
+# numpy ufuncs can no longer be pickled as of numpy 1.20
+# we still want to yamlize them, especially for TransforedPrior
 def numpy_ufunc_representer(dumper, data):
     return dumper.represent_scalar('!ufunc', data.__name__)
-yaml.add_representer(np.ufunc, numpy_ufunc_representer)
+
+
 def numpy_ufunc_constructor(loader, node):
     return np.core._ufunc_reconstruct('numpy', node.value)
+
+
+yaml.add_representer(np.ufunc, numpy_ufunc_representer)
 for loader in YAMLLOADERS:
     yaml.add_constructor('!ufunc', numpy_ufunc_constructor, Loader=loader)
+
 
 def numpy_dtype_representer(dumper, data):
     return dumper.represent_scalar('!dtype', data.name)
