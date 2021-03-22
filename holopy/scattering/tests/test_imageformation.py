@@ -180,17 +180,18 @@ class TestImageFormation(unittest.TestCase):
         imageformer = ImageFormation(Mie())
         scat_matrs = imageformer.calculate_scattering_matrix(
             SPHERE, SCAT_SCHEMA)
-        self.assertTrue(scat_matrs.dims == ('flat', 'Epar', 'Eperp'))
+        self.assertTrue(scat_matrs.dims == ('flat', 'E_out', 'E_in'))
 
     @attr("fast")
-    def test_calculate_scattering_matrix_has_correct_s1s2s3s4_labels(self):
+    def test_calculate_scattering_matrix_has_correct_coords(self):
         imageformer = ImageFormation(Mie())
         scat_matrs = imageformer.calculate_scattering_matrix(
             SPHERE, SCAT_SCHEMA)
-        epar_coords = scat_matrs.coords['Epar'].values
-        eperp_coords = scat_matrs.coords['Eperp'].values
-        self.assertTrue(np.all(epar_coords == np.array(['S2', 'S3'])))
-        self.assertTrue(np.all(eperp_coords == np.array(['S4', 'S1'])))
+        expected = np.array(['parallel', 'perpendicular'])
+        for dim in ['E_in', 'E_out']:
+            with self.subTest(dim=dim):
+                coords = scat_matrs.coords[dim].values
+                self.assertTrue(np.all(coords == expected))
 
     @attr("fast")
     def test_calculate_scattering_matrix_has_correct_spherical_coords(self):

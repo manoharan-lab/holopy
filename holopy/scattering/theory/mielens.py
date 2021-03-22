@@ -148,6 +148,29 @@ class AberratedMieLens(MieLens):
 
     def __init__(self, spherical_aberration=0.0, lens_angle=1.0,
                  calculator_accuracy_kwargs={}):
+        """
+        Parameters
+        ----------
+        spherical_aberration : float or array-like of floats
+            The spherical aberration, up to arbitrary order. If a float,
+            just the coefficient of the 3rd-order aberration (4th-order
+            in wavefront). When an array, the coefficients of
+            aberrations in ascending order (3rd, 5th, 7th, etc), where
+            the wavefront distortion for the nth-order aberration is of
+            the form (cos(theta) - 1)^(n+1), where n = 3, 5, 7, etc
+            Default is None, which raises an error.
+        lens_angle : float
+            Lens acceptance angle in radians.
+        calculator_accuracy_kwargs : dict
+            While the analytical calculation is exact, the numerical
+            implementation is approximate. Pass in any parameters to
+            increase or decrease the accuracy via
+            `calculator_accuracy_kwargs.` Valid keys are {`quad_npts`,
+            `interpolate_integrals`, `interpolator_window_size`,
+            `interpolator_degree`}, as explained in
+            mielensfunctions.MieLensCalculator.  The default calculation
+            accuracy is roughly 1e-12 relative accuracy.
+        """
         super(AberratedMieLens, self).__init__(
             lens_angle=lens_angle,
             calculator_accuracy_kwargs=calculator_accuracy_kwargs)
@@ -163,4 +186,3 @@ class AberratedMieLens(MieLens):
             spherical_aberration=self.spherical_aberration,
             **self.calculator_accuracy_kwargs)
         return field_calculator
-

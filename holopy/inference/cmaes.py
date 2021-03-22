@@ -148,7 +148,8 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
         Default tries 'mpi' then 'all'.
     """
     if _CMA_MISSING:
-        raise DependencyMissing('cma', "Install it with \'pip install cma\'.")
+        install_msg = "Install it with \'conda install -c conda-forge cma\'."
+        raise DependencyMissing('cma', install_msg)
 
     popsize = len(initial_population)
     stds = np.std(initial_population, axis=0, ddof=1)

@@ -230,6 +230,35 @@ class test_custom_yaml_output(unittest.TestCase):
         # only a & c appear because b is None, d is not in __init__ signature
         assert yaml.dump(instantiated) == '!S\na: 1\nc: 3\n'
 
+    @attr("fast")
+    def test_custom_treatment_of_length_zero_ndarray(self):
+        zero_length_array = np.array(3)
+        self.assertEqual(yaml.dump(zero_length_array), yaml.dump(3))
+
+    @attr("fast")
+    def test_custom_treatment_of_length_one_ndarray(self):
+        one_length_array = np.array([3])
+        self.assertEqual(yaml.dump(one_length_array), yaml.dump([3]))
+
+    @attr("fast")
+    def test_custom_treatment_of_longer_ndarray(self):
+        longer_array = 3 * np.ones(10, dtype=int)
+        self.assertEqual(yaml.dump(longer_array), yaml.dump([3] * 10))
+
+    @attr("fast")
+    def test_custom_treatment_of_multidim_ndarray(self):
+        multi_D_array = 3 * np.ones((2, 2), dtype=int)
+        self.assertEqual(yaml.dump(multi_D_array), yaml.dump([[3, 3], [3, 3]]))
+
+    @attr("fast")
+    def test_custom_yaml_dump_of_numpy_ufunc(self):
+        self.assertEqual(yaml.dump(np.sqrt), "!ufunc \'sqrt\'\n")
+
+    @attr("fast")
+    def test_custom_yaml_load_of_numpy_ufunc(self):
+        yaml_text = "!ufunc \'sqrt\'\n"
+        self.assertEqual(yaml.load(yaml_text, Loader=yaml.FullLoader), np.sqrt)
+
 
 class TestMemoryUsage(unittest.TestCase):
     @unittest.skipIf(not importlib.util.find_spec('memory_profiler'),

@@ -309,6 +309,10 @@ class Model(HoloPyObject):
                                                      self._parameters)}
 
     @property
+    def initial_guess_scatterer(self):
+        return self.scatterer_from_parameters(self.initial_guess)
+
+    @property
     def medium_index(self):
         return self._find_optics(self._parameters, None)['medium_index']
 

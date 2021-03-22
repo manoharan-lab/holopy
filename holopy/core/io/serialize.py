@@ -85,7 +85,10 @@ yaml.representer.SafeRepresenter.ignore_aliases = \
 # Represent 1d ndarrays as lists in yaml files because it makes them much
 # prettier
 def ndarray_representer(dumper, data):
-    return dumper.represent_list(data.tolist())
+    if data.ndim > 0:
+        return dumper.represent_list(data.tolist())
+    else:
+        return dumper.represent_data(data.item())
 yaml.add_representer(np.ndarray, ndarray_representer)
 
 # represent tuples as lists because yaml doesn't have tuples
@@ -110,6 +113,22 @@ def numpy_int_representer(dumper, data):
     return dumper.represent_int(int(data))
 yaml.add_representer(np.int64, numpy_int_representer)
 yaml.add_representer(np.int32, numpy_int_representer)
+
+
+# numpy ufuncs can no longer be pickled as of numpy 1.20
+# we still want to yamlize them, especially for TransforedPrior
+def numpy_ufunc_representer(dumper, data):
+    return dumper.represent_scalar('!ufunc', data.__name__)
+
+
+def numpy_ufunc_constructor(loader, node):
+    return np.core._ufunc_reconstruct('numpy', node.value)
+
+
+yaml.add_representer(np.ufunc, numpy_ufunc_representer)
+for loader in YAMLLOADERS:
+    yaml.add_constructor('!ufunc', numpy_ufunc_constructor, Loader=loader)
+
 
 def numpy_dtype_representer(dumper, data):
     return dumper.represent_scalar('!dtype', data.name)
