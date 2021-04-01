@@ -127,12 +127,7 @@ def determine_default_theory_for(scatterer):
     if isinstance(scatterer, Sphere):
         theory = Mie()
     elif isinstance(scatterer, Spheres):
-        if all([np.isscalar(scat.r) for scat in scatterer.scatterers]):
-            theory = Multisphere()
-        else:
-            warn("HoloPy's multisphere theory can't handle coated spheres." +
-                 "Using Mie theory.")
-            theory = Mie()
+        theory = _choose_mie_vs_multisphere(scatterer)
     elif isinstance(scatterer, Spheroid) or isinstance(scatterer, Cylinder):
         theory = Tmatrix()
     elif DDA.can_handle(scatterer):
@@ -206,11 +201,11 @@ def calc_holo(detector, scatterer, medium_index=None, illum_wavelen=None,
     holo : xarray.DataArray
         Calculated hologram from the given distribution of spheres
     """
-    theory = interpret_theory(scatterer, theory)
     validate_scatterer(scatterer)
     uschema = prep_schema(
         detector, medium_index, illum_wavelen, illum_polarization)
     scaling = dict_to_array(detector, scaling)
+    theory = interpret_theory(scatterer, theory)
     imageformer = ImageFormation(theory)
     scattered_field = imageformer.calculate_scattered_field(scatterer, uschema)
     reference_field = uschema.illum_polarization
@@ -246,8 +241,8 @@ def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None,
         Dimensional scattering, absorption, and extinction
         cross sections, and <cos theta>
     """
-    theory = interpret_theory(scatterer, theory)
     validate_scatterer(scatterer)
+    theory = interpret_theory(scatterer, theory)
     imageformer = ImageFormation(theory)
     cross_section = imageformer.calculate_cross_sections(
         scatterer=scatterer,
@@ -286,11 +281,11 @@ def calc_scat_matrix(detector, scatterer, medium_index=None, illum_wavelen=None,
         Scattering matrices at specified positions
 
     """
-    theory = interpret_theory(scatterer, theory)
     validate_scatterer(scatterer)
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=False)
+    theory = interpret_theory(scatterer, theory)
     imageformer = ImageFormation(theory)
     result = imageformer.calculate_scattering_matrix(scatterer, uschema)
     return finalize(uschema, result)
@@ -325,11 +320,11 @@ def calc_field(detector, scatterer, medium_index=None, illum_wavelen=None,
     e_field : :class:`.Vector` object
         Calculated hologram from the given distribution of spheres
     """
-    theory = interpret_theory(scatterer, theory)
     validate_scatterer(scatterer)
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=illum_polarization)
+    theory = interpret_theory(scatterer, theory)
     imageformer = ImageFormation(theory)
     result = imageformer.calculate_scattered_field(scatterer, uschema)
     return finalize(uschema, result)
@@ -354,4 +349,14 @@ def scattered_field_to_hologram(scat, ref):
     total_field = scat + ref
     holo = (np.abs(total_field.sel(vector=['x', 'y']))**2).sum(dim=vector)
     return holo
+
+
+def _choose_mie_vs_multisphere(spheres):
+    if any([not np.isscalar(scat.r) for scat in spheres.scatterers]):
+        warn("HoloPy's multisphere theory can't handle coated spheres." +
+             "Using Mie theory.")
+        theory = Mie()
+    else:
+        theory = Multisphere()
+    return theory
 
