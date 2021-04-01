@@ -102,8 +102,9 @@ def validate_scatterer(scatterer):
     # hierarchical data structures, so we check yaml serialization
     for prior_type in PRIOR_TYPES:
         if '!' + prior_type in yaml_scatterer:
-            msg = ('Scattering calculations require fixed values'
-                   ' but scatterer contains {} prior.'.format(prior_type))
+            msg = ('Scattering calculations require fixed values but scatterer'
+                   ' contains {} prior. Wrap Scatterer in a HoloPy Model and '
+                   'call model.initial_guess_scatterer').format(prior_type)
             raise ValueError(msg)
 
 
@@ -134,7 +135,7 @@ def determine_default_theory_for(scatterer):
             theory = Mie()
     elif isinstance(scatterer, Spheroid) or isinstance(scatterer, Cylinder):
         theory = Tmatrix()
-    elif DDA().can_handle(scatterer):
+    elif DDA.can_handle(scatterer):
         theory = DDA()
     else:
         raise AutoTheoryFailed(scatterer)

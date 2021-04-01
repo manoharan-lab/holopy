@@ -59,6 +59,28 @@ SCATTERERS_SMALL_OVERLAP = [
     ]
 
 
+class TestMultisphere(unittest.TestCase):
+    @attr('fast')
+    def test_theory_from_parameters(self):
+        np.random.seed(1332)
+        kwargs = {
+            'niter': np.random.randint(400),
+            'eps': np.random.rand() * 1e-6,
+            'meth': 1,
+            'qeps1': np.random.rand() * 1e-5,
+            'qeps2': np.random.rand() * 1e-8,
+            'compute_escat_radial': np.random.choice([True, False]),
+            'suppress_fortran_output': np.random.choice([True, False]),
+            }
+        theory_in = Multisphere(**kwargs)
+        pars = {}
+        theory_out = theory_in.from_parameters(pars)
+
+        for k, v in kwargs.items():
+            self.assertEqual(getattr(theory_out, k), v)
+
+
+
 @attr('fast')
 def test_construction():
     # test constructor to make sure it works properly and calls base
@@ -96,7 +118,7 @@ def test_polarization():
     return xholo, yholo
 
 
-@attr('fast')
+@attr('medium')
 def test_2_sph():
     sc = Spheres(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07),

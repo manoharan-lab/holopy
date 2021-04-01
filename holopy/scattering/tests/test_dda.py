@@ -20,7 +20,7 @@ Tests adda based DDA calculations
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
-
+import unittest
 
 from numpy.testing import assert_almost_equal, assert_allclose, assert_equal
 import numpy as np
@@ -54,6 +54,41 @@ def teardown_optics():
     global schema
     del schema
 
+
+class TestDDA(unittest.TestCase):
+    @attr('fast')
+    def test_can_handle_class_method(self):
+        self.assertTrue(DDA.can_handle(Sphere()))
+
+    @attr('fast')
+    def test_cannot_handle_things_that_are_not_scatterers(self):
+        not_a_scatterer = 'not_a_scatterer'
+        self.assertFalse(DDA.can_handle(not_a_scatterer))
+
+    @attr('fast', 'dda')
+    def test_theory_from_parameters(self):
+        np.random.seed(1332)
+        kwargs = {
+            'n_cpu': np.random.randint(8),
+            'use_gpu': np.random.choice([True, False]),
+            'gpu_id': None,
+            'max_dpl_size': None,
+            'use_indicators': np.random.choice([True, False]),
+            'keep_raw_calculations': np.random.choice([True, False]),
+            'addacmd': [],
+            'suppress_C_output': np.random.choice([True, False]),
+            }
+        try:
+            theory_in = DDA(**kwargs)
+        except DependencyMissing:
+            raise SkipTest()
+        pars = {}
+        theory_out = theory_in.from_parameters(pars)
+
+        for k, v in kwargs.items():
+            self.assertEqual(getattr(theory_out, k), v)
+
+
 def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
               **kwargs):
     try:
@@ -62,7 +97,8 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
     except DependencyMissing:
         raise SkipTest()
 
-@attr('medium')
+
+@attr('medium', "dda")
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_sphere():
     sc = Sphere(n=1.59, r=3e-1, center=(0, 0, 0))
@@ -71,7 +107,9 @@ def test_DDA_sphere():
     dda_holo = calc_holo(schema, sc, index, wavelen, theory=DDA)
     assert_allclose(mie_holo, dda_holo, rtol=.0015)
 
+
 @with_setup(setup=setup_optics, teardown=teardown_optics)
+@attr('slow', 'dda')
 def test_dda_2_cpu():
     if os.name == 'nt': # windows
         raise SkipTest()
@@ -94,7 +132,8 @@ def in_sphere(r):
         return (point**2).sum() < rsq
     return test
 
-@attr('medium')
+
+@attr('medium', 'dda')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_indicator():
     n = 1.59
@@ -106,7 +145,8 @@ def test_DDA_indicator():
     gen_holo = calc_holo(schema, s, index, wavelen, theory=DDA)
     assert_allclose(sphere_holo, gen_holo, rtol=2e-3)
 
-@attr('fast')
+
+@attr('fast', 'dda')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_voxelated_complex():
     s = Sphere(n = 1.2+2j, r = .2, center = (5,5,5))
@@ -117,7 +157,7 @@ def test_voxelated_complex():
     verify(holo_dda, 'dda_voxelated_complex', rtol=1e-5)
 
 
-@attr('medium')
+@attr('medium', 'dda')
 @with_setup(setup=setup_optics, teardown=teardown_optics)
 def test_DDA_coated():
     cs = Sphere(
@@ -129,6 +169,7 @@ def test_DDA_coated():
 
 
 @with_setup(setup=setup_optics, teardown=teardown_optics)
+@attr('medium', 'dda')
 def test_Ellipsoid_dda():
     e = Ellipsoid(1.5, r = (.5, .1, .1), center = (1, -1, 10))
     schema = detector_grid(10, .1)
@@ -145,7 +186,7 @@ def test_Ellipsoid_dda():
         raise SkipTest()
 
 
-@attr('slow')
+@attr('slow', 'dda')
 def test_predefined_scatterers():
     # note this tests only that the code runs, not that it is correct
     try:
@@ -162,6 +203,8 @@ def test_predefined_scatterers():
     except DependencyMissing:
         raise SkipTest
 
+
+@attr('dda')
 def test_janus():
     schema = detector_grid(10, .1)
     s = JanusSphere_Uniform(n = [1.34, 2.0], r = [.5, .51],
@@ -171,6 +214,8 @@ def test_janus():
                      illum_polarization=(1, 0))
     verify(holo, 'janus_dda')
 
+
+@attr('dda')
 def test_csg_dda():
     s = Sphere(n = 1.6, r=.1, center=(5, 5, 5))
     st = s.translated(.03, 0, 0)

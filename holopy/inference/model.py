@@ -28,7 +28,7 @@ from holopy.core.utils import ensure_array, ensure_listlike, ensure_scalar
 from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering.errors import (MultisphereFailure, TmatrixFailure,
                                       InvalidScatterer, MissingParameter)
-from holopy.scattering.interface import calc_holo
+from holopy.scattering.interface import calc_holo, interpret_theory
 from holopy.scattering.theory import MieLens
 from holopy.inference.prior import (Prior, Uniform, TransformedPrior,
                                     generate_guess)
@@ -133,9 +133,8 @@ class Model(HoloPyObject):
     def __init__(self, scatterer, noise_sd=None, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
                  constraints=[]):
-        dummy_parameters = {key: [0, 0, 0] for key in scatterer.parameters}
-        self._dummy_scatterer = scatterer.from_parameters(dummy_parameters)
-        self.theory = theory
+        self._dummy_scatterer = self._create_dummy_scatterer(scatterer)
+        self.theory = interpret_theory(self._dummy_scatterer, theory)
         self.constraints = ensure_listlike(constraints)
         if not (np.isscalar(noise_sd) or isinstance(noise_sd, (Prior, dict))):
             noise_sd = ensure_array(noise_sd)
@@ -144,6 +143,7 @@ class Model(HoloPyObject):
         self._parameters = []
         self._parameter_names = []
         self._maps = {'scatterer': self._convert_to_map(scatterer.parameters),
+                      'theory': self._convert_to_map(self.theory.parameters),
                       'optics': self._convert_to_map(optics_parameters)}
 
     def _convert_to_map(self, parameter, name=''):
@@ -309,6 +309,10 @@ class Model(HoloPyObject):
                                                      self._parameters)}
 
     @property
+    def initial_guess_scatterer(self):
+        return self.scatterer_from_parameters(self.initial_guess)
+
+    @property
     def medium_index(self):
         return self._find_optics(self._parameters, None)['medium_index']
 
@@ -327,6 +331,11 @@ class Model(HoloPyObject):
     @property
     def scatterer(self):
         return self._scatterer_from_parameters(self._parameters)
+
+    def theory_from_parameters(self, pars):
+        pars = self.ensure_parameters_are_listlike(pars)
+        formatted = read_map(self._maps['theory'], pars)
+        return self.theory.from_parameters(formatted)
 
     def scatterer_from_parameters(self, pars):
         """
@@ -350,6 +359,19 @@ class Model(HoloPyObject):
         """
         scatterer_parameters = read_map(self._maps['scatterer'], pars)
         return self._dummy_scatterer.from_parameters(scatterer_parameters)
+
+    @classmethod
+    def _create_dummy_scatterer(cls, scatterer):
+        # this assumes that scatterer parameters are 1D list-likes or scalars
+        # if they are not, this method needs to be changed.
+        dummy_parameters = dict()
+        for key, value in scatterer.parameters.items():
+            parameter_is_1d_group = hasattr(value, '__len__')
+            if parameter_is_1d_group:
+                dummy_parameters[key] = [0 for _ in value]
+            else:
+                dummy_parameters[key] = 0
+        return scatterer.from_parameters(dummy_parameters)
 
     def ensure_parameters_are_listlike(self, pars):
         if isinstance(pars, dict):
@@ -432,8 +454,7 @@ class Model(HoloPyObject):
         for constraint in self.constraints:
             if not constraint.check(par_scat):
                 return -np.inf
-        return sum([p.lnprob(val) for p, val in
-                    zip(self._parameters, pars)])
+        return sum([p.lnprob(val) for p, val in zip(self._parameters, pars)])
 
     def lnposterior(self, pars, data, pixels=None):
         """
@@ -574,21 +595,14 @@ class AlphaModel(Model):
         alpha = read_map(self._maps['model'], pars)['alpha']
         optics = self._find_optics(pars, detector)
         scatterer = self._scatterer_from_parameters(pars)
+        theory = self.theory_from_parameters(pars)
         try:
-            return calc_holo(detector, scatterer, theory=self.theory,
+            return calc_holo(detector, scatterer, theory=theory,
                              scaling=alpha, **optics)
         except (MultisphereFailure, TmatrixFailure, InvalidScatterer):
             return -np.inf
 
 
-# TODO: Change the default theory (when it is "auto") to be
-# selected by the model.
-# -- this is a little trickier than it sounds, because
-# hlopy.scattering.determine_theory picks based off of whether the
-# object is 1 sphere or a collection of spheres etc. So you can't
-# pass MieLens as a theory
-# For now it would be OK since PerfectLensModel only works with single
-# spheres or superpositions, but let's leave this for later.
 class ExactModel(Model):
     """
     Model of arbitrary scattering function given by calc_func.
@@ -615,53 +629,8 @@ class ExactModel(Model):
         """
         optics = self._find_optics(pars, detector)
         scatterer = self._scatterer_from_parameters(pars)
+        theory = self.theory_from_parameters(pars)
         try:
-            return self.calc_func(detector, scatterer, theory=self.theory, **optics)
+            return self.calc_func(detector, scatterer, theory=theory, **optics)
         except (MultisphereFailure, InvalidScatterer):
-            return -np.inf
-
-
-class PerfectLensModel(Model):
-    """
-    Model of hologram image formation through a high-NA objective.
-    """
-    def __init__(self, scatterer, alpha=1.0, lens_angle=1.0, noise_sd=None,
-                 medium_index=None, illum_wavelen=None, theory='auto',
-                 illum_polarization=None, constraints=[]):
-        super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
-                         illum_polarization, theory, constraints)
-        self._maps['model'] = self._convert_to_map({'alpha': alpha})
-        self._maps['theory'] = self._convert_to_map({'lens_angle': lens_angle})
-
-    @property
-    def alpha(self):
-        return read_map(self._maps['model'], self._parameters)['alpha']
-
-    @property
-    def lens_angle(self):
-        return read_map(self._maps['theory'], self._parameters)['lens_angle']
-
-    def _forward(self, pars, detector):
-        """
-        Compute a forward model (the hologram)
-
-        Parameters
-        -----------
-        pars: list
-            Values for each parameter used to compute the hologram. Ordering
-            is given by self._parameters
-        detector: xarray
-            dimensions of the resulting hologram. Metadata taken from
-            detector if not given explicitly when instantiating self.
-        """
-        alpha = read_map(self._maps['model'], pars)['alpha']
-        optics_kwargs = self._find_optics(pars, detector)
-        scatterer = self._scatterer_from_parameters(pars)
-        theory_kwargs = read_map(self._maps['theory'], pars)
-        # FIXME would be nice to have access to the interpolator kwargs
-        theory = MieLens(**theory_kwargs)
-        try:
-            return calc_holo(detector, scatterer, theory=theory,
-                             scaling=alpha, **optics_kwargs)
-        except InvalidScatterer:
             return -np.inf

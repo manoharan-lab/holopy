@@ -20,6 +20,7 @@
 import unittest
 import tempfile
 import warnings
+import itertools
 
 import yaml
 import numpy as np
@@ -30,14 +31,16 @@ from numpy.testing import assert_raises
 
 from holopy.core import detector_grid, update_metadata, holopy_object
 from holopy.core.tests.common import assert_equal, assert_obj_close
-from holopy.scattering import Sphere, Spheres, Mie, calc_holo
+from holopy.scattering import (
+    Sphere, Spheres, Mie, MieLens, AberratedMieLens, calc_holo, Multisphere)
+from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 from holopy.scattering.errors import MissingParameter
 from holopy.core.tests.common import assert_read_matches_write
 from holopy.inference import (prior, AlphaModel, ExactModel,
                               NmpfitStrategy, EmceeStrategy,
                               available_fit_strategies,
                               available_sampling_strategies)
-from holopy.inference.model import (Model, PerfectLensModel, transformed_prior,
+from holopy.inference.model import (Model, transformed_prior,
                                     make_xarray, read_map)
 from holopy.inference.tests.common import SimpleModel
 from holopy.scattering.tests.common import (
@@ -114,6 +117,47 @@ class TestModel(unittest.TestCase):
         self.assertEqual(model.scatterer_from_parameters(pars), expected)
 
     @attr('fast')
+    def test_theory_from_parameters(self):
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
+        theory_in = MieLens(lens_angle=prior.Uniform(0, 1.0))
+        model = Model(sphere, theory=theory_in)
+
+        np.random.seed(1021)
+        lens_angle = np.random.rand()
+        pars = {'lens_angle': lens_angle, 'n': 1.59, 'r': 0.5}
+        theory_out = model.theory_from_parameters(pars)
+
+        self.assertIsInstance(theory_out, theory_in.__class__)
+        self.assertEqual(theory_out.lens_angle, lens_angle)
+
+    @attr('fast')
+    def test_theory_from_parameters_respects_nonfittable_options_mie(self):
+        # tests for other theories are done in the scattering tests suite
+        sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
+        pars = {'n': 1.59, 'r': 0.5}
+
+        for c, f in itertools.product([True, False], [True, False]):
+            theory_in = Mie(
+                compute_escat_radial=c,
+                full_radial_dependence=f)
+            model = Model(sphere, theory=theory_in)
+            theory_out = model.theory_from_parameters(pars)
+            self.assertEqual(theory_out.compute_escat_radial, c)
+            self.assertEqual(theory_out.full_radial_dependence, f)
+
+    @attr('fast')
+    def test_auto_theory_from_parameters_when_spheres_gives_multisphere(self):
+        """testing a bug where the theory would always be Mie for spheres"""
+        index = prior.Uniform(1, 2)
+        radius = prior.Uniform(0, 1)
+        sphere1 = Sphere(n=index, r=radius, center=[1, 2, 3])
+        sphere2 = Sphere(n=index, r=radius, center=[1, 1, 1])
+        spheres = Spheres([sphere1, sphere2])
+        model = Model(spheres, theory='auto')
+
+        self.assertIsInstance(model.theory, Multisphere)
+
+    @attr('fast')
     def test_internal_scatterer_from_parameters_dict_fails(self):
         sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
         model = AlphaModel(sphere)
@@ -134,6 +178,16 @@ class TestModel(unittest.TestCase):
                         r=prior.Uniform(0, 1, guess=0.8))
         model = AlphaModel(sphere)
         self.assertEqual(model.initial_guess, {'n': 1.5, 'r': 0.8})
+
+    @attr('fast')
+    def test_initial_guess_scatterer(self):
+        sphere = Sphere(n=prior.Uniform(1, 2),
+                        r=prior.Uniform(0, 1, guess=0.8),
+                        center=[2, 2, 2])
+        model = AlphaModel(sphere)
+        expected = Sphere(n=1.5, r=0.8, center=[2, 2, 2])
+        self.assertEqual(model.initial_guess_scatterer, expected)
+
 
     @attr('fast')
     def test_yaml_preserves_parameter_names(self):
@@ -173,6 +227,30 @@ class TestModel(unittest.TestCase):
         as_list = [1.5, 1.2, 0.8]
         self.assertEqual(model.ensure_parameters_are_listlike(as_dict), as_list)
         self.assertEqual(model.ensure_parameters_are_listlike(as_list), as_list)
+
+    @attr('fast')
+    def test_theory_casts_from_auto(self):
+        sphere = Sphere()
+        model = AlphaModel(sphere, theory='auto')
+        self.assertIsInstance(model.theory, ScatteringTheory)
+
+    @attr('fast')
+    def test_theory_casts_correctly_when_not_auto(self):
+        sphere = Sphere()
+        model = AlphaModel(sphere, theory=Mie())
+        self.assertIsInstance(model.theory, ScatteringTheory)
+
+    @attr('fast')
+    def test_init_maps_theory_parameters(self):
+        sphere = Sphere()
+        theory = MieLens()
+        model = AlphaModel(sphere, theory=theory)
+
+        maps = model._maps
+        self.assertIn('theory', maps)
+        # raise ValueError(maps['scatterer'], sphere.parameters)
+        theory_map = [dict, [[['lens_angle', 1.0]]]]
+        self.assertEqual(maps['theory'], theory_map)
 
 
 class TestParameterMapping(unittest.TestCase):
@@ -688,6 +766,31 @@ class TestFindOptics(unittest.TestCase):
         self.assertRaises(MissingParameter, model._find_optics, [], schema)
 
 
+class TestExactModel(unittest.TestCase):
+    @attr('fast')
+    def test_forward_correctly_creates_mielens_theory(self):
+        model = ExactModel(
+            SPHERE_IN_METERS,
+            theory=MieLens(prior.Uniform(0., 1.0)))
+
+        np.random.seed(1032)
+        lens_angle = np.random.rand()
+        pars = {
+            'n': 1.5,
+            'r': 0.5e-6,
+            'lens_angle': lens_angle,
+            }
+
+        from_model = model.forward(pars, xschema_lens)
+
+        theory = MieLens(lens_angle=lens_angle)
+        scatterer = model.scatterer_from_parameters(pars)
+        correct = calc_holo(
+            xschema_lens, scatterer, theory=theory, scaling=1.0)
+
+        self.assertTrue(np.all(from_model.values == correct.values))
+
+
 class TestAlphaModel(unittest.TestCase):
     @attr('fast')
     def test_initializable(self):
@@ -714,63 +817,86 @@ class TestAlphaModel(unittest.TestCase):
         reloaded = take_yaml_round_trip(model)
         self.assertEqual(reloaded, model)
 
-
-class TestPerfectLensModel(unittest.TestCase):
-    @attr('fast')
-    def test_initializable(self):
-        scatterer = make_sphere()
-        model = PerfectLensModel(scatterer, lens_angle=0.6)
-        self.assertTrue(model is not None)
-
-    @attr('fast')
-    def test_accepts_lens_angle_as_prior(self):
-        scatterer = make_sphere()
-        lens_angle = prior.Uniform(0, 1.0)
-        model = PerfectLensModel(scatterer, lens_angle=lens_angle)
-        self.assertIsInstance(model.lens_angle, prior.Prior)
-
-    @attr('fast')
-    def test_accepts_alpha_as_prior(self):
-        scatterer = make_sphere()
-        lens_angle = prior.Uniform(0, 1.0)
-        alpha = prior.Uniform(0, 1.0)
-        model = PerfectLensModel(scatterer, alpha=alpha, lens_angle=lens_angle)
-        self.assertIsInstance(model.alpha, prior.Prior)
-
     @attr('fast')
     def test_forward_uses_alpha(self):
-        model = PerfectLensModel(
+        # we check that, if alpha = 0, the hologram is constant
+        model = AlphaModel(
             SPHERE_IN_METERS,
-            alpha=prior.Uniform(0, 1.0),
-            lens_angle=prior.Uniform(0, 1.0))
-        pars_common = {
-            'lens_angle': 0.3,
+            alpha=prior.Uniform(0, 1.0))
+        pars = {
             'n': 1.5,
             'r': 0.5e-6,
+            'alpha': 0,
             }
-        pars_alpha0 = pars_common.copy()
-        pars_alpha0.update({'alpha': 0})
-        alpha0 = model.forward(pars_alpha0, xschema_lens)
-        self.assertLess(alpha0.values.std(), 1e-6)
+        holo = model.forward(pars, xschema_lens)
+        self.assertLess(holo.values.std(), 1e-6)
+
+    @attr('fast')
+    def test_forward_correctly_creates_mielens_theory(self):
+        model = AlphaModel(
+            SPHERE_IN_METERS,
+            theory=MieLens(prior.Uniform(0., 1.0)),
+            alpha=prior.Uniform(0, 1.0))
+
+        np.random.seed(1032)
+        lens_angle = np.random.rand()
+        alpha = np.random.rand()
+        pars = {
+            'n': 1.5,
+            'r': 0.5e-6,
+            'alpha': alpha,
+            'lens_angle': lens_angle,
+            }
+
+        from_model = model.forward(pars, xschema_lens)
+
+        theory = MieLens(lens_angle=lens_angle)
+        scatterer = model.scatterer_from_parameters(pars)
+        correct = calc_holo(
+            xschema_lens, scatterer, theory=theory, scaling=alpha)
+
+        self.assertTrue(np.all(from_model.values == correct.values))
+
+    @attr('fast')
+    def test_forward_correctly_creates_aberratedmielens_theory(self):
+        n_ab_params = 4
+        theory_parameterized = AberratedMieLens(
+            lens_angle=prior.Uniform(0., 1.0),
+            spherical_aberration=[
+                prior.Uniform(-10, 10) for _ in range(n_ab_params)])
+        model = AlphaModel(
+            SPHERE_IN_METERS,
+            theory=theory_parameterized,
+            alpha=prior.Uniform(0, 1.0))
+
+        np.random.seed(1032)
+        lens_angle = np.random.rand()
+        spherical_aberration = np.random.rand(n_ab_params) * 20 - 10
+        alpha = np.random.rand()
+        pars = {
+            'n': 1.5,
+            'r': 0.5e-6,
+            'alpha': alpha,
+            'lens_angle': lens_angle,
+            }
+        for i, v in enumerate(spherical_aberration):
+            pars.update({f'spherical_aberration.{i}': v})
+
+        from_model = model.forward(pars, xschema_lens)
+
+        theory = AberratedMieLens(
+            lens_angle=lens_angle, spherical_aberration=spherical_aberration)
+        scatterer = model.scatterer_from_parameters(pars)
+        correct = calc_holo(
+            xschema_lens, scatterer, theory=theory, scaling=alpha)
+
+        self.assertTrue(np.all(from_model.values == correct.values))
 
 
 def make_sphere():
     index = prior.Uniform(1.4, 1.6, name='n')
     radius = prior.Uniform(0.2, 0.8, name='r')
     return Sphere(n=index, r=radius)
-
-
-def make_model_kwargs():
-    kwargs = {
-        'noise_sd': 0.05,
-        'medium_index': 1.33,
-        'illum_wavelen': 0.66,
-        'illum_polarization': (1, 0),
-        'theory': 'auto',
-        # constraints?
-        # FIXME need to test alpha, lens_angle for other models
-        }
-    return kwargs
 
 
 def take_yaml_round_trip(model):

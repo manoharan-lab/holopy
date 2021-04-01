@@ -359,12 +359,40 @@ class MieScatteringMatrix(object):
         """Evaluate S_parallel, perpendicular(theta) directly"""
         # Right now, the pi_l, tau_l functions calculate all values of
         # l at once. So we compute all at once then sum
-        pils, tauls = calculate_pil_taul(theta, self.max_l)
-        coeffs = np.array([(2 * l + 1) / (l * (l + 1))
-                           for l in range(1, self.max_l + 1)]).reshape(1, -1)
-        als_bls = [calculate_al_bl(self.index_ratio, self.size_parameter, l)
-                   for l in range(1, self.max_l + 1)]
+
+        # The al, bl calculation can produce nan's if the maximum l
+        # value is made aggressively large, due to weirdness in the
+        # complex arithmetic standard. (The spherical Hankel functions
+        # can be (0 + 1j * inf) when l is large. But, due to the
+        # implementation of complex arithmetic in Python and numpy,
+        # 0 + 1j*inf gets cast as nan + 1j*inf. We then divide a
+        # non-infinite number by the spherical Hankel's nan + 1j*inf,
+        # and that gives nan's when it should give 0.) To avoid this, we
+        # truncate the series at a "reasonable" value of l while
+        # checking that no nans actually appear in the calculation. We
+        # do this by stopping the series if we get a nan, but checking
+        # that the previous term in the series is close to 0:
+        als_bls = list()
+        for l in range(1, self.max_l + 1):
+            this_al_bl = calculate_al_bl(
+                self.index_ratio, self.size_parameter, l)
+            if np.isnan(this_al_bl).any():
+                previous_term_is_nonzero = np.any(np.abs(als_bls[-1]) > 1e-30)
+                if previous_term_is_nonzero:
+                    raise RuntimeError('nan for this value of theta, ka, max_l')
+                break
+            else:
+                truncated_max_l = l
+                als_bls.append(this_al_bl)
+
+        # Now we proceed with the calculation, but using the truncated
+        # max l instead of what the user requested:
         als, bls = [np.array(i) for i in zip(*als_bls)]
+        coeffs = np.array([
+            (2 * l + 1) / (l * (l + 1))
+            for l in range(1, truncated_max_l + 1)]).reshape(1, -1)
+        pils, tauls = calculate_pil_taul(theta, truncated_max_l)
+
         if self.parallel_or_perpendicular == 'perpendicular':
             ans = np.sum(coeffs * (bls * tauls + als * pils), axis=1)
         elif self.parallel_or_perpendicular == 'parallel':

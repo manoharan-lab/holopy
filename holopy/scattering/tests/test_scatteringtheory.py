@@ -83,6 +83,18 @@ class TestScatteringTheory(unittest.TestCase):
         self.assertRaises(
             NotImplementedError, theory.raw_cross_sections, *args)
 
+    @attr('fast')
+    def test_default_parameters_is_empty_dict(self):
+        theory = ScatteringTheory()
+        self.assertEqual(theory.parameters, dict())
+
+    @attr('fast')
+    def test_from_parameters_callable_by_default(self):
+        tmp = ScatteringTheory()
+        theory = tmp.from_parameters(tmp.parameters)
+        self.assertIsInstance(theory, ScatteringTheory)
+
+
 
 class TestMockTheory(unittest.TestCase):
     @attr("fast")

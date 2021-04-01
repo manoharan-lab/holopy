@@ -54,6 +54,12 @@ class ScatteringTheory(HoloPyObject):
     fields in a different way.
     """
     desired_coordinate_system = 'spherical'
+    parameter_names = tuple()
+
+    def __init__(self):
+        # holopy's yaml functionality inspects the code, so we need an
+        # init, even though it is empty.
+        pass
 
     def can_handle(self, scatterer):
         """Given a scatterer, returns a bool"""
@@ -83,3 +89,24 @@ class ScatteringTheory(HoloPyObject):
             fields[i] = mieangfuncs.fieldstocart(escat_sph, theta, phi)
         return fields.T
 
+    @property
+    def parameters(self):
+        return {k: getattr(self, k) for k in self.parameter_names}
+
+    def from_parameters(self, parameters):
+        """Creates a ScatteringTheory like the current one, but with different
+        parameters. Used for fitting
+
+        Parameters
+        ----------
+        dict
+            keys should be valid `self.parameter_names` fields, values
+            should be the corresponding kwargs
+
+        Returns
+        -------
+        ScatteringTheory instance, of the same class as `self`
+        """
+        kwargs = self._dict
+        kwargs.update(parameters)
+        return self.__class__(**kwargs)
