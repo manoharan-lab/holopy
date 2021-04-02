@@ -32,7 +32,7 @@ from holopy.scattering import (Sphere, Spheres, Mie, Multisphere,
 from holopy.core import detector_grid
 from holopy.core.tests.common import assert_obj_close
 from holopy.scattering.interface import *
-from holopy.scattering.errors import MissingParameter
+from holopy.scattering.errors import MissingParameter, InvalidScatterer
 from holopy.inference import prior
 
 import xarray as xr
@@ -140,7 +140,9 @@ class TestDetermineDefaultTheoryFor(unittest.TestCase):
 
     @attr('fast')
     def test_determine_default_theory_for_layered_spheres(self):
-        layered_spheres = Spheres([Sphere(r=[0.5, 1], n=[1, 1.5])]*2)
+        layered_spheres = Spheres([
+            Sphere(center=(1, 1, 1), r=[0.5, 1], n=[1, 1.5]),
+            Sphere(center=(3, 2, 2), r=[0.5, 1], n=[1, 1.5])])
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore')
             default_theory = determine_default_theory_for(layered_spheres)
@@ -155,6 +157,14 @@ class TestDetermineDefaultTheoryFor(unittest.TestCase):
         default_theory = determine_default_theory_for(spheres)
         correct_theory = Mie()
         self.assertEqual(default_theory, correct_theory)
+
+    @attr('fast')
+    def test_raises_invalid_scatterer_when_center_not_set_for_spheres(self):
+        spheres = Spheres([Sphere(), Sphere()])
+        self.assertRaises(
+            InvalidScatterer,
+            determine_default_theory_for,
+            spheres)
 
 
 class TestPrepSchema(unittest.TestCase):

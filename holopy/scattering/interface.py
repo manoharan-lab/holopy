@@ -34,7 +34,8 @@ from holopy.core.metadata import (
     dict_to_array)
 from holopy.core.utils import dict_without, ensure_array
 from holopy.scattering.scatterer import Sphere, Spheres, Spheroid, Cylinder
-from holopy.scattering.errors import AutoTheoryFailed, MissingParameter
+from holopy.scattering.errors import (
+    AutoTheoryFailed, MissingParameter, InvalidScatterer)
 from holopy.scattering.theory import Mie, Multisphere
 from holopy.scattering.imageformation import ImageFormation
 from holopy.scattering.theory import Tmatrix
@@ -352,14 +353,20 @@ def scattered_field_to_hologram(scat, ref):
 
 
 def _choose_mie_vs_multisphere(spheres):
+    center_or_radius_not_set = [
+        getattr(s, k) is None
+        for s in spheres.scatterers for k in ['center', 'r']]
     if len(spheres.scatterers) == 1:
         theory = Mie()
+    elif any(center_or_radius_not_set):
+        msg = ("Sphere centers and radii must be set for scattering " +
+               "calculations with more than one sphere.")
+        raise InvalidScatterer(spheres, msg)
     elif any([not np.isscalar(sphere.r) for sphere in spheres.scatterers]):
         warn("HoloPy's multisphere theory can't handle coated spheres." +
              "Using Mie theory.")
         theory = Mie()
     else:
-        theory = Multisphere()
         # We choose Multisphere if the spheres are close enough, else
         # Mie superposition. We choose the theory that is most accurate.
         # What is close enough? From Jerome's paper (
