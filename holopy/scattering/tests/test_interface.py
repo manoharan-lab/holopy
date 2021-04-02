@@ -120,7 +120,7 @@ class TestDetermineDefaultTheoryFor(unittest.TestCase):
     @attr('fast')
     def test_determine_default_theory_for_spheres(self):
         default_theory = determine_default_theory_for(
-            Spheres([Sphere(), Sphere()]))
+            Spheres([Sphere(center=(1, 1, 1)), Sphere(center=(1, 1, 2))]))
         correct_theory = Multisphere()
         self.assertTrue(default_theory == correct_theory)
 

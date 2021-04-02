@@ -95,7 +95,10 @@ class TestModel(unittest.TestCase):
 
     @attr('fast')
     def test_scatterers_maintain_attrs(self):
-        spheres = Spheres([Sphere(), Sphere()], warn=False)
+        spheres = Spheres([
+            Sphere(center=(1, 2, 3), r=0.4, n=1.59),
+            Sphere(center=(4, 5, 6), r=0.4, n=1.59)],
+            warn=False)
         model = AlphaModel(spheres)
         self.assertEqual(model.scatterer.warn, False)
 
