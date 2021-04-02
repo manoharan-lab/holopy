@@ -33,7 +33,10 @@ can:
 HoloPy provides a powerful and user-friendly interface to scattering
 and optical propagation theories. It also provides a set of flexible
 objects that make it easy to describe and analyze data from complex
-experiments or simulations.
+experiments or simulations. HoloPy's optical propagation theories are
+work for holograms of arbitrary objects; HoloPy's current scattering
+calculations accurately describe scatterers in sizes from tens of
+micrometers and smaller.
 
 The easiest way to see what HoloPy is all about is to jump to the
 examples in our `user guide <http://holopy.readthedocs.io/en/latest/tutorial/index.html>`_.
