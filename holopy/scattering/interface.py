@@ -352,11 +352,40 @@ def scattered_field_to_hologram(scat, ref):
 
 
 def _choose_mie_vs_multisphere(spheres):
-    if any([not np.isscalar(scat.r) for scat in spheres.scatterers]):
+    if len(spheres.scatterers) == 1:
+        theory = Mie()
+    elif any([not np.isscalar(sphere.r) for sphere in spheres.scatterers]):
         warn("HoloPy's multisphere theory can't handle coated spheres." +
              "Using Mie theory.")
         theory = Mie()
     else:
         theory = Multisphere()
+        # We choose Multisphere if the spheres are close enough, else
+        # Mie superposition. We choose the theory that is most accurate.
+        # What is close enough? From Jerome's paper (
+        # the effects from multiple scattering are on the order of
+        #       error_mie ~ Q_ext *(ka)^2 / kR
+        # For large spheres, Q_ext -> 2, so we can write this as
+        #       error_mie ~ kR * (a / R)^2 << 1
+        # The Multisphere theory uses spherical harmonic translation
+        # theorems to expand out each particle's scattered field and
+        # self-consistently solve for multiple-sphere scattering.
+        # For computational reasons Multisphere does not go past a fixed order
+        # (=70), but the actual number of terms needed scales as kR.
+        # So for large R, the error in Multisphere scales as
+        #       error_multisphere = kR / 100
+        # where the factor of 100 is the value of kR at which
+        # multisphere stops increasing the expansion order.
+        # The error for multisphere is smaller than the Mie
+        # superposition error when
+        #       (a / R)^2 / 100 < 1
+        # Note that the Mie error could still be large, if ka >> R / a
+        max_radius = max([sphere.r for sphere in spheres.scatterers])
+        centers = np.array([sphere.center for sphere in spheres.scatterers])
+        dx = centers.reshape(1, -1, 3) - centers.reshape(-1, 1, 3)
+        max_separation = np.linalg.norm(dx, axis=2).max()
+        close_enough = max_separation <= 15 * max_radius
+
+        theory =  Multisphere() if close_enough else Mie()
     return theory
 
