@@ -115,28 +115,28 @@ class TestDetermineDefaultTheoryFor(unittest.TestCase):
     def test_determine_default_theory_for_sphere(self):
         default_theory = determine_default_theory_for(Sphere())
         correct_theory = Mie()
-        self.assertTrue(default_theory == correct_theory)
+        self.assertEqual(default_theory, correct_theory)
 
     @attr('fast')
     def test_determine_default_theory_for_spheres(self):
         default_theory = determine_default_theory_for(
             Spheres([Sphere(center=(1, 1, 1)), Sphere(center=(1, 1, 2))]))
         correct_theory = Multisphere()
-        self.assertTrue(default_theory == correct_theory)
+        self.assertEqual(default_theory, correct_theory)
 
     @attr('fast')
     def test_determine_default_theory_for_spheroid(self):
         scatterer = Spheroid(n=1.33, r=(1.0, 2.0))
         default_theory = determine_default_theory_for(scatterer)
         correct_theory = Tmatrix()
-        self.assertTrue(default_theory == correct_theory)
+        self.assertEqual(default_theory, correct_theory)
 
     @attr('fast')
     def test_determine_default_theory_for_cylinder(self):
         scatterer = Cylinder(n=1.33, h=2, d=1)
         default_theory = determine_default_theory_for(scatterer)
         correct_theory = Tmatrix()
-        self.assertTrue(default_theory == correct_theory)
+        self.assertEqual(default_theory, correct_theory)
 
     @attr('fast')
     def test_determine_default_theory_for_layered_spheres(self):
@@ -145,7 +145,16 @@ class TestDetermineDefaultTheoryFor(unittest.TestCase):
             warnings.filterwarnings('ignore')
             default_theory = determine_default_theory_for(layered_spheres)
         correct_theory = Mie()
-        self.assertTrue(default_theory == correct_theory)
+        self.assertEqual(default_theory, correct_theory)
+
+    @attr('fast')
+    def test_gives_mie_when_spheres_very_far_apart(self):
+        sphere1 = Sphere(r=0.5, n=1.59, center=(100, 0, 10))
+        sphere2 = Sphere(r=0.5, n=1.59, center=(-100, 0, 10))
+        spheres = Spheres([sphere1, sphere2])
+        default_theory = determine_default_theory_for(spheres)
+        correct_theory = Mie()
+        self.assertEqual(default_theory, correct_theory)
 
 
 class TestPrepSchema(unittest.TestCase):
