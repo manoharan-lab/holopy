@@ -393,6 +393,5 @@ def _choose_mie_vs_multisphere(spheres):
         max_separation = np.linalg.norm(dx, axis=2).max()
         close_enough = max_separation <= 15 * max_radius
 
-        theory =  Multisphere() if close_enough else Mie()
+        theory = Multisphere() if close_enough else Mie()
     return theory
-
