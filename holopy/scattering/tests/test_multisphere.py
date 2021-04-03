@@ -159,9 +159,6 @@ class TestErrors(unittest.TestCase):
     args = (index, wavelen, xpolarization)
     kwargs = {'theory': Multisphere()}
 
-    def setUp(self):
-        warnings.filterwarnings('error')
-
     @attr('medium')
     def test_invalid_when_spheres_very_far_apart(self):
         sphere1 = Sphere(center=[7e0, 7e-6, 10e-6],  n=1.5811+1e-4j, r=5e-07)
