@@ -367,31 +367,43 @@ def _choose_mie_vs_multisphere(spheres):
              "Using Mie theory.")
         theory = Mie()
     else:
-        # We choose Multisphere if the spheres are close enough, else
-        # Mie superposition. We choose the theory that is most accurate.
-        # What is close enough? From Jerome's paper (
-        # the effects from multiple scattering are on the order of
+        # We choose the theory that is most accurate, which is
+        # Multisphere if the spheres are close enough, else Mie
+        # superposition.
+        # What is close enough? From Jerome's paper [1], the relative
+        # effects from multiple scattering are on the order of
         #       error_mie ~ Q_ext *(ka)^2 / kR
+        # where a is the sphere radius, R the characteristic separation,
+        # and k the wavevector of the light.
         # For large spheres, Q_ext -> 2, so we can write this as
-        #       error_mie ~ kR * (a / R)^2 << 1
+        #       error_mie ~ kR * (a / R)^2
+        #
         # The Multisphere theory uses spherical harmonic translation
         # theorems to expand out each particle's scattered field and
         # self-consistently solve for multiple-sphere scattering.
-        # For computational reasons Multisphere does not go past a fixed order
-        # (=70), but the actual number of terms needed scales as kR.
-        # So for large R, the error in Multisphere scales as
-        #       error_multisphere = kR / 100
-        # where the factor of 100 is the value of kR at which
-        # multisphere stops increasing the expansion order.
-        # The error for multisphere is smaller than the Mie
+        # For computational reasons Multisphere does not go past a fixed
+        # order (=70, which happens at kR ~ 100), but the actual number
+        # of terms needed scales as kR. Presumably at kR ~ 100 the error
+        # from multisphere is still small, say ~0.1.
+        # So for large R, the error in Multisphere is approximately
+        #       error_multisphere = 0.1 * kR / 100
+        # The error for Multisphere is smaller than the Mie
         # superposition error when
-        #       (a / R)^2 / 100 < 1
+        #       0.1 * kR / 100 < kR * (a / R)^2,       or
+        #       R < sqrt(1000) * a
+        # Since this is just an order-of-magnitude calculation, we take
+        # sqrt(1000) ~ 30.
         # Note that the Mie error could still be large, if ka >> R / a
+        #
+        # [1] Fung, Jerome, et al. "Imaging multiple colloidal particles
+        # by fitting electromagnetic scattering solutions to digital
+        # holograms." Journal of Quantitative Spectroscopy and Radiative
+        # Transfer 113.18 (2012): 2482-2489.
         max_radius = max([sphere.r for sphere in spheres.scatterers])
         centers = np.array([sphere.center for sphere in spheres.scatterers])
         dx = centers.reshape(1, -1, 3) - centers.reshape(-1, 1, 3)
         max_separation = np.linalg.norm(dx, axis=2).max()
-        close_enough = max_separation <= 15 * max_radius
+        close_enough = max_separation <= 30 * max_radius
 
         theory = Multisphere() if close_enough else Mie()
     return theory
