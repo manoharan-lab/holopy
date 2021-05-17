@@ -25,6 +25,7 @@ import xarray as xr
 
 from holopy.core.metadata import dict_to_array, make_subset_data
 from holopy.core.utils import ensure_array, ensure_listlike, ensure_scalar
+from holopy.core.errors import fit_warning
 from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering.errors import (MultisphereFailure, TmatrixFailure,
                                       InvalidScatterer, MissingParameter)
@@ -46,7 +47,6 @@ def _purge_ties(node):
         value = [(scalar, _purge_ties(mapping)) for scalar, mapping in
                  node.value if scalar.value != 'ties']
         if value != node.value:
-            from holopy.fitting import fit_warning
             tie_msg = ('. Ignoring previously defined ties. '
                         'Use Model.add_tie() to reassign them')
             fit_warning('newly saved model', 'the old one' + tie_msg)
@@ -269,7 +269,6 @@ class Model(HoloPyObject):
             parameters = fields['_parameters']
             maps = fields['_maps']
         except KeyError:
-            from holopy.fitting import fit_warning
             fit_warning('newly saved model', 'the old one')
             kwargs = fields
             return cls(**kwargs)
@@ -536,14 +535,12 @@ class Model(HoloPyObject):
         return log_likelihood
 
     def fit(self, data, strategy=None):
-        from holopy.fitting import fit_warning
         from holopy.inference.interface import validate_strategy
         fit_warning('holopy.fit()', 'model.fit()')
         strategy = validate_strategy(strategy, 'fit')
         return strategy.fit(self, data)
 
     def sample(self, data, strategy=None):
-        from holopy.fitting import fit_warning
         from holopy.inference.interface import validate_strategy
         fit_warning('holopy.sample()', 'model.sample()')
         strategy = validate_strategy(strategy, 'sample')

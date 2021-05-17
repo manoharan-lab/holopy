@@ -45,7 +45,6 @@ from holopy.inference.model import (Model, transformed_prior,
 from holopy.inference.tests.common import SimpleModel
 from holopy.scattering.tests.common import (
     xschema_lens, sphere as SPHERE_IN_METERS)
-from holopy.fitting import fit_warning
 
 
 class TestModel(unittest.TestCase):

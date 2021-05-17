@@ -31,7 +31,7 @@ images and calculations.
 """
 
 
-from holopy import core, scattering, fitting, inference
+from holopy import core, scattering, inference
 from holopy.core import (load, save, load_image, save_image, show,
                          check_display, detector_grid, detector_points)
 from holopy.propagation import propagate
