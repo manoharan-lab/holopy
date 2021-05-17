@@ -36,8 +36,7 @@ from holopy.core.io.vis import display_image
 from holopy.core.metadata import (data_grid, get_spacing, update_metadata,
                     copy_metadata, to_vector, illumination)
 from holopy.core.utils import ensure_array, dict_without
-from holopy.core.errors import (
-    NoMetadata, BadImage, LoadError, NORMALS_DEPRECATION_MESSAGE)
+from holopy.core.errors import NoMetadata, BadImage, LoadError
 from holopy.core.holopy_object import FullLoader# compatibility with pyyaml < 5
 
 attr_coords = '_attr_coords'
@@ -204,7 +203,7 @@ def load(inf, lazy=False):
 
 
 def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
-               illum_polarization=None, normals=None, noise_sd=None,
+               illum_polarization=None, noise_sd=None,
                channel=None, name=None):
     """
     Load data or results
@@ -235,8 +234,6 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
     obj : xarray.DataArray representation of the image with associated metadata
 
     """
-    if normals is not None:
-        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
     if name is None:
         name = os.path.splitext(os.path.split(inf)[-1])[0]
 
@@ -437,7 +434,7 @@ def _save_im(filename, im, depth=8):
 
 def load_average(
         filepath, refimg=None, spacing=None, medium_index=None,
-        illum_wavelen=None, illum_polarization=None, normals=None,
+        illum_wavelen=None, illum_polarization=None,
         noise_sd=None, channel=None, image_glob='*.tif'):
     """
     Average a set of images (usually as a background)
@@ -471,9 +468,6 @@ def load_average(
         noise_sd attribute contains average pixel stdev normalized by
         total image intensity
     """
-    if normals is not None:
-        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
-
     if isinstance(filepath, str):
         if os.path.isdir(filepath):
             filepath = glob.glob(os.path.join(filepath, image_glob))
@@ -527,7 +521,7 @@ def load_average(
         mean_image = copy_metadata(refimg, mean_image, do_coords=False)
 
     # overwrite metadata from refimg with provided values
-    return update_metadata(mean_image, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)
+    return update_metadata(mean_image, medium_index, illum_wavelen, illum_polarization, noise_sd)
 
 
 class Accumulator:

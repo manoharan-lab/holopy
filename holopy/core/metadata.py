@@ -30,7 +30,7 @@ import xarray as xr
 
 from holopy.core.utils import updated, repeat_sing_dims, ensure_array
 from holopy.core.math import to_cartesian
-from holopy.core.errors import CoordSysError, NORMALS_DEPRECATION_MESSAGE
+from holopy.core.errors import CoordSysError
 
 
 vector = 'vector'
@@ -42,7 +42,7 @@ illumination = 'illumination'
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def detector_grid(shape, spacing, normals=None, name=None, extra_dims=None):
+def detector_grid(shape, spacing, name=None, extra_dims=None):
     """
     Create a rectangular grid of pixels to represent a detector on which
     scattering calculations are to be performed.
@@ -83,13 +83,11 @@ def detector_grid(shape, spacing, normals=None, name=None, extra_dims=None):
         for val in extra_dims.values():
             shape.append(len(val))
     d = np.zeros(shape)
-    if normals is not None:
-        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
     return data_grid(d, spacing, name=name, extra_dims=extra_dims)
 
 
 def detector_points(coords={}, x=None, y=None, z=None, r=None, theta=None,
-                    phi=None, normals=None, name=None):
+                    phi=None, name=None):
     """
     Returns a one-dimensional set of detector coordinates at which scattering
     calculations are to be done.
@@ -127,8 +125,6 @@ def detector_points(coords={}, x=None, y=None, z=None, r=None, theta=None,
     a digital camera.)
 
     """
-    if normals is not None:
-        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
     updatelist = {'x': x, 'y': y, 'z': z, 'r': r, 'theta': theta, 'phi': phi}
     coords = updated(coords, updatelist)
     if 'x' in coords and 'y' in coords:
@@ -179,7 +175,7 @@ def clean_concat(arrays, dim):
 
 
 def update_metadata(a, medium_index=None, illum_wavelen=None,
-                    illum_polarization=None, normals=None, noise_sd=None):
+                    illum_polarization=None, noise_sd=None):
     """Returns a copy of an image with updated metadata in its 'attrs' field.
 
     Parameters
@@ -200,8 +196,6 @@ def update_metadata(a, medium_index=None, illum_wavelen=None,
     b : xarray.DataArray
         copy of input image with updated metadata.
     """
-    if normals is not None:
-        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
     attrlist = {'medium_index': medium_index,
                 'illum_wavelen': dict_to_array(a, illum_wavelen),
                 'illum_polarization': dict_to_array(
@@ -404,20 +398,6 @@ def from_flat(a):
 
 def get_values(a):
     return getattr(a, 'values', a)
-
-
-def default_norms(coords, n):
-    if n == 'auto':
-        if 'x' in coords:
-            n = (0, 0, 1)
-        elif 'theta' in coords:
-            n = to_cartesian(1, coords['theta'][1], coords['phi'][1])
-            n = -np.vstack((n['x'], n['y'], n['z']))
-            n = xr.DataArray(
-                n, dims=[vector, 'point'], coords={vector: ['x', 'y', 'z']})
-        else:
-            raise CoordSysError()
-    return to_vector(n)
 
 
 def make_coords(shape, spacing, z=0):

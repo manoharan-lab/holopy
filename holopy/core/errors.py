@@ -24,11 +24,6 @@ Error classes used in holopy
 import warnings
 
 
-NORMALS_DEPRECATION_MESSAGE = (
-    "`normals` are deprecated in holopy. Their old implementation was" +
-    " incorrect and cannot really be corrected.")
-
-
 class LoadError(Exception):
     def __init__(self, filename, message):
         super().__init__("Error loading file %r: %s" % (filename, message))
