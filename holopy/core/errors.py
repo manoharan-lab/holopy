@@ -21,6 +21,8 @@ Error classes used in holopy
 
 .. moduleauthor :: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
+import warnings
+
 
 NORMALS_DEPRECATION_MESSAGE = (
     "`normals` are deprecated in holopy. Their old implementation was" +
@@ -57,3 +59,9 @@ class DependencyMissing(Exception):
 
 class PerformanceWarning(UserWarning):
     pass
+
+
+def fit_warning(correct_obj, obselete_obj):
+    msg = ("HoloPy's inference API has changed. "
+    "Use a {} object instead of {}.".format(correct_obj, obselete_obj))
+    warnings.warn(msg, UserWarning)
