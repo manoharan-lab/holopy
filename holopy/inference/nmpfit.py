@@ -101,7 +101,7 @@ class NmpfitStrategy(HoloPyObject):
 
         Parameters
         ----------
-        model : :class:`~holopy.fitting.model.Model` object
+        model : :class:`~holopy.inference.model.Model` object
             A model describing the scattering system which leads to your
             data and the parameters to vary to fit it to the data
         data : xarray.DataArray
