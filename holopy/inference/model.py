@@ -25,7 +25,7 @@ import xarray as xr
 
 from holopy.core.metadata import dict_to_array, make_subset_data
 from holopy.core.utils import ensure_array, ensure_listlike, ensure_scalar
-from holopy.core.errors import fit_warning
+from holopy.core.errors import raise_fitting_api_error
 from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering.errors import (MultisphereFailure, TmatrixFailure,
                                       InvalidScatterer, MissingParameter)
@@ -49,7 +49,9 @@ def _purge_ties(node):
         if value != node.value:
             tie_msg = ('. Ignoring previously defined ties. '
                         'Use Model.add_tie() to reassign them')
-            fit_warning('newly saved model', 'the old one' + tie_msg)
+            raise_fitting_api_error(
+                'newly saved model',
+                'the old one' + tie_msg)
         node.value = value
     elif isinstance(node, yaml.SequenceNode):
         node.value = [_purge_ties(val) for val in node.value]
@@ -269,9 +271,7 @@ class Model(HoloPyObject):
             parameters = fields['_parameters']
             maps = fields['_maps']
         except KeyError:
-            fit_warning('newly saved model', 'the old one')
-            kwargs = fields
-            return cls(**kwargs)
+            raise_fitting_api_error('newly saved model', 'the old one')
         else:
             dummy_scatterer = fields['scatterer']
             scatterer_parameters = read_map(maps['scatterer'], parameters)
@@ -535,16 +535,10 @@ class Model(HoloPyObject):
         return log_likelihood
 
     def fit(self, data, strategy=None):
-        from holopy.inference.interface import validate_strategy
-        fit_warning('holopy.fit()', 'model.fit()')
-        strategy = validate_strategy(strategy, 'fit')
-        return strategy.fit(self, data)
+        raise_fitting_api_error('holopy.fit()', 'model.fit()')
 
     def sample(self, data, strategy=None):
-        from holopy.inference.interface import validate_strategy
-        fit_warning('holopy.sample()', 'model.sample()')
-        strategy = validate_strategy(strategy, 'sample')
-        return strategy.sample(self, data)
+        raise_fitting_api_error('holopy.sample()', 'model.sample()')
 
 
 class LimitOverlaps(HoloPyObject):
