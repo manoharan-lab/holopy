@@ -47,6 +47,7 @@ class DependencyMissing(Exception):
     def __init__(self, dependency, message=""):
         self.dependency = dependency
         self.message = message
+
     def __str__(self):
         return "Calculation requires {} but it could not be found. {}".format(
                 self.dependency, self.message)
@@ -56,7 +57,11 @@ class PerformanceWarning(UserWarning):
     pass
 
 
-def fit_warning(correct_obj, obselete_obj):
+class DeprecationError(Exception):
+    pass
+
+
+def raise_fitting_api_error(correct_obj, obselete_obj):
     msg = ("HoloPy's inference API has changed. "
     "Use a {} object instead of {}.".format(correct_obj, obselete_obj))
-    warnings.warn(msg, UserWarning)
+    raise DeprecationError(msg)

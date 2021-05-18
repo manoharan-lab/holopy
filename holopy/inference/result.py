@@ -33,7 +33,7 @@ from holopy.core.metadata import detector_grid, copy_metadata
 from holopy.core.holopy_object import HoloPyObject, FullLoader
 from holopy.core.io.io import pack_attrs, unpack_attrs
 from holopy.core.utils import dict_without, ensure_scalar
-from holopy.core.errors import fit_warning
+from holopy.core.errors import raise_fitting_api_error
 from holopy.scattering.errors import MissingParameter
 
 
@@ -188,11 +188,13 @@ class FitResult(HoloPyObject):
     # deprecated methods as of 3.3
     def best_fit(self):
         # this method is published in the HoloPy paper
-        fit_warning('FitResult.hologram', 'SamplingResult.best_fit()')
+        raise_fitting_api_error(
+            'FitResult.hologram', 'SamplingResult.best_fit()')
         return self.hologram
 
     def output_scatterer(self):
-        fit_warning('FitResult.scatterer', 'SamplingResult.output_scatterer()')
+        raise_fitting_api_error(
+            'FitResult.scatterer', 'SamplingResult.output_scatterer()')
         return self.scatterer
 
     @classmethod
@@ -282,12 +284,14 @@ class SamplingResult(FitResult):
 
     # deprecated methods as of 3.3
     def MAP(self):
-        fit_warning('SamplingResult.parameters', 'SamplingResult.MAP')
-        return self._parameters
+        raise_fitting_api_error(
+            'SamplingResult.parameters',
+            'SamplingResult.MAP')
 
     def values(self):
-        fit_warning('SamplingResult.intervals', 'SamplingResult.values')
-        return self.intervals
+        raise_fitting_api_error(
+            'SamplingResult.intervals',
+            'SamplingResult.values')
 
 
 GROUPNAME = 'stage_results[{}]'
