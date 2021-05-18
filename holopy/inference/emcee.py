@@ -34,7 +34,7 @@ except ModuleNotFoundError:
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.metadata import make_subset_data
 from holopy.core.utils import choose_pool, LnpostWrapper
-from holopy.core.errors import DependencyMissing, raise_fitting_api_error
+from holopy.core.errors import DependencyMissing
 from holopy.inference.result import SamplingResult, TemperedSamplingResult
 from holopy.inference import prior
 
@@ -61,17 +61,7 @@ class EmceeStrategy(HoloPyObject):
         self.parallel = parallel
         self.seed = seed
 
-    def sample(self, model, data, nsamples=None, walker_initial_pos=None):
-        if nsamples is not None:
-            # deprecated as of 3.3
-            raise_fitting_api_error(
-                'EmceeStrategy(nsamples=X)',
-                'passing nsamples to EmceeStrategy.sample')
-        if walker_initial_pos is not None:
-            # deprecated as of 3.3
-            raise_fitting_api_error(
-                'EmceeStrategy(walker_initial_pos=X)',
-                'passing walker_initial_pos to EmceeStrategy.sample')
+    def sample(self, model, data):
         time_start = time.time()
         if self.npixels is not None:
             data = make_subset_data(data, pixels=self.npixels, seed=self.seed)
