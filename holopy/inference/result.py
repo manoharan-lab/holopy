@@ -187,15 +187,10 @@ class FitResult(HoloPyObject):
 
     # deprecated methods as of 3.3
     def best_fit(self):
-        # this method is published in the HoloPy paper
+        # this method is published in the HoloPy paper so it needs
+        # an informative error message:
         raise_fitting_api_error(
             'FitResult.hologram', 'SamplingResult.best_fit()')
-        return self.hologram
-
-    def output_scatterer(self):
-        raise_fitting_api_error(
-            'FitResult.scatterer', 'SamplingResult.output_scatterer()')
-        return self.scatterer
 
     @classmethod
     def _unserialize(cls, dataset):
@@ -281,17 +276,6 @@ class SamplingResult(FitResult):
         burned_in.lnprobs = cut_start(burned_in.lnprobs)
         burned_in.intervals = burned_in._calc_intervals()
         return burned_in
-
-    # deprecated methods as of 3.3
-    def MAP(self):
-        raise_fitting_api_error(
-            'SamplingResult.parameters',
-            'SamplingResult.MAP')
-
-    def values(self):
-        raise_fitting_api_error(
-            'SamplingResult.intervals',
-            'SamplingResult.values')
 
 
 GROUPNAME = 'stage_results[{}]'
