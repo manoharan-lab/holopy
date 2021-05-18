@@ -15,11 +15,13 @@ New Features
 Improvements
 ------------
 - Calling a numpy ufunc on a Prior object with name kwarg gives the resulting
-  TransformedPrior object that name, e.g. clip_x = np.min(x, name='clipped')
-- Cleaned up model parameter names created from TransformedPrior objects
-- CmaStrategy now scales first step size based on initial population, not prior
+  TransformedPrior object that name, e.g. clip_x = np.min(x, name='clipped').
+- Cleaned up model parameter names created from TransformedPrior objects.
+- CmaStrategy now scales first step size based on initial population, not
+  prior.
 - Inference models work with scattering theories that require
   parameters. See more in the user guide :ref:`scatterers_user`.
+- Interpolation in background images is now robust to adjacent dead pixels.
 
 Documentation
 -------------
@@ -27,10 +29,10 @@ Documentation
 
 Bugfixes
 --------
-- NmpfitStrategy now correctly accounts for non-uniform priors when optimizing
-- Functional fitting interface no longer lets alpha go to zero
+- NmpfitStrategy now correctly accounts for non-uniform priors when optimizing.
+- Functional fitting interface no longer lets alpha go to zero.
 - More helpful errors when calling scattering functions (e.g. calc_holo) with
-  parameterized scatterers, which is unsupported as of HoloPy 3.4
+  parameterized scatterers, which is unsupported as of HoloPy 3.4.
 
 Compatibility Notes
 --------------------

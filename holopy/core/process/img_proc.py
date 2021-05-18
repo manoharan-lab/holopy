@@ -27,6 +27,7 @@ or detrending
 from scipy.signal import detrend as dt
 from scipy.ndimage import gaussian_filter
 import numpy as np
+import xarray as xr
 
 from holopy.core.errors import BadImage
 from holopy.core.metadata import (
@@ -74,6 +75,7 @@ def zero_filter(image):
     '''
     Search for and interpolate pixels equal to 0.
     This is to avoid NaN's when a hologram is divided by a BG with 0's.
+    Interpolation fails if any of the four corner pixels are 0.
 
     Parameters
     ----------
@@ -86,30 +88,13 @@ def zero_filter(image):
        Image where pixels = 0 are instead given values equal to average of
        neighbors.  dtype is the same as the input image
     '''
-    zero_pix = np.where(image == 0)
-    output = image.copy()
-
-    # check to see if adjacent pixels are 0, if more than 1 dead pixel
-    if len(zero_pix[0]) > 1:
-        delta_rows = zero_pix[0] - np.roll(zero_pix[0], 1)
-        delta_cols = zero_pix[1] - np.roll(zero_pix[1], 1)
-        if ((1 in delta_rows[np.where(delta_cols == 0)]) or
-            (1 in delta_cols[np.where(delta_rows == 0)])):
-            raise BadImage('Image has adjacent dead pixels, cannot remove dead pixels')
-
-    for row, col in zip(zero_pix[0], zero_pix[1]):
-        # in the bulk
-        if ((row > 0) and (row < (image.shape[0]-1)) and
-            (col > 0) and (col < image.shape[1]-1)):
-            output[row, col] = np.sum(image[row-1:row+2, col-1:col+2]) / 8.
-        else: # deal with edges by padding
-            im_avg = image.sum()/(image.size - len(zero_pix[0]))
-            padded_im = np.ones((image.shape[0]+2, image.shape[1]+2)) * im_avg
-            padded_im[1:-1, 1:-1] = image
-            output[row, col] = np.sum(padded_im[row:row+3, col:col+3]) / 8.
-        print('Pixel with value 0 reset to nearest neighbor average')
-
-    return copy_metadata(image, output)
+    filtered = xr.where(image>0, image, np.nan)
+    filtered = [filtered.interpolate_na(dim=xy) for xy in 'xy']
+    filtered = xr.concat(filtered, dim='dummy')
+    filtered = filtered.mean(dim='dummy', skipna=True)
+    if np.isnan(filtered).any().item():
+        raise BadImage('Image has dead pixels in corners, cannot interpolate')
+    return copy_metadata(image, filtered)
 
 
 def subimage(arr, center, shape):
@@ -123,9 +108,9 @@ def subimage(arr, center, shape):
     center : tuple of ints or floats
         The desired center of the region, should have the same number of
         elements as the arr has dimensions. Floats will be rounded
-    shape : int or tuple of ints
-        Desired shape of the region.  If a single int is given the region will
-        be that dimension in along every axis.  Shape should be even
+    shape : int or (int, int)
+        Desired shape of the region in x & y dimensions. If a single int is
+        given it is applied along both axes. Shape values must be even.
 
     Returns
     -------
