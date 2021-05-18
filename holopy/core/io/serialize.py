@@ -130,16 +130,6 @@ for loader in YAMLLOADERS:
     yaml.add_constructor('!ufunc', numpy_ufunc_constructor, Loader=loader)
 
 
-def numpy_dtype_representer(dumper, data):
-    return dumper.represent_scalar('!dtype', data.name)
-yaml.add_representer(np.dtype, numpy_dtype_representer)
-
-def numpy_dtype_loader(loader, node):
-    name = loader.construct_scalar(node)
-    return np.dtype(name)
-for loader in YAMLLOADERS:
-    yaml.add_constructor('!dtype', numpy_dtype_loader, Loader=loader)
-
 def class_representer(dumper, data):
     return dumper.represent_scalar('!class', "{0}.{1}".format(data.__module__,
                                                               data.__name__))

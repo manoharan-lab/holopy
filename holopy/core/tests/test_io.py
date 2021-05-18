@@ -205,18 +205,7 @@ class test_custom_yaml_output(unittest.TestCase):
     def test_yaml_output_of_numpy_types(self):
         a = np.ones(10, 'int')
         assert_equal(yaml.dump(a.std()), '0.0\n...\n')
-        assert_equal(yaml.dump(np.dtype('float')), "!dtype 'float64'\n")
-        assert_equal(yaml.safe_load(yaml.dump(np.dtype('float'))), np.dtype('float64'))
-        try:
-            assert_equal(yaml.dump(a.max()), '1\n...\n')
-        except AssertionError as err:
-            if err.args[0] == r"""
-    Items are not equal:
-     ACTUAL: '!!python/object/apply:numpy.core.multiarray.scalar [!dtype \'int32\', "\\x01\\0\\0\\0"]\n'
-     DESIRED: '1\n...\n'""":
-                raise AssertionError("You're probably running a 32 bit OS.  Writing and reading files with integers might be buggy on 32 bit OS's. We don't think it will lead to data loss, but we make no guarantees. If you see this on 64 bit operating systems, please let us know by filing a bug.")
-            else:
-                raise err
+        assert_equal(yaml.dump(a.max()), '1\n...\n')
 
     @attr("fast")
     def test_yaml_output_of_serializable(self):
