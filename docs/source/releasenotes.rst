@@ -27,6 +27,7 @@ Improvements
 - Inference models work with scattering theories that require
   parameters. See more in the user guide :ref:`scatterers_user`.
 - Interpolation in background images is now robust to adjacent dead pixels.
+- Restored ability to call scattering functions on parameterized scatterers.
 
 Documentation
 -------------

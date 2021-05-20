@@ -30,7 +30,6 @@ from holopy.core.errors import raise_fitting_api_error
 from holopy.scattering.errors import (MultisphereFailure, TmatrixFailure,
                                       InvalidScatterer, MissingParameter)
 from holopy.scattering.interface import calc_holo, interpret_theory
-from holopy.scattering.theory import MieLens
 from holopy.inference.prior import (Prior, Uniform, TransformedPrior,
                                     generate_guess)
 

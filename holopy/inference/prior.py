@@ -412,6 +412,11 @@ class ComplexPrior(TransformedPrior):
         return ((key, getattr(self, key)) for key in ['real', 'imag'])
 
 
+# Any new prior types should be added to:
+#   holopy.scattering.interface.PRIOR_TYPES
+#   holopy.scattering.tests.test_interface.TestValidateScatterer.priors
+
+
 def updated(prior, v, extra_uncertainty=0):
     """
     Update a prior from a posterior
@@ -478,4 +483,3 @@ def make_center_priors(im, z_range_extents=5, xy_uncertainty_pixels=1,
 
     xy_sd = xy_uncertainty_pixels * spacing
     return [Gaussian(c, s) for c, s in zip(center, xy_sd)] + [Uniform(*z_range)]
-

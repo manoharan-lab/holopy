@@ -41,7 +41,8 @@ from holopy.scattering.imageformation import ImageFormation
 from holopy.scattering.theory import Tmatrix
 from holopy.scattering.theory.dda import DDA
 
-PRIOR_TYPES = ['Uniform', 'Gaussian', 'BoundedGaussian', 'TransformedPrior']
+PRIOR_TYPES = ['Uniform', 'Gaussian', 'BoundedGaussian', 'TransformedPrior',
+               'ComplexPrior']
 
 
 def prep_schema(detector, medium_index, illum_wavelen, illum_polarization):
@@ -103,10 +104,9 @@ def validate_scatterer(scatterer):
     # hierarchical data structures, so we check yaml serialization
     for prior_type in PRIOR_TYPES:
         if '!' + prior_type in yaml_scatterer:
-            msg = ('Scattering calculations require fixed values but scatterer'
-                   ' contains {} prior. Wrap Scatterer in a HoloPy Model and '
-                   'call model.initial_guess_scatterer').format(prior_type)
-            raise ValueError(msg)
+            from holopy.inference.model import Model
+            return Model(scatterer).initial_guess_scatterer
+    return scatterer
 
 
 def finalize(detector, result):
@@ -202,7 +202,7 @@ def calc_holo(detector, scatterer, medium_index=None, illum_wavelen=None,
     holo : xarray.DataArray
         Calculated hologram from the given distribution of spheres
     """
-    validate_scatterer(scatterer)
+    scatterer = validate_scatterer(scatterer)
     uschema = prep_schema(
         detector, medium_index, illum_wavelen, illum_polarization)
     scaling = dict_to_array(detector, scaling)
@@ -242,7 +242,7 @@ def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None,
         Dimensional scattering, absorption, and extinction
         cross sections, and <cos theta>
     """
-    validate_scatterer(scatterer)
+    scatterer = validate_scatterer(scatterer)
     theory = interpret_theory(scatterer, theory)
     imageformer = ImageFormation(theory)
     cross_section = imageformer.calculate_cross_sections(
@@ -282,7 +282,7 @@ def calc_scat_matrix(detector, scatterer, medium_index=None, illum_wavelen=None,
         Scattering matrices at specified positions
 
     """
-    validate_scatterer(scatterer)
+    scatterer = validate_scatterer(scatterer)
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=False)
@@ -321,7 +321,7 @@ def calc_field(detector, scatterer, medium_index=None, illum_wavelen=None,
     e_field : :class:`.Vector` object
         Calculated hologram from the given distribution of spheres
     """
-    validate_scatterer(scatterer)
+    scatterer = validate_scatterer(scatterer)
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=illum_polarization)
