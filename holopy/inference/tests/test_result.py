@@ -31,6 +31,7 @@ from holopy.inference import (
 from holopy.scattering import Sphere, Mie
 from holopy.scattering.errors import MissingParameter
 from holopy.core.metadata import detector_grid, update_metadata
+from holopy.core.errors import DeprecationError
 from holopy.core.tests.common import (
     assert_read_matches_write, get_example_data)
 
@@ -100,33 +101,9 @@ class TestFitResult(unittest.TestCase):
         self.assertTrue(hasattr(result, '_hologram'))
 
     @attr("medium")
-    def test_best_fit_returns_hologram(self):
+    def test_best_fit_throws_exception(self):
         result = generate_fit_result()
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            best_fit = result.best_fit()
-        hologram = result.hologram
-        np.testing.assert_equal(best_fit.values, hologram.values)
-        self.assertEqual(best_fit.attrs, hologram.attrs)
-
-    @attr("medium")
-    def test_best_fit_raises_warning(self):
-        result = generate_fit_result()
-        self.assertWarns(UserWarning, result.best_fit)
-
-    @attr("medium")
-    def test_output_scatterer_returns_scatterer(self):
-        result = generate_fit_result()
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            old_scatterer = result.output_scatterer()
-        new_scatterer = result.scatterer
-        self.assertEqual(old_scatterer, new_scatterer)
-
-    @attr("medium")
-    def test_best_fit_raises_warning(self):
-        result = generate_fit_result()
-        self.assertWarns(UserWarning, result.output_scatterer)
+        self.assertRaises(DeprecationError, result.best_fit)
 
     @attr("medium")
     def test_max_lnprob(self):

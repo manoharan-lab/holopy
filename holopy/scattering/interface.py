@@ -343,9 +343,6 @@ def scattered_field_to_hologram(scat, ref):
         The scattered (object) field
     ref : xarray[vector]]
         The reference field
-    detector_normal : (float, float, float)
-        Vector normal to the detector the hologram should be measured at
-        (defaults to z hat, a detector in the x, y plane)
     """
     total_field = scat + ref
     holo = (np.abs(total_field.sel(vector=['x', 'y']))**2).sum(dim=vector)

@@ -21,10 +21,7 @@ Error classes used in holopy
 
 .. moduleauthor :: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
-
-NORMALS_DEPRECATION_MESSAGE = (
-    "`normals` are deprecated in holopy. Their old implementation was" +
-    " incorrect and cannot really be corrected.")
+import warnings
 
 
 class LoadError(Exception):
@@ -50,6 +47,7 @@ class DependencyMissing(Exception):
     def __init__(self, dependency, message=""):
         self.dependency = dependency
         self.message = message
+
     def __str__(self):
         return "Calculation requires {} but it could not be found. {}".format(
                 self.dependency, self.message)
@@ -57,3 +55,13 @@ class DependencyMissing(Exception):
 
 class PerformanceWarning(UserWarning):
     pass
+
+
+class DeprecationError(Exception):
+    pass
+
+
+def raise_fitting_api_error(correct_obj, obselete_obj):
+    msg = ("HoloPy's inference API has changed. "
+           "Use a {} object instead of {}.".format(correct_obj, obselete_obj))
+    raise DeprecationError(msg)

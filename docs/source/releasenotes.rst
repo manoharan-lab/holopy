@@ -52,6 +52,11 @@ Deprecations
 - PerfectLensModel is now deprecated; lens models are now directly
   fittable with either AlphaModel or ExactModel. To do so, pass in a
   :class:`holopy.prior.Prior` object as the `lens_angle`.
+- Inference-related deprecations started in 3.4 are now complete. This means
+  that some old `holopy` inference objects are no longer loadable. If you still
+  need to access these objects, `holopy` version 3.4 will let you load old
+  inference objects and save them in the new format.
+
 
 Holopy 3.4
 ==========

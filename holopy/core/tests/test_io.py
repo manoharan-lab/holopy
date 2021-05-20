@@ -185,20 +185,6 @@ class TestLoadingAndSaving(unittest.TestCase):
         l = load_image(filename, spacing=get_spacing(self.holo))
         assert_obj_close(l, copy_metadata(l, self.holo))
 
-    @attr('fast')
-    def test_load_image_normals_raises_error_with_deprecation_message(self):
-        filename = 'error-should-raise-regardless-of-filename.tiff'
-        self.assertRaisesRegex(
-            ValueError, "`normals` are deprecated*",
-            load_image, filename, normals=np.array([0, 0, 1.]))
-
-    @attr('fast')
-    def test_load_average_normals_raises_error_with_deprecation_message(self):
-        filename = 'error-should-raise-regardless-of-filename.tiff'
-        self.assertRaisesRegex(
-            ValueError, "`normals` are deprecated*",
-            load_average, [filename], normals=np.array([0, 0, 1.]))
-
 
 class test_custom_yaml_output(unittest.TestCase):
     @attr("fast")

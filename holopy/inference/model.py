@@ -26,6 +26,7 @@ import xarray as xr
 from holopy.core.metadata import dict_to_array, make_subset_data
 from holopy.core.utils import ensure_array, ensure_listlike, ensure_scalar
 from holopy.core.holopy_object import HoloPyObject
+from holopy.core.errors import raise_fitting_api_error
 from holopy.scattering.errors import (MultisphereFailure, TmatrixFailure,
                                       InvalidScatterer, MissingParameter)
 from holopy.scattering.interface import calc_holo, interpret_theory
@@ -36,24 +37,6 @@ from holopy.inference.prior import (Prior, Uniform, TransformedPrior,
 
 OPTICS_KEYS = ['medium_index', 'illum_wavelen',
                'illum_polarization', 'noise_sd']
-
-
-def _purge_ties(node):
-    '''
-    Temporary function to purge ties when reloading Scatterers saved pre-3.4
-    '''
-    if isinstance(node, yaml.MappingNode):
-        value = [(scalar, _purge_ties(mapping)) for scalar, mapping in
-                 node.value if scalar.value != 'ties']
-        if value != node.value:
-            from holopy.fitting import fit_warning
-            tie_msg = ('. Ignoring previously defined ties. '
-                        'Use Model.add_tie() to reassign them')
-            fit_warning('newly saved model', 'the old one' + tie_msg)
-        node.value = value
-    elif isinstance(node, yaml.SequenceNode):
-        node.value = [_purge_ties(val) for val in node.value]
-    return node
 
 
 def make_xarray(dim_name, keys, values):
@@ -263,26 +246,19 @@ class Model(HoloPyObject):
 
     @classmethod
     def from_yaml(cls, loader, node):
-        node = _purge_ties(node)
         fields = loader.construct_mapping(node, deep=True)
-        try:
-            parameters = fields['_parameters']
-            maps = fields['_maps']
-        except KeyError:
-            from holopy.fitting import fit_warning
-            fit_warning('newly saved model', 'the old one')
-            kwargs = fields
-            return cls(**kwargs)
-        else:
-            dummy_scatterer = fields['scatterer']
-            scatterer_parameters = read_map(maps['scatterer'], parameters)
-            scatterer = dummy_scatterer.from_parameters(scatterer_parameters)
-            kwargs = {'scatterer': scatterer, 'theory': fields['theory']}
-            kwargs.update(read_map(maps['optics'], parameters))
-            if 'model' in maps:
-                kwargs.update(read_map(maps['model'], parameters))
-            if 'theory' in maps:
-                kwargs.update(read_map(maps['theory'], parameters))
+        parameters = fields['_parameters']
+        maps = fields['_maps']
+
+        dummy_scatterer = fields['scatterer']
+        scatterer_parameters = read_map(maps['scatterer'], parameters)
+        scatterer = dummy_scatterer.from_parameters(scatterer_parameters)
+        kwargs = {'scatterer': scatterer, 'theory': fields['theory']}
+        kwargs.update(read_map(maps['optics'], parameters))
+        if 'model' in maps:
+            kwargs.update(read_map(maps['model'], parameters))
+        if 'theory' in maps:
+            kwargs.update(read_map(maps['theory'], parameters))
         model = cls(**kwargs)
         if model._parameters == parameters:
             model._parameter_names = fields['_parameter_names']
@@ -536,18 +512,10 @@ class Model(HoloPyObject):
         return log_likelihood
 
     def fit(self, data, strategy=None):
-        from holopy.fitting import fit_warning
-        from holopy.inference.interface import validate_strategy
-        fit_warning('holopy.fit()', 'model.fit()')
-        strategy = validate_strategy(strategy, 'fit')
-        return strategy.fit(self, data)
+        raise_fitting_api_error('holopy.fit()', 'model.fit()')
 
     def sample(self, data, strategy=None):
-        from holopy.fitting import fit_warning
-        from holopy.inference.interface import validate_strategy
-        fit_warning('holopy.sample()', 'model.sample()')
-        strategy = validate_strategy(strategy, 'sample')
-        return strategy.sample(self, data)
+        raise_fitting_api_error('holopy.sample()', 'model.sample()')
 
 
 class LimitOverlaps(HoloPyObject):
