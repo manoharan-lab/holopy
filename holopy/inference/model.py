@@ -26,6 +26,7 @@ import xarray as xr
 from holopy.core.metadata import dict_to_array, make_subset_data
 from holopy.core.utils import ensure_array, ensure_listlike, ensure_scalar
 from holopy.core.holopy_object import HoloPyObject
+from holopy.core.errors import raise_fitting_api_error
 from holopy.scattering.errors import (MultisphereFailure, TmatrixFailure,
                                       InvalidScatterer, MissingParameter)
 from holopy.scattering.interface import calc_holo, interpret_theory
@@ -509,6 +510,12 @@ class Model(HoloPyObject):
             N * np.mean(np.log(ensure_array(noise_sd))) -
             0.5 * (self._residuals(pars, data, noise_sd)**2).sum())
         return log_likelihood
+
+    def fit(self, data, strategy=None):
+        raise_fitting_api_error('holopy.fit()', 'model.fit()')
+
+    def sample(self, data, strategy=None):
+        raise_fitting_api_error('holopy.sample()', 'model.sample()')
 
 
 class LimitOverlaps(HoloPyObject):
