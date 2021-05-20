@@ -512,10 +512,10 @@ class Model(HoloPyObject):
         return log_likelihood
 
     def fit(self, data, strategy=None):
-        raise_fitting_api_error('holopy.fit()', 'model.fit()')
+        raise_fitting_api_error('holopy.fit()', 'Model.fit()')
 
     def sample(self, data, strategy=None):
-        raise_fitting_api_error('holopy.sample()', 'model.sample()')
+        raise_fitting_api_error('holopy.sample()', 'Model.sample()')
 
 
 class LimitOverlaps(HoloPyObject):

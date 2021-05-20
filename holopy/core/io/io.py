@@ -107,12 +107,7 @@ def unpack_attrs(a):
                 coords=attr_ref[attr],
                 dims=list(attr_ref[attr].keys()))
         elif attr in a:
-            try:
-                new_attrs[attr] = yaml.safe_load(a[attr])
-            except AttributeError:
-                from holopy.inference.result import warn_text
-                warnings.warn(warn_text)
-                new_attrs[attr] = a[attr]
+            new_attrs[attr] = yaml.safe_load(a[attr])
         else:
             new_attrs[attr] = None
     return new_attrs

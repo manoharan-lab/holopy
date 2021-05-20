@@ -7,6 +7,11 @@ HoloPy Release Notes
 Current Development (Holopy 3.5)
 ================================
 
+Announcements
+-------------
+If you encounter errors loading prevoiusly saved HoloPy objects, try loading
+them with HoloPy 3.4 and saving a new version. See deprecation notes below.
+
 New Features
 ------------
 - New :class:`.AberratedMieLens` allows for calculating holograms of spheres
@@ -55,7 +60,8 @@ Deprecations
 - Inference-related deprecations started in 3.4 are now complete. This means
   that some old `holopy` inference objects are no longer loadable. If you still
   need to access these objects, `holopy` version 3.4 will let you load old
-  inference objects and save them in the new format.
+  inference objects and save them in the new format that is compatible with
+  this (and future) versions of `holopy`.
 
 
 Holopy 3.4
