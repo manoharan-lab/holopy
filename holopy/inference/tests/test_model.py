@@ -40,9 +40,9 @@ from holopy.inference import (prior, AlphaModel, ExactModel,
                               NmpfitStrategy, EmceeStrategy,
                               available_fit_strategies,
                               available_sampling_strategies)
-from holopy.inference.model import (Model, transformed_prior,
-                                    make_xarray, read_map)
-from holopy.inference.tests.common import SimpleModel
+from holopy.inference.model import Model
+from holopy.inference.parameter_mapping import (Mapper, transformed_prior,
+                                                make_xarray, read_map)
 from holopy.scattering.tests.common import (
     xschema_lens, sphere as SPHERE_IN_METERS)
 
@@ -258,79 +258,79 @@ class TestModel(unittest.TestCase):
 class TestParameterMapping(unittest.TestCase):
     @attr("fast")
     def test_map_value(self):
-        model = SimpleModel()
+        mapper = Mapper()
         parameter = 14
-        parameter_map = model._convert_to_map(parameter)
+        parameter_map = mapper.convert_to_map(parameter)
         expected = parameter
         self.assertEqual(parameter_map, expected)
 
     @attr("fast")
     def test_map_prior(self):
-        model = SimpleModel()
+        mapper = Mapper()
         parameter = prior.Uniform(0, 1)
-        position = len(model._parameters)
-        parameter_map = model._convert_to_map(parameter, 'new name')
+        position = len(mapper.parameters)
+        parameter_map = mapper.convert_to_map(parameter, 'new name')
         expected = '_parameter_{}'.format(position)
         self.assertEqual(parameter_map, expected)
 
     @attr("fast")
-    def test_mapping_adds_to_model(self):
-        model = SimpleModel()
+    def test_mapping_adds_to_mapper(self):
+        mapper = Mapper()
         parameter = prior.Uniform(0, 1)
-        model._convert_to_map(parameter, 'new name')
-        self.assertEqual(model._parameters[-1], parameter)
-        self.assertEqual(model._parameter_names[-1], "new name")
+        mapper.convert_to_map(parameter, 'new name')
+        self.assertEqual(mapper.parameters[-1], parameter)
+        self.assertEqual(mapper.parameter_names[-1], "new name")
 
     @attr("fast")
     def test_map_list(self):
-        model = SimpleModel()
+        mapper = Mapper()
         parameter = [0, prior.Uniform(0, 1), prior.Uniform(2, 3)]
-        position = len(model._parameters)
-        parameter_map = model._convert_to_map(parameter)
+        position = len(mapper.parameters)
+        parameter_map = mapper.convert_to_map(parameter)
         expected = [0, "_parameter_{}".format(position),
                     "_parameter_{}".format(position + 1)]
         self.assertEqual(parameter_map, expected)
 
     @attr("fast")
     def test_list_compound_name(self):
-        model = SimpleModel()
+        mapper = Mapper()
         parameter = [0, prior.Uniform(0, 1), prior.Uniform(2, 3)]
-        model._convert_to_map(parameter, 'prefix')
-        self.assertEqual(model._parameter_names[-2], 'prefix.1')
-        self.assertEqual(model._parameter_names[-1], 'prefix.2')
+        mapper.convert_to_map(parameter, 'prefix')
+        self.assertEqual(mapper.parameter_names[-2], 'prefix.1')
+        self.assertEqual(mapper.parameter_names[-1], 'prefix.2')
 
     @attr("fast")
     def test_map_dictionary(self):
-        model = SimpleModel()
+        mapper = Mapper()
         parameter = {'a': 0, 'b': 1, 'c': prior.Uniform(0, 1)}
-        position = len(model._parameters)
-        parameter_map = model._convert_to_map(parameter)
+        position = len(mapper.parameters)
+        parameter_map = mapper.convert_to_map(parameter)
         expected_placeholder = "_parameter_{}".format(position)
         expected = [dict, [[['a', 0], ['b', 1], ['c', expected_placeholder]]]]
         self.assertEqual(parameter_map, expected)
 
     @attr("fast")
     def test_map_dictionary_ignores_none(self):
-        model = SimpleModel()
+        mapper = Mapper()
         parameter = {'a': 0, 'b': 1, 'c': None}
-        parameter_map = model._convert_to_map(parameter)
+        parameter_map = mapper.convert_to_map(parameter)
         expected = [dict, [[['a', 0], ['b', 1]]]]
         self.assertEqual(parameter_map, expected)
 
     @attr("fast")
     def test_dict_compound_name(self):
-        model = SimpleModel()
+        mapper = Mapper()
         parameter = {'a': 0, 'b': 1, 'c': prior.Uniform(0, 1)}
-        model._convert_to_map(parameter, 'prefix')
-        self.assertEqual(model._parameter_names[-1], 'prefix.c')
+        mapper.convert_to_map(parameter, 'prefix')
+        self.assertEqual(mapper.parameter_names[-1], 'prefix.c')
 
     @attr("fast")
     def test_map_xarray(self):
-        model = SimpleModel()
+        mapper = Mapper()
         parameter = xr.DataArray(np.zeros((3, 3)),
                                  coords=[[10, 20, 30], ['a', 'b', 'c']],
                                  dims=('tens', 'letters'))
-        parameter_map = model._convert_to_map(parameter)
+        parameter_map = mapper.convert_to_map(parameter)
         expected_1D = [make_xarray, ['letters', ['a', 'b', 'c'], [0, 0, 0]]]
         expected = [make_xarray, ['tens', [10, 20, 30],
                                   [expected_1D, expected_1D, expected_1D]]]
@@ -338,77 +338,78 @@ class TestParameterMapping(unittest.TestCase):
 
     @attr("fast")
     def test_xarray_compound_name(self):
-        model = SimpleModel()
+        mapper = Mapper()
         parameter = xr.DataArray(np.zeros((3, 3)),
                                  coords=[[10, 20, 30], ['a', 'b', 'c']],
                                  dims=('tens', 'letters')).astype('object')
         parameter[-1, -1] = prior.Uniform(0, 1)
-        model._convert_to_map(parameter, 'prefix')
-        self.assertEqual(model._parameter_names[-1], 'prefix.30.c')
+        mapper.convert_to_map(parameter, 'prefix')
+        self.assertEqual(mapper.parameter_names[-1], 'prefix.30.c')
 
     @attr("fast")
     def test_map_complex(self):
-        model = SimpleModel()
+        mapper = Mapper()
         parameter = prior.ComplexPrior(1, prior.Uniform(2, 3))
-        position = len(model._parameters)
-        parameter_map = model._convert_to_map(parameter)
+        position = len(mapper.parameters)
+        parameter_map = mapper.convert_to_map(parameter)
         placeholder = "_parameter_{}".format(position)
         expected = [transformed_prior, [complex, [1, placeholder]]]
         self.assertEqual(parameter_map, expected)
 
     @attr("fast")
     def test_complex_compound_name(self):
-        model = SimpleModel()
+        mapper = Mapper()
         parameter = prior.ComplexPrior(prior.Uniform(0, 1),
                                        prior.Uniform(2, 3))
-        model._convert_to_map(parameter, 'prefix')
-        self.assertEqual(model._parameter_names[-2], 'prefix.real')
-        self.assertEqual(model._parameter_names[-1], 'prefix.imag')
+        mapper.convert_to_map(parameter, 'prefix')
+        self.assertEqual(mapper.parameter_names[-2], 'prefix.real')
+        self.assertEqual(mapper.parameter_names[-1], 'prefix.imag')
 
     @attr('fast')
     def test_map_transformed_prior(self):
-        model = SimpleModel()
+        mapper = Mapper()
         transformed = prior.TransformedPrior(np.sqrt, prior.Uniform(0, 2),
                                              name='sqrt')
-        position = len(model._parameters)
-        parameter_map = model._convert_to_map(transformed)
+        position = len(mapper.parameters)
+        parameter_map = mapper.convert_to_map(transformed)
         placeholder = "_parameter_{}".format(position)
         expected = [transformed_prior, [np.sqrt, [placeholder]]]
         self.assertEqual(parameter_map, expected)
 
     @attr('fast')
     def test_map_transformed_prior_names(self):
-        model = SimpleModel()
+        mapper = Mapper()
         base_prior = [prior.Uniform(0, 2, name='first'), prior.Uniform(1, 2)]
         transformed = {'trans': prior.TransformedPrior(np.maximum, base_prior)}
-        parameter_map = model._convert_to_map(transformed)
-        self.assertEqual(model._parameter_names[-2:], ['first', 'trans.1'])
+        parameter_map = mapper.convert_to_map(transformed)
+        self.assertEqual(mapper.parameter_names[-2:], ['first', 'trans.1'])
 
     @attr('fast')
     def test_named_transformed_prior(self):
-        model = SimpleModel()
+        mapper = Mapper()
         base_prior = [prior.Uniform(0, 2, name='first'), prior.Uniform(1, 2)]
         transform = prior.TransformedPrior(np.maximum, base_prior, name='real')
         transform = {'fake': transform}
-        parameter_map = model._convert_to_map(transform)
-        self.assertEqual(model._parameter_names[-2:], ['first', 'real.1'])
+        parameter_map = mapper.convert_to_map(transform)
+        self.assertEqual(mapper.parameter_names[-2:], ['first', 'real.1'])
 
     @attr('fast')
     def test_map_hierarchical_transformed_prior(self):
-        model = SimpleModel()
+        mapper = Mapper()
         inner = prior.TransformedPrior(np.sqrt, prior.Uniform(0, 2))
         full = prior.TransformedPrior(np.maximum, [inner, prior.Uniform(0, 1)])
-        position = len(model._parameters)
-        parameter_map = model._convert_to_map(full)
+        position = len(mapper.parameters)
+        parameter_map = mapper.convert_to_map(full)
         placeholder = ['_parameter_{}'.format(position + i) for i in range(2)]
         submap = [transformed_prior, [np.sqrt, [placeholder[0]]]]
         expected = [transformed_prior, [np.maximum, [submap, placeholder[1]]]]
+        self.assertEqual(parameter_map, expected)
 
     @attr("fast")
     def test_map_composite_object(self):
-        model = SimpleModel()
+        mapper = Mapper()
         parameter = [prior.ComplexPrior(0, 1), {'a': 2, 'b': [4, 5]}, 6]
-        parameter_map = model._convert_to_map(parameter)
+        parameter_map = mapper.convert_to_map(parameter)
         expected = [[transformed_prior, [complex, [0, 1]]],
                     [dict, [[['a', 2], ['b', [4, 5]]]]], 6]
         self.assertEqual(parameter_map, expected)
