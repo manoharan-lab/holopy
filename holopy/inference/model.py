@@ -235,7 +235,7 @@ class Model(HoloPyObject):
                       for key, val in self._maps.items()}
 
     def _iteritems(self):
-        keys = ['scatterer', 'theory', '_parameters',
+        keys = ['_dummy_scatterer', 'theory', '_parameters',
                 '_parameter_names', '_maps']
         for key in keys:
             item = getattr(self, key)
@@ -249,7 +249,7 @@ class Model(HoloPyObject):
         parameters = fields['_parameters']
         maps = fields['_maps']
 
-        dummy_scatterer = fields['scatterer']
+        dummy_scatterer = fields['_dummy_scatterer']
         scatterer_parameters = read_map(maps['scatterer'], parameters)
         scatterer = dummy_scatterer.from_parameters(scatterer_parameters)
         kwargs = {'scatterer': scatterer, 'theory': fields['theory']}
