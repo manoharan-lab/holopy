@@ -87,6 +87,16 @@ class TestModel(unittest.TestCase):
                 self.assertEqual(reloaded, model)
 
     @attr('fast')
+    def test_yaml_round_trip_with_xarray_in_scatterer(self):
+        n = xr.DataArray([prior.Gaussian(1.5, 0.1), prior.Gaussian(1.7, 0.1)],
+                         dims=['illumination'],
+                         coords={'illumination': ['red', 'green']})
+        sphere = Sphere(r=0.5, n=n, center=(5, 5, 5))
+        model = AlphaModel(sphere)
+        reloaded = take_yaml_round_trip(model)
+        self.assertEqual(reloaded, model)
+
+    @attr('fast')
     def test_scatterer_is_parameterized(self):
         sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
         model = AlphaModel(sphere)
