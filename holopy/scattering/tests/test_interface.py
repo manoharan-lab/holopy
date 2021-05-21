@@ -216,17 +216,6 @@ class TestInterpretTheory(unittest.TestCase):
 
 
 class TestValidateScatterer(unittest.TestCase):
-    priors = [prior.Uniform(1, 2), prior.Gaussian(1, 0.1),
-              prior.BoundedGaussian(1, 0.1, 0, 3),
-              prior.TransformedPrior(np.sqrt, prior.Uniform(1, 4)),
-              prior.ComplexPrior(prior.Uniform(1, 2), 0.001)]
-
-    @attr('fast')
-    def test_all_priors_accounted_for(self):
-        self.assertEqual(len(self.priors), len(PRIOR_TYPES))
-        self.assertTrue(all(isinstance(test_prior, prior.Prior)
-                            for test_prior in self.priors))
-
     @attr('fast')
     def test_initial_guess_if_prior_in_scatterer(self):
         r = prior.Uniform(0.5, 0.6, 0.59)
@@ -234,15 +223,6 @@ class TestValidateScatterer(unittest.TestCase):
         scatterer = Sphere(r, n, center=[5, 5, 5])
         best_guess = Sphere(r.guess, n.guess, scatterer.center)
         self.assertEqual(validate_scatterer(scatterer), best_guess)
-
-    @attr('fast')
-    def test_all_prior_types_caught(self):
-        for test_prior, name in zip(self.priors, PRIOR_TYPES):
-            with self.subTest(key=name):
-                sphere = Sphere(r=0.5, n=test_prior, center=[1, 1, 1])
-                validated = validate_scatterer(sphere)
-                self.assertFalse(isinstance(validated.r, prior.Prior))
-
 
 
 if __name__ == '__main__':

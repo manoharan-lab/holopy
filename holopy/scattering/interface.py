@@ -40,10 +40,7 @@ from holopy.scattering.theory import Mie, Multisphere
 from holopy.scattering.imageformation import ImageFormation
 from holopy.scattering.theory import Tmatrix
 from holopy.scattering.theory.dda import DDA
-
-PRIOR_TYPES = ['Uniform', 'Gaussian', 'BoundedGaussian', 'TransformedPrior',
-               'ComplexPrior']
-
+from holopy.interface.parameter_mapping import Mapper, read_map
 
 def prep_schema(detector, medium_index, illum_wavelen, illum_polarization):
     detector = update_metadata(
@@ -99,14 +96,10 @@ def interpret_theory(scatterer, theory='auto'):
 
 
 def validate_scatterer(scatterer):
-    yaml_scatterer = yaml.dump(scatterer)
-    # need to make sure there are no priors, but they could be hidden in
-    # hierarchical data structures, so we check yaml serialization
-    for prior_type in PRIOR_TYPES:
-        if '!' + prior_type in yaml_scatterer:
-            from holopy.inference.model import Model
-            return Model(scatterer).initial_guess_scatterer
-    return scatterer
+    mapper = Mapper()
+    scatterer_map = mapper.convert_to_map(scatterer.parameters)
+    guesses = [par.guess for par in mapper.parameters]
+    return scatterer.from_parameters(read_map(scatterer_map, guesses))
 
 
 def finalize(detector, result):

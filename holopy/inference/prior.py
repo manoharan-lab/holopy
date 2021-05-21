@@ -412,11 +412,6 @@ class ComplexPrior(TransformedPrior):
         return ((key, getattr(self, key)) for key in ['real', 'imag'])
 
 
-# Any new prior types should be added to:
-#   holopy.scattering.interface.PRIOR_TYPES
-#   holopy.scattering.tests.test_interface.TestValidateScatterer.priors
-
-
 def updated(prior, v, extra_uncertainty=0):
     """
     Update a prior from a posterior
