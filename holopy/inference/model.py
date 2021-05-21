@@ -112,6 +112,8 @@ class Model(HoloPyObject):
     Compute probabilities that observed data could be explained by a set of
     scatterer and observation parameters.
     """
+    _model_parameters = {}
+
     def __init__(self, scatterer, noise_sd=None, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
                  constraints=[]):
@@ -126,7 +128,8 @@ class Model(HoloPyObject):
         self._parameter_names = []
         self._maps = {'scatterer': self._convert_to_map(scatterer.parameters),
                       'theory': self._convert_to_map(self.theory.parameters),
-                      'optics': self._convert_to_map(optics_parameters)}
+                      'optics': self._convert_to_map(optics_parameters),
+                      'model': self._convert_to_map(self._model_parameters)}
 
     def _convert_to_map(self, parameter, name=''):
         if isinstance(parameter, (list, tuple, np.ndarray)):
@@ -253,11 +256,8 @@ class Model(HoloPyObject):
         scatterer_parameters = read_map(maps['scatterer'], parameters)
         scatterer = dummy_scatterer.from_parameters(scatterer_parameters)
         kwargs = {'scatterer': scatterer, 'theory': fields['theory']}
-        kwargs.update(read_map(maps['optics'], parameters))
-        if 'model' in maps:
-            kwargs.update(read_map(maps['model'], parameters))
-        if 'theory' in maps:
-            kwargs.update(read_map(maps['theory'], parameters))
+        for key in ['optics', 'model', 'theory']:
+            kwargs.update(read_map(maps[key], parameters))
         model = cls(**kwargs)
         if model._parameters == parameters:
             model._parameter_names = fields['_parameter_names']
@@ -537,9 +537,9 @@ class AlphaModel(Model):
     def __init__(self, scatterer, alpha=1, noise_sd=None, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
                  constraints=[]):
+        self._model_parameters = {'alpha': alpha}
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
                          illum_polarization, theory, constraints)
-        self._maps['model'] = self._convert_to_map({'alpha': alpha})
 
     @property
     def alpha(self):
