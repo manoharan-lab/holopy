@@ -27,9 +27,8 @@ from holopy.core.errors import raise_fitting_api_error
 from holopy.scattering.errors import (MultisphereFailure, TmatrixFailure,
                                       InvalidScatterer, MissingParameter)
 from holopy.scattering.interface import calc_holo, interpret_theory
-from holopy.inference.prior import Prior, Uniform, generate_guess
-from holopy.inference.parameter_mapping import (Mapper, read_map,
-                                                edit_map_indices)
+from holopy.inference import prior
+from holopy.core.parameter_mapping import Mapper, read_map, edit_map_indices
 
 
 OPTICS_KEYS = ['medium_index', 'illum_wavelen',
@@ -50,7 +49,8 @@ class Model(HoloPyObject):
         self._dummy_scatterer = self._create_dummy_scatterer(scatterer)
         self.theory = interpret_theory(self._dummy_scatterer, theory)
         self.constraints = ensure_listlike(constraints)
-        if not (np.isscalar(noise_sd) or isinstance(noise_sd, (Prior, dict))):
+        if not (np.isscalar(noise_sd)
+                or isinstance(noise_sd, (prior.Prior, dict))):
             noise_sd = ensure_array(noise_sd)
         optics = [medium_index, illum_wavelen, illum_polarization, noise_sd]
         optics_parameters = {key: val for key, val in zip(OPTICS_KEYS, optics)}
@@ -248,14 +248,14 @@ class Model(HoloPyObject):
         else:
             raise MissingParameter('noise_sd')
         if val is None:
-            if np.all([isinstance(par, Uniform) for par in self._parameters]):
+            if np.all([isinstance(par, prior.Uniform) for par in self._parameters]):
                 val = 1
             else:
                 raise MissingParameter('noise_sd for non-uniform priors')
         return val
 
     def generate_guess(self, n=1, scaling=1, seed=None):
-        return generate_guess(self._parameters, n, scaling, seed)
+        return prior.generate_guess(self._parameters, n, scaling, seed)
 
     def lnprior(self, pars):
         """

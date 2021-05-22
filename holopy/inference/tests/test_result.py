@@ -24,7 +24,7 @@ import xarray as xr
 import numpy as np
 from nose.plugins.attrib import attr
 
-from holopy.inference.prior import Uniform
+from holopy.inference import prior
 from holopy.inference.result import UncertainValue, FitResult, SamplingResult
 from holopy.inference import (
     AlphaModel, CmaStrategy, EmceeStrategy, NmpfitStrategy)
@@ -37,8 +37,9 @@ from holopy.core.tests.common import (
 
 
 DATA = update_metadata(detector_grid(shape=10, spacing=2), 1.33, 0.660, (0, 1))
-par_s = Sphere(n=Uniform(1.5, 1.65), r=Uniform(0.5, 0.7), center=[10, 10, 10])
-MODEL = AlphaModel(par_s, alpha=Uniform(0.6, 0.9, guess=0.8))
+par_s = Sphere(n=prior.Uniform(1.5, 1.65),
+               r=prior.Uniform(0.5, 0.7), center=[10, 10, 10])
+MODEL = AlphaModel(par_s, alpha=prior.Uniform(0.6, 0.9, guess=0.8))
 INTERVALS = [UncertainValue(1.6, 0.1, name='n'), UncertainValue(0.6,
                         0.1, name='r'), UncertainValue(0.7, 0.1, name='alpha')]
 
@@ -68,14 +69,14 @@ class TestUncertainValue(unittest.TestCase):
 class TestFitResult(unittest.TestCase):
     def _make_model(self):
         sphere = Sphere(
-            center=(Uniform(0, 1e-5, guess=.567e-5),
-                    Uniform(0, 1e-5, .567e-5),
-                    Uniform(1e-5, 2e-5)),
-            r=Uniform(1e-8, 1e-5, 8.5e-7),
-            n=Uniform(1, 2, 1.59))
+            center=(prior.Uniform(0, 1e-5, guess=.567e-5),
+                    prior.Uniform(0, 1e-5, .567e-5),
+                    prior.Uniform(1e-5, 2e-5)),
+            r=prior.Uniform(1e-8, 1e-5, 8.5e-7),
+            n=prior.Uniform(1, 2, 1.59))
 
         model = AlphaModel(
-            sphere, theory=Mie(False), alpha=Uniform(0.1, 1, 0.6))
+            sphere, theory=Mie(False), alpha=prior.Uniform(0.1, 1, 0.6))
         return model
 
     @attr("fast")

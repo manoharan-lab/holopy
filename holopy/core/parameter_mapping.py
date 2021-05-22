@@ -21,8 +21,7 @@ import numpy as np
 import xarray as xr
 
 from holopy.core.holopy_object import HoloPyObject
-from holopy.inference.prior import Prior, TransformedPrior
-
+from holopy.core.prior import Prior, TransformedPrior
 
 def make_xarray(dim_name, keys, values):
     '''

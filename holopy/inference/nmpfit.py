@@ -31,7 +31,6 @@ from holopy.core.holopy_object import HoloPyObject
 from holopy.core.metadata import flat, make_subset_data
 from holopy.core.math import chisq, rsq
 from holopy.inference.third_party import nmpfit
-from holopy.inference.prior import Uniform
 from holopy.scattering.errors import (
     ParameterSpecificationError, MissingParameter)
 from holopy.inference.result import FitResult, UncertainValue

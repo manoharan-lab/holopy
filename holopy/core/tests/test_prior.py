@@ -24,13 +24,13 @@ from numpy.testing import assert_equal, assert_allclose
 import numpy as np
 from nose.plugins.attrib import attr
 
-from holopy.inference.prior import (
+from holopy.core.prior import (
     Prior, Gaussian, Uniform, BoundedGaussian, ComplexPrior, TransformedPrior,
     make_center_priors, updated, generate_guess)
 from holopy.inference.result import UncertainValue
 from holopy.core.metadata import data_grid
 from holopy.scattering.errors import ParameterSpecificationError
-from holopy.inference.parameter_mapping import Mapper
+from holopy.core.parameter_mapping import Mapper
 
 GOLD_SIGMA = -1.4189385332  # log(sqrt(0.5/pi))-1/2
 
