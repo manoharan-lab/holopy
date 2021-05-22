@@ -4,8 +4,8 @@
 HoloPy Release Notes
 ********************
 
-Current Development (Holopy 3.5)
-================================
+Holopy 3.5
+==========
 
 Announcements
 -------------
@@ -37,8 +37,7 @@ Bugfixes
 --------
 - NmpfitStrategy now correctly accounts for non-uniform priors when optimizing.
 - Functional fitting interface no longer lets alpha go to zero.
-- More helpful errors when calling scattering functions (e.g. calc_holo) with
-  parameterized scatterers, which is unsupported as of HoloPy 3.4.
+- Now able to save Model objects whose scatterer attribute contains xarrays.
 
 Compatibility Notes
 --------------------
@@ -52,6 +51,9 @@ Developer Notes
   :class:`.ScatteringTheory` that calculated deterimed at which points
   the scattering matrices or scattered fields needed to be calculated is
   now in `holopy.scattering.imageformation`.
+- The parameter parsing previously done by the `Model` class has now been
+  broken out to a new `hp.inference.parameter_mapping` module so it can be
+  accessed by non-`Model` objects.
 
 Deprecations
 ------------

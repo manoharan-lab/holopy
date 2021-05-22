@@ -88,7 +88,7 @@ def zero_filter(image):
        Image where pixels = 0 are instead given values equal to average of
        neighbors.  dtype is the same as the input image
     '''
-    filtered = xr.where(image>0, image, np.nan)
+    filtered = xr.where(image > 0, image, np.nan)
     filtered = [filtered.interpolate_na(dim=xy) for xy in 'xy']
     filtered = xr.concat(filtered, dim='dummy')
     filtered = filtered.mean(dim='dummy', skipna=True)

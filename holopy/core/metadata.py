@@ -430,7 +430,7 @@ def dict_to_array(schema, inval):
                         coords={name: list(inval.keys())})
         msg = ("Dictionary could not be converted to DataArray because " +
                "reference grid has no dimensions with matching coords")
-        raise ValueError()
+        raise ValueError(msg)
     else:
         return inval
 
