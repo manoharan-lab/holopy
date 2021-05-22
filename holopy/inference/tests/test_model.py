@@ -41,8 +41,8 @@ from holopy.inference import (prior, AlphaModel, ExactModel,
                               available_fit_strategies,
                               available_sampling_strategies)
 from holopy.inference.model import Model
-from holopy.inference.parameter_mapping import (Mapper, transformed_prior,
-                                                make_xarray, read_map)
+from holopy.core.parameter_mapping import (Mapper, transformed_prior,
+                                           make_xarray, read_map)
 from holopy.scattering.tests.common import (
     xschema_lens, sphere as SPHERE_IN_METERS)
 
