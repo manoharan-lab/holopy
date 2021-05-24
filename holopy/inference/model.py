@@ -28,7 +28,7 @@ from holopy.scattering.errors import (MultisphereFailure, TmatrixFailure,
                                       InvalidScatterer, MissingParameter)
 from holopy.scattering.interface import calc_holo, interpret_theory
 from holopy.inference import prior
-from holopy.core.parameter_mapping import Mapper, read_map, edit_map_indices
+from holopy.core.mapping import Mapper, read_map, edit_map_indices
 
 
 OPTICS_KEYS = ['medium_index', 'illum_wavelen',
@@ -248,7 +248,8 @@ class Model(HoloPyObject):
         else:
             raise MissingParameter('noise_sd')
         if val is None:
-            if np.all([isinstance(par, prior.Uniform) for par in self._parameters]):
+            if np.all([isinstance(par, prior.Uniform)
+                       for par in self._parameters]):
                 val = 1
             else:
                 raise MissingParameter('noise_sd for non-uniform priors')

@@ -30,7 +30,7 @@ from holopy.core.prior import (
 from holopy.inference.result import UncertainValue
 from holopy.core.metadata import data_grid
 from holopy.scattering.errors import ParameterSpecificationError
-from holopy.core.parameter_mapping import Mapper
+from holopy.core.mapping import Mapper
 
 GOLD_SIGMA = -1.4189385332  # log(sqrt(0.5/pi))-1/2
 

@@ -34,7 +34,7 @@ from holopy.scattering.errors import MissingParameter
 from holopy.core.tests.common import assert_read_matches_write
 from holopy.inference import prior, AlphaModel, ExactModel
 from holopy.inference.model import Model
-from holopy.core.parameter_mapping import transformed_prior
+from holopy.core.mapping import transformed_prior
 from holopy.scattering.tests.common import (
     xschema_lens, sphere as SPHERE_IN_METERS)
 

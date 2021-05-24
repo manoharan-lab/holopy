@@ -52,9 +52,10 @@ Developer Notes
   the scattering matrices or scattered fields needed to be calculated is
   now in `holopy.scattering.imageformation`.
 - The parameter parsing previously done by the `Model` class has now been
-  broken out to a new `hp.core.parameter_mapping` module so it can be
+  broken out to a new `hp.core.mapping` module so it can be
   accessed by non-`Model` objects.
-- `prior.py` has been moved from to hp.core module from hp.inference.
+- `prior.py` has been moved from to hp.core module from hp.inference but is
+  still accessible in the hp.inference namespace.
 
 Deprecations
 ------------

@@ -23,6 +23,7 @@ import xarray as xr
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.prior import Prior, TransformedPrior
 
+
 def make_xarray(dim_name, keys, values):
     '''
     Packs values into xarray with new dim and coords (keys)
@@ -92,7 +93,13 @@ def edit_map_indices(map_entry, indices):
 
 
 class Mapper(HoloPyObject):
-
+    '''
+    Creates "maps" from objects containing priors that retain their
+    hierarchical structure (including ties) but are easily serializable. The
+    main entry point is through `convert_to_map`, which returns a map of the
+    object and also updates the Mapper `parameter` and `parameter_names`
+    attributes so they can be extracted for later use.
+    '''
     def __init__(self):
         self.parameters = []
         self.parameter_names = []

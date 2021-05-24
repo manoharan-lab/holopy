@@ -40,7 +40,8 @@ from holopy.scattering.theory import Mie, Multisphere
 from holopy.scattering.imageformation import ImageFormation
 from holopy.scattering.theory import Tmatrix
 from holopy.scattering.theory.dda import DDA
-from holopy.core.parameter_mapping import Mapper, read_map
+from holopy.core.mapping import Mapper, read_map
+
 
 def prep_schema(detector, medium_index, illum_wavelen, illum_polarization):
     detector = update_metadata(

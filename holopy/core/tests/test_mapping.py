@@ -26,8 +26,8 @@ from nose.plugins.attrib import attr
 
 from holopy.scattering import Sphere, Spheres
 from holopy.core import prior
-from holopy.core.parameter_mapping import (Mapper, transformed_prior,
-                                           make_xarray, read_map)
+from holopy.core.mapping import (Mapper, transformed_prior,
+                                 make_xarray, read_map)
 
 
 class TestParameterMapping(unittest.TestCase):
