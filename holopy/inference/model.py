@@ -16,95 +16,23 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
-from copy import copy
 import warnings
 
-import yaml
 import numpy as np
-import xarray as xr
 
-from holopy.core.metadata import dict_to_array, make_subset_data
+from holopy.core.metadata import make_subset_data
 from holopy.core.utils import ensure_array, ensure_listlike, ensure_scalar
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.errors import raise_fitting_api_error
 from holopy.scattering.errors import (MultisphereFailure, TmatrixFailure,
                                       InvalidScatterer, MissingParameter)
 from holopy.scattering.interface import calc_holo, interpret_theory
-from holopy.scattering.theory import MieLens
-from holopy.inference.prior import (Prior, Uniform, TransformedPrior,
-                                    generate_guess)
+from holopy.inference import prior
+from holopy.core.mapping import Mapper, read_map, edit_map_indices
 
 
 OPTICS_KEYS = ['medium_index', 'illum_wavelen',
                'illum_polarization', 'noise_sd']
-
-
-def make_xarray(dim_name, keys, values):
-    '''
-    Packs values into xarray with new dim and coords (keys)
-    '''
-    if isinstance(values[0], xr.DataArray):
-        new_dim = xr.DataArray(keys, dims=[dim_name], name=dim_name)
-        return xr.concat(values, dim=new_dim)
-    else:
-        return xr.DataArray(np.array(values), coords=[keys], dims=dim_name)
-
-
-def transformed_prior(transformation, base_priors):
-    if any([isinstance(bp, Prior) for bp in base_priors]):
-        return TransformedPrior(transformation, base_priors)
-    else:
-        return transformation(*base_priors)
-
-
-def read_map(map_entry, parameter_values):
-    '''
-    Reads a map to create an object
-
-    Parameters
-    ----------
-    map_entry:
-        map or subset of map created by model methods
-    parameter_values: listlike
-        values to replace map placeholders in final object
-    '''
-    if isinstance(map_entry, str) and map_entry[:11] == '_parameter_':
-        return parameter_values[int(map_entry[11:])]
-    elif isinstance(map_entry, list):
-        if len(map_entry) == 2 and callable(map_entry[0]):
-            func, args = map_entry
-            return func(*[read_map(arg, parameter_values) for arg in args])
-        else:
-            return [read_map(item, parameter_values) for item in map_entry]
-    else:
-        return map_entry
-
-
-def edit_map_indices(map_entry, indices):
-    '''
-    Adjusts a map to account for ties between parameters
-
-    Parameters
-    ----------
-    map_entry:
-        map or subset of map created by model methods
-    indices: listlike
-        indices of parameters to be tied
-    '''
-    if isinstance(map_entry, list):
-        return [edit_map_indices(item, indices) for item in map_entry]
-    elif isinstance(map_entry, str) and map_entry[:11] == '_parameter_':
-        old_index = int(map_entry.split("_")[-1])
-        if old_index in indices:
-            new_index = indices[0]
-        elif old_index < indices[0]:
-            new_index = old_index
-        else:
-            shift = (np.array(indices) < old_index).sum() - 1
-            new_index = old_index - shift
-        return '_parameter_{}'.format(new_index)
-    else:
-        return map_entry
 
 
 class Model(HoloPyObject):
@@ -113,95 +41,26 @@ class Model(HoloPyObject):
     Compute probabilities that observed data could be explained by a set of
     scatterer and observation parameters.
     """
+    _model_parameters = {}
+
     def __init__(self, scatterer, noise_sd=None, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
                  constraints=[]):
         self._dummy_scatterer = self._create_dummy_scatterer(scatterer)
         self.theory = interpret_theory(self._dummy_scatterer, theory)
         self.constraints = ensure_listlike(constraints)
-        if not (np.isscalar(noise_sd) or isinstance(noise_sd, (Prior, dict))):
+        if not (np.isscalar(noise_sd)
+                or isinstance(noise_sd, (prior.Prior, dict))):
             noise_sd = ensure_array(noise_sd)
         optics = [medium_index, illum_wavelen, illum_polarization, noise_sd]
         optics_parameters = {key: val for key, val in zip(OPTICS_KEYS, optics)}
-        self._parameters = []
-        self._parameter_names = []
-        self._maps = {'scatterer': self._convert_to_map(scatterer.parameters),
-                      'theory': self._convert_to_map(self.theory.parameters),
-                      'optics': self._convert_to_map(optics_parameters)}
-
-    def _convert_to_map(self, parameter, name=''):
-        if isinstance(parameter, (list, tuple, np.ndarray)):
-            mapped = self._iterate_mapping(name + '.', enumerate(parameter))
-        elif isinstance(parameter, dict):
-            mapped = self._map_dictionary(parameter, name)
-        elif isinstance(parameter, xr.DataArray):
-            mapped = self._map_xarray(parameter, name)
-        elif isinstance(parameter, TransformedPrior):
-            mapped = self._map_transformed_prior(parameter, name)
-        elif isinstance(parameter, Prior):
-            index = self._get_parameter_index(parameter, name)
-            mapped = '_parameter_{}'.format(index)
-        else:
-            mapped = parameter
-        return mapped
-
-    def _iterate_mapping(self, prefix, pairs):
-        return [self._convert_to_map(parameter, prefix + str(suffix))
-                for suffix, parameter in pairs]
-
-    def _map_dictionary(self, parameter, name):
-        prefix = name + "." if len(name) > 0 else ""
-        values_map = self._iterate_mapping(prefix, parameter.items())
-        iterator = zip(parameter.keys(), values_map)
-        dict_args = [[key, val] for key, val in iterator if val is not None]
-        return [dict, [dict_args]]
-
-    def _map_xarray(self, parameter, name):
-        dim_name = parameter.dims[0]
-        coord_keys = parameter.coords[dim_name].values.tolist()
-        if len(parameter.dims) == 1:
-            values = parameter.values
-        else:
-            values = [parameter.loc[{dim_name: key}] for key in coord_keys]
-        values_map = self._iterate_mapping(name + '.', zip(coord_keys, values))
-        return [make_xarray, [dim_name, coord_keys, values_map]]
-
-    def _map_transformed_prior(self, parameter, name):
-        name = name if parameter.name is None else parameter.name
-        name = name + '.' if len(parameter.base_prior) > 1 else name
-        mapped_priors = self._iterate_mapping(name, parameter.map_keys)
-        return [transformed_prior, [parameter.transformation, mapped_priors]]
-
-    def _get_parameter_index(self, parameter, name):
-        index = self._check_for_ties(parameter)
-        if index is None:
-            index = len(self._parameters)
-            self._add_parameter(parameter, name)
-        else:
-            shared_name = self._parameter_names[index].split(':', 1)[-1]
-            really_shared = name.split(':', 1)[-1] == shared_name
-            if really_shared and shared_name not in self._parameter_names:
-                self._parameter_names[index] = shared_name
-        return index
-
-    def _check_for_ties(self, parameter):
-        for index, existing in enumerate(self._parameters):
-            # can't simply check parameter in self._parameters because
-            # then two priors defined separately, but identically will
-            # match whereas this way they are counted as separate objects.
-            if existing is parameter:
-                return index
-
-    def _add_parameter(self, parameter, name):
-        self._parameters.append(parameter)
-        if parameter.name is not None:
-            name = parameter.name
-        if name in self._parameter_names:
-            name += '_0'
-        while name in self._parameter_names:
-            counter, reversename = name[::-1].split("_", 1)
-            name = reversename[::-1] + "_" + str(int(counter[::-1]) + 1)
-        self._parameter_names.append(name)
+        mapper = Mapper()
+        self._maps = {'scatterer': mapper.convert_to_map(scatterer.parameters),
+                      'theory': mapper.convert_to_map(self.theory.parameters),
+                      'optics': mapper.convert_to_map(optics_parameters),
+                      'model': mapper.convert_to_map(self._model_parameters)}
+        self._parameters = mapper.parameters
+        self._parameter_names = mapper.parameter_names
 
     def add_tie(self, parameters_to_tie, new_name=None):
         """
@@ -236,7 +95,7 @@ class Model(HoloPyObject):
                       for key, val in self._maps.items()}
 
     def _iteritems(self):
-        keys = ['scatterer', 'theory', '_parameters',
+        keys = ['_dummy_scatterer', 'theory', '_parameters',
                 '_parameter_names', '_maps']
         for key in keys:
             item = getattr(self, key)
@@ -250,15 +109,12 @@ class Model(HoloPyObject):
         parameters = fields['_parameters']
         maps = fields['_maps']
 
-        dummy_scatterer = fields['scatterer']
+        dummy_scatterer = fields['_dummy_scatterer']
         scatterer_parameters = read_map(maps['scatterer'], parameters)
         scatterer = dummy_scatterer.from_parameters(scatterer_parameters)
         kwargs = {'scatterer': scatterer, 'theory': fields['theory']}
-        kwargs.update(read_map(maps['optics'], parameters))
-        if 'model' in maps:
-            kwargs.update(read_map(maps['model'], parameters))
-        if 'theory' in maps:
-            kwargs.update(read_map(maps['theory'], parameters))
+        for key in ['optics', 'model', 'theory']:
+            kwargs.update(read_map(maps[key], parameters))
         model = cls(**kwargs)
         if model._parameters == parameters:
             model._parameter_names = fields['_parameter_names']
@@ -392,14 +248,15 @@ class Model(HoloPyObject):
         else:
             raise MissingParameter('noise_sd')
         if val is None:
-            if np.all([isinstance(par, Uniform) for par in self._parameters]):
+            if np.all([isinstance(par, prior.Uniform)
+                       for par in self._parameters]):
                 val = 1
             else:
                 raise MissingParameter('noise_sd for non-uniform priors')
         return val
 
     def generate_guess(self, n=1, scaling=1, seed=None):
-        return generate_guess(self._parameters, n, scaling, seed)
+        return prior.generate_guess(self._parameters, n, scaling, seed)
 
     def lnprior(self, pars):
         """
@@ -512,10 +369,10 @@ class Model(HoloPyObject):
         return log_likelihood
 
     def fit(self, data, strategy=None):
-        raise_fitting_api_error('holopy.fit()', 'model.fit()')
+        raise_fitting_api_error('holopy.fit()', 'Model.fit()')
 
     def sample(self, data, strategy=None):
-        raise_fitting_api_error('holopy.sample()', 'model.sample()')
+        raise_fitting_api_error('holopy.sample()', 'Model.sample()')
 
 
 class LimitOverlaps(HoloPyObject):
@@ -538,9 +395,9 @@ class AlphaModel(Model):
     def __init__(self, scatterer, alpha=1, noise_sd=None, medium_index=None,
                  illum_wavelen=None, illum_polarization=None, theory='auto',
                  constraints=[]):
+        self._model_parameters = {'alpha': alpha}
         super().__init__(scatterer, noise_sd, medium_index, illum_wavelen,
                          illum_polarization, theory, constraints)
-        self._maps['model'] = self._convert_to_map({'alpha': alpha})
 
     @property
     def alpha(self):

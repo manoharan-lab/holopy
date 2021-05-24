@@ -4,8 +4,13 @@
 HoloPy Release Notes
 ********************
 
-Current Development (Holopy 3.5)
-================================
+Holopy 3.5
+==========
+
+Announcements
+-------------
+If you encounter errors loading prevoiusly saved HoloPy objects, try loading
+them with HoloPy 3.4 and saving a new version. See deprecation notes below.
 
 New Features
 ------------
@@ -15,11 +20,14 @@ New Features
 Improvements
 ------------
 - Calling a numpy ufunc on a Prior object with name kwarg gives the resulting
-  TransformedPrior object that name, e.g. clip_x = np.min(x, name='clipped')
-- Cleaned up model parameter names created from TransformedPrior objects
-- CmaStrategy now scales first step size based on initial population, not prior
+  TransformedPrior object that name, e.g. clip_x = np.min(x, name='clipped').
+- Cleaned up model parameter names created from TransformedPrior objects.
+- CmaStrategy now scales first step size based on initial population, not
+  prior.
 - Inference models work with scattering theories that require
   parameters. See more in the user guide :ref:`scatterers_user`.
+- Interpolation in background images is now robust to adjacent dead pixels.
+- Restored ability to call scattering functions on parameterized scatterers.
 
 Documentation
 -------------
@@ -27,10 +35,9 @@ Documentation
 
 Bugfixes
 --------
-- NmpfitStrategy now correctly accounts for non-uniform priors when optimizing
-- Functional fitting interface no longer lets alpha go to zero
-- More helpful errors when calling scattering functions (e.g. calc_holo) with
-  parameterized scatterers, which is unsupported as of HoloPy 3.4
+- NmpfitStrategy now correctly accounts for non-uniform priors when optimizing.
+- Functional fitting interface no longer lets alpha go to zero.
+- Now able to save Model objects whose scatterer attribute contains xarrays.
 
 Compatibility Notes
 --------------------
@@ -44,6 +51,11 @@ Developer Notes
   :class:`.ScatteringTheory` that calculated deterimed at which points
   the scattering matrices or scattered fields needed to be calculated is
   now in `holopy.scattering.imageformation`.
+- The parameter parsing previously done by the `Model` class has now been
+  broken out to a new `hp.core.mapping` module so it can be
+  accessed by non-`Model` objects.
+- `prior.py` has been moved from to hp.core module from hp.inference but is
+  still accessible in the hp.inference namespace.
 
 Deprecations
 ------------
@@ -53,7 +65,8 @@ Deprecations
 - Inference-related deprecations started in 3.4 are now complete. This means
   that some old `holopy` inference objects are no longer loadable. If you still
   need to access these objects, `holopy` version 3.4 will let you load old
-  inference objects and save them in the new format.
+  inference objects and save them in the new format that is compatible with
+  this (and future) versions of `holopy`.
 
 
 Holopy 3.4

@@ -24,13 +24,13 @@ from numpy.testing import assert_equal, assert_allclose
 import numpy as np
 from nose.plugins.attrib import attr
 
-from holopy.inference.prior import (
+from holopy.core.prior import (
     Prior, Gaussian, Uniform, BoundedGaussian, ComplexPrior, TransformedPrior,
     make_center_priors, updated, generate_guess)
 from holopy.inference.result import UncertainValue
 from holopy.core.metadata import data_grid
 from holopy.scattering.errors import ParameterSpecificationError
-from holopy.inference.tests.common import SimpleModel
+from holopy.core.mapping import Mapper
 
 GOLD_SIGMA = -1.4189385332  # log(sqrt(0.5/pi))-1/2
 
@@ -445,16 +445,16 @@ class TestTransformedPrior(unittest.TestCase):
     def test_map_keys_indexing(self):
         base_priors = [Uniform(0, 10, guess=4), Uniform(0, 2, guess=1)]
         transformed = TransformedPrior(np.maximum, base_priors)
-        model = SimpleModel()
-        model._iterate_mapping('root', transformed.map_keys)
-        self.assertEqual(model._parameter_names[-2:], ['root0', 'root1'])
+        mapper = Mapper()
+        mapper.iterate_mapping('root', transformed.map_keys)
+        self.assertEqual(mapper.parameter_names[-2:], ['root0', 'root1'])
 
     @attr('fast')
     def test_map_keys_single_prior(self):
         transformed = TransformedPrior(np.sqrt, Uniform(0, 2))
-        model = SimpleModel()
-        model._iterate_mapping('root', transformed.map_keys)
-        self.assertEqual(model._parameter_names[-1], 'root')
+        mapper = Mapper()
+        mapper.iterate_mapping('root', transformed.map_keys)
+        self.assertEqual(mapper.parameter_names[-1], 'root')
 
 def test_scale_factor():
     p1 = Gaussian(3, 1)

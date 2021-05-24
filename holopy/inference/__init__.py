@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
+from holopy.core import prior
 from holopy.inference.result import (
     FitResult, SamplingResult, TemperedSamplingResult)
 from holopy.inference.model import (AlphaModel, ExactModel, LimitOverlaps)

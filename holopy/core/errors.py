@@ -61,7 +61,7 @@ class DeprecationError(Exception):
     pass
 
 
-def raise_fitting_api_error(correct_obj, obselete_obj):
+def raise_fitting_api_error(correct, obselete):
     msg = ("HoloPy's inference API has changed. "
-           "Use a {} object instead of {}.".format(correct_obj, obselete_obj))
+           "Use {} instead of {}.".format(correct, obselete))
     raise DeprecationError(msg)

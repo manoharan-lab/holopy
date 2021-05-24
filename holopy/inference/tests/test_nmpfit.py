@@ -34,7 +34,7 @@ from holopy.scattering.errors import OverlapWarning
 from holopy.inference import (
     LimitOverlaps, ExactModel, AlphaModel, NmpfitStrategy,
     LeastSquaresScipyStrategy)
-from holopy.inference.prior import ComplexPrior, Uniform
+from holopy.core.prior import ComplexPrior, Uniform
 
 gold_alpha = .6497
 

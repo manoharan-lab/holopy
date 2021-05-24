@@ -478,4 +478,3 @@ def make_center_priors(im, z_range_extents=5, xy_uncertainty_pixels=1,
 
     xy_sd = xy_uncertainty_pixels * spacing
     return [Gaussian(c, s) for c, s in zip(center, xy_sd)] + [Uniform(*z_range)]
-

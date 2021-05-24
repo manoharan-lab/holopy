@@ -6,7 +6,6 @@ from nose.plugins.attrib import attr
 
 import holopy as hp
 from holopy.scattering import Sphere, Spheres
-from holopy.inference.prior import Uniform
 
 class TestBasicMethods(unittest.TestCase):
     @attr("fast")

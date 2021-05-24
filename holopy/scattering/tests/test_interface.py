@@ -217,9 +217,13 @@ class TestInterpretTheory(unittest.TestCase):
 
 class TestValidateScatterer(unittest.TestCase):
     @attr('fast')
-    def test_ValueError_if_prior_in_scatterer(self):
-        scatterer = Sphere(r=prior.Uniform(0.5, 0.6), n=1.5, center=[5, 5, 5])
-        self.assertRaises(ValueError, calc_holo, LOCATIONS, scatterer)
+    def test_initial_guess_if_prior_in_scatterer(self):
+        r = prior.Uniform(0.5, 0.6, 0.59)
+        n = prior.Gaussian(1.5, 0.2)
+        scatterer = Sphere(r, n, center=[5, 5, 5])
+        best_guess = Sphere(r.guess, n.guess, scatterer.center)
+        self.assertEqual(validate_scatterer(scatterer), best_guess)
+
 
 if __name__ == '__main__':
     unittest.main()
