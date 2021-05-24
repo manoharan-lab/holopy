@@ -406,11 +406,9 @@ class TestParameterTying(unittest.TestCase):
         mapper = Mapper()
         map1 = mapper.convert_to_map(parameters1)
         map2 = mapper.convert_to_map(parameters2)
-        expected = []
         s0 = Sphere(n=prior.Uniform(1, 2, name='dummy'),
                     r=prior.Uniform(1, 2, name='dummy'),
                     center=[tied, tied, prior.Uniform(0, 10, name='z')])
-        mapper = Mapper()
         expected_priors = [tied, prior.Uniform(0, 1), prior.Uniform(0, 1)]
         expected_names = ['to_tie', 'dummy2', 'dummy2_0']
         self.assertEqual(mapper.parameters, expected_priors)
