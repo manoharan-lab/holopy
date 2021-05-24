@@ -225,8 +225,8 @@ def display_image(im, scaling='auto', vert_axis='x', horiz_axis='y',
                     depth_axis='z', colour_axis='illumination'):
     im = im.copy()
     if isinstance(im, xr.DataArray):
-        if hasattr(im, 'z') and len(im['z']) == 1 and depth_axis is not 'z':
-            im = im[{'z':0}]
+        if 'z' in im.dims and len(im['z']) == 1 and depth_axis != 'z':
+            im = im[{'z': 0}]
         if depth_axis == 'z' and 'z' not in im.dims:
             im = im.expand_dims('z')
         if im.ndim > 3 + (colour_axis in im.dims):
@@ -263,7 +263,7 @@ def display_image(im, scaling='auto', vert_axis='x', horiz_axis='y',
     if np.iscomplex(im).any():
         warn("Image contains complex values. Taking image magnitude.")
         im = np.abs(im)
-    if scaling is 'auto':
+    if scaling == 'auto':
         scaling = (ensure_scalar(im.min()), ensure_scalar(im.max()))
     if scaling is not None:
         im = np.maximum(im, scaling[0])

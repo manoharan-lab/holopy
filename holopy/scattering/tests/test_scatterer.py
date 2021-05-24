@@ -32,7 +32,7 @@ from holopy.core import detector_grid
 from holopy.scattering import (
     Sphere, Spheres, Scatterer, Ellipsoid, Scatterers, calc_holo)
 from holopy.scattering.scatterer.scatterer import find_bounds
-from holopy.inference.prior import ComplexPrior, Uniform
+from holopy.inference import prior
 from holopy.scattering.errors import InvalidScatterer, MissingParameter
 
 
@@ -125,7 +125,7 @@ def test_underscore_parameter_identity():
 
 
 def test_from_parameters():
-    s_prior = Sphere(n=1.6, r=Uniform(0.5, 0.7), center=[10, 10, 10])
+    s_prior = Sphere(n=1.6, r=prior.Uniform(0.5, 0.7), center=[10, 10, 10])
     s_new_nr= Sphere(n=1.7, r=0.7, center=[10,10,10])
     pars = {'n':1.7, 'r':0.7}
     assert_equal(s_prior.from_parameters(pars), s_new_nr)

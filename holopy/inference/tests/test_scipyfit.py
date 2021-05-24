@@ -9,7 +9,7 @@ from holopy.scattering import Sphere, Mie, calc_holo
 from holopy.core.process import normalize
 from holopy.inference import (
     AlphaModel, LeastSquaresScipyStrategy, NmpfitStrategy)
-from holopy.inference.prior import Uniform
+from holopy.inference import prior
 
 
 SPHERE = Sphere(n=1.59, r=8e-7, center=(5.7e-6, 5.7e-6, 15e-6))
@@ -56,7 +56,7 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
             np.isclose(result.parameters['alpha'], CORRECT_ALPHA, rtol=0.1))
         self.assertEqual(model, result.model)
 
-    @attr('medium')
+    @attr('slow')
     def test_fitted_parameters_similar_to_nmpfit(self):
         data = make_fake_data()
         model = make_model()
@@ -151,7 +151,7 @@ def make_fake_data():
 
 
 def make_1_parameter_model():
-    alpha = Uniform(0.1, 1, name='alpha', guess=0.6)
+    alpha = prior.Uniform(0.1, 1, name='alpha', guess=0.6)
     theory = Mie(compute_escat_radial=False)
     model = AlphaModel(SPHERE, theory=theory, alpha=alpha)
     return model
@@ -161,15 +161,15 @@ def make_model():
     # Makes a model with all the paramters used in make_fake_data(),
     # but with the guesses slightly off from the true values
     center_guess = [
-        Uniform(0, 1e-5, name='x', guess=5.6e-6),
-        Uniform(0, 1e-5, name='y', guess=5.8e-6),
-        Uniform(1e-5, 2e-5, name='z', guess=14e-6),
+        prior.Uniform(0, 1e-5, name='x', guess=5.6e-6),
+        prior.Uniform(0, 1e-5, name='y', guess=5.8e-6),
+        prior.Uniform(1e-5, 2e-5, name='z', guess=14e-6),
         ]
     scatterer = Sphere(
-        n=Uniform(1, 2, name='n', guess=1.55),
-        r=Uniform(1e-8, 1e-5, name='r', guess=8.5e-7),
+        n=prior.Uniform(1, 2, name='n', guess=1.55),
+        r=prior.Uniform(1e-8, 1e-5, name='r', guess=8.5e-7),
         center=center_guess)
-    alpha = Uniform(0.1, 1, name='alpha', guess=0.6)
+    alpha = prior.Uniform(0.1, 1, name='alpha', guess=0.6)
     theory = Mie(compute_escat_radial=False)
     model = AlphaModel(scatterer, theory=theory, alpha=alpha)
     return model

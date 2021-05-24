@@ -1,5 +1,4 @@
 import unittest
-from collections import OrderedDict
 
 import numpy as np
 from nose.plugins.attrib import attr
@@ -37,25 +36,17 @@ class TestDetectorGrid(unittest.TestCase):
         self.assertEqual(detector.values.shape, true_shape)
 
     @attr("fast")
-    def test_normals_are_deprecated_with_error(self):
-        normals = np.array([0.5, 0, 0.5])
-        normals /= np.linalg.norm(normals)
-        self.assertRaisesRegex(
-            ValueError, "`normals` are deprecated*", detector_grid, 10, 1,
-            normals=normals)
-
-    @attr("fast")
     def test_name_is_stored(self):
         name = 'this-is-a-name'
         detector = detector_grid(10, 0.1, name=name)
         self.assertEqual(detector.name, name)
 
     @attr("fast")
-    def test_extra_dims_when_ordereddict(self):
+    def test_extra_dims_when_ordered_dict(self):
         shape = (2, 2)
         extra_dims_sizes = (1, 2, 3, 4, 5, 6, 7, 8)  # ends up as 1.3 MB
         extra_dims_names = 'abcdefgh'
-        extra_dims = OrderedDict()
+        extra_dims = {}
         for k, v in zip(extra_dims_names, extra_dims_sizes):
             extra_dims.update({k: np.arange(v)})
 
@@ -218,15 +209,6 @@ class TestDetectorPoints(unittest.TestCase):
         points = detector_points(x=x, y=y, z=z, name=name)
         self.assertEqual(points.name, name)
 
-    @attr("fast")
-    def test_normals_raises_error_with_deprecation_message(self):
-        npts = 13
-        r, theta, phi = np.random.randn(3, npts)
-        normals = np.random.randn(3, npts)
-        self.assertRaisesRegex(
-            ValueError, "`normals` are deprecated*",
-            detector_points, r=r, theta=theta, phi=phi, normals=normals)
-
 
 class TestCleanConcat(unittest.TestCase):
     @attr("fast")
@@ -314,16 +296,6 @@ class TestUpdateMetadata(unittest.TestCase):
         noise_sd = np.random.rand()
         updated_detector = update_metadata(detector, noise_sd=noise_sd)
         self.assertEqual(updated_detector.noise_sd, noise_sd)
-
-    @attr("fast")
-    def test_normals_raises_error_with_deprecation_message(self):
-        detector = detector_grid(3, 0.1)
-        np.random.seed(13)
-        normals = np.random.randn(3)
-        normals /= np.linalg.norm(normals)
-        self.assertRaisesRegex(
-            ValueError, "`normals` are deprecated*",
-            update_metadata, detector, normals=normals)
 
 
 class TestGetSpacing(unittest.TestCase):

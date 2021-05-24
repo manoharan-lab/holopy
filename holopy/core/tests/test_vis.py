@@ -21,9 +21,9 @@ import shutil
 import warnings
 import unittest
 import tempfile
-from collections import OrderedDict
 
 import numpy as np
+import xarray as xr
 from numpy.testing import assert_allclose, assert_raises, assert_equal
 from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
@@ -53,13 +53,6 @@ ARRAY_5D = np.reshape(ARRAY_4D, ARRAY_4D.shape + (1,))
 
 
 def convert_ndarray_to_xarray(array, extra_dims=None):
-    # FIXME extra_dims needs to be an OrderedDict, since the creation of
-    # an xarray assumes that iteration over extra_dims occurs in the
-    # insertion order.
-    # However FIXME passing ``extra_dims`` as an OrderedDict does not
-    # let the tests pass, as holopy.core.metadata.data_grid and
-    # holopy.core.metadata.make_coords both assume that dicts iterate
-    # in a fixed order.
     if array.ndim > 2:
         z = range(len(array))
     else:
@@ -148,7 +141,7 @@ class TestDisplayImage(unittest.TestCase):
     @attr("fast")
     def test_custom_extra_dimension_name(self):
         xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
-        extra_dims = OrderedDict([["t", [0, 1, 2]], [ILLUM, [0, 1, 2]]])
+        extra_dims = dict([["t", [0, 1, 2]], [ILLUM, [0, 1, 2]]])
         xarray_5d = convert_ndarray_to_xarray(
             ARRAY_5D.transpose([4, 1, 2, 0, 3]),
             extra_dims=extra_dims)
@@ -161,6 +154,16 @@ class TestDisplayImage(unittest.TestCase):
         # should be exactly the same and not just close:
         is_ok = np.all(displayed.values == xarray_4d.values)
         self.assertTrue(is_ok)
+
+    @attr('fast')
+    def test_z_in_coords_but_not_dims(self):
+        data = xr.DataArray(data=np.zeros((2, 2, 2)),
+                            dims=['x', 'y', 'z'],
+                            coords={'x': [0, 1], 'y': [0, 1], 'z': [0, 1]})
+        data = data.sel(z=1)
+        values = display_image(data, scaling=None).values
+        self.assertEqual(values.shape, (1, 2, 2))
+        self.assertTrue(np.all(values == 0))
 
     @attr("fast")
     def test_interpet_axes_for_numpy_arrays(self):
@@ -200,7 +203,7 @@ class TestDisplayImage(unittest.TestCase):
 
     @attr("fast")
     def test_raises_error_5d_xarray(self):
-        extra_dims = OrderedDict([[ILLUM, [0, 1, 2]], ["t", [0]]])
+        extra_dims = dict([[ILLUM, [0, 1, 2]], ["t", [0]]])
         xr5 = convert_ndarray_to_xarray(ARRAY_5D, extra_dims=extra_dims)
         assert_raises(BadImage, display_image, xr5)
 

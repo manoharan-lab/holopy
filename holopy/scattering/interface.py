@@ -26,6 +26,7 @@ from warnings import warn
 
 import xarray as xr
 import numpy as np
+import yaml
 
 from holopy.core.holopy_object import SerializableMetaclass
 from holopy.core.metadata import (
@@ -33,10 +34,13 @@ from holopy.core.metadata import (
     dict_to_array)
 from holopy.core.utils import dict_without, ensure_array
 from holopy.scattering.scatterer import Sphere, Spheres, Spheroid, Cylinder
-from holopy.scattering.errors import AutoTheoryFailed, MissingParameter
+from holopy.scattering.errors import (
+    AutoTheoryFailed, MissingParameter, InvalidScatterer)
 from holopy.scattering.theory import Mie, Multisphere
+from holopy.scattering.imageformation import ImageFormation
 from holopy.scattering.theory import Tmatrix
 from holopy.scattering.theory.dda import DDA
+from holopy.core.mapping import Mapper, read_map
 
 
 def prep_schema(detector, medium_index, illum_wavelen, illum_polarization):
@@ -92,6 +96,13 @@ def interpret_theory(scatterer, theory='auto'):
     return theory
 
 
+def validate_scatterer(scatterer):
+    mapper = Mapper()
+    scatterer_map = mapper.convert_to_map(scatterer.parameters)
+    guesses = [par.guess for par in mapper.parameters]
+    return scatterer.from_parameters(read_map(scatterer_map, guesses))
+
+
 def finalize(detector, result):
     if not hasattr(detector, 'flat'):
         result = from_flat(result)
@@ -101,7 +112,7 @@ def finalize(detector, result):
 # Some comments on why `determine_default_theory_for` exists, rather than each
 # Scatterer class knowing what a good default theory is.
 # The problem is that the theories (Mie etc) import Sphere to see if
-# the theory can handle the scatterer, in the _can_handle method and
+# the theory can handle the scatterer, in the can_handle method and
 # others. Worse, since the DDA theory calls an external DDA library
 # with specially-defined DDA objects, the DDA theory has a switch statement
 # for basically every holopy scatterer. So right now the scatterers can't
@@ -111,15 +122,10 @@ def determine_default_theory_for(scatterer):
     if isinstance(scatterer, Sphere):
         theory = Mie()
     elif isinstance(scatterer, Spheres):
-        if all([np.isscalar(scat.r) for scat in scatterer.scatterers]):
-            theory = Multisphere()
-        else:
-            warn("HoloPy's multisphere theory can't handle coated spheres." +
-                 "Using Mie theory.")
-            theory = Mie()
+        theory = _choose_mie_vs_multisphere(scatterer)
     elif isinstance(scatterer, Spheroid) or isinstance(scatterer, Cylinder):
         theory = Tmatrix()
-    elif DDA()._can_handle(scatterer):
+    elif DDA.can_handle(scatterer):
         theory = DDA()
     else:
         raise AutoTheoryFailed(scatterer)
@@ -190,11 +196,13 @@ def calc_holo(detector, scatterer, medium_index=None, illum_wavelen=None,
     holo : xarray.DataArray
         Calculated hologram from the given distribution of spheres
     """
-    theory = interpret_theory(scatterer, theory)
+    scatterer = validate_scatterer(scatterer)
     uschema = prep_schema(
         detector, medium_index, illum_wavelen, illum_polarization)
     scaling = dict_to_array(detector, scaling)
-    scattered_field = theory.calculate_scattered_field(scatterer, uschema)
+    theory = interpret_theory(scatterer, theory)
+    imageformer = ImageFormation(theory)
+    scattered_field = imageformer.calculate_scattered_field(scatterer, uschema)
     reference_field = uschema.illum_polarization
     holo = scattered_field_to_hologram(
         scattered_field * scaling, reference_field)
@@ -228,8 +236,10 @@ def calc_cross_sections(scatterer, medium_index=None, illum_wavelen=None,
         Dimensional scattering, absorption, and extinction
         cross sections, and <cos theta>
     """
+    scatterer = validate_scatterer(scatterer)
     theory = interpret_theory(scatterer, theory)
-    cross_section = theory.calculate_cross_sections(
+    imageformer = ImageFormation(theory)
+    cross_section = imageformer.calculate_cross_sections(
         scatterer=scatterer,
         medium_wavevec=2*np.pi/(illum_wavelen/medium_index),
         medium_index=medium_index,
@@ -266,11 +276,13 @@ def calc_scat_matrix(detector, scatterer, medium_index=None, illum_wavelen=None,
         Scattering matrices at specified positions
 
     """
-    theory = interpret_theory(scatterer, theory)
+    scatterer = validate_scatterer(scatterer)
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=False)
-    result = theory.calculate_scattering_matrix(scatterer, uschema)
+    theory = interpret_theory(scatterer, theory)
+    imageformer = ImageFormation(theory)
+    result = imageformer.calculate_scattering_matrix(scatterer, uschema)
     return finalize(uschema, result)
 
 
@@ -303,11 +315,13 @@ def calc_field(detector, scatterer, medium_index=None, illum_wavelen=None,
     e_field : :class:`.Vector` object
         Calculated hologram from the given distribution of spheres
     """
-    theory = interpret_theory(scatterer, theory)
+    scatterer = validate_scatterer(scatterer)
     uschema = prep_schema(
         detector, medium_index=medium_index, illum_wavelen=illum_wavelen,
         illum_polarization=illum_polarization)
-    result = theory.calculate_scattered_field(scatterer, uschema)
+    theory = interpret_theory(scatterer, theory)
+    imageformer = ImageFormation(theory)
+    result = imageformer.calculate_scattered_field(scatterer, uschema)
     return finalize(uschema, result)
 
 
@@ -323,11 +337,64 @@ def scattered_field_to_hologram(scat, ref):
         The scattered (object) field
     ref : xarray[vector]]
         The reference field
-    detector_normal : (float, float, float)
-        Vector normal to the detector the hologram should be measured at
-        (defaults to z hat, a detector in the x, y plane)
     """
     total_field = scat + ref
     holo = (np.abs(total_field.sel(vector=['x', 'y']))**2).sum(dim=vector)
     return holo
 
+
+def _choose_mie_vs_multisphere(spheres):
+    center_or_radius_not_set = [
+        getattr(s, k) is None
+        for s in spheres.scatterers for k in ['center', 'r']]
+    if len(spheres.scatterers) == 1:
+        theory = Mie()
+    elif any(center_or_radius_not_set):
+        msg = ("Sphere centers and radii must be set for scattering " +
+               "calculations with more than one sphere.")
+        raise InvalidScatterer(spheres, msg)
+    elif any([not np.isscalar(sphere.r) for sphere in spheres.scatterers]):
+        warn("HoloPy's multisphere theory can't handle coated spheres." +
+             "Using Mie theory.")
+        theory = Mie()
+    else:
+        # We choose the theory that is most accurate, which is
+        # Multisphere if the spheres are close enough, else Mie
+        # superposition.
+        # What is close enough? From Jerome's paper [1], the relative
+        # effects from multiple scattering are on the order of
+        #       error_mie ~ Q_ext *(ka)^2 / kR
+        # where a is the sphere radius, R the characteristic separation,
+        # and k the wavevector of the light.
+        # For large spheres, Q_ext -> 2, so we can write this as
+        #       error_mie ~ kR * (a / R)^2
+        #
+        # The Multisphere theory uses spherical harmonic translation
+        # theorems to expand out each particle's scattered field and
+        # self-consistently solve for multiple-sphere scattering.
+        # For computational reasons Multisphere does not go past a fixed
+        # order (=70, which happens at kR ~ 100), but the actual number
+        # of terms needed scales as kR. Presumably at kR ~ 100 the error
+        # from multisphere is still small, say ~0.1.
+        # So for large R, the error in Multisphere is approximately
+        #       error_multisphere = 0.1 * kR / 100
+        # The error for Multisphere is smaller than the Mie
+        # superposition error when
+        #       0.1 * kR / 100 < kR * (a / R)^2,       or
+        #       R < sqrt(1000) * a
+        # Since this is just an order-of-magnitude calculation, we take
+        # sqrt(1000) ~ 30.
+        # Note that the Mie error could still be large, if ka >> R / a
+        #
+        # [1] Fung, Jerome, et al. "Imaging multiple colloidal particles
+        # by fitting electromagnetic scattering solutions to digital
+        # holograms." Journal of Quantitative Spectroscopy and Radiative
+        # Transfer 113.18 (2012): 2482-2489.
+        max_radius = max([sphere.r for sphere in spheres.scatterers])
+        centers = np.array([sphere.center for sphere in spheres.scatterers])
+        dx = centers.reshape(1, -1, 3) - centers.reshape(-1, 1, 3)
+        max_separation = np.linalg.norm(dx, axis=2).max()
+        close_enough = max_separation <= 30 * max_radius
+
+        theory = Multisphere() if close_enough else Mie()
+    return theory

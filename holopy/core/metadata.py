@@ -23,7 +23,6 @@ Classes for defining metadata about experimental or calculated results.
 """
 
 from warnings import warn
-from collections import OrderedDict
 
 import yaml
 import numpy as np
@@ -31,7 +30,7 @@ import xarray as xr
 
 from holopy.core.utils import updated, repeat_sing_dims, ensure_array
 from holopy.core.math import to_cartesian
-from holopy.core.errors import CoordSysError, NORMALS_DEPRECATION_MESSAGE
+from holopy.core.errors import CoordSysError
 
 
 vector = 'vector'
@@ -43,7 +42,7 @@ illumination = 'illumination'
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def detector_grid(shape, spacing, normals=None, name=None, extra_dims=None):
+def detector_grid(shape, spacing, name=None, extra_dims=None):
     """
     Create a rectangular grid of pixels to represent a detector on which
     scattering calculations are to be performed.
@@ -59,9 +58,9 @@ def detector_grid(shape, spacing, normals=None, name=None, extra_dims=None):
         If array_like, \ *spacing*\ [0] between adjacent rows and
         \ *spacing*\ [1] between adjacent columns.
     name : string, optional
-    extra_dims : dict or OrderedDict, optional
+    extra_dims : dict, optional
         extra dimension(s) to add to the empty detector grid as
-        {dimname: [coords]}. Cast internally to an OrderedDict.
+        {dimname: [coords]}.
 
     Returns
     -------
@@ -81,17 +80,14 @@ def detector_grid(shape, spacing, normals=None, name=None, extra_dims=None):
         shape = list(shape)
 
     if extra_dims is not None:
-        extra_dims = OrderedDict(extra_dims)
         for val in extra_dims.values():
             shape.append(len(val))
     d = np.zeros(shape)
-    if normals is not None:
-        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
     return data_grid(d, spacing, name=name, extra_dims=extra_dims)
 
 
 def detector_points(coords={}, x=None, y=None, z=None, r=None, theta=None,
-                    phi=None, normals=None, name=None):
+                    phi=None, name=None):
     """
     Returns a one-dimensional set of detector coordinates at which scattering
     calculations are to be done.
@@ -129,8 +125,6 @@ def detector_points(coords={}, x=None, y=None, z=None, r=None, theta=None,
     a digital camera.)
 
     """
-    if normals is not None:
-        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
     updatelist = {'x': x, 'y': y, 'z': z, 'r': r, 'theta': theta, 'phi': phi}
     coords = updated(coords, updatelist)
     if 'x' in coords and 'y' in coords:
@@ -181,7 +175,7 @@ def clean_concat(arrays, dim):
 
 
 def update_metadata(a, medium_index=None, illum_wavelen=None,
-                    illum_polarization=None, normals=None, noise_sd=None):
+                    illum_polarization=None, noise_sd=None):
     """Returns a copy of an image with updated metadata in its 'attrs' field.
 
     Parameters
@@ -202,8 +196,6 @@ def update_metadata(a, medium_index=None, illum_wavelen=None,
     b : xarray.DataArray
         copy of input image with updated metadata.
     """
-    if normals is not None:
-        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
     attrlist = {'medium_index': medium_index,
                 'illum_wavelen': dict_to_array(a, illum_wavelen),
                 'illum_polarization': dict_to_array(
@@ -360,7 +352,7 @@ def data_grid(arr, spacing=None, medium_index=None, illum_wavelen=None,
         arr = np.expand_dims(arr, axis=0)
     coords = make_coords(arr.shape, spacing, z)
     if extra_dims is None:
-        extra_dims = OrderedDict()
+        extra_dims = {}
     else:
         coords.update(extra_dims)
     dims = ['z', 'x', 'y'] + list(extra_dims.keys())
@@ -408,26 +400,12 @@ def get_values(a):
     return getattr(a, 'values', a)
 
 
-def default_norms(coords, n):
-    if n is 'auto':
-        if 'x' in coords:
-            n = (0, 0, 1)
-        elif 'theta' in coords:
-            n = to_cartesian(1, coords['theta'][1], coords['phi'][1])
-            n = -np.vstack((n['x'], n['y'], n['z']))
-            n = xr.DataArray(
-                n, dims=[vector, 'point'], coords={vector: ['x', 'y', 'z']})
-        else:
-            raise CoordSysError()
-    return to_vector(n)
-
-
 def make_coords(shape, spacing, z=0):
     if np.isscalar(shape):
         shape = np.repeat(shape, 2)
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
-    to_return = OrderedDict([
+    to_return = dict([
         ('z', ensure_array(z)),
         ('x', np.arange(shape[1]) * spacing[0]),
         ('y', np.arange(shape[2]) * spacing[1]),
@@ -452,7 +430,7 @@ def dict_to_array(schema, inval):
                         coords={name: list(inval.keys())})
         msg = ("Dictionary could not be converted to DataArray because " +
                "reference grid has no dimensions with matching coords")
-        raise ValueError()
+        raise ValueError(msg)
     else:
         return inval
 

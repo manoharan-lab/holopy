@@ -21,45 +21,20 @@ Results of sampling
 .. moduleauthor:: Thomas G. Dimiduk <tom@dimiduk.net>
 """
 from copy import copy
-from collections import OrderedDict
 from warnings import warn
 
 import yaml
 import xarray as xr
 import pandas as pd
 import numpy as np
-import scipy.special
-import h5py
+
 
 from holopy.core.metadata import detector_grid, copy_metadata
 from holopy.core.holopy_object import HoloPyObject, FullLoader
 from holopy.core.io.io import pack_attrs, unpack_attrs
 from holopy.core.utils import dict_without, ensure_scalar
+from holopy.core.errors import raise_fitting_api_error
 from holopy.scattering.errors import MissingParameter
-
-
-warn_text = 'Loading a legacy (pre-3.3) HoloPy file. Please \
-                            save a new copy to ensure future compatibility'
-# anywhere warn_text appears, there's an if-statement that can be removed.
-# it is also used once in hp.core.io.io.unpack_attrs
-
-
-def get_strategy(strategy):
-    try:
-        return yaml.load(strategy, Loader=FullLoader)
-    except:
-        # old file
-        warn(warn_text)
-    index = strategy.find('pixel')
-    if index > -1 and strategy[index-1] != 'n':
-        strategy = strategy[:index] + 'n' + strategy[index:]
-    index = strategy.find('sample')
-    if index > -1:
-        strategy = strategy[:index] + 'emcee' + strategy[index+6:]
-    index = strategy.find('threads')
-    if index > -1:
-        strategy = strategy[:index] + 'parallel' + strategy[index+7]
-    return yaml.load(strategy, Loader=FullLoader)
 
 
 class FitResult(HoloPyObject):
@@ -186,17 +161,11 @@ class FitResult(HoloPyObject):
         dataset = self._serialize_as_dataset()
         dataset.to_netcdf(filename, engine='h5netcdf', **kwargs)
 
-    # deprecated methods as of 3.3
     def best_fit(self):
-        # this method is published in the HoloPy paper
-        from holopy.fitting import fit_warning
-        fit_warning('FitResult.hologram', 'SamplingResult.best_fit()')
-        return self.hologram
-
-    def output_scatterer(self):
-        from holopy.fitting import fit_warning
-        fit_warning('FitResult.scatterer', 'SamplingResult.output_scatterer()')
-        return self.scatterer
+        # this method is published in the HoloPy paper so it needs
+        # an informative error message:
+        raise_fitting_api_error(
+            'FitResult.hologram', 'FitResult.best_fit()')
 
     @classmethod
     def _unserialize(cls, dataset):
@@ -215,31 +184,15 @@ class FitResult(HoloPyObject):
             data = xr.DataArray(data.values, dims=coordnames + ['flat'],
                                 coords=coords, attrs=data.attrs)
         model = yaml.load(dataset.attrs['model'], Loader=FullLoader)
-        strategy = get_strategy(dataset.attrs['strategy'])
+        strategy = yaml.load(dataset.attrs['strategy'], Loader=FullLoader)
         outlist = [data, model, strategy]
-        try:
-            outlist.append(yaml.safe_load(dataset.attrs['time']))
-        except KeyError:
-            outlist.append(None)
-            warn(warn_text)
-        try:
-            kwargs = yaml.safe_load(dataset.attrs['_kwargs'])
-        except KeyError:
-            warn(warn_text)
-            kwargs = {}
-        try:
-            kwargs['intervals'] = yaml.load(dataset.attrs['intervals'],
-                                            Loader=FullLoader)
-            warn(warn_text)
-        except:
-            pass
+        outlist.append(yaml.safe_load(dataset.attrs['time']))
+        kwargs = yaml.safe_load(dataset.attrs['_kwargs'])
+
         for key in ['lnprobs', 'samples', '_best_fit']:
             try:
                 kwargs[key] = getattr(dataset, key)
-                try:
-                    kwargs[key].attrs = unpack_attrs(kwargs[key].attrs)
-                except KeyError:
-                    warn(warn_text)
+                kwargs[key].attrs = unpack_attrs(kwargs[key].attrs)
             except AttributeError:
                 pass
         outlist.append(kwargs)
@@ -275,27 +228,13 @@ class SamplingResult(FitResult):
     def burn_in(self, sample_number):
 
         def cut_start(array):
-            if len(array.chain.coords) == 0:
-                array['chain'] = ('chain', array.chain)
-                array.set_index(chain='chain')
-            return array.sel(chain=slice(sample_number, None))
+            return array.isel(chain=slice(sample_number, None))
 
         burned_in = copy(self)
         burned_in.samples = cut_start(burned_in.samples)
         burned_in.lnprobs = cut_start(burned_in.lnprobs)
         burned_in.intervals = burned_in._calc_intervals()
         return burned_in
-
-    # deprecated methods as of 3.3
-    def MAP(self):
-        from holopy.fitting import fit_warning
-        fit_warning('SamplingResult.parameters', 'SamplingResult.MAP')
-        return self._parameters
-
-    def values(self):
-        from holopy.fitting import fit_warning
-        fit_warning('SamplingResult.intervals', 'SamplingResult.values')
-        return self.intervals
 
 
 GROUPNAME = 'stage_results[{}]'
@@ -315,14 +254,7 @@ class TemperedSamplingResult(SamplingResult):
 
     @classmethod
     def _load(cls, filename):
-        try:
-            ds = SamplingResult._load(filename)
-        except AttributeError:
-            # old file
-            warn(warn_text)
-            ds = SamplingResult._load(filename, group='end_result')
-            with xr.open_dataset(filename, engine='h5netcdf') as top:
-                ds.strategy = get_strategy(top.attrs['strategy'])
+        ds = SamplingResult._load(filename)
         stages = [SamplingResult._load(filename, group=GROUPNAME.format(i))
                   for i in range(len(ds.strategy.stage_strategies) - 1)]
         return cls(ds, stages, ds.strategy, ds.time)
@@ -363,4 +295,3 @@ class UncertainValue(HoloPyObject):
         guess = guess_fmt.format(self.guess)
         return "${guess}^{{+{s.plus:.2g}}}_{{-{s.minus:.2g}}}{conf}$".format(
             s=self, conf=confidence, guess=guess)
-

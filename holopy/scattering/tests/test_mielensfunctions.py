@@ -1,3 +1,4 @@
+import warnings
 import unittest
 import itertools
 
@@ -7,6 +8,7 @@ from scipy.special import jn_zeros
 from nose.plugins.attrib import attr
 
 from holopy.scattering.theory import mielensfunctions
+from holopy.scattering.errors import MissingParameter
 
 
 TOLS = {'atol': 1e-12, 'rtol': 1e-12}
@@ -16,32 +18,25 @@ SOFTTOLS = {'atol': 1e-3, 'rtol': 1e-3}
 
 class TestMieLensCalculator(unittest.TestCase):
     @attr("fast")
-    def test_raises_error_when_params_arent_specified(self):
-        kwargs = {'particle_kz': None,
-                  'index_ratio': None,
-                  'size_parameter': None,
-                  'lens_angle': None,
-                  }
+    def test_raises_error_when_no_params_are_specified(self):
+        self.assertRaises(MissingParameter, mielensfunctions.MieLensCalculator)
 
-        def create_calculator(**kwargs):
-            return mielensfunctions.MieLensCalculator(**kwargs)
-
-        # 1. Check when none are supplied
-        self.assertRaises(ValueError, create_calculator, **kwargs)
-        self.assertRaises(ValueError, create_calculator)
-        # 2. Check when all but 1 are supplied
+    @attr("fast")
+    def test_raises_error_when_any_params_isnt_specified(self):
         kwargs = {'particle_kz': 10.0,
                   'index_ratio': 1.3,
                   'size_parameter': 5.0,
                   'lens_angle': 0.8,
                   }
+
+        def create_calculator(**kwargs):
+            return mielensfunctions.MieLensCalculator(**kwargs)
+
         for key in kwargs.keys():
             value = kwargs[key]  # popping it out
             kwargs[key] = None
-            self.assertRaises(ValueError, create_calculator, **kwargs)
+            self.assertRaises(MissingParameter, create_calculator, **kwargs)
             kwargs[key] = value  # putting it back
-        # 3. Check that no error is raised when all are supplied:
-        dum = create_calculator(**kwargs)
 
     @attr("fast")
     def test_raises_error_when_inputs_mismatched_size(self):
@@ -255,6 +250,18 @@ class TestMieLensCalculator(unittest.TestCase):
         fields_dont_explode = np.all(np.abs(field_x < 2e-4))
         self.assertTrue(fields_dont_explode)
 
+    @attr("fast")
+    def test_calculate_phase(self):
+        np.random.seed(119)
+        kz = 20.0 * np.random.rand()
+        calculator = mielensfunctions.MieLensCalculator(
+            size_parameter=10, lens_angle=1.0, particle_kz=kz,
+            index_ratio=1.1)
+
+        correct_phase = kz * (1 - calculator._quad_pts)
+        phase = calculator._calculate_phase()
+        self.assertTrue(np.allclose(correct_phase, phase, **TOLS))
+
     @attr("slow")
     def test_interpolate_is_same_as_direct_computation(self):
         k = 2 * np.pi / 0.66
@@ -331,6 +338,99 @@ class TestMieLensCalculator(unittest.TestCase):
     # 2. E_x = 0 at phi = pi/2, E_y = 0 at phi = 0
 
 
+class TestAberratedMieLensCalculator(unittest.TestCase):
+    @attr("fast")
+    def test_raises_error_when_no_params_are_specified(self):
+        self.assertRaises(
+            MissingParameter, mielensfunctions.AberratedMieLensCalculator)
+
+    @attr("fast")
+    def test_raises_error_when_any_params_isnt_specified(self):
+        kwargs = {'particle_kz': 10.0,
+                  'index_ratio': 1.3,
+                  'size_parameter': 5.0,
+                  'lens_angle': 0.8,
+                  'spherical_aberration': 1.0,
+                  }
+
+        def create_calculator(**kwargs):
+            return mielensfunctions.AberratedMieLensCalculator(**kwargs)
+
+        for key in kwargs.keys():
+            value = kwargs[key]  # popping it out
+            kwargs[key] = None
+            self.assertRaises(MissingParameter, create_calculator, **kwargs)
+            kwargs[key] = value  # putting it back
+
+    @attr("fast")
+    def test_calculate_aberration_form(self):
+        calculator = make_calculator_with_aberration_of(0.0)
+        aberration = calculator._pupil_x_squared
+
+        theta = np.arccos(calculator._quad_pts)
+        correct_aberration = (np.cos(theta) - 1.0)
+        self.assertTrue(np.allclose(aberration, correct_aberration, **TOLS))
+
+    @attr("fast")
+    def test_calculate_phase(self):
+        np.random.seed(143)
+        spherical_aberration = np.random.randn()
+        calculator = make_calculator_with_aberration_of(spherical_aberration)
+        kz = calculator.particle_kz
+
+        phase = calculator._calculate_phase()
+        correct_phase = (
+            kz * (1 - calculator._quad_pts) +
+            spherical_aberration * calculator._pupil_x_squared**2)
+        self.assertTrue(np.allclose(correct_phase, phase, **TOLS))
+
+    @attr("fast")
+    def test_gives_correct_values(self):
+        calculator = make_calculator_with_aberration_of(42.1)
+        krho = np.linspace(0, 100, 10)
+        fx_calc, fy_calc = calculator.calculate_scattered_field(krho, 0 * krho)
+
+        fx_true = np.array([
+            1.62200970e+00 + 2.11177687e+00j,
+            1.97957403e-01 + 2.91793510e-01j,
+            -1.23716044e-02 + 5.20378583e-02j,
+            -7.72814013e-03 - 8.83646666e-03j,
+            -9.92495711e-03 + 1.45672004e-02j,
+            1.27054494e-02 - 7.32949748e-04j,
+            -6.93675387e-03 - 4.27264277e-03j,
+            3.06621454e-03 + 4.21161773e-03j,
+            -1.33377823e-03 - 3.21410269e-03j,
+            6.26057275e-04 + 2.38456278e-03j])
+        fy_true = 0
+        self.assertTrue(np.allclose(fx_calc, fx_true, atol=1e-9))
+        self.assertTrue(np.allclose(fy_calc, fy_true, **TOLS))
+
+    @attr("fast")
+    def test_higher_order_aberrations_differ_from_3rd_order(self):
+        np.random.seed(354)
+        high_order = 10 * np.random.randn(10)  # 10th-order aberrations!
+        calc_high = make_calculator_with_aberration_of(high_order)
+        calc_low = make_calculator_with_aberration_of(high_order[:1])
+
+        krho = np.linspace(0, 100, 10)
+        fields_high = calc_high.calculate_scattered_field(krho, 0*krho)
+        fields_low = calc_low.calculate_scattered_field(krho, 0*krho)
+        self.assertFalse(np.allclose(fields_high, fields_low, **TOLS))
+
+    @attr("fast")
+    def test_higher_order_aberrations_zero_same_as_3rd_order(self):
+        np.random.seed(354)
+        high_order = np.zeros(7)
+        high_order[0] = 10 * np.random.randn()
+        calc_high = make_calculator_with_aberration_of(high_order)
+        calc_low = make_calculator_with_aberration_of(high_order[:1])
+
+        krho = np.linspace(0, 100, 10)
+        fields_high = calc_high.calculate_scattered_field(krho, 0*krho)
+        fields_low = calc_low.calculate_scattered_field(krho, 0*krho)
+        self.assertTrue(np.allclose(fields_high, fields_low, **TOLS))
+
+
 class TestMieScatteringMatrix(unittest.TestCase):
     default_kwargs = {'index_ratio': 1.1, 'size_parameter': 10.0}
 
@@ -340,6 +440,20 @@ class TestMieScatteringMatrix(unittest.TestCase):
         interpolator = mielensfunctions.MieScatteringMatrix(
             parallel_or_perpendicular='perpendicular', **self.default_kwargs)
         self.assertRaises(RuntimeError, interpolator._eval, theta)
+
+    @attr('fast')
+    def test_clips_high_max_l_to_avoid_nans(self):
+        theta = np.array([0.3])
+
+        msm_highl = mielensfunctions.MieScatteringMatrix(
+            parallel_or_perpendicular='perpendicular', max_l=1000,
+            **self.default_kwargs)
+        should_be_warned = 'invalid value encountered in cdouble_scalars'
+        with self.assertWarnsRegex(Warning, should_be_warned):
+            warnings.simplefilter('always')
+            s_theta = msm_highl._eval(theta)
+
+        self.assertFalse(np.isnan(s_theta))
 
     @attr("fast")
     def test_perpendicular_interpolator_accuracy(self):
@@ -705,6 +819,16 @@ def get_ratio_of_scattered_powerin_to_scattered_powerout(**kwargs):
     power_in = checker.evaluate_scattered_power_incident_on_pupil()
     power_out = checker.evaluate_scattered_power_incident_on_detector()
     return power_in / power_out
+
+
+def make_calculator_with_aberration_of(spherical_aberration):
+    calculator = mielensfunctions.AberratedMieLensCalculator(
+        size_parameter=10,
+        lens_angle=1.0,
+        particle_kz=10.0,
+        index_ratio=1.1,
+        spherical_aberration=spherical_aberration)
+    return calculator
 
 
 if __name__ == '__main__':

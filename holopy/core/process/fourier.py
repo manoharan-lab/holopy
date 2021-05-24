@@ -57,7 +57,7 @@ def fft(data, shift=True):
        The fourier transform of `a`
     """
     data_np = data.values if isinstance(data, xr.DataArray) else data
-    if data.ndim is 1:
+    if data.ndim == 1:
         res = np.fft.fft(data_np)
         if shift:
             res = np.fft.fftshift(res)
@@ -100,7 +100,7 @@ def ifft(data, shift=True):
        The inverse fourier transform of `data`
     """
     data_np = data.values if isinstance(data, xr.DataArray) else data
-    if data_np.ndim is 1:
+    if data_np.ndim == 1:
         res = np.fft.ifft(data_np)
         if shift:
             res = np.fft.fftshift(data_np)

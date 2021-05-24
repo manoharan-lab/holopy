@@ -150,9 +150,9 @@ class Scatterer(HoloPyObject):
         domains = self.in_domain(points)
         ns = ensure_array(self.n)
         if np.iscomplex(np.append(self.n, background)).any():
-            dtype = np.complex
+            dtype = complex
         else:
-            dtype = np.float
+            dtype = float
         index = np.ones_like(domains, dtype=dtype) * background
         for i, n in enumerate(ns):
             index[domains == i + 1] = n
@@ -188,9 +188,9 @@ class Scatterer(HoloPyObject):
 
     def _index_type(self, background=0.):
         if np.iscomplex([self.n]).any() or np.iscomplex(background):
-            return np.complex
+            return complex
         else:
-            return np.float
+            return float
 
     @property
     def bounds(self):

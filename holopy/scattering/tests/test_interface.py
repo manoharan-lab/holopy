@@ -32,7 +32,8 @@ from holopy.scattering import (Sphere, Spheres, Mie, Multisphere,
 from holopy.core import detector_grid
 from holopy.core.tests.common import assert_obj_close
 from holopy.scattering.interface import *
-from holopy.scattering.errors import MissingParameter
+from holopy.scattering.errors import MissingParameter, InvalidScatterer
+from holopy.inference import prior
 
 import xarray as xr
 
@@ -114,37 +115,56 @@ class TestDetermineDefaultTheoryFor(unittest.TestCase):
     def test_determine_default_theory_for_sphere(self):
         default_theory = determine_default_theory_for(Sphere())
         correct_theory = Mie()
-        self.assertTrue(default_theory == correct_theory)
+        self.assertEqual(default_theory, correct_theory)
 
     @attr('fast')
     def test_determine_default_theory_for_spheres(self):
         default_theory = determine_default_theory_for(
-            Spheres([Sphere(), Sphere()]))
+            Spheres([Sphere(center=(1, 1, 1)), Sphere(center=(1, 1, 2))]))
         correct_theory = Multisphere()
-        self.assertTrue(default_theory == correct_theory)
+        self.assertEqual(default_theory, correct_theory)
 
     @attr('fast')
     def test_determine_default_theory_for_spheroid(self):
         scatterer = Spheroid(n=1.33, r=(1.0, 2.0))
         default_theory = determine_default_theory_for(scatterer)
         correct_theory = Tmatrix()
-        self.assertTrue(default_theory == correct_theory)
+        self.assertEqual(default_theory, correct_theory)
 
     @attr('fast')
     def test_determine_default_theory_for_cylinder(self):
         scatterer = Cylinder(n=1.33, h=2, d=1)
         default_theory = determine_default_theory_for(scatterer)
         correct_theory = Tmatrix()
-        self.assertTrue(default_theory == correct_theory)
+        self.assertEqual(default_theory, correct_theory)
 
     @attr('fast')
     def test_determine_default_theory_for_layered_spheres(self):
-        layered_spheres = Spheres([Sphere(r=[0.5, 1], n=[1, 1.5])]*2)
+        layered_spheres = Spheres([
+            Sphere(center=(1, 1, 1), r=[0.5, 1], n=[1, 1.5]),
+            Sphere(center=(3, 2, 2), r=[0.5, 1], n=[1, 1.5])])
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore')
             default_theory = determine_default_theory_for(layered_spheres)
         correct_theory = Mie()
-        self.assertTrue(default_theory == correct_theory)
+        self.assertEqual(default_theory, correct_theory)
+
+    @attr('fast')
+    def test_gives_mie_when_spheres_very_far_apart(self):
+        sphere1 = Sphere(r=0.5, n=1.59, center=(100, 0, 10))
+        sphere2 = Sphere(r=0.5, n=1.59, center=(-100, 0, 10))
+        spheres = Spheres([sphere1, sphere2])
+        default_theory = determine_default_theory_for(spheres)
+        correct_theory = Mie()
+        self.assertEqual(default_theory, correct_theory)
+
+    @attr('fast')
+    def test_raises_invalid_scatterer_when_center_not_set_for_spheres(self):
+        spheres = Spheres([Sphere(), Sphere()])
+        self.assertRaises(
+            InvalidScatterer,
+            determine_default_theory_for,
+            spheres)
 
 
 class TestPrepSchema(unittest.TestCase):
@@ -193,6 +213,17 @@ class TestInterpretTheory(unittest.TestCase):
         theory = interpret_theory(SCATTERER, theory=Mie)
         theory_ok = type(theory) == Mie
         self.assertTrue(theory_ok)
+
+
+class TestValidateScatterer(unittest.TestCase):
+    @attr('fast')
+    def test_initial_guess_if_prior_in_scatterer(self):
+        r = prior.Uniform(0.5, 0.6, 0.59)
+        n = prior.Gaussian(1.5, 0.2)
+        scatterer = Sphere(r, n, center=[5, 5, 5])
+        best_guess = Sphere(r.guess, n.guess, scatterer.center)
+        self.assertEqual(validate_scatterer(scatterer), best_guess)
+
 
 if __name__ == '__main__':
     unittest.main()

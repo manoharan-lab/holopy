@@ -23,7 +23,7 @@ import numpy as np
 from holopy.core.holopy_object import SerializableMetaclass
 from holopy.scattering import Scatterer, Scatterers
 from holopy.inference.model import Model, AlphaModel
-from holopy.inference.prior import Uniform
+from holopy.inference import prior
 from holopy.inference.nmpfit import NmpfitStrategy
 from holopy.inference.scipyfit import LeastSquaresScipyStrategy
 from holopy.inference.cmaes import CmaStrategy
@@ -78,7 +78,7 @@ def make_default_model(base_scatterer, fitting_parameters=None):
     if fitting_parameters is None:
         fitting_parameters = base_scatterer.parameters.keys()
     scatterer = parameterize_scatterer(base_scatterer, fitting_parameters)
-    alpha_prior = Uniform(0, 1, guess=0.7, name='alpha')
+    alpha_prior = prior.Uniform(0.5, 1, name='alpha')
     return AlphaModel(scatterer, noise_sd=1, alpha=alpha_prior)
 
 
@@ -126,7 +126,7 @@ def make_uniform(guesses, key):
             subkeys = COORD_KEYS
         else:
             subkeys = [suffix + '.' + str(i) for i in range(len(guess_value))]
-        return [Uniform(minval, np.inf, guess_val, prefix + subkey)
+        return [prior.Uniform(minval, np.inf, guess_val, prefix + subkey)
                 for guess_val, subkey in zip(guess_value, subkeys)]
     else:
-        return Uniform(minval, np.inf, guess_value, key)
+        return prior.Uniform(minval, np.inf, guess_value, key)

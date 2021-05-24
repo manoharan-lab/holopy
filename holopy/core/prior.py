@@ -106,9 +106,9 @@ class Prior(HoloPyObject):
     def __rpow__(self, value):
         return TransformedPrior(operator.pow, [value, self])
 
-    def __array_ufunc__(self, ufunc, method, *args, **kwargs):
+    def __array_ufunc__(self, ufunc, method, *args, name=None, **kwargs):
         if method == "__call__" and len(kwargs) == 0:
-            return TransformedPrior(ufunc, args)
+            return TransformedPrior(ufunc, args, name)
         else:
             raise TypeError('Could not apply numpy ufunc to Prior object. '
                             'Use TransformedPrior.')
@@ -322,13 +322,11 @@ class TransformedPrior(Prior):
         self.name = name
 
     def prob(self, p):
-        msg = "Cannot calculate probability. Use base priors {}.".format(
-            self.base_names)
+        msg = "Cannot calculate probability. Use base priors."
         raise NotImplementedError(msg)
 
     def lnprob(self, p):
-        msg = "Cannot calculate probability. Use base priors {}.".format(
-            self.base_names)
+        msg = "Cannot calculate probability. Use base priors."
         raise NotImplementedError(msg)
 
     def sample(self, size=None):
@@ -353,7 +351,10 @@ class TransformedPrior(Prior):
 
     @property
     def map_keys(self):
-        return enumerate(self.base_prior)
+        if len(self.base_prior) == 1:
+            return [('',) + self.base_prior]
+        else:
+            return enumerate(self.base_prior)
 
 
 class ComplexPrior(TransformedPrior):
@@ -477,4 +478,3 @@ def make_center_priors(im, z_range_extents=5, xy_uncertainty_pixels=1,
 
     xy_sd = xy_uncertainty_pixels * spacing
     return [Gaussian(c, s) for c, s in zip(center, xy_sd)] + [Uniform(*z_range)]
-

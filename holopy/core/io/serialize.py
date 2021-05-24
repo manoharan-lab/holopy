@@ -73,7 +73,7 @@ copyreg.pickle(types.MethodType, _pickle_method, _unpickle_method)
 def ignore_aliases(data):
     try:
         # numpy arrays no longer want to be compared to None, so instead check for a none by looking for if it is an instance of NoneType
-        if data is None or data is ():
+        if data is None or len(data) == 0:
             return True
         if isinstance(data, (str, bool, int, float)):
             return True
@@ -85,7 +85,10 @@ yaml.representer.SafeRepresenter.ignore_aliases = \
 # Represent 1d ndarrays as lists in yaml files because it makes them much
 # prettier
 def ndarray_representer(dumper, data):
-    return dumper.represent_list(data.tolist())
+    if data.ndim > 0:
+        return dumper.represent_list(data.tolist())
+    else:
+        return dumper.represent_data(data.item())
 yaml.add_representer(np.ndarray, ndarray_representer)
 
 # represent tuples as lists because yaml doesn't have tuples
@@ -111,15 +114,21 @@ def numpy_int_representer(dumper, data):
 yaml.add_representer(np.int64, numpy_int_representer)
 yaml.add_representer(np.int32, numpy_int_representer)
 
-def numpy_dtype_representer(dumper, data):
-    return dumper.represent_scalar('!dtype', data.name)
-yaml.add_representer(np.dtype, numpy_dtype_representer)
 
-def numpy_dtype_loader(loader, node):
-    name = loader.construct_scalar(node)
-    return np.dtype(name)
+# numpy ufuncs can no longer be pickled as of numpy 1.20
+# we still want to yamlize them, especially for TransforedPrior
+def numpy_ufunc_representer(dumper, data):
+    return dumper.represent_scalar('!ufunc', data.__name__)
+
+
+def numpy_ufunc_constructor(loader, node):
+    return np.core._ufunc_reconstruct('numpy', node.value)
+
+
+yaml.add_representer(np.ufunc, numpy_ufunc_representer)
 for loader in YAMLLOADERS:
-    yaml.add_constructor('!dtype', numpy_dtype_loader, Loader=loader)
+    yaml.add_constructor('!ufunc', numpy_ufunc_constructor, Loader=loader)
+
 
 def class_representer(dumper, data):
     return dumper.represent_scalar('!class', "{0}.{1}".format(data.__module__,

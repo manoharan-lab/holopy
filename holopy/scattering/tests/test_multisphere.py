@@ -59,6 +59,28 @@ SCATTERERS_SMALL_OVERLAP = [
     ]
 
 
+class TestMultisphere(unittest.TestCase):
+    @attr('fast')
+    def test_theory_from_parameters(self):
+        np.random.seed(1332)
+        kwargs = {
+            'niter': np.random.randint(400),
+            'eps': np.random.rand() * 1e-6,
+            'meth': 1,
+            'qeps1': np.random.rand() * 1e-5,
+            'qeps2': np.random.rand() * 1e-8,
+            'compute_escat_radial': np.random.choice([True, False]),
+            'suppress_fortran_output': np.random.choice([True, False]),
+            }
+        theory_in = Multisphere(**kwargs)
+        pars = {}
+        theory_out = theory_in.from_parameters(pars)
+
+        for k, v in kwargs.items():
+            self.assertEqual(getattr(theory_out, k), v)
+
+
+
 @attr('fast')
 def test_construction():
     # test constructor to make sure it works properly and calls base
@@ -96,7 +118,7 @@ def test_polarization():
     return xholo, yholo
 
 
-@attr('fast')
+@attr('medium')
 def test_2_sph():
     sc = Spheres(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07),
@@ -133,36 +155,55 @@ def test_radial_holos():
         raise AssertionError("Holograms computed with and without radial component of scattered electric field are too similar.")
 
 
-@attr('medium')
-def test_invalid():
-    sc = Spheres(scatterers=[Sphere(center=[7.1, 7e-6, 10e-6],
-                                       n=1.5811+1e-4j, r=5e-07),
-                                Sphere(center=[6e-6, 7e-6, 10e-6],
-                                       n=1.5811+1e-4j, r=5e-07)])
+class TestErrors(unittest.TestCase):
+    args = (index, wavelen, xpolarization)
+    kwargs = {'theory': Multisphere()}
 
+    @attr('medium')
+    def test_invalid_when_spheres_very_far_apart(self):
+        sphere1 = Sphere(center=[7e0, 7e-6, 10e-6],  n=1.5811+1e-4j, r=5e-07)
+        sphere2 = Sphere(center=[6e-6, 7e-6, 10e-6], n=1.5811+1e-4j, r=5e-07)
+        scatterer = Spheres(scatterers=[sphere1, sphere2])
 
-    assert_raises(InvalidScatterer, calc_holo, schema, sc, index, wavelen, xpolarization)
+        self.assertRaises(
+            InvalidScatterer,
+            calc_holo,
+            schema, scatterer, *self.args, **self.kwargs)
 
-    sc = Spheres(scatterers=[Sphere(center=[7.1, 7e-6, 10e-6],
-                                       n=1.5811+1e-4j, r=5e-01),
-                                Sphere(center=[6e-6, 7e-6, 10e-6],
-                                       n=1.5811+1e-4j, r=5e-07)])
+    @attr('medium')
+    def test_invalid_when_spheres_too_big(self):
+        sphere1 = Sphere(center=[7e-1, 7e-6, 10e-6], n=1.5811+1e-4j, r=5e-02)
+        sphere2 = Sphere(center=[6e-1, 7e-6, 10e-6], n=1.5811+1e-4j, r=5e-07)
+        scatterer = Spheres(scatterers=[sphere1, sphere2])
+        self.assertRaises(
+            InvalidScatterer,
+            calc_holo,
+            schema, scatterer, *self.args, **self.kwargs)
 
-    assert_raises(InvalidScatterer, calc_holo, schema, sc, index, wavelen, xpolarization)
+    @attr('fast')
+    def test_invalid_when_scatterer_is_sphere(self):
+        sphere = Sphere(center=(0, 0, 11e-6))
+        self.assertRaises(
+            TheoryNotCompatibleError,
+            calc_holo,
+            schema, sphere, *self.args, **self.kwargs)
 
-    sc.scatterers[0].r = -1
-
-    assert_raises(InvalidScatterer, calc_holo, schema, sc, index, wavelen, xpolarization)
-
-    cs = Sphere(center = (0, 0, 11e-6))
-
-    assert_raises(TheoryNotCompatibleError, calc_holo, schema, cs, index, wavelen, xpolarization, Multisphere)
-
-    # try a coated sphere
-    sc2 = Spheres([Sphere(center = [0., 0., 0.],
-                          n = [1.+0.1j, 1.2],
-                          r = [4e-7, 5e-7])])
-    assert_raises(TheoryNotCompatibleError, calc_cross_sections, scatterer=sc2, medium_index=index, illum_wavelen=wavelen, illum_polarization=ypolarization, theory=Multisphere)
+    @attr('fast')
+    def test_invalid_when_coated_spheres(self):
+        # try a coated sphere
+        sphere1 = Sphere(
+            center=[7e-6, 7e-6, 10e-6],
+            n=1.5811+1e-4j,
+            r=5e-07)
+        sphere2 = Sphere(
+            center=[6e-6, 5e-6, 10e-6],
+            n=[1.5, 1.6],
+            r=[2e-7, 5e-07])
+        scatterer = Spheres(scatterers=[sphere1, sphere2])
+        self.assertRaises(
+            TheoryNotCompatibleError,
+            calc_holo,
+            schema, scatterer, *self.args, **self.kwargs)
 
 
 class TestOverlap(unittest.TestCase):

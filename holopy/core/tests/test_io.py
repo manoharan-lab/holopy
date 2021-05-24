@@ -185,38 +185,13 @@ class TestLoadingAndSaving(unittest.TestCase):
         l = load_image(filename, spacing=get_spacing(self.holo))
         assert_obj_close(l, copy_metadata(l, self.holo))
 
-    @attr('fast')
-    def test_load_image_normals_raises_error_with_deprecation_message(self):
-        filename = 'error-should-raise-regardless-of-filename.tiff'
-        self.assertRaisesRegex(
-            ValueError, "`normals` are deprecated*",
-            load_image, filename, normals=np.array([0, 0, 1.]))
-
-    @attr('fast')
-    def test_load_average_normals_raises_error_with_deprecation_message(self):
-        filename = 'error-should-raise-regardless-of-filename.tiff'
-        self.assertRaisesRegex(
-            ValueError, "`normals` are deprecated*",
-            load_average, [filename], normals=np.array([0, 0, 1.]))
-
 
 class test_custom_yaml_output(unittest.TestCase):
     @attr("fast")
     def test_yaml_output_of_numpy_types(self):
         a = np.ones(10, 'int')
         assert_equal(yaml.dump(a.std()), '0.0\n...\n')
-        assert_equal(yaml.dump(np.dtype('float')), "!dtype 'float64'\n")
-        assert_equal(yaml.safe_load(yaml.dump(np.dtype('float'))), np.dtype('float64'))
-        try:
-            assert_equal(yaml.dump(a.max()), '1\n...\n')
-        except AssertionError as err:
-            if err.args[0] == r"""
-    Items are not equal:
-     ACTUAL: '!!python/object/apply:numpy.core.multiarray.scalar [!dtype \'int32\', "\\x01\\0\\0\\0"]\n'
-     DESIRED: '1\n...\n'""":
-                raise AssertionError("You're probably running a 32 bit OS.  Writing and reading files with integers might be buggy on 32 bit OS's. We don't think it will lead to data loss, but we make no guarantees. If you see this on 64 bit operating systems, please let us know by filing a bug.")
-            else:
-                raise err
+        assert_equal(yaml.dump(a.max()), '1\n...\n')
 
     @attr("fast")
     def test_yaml_output_of_serializable(self):
@@ -229,6 +204,35 @@ class test_custom_yaml_output(unittest.TestCase):
         setattr(instantiated, 'd', 'e')
         # only a & c appear because b is None, d is not in __init__ signature
         assert yaml.dump(instantiated) == '!S\na: 1\nc: 3\n'
+
+    @attr("fast")
+    def test_custom_treatment_of_length_zero_ndarray(self):
+        zero_length_array = np.array(3)
+        self.assertEqual(yaml.dump(zero_length_array), yaml.dump(3))
+
+    @attr("fast")
+    def test_custom_treatment_of_length_one_ndarray(self):
+        one_length_array = np.array([3])
+        self.assertEqual(yaml.dump(one_length_array), yaml.dump([3]))
+
+    @attr("fast")
+    def test_custom_treatment_of_longer_ndarray(self):
+        longer_array = 3 * np.ones(10, dtype=int)
+        self.assertEqual(yaml.dump(longer_array), yaml.dump([3] * 10))
+
+    @attr("fast")
+    def test_custom_treatment_of_multidim_ndarray(self):
+        multi_D_array = 3 * np.ones((2, 2), dtype=int)
+        self.assertEqual(yaml.dump(multi_D_array), yaml.dump([[3, 3], [3, 3]]))
+
+    @attr("fast")
+    def test_custom_yaml_dump_of_numpy_ufunc(self):
+        self.assertEqual(yaml.dump(np.sqrt), "!ufunc \'sqrt\'\n")
+
+    @attr("fast")
+    def test_custom_yaml_load_of_numpy_ufunc(self):
+        yaml_text = "!ufunc \'sqrt\'\n"
+        self.assertEqual(yaml.load(yaml_text, Loader=yaml.FullLoader), np.sqrt)
 
 
 class TestMemoryUsage(unittest.TestCase):

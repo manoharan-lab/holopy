@@ -61,19 +61,7 @@ class EmceeStrategy(HoloPyObject):
         self.parallel = parallel
         self.seed = seed
 
-    def sample(self, model, data, nsamples=None, walker_initial_pos=None):
-        if nsamples is not None:
-            # deprecated as of 3.3
-            from holopy.fitting import fit_warning
-            fit_warning('EmceeStrategy(nsamples=X)',
-                        'passing nsamples to EmceeStrategy.sample')
-            self.nsamples = nsamples
-        if walker_initial_pos is not None:
-            # deprecated as of 3.3
-            from holopy.fitting import fit_warning
-            fit_warning('EmceeStrategy(walker_initial_pos=X)',
-                        'passing walker_initial_pos to EmceeStrategy.sample')
-            self.walker_initial_pos = walker_initial_pos
+    def sample(self, model, data):
         time_start = time.time()
         if self.npixels is not None:
             data = make_subset_data(data, pixels=self.npixels, seed=self.seed)

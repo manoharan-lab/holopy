@@ -25,7 +25,8 @@ import numpy as np
 
 from holopy.scattering.scatterer import Sphere
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
-from holopy.scattering.theory.mielensfunctions import MieLensCalculator
+from holopy.scattering.theory.mielensfunctions import (
+    MieLensCalculator, AberratedMieLensCalculator)
 
 
 class MieLens(ScatteringTheory):
@@ -42,6 +43,7 @@ class MieLens(ScatteringTheory):
     """
 
     desired_coordinate_system = 'cylindrical'
+    parameter_names = ('lens_angle',)
 
     def __init__(self, lens_angle=1.0, calculator_accuracy_kwargs={}):
         """
@@ -63,10 +65,10 @@ class MieLens(ScatteringTheory):
         self.lens_angle = lens_angle
         self.calculator_accuracy_kwargs = calculator_accuracy_kwargs
 
-    def _can_handle(self, scatterer):
+    def can_handle(self, scatterer):
         return isinstance(scatterer, Sphere)
 
-    def _raw_fields(self, positions, scatterer, medium_wavevec, medium_index,
+    def raw_fields(self, positions, scatterer, medium_wavevec, medium_index,
                     illum_polarization):
         """
         Parameters
@@ -98,10 +100,12 @@ class MieLens(ScatteringTheory):
                    "z from the particle")
             raise ValueError(msg)
 
-        field_calculator = MieLensCalculator(
-            particle_kz=particle_kz, index_ratio=index_ratio,
-            size_parameter=size_parameter, lens_angle=self.lens_angle,
-            **self.calculator_accuracy_kwargs)
+        field_calculator = self._create_calculator(
+            particle_kz=particle_kz,
+            index_ratio=index_ratio,
+            size_parameter=size_parameter,
+            )
+
         fields_pll, fields_prp = field_calculator.calculate_scattered_field(
             rho, phi)  # parallel and perp to the polarization
 
@@ -128,3 +132,57 @@ class MieLens(ScatteringTheory):
         field_xyz *= np.exp(1j * particle_kz) / incident_field_x
         return field_xyz
 
+    def _create_calculator(
+            self, particle_kz=None, index_ratio=None, size_parameter=None):
+        field_calculator = MieLensCalculator(
+            particle_kz=particle_kz,
+            index_ratio=index_ratio,
+            size_parameter=size_parameter,
+            lens_angle=self.lens_angle,
+            **self.calculator_accuracy_kwargs)
+        return field_calculator
+
+
+class AberratedMieLens(MieLens):
+    parameter_names = ('lens_angle', 'spherical_aberration')
+
+    def __init__(self, spherical_aberration=0.0, lens_angle=1.0,
+                 calculator_accuracy_kwargs={}):
+        """
+        Parameters
+        ----------
+        spherical_aberration : float or array-like of floats
+            The spherical aberration, up to arbitrary order. If a float,
+            just the coefficient of the 3rd-order aberration (4th-order
+            in wavefront). When an array, the coefficients of
+            aberrations in ascending order (3rd, 5th, 7th, etc), where
+            the wavefront distortion for the nth-order aberration is of
+            the form (cos(theta) - 1)^(n+1), where n = 3, 5, 7, etc
+            Default is None, which raises an error.
+        lens_angle : float
+            Lens acceptance angle in radians.
+        calculator_accuracy_kwargs : dict
+            While the analytical calculation is exact, the numerical
+            implementation is approximate. Pass in any parameters to
+            increase or decrease the accuracy via
+            `calculator_accuracy_kwargs.` Valid keys are {`quad_npts`,
+            `interpolate_integrals`, `interpolator_window_size`,
+            `interpolator_degree`}, as explained in
+            mielensfunctions.MieLensCalculator.  The default calculation
+            accuracy is roughly 1e-12 relative accuracy.
+        """
+        super(AberratedMieLens, self).__init__(
+            lens_angle=lens_angle,
+            calculator_accuracy_kwargs=calculator_accuracy_kwargs)
+        self.spherical_aberration = spherical_aberration
+
+    def _create_calculator(
+            self, particle_kz=None, index_ratio=None, size_parameter=None):
+        field_calculator = AberratedMieLensCalculator(
+            particle_kz=particle_kz,
+            index_ratio=index_ratio,
+            size_parameter=size_parameter,
+            lens_angle=self.lens_angle,
+            spherical_aberration=self.spherical_aberration,
+            **self.calculator_accuracy_kwargs)
+        return field_calculator

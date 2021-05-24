@@ -30,15 +30,13 @@ from PIL import Image as pilimage
 import xarray as xr
 import numpy as np
 import importlib
-from collections import OrderedDict
 
 from holopy.core.io import serialize
 from holopy.core.io.vis import display_image
 from holopy.core.metadata import (data_grid, get_spacing, update_metadata,
                     copy_metadata, to_vector, illumination)
 from holopy.core.utils import ensure_array, dict_without
-from holopy.core.errors import (
-    NoMetadata, BadImage, LoadError, NORMALS_DEPRECATION_MESSAGE)
+from holopy.core.errors import NoMetadata, BadImage, LoadError
 from holopy.core.holopy_object import FullLoader# compatibility with pyyaml < 5
 
 attr_coords = '_attr_coords'
@@ -83,7 +81,7 @@ def pack_attrs(a, do_spacing=False):
 
     for attr, val in a.attrs.items():
         if isinstance(val, xr.DataArray):
-            new_attrs[attr_coords][attr] = OrderedDict()
+            new_attrs[attr_coords][attr] = {}
             for dim in val.dims:
                 new_attrs[attr_coords][attr][str(dim)]=val[dim].values
             new_attrs[attr]=list(ensure_array(val.values))
@@ -109,12 +107,7 @@ def unpack_attrs(a):
                 coords=attr_ref[attr],
                 dims=list(attr_ref[attr].keys()))
         elif attr in a:
-            try:
-                new_attrs[attr] = yaml.safe_load(a[attr])
-            except AttributeError:
-                from holopy.inference.result import warn_text
-                warnings.warn(warn_text)
-                new_attrs[attr] = a[attr]
+            new_attrs[attr] = yaml.safe_load(a[attr])
         else:
             new_attrs[attr] = None
     return new_attrs
@@ -205,7 +198,7 @@ def load(inf, lazy=False):
 
 
 def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
-               illum_polarization=None, normals=None, noise_sd=None,
+               illum_polarization=None, noise_sd=None,
                channel=None, name=None):
     """
     Load data or results
@@ -236,8 +229,6 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
     obj : xarray.DataArray representation of the image with associated metadata
 
     """
-    if normals is not None:
-        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
     if name is None:
         name = os.path.splitext(os.path.split(inf)[-1])[0]
 
@@ -438,7 +429,7 @@ def _save_im(filename, im, depth=8):
 
 def load_average(
         filepath, refimg=None, spacing=None, medium_index=None,
-        illum_wavelen=None, illum_polarization=None, normals=None,
+        illum_wavelen=None, illum_polarization=None,
         noise_sd=None, channel=None, image_glob='*.tif'):
     """
     Average a set of images (usually as a background)
@@ -472,9 +463,6 @@ def load_average(
         noise_sd attribute contains average pixel stdev normalized by
         total image intensity
     """
-    if normals is not None:
-        raise ValueError(NORMALS_DEPRECATION_MESSAGE)
-
     if isinstance(filepath, str):
         if os.path.isdir(filepath):
             filepath = glob.glob(os.path.join(filepath, image_glob))
@@ -528,7 +516,7 @@ def load_average(
         mean_image = copy_metadata(refimg, mean_image, do_coords=False)
 
     # overwrite metadata from refimg with provided values
-    return update_metadata(mean_image, medium_index, illum_wavelen, illum_polarization, normals, noise_sd)
+    return update_metadata(mean_image, medium_index, illum_wavelen, illum_polarization, noise_sd)
 
 
 class Accumulator:

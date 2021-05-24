@@ -44,7 +44,8 @@ def run_apidoc(_):
     filepaths = ["-o",
                  os.path.join(docs_root, 'source', 'reference'),  # destination
                  holopy_root]  # codebase
-    exclusions = [os.path.join(holopy_root, '*', 'third_party', '*')]
+    exclusions = [os.path.join(holopy_root, '*', 'third_party', '*'),
+                  os.path.join(holopy_root, 'fitting.py')]
     apidoc.main(flags + filepaths + exclusions)
 
 
