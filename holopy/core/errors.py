@@ -19,7 +19,7 @@
 """
 Error classes used in holopy
 
-.. moduleauthor :: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
+.. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 import warnings
 

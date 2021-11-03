@@ -19,7 +19,7 @@
 Exceptions used in scatterpy module.  These are separated out from the
 other exceptions in other parts of HoloPy to keep things modular.
 
-.. moduleauthor :: Vinothan N. Manoharan <vnm@seas.harvard.edu>
+.. moduleauthor:: Vinothan N. Manoharan <vnm@seas.harvard.edu>
 """
 
 

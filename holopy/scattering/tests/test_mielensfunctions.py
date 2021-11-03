@@ -761,14 +761,14 @@ class CheckEnergyIsConserved(object):
 
     For the scattered beam, conservation of energy is equivalent to
     the statement that the integral
-        .. math ::
+        .. math::
 
             \\int_0^\beta
                 \\left[ |S_\\parallel|^2 + |S_\\perp|^2 \\right]
                 \\sin \\theta \\, d\\theta
 
     is equal to the integral
-        .. math ::
+        .. math::
 
             \\frac 1 2 \\int_0^\\inf
                 \\left[ |I_0(k\\rho)|^2 + |I_2(k\\rho)|^2 \\right]
