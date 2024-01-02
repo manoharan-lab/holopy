@@ -87,7 +87,7 @@ def center_find(image, centers=1, threshold=.5, blursize=3.):
     """
     image=copy(image)
     if blursize>0:
-        image.values = gaussian_filter(image.values,blursize)
+        image.values = gaussian_filter(image.values, blursize)
     col_deriv, row_deriv = image_gradient(image)
     while col_deriv.ndim > 2:
         col_deriv = col_deriv[:,:,0]

@@ -239,7 +239,7 @@ class test_custom_yaml_output(unittest.TestCase):
 class TestMemoryUsage(unittest.TestCase):
     @unittest.skipIf(not importlib.util.find_spec('memory_profiler'),
                      'memory_profiler is required for this test')
-    #@unittest.expectedFailure
+    # @unittest.expectedFailure
     # unittest.expectedFailure doesn't work in nose
     # see https://github.com/nose-devs/nose/issues/33
     # TODO: return to unittest.expectedFailure after switch to pytest
