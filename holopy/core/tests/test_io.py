@@ -28,6 +28,7 @@ import yaml
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 from nose.plugins.attrib import attr
+from nose.tools import raises
 from PIL import Image as pilimage
 from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 
@@ -237,8 +238,13 @@ class test_custom_yaml_output(unittest.TestCase):
 
 class TestMemoryUsage(unittest.TestCase):
     @unittest.skipIf(not importlib.util.find_spec('memory_profiler'),
-                     'memory_profiler is reqruired for this test')
-    @unittest.expectedFailure
+                     'memory_profiler is required for this test')
+    #@unittest.expectedFailure
+    # unittest.expectedFailure doesn't work in nose
+    # see https://github.com/nose-devs/nose/issues/33
+    # TODO: return to unittest.expectedFailure after switch to pytest
+    # Workaround for now:
+    @raises(AssertionError)
     def test_load_average_doesnt_use_excess_mem(self):
         # TODO: Why does load_average use so much memory?
         # See manoharan-lab/holopy#267
