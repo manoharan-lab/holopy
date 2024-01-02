@@ -135,16 +135,28 @@ class ImageFormation(HoloPyObject):
         """Packs the numpy.ndarray, shape (N, 3) ``scattered_field`` into
         an xr.DataArray, shape (N, 3). This function needs to pack the
         fields [flat or point, vector], with the coordinates the
-        same as that of the schema."""
+        same as that of the schema.
+
+        For a flat schema, cartesian coordinates, the coordinates of the field
+        dataarray should be
+
+          * flat     (flat) MultiIndex
+          * x        (flat) float64
+          * y        (flat) float64
+          * z        (flat) float64 or int64 (if 0)
+          * vector   (vector) <U1 'x' 'y' 'z'so that 'flat' or 'point'
+
+        'flat' is a multi-index coordinate created by when the schema is
+        flattened. It indexes the 3D positions of the detector points. 'vector'
+        is a new dimensional coordinate that indexes the 3D components of the
+        field vector.
+        """
         flattened_schema = flat(schema)  # now either point or flat
         point_or_flat = self._is_detector_view_point_or_flat(flattened_schema)
-        coords = {
-            key: (point_or_flat, val.values)
-            for key, val in flattened_schema[point_or_flat].coords.items()}
 
-        coords.update(
-            {point_or_flat: flattened_schema[point_or_flat],
-             vector: ['x', 'y', 'z']})
+        coords = {
+            point_or_flat: flattened_schema.coords[point_or_flat],
+            vector: ['x', 'y', 'z']}
         scattered_field = xr.DataArray(
             scattered_field, dims=[point_or_flat, vector], coords=coords,
             attrs=schema.attrs)

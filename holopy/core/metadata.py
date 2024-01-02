@@ -255,6 +255,8 @@ def copy_metadata(old, data, do_coords=True):
     `xr.DataArray`
     """
 
+    new = data.copy()
+
     def find_and_rename(oldkey, oldval):
         for newkey, newval in new.coords.items():
             if np.array_equal(oldval.values, newval.values):
@@ -262,8 +264,6 @@ def copy_metadata(old, data, do_coords=True):
             msg = ("Coordinate {} does not appear to have ".format(oldkey) +
                    "a corresponding coordinate in {}".format(new))
             raise ValueError(msg)
-
-    new = data.copy()
 
     old_is_xarray = isinstance(old, xr.DataArray)
     if old_is_xarray:
@@ -274,7 +274,9 @@ def copy_metadata(old, data, do_coords=True):
         new.name = old.name
 
         if hasattr(old, 'flat') and hasattr(new, 'flat'):
-            new['flat'] = old['flat']
+            # use reindex_like() to preserve order of MultiIndex and derived
+            # coordinates, or arrays may be misaligned
+            new = new.reindex_like(old)
         if do_coords:
             for key, val in old.coords.items():
                 if key not in new.coords:
