@@ -498,7 +498,7 @@ def load_average(
             name = ['x','y'][i]
             return np.around(refimg[name].values/spacing[i]).astype('int')
         mean_image = mean_image.isel(x=extent(0), y=extent(1))
-        std_image =  std_image.isel(x=extent(0), y=extent(1))
+        std_image = std_image.isel(x=extent(0), y=extent(1))
         mean_image['x'] = refimg.x
         mean_image['y'] = refimg.y
         std_image['x'] = refimg.x
