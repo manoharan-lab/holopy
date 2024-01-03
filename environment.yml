@@ -1,7 +1,7 @@
 # development environment for holopy
 #
 # To use:
-#   conda env create -f .\environment.yml
+#   conda env create -f ./environment.yml
 # and then
 #   conda activate holopy-devel
 #
@@ -33,7 +33,9 @@ dependencies:
   - pint
   - ipython
   - seaborn
-  - mkl-service
+  - sphinx_rtd_theme
+  # for amd64 platforms only; won't be found for aarch64
+  # - mkl-service
   # uncomment to install compilers on windows
   #  - m2w64-toolchain
 
