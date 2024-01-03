@@ -28,6 +28,7 @@ import yaml
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 from nose.plugins.attrib import attr
+from nose.tools import raises
 from PIL import Image as pilimage
 from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 
@@ -237,8 +238,13 @@ class test_custom_yaml_output(unittest.TestCase):
 
 class TestMemoryUsage(unittest.TestCase):
     @unittest.skipIf(not importlib.util.find_spec('memory_profiler'),
-                     'memory_profiler is reqruired for this test')
-    @unittest.expectedFailure
+                     'memory_profiler is required for this test')
+    # @unittest.expectedFailure
+    # unittest.expectedFailure doesn't work in nose
+    # see https://github.com/nose-devs/nose/issues/33
+    # TODO: return to unittest.expectedFailure after switch to pytest
+    # Workaround for now:
+    @raises(AssertionError)
     def test_load_average_doesnt_use_excess_mem(self):
         # TODO: Why does load_average use so much memory?
         # See manoharan-lab/holopy#267
@@ -297,42 +303,50 @@ class TestAccumulator(unittest.TestCase):
         accumulator = Accumulator()
         data = np.arange(10)
         for point in data: accumulator.push(point)
-        self.assertTrue(accumulator._std() == np.std(data))
+        self.assertTrue(accumulator.std() == np.std(data))
 
     @attr("fast")
     def test_std_no_data(self):
         accumulator = Accumulator()
-        self.assertTrue(accumulator._std() is None)
-
-    @attr("fast")
-    def test_cv(self):
-        accumulator = Accumulator()
-        data = np.arange(10)
-        for point in data: accumulator.push(point)
-        self.assertTrue(accumulator.cv() == np.std(data) / np.mean(data))
-
-    @attr("fast")
-    def test_cv_no_data(self):
-        accumulator = Accumulator()
-        self.assertTrue(accumulator.cv() is None)
+        self.assertTrue(accumulator.std() is None)
 
     @attr("medium")
     def test_calculate_hologram_noise_sd(self):
-        accumulator = Accumulator()
         refimg = _load_raw_example_data()
         paths = get_example_data_path(['bg01.jpg', 'bg02.jpg', 'bg03.jpg'])
         bg = load_average(paths, refimg)
         # This value is from the legacy version of load_average
         self.assertTrue(np.allclose(bg.noise_sd, 0.00709834))
 
+    @attr("medium")
+    def test_welford(self):
+        # tests Welford's algorithm against standard 2-pass algorithm
+        paths = get_example_data_path(['bg01.jpg', 'bg02.jpg', 'bg03.jpg'])
+        # duplicate several times to do a better check for numerical stability
+        paths = paths*10
+        # Welford method
+        mean_image = load_average(paths, spacing=1)
+        welford_mean = mean_image.mean().values
+        welford_std = mean_image.std().values
+        # two-pass method
+        images = np.stack([load_image(imfile, spacing=1) for imfile in paths],
+                          axis=-1)
+        twopass_mean_image = np.mean(images, axis=-1)
+        twopass_mean = twopass_mean_image.mean()
+        twopass_std = twopass_mean_image.std()
+        self.assertTrue(np.allclose([welford_mean, welford_std],
+                                    [twopass_mean, twopass_std]))
+
     @attr('fast')
     def test_2_colour_noise_sd(self):
         paths = get_example_data_path(['2colourbg0.jpg', '2colourbg1.jpg',
                                        '2colourbg2.jpg', '2colourbg3.jpg'])
         image = load_average(paths, spacing=1, channel=[0,1])
-        gold_noise = [0.06864433355667054, 0.04913377621162473]
-        noise = [image.noise_sd.loc[colour].item()
-                 for colour in ['green', 'red']]
+        # previous values from Solomon (not sure how to reproduce):
+        #   gold_noise = [0.06864433355667054, 0.04913377621162473]
+        # new values, from mean over pixels of CV at each pixel
+        gold_noise = [0.06909666, 0.04879883]
+        noise = image.noise_sd.sel(illumination=['green', 'red']).values
         self.assertTrue(np.allclose(gold_noise, noise))
 
 

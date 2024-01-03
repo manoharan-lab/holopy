@@ -1,0 +1,61 @@
+# development environment for holopy
+#
+# To use:
+#   conda env create -f ./environment.yml
+# and then
+#   conda activate holopy-devel
+#
+# To update dependencies after changing this environment file:
+#   conda env update --name holopy-devel --file environment.yml --prune
+#
+# can also use mamba instead of conda in the above
+name: holopy-devel
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - numpy<1.20
+  - scipy
+  - pyyaml
+  - pillow
+  - pandas
+  - xarray
+  - h5netcdf
+  - h5py
+  - numexpr
+  - sphinx
+  - matplotlib
+  - emcee=2.2.1
+  - schwimmbad
+  - memory_profiler
+  - cma
+  - pint
+  - ipython
+  - seaborn
+  - sphinx_rtd_theme
+  # for amd64 platforms only; won't be found for aarch64
+  # - mkl-service
+  # uncomment to install compilers on windows
+  #  - m2w64-toolchain
+
+  # include jupyterlab for convenience
+  - jupyterlab
+
+  # for running tests
+  - nose
+  - pytest
+
+  # for development
+  - pyright
+  - pylint
+  - flake8
+  - autoflake
+  - epc
+  - isort
+  - yapf
+  - debugpy
+  - pip
+
+  - pip:
+      - importmagic

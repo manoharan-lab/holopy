@@ -38,7 +38,7 @@ video microscopy, Optics Express 17, 13071-13079 (2009).
 
 import numpy as np
 from .img_proc import normalize
-from scipy.ndimage import sobel, filters
+from scipy.ndimage import sobel, gaussian_filter
 from copy import copy
 
 def center_find(image, centers=1, threshold=.5, blursize=3.):
@@ -87,7 +87,7 @@ def center_find(image, centers=1, threshold=.5, blursize=3.):
     """
     image=copy(image)
     if blursize>0:
-        image.values = filters.gaussian_filter(image.values,blursize)
+        image.values = gaussian_filter(image.values, blursize)
     col_deriv, row_deriv = image_gradient(image)
     while col_deriv.ndim > 2:
         col_deriv = col_deriv[:,:,0]
