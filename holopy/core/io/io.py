@@ -478,11 +478,9 @@ def load_average(
         spacing = get_spacing(refimg)
 
     # read colour channels from refimg
-    channel_dict = {'0': 'red', '1': 'green', '2': 'blue'}
+    channel_dict = {'red': 0, 'green': 1, 'blue': 2}
     if channel is None and refimg is not None and illumination in refimg.dims:
-        channel = [
-            i for i, col in enumerate(['red', 'green', 'blue'])
-            if col in refimg[illumination].values]
+        channel = [channel_dict[col] for col in refimg[illumination].values]
 
     if np.isscalar(spacing):
         spacing = np.repeat(spacing, 2)
@@ -492,15 +490,7 @@ def load_average(
     for path in filepath:
         accumulator.push(load_image(path, spacing, channel=channel))
     mean_image = accumulator.mean()
-
-    # calculate average noise from image
-    if noise_sd is None and len(filepath) > 1:
-        if channel:
-            noise_sd = xr.DataArray(accumulator.cv(),
-                                    [[channel_dict[str(ch)] for ch in channel]],
-                                    ['illumination'])
-        else:
-            noise_sd = ensure_array(accumulator.cv())
+    std_image = accumulator.std()
 
     # crop according to refimg dimensions
     if refimg is not None:
@@ -508,8 +498,19 @@ def load_average(
             name = ['x','y'][i]
             return np.around(refimg[name].values/spacing[i]).astype('int')
         mean_image = mean_image.isel(x=extent(0), y=extent(1))
+        std_image =  std_image.isel(x=extent(0), y=extent(1))
         mean_image['x'] = refimg.x
         mean_image['y'] = refimg.y
+        std_image['x'] = refimg.x
+        std_image['y'] = refimg.y
+
+    # calculate average noise from image. Since load_image() returns a
+    # DataArray, we can assume dims have the usual labels.
+    if noise_sd is None and len(filepath) > 1:
+        # The following will calculate noise_sd for either a
+        # single-channel or multi-channel image. For multi-channel, it returns
+        # noise_sd for each channel
+        noise_sd = (std_image / mean_image).mean(['x', 'y', 'z'])
 
     # copy metadata from refimg
     if refimg is not None:
@@ -521,7 +522,7 @@ def load_average(
 
 class Accumulator:
     """Calculates average and coefficient of variance for numerical data in
-    one pass using Welford's algorithim.
+    one pass using Welford's algorithm.
     """
     def __init__(self):
         self._n = 0
@@ -542,19 +543,7 @@ class Accumulator:
     def mean(self):
         return self._running_mean if self._running_mean is not None else 0.0
 
-    def cv(self):
-        """ The coefficient of variation
-        """
-        if self._n == 0:
-            return None
-        else:
-            try: # If data is a multicolor hologram, average over first 3 dims
-                return np.mean(np.array(self._std() / self.mean()),
-                               axis=(0, 1, 2))
-            except IndexError:
-                return np.mean(np.array(self._std() / self.mean()))
-
-    def _std(self):
+    def std(self):
         if self._n == 0:
             return None
         else:
