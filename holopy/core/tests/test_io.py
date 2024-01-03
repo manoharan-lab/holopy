@@ -297,33 +297,39 @@ class TestAccumulator(unittest.TestCase):
         accumulator = Accumulator()
         data = np.arange(10)
         for point in data: accumulator.push(point)
-        self.assertTrue(accumulator._std() == np.std(data))
+        self.assertTrue(accumulator.std() == np.std(data))
 
     @attr("fast")
     def test_std_no_data(self):
         accumulator = Accumulator()
-        self.assertTrue(accumulator._std() is None)
-
-    @attr("fast")
-    def test_cv(self):
-        accumulator = Accumulator()
-        data = np.arange(10)
-        for point in data: accumulator.push(point)
-        self.assertTrue(accumulator.cv() == np.std(data) / np.mean(data))
-
-    @attr("fast")
-    def test_cv_no_data(self):
-        accumulator = Accumulator()
-        self.assertTrue(accumulator.cv() is None)
+        self.assertTrue(accumulator.std() is None)
 
     @attr("medium")
     def test_calculate_hologram_noise_sd(self):
-        accumulator = Accumulator()
         refimg = _load_raw_example_data()
         paths = get_example_data_path(['bg01.jpg', 'bg02.jpg', 'bg03.jpg'])
         bg = load_average(paths, refimg)
         # This value is from the legacy version of load_average
         self.assertTrue(np.allclose(bg.noise_sd, 0.00709834))
+
+    @attr("medium")
+    def test_welford(self):
+        # tests Welford's algorithm against standard 2-pass algorithm
+        paths = get_example_data_path(['bg01.jpg', 'bg02.jpg', 'bg03.jpg'])
+        # duplicate several times to do a better check for numerical stability
+        paths = paths*10
+        # Welford method
+        mean_image = load_average(paths, spacing=1)
+        welford_mean = mean_image.mean().values
+        welford_std = mean_image.std().values
+        # two-pass method
+        images = np.stack([load_image(imfile, spacing=1) for imfile in paths],
+                          axis=-1)
+        twopass_mean_image = np.mean(images, axis=-1)
+        twopass_mean = twopass_mean_image.mean()
+        twopass_std = twopass_mean_image.std()
+        self.assertTrue(np.allclose([welford_mean, welford_std],
+                                    [twopass_mean, twopass_std]))
 
     @attr('fast')
     def test_2_colour_noise_sd(self):
