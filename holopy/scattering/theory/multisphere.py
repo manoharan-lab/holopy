@@ -28,7 +28,6 @@ dependence of spherical Hankel functions for the scattered field.
 
 
 import numpy as np
-import os
 from numpy import arctan2, sin, cos
 from warnings import warn
 from scipy.integrate import dblquad

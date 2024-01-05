@@ -81,7 +81,7 @@ class TestDDA(unittest.TestCase):
         try:
             theory_in = DDA(**kwargs)
         except DependencyMissing:
-            raise SkipTest()
+            raise SkipTest("Requires ADDA")
         pars = {}
         theory_out = theory_in.from_parameters(pars)
 
@@ -95,7 +95,7 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
         return calc_holo_external(
                     schema, scatterer, medium_index, illum_wavelen, **kwargs)
     except DependencyMissing:
-        raise SkipTest()
+        raise SkipTest("Requires ADDA")
 
 
 @attr('medium', "dda")
@@ -112,18 +112,18 @@ def test_DDA_sphere():
 @attr('slow', 'dda')
 def test_dda_2_cpu():
     if os.name == 'nt': # windows
-        raise SkipTest()
+        raise SkipTest("Requires ADDA")
     sc = Sphere(n=1.59, r=3e-1, center=(1, -1, 30))
     mie_holo = calc_holo(schema, sc, index, wavelen)
     try:
         dda_n2 = DDA(n_cpu=2)
     except DependencyMissing:
-        raise SkipTest()
+        raise SkipTest("Requires ADDA")
     try:
         dda_holo = calc_holo(schema, sc, index, wavelen, theory=dda_n2)
     except CalledProcessError:
         # DDA only compiled for serial calculations
-        raise SkipTest
+        raise SkipTest("DDA not compiled for parallel calculations")
     # TODO: figure out how to actually test that it runs on multiple cpus
 
 def in_sphere(r):
@@ -183,7 +183,7 @@ def test_Ellipsoid_dda():
         assert_equal(cmd, cmdlist)
         verify(h, 'ellipsoid_dda', rtol=3e-4, atol=3e-4)
     except DependencyMissing:
-        raise SkipTest()
+        raise SkipTest("Requires ADDA")
 
 
 @attr('slow', 'dda')
@@ -201,7 +201,7 @@ def test_predefined_scatterers():
             calc_holo(detector, s, illum_wavelen=.66, medium_index=1.33,
                 illum_polarization = (1,0), theory=DDA(use_indicators=False))
     except DependencyMissing:
-        raise SkipTest
+        raise SkipTest("Requires ADDA")
 
 
 @attr('dda')
