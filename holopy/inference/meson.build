@@ -12,3 +12,4 @@ inference_sources = [
 py.install_sources(inference_sources, subdir: 'holopy/inference')
 
 subdir('third_party')
+subdir('tests')
