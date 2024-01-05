@@ -5,15 +5,31 @@ requires = ['meson-python', 'cython', 'numpy<1.20', 'scipy', 'pyYaml', 'pillow',
 
 [project]
 name = 'HoloPy'
-version = '3.6.0'
-description = 'Holography in Python'
+# should read version from meson.build
+dynamic = ['version']
+description = 'Holography and Light Scattering in Python'
+readme = 'README.rst'
+license = {file = 'LICENSE'}
 authors = [{name = 'Manoharan Lab, Harvard University', email='vnm@seas.harvard.edu'},]
 homepage = 'https://manoharan.seas.harvard.edu/holopy'
-repository = 'https://github.com/manoharan-lab/holopy'
-license = {file = 'LICENSE'}
 test_suite = 'nose.collector'
 #entry_points = {'nose.plugins.0.10': HOLOPY_NOSE_PLUGIN_LOCATION}
 package = ['HoloPy']
+
+
+[project.urls]
+homepage = 'https://manoharan.seas.harvard.edu/holopy'
+repository = 'https://github.com/manoharan-lab/holopy'
+documentation = 'https://holopy.readthedocs.io'
+
+# The following allows us to use pytest without making unique names for each
+#  test file (and without having to put __init__.py files in the test
+#  directories. See
+#  https://docs.pytest.org/en/latest/explanation/goodpractices.html#choosing-an-import-mode
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
 
 # numpy>=1.12
 # scipy
