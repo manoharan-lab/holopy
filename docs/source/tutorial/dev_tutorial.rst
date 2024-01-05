@@ -7,29 +7,44 @@ Developer's Guide
 
 Installing HoloPy for Developers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-If you are going to hack on holopy, you probably only want to compile the
+If you are going to hack on holopy, you probably want to compile the
 scattering extensions.
 
-**For Mac and Linux:**
+First, download or clone the latest version of HoloPy from GitHub at `https://github.com/manoharan-lab/holopy <https://github.com/manoharan-lab/holopy>`_.
 
-Download or clone the latest version of HoloPy from Git Hub at `https://github.com/manoharan-lab/holopy <https://github.com/manoharan-lab/holopy>`_.
+To gather all the dependencies needed to build HoloPy, the simplest approach is
+to use the included environment.yml file to make a new conda environment::
+
+  conda env create -f ./environment.yml
+
+Then activate the new environment::
+
+  conda activate holopy-devel
+
+For Windows, if you don't already have Fortran and C compilers installed, you
+can edit the environment file to install the ``m2w64-toolchain`` package.
 
 Let's say you downloaded or cloned HoloPy to
 ``/home/me/holopy``. Then open a terminal, ``cd`` to ``/home/me/holopy`` and run::
 
-    python setup.py develop
+  python -m pip install --no-build-isolation --editable .
 
-This puts the extensions inside the source tree, so that you can work
-directly from ``/home/me/holopy`` and have the changes reflected in the version
-of HoloPy that you import into python.
+This will build the package and scattering extensions, and install a stub in
+your current environment that loads the package from the build directory. If you
+change the code and re-import holopy, it will be automatically rebuilt by meson.
 
-**Note for Mac users:** gfortran may put its library in a place python can't find it. If you get errors including something like ``can't find /usr/local/libgfortran.3.dynlib`` you can symlink them in from your install. You can do this by running::
+**Note for Mac users:**
+gfortran may put its library in a place python can't find it. If you get errors
+including something like ``can't find /usr/local/libgfortran.3.dynlib`` you can
+symlink them in from your install. You can do this by running::
 
   sudo ln -s /usr/local/gfortran/lib/libgfortran.3.dynlib /usr/local/lib
   sudo ln -s /usr/local/gfortran/lib/libquadmath.3.dynlib /usr/local/lib
 
-**For Windows:**
-Installation on Windows is still a work in progress, but we have been able to get HoloPy working on Windows 10 with an AMD64 architecture (64-bit) processor.
+**Note for Windows users:**
+The above build instructions *should* work with Windows, but if not, you can try
+the following, which should work on Windows 10 with an AMD64 architecture
+(64-bit) processor.
 
 1. Install `Anaconda <https://www.continuum.io/downloads>`_ with Python 3.6 and make sure it is working.
 2. Install the C compiler. It's included in `Visual Studio 2015 Community <https://www.visualstudio.com/downloads/>`_. Make sure it is working with a C helloworld.
@@ -37,10 +52,10 @@ Installation on Windows is still a work in progress, but we have been able to ge
 4. Install cython and made sure it works.
 5. Install `Intel's Fortran compiler <https://software.intel.com/en-us/fortran-compilers/try-buy>`_. A good place to start is the trial version of Parallel Studio XE. Make sure it is working with a Fortran helloworld.
 6. Install `mingw32-make <https://sourceforge.net/projects/mingw/files/MinGW/Extension/make/>`_, which does not come with Anaconda by default.
-7. Download or clone the master branch of HoloPy from `https://github.com/manoharan-lab/holopy <https://github.com/manoharan-lab/holopy>`_. 
+7. Download or clone the master branch of HoloPy from `https://github.com/manoharan-lab/holopy <https://github.com/manoharan-lab/holopy>`_.
 8. Open the command prompt included in Intel's Parallel Studio. Run ``holopy/setup.py``. It is necessay to use Intel's Parallel Studio command prompt to avoid compiling errors.
 9. Install the following dependencies that don't come with Anaconda::
-    
+
         conda install xarray dask netCDF4 bottleneck
         conda install -c astropy emcee=2.2.1
 
@@ -83,11 +98,15 @@ track of their dimension names separately. HoloPy's :func:`.save_image` writes a
 yaml dump of ``attrs`` (along with spacing information) to the
 ``imagedescription`` field of .tif file metadata.
 
-:ref:`infer_tutorial` returns a lot of information, which is stored in the form of a :class:`.SamplingResult` object.
-This object stores the model and :class:`.EmceeStrategy` that were used in the inference calculation as attributes. 
-An additional attribute named ``dataset`` is an `xarray Dataset <http://xarray.pydata.org/en/stable/data-structures.html#dataset>`_ 
-that contains both the data used in the inference calculation, as well as the raw output.
-The parameter values at each step of the sampling chain and the calculated log-probabilities at each step are stored here under the ``samples`` and ``lnprobs`` namespaces.
+:ref:`infer_tutorial` returns a lot of information, which is stored in the form
+of a :class:`.SamplingResult` object. This object stores the model and
+:class:`.EmceeStrategy` that were used in the inference calculation as
+attributes. An additional attribute named ``dataset`` is an `xarray Dataset
+<http://xarray.pydata.org/en/stable/data-structures.html#dataset>`_ that
+contains both the data used in the inference calculation, as well as the raw
+output. The parameter values at each step of the sampling chain and the
+calculated log-probabilities at each step are stored here under the ``samples``
+and ``lnprobs`` namespaces.
 
 .. _scat_theory:
 
@@ -142,12 +161,21 @@ For an example of this, see the :class:`.Lens`, :class:`.MieLens`, or
 Adding a new inference model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To perform inference, you need a noise model. You can make a new noise model by inheriting from :class:`~holopy.inference.noise_model.NoiseModel`. This class has all the machinery to compute likelihoods of observing data given some set of parameters and assuming Gaussian noise. 
+To perform inference, you need a noise model. You can make a new noise model by
+inheriting from :class:`~holopy.inference.noise_model.NoiseModel`. This class
+has all the machinery to compute likelihoods of observing data given some set of
+parameters and assuming Gaussian noise.
 
 To implement a new model, you just need to implement one function: ``forward``.
-This function receives a dictionary of parameter values and a data shape schema (defined by :func:`.detector_grid`, for example) and needs to return simulated data of shape specified. See the ``_forward`` function in :class:`~holopy.inference.noise_model.AlphaModel` for an example of how to do this. 
+This function receives a dictionary of parameter values and a data shape schema
+(defined by :func:`.detector_grid`, for example) and needs to return simulated
+data of shape specified. See the ``_forward`` function in
+:class:`~holopy.inference.noise_model.AlphaModel` for an example of how to do
+this.
 
-If you want to use some other noise model, you may need to override _lnlike and define the probablity given your uncertainty. You can reference _lnlike in :class:`~holopy.inference.noise_model.NoiseModel`.
+If you want to use some other noise model, you may need to override ``_lnlike``
+and define the probablity given your uncertainty. You can reference ``_lnlike``
+in :class:`~holopy.inference.noise_model.NoiseModel`.
 
 .. _nose_tests:
 
@@ -162,3 +190,7 @@ package (e.g. ``/home/me/holopy``) and run:
 
    python run_nose.py
 
+Note that you can download the full test holograms by installing ``git lfs`` and
+doing::
+
+  git lfs pull
