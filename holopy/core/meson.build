@@ -13,3 +13,4 @@ py.install_sources(core_sources, subdir: 'holopy/core')
 
 subdir('io')
 subdir('process')
+subdir('tests')

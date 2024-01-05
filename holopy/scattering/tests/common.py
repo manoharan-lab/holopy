@@ -16,9 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import numpy as np
 from holopy.core import detector_grid, update_metadata
 from holopy.scattering.scatterer import Sphere
+from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 
 wavelen = 658e-9
 ypolarization = [0., 1.0]  # y-polarized
@@ -46,3 +47,31 @@ z = 15e-6
 
 sphere = Sphere(n=n_particle_real + n_particle_imag*1j, r=radius,
                 center=(x, y, z))
+
+class MockTheory(ScatteringTheory):
+    """Minimally-functional daughter of ScatteringTheory for fast tests."""
+    def __init__(*args, **kwargs):
+        pass  # an init is necessary for the repr
+
+    def can_handle(self, scatterer):
+        return isinstance(scatterer, Sphere)
+
+    def raw_fields(self, positions, *args, **kwargs):
+        return np.ones(positions.shape, dtype='complex128')
+
+
+class MockScatteringMatrixBasedTheory(ScatteringTheory):
+    """Minimally-functional daughter of ScatteringTheory which
+    uses the scattering matrix pathway, for fast tests.
+    Smells like a Rayleigh scatterer, just for fun. But it's not"""
+    def __init__(*args, **kwargs):
+        pass  # an init is necessary for the repr
+
+    def can_handle(self, scatterer):
+        return isinstance(scatterer, Sphere)
+
+    def raw_scat_matrs(self, scatterer, positions, *args, **kwargs):
+        strength = scatterer.n * scatterer.r
+        scattering_matrix = np.array(
+            [np.eye(2) for _ in range(positions.shape[1])])
+        return strength * scattering_matrix.astype('complex128')

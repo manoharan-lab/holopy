@@ -12,8 +12,8 @@ from holopy.scattering.scatterer import Sphere, Spheres, Ellipsoid
 from holopy.scattering.errors import TheoryNotCompatibleError
 from holopy.scattering.interface import prep_schema
 from holopy.scattering.tests.common import xschema as XSCHEMA
-from holopy.scattering.tests.test_scatteringtheory import (
-    MockTheory, MockScatteringMatrixBasedTheory)
+from holopy.scattering.tests.common import (MockTheory,
+                                            MockScatteringMatrixBasedTheory)
 
 
 SPHERE = Sphere(n=1.5, r=1.0, center=(0, 0, 2))
