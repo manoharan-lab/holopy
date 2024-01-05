@@ -39,14 +39,15 @@ dependencies:
   # uncomment to install compilers on windows
   #  - m2w64-toolchain
 
-  # include jupyterlab for convenience
-  - jupyterlab
+  # for building fortran extensions and python package
+  - meson
+  - meson-python
 
   # for running tests
   - nose
   - pytest
 
-  # for development
+  # optional packages to make development easier in (e.g.) emacs
   - pyright
   - pylint
   - flake8
@@ -59,3 +60,7 @@ dependencies:
 
   - pip:
       - importmagic
+
+  # include jupyterlab for convenience
+  - jupyterlab
+
