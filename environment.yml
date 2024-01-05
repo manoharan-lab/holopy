@@ -51,6 +51,7 @@ dependencies:
   - pyright
   - pylint
   - flake8
+  - flake8-pytest-style
   - autoflake
   - epc
   - isort
