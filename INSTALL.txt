@@ -1,33 +1,51 @@
-Two options for installing:
+The easiest way to install HoloPy is to use the conda-forge build. See the
+documentation for more information
+(https://holopy.readthedocs.io/en/master/tutorial/install.html)
 
-User installation
------------------
+If you want to build HoloPy yourself, here are some instructions.
 
-If you want to install the binary build of holopy on your system, run 
+Dependencies
+------------
 
-python setup.py install
+To gather all the dependencies needed to build HoloPy, the simplest approach is
+to use the included environment.yml file to make a new conda environment
 
-as root.  This will build the packages and install holopy in the local
-dist-packages directory of your python installation, so that python
-will automatically be able to find it when you type "import holopy".
+  conda env create -f ./environment.yml
 
-If you are a developer, you might not want to do this because you
-might eventually find yourself with two versions of holopy on your
-system, one installed globally and one installed locally.  An
-alternative is the:
+Then activate the new environment:
 
-Developer installation
-----------------------
+  conda activate holopy-devel
 
-If you are going to hack on holopy, you probably only want to compile the
-scattering extensions.  Let's say you install it in
-/home/me/holopy.  Then cd to "/home/me/holopy" and run
+For Windows, if you don't already have Fortran and C compilers installed, you
+can edit the environment file to install m2w64-toolchain.
 
-python setup.py build_ext --inplace
+Then you have two options for building and installing the package on your
+system.
 
-This puts the extensions inside the source tree, so that you can work
-directly from /home/me/holopy.  You will need to add
-/home/me/holopy to your python_path for python to find the
-module when you import it.
+Installation
+------------
+
+If you want to install the binary build of holopy on your system, cd to the root
+of the repository and run
+
+pip install .
+
+This will build the package and scattering extensions (using meson) and install
+HoloPy in your current environment, so that python will automatically be able to
+find it when you type "import holopy".
+
+Editable install
+----------------
+
+For developers, it's convenient to be able to make changes to the code and have
+those changes immediately available to unit tests or scripts. To enable this
+functionality, you can do an editable install. From the root of the repository,
+run
+
+python -m pip install --no-build-isolation --editable .
+
+This will build the package and scattering extensions, and install a stub in
+your current environment that loads the package from the build directory. If you
+change the code and re-import holopy, it will be automatically rebuilt by meson.
 
 
