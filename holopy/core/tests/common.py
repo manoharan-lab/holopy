@@ -52,7 +52,12 @@ class HoloPyCatchWarnings(Plugin):
 
 
 def assert_read_matches_write(original):
-    with tempfile.NamedTemporaryFile(suffix='.h5') as tempf:
+    # for Windows, must specify delete=False so that the load statement can run
+    # after the the save statement completes. Otherwise the file will be
+    # deleted after save. In Python 3.12, can switch to "delete=True,
+    # delete_on_close=False" which will delete the file after the context
+    # manager exits
+    with tempfile.NamedTemporaryFile(suffix='.h5', delete=False) as tempf:
         save(tempf.name, original)
         loaded = load(tempf.name)
     # For now our code for writing xarrays to hdf5 ends up with them
