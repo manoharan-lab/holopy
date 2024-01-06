@@ -1,4 +1,5 @@
 inference_test_sources = [
+'test_cma.py',
 'common.py'
 ]
 

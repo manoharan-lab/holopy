@@ -179,7 +179,7 @@ in :class:`~holopy.inference.noise_model.NoiseModel`.
 
 .. _nose_tests:
 
-Running Tests
+Running tests
 ~~~~~~~~~~~~~
 HoloPy comes with a suite of tests that ensure everything has been
 built correctly and that it's able to perform all of the calculations
@@ -194,3 +194,72 @@ Note that you can download the full test holograms by installing ``git lfs`` and
 doing::
 
   git lfs pull
+
+Notes on the build system
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We use the `meson build system <https://mesonbuild.com/>`_ with the
+`meson-python extension <https://meson-python.readthedocs.io/en/latest/>`_ to
+build the scattering extensions and install the package. Previously we used
+``numpy.distutils`` but this module has been deprecated. There are a few things
+you need to know about the build system in order to ensure that your changes to
+HoloPy will work properly.
+
+1. Note that all meson builds are done "out of tree". That means compiled
+extensions are not installed into the same directory as their sources.
+Note that holopy has several extensions that must be installed in a # way that
+makes it possible to do (for example)::
+
+.. sourcecode:: python
+
+   import holopy.scattering.theory.mie_f.scsmfo_min
+
+To enable this functionality, we need to tell meson to copy the extensions to
+the appropriate point in the installation tree, *and* to copy the python files
+too. In the subdirectories, you'll see meson.build files that call
+``install_sources()``, which installs the .py files of holopy, and that call
+``extension_module(subdir=...)`` which tells meson where to install the fortran
+extensions. All files have to be specified, so if you add a python file
+somewhere, you need to update the relevant meson.build file to include it in the
+installation. This is how scipy uses meson. Having to specify all the files is a
+big switch from how ``numpy.distutils`` does things, but it is supposed to make
+the build process more efficient.
+
+Currently we do not add the test files or the example data to the installation,
+because we'd need to specify a lot of files, and it would add an extra step to
+writing new tests.
+
+2. Unlike ``numpy.distutils``, meson doesn't run f2py automatically to
+compile the scattering extensions. There is some logic in the ``meson.build``
+file in the ``mie_f`` directory that will automatically run f2py to generate the
+C and Fortran wrappers for the scattering extensions. Have a look at this file
+if you are adding a new Fortran extension.
+
+
+**Gotchas**
+- If you open a Python interpreter or Jupyter notebook in the root of the
+  repository, remember that Python will see the subdirectory ``holopy`` as a
+  package. So even if you haven't built the package with meson, ``import
+  holopy`` might work, and will probably give you a lot of unexpected results
+  (like the scattering theories being missing). Remember that meson builds do
+  not happen in the source tree. To check whether you have actually built and
+  installed the package, try to import it from a directory that
+  does not have the ``holopy`` source tree as a subdirectory.
+- To run the tests, however, you *do* need your current working directory to be
+  inside the source tree. This is because the tests are not installed with the
+  package.
+- All python files that include tests that use multiprocessing *must* be added
+  to ``install_sources()`` in the relevant ``meson.build`` file. This is because
+  the multiprocessing module needs to do some pickling, and it tries to import
+  the test file as a module. This is the exception to the rule that we do not
+  include test files in the installation. If you don't install the file
+  containing the tests, you might see that `pytest` hangs on the test. Doing
+  `pytest -s` is a good way to debug any hanging tests. It runs pytest, but it
+  shows all the output (stdout and stderr) from the code. If you see a
+  ``ModuleNotFoundError`` from the ``multiprocessing`` package, you need to
+  include your test file in the installation. So, for example, we have to
+  include ``/holopy/inference/tests/test_cma.py`` in
+  ``/holopy/inference/tests/meson.build`` because it relies on the ``cmaes``
+  module, which uses ``multiprocessing``.
+
+.. _nose_tests:

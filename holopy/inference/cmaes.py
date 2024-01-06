@@ -57,7 +57,7 @@ class CmaStrategy(HoloPyObject):
         Otherwise, a single pixel subset is used throughout calculation.
     parent_fraction: float, optional
         Fraction of each generation to use to construct the next generation.
-        Takes symbol \mu in cma literature
+        Takes symbol mu in cma literature
     weight_function: function, optional
         takes arguments (i, popsize), i in range(popsize); returns weight of i
     tols: dict, optional
@@ -186,4 +186,3 @@ def run_cma(obj_func, parameters, initial_population, weight_function,
         # I made pool, responsible for closing it.
         pool.close()
     return cma_strategy
-
