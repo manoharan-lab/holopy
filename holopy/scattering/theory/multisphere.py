@@ -189,10 +189,10 @@ class Multisphere(ScatteringTheory):
         # have laser propagation as positive, we have it negative),
         # so we multiply the z coordinate by -1 to correct for that.
         _, lmax, amn0, converged = scsmfo_min.amncalc(
-            1, centers[:,0],  centers[:,1],
-            -1.0 * centers[:,2],  m.real, m.imag,
+            1, centers[:, 0], centers[:, 1],
+            -1.0 * centers[:, 2], m.real, m.imag,
             scatterer.r * medium_wavevec, self.niter, self.eps,
-            self.qeps1, self.qeps2, self.meth, (0,0), suppress_flag)
+            self.qeps1, self.qeps2, self.meth, (0, 0), suppress_flag)
 
         # converged == 1 if the SCSMFO iterative solver converged
         # f2py converts F77 LOGICAL to int

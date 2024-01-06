@@ -22,8 +22,8 @@ ADDA (https://github.com/adda-team/adda) to do DDA calculations.
 """
 
 # TODO: Adda currently fails if you call it with things specified in meters
-# (values are too small), so we should probably nondimensionalize before talking
-# to adda.
+# (values are too small), so we should probably nondimensionalize before
+# talking to adda.
 
 import subprocess
 import tempfile
