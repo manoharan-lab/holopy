@@ -44,7 +44,6 @@ from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
 from scipy.special import spherical_jn, spherical_yn
 
-from holopy.core.utils import SuppressOutput
 from holopy.scattering.theory.mie_f import (
     mieangfuncs, miescatlib, multilayer_sphere_lib, scsmfo_min, mie_specfuncs)
 from holopy.scattering.theory.multisphere import _asm_far
@@ -270,17 +269,16 @@ def test_mie_multisphere_singlesph():
     asbs = miescatlib.scatcoeffs(m, x, n_stop_mie)
     emie_x, emie_y, emie_z = mieangfuncs.mie_fields(field_pts, asbs, pol, 1, 1)
 
-    # calculate fields with Multisphere
-    with SuppressOutput():
-        _, lmax, amn0, conv = scsmfo_min.amncalc(
-            1, 0., 0., 0., m.real, m.imag, x, 100, 1e-6, 1e-8, 1e-8, 1,
-            (0., 0.))
+    # calculate fields with Multisphere (output suppressed)
+    suppress_output = 1
+    _, lmax, amn0, conv = scsmfo_min.amncalc(
+        1, 0., 0., 0., m.real, m.imag, x, 100, 1e-6, 1e-8, 1e-8, 1,
+        (0., 0.), suppress_output)
     # increase qeps1 from usual here
     limit = lmax**2 + 2 * lmax
     amn = amn0[:, 0:limit, :]
     etm_x, etm_y, etm_z = mieangfuncs.tmatrix_fields(field_pts, amn, lmax,
                                                      0., pol, 1)
-
     assert_allclose(etm_x, emie_x, rtol = 1e-6, atol = 1e-6)
     assert_allclose(etm_y, emie_y, rtol = 1e-6, atol = 1e-6)
     assert_allclose(etm_z, emie_z, rtol = 1e-6, atol = 1e-6)
@@ -341,13 +339,15 @@ def test_asm():
     qeps1 = 1e-5
     qeps2 = 1e-8
     meth = 1
-    with SuppressOutput():
-        # The fortran code uses oppositely directed z axis (they have laser
-        # propagation as positive, we have it negative), so we multiply the
-        # z coordinate by -1 to correct for that.
-        _, lmax, amn0, converged = scsmfo_min.amncalc(
-            1, centers[:,0],  centers[:,1], -1.0 * centers[:,2],  m.real,
-            m.imag, size_p, niter, eps, qeps1, qeps2,  meth, (0,0))
+    # suppress output from fortran code
+    suppress_output = 1
+    # The fortran code uses oppositely directed z axis (they have laser
+    # propagation as positive, we have it negative), so we multiply the
+    # z coordinate by -1 to correct for that.
+    _, lmax, amn0, converged = scsmfo_min.amncalc(
+        1, centers[:,0],  centers[:,1], -1.0 * centers[:,2],  m.real,
+        m.imag, size_p, niter, eps, qeps1, qeps2,  meth, (0,0),
+        suppress_output)
     limit = lmax**2 + 2*lmax
     amn = amn0[:, 0:limit, :]
     asm_fwd = _asm_far(0, 0, amn, lmax)
