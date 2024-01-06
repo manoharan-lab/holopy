@@ -345,8 +345,8 @@ def test_asm():
     # propagation as positive, we have it negative), so we multiply the
     # z coordinate by -1 to correct for that.
     _, lmax, amn0, converged = scsmfo_min.amncalc(
-        1, centers[:,0],  centers[:,1], -1.0 * centers[:,2],  m.real,
-        m.imag, size_p, niter, eps, qeps1, qeps2,  meth, (0,0),
+        1, centers[:, 0], centers[:, 1], -1.0 * centers[:, 2], m.real,
+        m.imag, size_p, niter, eps, qeps1, qeps2, meth, (0, 0),
         suppress_output)
     limit = lmax**2 + 2*lmax
     amn = amn0[:, 0:limit, :]
