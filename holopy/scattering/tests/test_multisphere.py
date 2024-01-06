@@ -115,7 +115,6 @@ def test_polarization():
     # but their max and min values should be close
     assert_obj_close(xholo.max(), yholo.max())
     assert_obj_close(xholo.min(), yholo.min())
-    return xholo, yholo
 
 
 @attr('medium')
