@@ -18,7 +18,6 @@
 
 import tempfile
 import os
-import warnings
 import types
 import inspect
 import yaml
@@ -28,27 +27,8 @@ import pickle
 import xarray as xr
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
-from nose.plugins import Plugin
 
 from holopy.core.io import load, save, get_example_data
-from holopy.core.errors import PerformanceWarning
-
-
-class HoloPyCatchWarnings(Plugin):
-    name='holopycatchwarnings'
-
-    def options(self, parser, env=os.environ):
-        super(HoloPyCatchWarnings, self).options(parser, env=env)
-
-    def configure(self, options, conf):
-        super(HoloPyCatchWarnings, self).configure(options, conf)
-        if not self.enabled:
-            return
-
-    def beforeTest(self, test):
-        warnings.simplefilter("error")
-        warnings.simplefilter(action="ignore", category=PerformanceWarning)
-        warnings.simplefilter(action="ignore", category=FutureWarning)
 
 
 def assert_read_matches_write(original):
