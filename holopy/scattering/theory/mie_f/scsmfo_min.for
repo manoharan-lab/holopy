@@ -3,12 +3,12 @@ c Modified by Jerome Fung from scsmfo1b.for by Daniel Mackowski.
 c Original code available at ftp://ftp.eng.auburn.edu/pub/dmckwski/scatcodes/
 c
 c This is a minimal subset of scsmfo1b's subroutines (w/o the main program),
-c hence the name scsmfo_min. 
+c hence the name scsmfo_min.
 c Note: I think SCSMFO stands for "Scattering, Clusters of Spheres,
 c Mackowski, Fixed Orientation"; I don't know what the 1B refers to.
 
-c The code is intended to be compiled with f2py; only the subroutine amncalc 
-c is intended to be called from Python. This permits the calculation of 
+c The code is intended to be compiled with f2py; only the subroutine amncalc
+c is intended to be called from Python. This permits the calculation of
 c amn coefficients for arbitrary sphere clusters.
 
 c amncalc has been modified from original code as follows:
@@ -16,15 +16,22 @@ c 1) code to calculate bcof and fnr and avoid common block added
 c 2) sizes of necessary arrays determined at run time rather than
 c    by allocating way more memory than necessary.
 
+c Further modifications made by Vinothan N. Manoharan
+c <vnm@seas.harvard.edu>:
+c 3) added argument "suppress" to amncalc and itersoln. If suppress
+c    is nonzero, all output from these subroutines is suppressed.
+c    Added this argument to avoid redirecting stdout in Python
+c    code that calls these subroutines.
+
 c calculation of cluster T matrix via iteration scheme
 c
       subroutine amncalc(inew,npart,xp,yp,zp,sni,ski,xi,nodr,
      1            nodrtmax,niter,eps,qeps1,qeps2,meth,
-     1            ea, amn0, status)
+     1            ea, suppress, amn0, status)
 c Intended to be called from Python.
 c Inputs:
 c inew (legacy, for program control -- set to 1)
-c xp (array with particle x coords relative to COM, non-dimensionalized by 
+c xp (array with particle x coords relative to COM, non-dimensionalized by
 c wavevector)
 c yp (array with particle y coords, non-dimensionalized)
 c zp (array with particle z coords, non-dimensionalized)
@@ -37,6 +44,7 @@ c qeps1 (single sphere error tolerance)
 c qeps2 (cluster error tolerance)
 c meth (set to 1 to use order of scattering)
 c ea (array of cluster Euler alpha and beta, degrees)
+c suppress (set to nonzero to suppress output to stdout)
 c Outputs:
 c nodr (array of single sphere expansion orders)
 c nodrtmax (max order of cluster VSH expansion)
@@ -70,8 +78,9 @@ c ******************************************************************
       data ci/(0.d0,1.d0)/
 Cf2py intent(in) inew, npart, xp, yp, zp, sni, ski, xi, niter
 Cf2py intent(in) eps, qeps1, qeps2, meth, ea
+Cf2py intent(in) suppress
 Cf2py intent(out) nodr, nodrtmax, amn0, status
-      
+
 c calculate constants in common block /consts/
       do n=1,2*nbc
          fnr(n)=dsqrt(dble(n))
@@ -110,16 +119,17 @@ c
          nodrmax=max(nodr(i),nodrmax)
       enddo
 
-
-      print*, 'single sphere max. order: ', nodrmax
-      if(nodrmax.eq.nod) then
-         print*, 'Warning: single--sphere error tolerance may not 
-     1            be obtained.'
-         print*, 'Decrease qeps1 and/or increase nod.'
+      if(suppress.eq.0) then
+         print*, 'single sphere max. order: ', nodrmax
+         if(nodrmax.eq.nod) then
+            print*, 'Warning: single--sphere error tolerance may not
+     1               be obtained.'
+            print*, 'Decrease qeps1 and/or increase nod.'
+         endif
       endif
 
       nblkmax=nodrmax*(nodrmax+2)
-      
+
       xm=xm/dble(npart)
       ym=ym/dble(npart)
       zm=zm/dble(npart)
@@ -138,16 +148,22 @@ c
          nblkt(i)=nodrt(i)*(nodrt(i)+2)
       enddo
       if(nodrtmax.gt.notd) then
-         print*, 'Warning: notd dimension may be too small.'
-         print*, 'increase to ', nodrtmax
+         if(suppress.eq.0) then
+            print*, 'Warning: notd dimension may be too small.'
+            print*, 'increase to ', nodrtmax
+         endif
       endif
       nodrtmax=min(nodrtmax,notd)
-      print*,''
-      print*, 'Estimated cluster expansion order:', nodrtmax
+      if(suppress.eq.0) then
+         print*,''
+         print*, 'Estimated cluster expansion order:', nodrtmax
+      endif
       nblktmax=nodrtmax*(nodrtmax+2)
 c
       do i=1,npart
-         print*, 'assembling interaction matrix row: ', i
+         if(suppress.eq.0) then
+            print*, 'assembling interaction matrix row: ', i
+         endif
          do j=i+1,npart
             ij=.5*(j-1)*(j-2)+j-i
             x=xp(i)-xp(j)
@@ -190,7 +206,9 @@ c
             enddo
          enddo
       enddo
-      print*, ''
+      if(suppress.eq.0) then
+         print*, ''
+      endif
 
 15    do n=1,nblktmax
          do ip=1,2
@@ -253,8 +271,10 @@ c Iterative solution for both polarizations begins here
       max_err = 0.
 
       do k=1,2
-         print*, 'Solving for incident state ', k
-        
+         if(suppress.eq.0) then
+            print*, 'Solving for incident state ', k
+         endif
+
          do i=1,npart
             do n=1,nodr(i)
                nn1=n*(n+1)
@@ -272,7 +292,8 @@ c Iterative solution for both polarizations begins here
 
          if(niter.ne.0) then
             call itersoln(npart,nodr,nblk,eps,niter,
-     1        meth,itest,ek,drot,amnl,an1,pmn,amn(1,1,1,k),iter,err)
+     1        meth,itest,ek,drot,amnl,an1,pmn,amn(1,1,1,k),iter,
+     1        suppress,err)
 c max_err gets checked at the end for convergence
             max_err = max(max_err, err)
             itermax=max(itermax,iter)
@@ -324,7 +345,9 @@ c max_err gets checked at the end for convergence
 
       enddo
 
-      print*, ' Cluster expansion order: ', nodrtmax
+      if(suppress.eq.0) then
+         print*, ' Cluster expansion order: ', nodrtmax
+      endif
 
 c Check convergence: is the maximum error from iteration less than eps?
       status = .false.
@@ -339,7 +362,7 @@ c meth=1: order-of-scattering
 c Thanks to Piotr Flatau
 c
       subroutine itersoln(npart,nodr,nblk,eps,niter,meth,itest,ek,drot,
-     1                    amnl,an1,pnp,anp,iter,err)
+     1                    amnl,an1,pnp,anp,iter,suppress,err)
       implicit real*8(a-h,o-z)
       include 'scfodim.for'
       parameter(nbd=nod*(nod+2),
@@ -492,10 +515,14 @@ c              enorm=enorm+anp(ip,n,i)*conjg(anp(ip,n,i))
          enddo
       enddo
       err=err/enorm
-      print*, '+iteration: ', iter
-      print*, 'error: ', err
+      if(suppress.eq.0) then
+         print*, '+iteration: ', iter
+         print*, 'error: ', err
+      endif
       if(err.lt. eps) then
-         print*, ''
+         if(suppress.eq.0) then
+            print*, ''
+         endif
          return
       endif
       cbk=csk2/csk
@@ -510,7 +537,9 @@ c              enorm=enorm+anp(ip,n,i)*conjg(anp(ip,n,i))
       csk=csk2
       iter=iter+1
       if(iter.le.niter) goto 40
-      print*, ''
+      if(suppress.eq.0) then
+         print*, ''
+      endif
       return
 
 200   do i=1,npart
@@ -566,10 +595,14 @@ c              enorm=enorm+anp(ip,n,i)*conjg(anp(ip,n,i))
       enddo
       err=err/enorm
       iter=iter+1
-      print*, '+iteration: ', iter
-      print*, 'error: ', err
+      if(suppress.eq.0) then
+         print*, '+iteration: ', iter
+         print*, 'error: ', err
+      endif
       if((err.gt.eps).and.(iter.lt.niter)) goto 310
-      print*, ''
+      if(suppress.eq.0) then
+         print*, ''
+      endif
       return
       end
 c
@@ -1490,7 +1523,7 @@ c                                                                               
 
 
 
-c *********************** 
+c ***********************
 c Added by Jerome
 
 c      subroutine xsects(npart, sni, ski, xi, qeps1, amn0)
@@ -1543,7 +1576,7 @@ c      qatpi2=qatpi2/xv/xv
 c      qatpi4=qatpi4/xv/xv
 
 c      call scatexp(amn0,nodrt,1,gmn)
-      
+
 
 c      return
 c      end

@@ -120,7 +120,7 @@
            else
                call asm_mie_far(nstop, asbs, theta, asm_scat)
            endif
-           
+
            ! calculate scattered fields in spherical coordinates
            call calc_scat_field(kr, phi, asm_scat, einc, escat_sph)
 
@@ -149,7 +149,7 @@
       subroutine mie_internal_fields(n_pts, calc_points, m, csds, nstop, &
            einc, eint_x, eint_y, eint_z)
         ! Calculate internal fields inside a sphere in the Lorenz-Mie solution,
-        ! at a list of selected points.  
+        ! at a list of selected points.
         !
         ! Function calls from Python may need to transpose calc_points.
         !
@@ -187,7 +187,7 @@
              eint_y, eint_z
         integer :: i
         complex (kind = 8), dimension(3) :: eint_sph, eint_cart1, eint_cart2
-        
+
         ! Loop over field points
         do i = 1, n_pts, 1
            mkr = m * calc_points(1, i)
@@ -210,7 +210,7 @@
            eint_y(i) = eint_cart1(2) + eint_cart2(2)
            eint_z(i) = eint_cart1(3) + eint_cart2(3)
         end do
-      
+
         return
         end
 
@@ -323,7 +323,7 @@
         ! initialize
         data ci/(0.d0, 1.d0)/
         esph_out = (/ 0., 0., 0. /)
-        
+
         ! special function calls
         call pisandtaus(nstop, theta, pi_l, tau_l)
         call csphjy(nstop, mkr, nmx_csphjy, jl, djl, yl, dyl)
@@ -332,9 +332,9 @@
         do n = 1, nstop, 1
            pref_up = 2. * n + 1.
            pref_dn = n * (n + 1.)
-           derj = jl(n) / mkr + djl(n) 
+           derj = jl(n) / mkr + djl(n)
            ! radial
-           esph_out(1) = esph_out(1) + ci**(n-1) * pref_up * csds(2, n) * & 
+           esph_out(1) = esph_out(1) + ci**(n-1) * pref_up * csds(2, n) * &
                 st * pi_l(n) * jl(n) / mkr
            ! theta
            esph_out(2) = esph_out(2) + ci**n * pref_up / pref_dn * &
@@ -446,9 +446,9 @@
         return
         end
 
-     
+
       subroutine radial_field_mie(nstop, as, kr, theta, erad_nd)
-        ! Calculate non-dimensional radial component of the scattered 
+        ! Calculate non-dimensional radial component of the scattered
         ! Lorenz-Mie electric field. Physical E_scat,radial requires
         ! an overall prefactor of E_\parallel,inc (incident field parallel
         ! to scattering plane).
@@ -508,7 +508,7 @@
 
         ! main loop
         do n = 1, nstop, 1
-           prefactor = 2 * n + 1 
+           prefactor = 2 * n + 1
            hl = jn(n) + ci * yn(n) ! spherical hankel
            erad_nd = erad_nd + as(1, n) * prefactor * ci**(n + 1) * &
                 st * pi_n(n) * hl / kr
@@ -552,7 +552,7 @@
         st = dsin(theta)
         cp = dcos(phi)
         sp = dsin(phi)
-        
+
         acart(1) = st * cp * a_r
         acart(2) = st * sp * a_r
         acart(3) = ct * a_r
@@ -640,9 +640,9 @@
         ! Calculate logarithmic derivatives D_n(z) of the Riccati-Bessel
         ! function \psi_n(z) by downward recursion as in BHMIE.
         ! Calculate from n = 0 to n = nstop, using D_nmx = start_val as the
-        ! starting point for downward recursion.        
+        ! starting point for downward recursion.
         ! Inputs:
-        !    z: argument 
+        !    z: argument
         !    nmx: value of n from which down recursion starts
         !    nstop: maximum returned order
         !    start_val: value from which recursion begins
@@ -664,7 +664,7 @@
         Dn_out = Dn(0:nstop)
         return
         end
-      
+
 
         subroutine lentz_dn1(z, n, eps1, eps2, Dn)
           ! Calculate logarithmic derivative D_n(z) of the Riccati-Bessel
@@ -694,7 +694,7 @@
                nth_convergent, nth_product, ai, aiplus1, aiplus2, &
                xi1, xi2
           integer :: ctr
-          
+
           a1 = a_i(1)
           a2 = a_i(2)
 
@@ -733,14 +733,14 @@
 
               nth_product = numerator / denominator
               nth_convergent = nth_convergent * nth_product
-              ctr = ctr + 1    
+              ctr = ctr + 1
 
            end do
 
        Dn = nth_convergent - n / z
 
         contains
-          complex (kind = 8) function a_i(i) 
+          complex (kind = 8) function a_i(i)
             ! Calculate a_n according to Lentz eqn. 9
             ! or Wiscombe eqn. 25b. Note that Lentz's v = our n + 0.5
             ! and Lentz's n is i here.

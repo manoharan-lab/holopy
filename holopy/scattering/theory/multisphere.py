@@ -32,7 +32,6 @@ from numpy import arctan2, sin, cos
 from warnings import warn
 from scipy.integrate import dblquad
 
-from holopy.core.utils import SuppressOutput
 from holopy.core.errors import DependencyMissing
 from holopy.scattering.scatterer import Spheres,Sphere
 from holopy.scattering.errors import (
@@ -182,15 +181,18 @@ class Multisphere(ScatteringTheory):
         if (centers > 1e4).any():
             raise InvalidScatterer(scatterer, "Particle separation "
                                         "too large, calculation would take forever")
-        with SuppressOutput(suppress_output=self.suppress_fortran_output):
-            # The fortran code uses oppositely directed z axis (they
-            # have laser propagation as positive, we have it negative),
-            # so we multiply the z coordinate by -1 to correct for that.
-            _, lmax, amn0, converged = scsmfo_min.amncalc(
-                1, centers[:,0],  centers[:,1],
-                -1.0 * centers[:,2],  m.real, m.imag,
-                scatterer.r * medium_wavevec, self.niter, self.eps,
-                self.qeps1, self.qeps2,  self.meth, (0,0))
+        if self.suppress_fortran_output:
+            suppress_flag = 1
+        else:
+            suppress_flag = 0
+        # The fortran code uses oppositely directed z axis (they
+        # have laser propagation as positive, we have it negative),
+        # so we multiply the z coordinate by -1 to correct for that.
+        _, lmax, amn0, converged = scsmfo_min.amncalc(
+            1, centers[:,0],  centers[:,1],
+            -1.0 * centers[:,2],  m.real, m.imag,
+            scatterer.r * medium_wavevec, self.niter, self.eps,
+            self.qeps1, self.qeps2, self.meth, (0,0), suppress_flag)
 
         # converged == 1 if the SCSMFO iterative solver converged
         # f2py converts F77 LOGICAL to int
