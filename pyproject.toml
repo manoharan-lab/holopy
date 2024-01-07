@@ -47,3 +47,10 @@ addopts = [
 #     # ignore these warnings until schwimmbad is removed or updated
 #     'ignore:^Exception ignored in.*<function Pool:::'
 # ]
+# pytest markers replace nose attrs
+markers = [
+    "fast: mark tests as fast",
+    "medium: mark tests as medium run time",
+    "slow: mark tests as slow",
+    "dda: mark tests that use ADDA",
+]

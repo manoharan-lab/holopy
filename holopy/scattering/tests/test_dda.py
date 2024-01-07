@@ -24,9 +24,7 @@ import unittest
 
 from numpy.testing import assert_almost_equal, assert_allclose, assert_equal
 import numpy as np
-from nose.tools import with_setup
-from nose.plugins.attrib import attr
-from nose.plugins.skip import SkipTest
+import pytest
 from subprocess import CalledProcessError
 import os
 
@@ -36,15 +34,14 @@ from holopy.scattering.scatterer import (Sphere, Ellipsoid, Scatterer,
                                          JanusSphere_Uniform, Difference)
 from holopy.scattering import Mie, DDA, calc_holo as calc_holo_external
 from holopy.core import detector_grid, update_metadata
-from holopy.core.tests.common import verify, assert_obj_close
+from holopy.core.tests.common import verify
 
-# nose setup/teardown methods
+# setup/teardown methods
 def setup_optics():
     # set up optics class for use in several test functions
     global schema, wavelen, index
     wavelen = 658e-3
     polarization = [0., 1.0]
-    divergence = 0
     pixel_scale = [.1151, .1151]
     index = 1.33
     schema = detector_grid(12, spacing = pixel_scale)
@@ -54,18 +51,24 @@ def teardown_optics():
     global schema
     del schema
 
+@pytest.fixture
+def optics():
+    setup_optics()
+    yield
+    teardown_optics()
 
 class TestDDA(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_can_handle_class_method(self):
         self.assertTrue(DDA.can_handle(Sphere()))
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_cannot_handle_things_that_are_not_scatterers(self):
         not_a_scatterer = 'not_a_scatterer'
         self.assertFalse(DDA.can_handle(not_a_scatterer))
 
-    @attr('fast', 'dda')
+    @pytest.mark.fast
+    @pytest.mark.dda
     def test_theory_from_parameters(self):
         np.random.seed(1332)
         kwargs = {
@@ -81,7 +84,7 @@ class TestDDA(unittest.TestCase):
         try:
             theory_in = DDA(**kwargs)
         except DependencyMissing:
-            raise SkipTest("Requires ADDA")
+            pytest.skip("Requires ADDA")
         pars = {}
         theory_out = theory_in.from_parameters(pars)
 
@@ -95,12 +98,12 @@ def calc_holo(schema, scatterer, medium_index=None, illum_wavelen=None,
         return calc_holo_external(
                     schema, scatterer, medium_index, illum_wavelen, **kwargs)
     except DependencyMissing:
-        raise SkipTest("Requires ADDA")
+        pytest.skip("Requires ADDA")
 
 
-@attr('medium', "dda")
-@with_setup(setup=setup_optics, teardown=teardown_optics)
-def test_DDA_sphere():
+@pytest.mark.medium
+@pytest.mark.dda
+def test_DDA_sphere(optics):
     sc = Sphere(n=1.59, r=3e-1, center=(0, 0, 0))
     sc = sc.translated(1, -1, 30)
     mie_holo = calc_holo(schema, sc, index, wavelen)
@@ -108,22 +111,22 @@ def test_DDA_sphere():
     assert_allclose(mie_holo, dda_holo, rtol=.0015)
 
 
-@with_setup(setup=setup_optics, teardown=teardown_optics)
-@attr('slow', 'dda')
-def test_dda_2_cpu():
+@pytest.mark.slow
+@pytest.mark.dda
+def test_dda_2_cpu(optics):
     if os.name == 'nt': # windows
-        raise SkipTest("Requires ADDA")
+        pytest.skip("Requires ADDA")
     sc = Sphere(n=1.59, r=3e-1, center=(1, -1, 30))
     mie_holo = calc_holo(schema, sc, index, wavelen)
     try:
         dda_n2 = DDA(n_cpu=2)
     except DependencyMissing:
-        raise SkipTest("Requires ADDA")
+        pytest.skip("Requires ADDA")
     try:
         dda_holo = calc_holo(schema, sc, index, wavelen, theory=dda_n2)
     except CalledProcessError:
         # DDA only compiled for serial calculations
-        raise SkipTest("DDA not compiled for parallel calculations")
+        pytest.skip("DDA not compiled for parallel calculations")
     # TODO: figure out how to actually test that it runs on multiple cpus
 
 def in_sphere(r):
@@ -132,10 +135,9 @@ def in_sphere(r):
         return (point**2).sum() < rsq
     return test
 
-
-@attr('medium', 'dda')
-@with_setup(setup=setup_optics, teardown=teardown_optics)
-def test_DDA_indicator():
+@pytest.mark.medium
+@pytest.mark.dda
+def test_DDA_indicator(optics):
     n = 1.59
     center = (1, 1, 30)
     r = .3
@@ -145,10 +147,9 @@ def test_DDA_indicator():
     gen_holo = calc_holo(schema, s, index, wavelen, theory=DDA)
     assert_allclose(sphere_holo, gen_holo, rtol=2e-3)
 
-
-@attr('fast', 'dda')
-@with_setup(setup=setup_optics, teardown=teardown_optics)
-def test_voxelated_complex():
+@pytest.mark.fast
+@pytest.mark.dda
+def test_voxelated_complex(optics):
     s = Sphere(n = 1.2+2j, r = .2, center = (5,5,5))
     sv = Scatterer(s.indicators, s.n, s.center)
     schema = detector_grid(10, .1)
@@ -157,9 +158,9 @@ def test_voxelated_complex():
     verify(holo_dda, 'dda_voxelated_complex', rtol=1e-5)
 
 
-@attr('medium', 'dda')
-@with_setup(setup=setup_optics, teardown=teardown_optics)
-def test_DDA_coated():
+@pytest.mark.medium
+@pytest.mark.dda
+def test_DDA_coated(optics):
     cs = Sphere(
         center=[7.141442573813124, 7.160766866147957, 11.095409800342143],
         n=[(1.27121212428+0j), (1.49+0j)], r=[.1-0.0055, 0.1])
@@ -167,10 +168,9 @@ def test_DDA_coated():
     dda_holo = calc_holo(schema, cs, index, wavelen, theory=DDA)
     assert_allclose(lmie_holo, dda_holo, rtol = 5e-4)
 
-
-@with_setup(setup=setup_optics, teardown=teardown_optics)
-@attr('medium', 'dda')
-def test_Ellipsoid_dda():
+@pytest.mark.medium
+@pytest.mark.dda
+def test_Ellipsoid_dda(optics):
     e = Ellipsoid(1.5, r = (.5, .1, .1), center = (1, -1, 10))
     schema = detector_grid(10, .1)
     try:
@@ -183,10 +183,11 @@ def test_Ellipsoid_dda():
         assert_equal(cmd, cmdlist)
         verify(h, 'ellipsoid_dda', rtol=3e-4, atol=3e-4)
     except DependencyMissing:
-        raise SkipTest("Requires ADDA")
+        pytest.skip("Requires ADDA")
 
 
-@attr('slow', 'dda')
+@pytest.mark.slow
+@pytest.mark.dda
 def test_predefined_scatterers():
     # note this tests only that the code runs, not that it is correct
     try:
@@ -201,10 +202,10 @@ def test_predefined_scatterers():
             calc_holo(detector, s, illum_wavelen=.66, medium_index=1.33,
                 illum_polarization = (1,0), theory=DDA(use_indicators=False))
     except DependencyMissing:
-        raise SkipTest("Requires ADDA")
+        pytest.skip("Requires ADDA")
 
 
-@attr('dda')
+@pytest.mark.dda
 def test_janus():
     schema = detector_grid(10, .1)
     s = JanusSphere_Uniform(n = [1.34, 2.0], r = [.5, .51],
@@ -214,8 +215,8 @@ def test_janus():
                      illum_polarization=(1, 0))
     verify(holo, 'janus_dda')
 
-
-@attr('dda')
+@pytest.mark.skip(reason="test needs to be updated for recent version of ADDA")
+@pytest.mark.dda
 def test_csg_dda():
     s = Sphere(n = 1.6, r=.1, center=(5, 5, 5))
     st = s.translated(.03, 0, 0)
