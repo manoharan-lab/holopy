@@ -34,6 +34,8 @@ dependencies:
   - ipython
   - seaborn
   - sphinx_rtd_theme
+  # installs compilers on linux and OSX
+  # - compilers
   # for amd64 platforms only; won't be found for aarch64
   # - mkl-service
   # uncomment to install compilers on windows

@@ -31,17 +31,19 @@ addopts = [
 ]
 # filterwarnings replicates setup previously used by nose. Warnings are treated
 # as errors except for those specified under "ignore"
-filterwarnings = [
-    "error",
-    # use this regex to catch the PerformanceWarning from lens model when
-    # numexpr is not installed
-    'ignore:\bnumexpr\b:::',
-    "ignore::FutureWarning",
-    # ignore these warnings until nose is removed
-    'ignore:^pkg_resources:::',
-    'ignore:^Deprecated call to `pkg_resources:::',
-    'ignore:^the imp module is deprecated in favour of importlib:::',
-    'ignore:^Support for nose tests is deprecated:::',
-    # ignore these warnings until schwimmbad is removed or updated
-    'ignore:^Exception ignored in.*<function Pool:::'
-]
+# Commented out for now until migration to pytest is complete (pytest reports
+#  all warnings when run from command line)
+# filterwarnings = [
+#     "error",
+#     # use this regex to catch the PerformanceWarning from lens model when
+#     # numexpr is not installed
+#     'ignore:\bnumexpr\b:::',
+#     "ignore::FutureWarning",
+#     # ignore these warnings until nose is removed
+#     'ignore:^pkg_resources:::',
+#     'ignore:^Deprecated call to `pkg_resources:::',
+#     'ignore:^the imp module is deprecated in favour of importlib:::',
+#     'ignore:^Support for nose tests is deprecated:::',
+#     # ignore these warnings until schwimmbad is removed or updated
+#     'ignore:^Exception ignored in.*<function Pool:::'
+# ]

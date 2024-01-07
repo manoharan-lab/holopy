@@ -42,7 +42,7 @@ py.extension_module('uts_scsmfo',
    c_args: numpy_nodepr_api,
    include_directories: inc_np,
    install: true,
-   dependencies: py_dep,
+   dependencies: [py_dep, quadmath_dep],
    subdir: 'holopy/scattering/theory/mie_f'
 )
 
@@ -67,7 +67,7 @@ py.extension_module('mieangfuncs',
    c_args: numpy_nodepr_api,
    include_directories: inc_np,
    install: true,
-   dependencies: py_dep,
+   dependencies: [py_dep, quadmath_dep],
    subdir: 'holopy/scattering/theory/mie_f'
 )
 
@@ -86,7 +86,7 @@ py.extension_module('scsmfo_min',
   c_args: numpy_nodepr_api,
   include_directories: inc_np,
   install: true,
-  dependencies: py_dep,
+  dependencies: [py_dep, quadmath_dep],
   subdir: 'holopy/scattering/theory/mie_f'
 )
 

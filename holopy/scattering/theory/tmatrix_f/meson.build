@@ -15,7 +15,7 @@ py.extension_module('S',
   c_args: numpy_nodepr_api,
   include_directories: inc_np,
   install: true,
-  dependencies : py_dep,
+  dependencies: [py_dep, quadmath_dep],
   subdir: 'holopy/scattering/theory/tmatrix_f'
 )
 

@@ -17,7 +17,7 @@ version to support python>3.12
 '''
 
 # It seems to be common to add fortran in this way rather than in the
-# project statement -- might avoid some warnings.
+# project statement -- avoids some warnings.
 add_languages('fortran', native: false)
 
 # (below is from scipy meson.build)
@@ -33,6 +33,9 @@ numpy_nodepr_api = '-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'
 
 py = import('python').find_installation(pure: false)
 py_dep = py.dependency()
+
+# quadmath library is required to compile fortran scattering extensions
+quadmath_dep = meson.get_compiler('fortran').find_library('quadmath')
 
 # Unlike numpy.distutils, meson doesn't run f2py automatically to
 # compile the fortran extensions. So we need to tell meson how to find
