@@ -43,9 +43,12 @@ dependencies:
   - meson
   - meson-python
 
-  # for running tests
+  # for running tests: "cov" is coverage plugin, "xdist" is to run pytest in
+  # parallel
   - nose
   - pytest
+  - pytest-cov
+  - pytest-xdist
 
   # optional packages to make development easier in (e.g.) emacs
   - pyright
