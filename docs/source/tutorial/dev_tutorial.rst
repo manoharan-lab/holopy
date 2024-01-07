@@ -5,7 +5,7 @@ Developer's Guide
 
 .. _dev_install:
 
-Installing HoloPy for Developers
+Installing HoloPy for developers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 If you are going to hack on holopy, you probably want to compile the
 scattering extensions.
@@ -24,19 +24,21 @@ Then activate the new environment::
 For Windows, if you don't already have Fortran and C compilers installed, you
 can edit the environment file to install the ``m2w64-toolchain`` package.
 
-Let's say you downloaded or cloned HoloPy to
-``/home/me/holopy``. Then open a terminal, ``cd`` to ``/home/me/holopy`` and run::
+Now you can build and install the package. Let's say you downloaded or cloned
+HoloPy to ``/home/me/holopy``. Then open a terminal, ``cd`` to
+``/home/me/holopy`` and run::
 
   python -m pip install --no-build-isolation --editable .
 
-This will build the package and scattering extensions, and install a stub in
-your current environment that loads the package from the build directory. If you
-change the code and re-import holopy, it will be automatically rebuilt by meson.
+This will build the package and scattering extensions, and it will install a
+stub in your current environment that loads the package from the build
+directory. If you change the code and re-import holopy, it will be automatically
+rebuilt by meson.
 
 **Note for Mac users:**
 gfortran may put its library in a place python can't find it. If you get errors
 including something like ``can't find /usr/local/libgfortran.3.dynlib`` you can
-symlink them in from your install. You can do this by running::
+add symlinks to fix them::
 
   sudo ln -s /usr/local/gfortran/lib/libgfortran.3.dynlib /usr/local/lib
   sudo ln -s /usr/local/gfortran/lib/libquadmath.3.dynlib /usr/local/lib
@@ -46,14 +48,31 @@ The above build instructions *should* work with Windows, but if not, you can try
 the following, which should work on Windows 10 with an AMD64 architecture
 (64-bit) processor.
 
-1. Install `Anaconda <https://www.continuum.io/downloads>`_ with Python 3.6 and make sure it is working.
-2. Install the C compiler. It's included in `Visual Studio 2015 Community <https://www.visualstudio.com/downloads/>`_. Make sure it is working with a C helloworld.
-3. From now on, make sure any command prompt window invokes the right environment conditions for compiling with VC. To do this, make sure ``C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat`` is added to the system path variable. This batch detects your architecture, then runs another batch that sets the path include the directory with the correct version of the VC compiler.
+1. Install `Anaconda <https://www.continuum.io/downloads>`_ with Python 3.6 and
+   make sure it is working.
+2. Install the C compiler. It's included in `Visual Studio 2015 Community
+   <https://www.visualstudio.com/downloads/>`_. Make sure it is working with a C
+   helloworld.
+3. From now on, make sure any command prompt window invokes the right
+   environment conditions for compiling with VC. To do this, make sure
+   ``C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat`` is
+   added to the system path variable. This batch detects your architecture, then
+   runs another batch that sets the path include the directory with the correct
+   version of the VC compiler.
 4. Install cython and made sure it works.
-5. Install `Intel's Fortran compiler <https://software.intel.com/en-us/fortran-compilers/try-buy>`_. A good place to start is the trial version of Parallel Studio XE. Make sure it is working with a Fortran helloworld.
-6. Install `mingw32-make <https://sourceforge.net/projects/mingw/files/MinGW/Extension/make/>`_, which does not come with Anaconda by default.
-7. Download or clone the master branch of HoloPy from `https://github.com/manoharan-lab/holopy <https://github.com/manoharan-lab/holopy>`_.
-8. Open the command prompt included in Intel's Parallel Studio. Run ``holopy/setup.py``. It is necessay to use Intel's Parallel Studio command prompt to avoid compiling errors.
+5. Install `Intel's Fortran compiler
+   <https://software.intel.com/en-us/fortran-compilers/try-buy>`_. A good place
+   to start is the trial version of Parallel Studio XE. Make sure it is working
+   with a Fortran helloworld.
+6. Install `mingw32-make
+   <https://sourceforge.net/projects/mingw/files/MinGW/Extension/make/>`_, which
+   does not come with Anaconda by default.
+7. Download or clone the master branch of HoloPy from
+   `https://github.com/manoharan-lab/holopy
+   <https://github.com/manoharan-lab/holopy>`_.
+8. Open the command prompt included in Intel's Parallel Studio. Run
+   ``holopy/setup.py``. It is necessay to use Intel's Parallel Studio command
+   prompt to avoid compiling errors.
 9. Install the following dependencies that don't come with Anaconda::
 
         conda install xarray dask netCDF4 bottleneck
@@ -61,11 +80,13 @@ the following, which should work on Windows 10 with an AMD64 architecture
 
 10. Open an iPython console where holopy is installed and try ``import holopy``.
 
-If the above procedure doesn't work, or you find something else that does, please `let us know <https://github.com/manoharan-lab/holopy/issues>`_ so that we can improve these instructions.
+If the above procedure doesn't work, or you find something else that does,
+please `let us know <https://github.com/manoharan-lab/holopy/issues>`_ so that
+we can improve these instructions.
 
 ..  _xarray:
 
-How HoloPy Stores Data
+How HoloPy stores data
 ~~~~~~~~~~~~~~~~~~~~~~
 Images in HoloPy are stored in the format of xarray `DataArrays
 <http://xarray.pydata.org/en/stable/data-structures.html#dataarray>`_. Spatial
@@ -181,10 +202,10 @@ in :class:`~holopy.inference.noise_model.NoiseModel`.
 
 Running tests
 ~~~~~~~~~~~~~
-HoloPy comes with a suite of tests that ensure everything has been
-built correctly and that it's able to perform all of the calculations
-it is designed to do.  To run these tests, navigate to the root of the
-package (e.g. ``/home/me/holopy``) and run:
+HoloPy comes with a suite of tests that ensure everything has been built
+correctly and that it can perform all of the calculations it is designed to do.
+To run these tests, navigate to the root of the package (e.g.,
+``/home/me/holopy``) and run
 
 .. sourcecode:: bash
 
@@ -194,6 +215,9 @@ Note that you can download the full test holograms by installing ``git lfs`` and
 doing::
 
   git lfs pull
+
+You don't need to do this, but it can be helpful to inspect differences between
+the test calculations and the expected holograms if the tests fail.
 
 Notes on the build system
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -207,8 +231,8 @@ HoloPy will work properly.
 
 1. Note that all meson builds are done "out of tree". That means compiled
 extensions are not installed into the same directory as their sources.
-Note that holopy has several extensions that must be installed in a # way that
-makes it possible to do (for example)::
+Note that holopy has several extensions that must be installed in a way that
+makes it possible to do (for example)
 
 .. sourcecode:: python
 
@@ -216,28 +240,29 @@ makes it possible to do (for example)::
 
 To enable this functionality, we need to tell meson to copy the extensions to
 the appropriate point in the installation tree, *and* to copy the python files
-too. In the subdirectories, you'll see meson.build files that call
+too. In the subdirectories, you'll see ``meson.build`` files that call
 ``install_sources()``, which installs the .py files of holopy, and that call
-``extension_module(subdir=...)`` which tells meson where to install the fortran
-extensions. All files have to be specified, so if you add a python file
-somewhere, you need to update the relevant meson.build file to include it in the
-installation. This is how scipy uses meson. Having to specify all the files is a
-big switch from how ``numpy.distutils`` does things, but it is supposed to make
-the build process more efficient.
+``extension_module(subdir=...)``, which tells meson where to install the
+compiled scattering extensions. All files have to be specified, so if you add a
+Python file somewhere, you need to update the relevant ``meson.build`` file to
+include it in the installation. Having to specify all the files is a big change
+from how we did things with ``numpy.distutils``, but it's supposed to make the
+build process more efficient.
 
 Currently we do not add the test files or the example data to the installation,
 because we'd need to specify a lot of files, and it would add an extra step to
 writing new tests.
 
 2. Unlike ``numpy.distutils``, meson doesn't run f2py automatically to
-compile the scattering extensions. There is some logic in the ``meson.build``
+compile the scattering extensions. There is some code in the ``meson.build``
 file in the ``mie_f`` directory that will automatically run f2py to generate the
 C and Fortran wrappers for the scattering extensions. Have a look at this file
-if you are adding a new Fortran extension.
+if you're adding a new Fortran extension.
 
 
 **Gotchas**
-- If you open a Python interpreter or Jupyter notebook in the root of the
+
+* If you open a Python interpreter or Jupyter notebook in the root of the
   repository, remember that Python will see the subdirectory ``holopy`` as a
   package. So even if you haven't built the package with meson, ``import
   holopy`` might work, and will probably give you a lot of unexpected results
@@ -245,21 +270,19 @@ if you are adding a new Fortran extension.
   not happen in the source tree. To check whether you have actually built and
   installed the package, try to import it from a directory that
   does not have the ``holopy`` source tree as a subdirectory.
-- To run the tests, however, you *do* need your current working directory to be
+* To run the tests, however, you *do* need your current working directory to be
   inside the source tree. This is because the tests are not installed with the
   package.
-- All python files that include tests that use multiprocessing *must* be added
+* All python files that include tests that use multiprocessing *must* be added
   to ``install_sources()`` in the relevant ``meson.build`` file. This is because
   the multiprocessing module needs to do some pickling, and it tries to import
   the test file as a module. This is the exception to the rule that we do not
   include test files in the installation. If you don't install the file
-  containing the tests, you might see that `pytest` hangs on the test. Doing
-  `pytest -s` is a good way to debug any hanging tests. It runs pytest, but it
+  containing the tests, you might see that ``pytest`` hangs on the test. Doing
+  ``pytest -s`` is a good way to debug any hanging tests. It runs pytest, but it
   shows all the output (stdout and stderr) from the code. If you see a
   ``ModuleNotFoundError`` from the ``multiprocessing`` package, you need to
   include your test file in the installation. So, for example, we have to
   include ``/holopy/inference/tests/test_cma.py`` in
   ``/holopy/inference/tests/meson.build`` because it relies on the ``cmaes``
   module, which uses ``multiprocessing``.
-
-.. _nose_tests:
