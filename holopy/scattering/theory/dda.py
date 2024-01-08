@@ -21,21 +21,20 @@ ADDA (https://github.com/adda-team/adda) to do DDA calculations.
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 
-#TODO: Adda currently fails if you call it with things specified in meters
-#(values are too small), so we should probably nondimensionalize before talking
-#to adda.
+# TODO: Adda currently fails if you call it with things specified in meters
+# (values are too small), so we should probably nondimensionalize before
+# talking to adda.
 
 import subprocess
 import tempfile
 import glob
 import os
 import shutil
-import time
 import warnings
 
 import numpy as np
 
-from holopy.core.utils import ensure_array, SuppressOutput
+from holopy.core.utils import ensure_array
 from holopy.scattering.scatterer import (
     Ellipsoid, Capsule, Cylinder, Bisphere, Sphere, Scatterer, Spheroid)
 from holopy.core.errors import DependencyMissing
@@ -82,8 +81,11 @@ class DDA(ScatteringTheory):
 
         # Check that adda is present and able to run
         try:
-            with SuppressOutput(suppress_output=suppress_C_output):
-                subprocess.check_call(['adda', '-V'])
+            # capture_output tells run() to capture stdout and stderr and
+            # return them or put them in a CalledProcessError exception. Here
+            # we're just using this option to suppress the output.
+            subprocess.run(['adda', '-V'], capture_output=suppress_C_output,
+                           check=True)
         except (subprocess.CalledProcessError, OSError):
             raise DependencyMissing('adda', "adda is not included with HoloPy "
                 "and must be installed separately. You should be able to run "
@@ -125,12 +127,18 @@ class DDA(ScatteringTheory):
         predefined = isinstance(scatterer, tuple(_get_predefined_shape.keys()))
         layered=isinstance(scatterer, Sphere) and not np.isscalar(scatterer.r)
         if not predefined or self.use_indicators or layered:
-            scat_args = self._adda_discretized(scatterer, medium_wavelen, medium_index, temp_dir)
+            scat_args = self._adda_discretized(scatterer, medium_wavelen,
+                                               medium_index, temp_dir)
         else:
-            scat_args = self._adda_predefined(scatterer, medium_wavelen, medium_index, temp_dir)
+            scat_args = self._adda_predefined(scatterer, medium_wavelen,
+                                              medium_index, temp_dir)
         cmd.extend(scat_args)
-        with SuppressOutput(suppress_output=self.suppress_C_output):
-            subprocess.check_call(cmd, cwd=temp_dir)
+        adda_out = subprocess.run(cmd, cwd=temp_dir, check=True,
+                                  capture_output=self.suppress_C_output)
+
+        # adda_out is a subprocess.CompletedProcess object that contains the
+        # output of ADDA; could be used for diagnostics
+        return adda_out
 
     # TODO: figure out why our discretization gives a different result
     # and fix so that we can use that and eliminate this.

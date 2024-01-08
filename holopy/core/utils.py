@@ -41,41 +41,6 @@ except ModuleNotFoundError:
 from holopy.core.errors import DependencyMissing
 from holopy.core.holopy_object import HoloPyObject
 
-
-# FIXME this is difficult to test, since it works on the file level
-# perhaps make this capture the output rather than writing it to devnull?
-class SuppressOutput():
-    def __init__(self, suppress_output=True):
-        self.suppress_output = suppress_output
-        try:
-            self.std_out = sys.stdout.fileno()
-        except io.UnsupportedOperation:
-            self.stdout_behaves_normally = False  # ie running on travis
-            self.std_out = 1
-        else:
-            self.stdout_behaves_normally = True
-
-    def _redirect_stdout(self, destination_fileno):
-        if self.stdout_behaves_normally:
-            sys.stdout.close()
-        os.dup2(destination_fileno, self.std_out)
-        if self.stdout_behaves_normally:
-            sys.stdout = io.TextIOWrapper(os.fdopen(self.std_out, 'wb'))
-
-    def __enter__(self):
-        if self.suppress_output:
-            # store default (current) stdout
-            self.default_stdout = os.dup(self.std_out)
-            self.devnull = os.open(os.devnull, os.O_WRONLY)
-            self._redirect_stdout(self.devnull)
-
-    def __exit__(self, *args):
-        if self.suppress_output:
-            self._redirect_stdout(self.default_stdout)
-            os.close(self.devnull)
-            os.close(self.default_stdout)
-
-
 def ensure_array(x):
     '''
     if x is None, returns None. Otherwise, gives x in a form so that each of:
