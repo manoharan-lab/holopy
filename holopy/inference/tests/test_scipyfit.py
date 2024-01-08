@@ -2,11 +2,11 @@ import unittest
 import warnings
 
 import numpy as np
-from nose.plugins.attrib import attr
+
+import pytest
 
 import holopy
 from holopy.scattering import Sphere, Mie, calc_holo
-from holopy.core.process import normalize
 from holopy.inference import (
     AlphaModel, LeastSquaresScipyStrategy, NmpfitStrategy)
 from holopy.inference import prior
@@ -17,7 +17,7 @@ CORRECT_ALPHA = 0.7
 
 
 class TestLeastSquaresScipyStrategy(unittest.TestCase):
-    @attr("slow")
+    @pytest.mark.slow
     def test_fit_complete_model_on_complete_data(self):
         data = make_fake_data()
         model = make_model()
@@ -36,7 +36,7 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
             np.isclose(result.parameters['alpha'], CORRECT_ALPHA, rtol=0.1))
         self.assertEqual(model, result.model)
 
-    @attr('medium')
+    @pytest.mark.medium
     def test_fit_random_subset(self):
         data = make_fake_data()
         model = make_model()
@@ -56,7 +56,7 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
             np.isclose(result.parameters['alpha'], CORRECT_ALPHA, rtol=0.1))
         self.assertEqual(model, result.model)
 
-    @attr('slow')
+    @pytest.mark.slow
     def test_fitted_parameters_similar_to_nmpfit(self):
         data = make_fake_data()
         model = make_model()
@@ -77,7 +77,7 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
                 params_nmp[key],
                 places=4)
 
-    @attr('slow')
+    @pytest.mark.slow
     def test_fitted_uncertainties_scale_with_number_of_points(self):
         data = make_fake_data()
         model = make_model()
@@ -99,7 +99,7 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
                     3 * uncertainties_900[key],
                     rtol=0.3, atol=0))
 
-    @attr('medium')
+    @pytest.mark.medium
     def test_1_sigma_uncertainty_increases_logpost_by_half(self):
         data = make_fake_data()
         model = make_1_parameter_model()
@@ -115,8 +115,8 @@ class TestLeastSquaresScipyStrategy(unittest.TestCase):
         delta_loglikelihood = loglikelihood_best - loglikelihood_1sig
         self.assertAlmostEqual(delta_loglikelihood, 0.5, places=2)
 
-    @attr('medium')
-    @unittest.skip('Nmpfit does not unscale uncertainties')  # expectedFailure
+    @pytest.mark.medium
+    @pytest.mark.xfail(reason="Nmpfit does not unscale uncertainties")
     def test_fitted_uncertainties_similar_to_nmpfit(self):
         data = make_fake_data()
         model = make_model()

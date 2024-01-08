@@ -21,8 +21,6 @@ import numpy as np
 from holopy.inference import prior
 from holopy.inference.model import Model
 from holopy.inference.result import SamplingResult
-from holopy.inference.emcee import EmceeStrategy
-from holopy.scattering import Sphere
 
 class SimpleModel(Model):
     def __init__(self, npars=2, noise_sd=1):

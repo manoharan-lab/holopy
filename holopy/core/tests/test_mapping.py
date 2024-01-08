@@ -22,7 +22,7 @@ import unittest
 import numpy as np
 import xarray as xr
 
-from nose.plugins.attrib import attr
+import pytest
 
 from holopy.scattering import Sphere, Spheres
 from holopy.core import prior
@@ -31,7 +31,7 @@ from holopy.core.mapping import (Mapper, transformed_prior,
 
 
 class TestParameterMapping(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_map_value(self):
         mapper = Mapper()
         parameter = 14
@@ -39,7 +39,7 @@ class TestParameterMapping(unittest.TestCase):
         expected = parameter
         self.assertEqual(parameter_map, expected)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_map_prior(self):
         mapper = Mapper()
         parameter = prior.Uniform(0, 1)
@@ -48,7 +48,7 @@ class TestParameterMapping(unittest.TestCase):
         expected = '_parameter_{}'.format(position)
         self.assertEqual(parameter_map, expected)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_mapping_adds_to_mapper(self):
         mapper = Mapper()
         parameter = prior.Uniform(0, 1)
@@ -56,7 +56,7 @@ class TestParameterMapping(unittest.TestCase):
         self.assertEqual(mapper.parameters[-1], parameter)
         self.assertEqual(mapper.parameter_names[-1], "new name")
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_map_list(self):
         mapper = Mapper()
         parameter = [0, prior.Uniform(0, 1), prior.Uniform(2, 3)]
@@ -66,7 +66,7 @@ class TestParameterMapping(unittest.TestCase):
                     "_parameter_{}".format(position + 1)]
         self.assertEqual(parameter_map, expected)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_list_compound_name(self):
         mapper = Mapper()
         parameter = [0, prior.Uniform(0, 1), prior.Uniform(2, 3)]
@@ -74,7 +74,7 @@ class TestParameterMapping(unittest.TestCase):
         self.assertEqual(mapper.parameter_names[-2], 'prefix.1')
         self.assertEqual(mapper.parameter_names[-1], 'prefix.2')
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_map_dictionary(self):
         mapper = Mapper()
         parameter = {'a': 0, 'b': 1, 'c': prior.Uniform(0, 1)}
@@ -84,7 +84,7 @@ class TestParameterMapping(unittest.TestCase):
         expected = [dict, [[['a', 0], ['b', 1], ['c', expected_placeholder]]]]
         self.assertEqual(parameter_map, expected)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_map_dictionary_ignores_none(self):
         mapper = Mapper()
         parameter = {'a': 0, 'b': 1, 'c': None}
@@ -92,14 +92,14 @@ class TestParameterMapping(unittest.TestCase):
         expected = [dict, [[['a', 0], ['b', 1]]]]
         self.assertEqual(parameter_map, expected)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_dict_compound_name(self):
         mapper = Mapper()
         parameter = {'a': 0, 'b': 1, 'c': prior.Uniform(0, 1)}
         mapper.convert_to_map(parameter, 'prefix')
         self.assertEqual(mapper.parameter_names[-1], 'prefix.c')
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_map_xarray(self):
         mapper = Mapper()
         parameter = xr.DataArray(np.zeros((3, 3)),
@@ -111,7 +111,7 @@ class TestParameterMapping(unittest.TestCase):
                                   [expected_1D, expected_1D, expected_1D]]]
         self.assertEqual(parameter_map, expected)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_xarray_compound_name(self):
         mapper = Mapper()
         parameter = xr.DataArray(np.zeros((3, 3)),
@@ -121,7 +121,7 @@ class TestParameterMapping(unittest.TestCase):
         mapper.convert_to_map(parameter, 'prefix')
         self.assertEqual(mapper.parameter_names[-1], 'prefix.30.c')
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_map_complex(self):
         mapper = Mapper()
         parameter = prior.ComplexPrior(1, prior.Uniform(2, 3))
@@ -131,7 +131,7 @@ class TestParameterMapping(unittest.TestCase):
         expected = [transformed_prior, [complex, [1, placeholder]]]
         self.assertEqual(parameter_map, expected)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_complex_compound_name(self):
         mapper = Mapper()
         parameter = prior.ComplexPrior(prior.Uniform(0, 1),
@@ -140,7 +140,7 @@ class TestParameterMapping(unittest.TestCase):
         self.assertEqual(mapper.parameter_names[-2], 'prefix.real')
         self.assertEqual(mapper.parameter_names[-1], 'prefix.imag')
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_map_transformed_prior(self):
         mapper = Mapper()
         transformed = prior.TransformedPrior(np.sqrt, prior.Uniform(0, 2),
@@ -151,7 +151,7 @@ class TestParameterMapping(unittest.TestCase):
         expected = [transformed_prior, [np.sqrt, [placeholder]]]
         self.assertEqual(parameter_map, expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_map_transformed_prior_names(self):
         mapper = Mapper()
         base_prior = [prior.Uniform(0, 2, name='first'), prior.Uniform(1, 2)]
@@ -159,7 +159,7 @@ class TestParameterMapping(unittest.TestCase):
         parameter_map = mapper.convert_to_map(transformed)
         self.assertEqual(mapper.parameter_names[-2:], ['first', 'trans.1'])
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_named_transformed_prior(self):
         mapper = Mapper()
         base_prior = [prior.Uniform(0, 2, name='first'), prior.Uniform(1, 2)]
@@ -168,7 +168,7 @@ class TestParameterMapping(unittest.TestCase):
         parameter_map = mapper.convert_to_map(transform)
         self.assertEqual(mapper.parameter_names[-2:], ['first', 'real.1'])
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_map_hierarchical_transformed_prior(self):
         mapper = Mapper()
         inner = prior.TransformedPrior(np.sqrt, prior.Uniform(0, 2))
@@ -180,7 +180,7 @@ class TestParameterMapping(unittest.TestCase):
         expected = [transformed_prior, [np.maximum, [submap, placeholder[1]]]]
         self.assertEqual(parameter_map, expected)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_map_composite_object(self):
         mapper = Mapper()
         parameter = [prior.ComplexPrior(0, 1), {'a': 2, 'b': [4, 5]}, 6]
@@ -191,27 +191,27 @@ class TestParameterMapping(unittest.TestCase):
 
 
 class TestUnmapping(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_read_func_map(self):
         parameter_map = [dict, [[['a', 0], ['b', 1], ['c', 2]]]]
         expected = {'a': 0, 'b': 1, 'c': 2}
         self.assertEqual(read_map(parameter_map, []), expected)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_read_placeholder_map(self):
         parameter_map = [0, 1, "_parameter_2"]
         placeholders = [3, 4, 5]
         expected = [0, 1, 5]
         self.assertEqual(read_map(parameter_map, placeholders), expected)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_read_complex_map_values(self):
         parameter_map = [transformed_prior, [complex, ['_parameter_0',
                                                        '_parameter_1']]]
         values = [0, 1]
         self.assertEqual(read_map(parameter_map, values), complex(0, 1))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_read_complex_map_priors(self):
         parameter_map = [transformed_prior, [complex, ['_parameter_0',
                                                        '_parameter_1']]]
@@ -219,20 +219,20 @@ class TestUnmapping(unittest.TestCase):
         expected = prior.TransformedPrior(complex, [priors[0], priors[1]])
         self.assertEqual(read_map(parameter_map, priors), expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_read_transformed_prior_map_values(self):
         parameter_map = [transformed_prior, [np.sqrt, ['_parameter_0']]]
         values = [4]
         self.assertEqual(read_map(parameter_map, values), 2)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_read_transformed_prior_map_priors(self):
         parameter_map = [transformed_prior, [np.sqrt, ['_parameter_0']]]
         priors = [prior.Uniform(0, 1)]
         expected = prior.TransformedPrior(np.sqrt, priors)
         self.assertEqual(read_map(parameter_map, priors), expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_read_hierarchical_transformed(self):
         inner_map = [transformed_prior, [np.sqrt, ['_parameter_0']]]
         parameter_map = [transformed_prior, [np.maximum, ['_parameter_1',
@@ -246,7 +246,7 @@ class TestUnmapping(unittest.TestCase):
         self.assertEqual(read_map(inner_map, values), 5)
         self.assertEqual(read_map(parameter_map, values), 7)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_read_composite_map(self):
         n_map = [
             dict,
@@ -264,7 +264,7 @@ class TestUnmapping(unittest.TestCase):
         expected = {'r': [0.5, 0.7], 'n': n_expected, 'center': [10, 20, 30]}
         self.assertEqual(read_map(parameter_map, placeholders), expected)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_make_xarray_1D(self):
         values = [1, 2, 3, 4, 5]
         coords = [10, 20, 30, 40, 50]
@@ -273,7 +273,7 @@ class TestUnmapping(unittest.TestCase):
         expected = xr.DataArray(values, coords=[coords], dims=[dims])
         xr.testing.assert_equal(constructed, expected)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_make_xarray_slices(self):
         shared_coords = [['a', 'b', 'c'], [10, 20, 30]]
         shared_dims = ['letters', 'tens']
@@ -287,7 +287,7 @@ class TestUnmapping(unittest.TestCase):
 
 
 class TestParameterTying(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_parameters_list(self):
         tied = prior.Uniform(0, 1)
         scatterer = Sphere(n=tied, r=prior.Uniform(0.5, 1.5),
@@ -299,7 +299,7 @@ class TestParameterTying(unittest.TestCase):
                     prior.Uniform(0, 10)]
         self.assertEqual(mapper.parameters, expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_parameters_names(self):
         tied = prior.Uniform(0, 1)
         scatterer = Sphere(n=tied, r=prior.Uniform(0.5, 1.5),
@@ -309,7 +309,7 @@ class TestParameterTying(unittest.TestCase):
         expected = ['n', 'r', 'center.2']
         self.assertEqual(mapper.parameter_names, expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_parameters_map(self):
         tied = prior.Uniform(0, 1)
         scatterer = Sphere(n=tied, r=prior.Uniform(0.5, 1.5),
@@ -320,7 +320,7 @@ class TestParameterTying(unittest.TestCase):
                             ['center', ['_parameter_0', 10, '_parameter_2']]]]]
         self.assertEqual(parameter_map, expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_equal_not_identical_do_not_tie(self):
         scatterer = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
                            center=[10, 10, prior.Uniform(1, 2)])
@@ -333,7 +333,7 @@ class TestParameterTying(unittest.TestCase):
         self.assertEqual(mapper.parameters, expected_priors)
         self.assertEqual(mapper.parameter_names, expected_names)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_transformed_priors_are_tied(self):
         base_prior = prior.Uniform(0, 2, name='x')
         transformed = prior.TransformedPrior(np.sqrt, base_prior, name='y')
@@ -346,7 +346,7 @@ class TestParameterTying(unittest.TestCase):
         self.assertEqual(mapper.parameters, expected_priors)
         self.assertEqual(mapper.parameter_names, expected_names)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_tied_name(self):
         tied = prior.Uniform(0, 1)
         s0 = Sphere(n=prior.Uniform(1, 2), r=tied, center=[1, 1, 1])
@@ -356,7 +356,7 @@ class TestParameterTying(unittest.TestCase):
         expected_names = ['0:n', 'r', '1:n']
         self.assertEqual(mapper.parameter_names, expected_names)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_no_tied_name_if_not_shared_between_scatterers(self):
         s0_r = prior.Gaussian(0.5, 0.1)
         s1_r = prior.Gaussian(0.5, 0.1)
@@ -367,7 +367,7 @@ class TestParameterTying(unittest.TestCase):
         expected_names = ['0:r', '1:r']
         self.assertEqual(mapper.parameter_names, expected_names)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_prior_name(self):
         tied = prior.Uniform(-5, 5, name='xy')
         sphere = Sphere(n=prior.Uniform(1, 2, name='index'), r=0.5,
@@ -377,7 +377,7 @@ class TestParameterTying(unittest.TestCase):
         expected_names = ['index', tied.name, 'z']
         self.assertEqual(mapper.parameter_names, expected_names)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_duplicate_name(self):
         tied = prior.Uniform(-5, 5, name='dummy')
         sphere = Sphere(n=prior.Uniform(1, 2, name='dummy'), r=0.5,
@@ -387,7 +387,7 @@ class TestParameterTying(unittest.TestCase):
         expected = ['dummy', 'dummy_0', 'z']
         self.assertEqual(mapper.parameter_names, expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_triplicate_name(self):
         tied = prior.Uniform(-5, 5, name='dummy')
         sphere = Sphere(n=prior.Uniform(1, 2, name='dummy'),
@@ -398,7 +398,7 @@ class TestParameterTying(unittest.TestCase):
         expected = ['dummy', 'dummy_0', 'dummy_1', 'z']
         self.assertEqual(mapper.parameter_names, expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_ties_on_separate_convert_to_map_calls(self):
         tied = prior.Uniform(-5, 5, name='to_tie')
         parameters1 = {'tie': tied, 'dummy1': 3, 'dummy2': prior.Uniform(0, 1)}

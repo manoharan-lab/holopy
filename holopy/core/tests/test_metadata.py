@@ -1,7 +1,8 @@
 import unittest
 
 import numpy as np
-from nose.plugins.attrib import attr
+
+import pytest
 
 from holopy.core.metadata import (
     detector_grid, detector_points, clean_concat, update_metadata,
@@ -19,7 +20,7 @@ METADATA_VALUES = {
 
 
 class TestDetectorGrid(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_pads_shape_with_leading_1(self):
         spacing = 0.1
         shape = (9, 12)
@@ -27,7 +28,7 @@ class TestDetectorGrid(unittest.TestCase):
         self.assertEqual(len(detector.values.shape), 3)
         self.assertEqual(detector.values.shape[0], 1)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_returned_shape_is_correct(self):
         spacing = 0.1
         shape = (9, 12)
@@ -35,13 +36,13 @@ class TestDetectorGrid(unittest.TestCase):
         detector = detector_grid(shape, spacing)
         self.assertEqual(detector.values.shape, true_shape)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_name_is_stored(self):
         name = 'this-is-a-name'
         detector = detector_grid(10, 0.1, name=name)
         self.assertEqual(detector.name, name)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_extra_dims_when_ordered_dict(self):
         shape = (2, 2)
         extra_dims_sizes = (1, 2, 3, 4, 5, 6, 7, 8)  # ends up as 1.3 MB
@@ -55,7 +56,7 @@ class TestDetectorGrid(unittest.TestCase):
         detector_shape = detector.values.shape
         self.assertEqual(true_shape, detector_shape)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_extra_dims_when_dict(self):
         # Test that extra_dims behaves correctly when dicts are not ordered,
         # in lower versions of Python
@@ -76,13 +77,13 @@ class TestDetectorGrid(unittest.TestCase):
 
 
 class TestDetectorPoints(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_raises_error_when_no_coordinates_passed(self):
         self.assertRaises(CoordSysError, detector_points)
 
     # xyz tests:
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_stores_xyz_as_correct_shape_when_xyz_passed(self):
         np.random.seed(70)
         npts = 21
@@ -95,7 +96,7 @@ class TestDetectorPoints(unittest.TestCase):
         self.assertEqual(points.y.size, npts)
         self.assertEqual(points.z.size, npts)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_stores_xyz_correct_values_when_xyz_passed(self):
         np.random.seed(70)
         npts = 21
@@ -109,7 +110,7 @@ class TestDetectorPoints(unittest.TestCase):
         self.assertTrue(np.all(points.y == y))
         self.assertTrue(np.all(points.z == z))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_stores_z_as_array_when_scalar_z_passed(self):
         np.random.seed(70)
         npts = 21
@@ -123,7 +124,7 @@ class TestDetectorPoints(unittest.TestCase):
         self.assertTrue(np.all(points.z == z))
         self.assertEqual(points.z.size, npts)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_z_defaults_to_zero_when_xy_passed(self):
         np.random.seed(70)
         npts = 21
@@ -135,7 +136,7 @@ class TestDetectorPoints(unittest.TestCase):
 
     # r, theta, phi tests:
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_stores_rthetaphi_as_correct_shape_when_rthetaphi_passed(self):
         np.random.seed(70)
         npts = 21
@@ -148,7 +149,7 @@ class TestDetectorPoints(unittest.TestCase):
         self.assertEqual(points.theta.size, npts)
         self.assertEqual(points.phi.size, npts)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_stores_rthetaphi_correct_values_when_rthetaphi_passed(self):
         np.random.seed(70)
         npts = 21
@@ -161,7 +162,7 @@ class TestDetectorPoints(unittest.TestCase):
         self.assertTrue(np.all(points.theta == theta))
         self.assertTrue(np.all(points.phi == phi))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_stores_r_as_array_when_scalar_r_passed(self):
         np.random.seed(70)
         npts = 21
@@ -175,7 +176,7 @@ class TestDetectorPoints(unittest.TestCase):
         self.assertTrue(np.all(points.r == r))
         self.assertEqual(points.r.size, npts)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_r_defaults_to_inf_when_thetaphi_passed(self):
         np.random.seed(70)
         npts = 21
@@ -188,7 +189,7 @@ class TestDetectorPoints(unittest.TestCase):
         self.assertEqual(points.r.size, npts)
 
     # Other tests:
-    @attr("fast")
+    @pytest.mark.fast
     def test_data_is_stored_as_zeros_of_corect_size(self):
         npts = 23
         x, y, z = np.random.randn(3, npts)
@@ -196,13 +197,13 @@ class TestDetectorPoints(unittest.TestCase):
         self.assertEqual(points.size, npts)
         self.assertTrue(np.all(points.values == 0))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_name_defaults_to_data(self):
         x, y, z = np.random.randn(3, 10)
         points = detector_points(x=x, y=y, z=z)
         self.assertEqual(points.name, 'data')
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_name_is_stored(self):
         x, y, z = np.random.randn(3, 10)
         name = 'this-is-a-test'
@@ -211,7 +212,7 @@ class TestDetectorPoints(unittest.TestCase):
 
 
 class TestCleanConcat(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_concatenates_data(self):
         data1 = make_data(seed=1)
         data2 = make_data(seed=2)
@@ -219,7 +220,7 @@ class TestCleanConcat(unittest.TestCase):
         concatenated = clean_concat([data1, data2], 'point')
         self.assertEqual(concatenated.shape, data1.shape + (2,))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_preserves_data_order(self):
         data1 = make_data(seed=1)
         data2 = make_data(seed=2)
@@ -229,7 +230,7 @@ class TestCleanConcat(unittest.TestCase):
         self.assertTrue(np.all(concatenated.values[..., 0] == data[0].values))
         self.assertTrue(np.all(concatenated.values[..., 1] == data[1].values))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_preserves_metadata_keys(self):
         data1 = update_metadata(make_data(seed=1), **METADATA_VALUES)
         data2 = update_metadata(make_data(seed=2), **METADATA_VALUES)
@@ -240,7 +241,7 @@ class TestCleanConcat(unittest.TestCase):
             self.assertIn(key, concatenated.attrs)
             self.assertTrue(hasattr(concatenated, key))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_preserves_metadata_values(self):
         data1 = update_metadata(make_data(seed=1), **METADATA_VALUES)
         data2 = update_metadata(make_data(seed=2), **METADATA_VALUES)
@@ -257,7 +258,7 @@ class TestCleanConcat(unittest.TestCase):
 
 
 class TestUpdateMetadata(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_does_update_medium_index(self):
         detector = detector_grid(3, 0.1)
 
@@ -266,7 +267,7 @@ class TestUpdateMetadata(unittest.TestCase):
         updated_detector = update_metadata(detector, medium_index=medium_index)
         self.assertEqual(updated_detector.medium_index, medium_index)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_does_update_illum_wavelength(self):
         detector = detector_grid(3, 0.1)
 
@@ -276,7 +277,7 @@ class TestUpdateMetadata(unittest.TestCase):
             detector, illum_wavelen=illum_wavelen)
         self.assertEqual(updated_detector.illum_wavelen, illum_wavelen)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_does_update_illum_polarization(self):
         detector = detector_grid(3, 0.1)
         np.random.seed(12)
@@ -289,7 +290,7 @@ class TestUpdateMetadata(unittest.TestCase):
             illum_polarization)
         self.assertTrue(is_ok)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_does_update_noise_sd(self):
         detector = detector_grid(3, 0.1)
         np.random.seed(13)
@@ -299,7 +300,7 @@ class TestUpdateMetadata(unittest.TestCase):
 
 
 class TestGetSpacing(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_raises_error_when_xspacing_is_unequal(self):
         x = np.linspace(0, 1, 11)**2  # non-uniform spacing
         y = np.linspace(0, 1, 11)
@@ -307,7 +308,7 @@ class TestGetSpacing(unittest.TestCase):
         detector = detector_points(x=x, y=y)
         self.assertRaises(ValueError, get_spacing, detector)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_raises_error_when_yspacing_is_unequal(self):
         x = np.linspace(0, 1, 11)
         y = np.linspace(0, 1, 11)**2  # non-uniform spacing
@@ -315,7 +316,7 @@ class TestGetSpacing(unittest.TestCase):
         detector = detector_points(x=x, y=y)
         self.assertRaises(ValueError, get_spacing, detector)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_on_different_spacings(self):
         xspacing = 0.1
         yspacing = 0.2
@@ -325,7 +326,7 @@ class TestGetSpacing(unittest.TestCase):
         self.assertEqual(spacing[0], xspacing)
         self.assertEqual(spacing[1], yspacing)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_on_same_spacing(self):
         true_spacing = 0.1
         detector = detector_grid((10, 10), spacing=true_spacing)
@@ -336,7 +337,7 @@ class TestGetSpacing(unittest.TestCase):
 
 
 class TestGetExtents(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_returns_empty_when_dims_is_point(self):
         x = np.linspace(0, 1, 11)
         y = np.linspace(0, 1, 11)
@@ -346,7 +347,7 @@ class TestGetExtents(unittest.TestCase):
         self.assertRaisesRegex(
             ValueError, msg, get_extents, points)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_on_detector_grid_when_spacing_is_isotropic(self):
         shape = (10, 12)  # (x, y)
         spacing = 0.1
@@ -356,7 +357,7 @@ class TestGetExtents(unittest.TestCase):
         extents = get_extents(detector)
         self.assertEqual(extents, true_extents)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_on_detector_grid_when_spacing_is_anisotropic(self):
         shape = (10, 12)  # (x, y)
         spacing = (0.1, 0.2)
@@ -366,7 +367,7 @@ class TestGetExtents(unittest.TestCase):
         extents = get_extents(detector)
         self.assertEqual(extents, true_extents)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_on_detector_grid_when_spacing_is_0(self):
         shape = (10, 12)  # (x, y)
         spacing = 0.0
@@ -375,7 +376,7 @@ class TestGetExtents(unittest.TestCase):
         extents = get_extents(detector)
         self.assertEqual(extents, true_extents)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_on_detector_grid_when_size_is_1(self):
         shape = (1, 1)
         spacing = 0.1
@@ -386,7 +387,7 @@ class TestGetExtents(unittest.TestCase):
 
 
 class TestCopyMetadata(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_copies_metadata_keys(self):
         metadata = make_metadata()
         data = make_data()
@@ -395,7 +396,7 @@ class TestCopyMetadata(unittest.TestCase):
             self.assertIn(key, copied.attrs)
             self.assertTrue(hasattr(copied, key))
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_copies_metadata_values(self):
         metadata = make_metadata()
         data = make_data()
@@ -409,7 +410,7 @@ class TestCopyMetadata(unittest.TestCase):
             if key != 'illum_polarization':
                 self.assertEqual(value, getattr(copied, key))
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_copies_coords(self):
         metadata = make_metadata()
         data = make_data()
@@ -419,14 +420,14 @@ class TestCopyMetadata(unittest.TestCase):
             copied_coords = copied.coords[coordinate].values
             self.assertTrue(np.all(old_coords == copied_coords))
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_copies_name(self):
         metadata = make_metadata()
         data = make_data()
         copied = copy_metadata(metadata, data)
         self.assertEqual(metadata.name, copied.name)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_does_not_change_data(self):
         metadata = make_metadata()
         data = make_data()
@@ -440,28 +441,28 @@ class TestMakeSubsetData(unittest.TestCase):
     # Not used:
     #   random_subset
     #   return_selection
-    @attr("fast")
+    @pytest.mark.fast
     def test_returns_data_when_nothing_passed(self):
         data = make_data()
         subset = make_subset_data(data)
         self.assertTrue(data is subset)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_returns_correct_number_of_pixels(self):
         data = make_data()
         number_of_pixels_to_select = 3
         subset = make_subset_data(data, pixels=number_of_pixels_to_select)
         self.assertEqual(subset.size, number_of_pixels_to_select)
 
-    @attr("fast")
-    @unittest.skip("subset_data fails for detector_points")  # FIXME
+    @pytest.mark.fast
+    @pytest.mark.skip(reason="subset_data fails for detector_points")  # FIXME
     def test_returns_correct_number_of_pixels_on_detector_points(self):
         points = make_points()
         number_of_pixels_to_select = 3
         subset = make_subset_data(points, pixels=number_of_pixels_to_select)
         self.assertEqual(subset.size, number_of_pixels_to_select)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_returns_elements_of_data(self):
         data = make_data()
         number_of_pixels_to_select = 3
@@ -469,7 +470,7 @@ class TestMakeSubsetData(unittest.TestCase):
         for datum in subset.values:
             self.assertIn(datum, data.values.ravel())
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_seed_returns_same_data(self):
         data = make_data()
         number_of_pixels_to_select = data.size // 2
@@ -480,7 +481,7 @@ class TestMakeSubsetData(unittest.TestCase):
             data, pixels=number_of_pixels_to_select, seed=seed)
         self.assertTrue(np.all(subset1.values == subset2.values))
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_returns_correct_xy_coords(self):
         data = make_data()
         number_of_pixels_to_select = 3
@@ -498,7 +499,7 @@ class TestMakeSubsetData(unittest.TestCase):
                 for which, k in enumerate('xy')]
             self.assertEqual(coords_from_subset, coords_from_data)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_returns_correct_z_coords(self):
         data = make_data()
         number_of_pixels_to_select = 3

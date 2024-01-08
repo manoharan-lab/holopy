@@ -2,7 +2,8 @@ import unittest
 
 import numpy as np
 import xarray as xr
-from nose.plugins.attrib import attr
+
+import pytest
 
 from holopy.core import detector_grid, detector_points
 from holopy.core.metadata import flat
@@ -30,7 +31,7 @@ SCAT_SCHEMA = prep_schema(
 
 
 class TestImageFormation(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_calc_field_returns_xarray_of_correct_shape(self):
         imageformer = make_imageformer()
         fields = imageformer.calculate_scattered_field(SPHERE, XSCHEMA)
@@ -38,7 +39,7 @@ class TestImageFormation(unittest.TestCase):
         self.assertTrue(type(fields) is xr.DataArray)
         self.assertTrue(fields.shape == correct_shape)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_calc_field_keeps_same_attrs_as_input_schema(self):
         imageformer = make_imageformer()
         fields = imageformer.calculate_scattered_field(SPHERE, XSCHEMA)
@@ -47,7 +48,7 @@ class TestImageFormation(unittest.TestCase):
         self.assertTrue(old_attrs == new_attrs)
         self.assertFalse(old_attrs is new_attrs)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_calc_field_keeps_same_coords_as_flattened_input_schema(self):
         imageformer = make_imageformer()
         fields = imageformer.calculate_scattered_field(SPHERE, XSCHEMA)
@@ -60,7 +61,7 @@ class TestImageFormation(unittest.TestCase):
         self.assertTrue(np.all(flat_schema.y.values == fields.y.values))
         self.assertTrue(np.all(flat_schema.z.values == fields.z.values))
 
-    @attr("medium")  # FIXME why is this slow?
+    @pytest.mark.medium  # FIXME why is this slow?
     def test_calc_field_keeps_same_coords_as_flattened_input_for_spheres(self):
         imageformer = make_imageformer()
         fields = imageformer.calculate_scattered_field(SPHERES, XSCHEMA)
@@ -73,13 +74,13 @@ class TestImageFormation(unittest.TestCase):
         self.assertTrue(np.all(flat_schema.y.values == fields.y.values))
         self.assertTrue(np.all(flat_schema.z.values == fields.z.values))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_calc_field_has_correct_dims(self):
         imageformer = make_imageformer()
         fields = imageformer.calculate_scattered_field(SPHERE, XSCHEMA)
         self.assertTrue(fields.dims == ('flat', 'vector'))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_calc_field_equals_calc_singlecolor_for_single_color(self):
         imageformer = make_imageformer()
         from_calc_scat = imageformer.calculate_scattered_field(SPHERE, XSCHEMA)
@@ -89,7 +90,7 @@ class TestImageFormation(unittest.TestCase):
             from_calc_scat.values, from_calc_single.values, **TOLS)
         self.assertTrue(is_ok)
 
-    @attr("medium")  # FIXME why is this slow?
+    @pytest.mark.medium  # FIXME why is this slow?
     def test_calc_singlecolor_equals_get_field_from_for_sphere(self):
         imageformer = make_imageformer()
         from_calc_single = imageformer._calculate_single_color_scattered_field(
@@ -98,7 +99,7 @@ class TestImageFormation(unittest.TestCase):
         is_ok = np.allclose(from_get_field, from_calc_single, **TOLS)
         self.assertTrue(is_ok)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_calc_singlecolor_raises_error_for_cant_handle(self):
         imageformer = make_imageformer()
         assert not imageformer.scattering_theory.can_handle(ELLIPSOID)
@@ -107,7 +108,7 @@ class TestImageFormation(unittest.TestCase):
             imageformer._calculate_single_color_scattered_field,
             ELLIPSOID, XSCHEMA)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_calc_singlecolor_adds_get_field_from_for_spheres(self):
         imageformer = make_imageformer()
         from_calc_single = imageformer._calculate_single_color_scattered_field(
@@ -120,7 +121,7 @@ class TestImageFormation(unittest.TestCase):
             from_get_field, from_calc_single.values, **TOLS)
         self.assertTrue(is_ok)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_pack_field_into_xarray_returns_correct_dims(self):
         imageformer = make_imageformer()
         scattered_field = imageformer._get_field_from(SPHERE, XSCHEMA)
@@ -132,7 +133,7 @@ class TestImageFormation(unittest.TestCase):
 
         self.assertTrue(has_flat_or_point and second_dimension_is_vector)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_pack_field_into_xarray_returns_correct_coords(self):
         imageformer = make_imageformer()
         scattered_field = imageformer._get_field_from(SPHERE, XSCHEMA)
@@ -150,7 +151,7 @@ class TestImageFormation(unittest.TestCase):
             np.unique(XSCHEMA.z.values))
         self.assertTrue(x_ok and y_ok and z_ok)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_is_detector_view_point_or_flat_when_neither(self):
         imageformer = make_imageformer()
         self.assertRaises(
@@ -158,14 +159,14 @@ class TestImageFormation(unittest.TestCase):
             imageformer._is_detector_view_point_or_flat,
             XSCHEMA)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_is_detector_view_point_or_flat_when_flat(self):
         imageformer = make_imageformer()
         flattened = flat(XSCHEMA)
         point_or_flat = imageformer._is_detector_view_point_or_flat(flattened)
         self.assertTrue(point_or_flat == 'flat')
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_is_detector_view_point_or_flat_when_point(self):
         imageformer = make_imageformer()
         point_view = detector_points(
@@ -175,14 +176,14 @@ class TestImageFormation(unittest.TestCase):
         point_or_flat = imageformer._is_detector_view_point_or_flat(point_view)
         self.assertTrue(point_or_flat == 'point')
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_calculate_scattering_matrix_has_correct_dims(self):
         imageformer = ImageFormation(Mie())
         scat_matrs = imageformer.calculate_scattering_matrix(
             SPHERE, SCAT_SCHEMA)
         self.assertTrue(scat_matrs.dims == ('flat', 'E_out', 'E_in'))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_calculate_scattering_matrix_has_correct_coords(self):
         imageformer = ImageFormation(Mie())
         scat_matrs = imageformer.calculate_scattering_matrix(
@@ -193,7 +194,7 @@ class TestImageFormation(unittest.TestCase):
                 coords = scat_matrs.coords[dim].values
                 self.assertTrue(np.all(coords == expected))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_calculate_scattering_matrix_has_correct_spherical_coords(self):
         imageformer = ImageFormation(Mie())
         scat_matrs = imageformer.calculate_scattering_matrix(
@@ -223,7 +224,7 @@ class TestImageFormation(unittest.TestCase):
         self.assertTrue(np.allclose(true_theta, packed_theta, **MEDTOLS))
         self.assertTrue(np.allclose(true_phi, packed_phi, **MEDTOLS))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_calculate_scattering_matrix_has_correct_cartesian_coords(self):
         imageformer = ImageFormation(Mie())
         scat_matrs = imageformer.calculate_scattering_matrix(
@@ -244,7 +245,7 @@ class TestImageFormation(unittest.TestCase):
         self.assertTrue(np.allclose(true_y, packed_y, **MEDTOLS))
         self.assertTrue(np.allclose(true_z, packed_z, **MEDTOLS))
 
-    @attr("medium")  # FIXME why is this slow?
+    @pytest.mark.medium  # FIXME why is this slow?
     def test_scattering_matrix_pathway_returns_correct_type(self):
         imageformer = ImageFormation(MockScatteringMatrixBasedTheory())
         fields = imageformer.calculate_scattered_field(SPHERE, XSCHEMA)
@@ -252,7 +253,7 @@ class TestImageFormation(unittest.TestCase):
         self.assertTrue(type(fields) is xr.DataArray)
         self.assertTrue(fields.shape == correct_shape)
 
-    @attr("medium")  # FIXME why is this slow?
+    @pytest.mark.medium  # FIXME why is this slow?
     def test_scattering_matrix_pathway_returns_linear_in_scatmatrs(self):
         imageformer = ImageFormation(MockScatteringMatrixBasedTheory())
         sphere01 = Sphere(n=1.5, r=1.0, center=(0, 0, 2))
@@ -264,7 +265,7 @@ class TestImageFormation(unittest.TestCase):
 
 
 class TestTransformToDesiredCoords(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_transform_to_desired_coordinates(self):
         detector = detector_grid(shape=(2, 2), spacing=0.1)
         imageformer = ImageFormation(MockTheory())

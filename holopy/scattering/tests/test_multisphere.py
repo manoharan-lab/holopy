@@ -22,7 +22,6 @@ Test T-matrix sphere cluster calculations and python interface.
 '''
 
 
-import sys
 import os
 import warnings
 import unittest
@@ -31,20 +30,23 @@ import numpy as np
 from numpy.testing import (assert_equal, assert_array_almost_equal,
                            assert_allclose, assert_array_equal, assert_raises)
 
-from nose.plugins.attrib import attr
-from nose.plugins.skip import SkipTest
+import pytest
+
 import scipy
 
 from holopy.core.metadata import detector_points
 from holopy.scattering import (
     calc_holo, calc_scat_matrix, calc_cross_sections, Multisphere, Sphere,
-    Spheres)
+    Spheres
+)
 from holopy.scattering.errors import (
     InvalidScatterer, TheoryNotCompatibleError, MultisphereFailure,
-    OverlapWarning)
+    OverlapWarning
+)
 from holopy.scattering.tests.common import (
     xschema, yschema, index, wavelen, xpolarization, ypolarization,
-    scaling_alpha, sphere)
+    scaling_alpha, sphere
+)
 from holopy.core.tests.common import assert_obj_close, verify
 
 schema = xschema
@@ -60,7 +62,7 @@ SCATTERERS_SMALL_OVERLAP = [
 
 
 class TestMultisphere(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_theory_from_parameters(self):
         np.random.seed(1332)
         kwargs = {
@@ -81,7 +83,7 @@ class TestMultisphere(unittest.TestCase):
 
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_construction():
     # test constructor to make sure it works properly and calls base
     # class constructor properly
@@ -94,7 +96,7 @@ def test_construction():
     assert_equal(theory.qeps2, 1e-8)
 
 
-@attr('medium')
+@pytest.mark.medium
 def test_polarization():
     # test holograms for orthogonal polarizations; make sure they're
     # not the same, nor too different from one another.
@@ -117,7 +119,7 @@ def test_polarization():
     assert_obj_close(xholo.min(), yholo.min())
 
 
-@attr('medium')
+@pytest.mark.medium
 def test_2_sph():
     sc = Spheres(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
                                        n=1.5811+1e-4j, r=5e-07),
@@ -132,7 +134,7 @@ def test_2_sph():
     assert_obj_close(holo.std(), 0.09558537595025796)
 
 
-@attr('medium')
+@pytest.mark.medium
 def test_radial_holos():
     # Check that holograms computed with and w/o radial part of E_scat differ
     sc = Spheres(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
@@ -158,7 +160,7 @@ class TestErrors(unittest.TestCase):
     args = (index, wavelen, xpolarization)
     kwargs = {'theory': Multisphere()}
 
-    @attr('medium')
+    @pytest.mark.medium
     def test_invalid_when_spheres_very_far_apart(self):
         sphere1 = Sphere(center=[7e0, 7e-6, 10e-6],  n=1.5811+1e-4j, r=5e-07)
         sphere2 = Sphere(center=[6e-6, 7e-6, 10e-6], n=1.5811+1e-4j, r=5e-07)
@@ -169,7 +171,7 @@ class TestErrors(unittest.TestCase):
             calc_holo,
             schema, scatterer, *self.args, **self.kwargs)
 
-    @attr('medium')
+    @pytest.mark.medium
     def test_invalid_when_spheres_too_big(self):
         sphere1 = Sphere(center=[7e-1, 7e-6, 10e-6], n=1.5811+1e-4j, r=5e-02)
         sphere2 = Sphere(center=[6e-1, 7e-6, 10e-6], n=1.5811+1e-4j, r=5e-07)
@@ -179,7 +181,7 @@ class TestErrors(unittest.TestCase):
             calc_holo,
             schema, scatterer, *self.args, **self.kwargs)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_invalid_when_scatterer_is_sphere(self):
         sphere = Sphere(center=(0, 0, 11e-6))
         self.assertRaises(
@@ -187,7 +189,7 @@ class TestErrors(unittest.TestCase):
             calc_holo,
             schema, sphere, *self.args, **self.kwargs)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_invalid_when_coated_spheres(self):
         # try a coated sphere
         sphere1 = Sphere(
@@ -206,14 +208,14 @@ class TestErrors(unittest.TestCase):
 
 
 class TestOverlap(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_spheres_raises_warning_when_overlapping(self):
         self.assertWarns(
             OverlapWarning,
             Spheres,
             scatterers=SCATTERERS_LARGE_OVERLAP)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_calc_holo_fails_to_converge_when_overlap_is_large(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -223,7 +225,7 @@ class TestOverlap(unittest.TestCase):
                 calc_holo,
                 schema, sc, index, wavelen, xpolarization)
 
-    @attr('medium')
+    @pytest.mark.medium
     def test_calc_holo_succeeds_but_warns_with_small_overlap(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -232,7 +234,7 @@ class TestOverlap(unittest.TestCase):
         verify(holo, '2_sphere_allow_overlap')
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_niter():
     sc = Spheres(scatterers=[Sphere(center=[7.1e-6, 7e-6, 10e-6],
                                           n=1.5811+1e-4j, r=5e-07),
@@ -243,7 +245,7 @@ def test_niter():
     assert_raises(MultisphereFailure, calc_holo, schema, sc, index, wavelen, xpolarization, multi)
 
 
-@attr('medium')
+@pytest.mark.medium
 def test_cross_sections():
     wavelen = 1.
     index = 1.
@@ -265,12 +267,12 @@ def test_cross_sections():
 
     if 'TRAVIS' in os.environ:
         #This test fails on travis for unknown reasons. See github issue #194
-        raise SkipTest()
+        pytest.skip('fails on travis for unknown reason')
     else:
         assert_allclose(xsects[:3], gold_xsects, rtol = 1e-3)
 
 
-@attr("fast")
+@pytest.mark.fast
 def test_farfield():
     schema = detector_points(theta = np.linspace(0, np.pi/2), phi = np.zeros(50))
     n = 1.59+0.01j
@@ -282,7 +284,7 @@ def test_farfield():
     matr = calc_scat_matrix(schema, cluster, illum_wavelen=.66, medium_index=index, theory=Multisphere)
 
 
-@attr('medium')
+@pytest.mark.medium
 def test_wrap_sphere():
     sphere=Sphere(center=[7.1e-6, 7e-6, 10e-6],n=1.5811+1e-4j, r=5e-07)
     sphere_w=Spheres([sphere])

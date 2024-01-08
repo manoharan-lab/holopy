@@ -25,8 +25,8 @@ import tempfile
 import numpy as np
 import xarray as xr
 from numpy.testing import assert_allclose, assert_raises, assert_equal
-from nose.plugins.attrib import attr
-from nose.plugins.skip import SkipTest
+
+import pytest
 
 from holopy.core.metadata import data_grid, clean_concat, illumination as ILLUM
 from holopy.core.io.vis import (
@@ -82,7 +82,7 @@ class TestSavingImage(unittest.TestCase):
             msg = "more than 100 files in temp directory... test is broken"
             raise RuntimeError(msg)
 
-    @attr("medium")
+    @pytest.mark.medium
     def test_save_single_image_writes_image_file(self):
         # For now, we just test that it writes an image file, not that
         # the file is correct:
@@ -92,7 +92,7 @@ class TestSavingImage(unittest.TestCase):
         self.assertTrue(os.path.exists(savename))
         os.remove(savename)  # cleaning up
 
-    @attr("medium")
+    @pytest.mark.medium
     def test_save_multiple_images_writes_image_files(self):
         # For now, we just test that it writes the image files, not that
         # the files are correct:
@@ -106,7 +106,7 @@ class TestSavingImage(unittest.TestCase):
 
 
 class TestDisplayImage(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_xarray_dimension_order(self):
         xarray_grid = convert_ndarray_to_xarray(ARRAY_3D)
         displayed = display_image(xarray_grid, scaling=None)
@@ -115,7 +115,7 @@ class TestDisplayImage(unittest.TestCase):
         assert_obj_close(displayed, xarray_grid)
         assert_obj_close(displayed_transposed, xarray_grid)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_complex_values_return_magnitude(self):
         xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
         xarray_complex = xarray_real + 0j
@@ -125,7 +125,7 @@ class TestDisplayImage(unittest.TestCase):
             displayed = display_image(xarray_complex, scaling=None)
             assert_obj_close(displayed, xarray_real)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_custom_dimension_names(self):
         xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
         dims = xarray_real.assign_coords(
@@ -138,7 +138,7 @@ class TestDisplayImage(unittest.TestCase):
         is_ok = np.allclose(dims.values, xarray_real.values)
         self.assertTrue(is_ok)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_custom_extra_dimension_name(self):
         xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
         extra_dims = dict([["t", [0, 1, 2]], [ILLUM, [0, 1, 2]]])
@@ -155,7 +155,7 @@ class TestDisplayImage(unittest.TestCase):
         is_ok = np.all(displayed.values == xarray_4d.values)
         self.assertTrue(is_ok)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_z_in_coords_but_not_dims(self):
         data = xr.DataArray(data=np.zeros((2, 2, 2)),
                             dims=['x', 'y', 'z'],
@@ -165,7 +165,7 @@ class TestDisplayImage(unittest.TestCase):
         self.assertEqual(values.shape, (1, 2, 2))
         self.assertTrue(np.all(values == 0))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_interpet_axes_for_numpy_arrays(self):
         xr2 = convert_ndarray_to_xarray(ARRAY_2D)
         xr3 = convert_ndarray_to_xarray(ARRAY_3D)
@@ -177,7 +177,7 @@ class TestDisplayImage(unittest.TestCase):
         assert_obj_close(displayed_3d, xr3)
         assert_obj_close(displayed_transposed, xr3)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_specify_axes_for_numpy_arrays(self):
         transposed = np.transpose(ARRAY_3D, [1, 0, 2])
         displayed_transposed = display_image(transposed, scaling=None)
@@ -188,26 +188,26 @@ class TestDisplayImage(unittest.TestCase):
             display_image(ARRAY_3D, vert_axis=0, horiz_axis=2, scaling=None),
             xr_transposed)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_raises_error_1D_numpy_array(self):
         self.assertRaises(BadImage, display_image, ARRAY_2D[0])
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_raises_error_4D_numpy_array(self):
         self.assertRaises(BadImage, display_image, ARRAY_4D)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_raises_error_4D_array_no_color_axis(self):
         xr4 = convert_ndarray_to_xarray(ARRAY_4D, extra_dims={'t': [0, 1, 2]})
         assert_raises(BadImage, display_image, xr4)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_raises_error_5d_xarray(self):
         extra_dims = dict([[ILLUM, [0, 1, 2]], ["t", [0]]])
         xr5 = convert_ndarray_to_xarray(ARRAY_5D, extra_dims=extra_dims)
         assert_raises(BadImage, display_image, xr5)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_too_many_color_channels(self):
         col1 = convert_ndarray_to_xarray(
             ARRAY_4D, extra_dims={ILLUM: [0, 1, 2]})
@@ -216,7 +216,7 @@ class TestDisplayImage(unittest.TestCase):
         xr6cols = clean_concat([col1, col2], dim=ILLUM)
         assert_raises(BadImage, display_image, xr6cols)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_scaling_exceeds_intensity_bounds(self):
         scale = (-5, 100)
         xr3 = (convert_ndarray_to_xarray(ARRAY_3D) + 5) / 105
@@ -224,7 +224,7 @@ class TestDisplayImage(unittest.TestCase):
         assert_allclose(displayed.values, xr3.values)
         assert_equal(displayed.attrs['_image_scaling'], scale)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_scaling_constricts_intensity_bounds(self):
         scale = (-5, 100)
         wide3 = ARRAY_3D.copy()
@@ -234,7 +234,7 @@ class TestDisplayImage(unittest.TestCase):
         assert_equal(display_image(wide3).attrs['_image_scaling'], scale)
         assert_obj_close(display_image(wide3, (0, 59)).values, xr3.values)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_flat_colour_dimension_gives_greyscale(self):
         xr3 = convert_ndarray_to_xarray(
             ARRAY_4D[:, :, :, 0:1], extra_dims={ILLUM: [0]})
@@ -243,7 +243,7 @@ class TestDisplayImage(unittest.TestCase):
         displayed_np.attrs = displayed_xr.attrs
         assert_obj_close(displayed_xr.shape, displayed_np.shape)
 
-    @attr("medium")
+    @pytest.mark.medium
     def test_colour_name_formats(self):
         base = convert_ndarray_to_xarray(
             ARRAY_4D, extra_dims={ILLUM: ['red', 'green', 'blue']})
@@ -256,7 +256,7 @@ class TestDisplayImage(unittest.TestCase):
                 ARRAY_4D, extra_dims={ILLUM: collist})
             assert_obj_close(display_image(xr4, scaling=None), base)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_colours_in_wrong_order(self):
         base = convert_ndarray_to_xarray(
             ARRAY_4D, extra_dims={ILLUM: ['red', 'green', 'blue']})
@@ -265,7 +265,7 @@ class TestDisplayImage(unittest.TestCase):
             extra_dims={ILLUM: ['red', 'blue', 'green']})
         assert_allclose(display_image(xr4, scaling=None).values, base.values)
 
-    @attr("medium")
+    @pytest.mark.medium
     def test_missing_colours(self):
         base = convert_ndarray_to_xarray(
             ARRAY_4D, extra_dims={ILLUM: ['red', 'green', 'blue']})
@@ -285,7 +285,7 @@ class TestDisplayImage(unittest.TestCase):
                 del xr4.attrs['_dummy_channel']
             assert_obj_close(xr4, base)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_maintains_metadata(self):
         base = convert_ndarray_to_xarray(ARRAY_3D)
         base.attrs = {'a':2, 'b':3, 'c':4, 'd':5, '_image_scaling':(0, 59)}
@@ -293,30 +293,30 @@ class TestDisplayImage(unittest.TestCase):
 
 
 class ShowTest(unittest.TestCase):
-    @attr("medium")
+    @pytest.mark.medium
     def test_show(self):
         if _NO_MATPLOTLIB:
-            raise SkipTest()
+            pytest.skip("matplotlib not installed")
         plt.ioff()
         d = get_example_data('image0001')
         try:
             show(d)
         except RuntimeError:
             # this occurs on travis since there is no display
-            raise SkipTest()
+            pytest.skip("no display")
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', (DeprecationWarning, UserWarning))
             with tempfile.TemporaryFile(suffix='.pdf') as filename:
                 plt.savefig(filename)
 
-    @attr("medium")
+    @pytest.mark.medium
     def test_scatterer_slices(self):
         s = Sphere(r = .5, center = (0, 0, 0), n=1.5)
         try:
             show_scatterer_slices(s, 0.1)
         except RuntimeError:
             # this occurs on travis since there is no display
-            raise SkipTest()
+            pytest.skip("no display")
 
 
 if __name__ == '__main__':

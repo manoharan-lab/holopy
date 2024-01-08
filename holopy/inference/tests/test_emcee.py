@@ -21,13 +21,14 @@ import warnings
 import unittest
 
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose
-from nose.plugins.attrib import attr
+from numpy.testing import assert_allclose
+
+import pytest
 
 from holopy.inference import prior, TemperedStrategy
 from holopy.core.process import normalize
 from holopy.core.tests.common import assert_obj_close, get_example_data
-from holopy.scattering import Sphere, Mie, MieLens
+from holopy.scattering import Sphere, MieLens
 from holopy.inference import prior
 from holopy.inference.model import AlphaModel, Model
 from holopy.inference.emcee import sample_emcee, EmceeStrategy
@@ -35,7 +36,7 @@ from holopy.inference.tests.common import SimpleModel
 
 
 class testEmcee(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_BaseModel_lnprior(self):
         scat = Sphere(r=prior.Gaussian(1, 1), n=prior.Gaussian(1, 1),
                       center=[10, 10, 10])
@@ -44,7 +45,7 @@ class testEmcee(unittest.TestCase):
         desired_sigma = -1.4189385332
         assert_obj_close(mod.lnprior([0, 0]), desired_sigma * 2)
 
-    @attr("medium")
+    @pytest.mark.medium
     def test_sample_emcee(self):
         data = np.array(.5)
         nwalkers = 10
@@ -63,7 +64,7 @@ class testEmcee(unittest.TestCase):
         should_be_onehalf = chain[lnprob == lnprob.max()]
         assert_allclose(should_be_onehalf, .5, rtol=.001)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_EmceeStrategy(self):
         data = np.array(.5)
         mod = SimpleModel(1)
@@ -73,7 +74,7 @@ class testEmcee(unittest.TestCase):
 
 
 class TestSubsetTempering(unittest.TestCase):
-    @attr("slow")
+    @pytest.mark.slow
     def test_alpha_subset_tempering(self):
         holo = normalize(get_example_data('image0001'))
         scat = Sphere(r=0.65e-6, n=1.58, center=[5.5e-6, 5.8e-6, 14e-6])
@@ -86,7 +87,7 @@ class TestSubsetTempering(unittest.TestCase):
         desired_alpha = np.array([0.650348])
         assert_allclose(inference_result._parameters, desired_alpha, rtol=5e-3)
 
-    @attr("slow")
+    @pytest.mark.slow
     def test_perfectlens_subset_tempering(self):
         data = normalize(get_example_data('image0001'))
         scatterer = Sphere(r=0.65e-6, n=1.58, center=[5.5e-6, 5.8e-6, 14e-6])

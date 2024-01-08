@@ -20,7 +20,6 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
 from holopy.inference.cmaes import run_cma, CmaStrategy
-from holopy.inference.model import Model
 from holopy.inference import prior
 from holopy.inference.tests.common import SimpleModel
 

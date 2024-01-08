@@ -22,7 +22,8 @@ import warnings
 
 import xarray as xr
 import numpy as np
-from nose.plugins.attrib import attr
+
+import pytest
 
 from holopy.inference import prior
 from holopy.inference.result import UncertainValue, FitResult, SamplingResult
@@ -59,7 +60,7 @@ def generate_sampling_result():
 
 
 class TestUncertainValue(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_optional_assymetric_uncertainty(self):
         uncval1 = UncertainValue([10], np.array(2))
         uncval2 = UncertainValue(10, 2, 2)
@@ -79,12 +80,12 @@ class TestFitResult(unittest.TestCase):
             sphere, theory=Mie(False), alpha=prior.Uniform(0.1, 1, 0.6))
         return model
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_failure_if_no_intervals(self):
         self.assertRaises(MissingParameter,
                           FitResult, DATA, MODEL, CmaStrategy(), 10)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_properties(self):
         result = generate_fit_result()
         self.assertEqual(result._parameters, [1.6, 0.6, 0.7])
@@ -94,25 +95,25 @@ class TestFitResult(unittest.TestCase):
         self.assertEqual(result.scatterer,
                          Sphere(n=1.6, r=0.6, center=[10, 10, 10]))
 
-    @attr("medium")
+    @pytest.mark.medium
     def test_hologram(self):
         result = generate_fit_result()
         self.assertAlmostEqual(
             result.hologram.mean().item(), 1.005387, places=6)
         self.assertTrue(hasattr(result, '_hologram'))
 
-    @attr("medium")
+    @pytest.mark.medium
     def test_best_fit_throws_exception(self):
         result = generate_fit_result()
         self.assertRaises(DeprecationError, result.best_fit)
 
-    @attr("medium")
+    @pytest.mark.medium
     def test_max_lnprob(self):
         result = generate_fit_result()
         self.assertAlmostEqual(result.max_lnprob, -138.17557, places=5)
         self.assertTrue(hasattr(result, '_max_lnprob'))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_calculate_first_time(self):
         result = generate_fit_result()
         dummy_string = "a dummy string"
@@ -123,7 +124,7 @@ class TestFitResult(unittest.TestCase):
         self.assertEqual(getattr(result, dummy_name), dummy_string)
         self.assertEqual(result._kwargs_keys[-1], dummy_name)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_values_only_calculated_once(self):
         result = generate_fit_result()
         calculations = ['max_lnprob', 'hologram', 'guess_hologram']
@@ -132,13 +133,13 @@ class TestFitResult(unittest.TestCase):
             setattr(result, '_' + calculation, random_val)
             self.assertEqual(getattr(result, calculation), random_val)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_add_attr(self):
         result = generate_fit_result()
         result.add_attr({'foo':'bar', 'foobar':7})
         self.assertEqual(result.foo, 'bar')
 
-    @attr("medium")
+    @pytest.mark.medium
     def test_guesses_match_model(self):
         result = generate_fit_result()
         model = result.model
@@ -152,7 +153,7 @@ class TestFitResult(unittest.TestCase):
                                 guess_hologram.values)
         self.assertEqual(result.guess_hologram.attrs, guess_hologram.attrs)
 
-    @attr('medium')
+    @pytest.mark.medium
     def test_subset_data_fit_result_is_saveable(self):
         model = self._make_model()
         holo = get_example_data('image0001')
@@ -167,7 +168,7 @@ class TestFitResult(unittest.TestCase):
         result = fitted  # was fix_flat(fitted)
         assert_read_matches_write(result)
 
-    @attr('medium')
+    @pytest.mark.medium
     def test_subset_data_fit_result_stores_model(self):
         model = self._make_model()
         holo = get_example_data('image0001')
@@ -183,13 +184,13 @@ class TestFitResult(unittest.TestCase):
 
 
 class TestIO(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_base_io(self):
         result = FitResult(DATA, MODEL, CmaStrategy(),
                            10, {'intervals':INTERVALS})
         assert_read_matches_write(result)
 
-    @attr("medium")
+    @pytest.mark.medium
     def test_dataarray_attr(self):
         result = generate_fit_result()
         samples = xr.DataArray([[1,2,3], [4,5,6]], dims=['dim1', 'dim2'],
@@ -197,7 +198,7 @@ class TestIO(unittest.TestCase):
         result.add_attr({'samples': samples})
         assert_read_matches_write(result)
 
-    @attr("medium")
+    @pytest.mark.medium
     def test_saved_calculations(self):
         result = generate_fit_result()
         result.best_fit
@@ -206,7 +207,7 @@ class TestIO(unittest.TestCase):
 
 
 class TestSamplingResult(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_intervals(self):
         result = generate_sampling_result()
         self.assertEqual(result.intervals[0].guess, 1)
@@ -214,7 +215,7 @@ class TestSamplingResult(unittest.TestCase):
         self.assertEqual(result.intervals[0].name, 'p1')
         self.assertEqual(result.intervals[1].name, 'p2')
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_burn_in(self):
         result = generate_sampling_result().burn_in(1)
         self.assertEqual(result.intervals[0].guess, 11)

@@ -17,8 +17,9 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 import numpy as np
 import xarray as xr
-from numpy.testing import assert_allclose, assert_equal
-from nose.plugins.attrib import attr
+from numpy.testing import assert_allclose
+
+import pytest
 
 from holopy.core import detector_grid, detector_points
 from holopy.core.tests.common import assert_obj_close
@@ -30,10 +31,12 @@ from holopy.scattering.interface import calc_intensity, calc_holo, calc_field
 # small tests against results from the previous version of holopy
 
 
-@attr("fast")
+@pytest.mark.fast
 def test_calc_field():
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
-    t = update_metadata(detector_grid(shape = (2,2), spacing = .1), illum_wavelen = 0.66, medium_index=1.33, illum_polarization = (1,0))
+    t = update_metadata(detector_grid(shape = (2,2), spacing = .1),
+                        illum_wavelen = 0.66, medium_index=1.33,
+                        illum_polarization = (1,0))
     thry = Mie(False)
     f = calc_field(t, s, 1.33, .66, (1,0), theory=thry)
     assert_obj_close(t.attrs, f.attrs)
@@ -49,10 +52,12 @@ def test_calc_field():
                                      4.89755627e-02 -2.31844748e-01j],
                                   [ -5.71886751e-01 +2.17145168e+00j,
                                      1.72579090e-03 -8.72241140e-03j,
-                                     5.70160960e-02 -2.16272927e-01j]]]), dims=['x', 'y', 'vector'], coords={'x':t.x, 'y': t.y, 'vector': ['x', 'y', 'z']})
+                                     5.70160960e-02 -2.16272927e-01j]]]),
+                        dims=['x', 'y', 'vector'],
+                        coords={'x':t.x, 'y': t.y, 'vector': ['x', 'y', 'z']})
     assert abs((f - gold).max()) < 5e-9
 
-@attr("fast")
+@pytest.mark.fast
 def test_detector_points():
     s = Sphere(n=1.59, r=.5, center=(0,0,0))
     medium_index = 1.33
@@ -74,7 +79,7 @@ def test_detector_points():
     assert_allclose(field_cartesian, field_spherical)
 
 
-@attr("fast")
+@pytest.mark.fast
 def test_calc_holo():
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = detector_grid(shape = (2,2), spacing = .1)
@@ -83,16 +88,17 @@ def test_calc_holo():
     assert_allclose(h, np.array([[[ 6.51162661],[  5.67743548]],
                                  [[ 5.63554802],[  4.89856241]]]))
 
-@attr("fast")
+@pytest.mark.fast
 def test_calc_intensity():
     s = Sphere(n=1.59, r=.5, center=(0,0,1))
     t = detector_grid(shape = (2,2), spacing = .1)
     thry = Mie(False)
-    i = calc_intensity(t, s, illum_wavelen=.66, medium_index=1.33, illum_polarization = (1, 0), theory=thry)
+    i = calc_intensity(t, s, illum_wavelen=.66, medium_index=1.33,
+                       illum_polarization = (1, 0), theory=thry)
     assert_allclose(i, np.array([[[ 6.30336023],  [5.65995739]],
                                  [[ 5.61505927],  [5.04233591]]]))
 
-@attr("fast")
+@pytest.mark.fast
 def test_csg_construction():
     s = Sphere(n = 1.6, r=.5, center=(0, 0, 0))
     st = s.translated(.4, 0, 0)

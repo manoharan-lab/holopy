@@ -27,14 +27,15 @@ import numpy as np
 from numpy.testing import assert_allclose
 import yaml
 import os
-from nose.plugins.attrib import attr
+
+import pytest
 
 from holopy.core import detector_grid
 from holopy.core.tests.common import verify
 from holopy.scattering.theory.mie_f import multilayer_sphere_lib, miescatlib
 from holopy.scattering import Sphere, calc_holo, Mie
 
-@attr('medium')
+@pytest.mark.medium
 def test_Shell():
     s = Sphere(center=[7.141442573813124, 7.160766866147957, 11.095409800342143],
               n=[(1.27121212428+0j), (1.49+0j)], r=[0.960957713253-0.0055,
@@ -47,7 +48,7 @@ def test_Shell():
 
     verify(h, 'shell')
 
-@attr('slow')
+@pytest.mark.slow
 def test_sooty_particles():
     '''
     Test multilayered sphere scattering coefficients by comparison of

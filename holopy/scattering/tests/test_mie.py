@@ -28,34 +28,43 @@ import yaml
 import numpy as np
 from numpy.testing import (assert_array_almost_equal, assert_almost_equal,
                            assert_raises, assert_equal, assert_allclose)
-from nose.plugins.attrib import attr
+
+import pytest
 
 from holopy.scattering.scatterer import (
-    Sphere, Spheres, Ellipsoid, LayeredSphere)
+    Sphere, Spheres, Ellipsoid, LayeredSphere
+)
 from holopy.scattering.theory import Mie
 from holopy.scattering.imageformation import ImageFormation
 from holopy.scattering.errors import TheoryNotCompatibleError, InvalidScatterer
 from holopy.core.metadata import (
-    detector_grid, detector_points, to_vector, update_metadata)
+    detector_grid, detector_points, to_vector, update_metadata
+)
 from holopy.core.process import subimage
 from holopy.scattering.tests.common import (
     sphere, xschema, scaling_alpha, yschema, xpolarization, ypolarization,
-    x, y, z, n, radius, wavelen, index)
+    x, y, z, n, radius, wavelen, index
+)
 from holopy.core.tests.common import assert_obj_close, verify
 from holopy.scattering.interface import (
     calc_field, calc_holo, calc_intensity, calc_scat_matrix,
-    calc_cross_sections)
+    calc_cross_sections
+)
 
 
 
-@attr('medium')
+@pytest.mark.medium
 def test_single_sphere():
     # single sphere hologram (only tests that functions return)
     thry = Mie(False)
-    holo = calc_holo(xschema, sphere, index, wavelen, xpolarization, theory=thry, scaling=scaling_alpha)
-    field = calc_field(xschema, sphere, index, wavelen, xpolarization, theory=thry)
+    holo = calc_holo(xschema, sphere, index, wavelen, xpolarization,
+                     theory=thry, scaling=scaling_alpha)
+    field = calc_field(xschema, sphere, index, wavelen, xpolarization,
+                       theory=thry)
 
-    intensity = calc_intensity(xschema, sphere, medium_index=index, illum_wavelen=wavelen, illum_polarization=xpolarization, theory=thry)
+    intensity = calc_intensity(xschema, sphere, medium_index=index,
+                               illum_wavelen=wavelen,
+                               illum_polarization=xpolarization, theory=thry)
 
     verify(holo, 'single_holo')
     verify(field, 'single_field')
@@ -64,14 +73,18 @@ def test_single_sphere():
     # for them
 
     # large radius (calculation not attempted because it would take forever
-    assert_raises(InvalidScatterer, calc_holo, xschema, Sphere(r=1, n = 1.59, center = (5,5,5)), medium_index=index, illum_wavelen=wavelen)
+    assert_raises(InvalidScatterer, calc_holo, xschema,
+                  Sphere(r=1, n = 1.59, center = (5,5,5)), medium_index=index,
+                  illum_wavelen=wavelen)
 
-@attr('medium')
+@pytest.mark.medium
 def test_farfield_holo():
     # Tests that a far field calculation gives a hologram that is
     # different from a full radial dependence calculation, but not too different
-    holo_full = calc_holo(xschema, sphere, index, wavelen, xpolarization, scaling=scaling_alpha)
-    holo_far = calc_holo(xschema, sphere, index, wavelen, xpolarization, scaling=scaling_alpha, theory=Mie(False, False))
+    holo_full = calc_holo(xschema, sphere, index, wavelen, xpolarization,
+                          scaling=scaling_alpha)
+    holo_far = calc_holo(xschema, sphere, index, wavelen, xpolarization,
+                         scaling=scaling_alpha, theory=Mie(False, False))
 
 
     # the two arrays should not be equal
@@ -91,7 +104,7 @@ def test_farfield_holo():
                         context="Near and Far field holograms too different")
 
 
-@attr('medium')
+@pytest.mark.medium
 def test_subimaged():
     # make a dummy image so that we can pretend we are working with
     # data we want to subimage
@@ -103,7 +116,7 @@ def test_subimaged():
     assert_obj_close(subimage(h, *sub), hs)
 
 
-@attr('medium')
+@pytest.mark.medium
 def test_Mie_multiple():
     s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
     s2 = Sphere(n = 1.59, r = 1e-6, center=[8e-6,5e-6,5e-6])
@@ -125,19 +138,23 @@ def test_Mie_multiple():
         calc_field(schema, el, index, wavelen, theory=Mie)
     assert_equal(str(cm.exception), "Mie scattering theory can't handle "
                  "scatterers of type Ellipsoid")
-    assert_raises(TheoryNotCompatibleError, calc_field, schema, el, index, wavelen, xpolarization, Mie)
-    assert_raises(TheoryNotCompatibleError, calc_intensity,
-                  schema, el, index, wavelen, xpolarization, Mie)
-    assert_raises(TheoryNotCompatibleError, calc_holo, schema, el, index, wavelen, xpolarization, Mie)
+    assert_raises(TheoryNotCompatibleError, calc_field, schema, el, index,
+                  wavelen, xpolarization, Mie)
+    assert_raises(TheoryNotCompatibleError, calc_intensity, schema, el, index,
+                  wavelen, xpolarization, Mie)
+    assert_raises(TheoryNotCompatibleError, calc_holo, schema, el, index,
+                  wavelen, xpolarization, Mie)
 
-@attr('medium')
+@pytest.mark.medium
 def test_mie_polarization():
 
     # test holograms for orthogonal polarizations; make sure they're
     # not the same, nor too different from one another.
     thry = Mie(False)
-    xholo = calc_holo(xschema, sphere, index, wavelen, illum_polarization=xpolarization, scaling=scaling_alpha)
-    yholo = calc_holo(yschema, sphere, index, wavelen, illum_polarization=ypolarization, scaling=scaling_alpha)
+    xholo = calc_holo(xschema, sphere, index, wavelen,
+                      illum_polarization=xpolarization, scaling=scaling_alpha)
+    yholo = calc_holo(yschema, sphere, index, wavelen,
+                      illum_polarization=ypolarization, scaling=scaling_alpha)
 
     # the two arrays should not be equal
     try:
@@ -153,7 +170,7 @@ def test_mie_polarization():
     assert_obj_close(xholo.min(), yholo.min())
 
 
-@attr('medium')
+@pytest.mark.medium
 def test_linearity():
     # look at superposition of scattering from two point particles;
     # make sure that this is sum of holograms from individual point
@@ -171,9 +188,12 @@ def test_linearity():
 
     sc = Spheres(scatterers = [sphere1, sphere2])
 
-    holo_1 = calc_holo(xschema, sphere1, index, wavelen, xpolarization, scaling=scaling_alpha)
-    holo_2 = calc_holo(xschema, sphere2, index, wavelen, xpolarization, scaling=scaling_alpha)
-    holo_super = calc_holo(xschema, sc, index, wavelen, xpolarization, theory=Mie, scaling=scaling_alpha)
+    holo_1 = calc_holo(xschema, sphere1, index, wavelen, xpolarization,
+                       scaling=scaling_alpha)
+    holo_2 = calc_holo(xschema, sphere2, index, wavelen, xpolarization,
+                       scaling=scaling_alpha)
+    holo_super = calc_holo(xschema, sc, index, wavelen, xpolarization,
+                           theory=Mie, scaling=scaling_alpha)
 
     # make sure we're not just looking at uniform arrays (could
     # happen if the size is set too small)
@@ -194,7 +214,7 @@ def test_linearity():
     # uncomment to debug
     #return holo_1, holo_2, holo_super
 
-@attr('medium')
+@pytest.mark.medium
 def test_nonlinearity():
     # look at superposition of scattering from two large particles;
     # make sure that this is *not equal* to sum of holograms from
@@ -212,9 +232,12 @@ def test_nonlinearity():
 
     sc = Spheres(scatterers = [sphere1, sphere2])
 
-    holo_1 = calc_holo(xschema, sphere1, index, wavelen, illum_polarization=xpolarization, scaling=scaling_alpha)
-    holo_2 = calc_holo(xschema, sphere2, index, wavelen, illum_polarization=xpolarization, scaling=scaling_alpha)
-    holo_super = calc_holo(xschema, sc, index, wavelen, xpolarization, scaling=scaling_alpha, theory=Mie)
+    holo_1 = calc_holo(xschema, sphere1, index, wavelen,
+                       illum_polarization=xpolarization, scaling=scaling_alpha)
+    holo_2 = calc_holo(xschema, sphere2, index, wavelen,
+                       illum_polarization=xpolarization, scaling=scaling_alpha)
+    holo_super = calc_holo(xschema, sc, index, wavelen, xpolarization,
+                           scaling=scaling_alpha, theory=Mie)
 
     # test nonlinearity by subtracting off individual holograms
     try:
@@ -230,9 +253,10 @@ def test_nonlinearity():
     #return holo_1, holo_2, holo_super
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_radiometric():
-    cross_sects = calc_cross_sections(sphere, index, wavelen, illum_polarization=xpolarization)
+    cross_sects = calc_cross_sections(sphere, index, wavelen,
+                                      illum_polarization=xpolarization)
     # turn cross sections into efficiencies
     cross_sects[0:3] = cross_sects[0:3] / (np.pi * radius**2)
 
@@ -250,23 +274,26 @@ def test_radiometric():
     for key, val in gold.items():
         assert_almost_equal(gold[key], val, decimal = 5)
 
-@attr('fast')
+@pytest.mark.fast
 def test_farfield_matr():
-    schema = detector_points(theta = np.linspace(0, np.pi/2), phi = np.linspace(0, 1))
+    schema = detector_points(theta = np.linspace(0, np.pi/2),
+                             phi = np.linspace(0, 1))
     sphere = Sphere(r = .5, n = 1.59+0.1j)
 
     matr = calc_scat_matrix(schema, sphere, index, .66)
     verify(matr, 'farfield_matricies', rtol = 1e-6)
 
-@attr('medium')
+@pytest.mark.medium
 def test_radialEscat():
     thry_1 = Mie()
     thry_2 = Mie(False)
 
     sphere = Sphere(r = 1e-6, n = 1.4 + 0.01j, center = [10e-6, 10e-6,
                                                          1.2e-6])
-    h1 = calc_holo(xschema, sphere, index, wavelen, illum_polarization=xpolarization)
-    h2 = calc_holo(xschema, sphere, index, wavelen, illum_polarization=xpolarization, theory=thry_2)
+    h1 = calc_holo(xschema, sphere, index, wavelen,
+                   illum_polarization=xpolarization)
+    h2 = calc_holo(xschema, sphere, index, wavelen,
+                   illum_polarization=xpolarization, theory=thry_2)
 
     try:
         assert_array_almost_equal(h1, h2, decimal=12)
@@ -277,7 +304,7 @@ def test_radialEscat():
                              " are exactly equal")
 
 
-@attr("medium")
+@pytest.mark.medium
 def test_layered():
     l = LayeredSphere(n = (1, 2), t = (1, 1), center = (2, 2, 2))
     s = Sphere(n = (1,2), r = (1, 2), center = (2, 2, 2))
@@ -287,15 +314,16 @@ def test_layered():
     hs = calc_holo(sch, s, index, wavelen, illum_polarization=xpolarization)
     assert_obj_close(hl, hs, rtol=0)
 
-@attr("fast")
+@pytest.mark.fast
 def test_large_sphere():
     large_sphere_gold=[[[0.96371831],[1.04338683]],[[1.04240049],[0.99605225]]]
     s=Sphere(n=1.5, r=5, center=(10,10,10))
     sch=detector_grid(10,.2)
-    hl=calc_holo(sch, s, illum_wavelen=.66, medium_index=1, illum_polarization=(1,0))
+    hl=calc_holo(sch, s, illum_wavelen=.66, medium_index=1,
+                 illum_polarization=(1,0))
     assert_obj_close(np.array(hl[0:2,0:2]),large_sphere_gold)
 
-@attr('fast')
+@pytest.mark.fast
 def test_calc_scat_coeffs():
     sp = Sphere(r=.5, n=1.6, center=(10, 10, 5))
     wavevec = 2* np.pi / (.66/1.33)
@@ -333,7 +361,7 @@ def test_calc_scat_coeffs():
   (1.128893090815587e-21-3.359900431286003e-11j),
   (1.5306616534558257e-24-1.2371991163332706e-12j)]])
 
-@attr("fast")
+@pytest.mark.fast
 def test_raw_fields():
     sp = Sphere(r=.5, n=1.6, center=(10, 10, 5))
     wavelen = .66
@@ -376,7 +404,7 @@ def test_raw_fields():
   (-0.0021320123934202356-0.0035427449839031066j)]])
 
 
-@attr('medium')
+@pytest.mark.medium
 def test_j0_roots():
     # Checks for misbehavior when j_0(x) = 0
     eps = 1e-12

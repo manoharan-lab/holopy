@@ -20,18 +20,18 @@
 import warnings
 
 import numpy as np
-from numpy.testing import assert_equal, assert_raises, assert_allclose
-from nose.plugins.attrib import attr
+from numpy.testing import assert_equal
+
+import pytest
 
 from holopy.scattering import Sphere, Spheres, calc_holo
 from holopy.core import detector_grid
 from holopy.core.tests.common import assert_obj_close
-from holopy.scattering.errors import ParameterSpecificationError
 from holopy.inference import NmpfitStrategy as Nmpfit
 from holopy.inference import prior, AlphaModel
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_minimizer():
     x = np.arange(-10, 10, .1)
     a = 5.3
@@ -63,7 +63,7 @@ def test_minimizer():
     assert_equal(minimization_details.niter, 2) # there's always an offset of 1
 
 
-@attr('slow')
+@pytest.mark.slow
 def test_optimization_with_maxiter_of_2():
     gold_fit_dict = {
         '0:r': 0.52480509800531849,

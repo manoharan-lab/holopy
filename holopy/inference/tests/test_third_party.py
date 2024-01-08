@@ -21,7 +21,8 @@ Test fitting a hologram using nmpfit without any wrapping
 
 
 import numpy as np
-from nose.plugins.attrib import attr
+
+import pytest
 
 from holopy.scattering import Mie, Sphere, calc_holo
 from holopy.inference.third_party import nmpfit
@@ -103,7 +104,7 @@ def residfunct(p, fjac = None):
     return([status, get_values(flat(derivates))])
 
 
-@attr('slow')
+@pytest.mark.slow
 def test_nmpfit():
     fitresult = nmpfit.mpfit(residfunct, parinfo = parinfo, ftol = ftol,
                              xtol = xtol, gtol = gtol, damp = damp,

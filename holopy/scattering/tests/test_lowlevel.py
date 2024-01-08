@@ -40,12 +40,14 @@ import yaml
 from numpy.testing import assert_allclose
 import numpy as np
 from numpy import sqrt, dot, pi, conj, real, imag, exp
-from nose.plugins.attrib import attr
-from nose.plugins.skip import SkipTest
+
+import pytest
+
 from scipy.special import spherical_jn, spherical_yn
 
 from holopy.scattering.theory.mie_f import (
-    mieangfuncs, miescatlib, multilayer_sphere_lib, scsmfo_min, mie_specfuncs)
+    mieangfuncs, miescatlib, scsmfo_min, mie_specfuncs
+)
 from holopy.scattering.theory.multisphere import _asm_far
 
 # basic defs
@@ -54,7 +56,7 @@ kr_asym = 1.9e4
 theta = pi/4.
 phi = -pi/4.
 
-@attr('fast')
+@pytest.mark.fast
 def test_spherical_vector_to_cartesian():
     '''
     Test conversions between complex vectors in spherical components
@@ -77,7 +79,7 @@ def test_spherical_vector_to_cartesian():
     assert_allclose(fortran_conversion, dot(conversion_mat, test_vect))
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_polarization_to_scatt_coords():
     '''
     Test conversion of an incident polarization (specified as a
@@ -95,7 +97,7 @@ def test_polarization_to_scatt_coords():
     assert_allclose(fortran_result, dot(conversion_mat, test_vect))
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_mie_amplitude_scattering_matrices():
     '''
     Test calculation of Mie amplitude scattering matrix elements.
@@ -128,7 +130,7 @@ def test_mie_amplitude_scattering_matrices():
                              'gold_mie_scat_matrix')
     with open(gold_name + '.yaml') as gold_file:
         gold_dict = yaml.safe_load(gold_file)
-    
+
     gold = np.array([gold_dict['S11'], gold_dict['pol'],
                      gold_dict['S33'], gold_dict['S34']])
 
@@ -168,7 +170,7 @@ def test_mie_amplitude_scattering_matrices():
         raise AssertionError("Near-field amplitude scattering matrix " +
                              "suspiciously close to far-field result.")
 
-@attr('fast')
+@pytest.mark.fast
 def test_scattered_field_from_asm():
     '''
     Test the calculation of the scattered field, given the amplitude
@@ -182,11 +184,8 @@ def test_scattered_field_from_asm():
     assert_allclose(fortran_test, gold)
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_mie_internal_coeffs():
-    if os.name == 'nt':
-        raise SkipTest()
-
     m = 1.5 + 0.1j
     x = 50.
     n_stop = miescatlib.nstop(x)
@@ -200,7 +199,7 @@ def test_mie_internal_coeffs():
     assert_allclose(cl, (jlx - hlx * bl) / jlmx, rtol = 1e-6, atol = 1e-6)
     assert_allclose(dl, (jlx - hlx * al)/ (m * jlmx), rtol = 1e-6, atol = 1e-6)
 
-@attr('fast')
+@pytest.mark.fast
 def test_mie_bndy_conds():
     '''
     Check that appropriate boundary conditions are satisfied:
@@ -246,7 +245,7 @@ def test_mie_bndy_conds():
 # independent of kr and close to the analytical result.
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_mie_multisphere_singlesph():
     '''
     Check that fields from mie_fields and tmatrix_fields are consistent
@@ -284,7 +283,7 @@ def test_mie_multisphere_singlesph():
     assert_allclose(etm_z, emie_z, rtol = 1e-6, atol = 1e-6)
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_dn1_down_recursion():
     '''
     Test Fortran down recursion code against older pure Python code.
@@ -299,7 +298,7 @@ def test_dn1_down_recursion():
     assert_allclose(dn1_fortran, dn1_python, rtol = 1e-6)
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_dn1_lentz():
     '''
     Test down recursion beginning with Lentz continued fraction algorithm
@@ -329,7 +328,7 @@ def test_dn1_lentz():
         lentz_illconditioned = mieangfuncs.lentz_dn1(z, nstop, 1., eps2)
         assert_allclose(lentz_illconditioned, lentz_start, rtol = 1e-12)
 
-@attr("fast")
+@pytest.mark.fast
 def test_asm():
     centers = np.array([[ 0.,  0.,  1.], [ 0.,  0., -1.]])
     m = np.array([ 1.5+0.1j,  1.5+0.1j])

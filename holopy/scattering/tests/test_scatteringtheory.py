@@ -1,19 +1,17 @@
 import unittest
 
 import numpy as np
-import xarray as xr
-from numpy.testing import assert_allclose, assert_equal
-from nose.plugins.attrib import attr
 
-from holopy.core import detector_grid, detector_points
-from holopy.core.metadata import update_metadata, flat
+import pytest
+
+from holopy.core import detector_grid
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 from holopy.scattering.theory import Mie
 from holopy.scattering.scatterer import Sphere, Spheres, Ellipsoid
-from holopy.scattering.errors import TheoryNotCompatibleError
 from holopy.scattering.interface import prep_schema
-from holopy.scattering.tests.common import xschema as XSCHEMA
-from holopy.scattering.tests.common import MockTheory, MockScatteringMatrixBasedTheory
+from holopy.scattering.tests.common import (
+    MockTheory, MockScatteringMatrixBasedTheory
+)
 
 SPHERE = Sphere(n=1.5, r=1.0, center=(0, 0, 2))
 SPHERES = Spheres([
@@ -30,35 +28,35 @@ SCAT_SCHEMA = prep_schema(
     medium_index=1.33, illum_wavelen=0.66, illum_polarization=False)
 
 class TestScatteringTheory(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_default_desired_coordinate_system_is_spherical(self):
         for cls in [ScatteringTheory, Mie, MockTheory]:
             self.assertTrue(cls.desired_coordinate_system == 'spherical')
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_can_handle_not_implemented(self):
         theory = ScatteringTheory()
         self.assertRaises(NotImplementedError, theory.can_handle, SPHERE)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_raw_scat_matrs_not_implemented(self):
         theory = ScatteringTheory()
         args = (None,) * 4  # 4 positional arguments....
         self.assertRaises(NotImplementedError, theory.raw_scat_matrs, *args)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_raw_cross_sections_not_implemented(self):
         theory = ScatteringTheory()
         args = (None,) * 4  # 4 positional arguments....
         self.assertRaises(
             NotImplementedError, theory.raw_cross_sections, *args)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_default_parameters_is_empty_dict(self):
         theory = ScatteringTheory()
         self.assertEqual(theory.parameters, dict())
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_from_parameters_callable_by_default(self):
         tmp = ScatteringTheory()
         theory = tmp.from_parameters(tmp.parameters)
@@ -67,22 +65,22 @@ class TestScatteringTheory(unittest.TestCase):
 
 
 class TestMockTheory(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_creation(self):
         theory = MockTheory()
         self.assertTrue(theory is not None)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_can_handle_sphere(self):
         theory = MockTheory()
         self.assertTrue(theory.can_handle(SPHERE))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_cannot_handle_spheres(self):
         theory = MockTheory()
         self.assertFalse(theory.can_handle(SPHERES))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_raw_fields_returns_correct_shape(self):
         theory = MockTheory()
         positions = np.random.randn(65, 3)
@@ -96,7 +94,7 @@ class TestMockTheory(unittest.TestCase):
 
         self.assertTrue(fields.shape == positions.shape)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_raw_fields_returns_ones(self):
         theory = MockTheory()
         positions = np.random.randn(65, 3)
@@ -110,7 +108,7 @@ class TestMockTheory(unittest.TestCase):
 
         self.assertTrue(np.allclose(fields, 1.0, **TOLS))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_raw_fields_returns_dtype_complex(self):
         theory = MockTheory()
         positions = np.random.randn(65, 3)
@@ -126,29 +124,29 @@ class TestMockTheory(unittest.TestCase):
 
 
 class TestMockScatteringMatrixBasedTheory(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_creation(self):
         theory = MockScatteringMatrixBasedTheory()
         self.assertTrue(theory is not None)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_can_handle_sphere(self):
         theory = MockScatteringMatrixBasedTheory()
         self.assertTrue(theory.can_handle(SPHERE))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_cannot_handle_spheres(self):
         theory = MockScatteringMatrixBasedTheory()
         self.assertFalse(theory.can_handle(SPHERES))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_raw_scat_matrs_returns_correct_shape(self):
         theory = MockScatteringMatrixBasedTheory()
         positions = np.random.randn(3, 65)
         scattering_matrices = theory.raw_scat_matrs(SPHERE, positions)
         self.assertTrue(scattering_matrices.shape == (positions.shape[1], 2, 2))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_raw_scat_matrs_returns_eyes(self):
         theory = MockScatteringMatrixBasedTheory()
         positions = np.random.randn(3, 65)
@@ -159,7 +157,7 @@ class TestMockScatteringMatrixBasedTheory(unittest.TestCase):
             for m in scattering_matrices]
         self.assertTrue(all(each_is_eye))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_raw_fields_returns_dtype_complex(self):
         theory = MockScatteringMatrixBasedTheory()
         positions = np.random.randn(3, 65)

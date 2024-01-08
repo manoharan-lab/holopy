@@ -25,18 +25,20 @@ import unittest
 
 import numpy as np
 import xarray as xr
-from nose.plugins.attrib import attr
 
-from holopy.scattering import Sphere, Spheres, calc_holo
+import pytest
+
+from holopy.scattering import Sphere, calc_holo
 from holopy.scattering.interface import prep_schema
 from holopy.core.metadata import detector_grid, update_metadata, to_vector
 from holopy.inference import prior, AlphaModel
 from holopy.core.tests.common import (
-    assert_equal, assert_obj_close, assert_allclose)
+    assert_equal, assert_obj_close
+)
 
 
 class TestHologramCalculation(unittest.TestCase):
-    @attr("medium")
+    @pytest.mark.medium
     def test_calc_holo_with_twocolor_index(self):
         indices = dict([('red',1.5),('green',2)])
         radius = 0.5
@@ -70,7 +72,7 @@ class TestHologramCalculation(unittest.TestCase):
             np.array([green_hologram.values])])
         assert_equal(both_hologram.values, joined)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_calc_holo_with_twocolor_alpha(self):
         detector = detector_grid(
             5, 1, extra_dims={'illumination': ['red', 'green']})
@@ -82,7 +84,7 @@ class TestHologramCalculation(unittest.TestCase):
             illum_wavelen={'red': 0.66, 'green': 0.52}, medium_index=1.33)
         assert result is not None
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_calc_holo_with_twocolor_priors(self):
         detector = detector_grid(
             5, 1, extra_dims={'illumination': ['red', 'green']})
@@ -97,7 +99,7 @@ class TestHologramCalculation(unittest.TestCase):
         result = model.forward(model.initial_guess, detector)
         assert result is not None
 
-@attr("medium")
+@pytest.mark.medium
 def test_prep_schema():
     sch_f = detector_grid(shape=5,spacing=1)
     sch_x = detector_grid(shape=5,spacing=1,extra_dims={'illumination':['red','green','blue']})

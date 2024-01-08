@@ -16,11 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
-from nose.plugins.attrib import attr
+import pytest
 
 from holopy.core.tests.common import assert_pickle_roundtrip, get_example_data
 
-@attr("fast")
+@pytest.mark.fast
 def test_image():
     holo = get_example_data('image0001')
     assert_pickle_roundtrip(holo)

@@ -1,33 +1,35 @@
 import unittest
 import warnings
 
-from nose.plugins.attrib import attr
+import pytest
 
-from holopy.core.errors import *
-
+from holopy.core.errors import (
+    LoadError, BadImage, NoMetadata, CoordSysError,
+    DependencyMissing, PerformanceWarning
+)
 
 class TestErrors(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_LoadError(self):
         self.assertRaises(LoadError, _raise, LoadError('', ''))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_BadImage(self):
         self.assertRaises(BadImage, _raise, BadImage())
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_NoMetadata(self):
         self.assertRaises(NoMetadata, _raise, NoMetadata())
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_CoordSysError(self):
         self.assertRaises(CoordSysError, _raise, CoordSysError())
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_DependencyMissing(self):
         self.assertRaises(DependencyMissing, _raise, DependencyMissing('', ''))
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_PerformanceWarning(self):
         self.assertWarns(PerformanceWarning, _warn, PerformanceWarning)
 
