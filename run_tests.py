@@ -18,16 +18,14 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 from subprocess import call
 import sys
-import multiprocessing
 
-t = ['nosetests']
+t = ['pytest']
 
 if len(sys.argv) > 1 and sys.argv[1] == 'coverage':
-    t.extend(['--with-coverage', '--cover-package=holopy', '--cover-erase'])
+    t.extend(['--cov=holopy'])
 else:
-    t.extend(['--processes={0}'.format(multiprocessing.cpu_count())] +
-             sys.argv[2:])
-t.extend(['--process-timeout=120'])
+    t.extend(['-n'] + ['logical'] + sys.argv[2:])
+t.extend(['--timeout=120'])
 
 print((' '.join(t)))
 returncode = call(t)

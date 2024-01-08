@@ -27,4 +27,3 @@ h5py
 matplotlib
 xarray>=0.10.0
 h5netcdf
-nose

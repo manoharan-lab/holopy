@@ -46,11 +46,11 @@ dependencies:
   - meson-python
 
   # for running tests: "cov" is coverage plugin, "xdist" is to run pytest in
-  # parallel
-  - nose
+  # parallel; "timeout" is to set timeout for tests
   - pytest
   - pytest-cov
   - pytest-xdist
+  - pytest-timeout
 
   # optional packages to make development easier in (e.g.) emacs
   - pyright
