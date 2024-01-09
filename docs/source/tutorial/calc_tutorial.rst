@@ -406,7 +406,7 @@ Scattering Cross-Sections
 The scattering cross section provides a measure of how much light from an
 incident beam is scattered by a particular scatterer. Similar to calculating
 scattering matrices, we can omit the position of the scatterer for calculation
-of cross sections. Since cross sections integrates over all angles, we can also
+of cross sections. Since cross sections integrate over all angles, we can also
 omit the ``detector`` argument entirely:
 
 ..  testcode::
@@ -417,12 +417,20 @@ omit the ``detector`` argument entirely:
 ..  testcode::
     :hide:
 
-    print(np.around(x_sec.values, 5))
+    # for cross-platform compatibility, need to add 0.0 (to avoid -0 being
+    # compared to 0) and don't rely on numpy's string representation, which
+    # can vary from platform to platform.
+
+    rounded_vals = np.around(x_sec.values, 5) +  0.0
+    for val in rounded_vals: print(val)
 
 ..  testoutput::
     :hide:
 
-    [ 1.93274 -0.       1.93274  0.9162 ]
+    1.93274
+    0.0
+    1.93274
+    0.9162
 
 x_sec returns an array containing four elements. The first element is the
 scattering cross section, specified in terms of the same units as wavelength and
