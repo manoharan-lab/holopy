@@ -1,4 +1,4 @@
-.. _dev_tutorial:
+.. _dev_guide:
 
 Developer's Guide
 =================
@@ -10,7 +10,9 @@ Installing HoloPy for developers
 If you are going to hack on holopy, you probably want to compile the
 scattering extensions.
 
-First, download or clone the latest version of HoloPy from GitHub at `https://github.com/manoharan-lab/holopy <https://github.com/manoharan-lab/holopy>`_.
+First, download or clone the latest version of HoloPy from GitHub at
+`https://github.com/manoharan-lab/holopy
+<https://github.com/manoharan-lab/holopy>`_.
 
 To gather all the dependencies needed to build HoloPy, the simplest approach is
 to use the included environment.yml file to make a new conda environment::
@@ -20,6 +22,9 @@ to use the included environment.yml file to make a new conda environment::
 Then activate the new environment::
 
   conda activate holopy-devel
+
+For Linux, you will need to install the gcc and gfortran compilers before
+building the package.
 
 For Windows, if you don't already have Fortran and C compilers installed, you
 can edit the environment file to install the ``m2w64-toolchain`` package.
@@ -43,46 +48,25 @@ add symlinks to fix them::
   sudo ln -s /usr/local/gfortran/lib/libgfortran.3.dynlib /usr/local/lib
   sudo ln -s /usr/local/gfortran/lib/libquadmath.3.dynlib /usr/local/lib
 
-**Note for Windows users:**
-The above build instructions *should* work with Windows, but if not, you can try
-the following, which should work on Windows 10 with an AMD64 architecture
-(64-bit) processor.
+**Note for Windows users:** The above build instructions *should* work with
+Windows. Be aware that if you use the ``m2w64-toolchain`` conda package to
+install the compilers, you will get a fairly old version of gcc (5.3.0). If you
+want to compile with a more recent version of gcc, you can download the
+compilers and install them manually. One of the easiest ways to do this (as
+recommended by Scipy) is to install the `RTools bundle, version 4.0
+<https://cran.r-project.org/bin/windows/Rtools/rtools40.html>`_. Then update
+your ``PATH`` variable to include the directory ``[PATH TO RTOOLS]\ucrt64\bin``,
+replacing ``[PATH TO RTOOLS]`` with the directory of the RTools installation. In
+Powershell, you can edit your ``PATH`` (for the duration of your Powershell
+session only) with::
 
-1. Install `Anaconda <https://www.continuum.io/downloads>`_ with Python 3.6 and
-   make sure it is working.
-2. Install the C compiler. It's included in `Visual Studio 2015 Community
-   <https://www.visualstudio.com/downloads/>`_. Make sure it is working with a C
-   helloworld.
-3. From now on, make sure any command prompt window invokes the right
-   environment conditions for compiling with VC. To do this, make sure
-   ``C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat`` is
-   added to the system path variable. This batch detects your architecture, then
-   runs another batch that sets the path include the directory with the correct
-   version of the VC compiler.
-4. Install cython and made sure it works.
-5. Install `Intel's Fortran compiler
-   <https://software.intel.com/en-us/fortran-compilers/try-buy>`_. A good place
-   to start is the trial version of Parallel Studio XE. Make sure it is working
-   with a Fortran helloworld.
-6. Install `mingw32-make
-   <https://sourceforge.net/projects/mingw/files/MinGW/Extension/make/>`_, which
-   does not come with Anaconda by default.
-7. Download or clone the master branch of HoloPy from
-   `https://github.com/manoharan-lab/holopy
-   <https://github.com/manoharan-lab/holopy>`_.
-8. Open the command prompt included in Intel's Parallel Studio. Run
-   ``holopy/setup.py``. It is necessay to use Intel's Parallel Studio command
-   prompt to avoid compiling errors.
-9. Install the following dependencies that don't come with Anaconda::
+  $env:Path += ';[PATH TO RTOOLS]\ucrt64\bin'
 
-        conda install xarray dask netCDF4 bottleneck
-        conda install -c astropy emcee=2.2.1
+Then follow the instructions above.
 
-10. Open an iPython console where holopy is installed and try ``import holopy``.
-
-If the above procedure doesn't work, or you find something else that does,
-please `let us know <https://github.com/manoharan-lab/holopy/issues>`_ so that
-we can improve these instructions.
+If this procedure doesn't work, or you find something else that does, please
+`let us know <https://github.com/manoharan-lab/holopy/issues>`_ so that we can
+improve these instructions.
 
 ..  _xarray:
 
@@ -103,7 +87,7 @@ or spherical form) track this dimension, so that each data value in the array
 has its own set of coordinates unrelated to its neighbours. This type of
 one-dimensional organization is sometimes used for 2D images as well. Inference
 and fitting methods typically use only a subset of points in an image (see
-:ref:`random_subset`), and so it makes sense for them to keep track of lists of
+[Dimiduk2014]_), and so it makes sense for them to keep track of lists of
 location coordinates instead of a grid. Furthermore, HoloPy's scattering
 functions accept coordinates in the form of a 3xN array of coordinates. In both
 of these cases, the 2D image is flattened into a 1D DataArray like that created
@@ -119,9 +103,9 @@ track of their dimension names separately. HoloPy's :func:`.save_image` writes a
 yaml dump of ``attrs`` (along with spacing information) to the
 ``imagedescription`` field of .tif file metadata.
 
-:ref:`infer_tutorial` returns a lot of information, which is stored in the form
-of a :class:`.SamplingResult` object. This object stores the model and
-:class:`.EmceeStrategy` that were used in the inference calculation as
+MCMC sampling (see :ref:`infer_tutorial`) returns a lot of information, which is
+stored in the form of a :class:`.SamplingResult` object. This object stores the
+model and :class:`.EmceeStrategy` that were used in the inference calculation as
 attributes. An additional attribute named ``dataset`` is an `xarray Dataset
 <http://xarray.pydata.org/en/stable/data-structures.html#dataset>`_ that
 contains both the data used in the inference calculation, as well as the raw
@@ -198,18 +182,22 @@ If you want to use some other noise model, you may need to override ``_lnlike``
 and define the probablity given your uncertainty. You can reference ``_lnlike``
 in :class:`~holopy.inference.noise_model.NoiseModel`.
 
-.. _nose_tests:
+.. _running_tests:
 
 Running tests
 ~~~~~~~~~~~~~
 HoloPy comes with a suite of tests that ensure everything has been built
 correctly and that it can perform all of the calculations it is designed to do.
-To run these tests, navigate to the root of the package (e.g.,
+To run these tests, navigate to the root of the source tree (e.g.,
 ``/home/me/holopy``) and run
 
 .. sourcecode:: bash
 
-   python run_nose.py
+   python run_tests.py
+
+or you can just run ``pytest`` (or ``pytest -v`` for verbose output) directly
+from the command line. It will automatically discover all the tests and run
+them.
 
 Note that you can download the full test holograms by installing ``git lfs`` and
 doing::

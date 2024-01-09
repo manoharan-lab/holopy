@@ -263,7 +263,7 @@ class Model(HoloPyObject):
         Compute the log-prior probability of pars
 
         Parameters
-        -----------
+        ----------
         pars: dict or list
             list - values for each parameter in the order of self._parameters
             dict - keys should match self.parameters
@@ -294,7 +294,7 @@ class Model(HoloPyObject):
         Compute the log-posterior probability of pars given data
 
         Parameters
-        -----------
+        ----------
         pars: dict or list
             list - values for each parameter in the order of self._parameters
             dict - keys should match self.parameters
@@ -304,7 +304,7 @@ class Model(HoloPyObject):
             Specify to use a random subset of all pixels in data
 
         Returns
-        --------
+        -------
         lnposterior: float
         """
         pars = self.ensure_parameters_are_listlike(pars)
@@ -342,7 +342,7 @@ class Model(HoloPyObject):
         Compute the log-likelihood for pars given data
 
         Parameters
-        -----------
+        ----------
         pars: dict or list
             list - values for each parameter in the order of self._parameters
             dict - keys should match self.parameters
@@ -350,7 +350,7 @@ class Model(HoloPyObject):
             The data to compute likelihood against
 
         Returns
-        --------
+        -------
         lnlike: float
         """
         pars = self.ensure_parameters_are_listlike(pars)
@@ -409,7 +409,7 @@ class AlphaModel(Model):
         scaled by self.alpha.
 
         Parameters
-        -----------
+        ----------
         pars: list
             Values for each parameter used to compute the hologram. Ordering
             is given by self._parameters
@@ -444,7 +444,7 @@ class ExactModel(Model):
         Compute a forward model (the hologram)
 
         Parameters
-        -----------
+        ----------
         pars: list
             Values for each parameter used to compute the hologram. Ordering
             is given by self._parameters

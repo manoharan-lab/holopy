@@ -17,8 +17,6 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-MieScatLib.py
-
 Library of code to do Mie scattering calculations.
 
 .. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>

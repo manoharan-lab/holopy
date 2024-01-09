@@ -1,4 +1,4 @@
-.. _user_guide:
+.. _tutorial:
 
 ==========
 Tutorials
@@ -17,4 +17,3 @@ and want to get started quickly.
    calc_tutorial
    dda_tutorial
    fit_tutorial
-   dev_tutorial

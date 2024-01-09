@@ -22,18 +22,13 @@ The abstract base class for all scattering objects
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
 
-from collections import defaultdict
-from itertools import chain
 from copy import copy, deepcopy
-from numbers import Number
 
 import numpy as np
-import xarray as xr
 
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.utils import ensure_array
-from holopy.scattering.errors import (
-    InvalidScatterer, ParameterSpecificationError)
+from holopy.scattering.errors import InvalidScatterer
 
 
 class Scatterer(HoloPyObject):

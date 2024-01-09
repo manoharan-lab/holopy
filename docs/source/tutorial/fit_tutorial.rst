@@ -226,6 +226,8 @@ very informative. To help with naming, you can even assign names to
     diameter = np.sqrt(sphere_area / np.pi, name='diameter')
 
 
+.. _infer_tutorial:
+
 Bayesian Parameter Estimation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

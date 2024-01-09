@@ -345,14 +345,16 @@ def show_scatterer_slices(scatterer, spacing):
 
 
 def check_display():
-    """Diagnostic test to check matplotlib backend.
+    """
+    Diagnostic test to check matplotlib backend.
 
     You should see a white square inside a black square, with a colorbar.
     Pressing the left or right arrow keys should cycle through z.
+
     You should see:
-        Z = 0 : A white axes-aligned square
-        Z = 1 : A white circle
-        Z = 2 : A white diamond (square at 45 degrees)
+    Z = 0 : A white axes-aligned square
+    Z = 1 : A white circle
+    Z = 2 : A white diamond (square at 45 degrees)
     """
     a = np.zeros([100, 100, 3])
     a[25:75,25:75,0] = 1

@@ -128,7 +128,7 @@ class MieLens(ScatteringTheory):
         # consider the incident wave to have phase 1. So we need to fix
         # this by multiplying by e^{ikz}.
         # Combined, we multiply by e^{ikz} / incident_field[x-component]:
-        incident_field_x, _ = field_calculator.calculate_incident_field()
+        incident_field_x, _ = field_calculator._calculate_incident_field()
         field_xyz *= np.exp(1j * particle_kz) / incident_field_x
         return field_xyz
 

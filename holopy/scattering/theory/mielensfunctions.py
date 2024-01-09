@@ -2,7 +2,6 @@ import numpy as np
 from numpy.polynomial.chebyshev import Chebyshev
 from numpy.polynomial.legendre import legval
 from scipy.special import j0, j1, spherical_jn, spherical_yn
-from scipy import interpolate
 
 from holopy.scattering.errors import MissingParameter
 
@@ -15,62 +14,64 @@ LEGGAUSS_PTS_WTS_NPTS = np.polynomial.legendre.leggauss(NPTS)
 
 
 class MieLensCalculator(object):
+    """Calculates the field from a Mie scatterer imaged in a high-NA lens.
+
+    The incindent electric field is E e^{ikz}, with the particle
+    position at z. The scattered field takes into account the
+    varying phase of the incoming field.
+
+    Parameters
+    ----------
+    particle_kz : float
+        + z is away from the lens
+    index_ratio : float > 0
+    size_parameter : float > 0
+    lens_angle : float on (0, pi/2)
+
+    Methods
+    -------
+    calculate_scattered_field(krho, phi)
+        tuple of 2 numpy.ndarrays, of shape krho
+    calculate_total_field(krho, phi)
+        tuple of 2 numpy.ndarrays, of shape krho
+    calculate_total_intensity(krho, phi)
+        numpy.ndarray, of shape krho
+
+    Other Parameters
+    ----------------
+    quad_npts : int, optional
+        The number of points for numerical quadrature of the
+        integrals over the lens pupil.
+    interpolate_integrals : {'check', True, False}
+        Whether or not to interpolate the internally-evaluated
+        integrals for speed. Default is `'check'`, which interpolates
+        if it will be faster or does direct numerical quadrature
+        otherwise. Interpolation is done via a piecewise Chebyshev
+        approximant.
+    interpolator_window_size : float, optional
+        The spacing, in units of `1/k`, for the windows of the
+        piecewise Chebyshev approximants. A lower value gives more
+        accurate results, although accuracy depends on the
+        `interpolator_degree` parameter as well. The default is 39.
+        which gives 5e-13 relative accuracy.
+    interpolator_degree : int, optional
+        The polynomial degree for the piecewise Chebyshev
+        approximants. A higher value gives more accurate results,
+        although accuracy depends on the `interpolator_window_size`
+        parameter as well. The default is 32, which gives 5e-13
+        relative accuracy.
+
+        It is best to leave the interpolator parameters as-is; they
+        are only exposed for testing and advanced usage.
+    """
+
     must_be_specified = [
         'particle_kz', 'index_ratio', 'size_parameter', 'lens_angle']
 
     def __init__(self, particle_kz=None, index_ratio=None, size_parameter=None,
                  lens_angle=None, quad_npts=100, interpolate_integrals='check',
                  interpolator_window_size=30.0, interpolator_degree=32):
-        """Calculates the field from a Mie scatterer imaged in a high-NA lens.
 
-        The incindent electric field is E e^{ikz}, with the particle
-        position at z. The scattered field takes into account the
-        varying phase of the incoming field.
-
-        Parameters
-        ----------
-        particle_kz : float
-            + z is away from the lens
-        index_ratio : float > 0
-        size_parameter : float > 0
-        lens_angle : float on (0, pi/2)
-
-        Methods
-        -------
-        calculate_scattered_field(krho, phi)
-            tuple of 2 numpy.ndarrays, of shape krho
-        calculate_total_field(krho, phi)
-            tuple of 2 numpy.ndarrays, of shape krho
-        calculate_total_intensity(krho, phi)
-            numpy.ndarray, of shape krho
-
-        Other Parameters
-        ----------------
-        quad_npts : int, optional
-            The number of points for numerical quadrature of the
-            integrals over the lens pupil.
-        interpolate_integrals : {'check', True, False}
-            Whether or not to interpolate the internally-evaluated
-            integrals for speed. Default is `'check'`, which interpolates
-            if it will be faster or does direct numerical quadrature
-            otherwise. Interpolation is done via a piecewise Chebyshev
-            approximant.
-        interpolator_window_size : float, optional
-            The spacing, in units of `1/k`, for the windows of the
-            piecewise Chebyshev approximants. A lower value gives more
-            accurate results, although accuracy depends on the
-            `interpolator_degree` parameter as well. The default is 39.
-            which gives 5e-13 relative accuracy.
-        interpolator_degree : int, optional
-            The polynomial degree for the piecewise Chebyshev
-            approximants. A higher value gives more accurate results,
-            although accuracy depends on the `interpolator_window_size`
-            parameter as well. The default is 32, which gives 5e-13
-            relative accuracy.
-
-            It is best to leave the interpolator parameter as-is; they
-            are only exposed for testing and advanced usage.
-        """
         self.particle_kz = particle_kz
         self.index_ratio = index_ratio
         self.size_parameter = size_parameter
@@ -95,17 +96,17 @@ class MieLensCalculator(object):
         self._precompute_scattering_matrices()
 
     def calculate_scattered_field(self, krho, phi):
-        """Calculates the field from a Mie scatterer imaged through a
+        r"""Calculates the field from a Mie scatterer imaged through a
         high-NA lens and excited with an electric field of unit strength
         directed along the optical axis.
 
-            .. math::
-                \vec{E}_{sc} = A \left[ I_{12} \sin(2\phi) \hat{y} +
-                                       -I_{10} \hat{x} +
-                                        I_{12} \cos(2\phi) \hat{x} +
-                                       -I_{20} \hat{x} +
-                                       -I_{22} \cos(2\phi) \hat{x} +
-                                       -I_{22} \sin(2\phi) \hat{y} \right]
+        .. math::
+           \vec{E}_{sc} = A \left[ I_{12} \sin(2\phi) \hat{y} +
+                                  -I_{10} \hat{x} +
+                                   I_{12} \cos(2\phi) \hat{x} +
+                                  -I_{20} \hat{x} +
+                                  -I_{22} \cos(2\phi) \hat{x} +
+                                  -I_{22} \sin(2\phi) \hat{y} \right]
 
         Parameters
         ----------
@@ -157,14 +158,14 @@ class MieLensCalculator(object):
         """The total (incident + scattered) field at the detector
         """
         scattered_x, scattered_y = self.calculate_scattered_field(krho, phi)
-        incident_x, incident_y = self.calculate_incident_field()
+        incident_x, incident_y = self._calculate_incident_field()
         return incident_x + scattered_x, incident_y + scattered_y
 
     def calculate_total_intensity(self, krho, phi):
         fx, fy = self.calculate_total_field(krho, phi)
         return np.abs(fx)**2 + np.abs(fy)**2
 
-    def calculate_incident_field(self):
+    def _calculate_incident_field(self):
         """This is here so
         (i)  Any corrections in the theory to the scattered field
              have an easy place to enter, and
@@ -275,29 +276,31 @@ class MieLensCalculator(object):
 
 
 class AberratedMieLensCalculator(MieLensCalculator):
+    """
+    This class handles lenses with spherical aberration. It is based on
+    `MieLensCalculator`, which documents the methods and parameters.
+
+    Parameters
+    ----------
+    spherical_aberration : float or array-like of floats
+        The spherical aberration, up to arbitrary order. If a float,
+        just the coefficient of the 3rd-order aberration (4th-order
+        in wavefront). When an array, the coefficients of
+        aberrations in ascending order (3rd, 5th, 7th, etc), where
+        the wavefront distortion for the nth-order aberration is of
+        the form (cos(theta) - 1)^(n+1), where n = 3, 5, 7, etc
+        Default is None, which raises an error.
+
+    Other Parameters
+    ----------------
+    See MieLensCalculator
+    """
+
     must_be_specified = [
         'particle_kz', 'index_ratio', 'size_parameter', 'lens_angle',
         'spherical_aberration']
 
     def __init__(self, spherical_aberration=None, **kwargs):
-        """
-        See `MieLensCalculator` for a more complete docstring.
-
-        Parameters
-        ----------
-        spherical_aberration : float or array-like of floats
-            The spherical aberration, up to arbitrary order. If a float,
-            just the coefficient of the 3rd-order aberration (4th-order
-            in wavefront). When an array, the coefficients of
-            aberrations in ascending order (3rd, 5th, 7th, etc), where
-            the wavefront distortion for the nth-order aberration is of
-            the form (cos(theta) - 1)^(n+1), where n = 3, 5, 7, etc
-            Default is None, which raises an error.
-
-        Other Parameters
-        ----------------
-        See MieLensCalculator
-        """
         self.spherical_aberration = spherical_aberration
         super(AberratedMieLensCalculator, self).__init__(**kwargs)
 
@@ -438,31 +441,31 @@ def calculate_al_bl(index_ratio, size_parameter, l):
 
 
 class AlBlFunctions(object):
-    """
+    r"""
     Group of functions for calculating the Mie scattering coefficients,
     used for expressing the scattered field in terms of vector spherical
     harmonics.
 
     The coefficients `a_l`, `b_l` are defined as
 
-    ..math::
+    .. math::
 
-        a_l = \frac{\psi_l(x) \psi_l'(nx) -  n \psi_l(nx) \psi_l'(x)}
-                   {\\xi_l(x) \psi_l'(nx) - n \psi_l(nx)  \\xi_l'(x)},
+       a_l = \frac{\psi_l(x) \psi_l'(nx) -  n \psi_l(nx) \psi_l'(x)}
+                  {\\xi_l(x) \psi_l'(nx) - n \psi_l(nx)  \\xi_l'(x)},
 
-        b_l = \frac{\psi_l(nx) \psi_l'(x) - n \psi_l(x) \psi_l'(nx)}
-                   {\psi_l(nx) \\xi_l'(x) - n \\xi_l(x) \psi_l'(nx)},
+       b_l = \frac{\psi_l(nx) \psi_l'(x) - n \psi_l(x) \psi_l'(nx)}
+                  {\psi_l(nx) \\xi_l'(x) - n \\xi_l(x) \psi_l'(nx)},
 
     where :math:`\psi_l` and :math:`\\xi_l` are the Riccati-Bessel
     functions of the first and third kinds, respectively. The
-    definitions used here follow those of van de Hulst [1]_, which
-    differ from those used in Bohren and Huffman [2]_.
+    definitions used here follow those of van de Hulst [vdh]_, which
+    differ from those used in Bohren and Huffman [bandh]_.
 
     References
     ----------
-    .. [1] H. C. van de Hulst, "Light Scattering by Small Particles",
+    .. [vdh] H. C. van de Hulst, "Light Scattering by Small Particles",
            Dover (1981), pg 123.
-    .. [2] C. F. Bohren and Donald R. Huffman, "Absorption and
+    .. [bandh] C. F. Bohren and Donald R. Huffman, "Absorption and
            Scattering of Light by Small Particles", Wiley (2004),
            pg 101.
     """
@@ -503,14 +506,15 @@ class AlBlFunctions(object):
 
     @staticmethod
     def riccati_psin(n, z, derivative=False):
-        """Riccati-Bessel function of the first kind or its derivative.
+        r"""Riccati-Bessel function of the first kind or its derivative.
 
         .. math:: \psi_n(z) = z\,j_n(z),
+
         where :math:`j_n(z)` is the spherical Bessel function of the
         first kind.
 
         Parameters
-         ----------
+        ----------
         n : int, array_like
               Order of the Bessel function (n >= 0).
         z : complex or float, array_like
@@ -524,15 +528,15 @@ class AlBlFunctions(object):
         psin : ndarray
         """
         if derivative:
-            ricatti = (z * spherical_jn(n, z, derivative=True) +
+            riccati = (z * spherical_jn(n, z, derivative=True) +
                        spherical_jn(n, z))
         else:
-            ricatti = z * spherical_jn(n, z)
-        return ricatti
+            riccati = z * spherical_jn(n, z)
+        return riccati
 
     @staticmethod
     def riccati_xin(order, z, derivative=False):
-        """Riccati-Bessel function of the third kind or its derivative.
+        r"""Riccati-Bessel function of the third kind or its derivative.
 
         .. math:: \\xi_n(z) = z\,h^{(1)}_n(z),
 
@@ -553,35 +557,33 @@ class AlBlFunctions(object):
         xin : ndarray
         """
         if derivative:
-            ricatti = (z * spherical_h2n(order, z, derivative=derivative) +
+            riccati = (z * spherical_h2n(order, z, derivative=derivative) +
                        spherical_h2n(order, z))
         else:
-            ricatti = z * spherical_h2n(order, z)
-        return ricatti
+            riccati = z * spherical_h2n(order, z)
+        return riccati
 
 
 def calculate_pil_taul(theta, max_order):
-    """
+    r"""
     The 1st through Nth order angle dependent functions for Mie scattering,
-    evaluated at theta. The functions :math`\pi(\theta)` and :math`\tau(\theta)
-    are defined as:
+    evaluated at theta. The functions :math:`\pi(\theta)` and
+    :math:`\tau(\theta)` are defined as:
 
-    ..math::
+    .. math::
 
-    \pi_n(\theta) = \frac{1}{\sin \theta} P_n^1(\cos\theta)
-
-    \tau_n(\theta) = \frac{\mathrm{d}}{\mathrm{d}\theta} P_n^1(\cos\theta)
+      \pi_n(\theta) &= \frac{1}{\sin \theta} P_n^1(\cos\theta) \\
+      \tau_n(\theta) &= \frac{\mathrm{d}}{\mathrm{d}\theta} P_n^1(\cos\theta)
 
     where :math:`P_n^m` is the associated Legendre function. The functions are
     computed by upward recurrence using the relations
 
-    ..math::
+    .. math::
 
-    \pi_n = \frac{2n-1}{n-1}\cos\theta \, \pi_{n-1} - \frac{n}{n-1}\pi_{n-2}
+      \pi_n &= \frac{2n-1}{n-1}\cos\theta \, \pi_{n-1} - \frac{n}{n-1}\pi_{n-2} \\
+      \tau_n &= n \, \cos\theta \, \pi_n - (n+1)\pi_{n-1}
 
-    \tau_n = n \, \cos\theta \, \pi_n - (n+1)\pi_{n-1}
-
-    beginning with :math:`pi_0 = 0` and :math:`pi_1 = 1`
+    beginning with :math:`\pi_0 = 0` and :math:`\pi_1 = 1`
 
     Parameters
     ----------
@@ -659,4 +661,3 @@ class PiecewiseChebyshevApproximant(object):
     @classmethod
     def _mask_window(cls, x, window):
         return (x >= window[0]) & (x < window[1])
-

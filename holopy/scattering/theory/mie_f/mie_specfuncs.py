@@ -27,9 +27,11 @@ calculations.
 
 Papers referenced herein:
 
+[Mackowski1990]_
 D. W. Mackowski, R. A. Altenkirch, and M. P. Menguc, "Internal absorption
 cross sections in a stratified sphere," Applied Optics 29, 1551-1559, (1990).
 
+[Yang2003]_
 Yang, "Improved recursive algorithm for light scattering by a multilayered
 sphere," Applied Optics 42, 1710-1720, (1993).
 
