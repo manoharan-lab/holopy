@@ -15,10 +15,10 @@
 
 import sys
 import os
+from datetime import datetime
 
 import holopy as hp
 
-import sphinx_rtd_theme
 from sphinx.ext import apidoc
 
 from unittest.mock import MagicMock
@@ -40,14 +40,15 @@ def run_apidoc(_):
     flags = ["-f",  # overwrite existing files
              "-T",  # don't generate redundant table of contents
              "-M",  # put module description before contents
-             "-E"]  # limit hierarchy levels
+             "-d2"] # 2 levels for table of contents
     filepaths = ["-o",
                  os.path.join(docs_root, 'source', 'reference'),  # destination
                  holopy_root]  # codebase
     exclusions = [os.path.join(holopy_root, '*', 'third_party', '*'),
-                  os.path.join(holopy_root, 'fitting.py')]
+                  os.path.join(holopy_root, 'scattering', 'theory', 'mie_f', '*.so'),
+                  os.path.join(holopy_root, 'scattering', 'theory', 'tmatrix_f', '*.so'),
+                  os.path.join(holopy_root, '*', 'tests')]
     apidoc.main(flags + filepaths + exclusions)
-
 
 def setup(app):
     app.connect('builder-inited', run_apidoc)
@@ -68,14 +69,19 @@ sys.path.insert(0, os.path.abspath('../holopy'))
 extensions = [
     'matplotlib.sphinxext.plot_directive',
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.ifconfig',
     'sphinx.ext.napoleon',
-    'sphinx.ext.mathjax'
+    #'numpydoc',
+    'sphinx.ext.mathjax',
+    'sphinx_rtd_theme',
 ]
+
+#numpydoc_class_members_toctree = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -86,12 +92,13 @@ source_suffix = '.rst'
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
 
-# The master toctree document.
-master_doc = 'index'
+# The root toctree document.
+root_doc = 'index'
 
 # General information about the project.
+current_year = datetime.now().year
 project = 'HoloPy'
-copyright = '2016, Manoharan Lab, Harvard University'
+copyright = f'2016–{current_year}, Manoharan Lab, Harvard University'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -311,7 +318,7 @@ texinfo_documents = [
 epub_title = 'HoloPy'
 epub_author = 'Manoharan Lab, Harvard University'
 epub_publisher = 'Manoharan Lab, Harvard University'
-epub_copyright = '2016, Manoharan Lab, Harvard University'
+epub_copyright = f'2016–{current_year}, Manoharan Lab, Harvard University'
 
 # The basename for the epub file. It defaults to the project name.
 #epub_basename = 'Holopy'
@@ -374,6 +381,5 @@ epub_exclude_files = ['search.html']
 # If false, no index is generated.
 #epub_use_index = True
 
-
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'http://docs.python.org/': None}
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}

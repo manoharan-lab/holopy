@@ -13,6 +13,10 @@ The following references describe applications of HoloPy and technical advances.
 If you use HoloPy, we ask that you cite the articles that are relevant to your
 application.
 
+.. [Martin2021] Martin, Caroline, Brian Leahy, and Vinothan N. Manoharan. “Improving Holographic Particle Characterization by Modeling Spherical Aberration.” Optics Express 29, no. 12 (June 7, 2021): 18212–23. doi:10.1364/OE.424043.
+
+.. [Leahy2020] Leahy, Brian, Ronald Alexander, Caroline Martin, Solomon Barkley, and Vinothan N. Manoharan.  “Large depth-of-field tracking of colloidal spheres in holographic microscopy by modeling the objective lens.” Optics Express 28, no. 2 (2020): 1061-1075. doi:10.1364/OE.382159
+
 .. [Dimiduk2016] Dimiduk, Thomas G., and Vinothan N. Manoharan. “Bayesian Approach to Analyzing Holograms of Colloidal Particles.” Optics Express 24, no. 21 (October 17, 2016): 24045–60. doi:10.1364/OE.24.024045.
 
 .. [Wang2016] Wang, Anna, Rees F. Garmann, and Vinothan N. Manoharan. “Tracking E. Coli Runs and Tumbles with Scattering Solutions and Digital Holographic Microscopy.” Optics Express 24, no. 21 (October 17, 2016): 23719–25. doi:10.1364/OE.24.023719.
@@ -30,8 +34,6 @@ application.
 .. [Perry2012] Perry, Rebecca W., Guangnan Meng, Thomas G. Dimiduk, Jerome Fung, and Vinothan N. Manoharan. “Real-Space Studies of the Structure and Dynamics of Self-Assembled Colloidal Clusters.” Faraday Discussions 159, no. 1 (June 7, 2012): 211–34. doi:10.1039/C2FD20061A.
 
 .. [Fung2011] Fung, Jerome, K. Eric Martin, Rebecca W. Perry, David M. Kaz, Ryan McGorty, and Vinothan N. Manoharan. “Measuring Translational, Rotational, and Vibrational Dynamics in Colloids with Digital Holographic Microscopy.” Optics Express 19, no. 9 (April 25, 2011): 8051–65. doi:10.1364/OE.19.008051.
-
-.. [Leahy2020] Leahy, Brian, Ronald Alexander, Caroline Martin, Solomon Barkley, and Vinothan N. Manoharan. "Large depth-of-field tracking of colloidal spheres in holographic microscopy by modeling the objective lens." Optics Express 28, no. 2 (2020): 1061-1075. doi:10.1364/OE.382159
 
 Ovryn and Izen and Lee and coworkers were the first to develop methods to fit scattering models to digital holograms:
 

@@ -16,24 +16,24 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 import numpy as np
-from nose.plugins.attrib import attr
+
+import pytest
 
 from holopy.core.tests.common import assert_pickle_roundtrip, get_example_data
 
 from holopy.inference.model import AlphaModel, ExactModel
 from holopy.inference import prior
 from holopy.scattering.scatterer import Sphere
-from holopy.scattering.theory import Mie
 
 
-@attr("fast")
+@pytest.mark.fast
 def test_prior():
     g = prior.Gaussian(1, 1)
     assert_pickle_roundtrip(g)
     assert_pickle_roundtrip(g.lnprob)
 
 
-@attr("fast")
+@pytest.mark.fast
 def test_AlphaModelholo_likelihood():
     holo = get_example_data('image0001')
     s = Sphere(
@@ -43,7 +43,7 @@ def test_AlphaModelholo_likelihood():
     assert_pickle_roundtrip(model)
 
 
-@attr("fast")
+@pytest.mark.fast
 def test_ExactModelholo_likelihood():
     holo = get_example_data('image0001')
     sphere_center = (prior.Gaussian(5, 1),

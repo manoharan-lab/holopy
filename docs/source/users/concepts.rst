@@ -12,7 +12,7 @@ meters, or microns.  So if you specify the wavelength of your red imaging
 laser as 658 then all other units (*x*, *y*, *z* position coordinates,
 particle radii, etc.)  must also be specified in nanometers.
 
-.. _coordinate_system: 
+.. _coordinate_system:
 
 Coordinate System
 -----------------
@@ -28,15 +28,15 @@ way that images are treated by most computer software.
    :scale: 30 %
    :alt: Coordinate system used in HoloPy.
 
-In sample space, we choose the z axis so that distances to objects
-from the camera/focal plane are positive (have positive z
-coordinates).  The price we pay for this choice is that the
-propagation direction of the illumination light is then negative.
-In the image above, light travels from a source located in front of the screen, through a scatterer, and onto a detector behind the screen.
+In sample space, we choose the z axis so that distances to objects from the
+camera/focal plane are positive (have positive z coordinates). The price we pay
+for this choice is that the propagation direction of the illumination light is
+then negative. In the image above, light travels from a source located in front
+of the screen, through a scatterer, and onto a detector behind the screen.
 
 More complex detector geometries will define their own origin, or ask
 you to define one.
-	
+
 .. _rotations:
 
 Rotations of Scatterers
@@ -47,7 +47,7 @@ system. We do this in the most general way possible by specifying three
 Euler angles and a reference orientation. Rotating a scatterer initially
 in the reference orientation through the three Euler angles :math:`\alpha`,
 :math:`\beta`, and :math:`\gamma` (in the active transformation picture)
-yields the desired orientation. The reference orientation is specified by the 
+yields the desired orientation. The reference orientation is specified by the
 definition of the scatterer.
 
 The Euler rotations are performed in the following way:
@@ -63,6 +63,3 @@ the origin. This is the usual sense of how rotations are typically defined in ma
 .. image:: ../images/euler_matrix_eqn.png
    :scale: 100 %
    :alt: Matrix equation for Euler rotations.
-
-
-

@@ -25,15 +25,15 @@ Test construction and manipulation of Scatterer objects.
 import numpy as np
 from numpy.testing import assert_equal, assert_almost_equal, assert_raises
 from holopy.core.tests.common import assert_obj_close
-from nose.plugins.attrib import attr
-from nose.tools import raises
+
+import pytest
 
 from holopy.scattering.scatterer import Sphere, Ellipsoid, Spheres, RigidCluster
 from holopy.scattering.errors import InvalidScatterer, OverlapWarning
 
 import warnings
 
-@attr('fast')
+@pytest.mark.fast
 def test_Spheres_construction():
 
     # cluster of multiple spheres
@@ -54,8 +54,7 @@ def test_Spheres_construction():
     sc.center
 
 
-@attr('fast')
-@raises(InvalidScatterer)
+@pytest.mark.fast
 def test_Spheres_construction_typechecking():
     # heterogeneous composite should raise exception, since a
     # sphere cluster must contain only Spheres
@@ -64,9 +63,10 @@ def test_Spheres_construction_typechecking():
     s3 = Sphere(n = 1.59+0.0001j, r = 5e-7, center=[5e-6,0,0])
     cs = Ellipsoid(n=1.59+0.0001j, r=(5e-7, 5e-7, 8e-7),
                       center=[-5e-6, 0,0])
-    sc = Spheres(scatterers=[s1, s2, s3, cs])
+    with pytest.raises(InvalidScatterer):
+        sc = Spheres(scatterers=[s1, s2, s3, cs])
 
-@attr('fast')
+@pytest.mark.fast
 def test_Spheres_ovelap_checking():
     s1 = Sphere(n = 1.59, r = 5e-7, center=(1e-6, -1e-6, 10e-6))
     with warnings.catch_warnings(record=True) as w:
@@ -75,7 +75,7 @@ def test_Spheres_ovelap_checking():
         assert len(w) > 0
 
 
-@attr("fast")
+@pytest.mark.fast
 def test_Spheres_parameters():
     s1 = Sphere(n = 1.59, r = 5e-7, center=[1e-6, -1e-6, 10e-6])
     s2 = Sphere(n = 1.59, r = 1e-6, center=[0,0,0])
@@ -96,7 +96,7 @@ def test_Spheres_parameters():
     assert_equal(sc.scatterers[1].center, sc2.scatterers[1].center)
 
 
-@attr("fast")
+@pytest.mark.fast
 def test_Spheres_translation():
     s1 = Sphere(n = 1.59, r = 5, center=[1, -1, 10])
     s2 = Sphere(n = 1.59, r = 1, center=[0,0,0])
@@ -111,7 +111,7 @@ def test_Spheres_translation():
     assert_equal([2, 0, 11], sc2.scatterers[0].center)
     assert_equal([1, 1, 1], sc2.scatterers[1].center)
 
-@attr("fast")
+@pytest.mark.fast
 def test_Spheres_rotation():
     s1 = Sphere(n = 1.59, r = 1, center = [1, 0, 0])
     s2 = Sphere(n = 1.59, r = 1, center = [-1, 0, 1])
@@ -127,7 +127,7 @@ def test_Spheres_rotation():
     assert_almost_equal([0, 1, 1], sc2.scatterers[1].center)
 
 
-@attr("fast")
+@pytest.mark.fast
 def test_RigidCluster():
     # test construction
     s1 = Sphere(n = 1, center = (1, 0, 0))

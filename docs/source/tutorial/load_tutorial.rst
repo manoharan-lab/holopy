@@ -10,7 +10,7 @@ Loading and viewing a hologram
 
 We include a couple of example holograms with HoloPy. Lets start by
 loading and viewing one of them
-  
+
 .. plot:: pyplots/show_example_holo.py
    :include-source:
 
@@ -21,30 +21,30 @@ loading and viewing one of them
     from holopy.core.io import get_example_data_path
     imagepath = get_example_data_path('image01.jpg')
 
-The first few lines just specify where to look for an image. 
-The most important line actually loads the image so that you can work with it: 
+The first few lines just specify where to look for an image.
+The most important line actually loads the image so that you can work with it:
 
 ..  testcode::
-    
+
     raw_holo = hp.load_image(imagepath, spacing = 0.0851)
 
 HoloPy can import any image format that can be handled by `Pillow
 <http://pillow.readthedocs.io/en/3.3.x/handbook/image-file-formats.html>`_.
- 
-The spacing argument tells holopy about the scale of your image. Here, we had 
+
+The spacing argument tells holopy about the scale of your image. Here, we had
 previously measured that each pixel is a square with side length 0.0851
 micrometers. In general, you should specify ``spacing`` as the distance between
 adjacent pixel centres. You can load an image without a spacing value if you
-just want to look at it, but holopy calculations will give incorrect results. 
+just want to look at it, but holopy calculations will give incorrect results.
 
-The final line displays the loaded image on your screen with the built-in 
+The final line displays the loaded image on your screen with the built-in
 HoloPy :func:`.show` function. If you don't see anything, you may need to set
-your matplotlib backend. Refer to :ref:`usage` for instructions. 
+your matplotlib backend. Refer to :ref:`usage` for instructions.
 
 Correcting Noisy Images
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The raw hologram has some non-uniform illumination and an artifact in the 
+The raw hologram has some non-uniform illumination and an artifact in the
 upper-right corner. These can be removed if you take a background image with
 the same optical setup but without the object of interest. Dividing the raw
 hologram by the background using :func:`.bg_correct` improves the image a lot.
@@ -60,10 +60,10 @@ hologram by the background using :func:`.bg_correct` improves the image a lot.
 ..  plot:: pyplots/show_bg_holo.py
 
 Often, it is beneficial to record multiple background images. In this case,
-we want an average image to pass into :func:`.bg_correct` as our background. 
+we want an average image to pass into :func:`.bg_correct` as our background.
 
 ..  testcode::
-     
+
     bgpath = get_example_data_path(['bg01.jpg', 'bg02.jpg', 'bg03.jpg'])
     bg = hp.core.io.load_average(bgpath, refimg = raw_holo)
     holo = bg_correct(raw_holo, bg)
@@ -71,9 +71,9 @@ we want an average image to pass into :func:`.bg_correct` as our background.
 
 Here, we have used :func:`.load_average` to construct an average of the three background
 images specified in ``bgpath``. The ``refimg`` argument allows us to specify a reference
-image that is used to provide spacing and other metadata to the new averaged image. 
+image that is used to provide spacing and other metadata to the new averaged image.
 
-If you are worried about stray light in your optical train, you should 
+If you are worried about stray light in your optical train, you should
 also capture a dark-field image of your sample, recorded with no laser illumination.
 A dark-field image is specified as an optional third argument to :func:`.bg_correct`.
 
@@ -86,12 +86,12 @@ A dark-field image is specified as an optional third argument to :func:`.bg_corr
 
 ..  testcode::
     :hide:
-    
+
     print(holo.values[0,0,0])
 
 ..  testoutput::
     :hide:
-    
+
     0.91964285...
 
 Holopy includes some other convenient tools for manipulating image data.
@@ -133,13 +133,13 @@ specify metadata when loading the image, we can use :func:`.update_metadata` to 
 
 ..  testcode::
     :hide:
-    
+
     print(holo.medium_index-holo.illum_wavelen)
     print(raw_holo.medium_index-raw_holo.illum_wavelen)
 
 ..  testoutput::
     :hide:
-    
+
     0.67
     0.67
 
@@ -153,12 +153,12 @@ Saving and Reloading Holograms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Once you have background-divided a hologram and associated it with metadata, you might
-want to save it so that you can skip those steps next time you are working with the 
+want to save it so that you can skip those steps next time you are working with the
 same image::
-    
+
     hp.save('outfilename', holo)
 
-saves your processed image to a compact HDF5 file. In fact, you can use :func:`.save` 
+saves your processed image to a compact HDF5 file. In fact, you can use :func:`.save`
 on any holopy object. To reload your same hologram with metadata you would write::
 
     holo = hp.load('outfilename')
@@ -167,6 +167,6 @@ If you would like to save your hologram to an image format for easy visualizatio
 
     hp.save_image('outfilename', holo)
 
-Additional options of :func:`.save_image` allow you to control how image intensity is scaled. 
+Additional options of :func:`.save_image` allow you to control how image intensity is scaled.
 Although HoloPy stores metadata when writing to .tif image files, you should save
 holograms in HDF5 format using :func:`.save` to avoid rounding.

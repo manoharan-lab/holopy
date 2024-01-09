@@ -24,7 +24,7 @@ import yaml
 import numpy as np
 import xarray as xr
 
-from nose.plugins.attrib import attr
+import pytest
 
 from holopy.core import detector_grid, holopy_object
 from holopy.scattering import (
@@ -47,13 +47,13 @@ class TestModel(unittest.TestCase):
         'illum_polarization',
         ]
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_initializable(self):
         scatterer = make_sphere()
         model = Model(scatterer)
         self.assertTrue(model is not None)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_yaml_round_trip_with_dict(self):
         sphere = make_sphere()
         for key in self.model_keywords:
@@ -64,7 +64,7 @@ class TestModel(unittest.TestCase):
                 reloaded = take_yaml_round_trip(model)
                 self.assertEqual(reloaded, model)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_yaml_round_trip_with_xarray(self):
         sphere = make_sphere()
         for key in self.model_keywords:
@@ -78,7 +78,7 @@ class TestModel(unittest.TestCase):
                 reloaded = take_yaml_round_trip(model)
                 self.assertEqual(reloaded, model)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_yaml_round_trip_with_xarray_in_scatterer(self):
         n = xr.DataArray([prior.Gaussian(1.5, 0.1), prior.Gaussian(1.7, 0.1)],
                          dims=['illumination'],
@@ -88,13 +88,13 @@ class TestModel(unittest.TestCase):
         reloaded = take_yaml_round_trip(model)
         self.assertEqual(reloaded, model)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_scatterer_is_parameterized(self):
         sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
         model = AlphaModel(sphere)
         self.assertEqual(model.scatterer, sphere)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_scatterers_maintain_attrs(self):
         spheres = Spheres([
             Sphere(center=(1, 2, 3), r=0.4, n=1.59),
@@ -103,7 +103,7 @@ class TestModel(unittest.TestCase):
         model = AlphaModel(spheres)
         self.assertEqual(model.scatterer.warn, False)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_scatterer_from_parameters_dict(self):
         sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
         model = AlphaModel(sphere)
@@ -112,7 +112,7 @@ class TestModel(unittest.TestCase):
         out_scatterer = model.scatterer_from_parameters(pars)
         self.assertEqual(out_scatterer, expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_scatterer_from_parameters_list(self):
         sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
         model = AlphaModel(sphere)
@@ -120,7 +120,7 @@ class TestModel(unittest.TestCase):
         expected = Sphere(n=1.6, r=0.8)
         self.assertEqual(model.scatterer_from_parameters(pars), expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_theory_from_parameters(self):
         sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
         theory_in = MieLens(lens_angle=prior.Uniform(0, 1.0))
@@ -134,7 +134,7 @@ class TestModel(unittest.TestCase):
         self.assertIsInstance(theory_out, theory_in.__class__)
         self.assertEqual(theory_out.lens_angle, lens_angle)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_theory_from_parameters_respects_nonfittable_options_mie(self):
         # tests for other theories are done in the scattering tests suite
         sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
@@ -149,7 +149,7 @@ class TestModel(unittest.TestCase):
             self.assertEqual(theory_out.compute_escat_radial, c)
             self.assertEqual(theory_out.full_radial_dependence, f)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_auto_theory_from_parameters_when_spheres_gives_multisphere(self):
         """testing a bug where the theory would always be Mie for spheres"""
         index = prior.Uniform(1, 2)
@@ -161,14 +161,14 @@ class TestModel(unittest.TestCase):
 
         self.assertIsInstance(model.theory, Multisphere)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_internal_scatterer_from_parameters_dict_fails(self):
         sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
         model = AlphaModel(sphere)
         pars = {'r': 0.8, 'n': 1.6}
         self.assertRaises(KeyError, model._scatterer_from_parameters, pars)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_internal_scatterer_from_parameters_list(self):
         sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1))
         model = AlphaModel(sphere)
@@ -176,14 +176,14 @@ class TestModel(unittest.TestCase):
         expected = Sphere(n=1.6, r=0.8)
         self.assertEqual(model._scatterer_from_parameters(pars), expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_initial_guess(self):
         sphere = Sphere(n=prior.Uniform(1, 2),
                         r=prior.Uniform(0, 1, guess=0.8))
         model = AlphaModel(sphere)
         self.assertEqual(model.initial_guess, {'n': 1.5, 'r': 0.8})
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_initial_guess_scatterer(self):
         sphere = Sphere(n=prior.Uniform(1, 2),
                         r=prior.Uniform(0, 1, guess=0.8),
@@ -192,7 +192,7 @@ class TestModel(unittest.TestCase):
         expected = Sphere(n=1.5, r=0.8, center=[2, 2, 2])
         self.assertEqual(model.initial_guess_scatterer, expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_yaml_preserves_parameter_names(self):
         n = prior.ComplexPrior(prior.Uniform(1, 2), prior.Uniform(0, 0.1))
         sphere = Sphere(n=n, r=prior.Uniform(0, 1.5, name='radius'),
@@ -203,7 +203,7 @@ class TestModel(unittest.TestCase):
         post_names = take_yaml_round_trip(model)._parameter_names
         self.assertEqual(pre_names, post_names)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_yaml_preserves_parameter_ties(self):
         tied = prior.Uniform(0, 1)
         sphere = Sphere(n=tied, r=prior.Uniform(0.6, 1, name='radius'),
@@ -222,7 +222,7 @@ class TestModel(unittest.TestCase):
         self.assertEqual(post_model._parameter_names, ['b', 'c'])
         self.assertEqual(post_model._parameters[0].name, 'a')
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_ensure_parameters_are_listlike(self):
         sphere = Sphere(r=prior.Uniform(0, 1), n=prior.Uniform(1, 2))
         model = AlphaModel(sphere, alpha=prior.Uniform(0.5, 1))
@@ -231,19 +231,19 @@ class TestModel(unittest.TestCase):
         self.assertEqual(model.ensure_parameters_are_listlike(as_dict), as_list)
         self.assertEqual(model.ensure_parameters_are_listlike(as_list), as_list)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_theory_casts_from_auto(self):
         sphere = Sphere()
         model = AlphaModel(sphere, theory='auto')
         self.assertIsInstance(model.theory, ScatteringTheory)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_theory_casts_correctly_when_not_auto(self):
         sphere = Sphere()
         model = AlphaModel(sphere, theory=Mie())
         self.assertIsInstance(model.theory, ScatteringTheory)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_init_maps_theory_parameters(self):
         sphere = Sphere()
         theory = MieLens()
@@ -257,20 +257,20 @@ class TestModel(unittest.TestCase):
 
 
 class TestAdd_Tie(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_add_missing_tie_fails(self):
         sphere = Sphere(n=prior.Uniform(1, 2), r=0.5, center=[10, 10, 10])
         model = AlphaModel(sphere)
         self.assertRaises(ValueError, model.add_tie, ['r', 'n'])
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_add_unequal_tie_fails(self):
         sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(0, 1),
                         center=[10, 10, 10])
         model = AlphaModel(sphere)
         self.assertRaises(ValueError, model.add_tie, ['r', 'n'])
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_add_tie_updates_parameters(self):
         tied = prior.Uniform(-5, 5)
         sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
@@ -280,7 +280,7 @@ class TestAdd_Tie(unittest.TestCase):
         expected = [prior.Uniform(1, 2), prior.Uniform(-5, 5)]
         self.assertEqual(model._parameters, expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_add_tie_updates_parameter_names(self):
         tied = prior.Uniform(-5, 5)
         sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
@@ -290,7 +290,7 @@ class TestAdd_Tie(unittest.TestCase):
         expected = ['n', 'center.0']
         self.assertEqual(model._parameter_names, expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_add_tie_updates_map(self):
         tied = prior.Uniform(-5, 5)
         sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
@@ -301,7 +301,7 @@ class TestAdd_Tie(unittest.TestCase):
                             ['center', ['_parameter_1', '_parameter_1', 10]]]]]
         self.assertEqual(model._maps['scatterer'], expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_add_tie_specify_name(self):
         tied = prior.Uniform(-5, 5)
         sphere = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
@@ -311,7 +311,7 @@ class TestAdd_Tie(unittest.TestCase):
         expected = ['dummy', 'center.0']
         self.assertEqual(model._parameter_names, expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_add_3_way_tie(self):
         n = prior.ComplexPrior(prior.Uniform(1, 2), prior.Uniform(0, 1))
         sphere = Sphere(n=n, r=prior.Uniform(0.5, 1),
@@ -334,14 +334,14 @@ class TestAdd_Tie(unittest.TestCase):
 
 
 class TestFindOptics(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_reads_noise_map(self):
         noise = {'red': 0.5, 'green': prior.Uniform(0, 1)}
         model = AlphaModel(Sphere(), noise_sd=noise)
         found_noise = model._find_noise([0.7], None)
         self.assertEqual(found_noise, {'red': 0.5, 'green': 0.7})
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_noise_from_schema(self):
         model = AlphaModel(Sphere(), noise_sd=None)
         schema = detector_grid(2, 2)
@@ -349,7 +349,7 @@ class TestFindOptics(unittest.TestCase):
         found_noise = model._find_noise([], schema)
         self.assertEqual(found_noise, 0.5)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_model_noise_takes_precedence(self):
         model = AlphaModel(Sphere(), noise_sd=0.8)
         schema = detector_grid(2, 2)
@@ -357,7 +357,7 @@ class TestFindOptics(unittest.TestCase):
         found_noise = model._find_noise([], schema)
         self.assertEqual(found_noise, 0.8)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_no_noise_if_all_uniform(self):
         sphere = Sphere(r=prior.Uniform(0, 1), n=prior.Uniform(1, 2))
         model = AlphaModel(sphere)
@@ -365,7 +365,7 @@ class TestFindOptics(unittest.TestCase):
         found_noise = model._find_noise([0.5, 0.5], schema)
         self.assertEqual(found_noise, 1)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_require_noise_if_nonuniform(self):
         sphere = Sphere(r=prior.Gaussian(0, 1), n=prior.Uniform(1, 2))
         model = AlphaModel(sphere)
@@ -373,7 +373,7 @@ class TestFindOptics(unittest.TestCase):
         pars = [0.5, 0.5]
         self.assertRaises(MissingParameter, model._find_noise, pars, schema)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_reads_optics_from_map(self):
         med_n = prior.ComplexPrior(1.5, prior.Uniform(0, 0.1))
         wl = {'red': 0.5, 'green': prior.Uniform(0, 1)}
@@ -387,7 +387,7 @@ class TestFindOptics(unittest.TestCase):
                     'illum_polarization': [1, 1]}
         self.assertEqual(found_optics, expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_optics_from_schema(self):
         model = AlphaModel(Sphere(), medium_index=prior.Uniform(1, 2))
         schema = detector_grid(2, 2)
@@ -398,7 +398,7 @@ class TestFindOptics(unittest.TestCase):
                     'illum_polarization': [1, 0]}
         self.assertEqual(found_optics, expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_model_optics_take_precedence(self):
         model = AlphaModel(Sphere(), medium_index=1.5, illum_wavelen=0.8)
         schema = detector_grid(2, 2)
@@ -409,7 +409,7 @@ class TestFindOptics(unittest.TestCase):
                     'illum_polarization': [1, 0]}
         self.assertEqual(found_optics, expected)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_missing_optics(self):
         model = AlphaModel(Sphere(), medium_index=1.5, illum_wavelen=0.8)
         schema = detector_grid(2, 2)
@@ -418,7 +418,7 @@ class TestFindOptics(unittest.TestCase):
 
 
 class TestExactModel(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_forward_correctly_creates_mielens_theory(self):
         model = ExactModel(
             SPHERE_IN_METERS,
@@ -443,13 +443,13 @@ class TestExactModel(unittest.TestCase):
 
 
 class TestAlphaModel(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_initializable(self):
         scatterer = make_sphere()
         model = AlphaModel(scatterer, alpha=0.6)
         self.assertTrue(model is not None)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_yaml_round_trip_with_xarray(self):
         alpha_xarray = xr.DataArray(
             [1, 0.5],
@@ -460,7 +460,7 @@ class TestAlphaModel(unittest.TestCase):
         reloaded = take_yaml_round_trip(model)
         self.assertEqual(reloaded, model)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_yaml_round_trip_with_dict(self):
         alpha_dict = {'red': 1, 'green': 0.5}
         sphere = make_sphere()
@@ -468,7 +468,7 @@ class TestAlphaModel(unittest.TestCase):
         reloaded = take_yaml_round_trip(model)
         self.assertEqual(reloaded, model)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_forward_uses_alpha(self):
         # we check that, if alpha = 0, the hologram is constant
         model = AlphaModel(
@@ -482,7 +482,7 @@ class TestAlphaModel(unittest.TestCase):
         holo = model.forward(pars, xschema_lens)
         self.assertLess(holo.values.std(), 1e-6)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_forward_correctly_creates_mielens_theory(self):
         model = AlphaModel(
             SPHERE_IN_METERS,
@@ -508,7 +508,7 @@ class TestAlphaModel(unittest.TestCase):
 
         self.assertTrue(np.all(from_model.values == correct.values))
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_forward_correctly_creates_aberratedmielens_theory(self):
         n_ab_params = 4
         theory_parameterized = AberratedMieLens(
@@ -556,7 +556,7 @@ def take_yaml_round_trip(model):
     return loaded
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_io():
     model = ExactModel(Sphere(1), calc_holo)
     assert_read_matches_write(model)

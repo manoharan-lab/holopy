@@ -24,32 +24,42 @@ dependencies:
   - h5netcdf
   - h5py
   - numexpr
-  - sphinx
   - matplotlib
   - emcee=2.2.1
   - schwimmbad
   - memory_profiler
   - cma
-  - pint
   - ipython
   - seaborn
-  - sphinx_rtd_theme
+  # installs compilers on linux and OSX
+  # - compilers
   # for amd64 platforms only; won't be found for aarch64
   # - mkl-service
   # uncomment to install compilers on windows
   #  - m2w64-toolchain
 
-  # include jupyterlab for convenience
-  - jupyterlab
+  # for building documentation
+  - sphinx
+  - sphinx_rtd_theme
+  - numpydoc
 
-  # for running tests
-  - nose
+
+  # for building fortran extensions and python package
+  - meson
+  - meson-python
+
+  # for running tests: "cov" is coverage plugin, "xdist" is to run pytest in
+  # parallel; "timeout" is to set timeout for tests
   - pytest
+  - pytest-cov
+  - pytest-xdist
+  - pytest-timeout
 
-  # for development
+  # optional packages to make development easier in (e.g.) emacs
   - pyright
   - pylint
   - flake8
+  - flake8-pytest-style
   - autoflake
   - epc
   - isort
@@ -59,3 +69,7 @@ dependencies:
 
   - pip:
       - importmagic
+
+  # include jupyterlab for convenience
+  - jupyterlab
+

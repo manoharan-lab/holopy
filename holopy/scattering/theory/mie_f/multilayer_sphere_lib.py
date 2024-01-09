@@ -16,18 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 '''
-multilayer_sphere_lib.py
-
-Author:
-Jerome Fung (fung@physics.harvard.edu)
-
-Functions to calculate the scattering from a spherically symmetric particle 
-with an arbitrary number of layers with different refractive indices. 
+Functions to calculate the scattering from a spherically symmetric particle
+with an arbitrary number of layers with different refractive indices.
 
 Key reference for multilayer algorithm:
-Yang, "Improved recursive algorithm for light scattering by a multilayered 
+
+[Yang2003]_
+Yang, "Improved recursive algorithm for light scattering by a multilayered
 sphere," Applied Optics 42, 1710-1720, (1993).
 
+.. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 '''
 
 import numpy as np

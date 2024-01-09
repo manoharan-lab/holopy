@@ -21,9 +21,10 @@ import warnings
 import unittest
 
 import numpy as np
-from nose.plugins.attrib import attr
+import pytest
 from numpy.testing import (
-    assert_equal, assert_approx_equal, assert_allclose, assert_raises)
+    assert_equal, assert_approx_equal, assert_allclose
+)
 
 from holopy.scattering import Sphere, Spheres, LayeredSphere, Mie, calc_holo
 from holopy.core import detector_grid, load, save, update_metadata
@@ -32,8 +33,8 @@ from holopy.core.tests.common import (
     assert_obj_close, get_example_data, assert_read_matches_write)
 from holopy.scattering.errors import OverlapWarning
 from holopy.inference import (
-    LimitOverlaps, ExactModel, AlphaModel, NmpfitStrategy,
-    LeastSquaresScipyStrategy)
+    LimitOverlaps, ExactModel, AlphaModel, NmpfitStrategy
+)
 from holopy.core.prior import ComplexPrior, Uniform
 
 gold_alpha = .6497
@@ -41,7 +42,7 @@ gold_alpha = .6497
 gold_sphere = Sphere(1.582+1e-4j, 6.484e-7, (5.534e-6, 5.792e-6, 1.415e-5))
 
 
-@attr('slow')
+@pytest.mark.slow
 def test_fit_mie_single():
     holo = normalize(get_example_data('image0001'))
 
@@ -66,7 +67,7 @@ def test_fit_mie_single():
     assert_equal(model, result.model)
 
 
-@attr('slow')
+@pytest.mark.slow
 def test_fit_mie_par_scatterer():
     holo = normalize(get_example_data('image0001'))
 
@@ -100,7 +101,7 @@ class TestRandomSubsetFitting(unittest.TestCase):
             sphere, theory=Mie(False), alpha=Uniform(0.1, 1, 0.6))
         return model
 
-    @attr('medium')
+    @pytest.mark.medium
     def test_returns_close_values(self):
         model = self._make_model()
         holo = normalize(get_example_data('image0001'))
@@ -119,7 +120,7 @@ class TestRandomSubsetFitting(unittest.TestCase):
         assert_obj_close(result.scatterer, gold_sphere, rtol=1e-2)
 
 
-@attr('medium')
+@pytest.mark.medium
 def test_serialization():
     par_s = Sphere(center = (Uniform(0, 1e-5, guess=.567e-5),
                          Uniform(0, 1e-5, .567e-5), Uniform(1e-5, 2e-5)),

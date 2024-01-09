@@ -23,19 +23,19 @@ Tests non-spherical T-matrix code calculations against Mie code
 '''
 import unittest
 
-from numpy.testing import assert_raises, assert_allclose
+from numpy.testing import assert_allclose
 import numpy as np
 import pandas as pd
-import yaml
-from nose.plugins.attrib import attr
-from nose.plugins.skip import SkipTest
 
-import holopy as hp
+import pytest
+
 from holopy.scattering import (
-    Tmatrix, DDA, Sphere, Spheroid, Ellipsoid, Cylinder, calc_holo)
+    Tmatrix, DDA, Sphere, Spheroid, Cylinder, calc_holo
+)
 from holopy.scattering.theory import Mie
 from holopy.core.errors import DependencyMissing
 from holopy.core import detector_grid, update_metadata
+from holopy.core.tests.common import verify
 
 from holopy.scattering.theory.tmatrix_f.S import ampld
 
@@ -63,7 +63,7 @@ MISHCHENKO_PARAMS = dict((
 
 
 class TestTMatrix(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_calc_scattering_matrix(self):
         """
         The original [ampld.lpd.f]
@@ -107,7 +107,7 @@ class TestTMatrix(unittest.TestCase):
               zip(expected_results.values(), results.values())]
         self.assertTrue(all(ok))
 
-    @attr('slow')
+    @pytest.mark.slow
     def test_sphere(self):
         s = Sphere(n=1.59, r=0.9, center=(2, 2, 80))
         mie_holo = calc_holo_safe(SCHEMA, s)
@@ -115,43 +115,35 @@ class TestTMatrix(unittest.TestCase):
         assert_allclose(mie_holo, tmat_holo, atol=.008)
 
 
-    @attr("slow")
+    @pytest.mark.slow
     def test_spheroid(self):
         s = Spheroid(n=1.5, r=[.4, 1.],
                      rotation=(0, np.pi/2, np.pi/2), center=(5, 5, 15))
         holo = calc_holo_safe(SCHEMA, s)
-        test_values = _load_verification_data('tmatrix_spheroid')
-        min_ok = np.allclose(test_values['min'], np.min(holo.values), rtol=1e-6)
-        max_ok = np.allclose(test_values['max'], np.max(holo.values), rtol=1e-6)
-        mean_ok = np.allclose(test_values['mean'], np.mean(holo.values), rtol=1e-6)
-        std_ok = np.allclose(test_values['std'], np.std(holo.values), rtol=1e-6)
-        self.assertTrue(all([min_ok, max_ok, mean_ok, std_ok]))
+        verify(holo, 'tmatrix_spheroid', rtol=1e-6)
 
 
-    @attr("slow")
+    @pytest.mark.slow
     def test_cylinder(self):
         s = Cylinder(
             n=1.5, d=.8, h=2, rotation=(0, np.pi/2, np.pi/2), center=(5, 5, 15))
         holo = calc_holo_safe(SCHEMA, s)
-        test_values = _load_verification_data('tmatrix_cylinder')
-        min_ok = np.allclose(test_values['min'], np.min(holo.values), rtol=1e-6)
-        max_ok = np.allclose(test_values['max'], np.max(holo.values), rtol=1e-6)
-        mean_ok = np.allclose(test_values['mean'], np.mean(holo.values), rtol=1e-6)
-        std_ok = np.allclose(test_values['std'], np.std(holo.values), rtol=1e-6)
-        self.assertTrue(all([min_ok, max_ok, mean_ok, std_ok]))
+        verify(holo, 'tmatrix_cylinder', rtol=1e-6)
 
-    @attr("slow", "dda")
+
+    @pytest.mark.slow
+    @pytest.mark.dda
     def test_vs_dda(self):
         s = Spheroid(n=1.5, r=[.4, 1.],
                      rotation=(0, np.pi/2, np.pi/2), center=(5, 5, 50))
         try:
             dda_holo = calc_holo_safe(SCHEMA, s, theory=DDA)
         except DependencyMissing:
-            raise SkipTest()
+            pytest.skip("DDA not installed or not accessible")
         tmat_holo = calc_holo_safe(SCHEMA, s, theory=Tmatrix)
         assert_allclose(dda_holo, tmat_holo, atol=.05)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_calc_scattering_matrix_multiple_angles(self):
         params = MISHCHENKO_PARAMS
         params['thet'] = np.ones(2) * params['thet']
@@ -160,7 +152,7 @@ class TestTMatrix(unittest.TestCase):
         s = ampld(*list(params.values()))
         self.assertTrue(len(s[0]) == 2)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_raw_scat_matrs_same_as_mie(self):
         theory_mie = Mie()
         theory_tmat = Tmatrix()
@@ -172,7 +164,7 @@ class TestTMatrix(unittest.TestCase):
         s_tmat = theory_tmat.raw_scat_matrs(s, pos, 2*np.pi/.660, 1.33)
         self.assertTrue(np.allclose(s_mie, s_tmat))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_raw_fields_similar_to_mie(self):
         theory_mie = Mie(False, False)
         theory_tmat = Tmatrix()
@@ -193,15 +185,7 @@ def calc_holo_safe(
             schema, scatterer, medium_index, illum_wavelen, **kwargs)
         return holo
     except DependencyMissing:
-        raise SkipTest()
-
-
-def _load_verification_data(name):
-    hp_root = hp.__path__[0]
-    fname = hp_root + '/scattering/tests/gold/gold_' + name + '.yaml'
-    with open (fname, 'r') as f:
-        test_values = yaml.safe_load(f)
-    return test_values
+        pytest.skip("one of the scattering theories is missing")
 
 
 if __name__ == '__main__':

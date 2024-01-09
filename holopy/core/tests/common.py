@@ -18,7 +18,6 @@
 
 import tempfile
 import os
-import warnings
 import types
 import inspect
 import yaml
@@ -28,31 +27,17 @@ import pickle
 import xarray as xr
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
-from nose.plugins import Plugin
 
 from holopy.core.io import load, save, get_example_data
-from holopy.core.errors import PerformanceWarning
-
-
-class HoloPyCatchWarnings(Plugin):
-    name='holopycatchwarnings'
-
-    def options(self, parser, env=os.environ):
-        super(HoloPyCatchWarnings, self).options(parser, env=env)
-
-    def configure(self, options, conf):
-        super(HoloPyCatchWarnings, self).configure(options, conf)
-        if not self.enabled:
-            return
-
-    def beforeTest(self, test):
-        warnings.simplefilter("error")
-        warnings.simplefilter(action="ignore", category=PerformanceWarning)
-        warnings.simplefilter(action="ignore", category=FutureWarning)
 
 
 def assert_read_matches_write(original):
-    with tempfile.NamedTemporaryFile(suffix='.h5') as tempf:
+    # for Windows, must specify delete=False so that the load statement can run
+    # after the the save statement completes. Otherwise the file will be
+    # deleted after save. In Python 3.12, can switch to "delete=True,
+    # delete_on_close=False" which will delete the file after the context
+    # manager exits
+    with tempfile.NamedTemporaryFile(suffix='.h5', delete=False) as tempf:
         save(tempf.name, original)
         loaded = load(tempf.name)
     # For now our code for writing xarrays to hdf5 ends up with them

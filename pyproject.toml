@@ -1,0 +1,52 @@
+[build-system]
+build-backend = 'mesonpy'
+requires = ['meson-python', 'cython', 'numpy<1.20', 'scipy', 'pyYaml', 'pillow',
+            'h5py', 'matplotlib', 'xarray', 'h5netcdf', 'nose']
+
+[project]
+name = 'HoloPy'
+# should read version from meson.build
+dynamic = ['version']
+description = 'Holography and Light Scattering in Python'
+readme = 'README.rst'
+license = {file = 'LICENSE'}
+authors = [{name = 'Manoharan Lab, Harvard University', email='vnm@seas.harvard.edu'},]
+homepage = 'https://manoharan.seas.harvard.edu/holopy'
+test_suite = 'nose.collector'
+package = ['HoloPy']
+
+
+[project.urls]
+homepage = 'https://manoharan.seas.harvard.edu/holopy'
+repository = 'https://github.com/manoharan-lab/holopy'
+documentation = 'https://holopy.readthedocs.io'
+
+[tool.pytest.ini_options]
+# addopts allows us to use pytest without making unique names for each
+#  test file (and without having to put __init__.py files in the test
+#  directories. See
+#  https://docs.pytest.org/en/latest/explanation/goodpractices.html#choosing-an-import-mode
+addopts = [
+    "--import-mode=importlib",
+]
+# filterwarnings replicates setup previously used by nose. Warnings are treated
+# as errors except for those specified under "ignore"
+filterwarnings = [
+    "error",
+    # use this regex to catch the PerformanceWarning from lens model when
+    # numexpr is not installed
+    'ignore:\bnumexpr\b:::',
+    "ignore::FutureWarning",
+    # ignore these warnings until schwimmbad is removed or updated
+    'ignore:^pkg_resources:::',
+    'ignore:^Deprecated call to `pkg_resources:::',
+    'ignore:^Exception ignored in.*<function Pool:::',
+    'ignore::pytest.PytestUnraisableExceptionWarning'
+]
+# pytest markers replace nose attrs
+markers = [
+    "fast: mark tests as fast",
+    "medium: mark tests as medium run time",
+    "slow: mark tests as slow",
+    "dda: mark tests that use ADDA",
+]

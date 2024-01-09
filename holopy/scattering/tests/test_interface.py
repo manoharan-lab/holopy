@@ -24,14 +24,19 @@ calc_intensity and calc_holo, based on subclass's calc_field
 """
 import unittest
 import warnings
+import numpy as np
 
-from nose.plugins.attrib import attr
+import pytest
 
 from holopy.scattering import (Sphere, Spheres, Mie, Multisphere,
                                Spheroid, Cylinder, Tmatrix)
 from holopy.core import detector_grid
-from holopy.core.tests.common import assert_obj_close
-from holopy.scattering.interface import *
+from holopy.scattering.interface import (
+    calc_holo, calc_field, calc_cross_sections, calc_intensity,
+    calc_scat_matrix, finalize, copy_metadata,
+    scattered_field_to_hologram, determine_default_theory_for,
+    validate_scatterer, prep_schema, interpret_theory
+)
 from holopy.scattering.errors import MissingParameter, InvalidScatterer
 from holopy.inference import prior
 
@@ -45,14 +50,14 @@ POL = (0, 1)
 
 
 class TestInterface(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_calc_holo(self):
         # FIXME: Test results change when 'auto' theory for SCATTERER changes
         result = calc_holo(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
         expected = np.array([[1.03670094, 1.05260144], [1.04521558, 1.01477807]])
         self.assertTrue(np.allclose(result.values.squeeze(), expected))
 
-    @attr('medium')
+    @pytest.mark.medium
     def test_calc_field(self):
         # FIXME: Test results change when 'auto' theory for SCATTERER changes
         result = calc_field(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
@@ -64,7 +69,7 @@ class TestInterface(unittest.TestCase):
                               [ .01727821-.00295829j,  .00384075-.01752032j]]])
         self.assertTrue(np.allclose(result.values.squeeze(), expected))
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_calc_cross_sections(self):
         # FIXME: Test results change when 'auto' theory for SCATTERER changes
         result = calc_cross_sections(SCATTERER, MED_INDEX, WAVELEN, POL)
@@ -72,7 +77,7 @@ class TestInterface(unittest.TestCase):
                              2.04017098e+00, 9.13750771e-01])
         self.assertTrue(np.allclose(result.values.squeeze(), expected))
 
-    @attr('medium')
+    @pytest.mark.medium
     def test_calc_intensity(self):
         # FIXME: Test results change when 'auto' theory for SCATTERER changes
         result = calc_intensity(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN, POL)
@@ -80,9 +85,9 @@ class TestInterface(unittest.TestCase):
                              [0.00059256, 0.00098669]])
         self.assertTrue(np.allclose(result.values.squeeze(), expected))
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_calc_scat_matrix(self):
-        # FIXME: Test results change when 'auto' theory for SCATTERER changes 
+        # FIXME: Test results change when 'auto' theory for SCATTERER changes
         result = calc_scat_matrix(LOCATIONS, SCATTERER, MED_INDEX, WAVELEN)
         expected = np.array([[[[-2.3818862 +1.10607989j, -2.41362056+1.74943249j],
                                [-2.41362056+1.74943249j, -2.15238106+2.50562808j]],
@@ -94,13 +99,13 @@ class TestInterface(unittest.TestCase):
                                [-2.74726197+2.19673594j, -2.66462981+2.81492861j]]]])
         self.assertTrue(np.allclose(result.values.squeeze(), expected))
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_finalize(self):
         result = finalize(LOCATIONS.values, LOCATIONS)
         expected = copy_metadata(LOCATIONS.values, LOCATIONS)
         self.assertTrue(result.equals(expected))
 
-    @attr('medium')
+    @pytest.mark.medium
     def test_scattered_field_to_hologram(self):
         coords = ['x', 'y', 'z']
         scat = xr.DataArray(np.array([1, 0, 0]), coords=[('vector', coords)])
@@ -111,34 +116,34 @@ class TestInterface(unittest.TestCase):
 
 
 class TestDetermineDefaultTheoryFor(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_determine_default_theory_for_sphere(self):
         default_theory = determine_default_theory_for(Sphere())
         correct_theory = Mie()
         self.assertEqual(default_theory, correct_theory)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_determine_default_theory_for_spheres(self):
         default_theory = determine_default_theory_for(
             Spheres([Sphere(center=(1, 1, 1)), Sphere(center=(1, 1, 2))]))
         correct_theory = Multisphere()
         self.assertEqual(default_theory, correct_theory)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_determine_default_theory_for_spheroid(self):
         scatterer = Spheroid(n=1.33, r=(1.0, 2.0))
         default_theory = determine_default_theory_for(scatterer)
         correct_theory = Tmatrix()
         self.assertEqual(default_theory, correct_theory)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_determine_default_theory_for_cylinder(self):
         scatterer = Cylinder(n=1.33, h=2, d=1)
         default_theory = determine_default_theory_for(scatterer)
         correct_theory = Tmatrix()
         self.assertEqual(default_theory, correct_theory)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_determine_default_theory_for_layered_spheres(self):
         layered_spheres = Spheres([
             Sphere(center=(1, 1, 1), r=[0.5, 1], n=[1, 1.5]),
@@ -149,7 +154,7 @@ class TestDetermineDefaultTheoryFor(unittest.TestCase):
         correct_theory = Mie()
         self.assertEqual(default_theory, correct_theory)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_gives_mie_when_spheres_very_far_apart(self):
         sphere1 = Sphere(r=0.5, n=1.59, center=(100, 0, 10))
         sphere2 = Sphere(r=0.5, n=1.59, center=(-100, 0, 10))
@@ -158,7 +163,7 @@ class TestDetermineDefaultTheoryFor(unittest.TestCase):
         correct_theory = Mie()
         self.assertEqual(default_theory, correct_theory)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_raises_invalid_scatterer_when_center_not_set_for_spheres(self):
         spheres = Spheres([Sphere(), Sphere()])
         self.assertRaises(
@@ -168,22 +173,22 @@ class TestDetermineDefaultTheoryFor(unittest.TestCase):
 
 
 class TestPrepSchema(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_wavelength_missing(self):
         args = (LOCATIONS, MED_INDEX, None, POL)
         self.assertRaises(MissingParameter, prep_schema, *args)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_medium_index_missing(self):
         args = (LOCATIONS, None, WAVELEN, POL)
         self.assertRaises(MissingParameter, prep_schema, *args)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_polarization_missing(self):
         args = (LOCATIONS, MED_INDEX, WAVELEN, None)
         self.assertRaises(MissingParameter, prep_schema, *args)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_multiple_illumination_via_polarization_shape(self):
         coords = ['red', 'green']
         polarization = xr.DataArray(np.array([[1, 0], [0, 1]]),
@@ -192,7 +197,7 @@ class TestPrepSchema(unittest.TestCase):
         detector = prep_schema(LOCATIONS, MED_INDEX, WAVELEN, polarization)
         self.assertTrue(len(detector.illum_wavelen == 2))
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_multiple_illumination_via_detector_wavelength_shape(self):
         coords = ['red', 'green']
         wavelength = xr.DataArray(np.array([0.66, 0.532]),
@@ -202,13 +207,13 @@ class TestPrepSchema(unittest.TestCase):
 
 
 class TestInterpretTheory(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_interpret_auto_theory(self):
         theory = interpret_theory(SCATTERER, theory='auto')
         theory_ok = type(theory) == Mie
         self.assertTrue(theory_ok)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_interpret_specified_theory(self):
         theory = interpret_theory(SCATTERER, theory=Mie)
         theory_ok = type(theory) == Mie
@@ -216,7 +221,7 @@ class TestInterpretTheory(unittest.TestCase):
 
 
 class TestValidateScatterer(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_initial_guess_if_prior_in_scatterer(self):
         r = prior.Uniform(0.5, 0.6, 0.59)
         n = prior.Gaussian(1.5, 0.2)

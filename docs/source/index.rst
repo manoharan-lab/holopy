@@ -32,6 +32,7 @@ answer questions, and benefit from other users' questions.
    releasenotes
    tutorial/index
    users/index
+   dev_guide
    reference/holopy
    credits
 

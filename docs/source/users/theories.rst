@@ -4,7 +4,9 @@
 The HoloPy Scattering Theories
 ==============================
 
-The HoloPy :class:`.ScatteringTheory` classes know how to calculate scattered fields from detector and scatterer information. Each scattering theory is only able to work with certain specific scatterers.
+The HoloPy :class:`.ScatteringTheory` classes know how to calculate scattered
+fields from detector and scatterer information. Each scattering theory is only
+able to work with certain specific scatterers.
 
 There are two broad classes of scattering theories in HoloPy:
 :ref:`lens-free<lens_free>` theories which treat the recorded fields as
@@ -25,7 +27,8 @@ Not sure how to choose a scattering theory? See the
 ScatteringTheory Methods
 ------------------------
 
-HoloPy Scattering theories calculate the scattered fields through one of the following methods.
+HoloPy Scattering theories calculate the scattered fields through one of the
+following methods.
 
     - :meth:`~.ScatteringTheory._raw_fields`
       Calculates the scattering fields.
@@ -36,9 +39,13 @@ HoloPy Scattering theories calculate the scattered fields through one of the fol
     - :meth:`~.ScatteringTheory._can_handle`
       Checks if the theory is compatible with a given scatterer.
 
-If a theory is asked for the raw fields, but does not have a ``_raw_fields`` method, the scattering theory attempts to calculate them via the scattering matrices, as called by ``_raw_scat_matrs``. More than one of these methods may be implemented for performance reasons.
+If a theory is asked for the raw fields, but does not have a ``_raw_fields``
+method, the scattering theory attempts to calculate them via the scattering
+matrices, as called by ``_raw_scat_matrs``. More than one of these methods may
+be implemented for performance reasons.
 
-Be advised that the :class:`.ScatteringTheory` class is under active development, and these method names may change.
+Be advised that the :class:`.ScatteringTheory` class is under active
+development, and these method names may change.
 
 
 .. _lens_free:
@@ -224,9 +231,7 @@ acceptance angle of the lens. The acceptance angle :math:`\beta` is
 related to the numerical aperture or NA of the lens by :math:`\beta =
 \arcsin(NA / n_f)`, where :math:`n_f` is the refractive of the immersion
 fluid. For more details on the effect of the lens on the recorded
-hologram, see our papers
-`here <https://www.osapublishing.org/oe/abstract.cfm?uri=oe-28-2-1061>`_
-and `here <url>`_.
+hologram, see [Leahy2020]_ and [Martin2021]_.
 
 The :class:`.Lens` theory allows HoloPy to include the effects of a perfect
 objective lens with any scattering theory. The Lens theory works by wrapping a
@@ -259,7 +264,7 @@ passed to :func:`.calc_holo` just like any other scattering theory:
     lens_angle = 1.0
     theory = MieLens(lens_angle)
 
-In addition, `holopy` supports the calculation of holograms of spherical
+In addition, HoloPy supports the calculation of holograms of spherical
 particles when the imaging objective lens has spherical aberrations of
 arbitrary order. Currently only spherical aberrations are supported, and
 only for the image of spherical scatterers. The following code creates

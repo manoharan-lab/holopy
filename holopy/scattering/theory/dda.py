@@ -16,8 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
-Compute holograms using the discrete dipole approximation (DDA).  Currently uses
+Compute holograms using the discrete dipole approximation (DDA). Currently uses
 ADDA (https://github.com/adda-team/adda) to do DDA calculations.
+
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
 

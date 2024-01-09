@@ -20,7 +20,8 @@ import unittest
 import numpy as np
 import xarray as xr
 from numpy.testing import assert_allclose
-from nose.plugins.attrib import attr
+
+import pytest
 
 from holopy.core.process import center_find, subimage, fft, ifft
 from holopy.core.metadata import data_grid, detector_grid
@@ -29,7 +30,7 @@ from holopy.core.tests.common import get_example_data, assert_obj_close
 #Test centerfinder
 gold_location = np.array([ 48.5729142,  50.23217416])
 
-@attr("medium")
+@pytest.mark.medium
 def test_FoundLocation():
     holo = get_example_data('image0001')
     location = center_find(holo, threshold=.25)
@@ -37,7 +38,7 @@ def test_FoundLocation():
 
 
 #Test img_proc
-@attr("fast")
+@pytest.mark.fast
 def test_subimage():
     i = detector_grid(shape=(10, 10), spacing=1)
     s = subimage(i, (5,5), 2)
@@ -47,7 +48,7 @@ def test_subimage():
     s2 = subimage(i2, (5, 5), 2)
 
 
-@attr("fast")
+@pytest.mark.fast
 def test_subimage_floats():
     i = data_grid(np.zeros((100, 100)), .1)
     s1 = subimage(i, (5.2,5.6), 2)
@@ -56,7 +57,7 @@ def test_subimage_floats():
 
 
 class TestFourier(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_fft_1d_no_shift(self):
         a = np.array([
             0.03939436, 0.69091932, 0.10291701, 0.92518768, 0.99788634,
@@ -79,7 +80,7 @@ class TestFourier(unittest.TestCase):
 
         assert_allclose(fft(a, shift=False), ft)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_ifft_1d_no_shift(self):
         a = np.array([
             0.03939436, 0.69091932, 0.10291701, 0.92518768, 0.99788634,
@@ -102,25 +103,25 @@ class TestFourier(unittest.TestCase):
 
         assert_allclose(ifft(a, shift=False), np.fft.ifft(a))
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_fft(self):
         holo = get_example_data('image0001')
         assert_obj_close(holo, ifft(fft(holo)))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_fft_of_xarray_returns_xarray(self):
         xarray = get_example_data('image0001')
         after_fft = fft(xarray)
         self.assertIsInstance(after_fft, xr.DataArray)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_ifft_of_xarray_returns_xarray(self):
         xarray = get_example_data('image0001')
         forward = fft(xarray)
         backward = ifft(forward)
         self.assertIsInstance(backward, xr.DataArray)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_fft_ifft_2d_are_inverses(self):
         xarray = get_example_data('image0001')
         forward = fft(xarray)

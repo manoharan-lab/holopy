@@ -25,7 +25,9 @@ from importlib.util import find_spec
 
 import numpy as np
 from numpy.testing import assert_allclose
-from nose.plugins.attrib import attr
+
+import pytest
+
 import xarray as xr
 try:
     from schwimmbad import MultiPool, pool, MPIPool
@@ -56,14 +58,14 @@ class DummyPool():
 
 
 class TestCoordinateTransformations(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_transform_cartesian_to_spherical_returns_correct_shape(self):
         np.random.seed(12)
         xyz = np.random.randn(3, 10)
         rtp = transform_cartesian_to_spherical(xyz)
         self.assertTrue(rtp.shape == xyz.shape)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_transform_cartesian_to_spherical(self):
         np.random.seed(12)
         xyz = np.random.randn(3, 10)
@@ -84,7 +86,7 @@ class TestCoordinateTransformations(unittest.TestCase):
         self.assertTrue(theta_is_close)
         self.assertTrue(phi_is_close)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_transform_cartesian_to_spherical_returns_phi_on_0_2pi(self):
         np.random.seed(12)
         xyz = np.random.randn(3, 10)
@@ -92,14 +94,14 @@ class TestCoordinateTransformations(unittest.TestCase):
         phi = rtp[2]
         self.assertTrue(np.all(phi > 0))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_transform_cartesian_to_spherical_at_origin(self):
         xyz_0 = np.zeros((3, 1))
         rtp = transform_cartesian_to_spherical(xyz_0)
         xyz_1 = transform_spherical_to_cartesian(rtp)
         self.assertTrue(np.allclose(xyz_0, xyz_1, **TOLS))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_transform_spherical_to_cartesian(self):
         # check that spherical_to_cartesian is the inverse of cartesian_to_sph
         np.random.seed(12)
@@ -108,14 +110,14 @@ class TestCoordinateTransformations(unittest.TestCase):
         xyz_1 = transform_spherical_to_cartesian(rtp)
         self.assertTrue(np.allclose(xyz_0, xyz_1, **TOLS))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_transform_cartesian_to_cylindrical_returns_correct_shape(self):
         np.random.seed(12)
         xyz = np.random.randn(3, 10)
         rpz = transform_cartesian_to_cylindrical(xyz)
         self.assertTrue(rpz.shape == xyz.shape)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_transform_cartesian_to_cylindrical(self):
         np.random.seed(12)
         xyz = np.random.randn(3, 10)
@@ -132,7 +134,7 @@ class TestCoordinateTransformations(unittest.TestCase):
         self.assertTrue(phi_is_close)
         self.assertTrue(z_is_close)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_transform_cartesian_to_cylindrical_returns_phi_on_0_2pi(self):
         np.random.seed(12)
         xyz = np.random.randn(3, 10)
@@ -140,7 +142,7 @@ class TestCoordinateTransformations(unittest.TestCase):
         phi = rpz[1]
         self.assertTrue(np.all(phi > 0))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_transform_cylindrical_to_cartesian(self):
         # check cylindrical_to_cartesian is the inverse of cartesian_to_cyl
         np.random.seed(12)
@@ -149,7 +151,7 @@ class TestCoordinateTransformations(unittest.TestCase):
         xyz_1 = transform_cylindrical_to_cartesian(rpz)
         self.assertTrue(np.allclose(xyz_0, xyz_1, **TOLS))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_transform_cylindrical_to_spherical(self):
         # Uses the pre-existing cartesian to cylindrical & spherical functions
         np.random.seed(12)
@@ -161,7 +163,7 @@ class TestCoordinateTransformations(unittest.TestCase):
         is_ok = np.allclose(r_theta_phi_true, r_theta_phi_check, **TOLS)
         self.assertTrue(is_ok)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_transform_spherical_to_cylindrical(self):
         # Uses the pre-existing cartesian to cylindrical & spherical functions
         np.random.seed(12)
@@ -173,7 +175,7 @@ class TestCoordinateTransformations(unittest.TestCase):
         is_ok = np.allclose(rho_phi_z_true, rho_phi_z_check, **TOLS)
         self.assertTrue(is_ok)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_find_transformation_function_returns_helpful_error(self):
         # This test will have to be changed if someone implements
         # spherical bipolar coordinates.
@@ -182,7 +184,7 @@ class TestCoordinateTransformations(unittest.TestCase):
             find_transformation_function,
             'cartesian', 'spherical_bipolar')
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_find_transformation_function(self):
         desired = [
             ('cartesian', 'spherical', transform_cartesian_to_spherical),
@@ -196,14 +198,14 @@ class TestCoordinateTransformations(unittest.TestCase):
             self.assertTrue(
                 find_transformation_function(initial, final) is correct_method)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_keep_in_same_coordinates(self):
         np.random.seed(12)
         xyz = np.random.randn(3, 10)
         the_same = keep_in_same_coordinates(xyz)
         self.assertTrue(np.allclose(xyz, the_same, **TOLS))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_find_transformation_function_when_same(self):
         np.random.seed(12)
         xyz = np.random.randn(3, 10)
@@ -211,7 +213,7 @@ class TestCoordinateTransformations(unittest.TestCase):
             method = find_transformation_function(which, which)
             self.assertTrue(np.allclose(xyz, method(xyz), **TOLS))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_coordinate_transformations_work_when_z_is_a_scalar(self):
         # This just tests that the transformations work, not that they
         # are in the shape (N, 3), as some of the calculations prefer
@@ -240,14 +242,14 @@ class TestCoordinateTransformations(unittest.TestCase):
 
 
 #Test math
-@attr("fast")
+@pytest.mark.fast
 def test_rotate_single_point():
     points = np.array([1.,1.,1.])
     assert_allclose(rotate_points(points, np.pi, np.pi, np.pi),
                     np.array([-1.,  1., -1.]), 1e-5)
 
 
-@attr("fast")
+@pytest.mark.fast
 def test_rotation_matrix_degrees():
     assert_allclose(rotation_matrix(180., 180., 180., radians = False),
                     rotation_matrix(np.pi, np.pi, np.pi))
@@ -255,27 +257,27 @@ def test_rotation_matrix_degrees():
 #test utils
 
 class TestEnsureArray(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_None_is_unchanged(self):
         self.assertTrue(ensure_array(None) is None)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_xarray_is_unchanged(self):
         xr_array = xr.DataArray([2], dims='a', coords={'a':['b']})
         self.assertTrue(xr_array.equals(ensure_array(xr_array)))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_listlike(self):
         self.assertEqual(ensure_array([1]), np.array([1]))
         self.assertEqual(ensure_array((1)), np.array([1]))
         self.assertEqual(ensure_array(np.array([1])), np.array([1]))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_xarrays_without_coords(self):
         self.assertEqual(ensure_array(xr.DataArray(1)), np.array([1]))
         self.assertEqual(ensure_array(xr.DataArray([1])), np.array([1]))
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_zero_d_objects(self):
         self.assertEqual(ensure_array(1), np.array([1]))
         self.assertEqual(ensure_array(np.array(1)), np.array([1]))
@@ -285,19 +287,19 @@ class TestEnsureArray(unittest.TestCase):
 
 
 class TestListUtils(unittest.TestCase):
-    @attr('fast')
+    @pytest.mark.fast
     def test_ensure_listlike(self):
         self.assertEqual(ensure_listlike(None), [])
         self.assertEqual(ensure_listlike(1), [1])
         self.assertEqual(ensure_listlike([1]), [1])
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_ensure_scalar(self):
         self.assertEqual(ensure_scalar(1), 1)
         self.assertEqual(ensure_scalar(np.array(1)), 1)
         self.assertEqual(ensure_scalar(np.array([1])), 1)
 
-@attr("fast")
+@pytest.mark.fast
 def test_mkdir_p():
     tempdir = tempfile.mkdtemp()
     mkdir_p(os.path.join(tempdir, 'a', 'b'))
@@ -306,14 +308,14 @@ def test_mkdir_p():
 
 
 class TestDictionaryUtils(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_dict_without(self):
         input_dict = {'a':1, 'b':2, 'c':3, 'd':4}
         output_dict = dict_without(input_dict, ['a','d','e'])
         self.assertEqual(input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
         self.assertEqual(output_dict, {'b':2, 'c':3})
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_updated_basic(self):
         input_dict = {'a':1, 'b':2, 'c':3, 'd':4}
         update_dict = {'c':5, 'd':None, 'e':6}
@@ -321,7 +323,7 @@ class TestDictionaryUtils(unittest.TestCase):
         self.assertEqual(input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
         self.assertEqual(output_dict, {'a':1, 'b':2, 'c':5, 'd':4, 'e':6})
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_updated_keep_None(self):
         input_dict = {'a':1, 'b':2, 'c':3, 'd':4}
         update_dict = {'c':5, 'd':None, 'e':6}
@@ -329,14 +331,14 @@ class TestDictionaryUtils(unittest.TestCase):
         self.assertEqual(input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
         self.assertEqual(output_dict, {'a':1, 'b':2, 'c':5, 'd':None, 'e':6})
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_updated_from_kw(self):
         input_dict = {'a':1, 'b':2, 'c':3, 'd':4}
         output_dict = updated(input_dict, b=7, c=None, e=8)
         self.assertEqual(input_dict, {'a':1, 'b':2, 'c':3, 'd':4})
         self.assertEqual(output_dict, {'a':1, 'b':7, 'c':3, 'd':4, 'e':8})
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_kw_takes_priority(self):
         input_dict = {'a':1, 'b':2, 'c':3, 'd':4}
         update_dict = {'c':5, 'd':None, 'e':6}
@@ -348,27 +350,27 @@ class TestDictionaryUtils(unittest.TestCase):
 class TestRepeatSingDims(unittest.TestCase):
     # these tests compare dictionaries containing numpy arrays
     # using np.testing.assert_equal to avoid errors.
-    @attr("fast")
+    @pytest.mark.fast
     def test_all_keys(self):
         input_dict = {'x':[0], 'y':[1], 'z':[0,1,2]}
         output_dict = {'x':np.array([0, 0, 0]), 'y':np.array([1, 1, 1]),
                       'z':[0, 1, 2]}
         np.testing.assert_equal(repeat_sing_dims(input_dict), output_dict)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_input_isnt_modified(self):
         input_dict = {'x':[0], 'y':[1], 'z':[0,1,2]}
         repeat_sing_dims(input_dict)
         self.assertEqual(input_dict, {'x':[0], 'y':[1], 'z':[0,1,2]})
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_repeat_some_keys(self):
         input_dict = {'x':[0], 'y':[1], 'z':[0,1,2]}
         output_dict ={'x':np.array([0,0,0]), 'y':[1], 'z':[0, 1, 2]}
         repeated = repeat_sing_dims(input_dict, ['x', 'z'])
         np.testing.assert_equal(repeated, output_dict)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_nothing_to_repeat(self):
         input_dict = {'x':[0], 'y':[1], 'z':[0,1,2]}
         repeated = repeat_sing_dims(input_dict, ['x', 'y'])
@@ -376,18 +378,18 @@ class TestRepeatSingDims(unittest.TestCase):
 
 
 class TestChoosePool(unittest.TestCase):
-    @attr("fast")
+    @pytest.mark.fast
     def test_custom_pool(self):
         custom_pool = DummyPool(17)
         chosen_pool = choose_pool(custom_pool)
         self.assertTrue(choose_pool(custom_pool) is custom_pool)
 
-    @attr("fast")
+    @pytest.mark.fast
     def test_multiprocessing_pool(self):
         mp_pool = mp.pool.Pool(5)
         self.assertTrue(choose_pool(mp_pool) is mp_pool)
 
-    @attr("fast")
+    @pytest.mark.fast
     @unittest.skipIf(not _has_schwimmbad, "schwimmbad not installed")
     def test_nonepool(self):
         none_pool = choose_pool(None)
@@ -395,21 +397,21 @@ class TestChoosePool(unittest.TestCase):
         self.assertEqual(list(none_pool.map(len, [[0,1,2],'asdf'])), [3, 4])
         self.assertTrue(hasattr(none_pool, "close"))
 
-    @attr("fast")
+    @pytest.mark.fast
     @unittest.skipIf(not _has_schwimmbad, "schwimmbad not installed")
     def test_counting_all_cores(self):
         all_pool = choose_pool('all')
         self.assertTrue(isinstance(all_pool, MultiPool))
         self.assertEqual(all_pool._processes, mp.cpu_count())
 
-    @attr("fast")
+    @pytest.mark.fast
     @unittest.skipIf(not _has_schwimmbad, "schwimmbad not installed")
     def test_schwimmbad_multipool(self):
         multi_pool = choose_pool(5)
         self.assertTrue(isinstance(multi_pool, MultiPool))
         self.assertEqual(multi_pool._processes, 5)
 
-    @attr("fast")
+    @pytest.mark.fast
     @unittest.skipIf(not _has_schwimmbad, "schwimmbad not installed")
     def test_MPI(self):
         if MPIPool.enabled():
@@ -423,7 +425,7 @@ class TestChoosePool(unittest.TestCase):
             # mpi4py installed but only one process available
             self.assertRaises(ValueError, choose_pool, 'mpi')
 
-    @attr("fast")
+    @pytest.mark.fast
     @unittest.skipIf(not _has_schwimmbad, "schwimmbad not installed")
     def test_auto(self):
         auto_pool = choose_pool('auto')

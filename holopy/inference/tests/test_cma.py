@@ -18,12 +18,17 @@
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
+import pytest
 
 from holopy.inference.cmaes import run_cma, CmaStrategy
-from holopy.inference.model import Model
 from holopy.inference import prior
 from holopy.inference.tests.common import SimpleModel
 
+try:
+    import schwimmbad
+    SCHWIMMBAD_INSTALLED = True
+except ModuleNotFoundError:
+    SCHWIMMBAD_INSTALLED = False
 
 def simplefunc(x):
     """Has a global minium at x = 0.5"""
@@ -38,7 +43,7 @@ def weightfunc(x, popsize):
 data = np.array(.5)
 tols = {'maxiter': 2}
 
-
+@pytest.mark.skipif(not SCHWIMMBAD_INSTALLED, reason="requires schwimmbad")
 def test_run_cma_returns_reproducible_answer():
     # If this test fails, it could be either a change in holopy code
     # or a change in the cma package code.
@@ -52,14 +57,14 @@ def test_run_cma_returns_reproducible_answer():
     correct = 2.871557
     assert_allclose(found, correct, rtol=1e-3)
 
-
+@pytest.mark.skipif(not SCHWIMMBAD_INSTALLED, reason="requires schwimmbad")
 def test_CmaStrategy():
     mod = SimpleModel()
     strat = CmaStrategy(seed=18, tols=tols, popsize=5)
     r = strat.fit(mod, data)
     assert_allclose(np.mean(r._parameters), .522794, atol=.001)
 
-
+@pytest.mark.skipif(not SCHWIMMBAD_INSTALLED, reason="requires schwimmbad")
 def test_default_popsize():
     npars = 2
     mod = SimpleModel(npars)

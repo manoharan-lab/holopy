@@ -15,9 +15,10 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-import numpy as np
-from scipy.ndimage.measurements import center_of_mass
-from nose.plugins.attrib import attr
+
+from scipy.ndimage import center_of_mass
+
+import pytest
 
 from holopy.core.io import get_example_data_path, load_image
 from holopy.propagation import ps_propagate
@@ -26,9 +27,8 @@ from holopy.core.tests.common import verify
 from warnings import simplefilter
 
 
-@attr("medium")
+@pytest.mark.medium
 def test_ps():
-
     imagepath = get_example_data_path('ps_image01.jpg')
     bgpath = get_example_data_path('ps_bg01.jpg')
     L = 0.0407 # distance from light source to screen
@@ -46,4 +46,3 @@ def test_ps():
     recons = ps_propagate(holo, zstack, L, beam_c) # do propagation
 
     verify(recons, 'ps_recon')
-

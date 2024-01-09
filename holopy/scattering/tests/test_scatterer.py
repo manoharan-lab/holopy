@@ -24,19 +24,20 @@ Test construction and manipulation of Scatterer objects.
 import unittest
 
 import numpy as np
-import xarray as xr
 from numpy.testing import assert_equal, assert_raises, assert_allclose
-from nose.plugins.attrib import attr
+
+import pytest
 
 from holopy.core import detector_grid
 from holopy.scattering import (
-    Sphere, Spheres, Scatterer, Ellipsoid, Scatterers, calc_holo)
+    Sphere, Ellipsoid, Scatterers, calc_holo
+)
 from holopy.scattering.scatterer.scatterer import find_bounds
 from holopy.inference import prior
 from holopy.scattering.errors import InvalidScatterer, MissingParameter
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_Sphere_construction():
     s = Sphere(n=1.59, r=5e-7, center=(1e-6, -1e-6, 10e-6))
     s = Sphere(n=1.59, r=5e-7)
@@ -56,7 +57,7 @@ def test_Sphere_construction():
     cs = Sphere(n=(1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6), center=center)
 
 
-@attr("fast")
+@pytest.mark.fast
 def test_Ellipsoid():
     s = Ellipsoid(n=1.57, r=(1, 2, 3), center=(3, 2, 1))
     assert_equal(s.n, 1.57)
@@ -65,7 +66,7 @@ def test_Ellipsoid():
     assert_equal(str(s)[0:9], 'Ellipsoid')
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_Sphere_construct_list():
     # specify center as list
     center = [1e-6, -1e-6, 10e-6]
@@ -73,7 +74,7 @@ def test_Sphere_construct_list():
     assert_equal(s.center, np.array(center))
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_Sphere_construct_tuple():
     # specify center as list
     center = (1e-6, -1e-6, 10e-6)
@@ -81,7 +82,7 @@ def test_Sphere_construct_tuple():
     assert_equal(s.center, np.array(center))
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_Sphere_construct_array():
     # specify center as list
     center = np.array([1e-6, -1e-6, 10e-6])
@@ -95,7 +96,7 @@ def test_Sphere_construct_array():
                  "as (x, y, z)")
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_Sphere_parameters():
     s = Sphere(n=1.59+1e-4j, r=5e-7, center=(1e-6, -1e-6, 10e-6))
     assert_equal(
@@ -131,7 +132,7 @@ def test_from_parameters():
     assert_equal(s_prior.from_parameters(pars), s_new_nr)
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_Composite_construction():
     # empty composite
     comp_empty = Scatterers()
@@ -159,7 +160,7 @@ def test_Composite_construction():
     comp3 = Scatterers(scatterers=[comp2, cs])
 
 
-@attr('fast')
+@pytest.mark.fast
 def test_translate():
     s = Sphere(n = 1.59, r = .5, center = (0, 0, 0))
     s2 = s.translated(1, 1, 1)
@@ -168,24 +169,28 @@ def test_translate():
     assert_allclose(s2.center, (1, 1, 1))
 
 
-@attr("fast")
+@pytest.mark.fast
 def test_find_bounds():
     s = Sphere(n = 1.59, r = .5e-6, center = (0, 0, 0))
-    assert_allclose(find_bounds(s.indicators.functions[0])[0], np.array([-s.r,s.r]), rtol=0.1)
+    assert_allclose(find_bounds(s.indicators.functions[0])[0],
+                    np.array([-s.r,s.r]), rtol=0.1)
     s = Sphere(n = 1.59, r = .5, center = (0, 0, 0))
-    assert_allclose(find_bounds(s.indicators.functions[0])[0], np.array([-s.r,s.r]), rtol=0.1)
+    assert_allclose(find_bounds(s.indicators.functions[0])[0],
+                    np.array([-s.r,s.r]), rtol=0.1)
     s = Sphere(n = 1.59, r = .5e6, center = (0, 0, 0))
-    assert_allclose(find_bounds(s.indicators.functions[0])[0], np.array([-s.r,s.r]), rtol=0.1)
+    assert_allclose(find_bounds(s.indicators.functions[0])[0],
+                    np.array([-s.r,s.r]), rtol=0.1)
 
 
-@attr("fast")
+@pytest.mark.fast
 def test_sphere_nocenter():
     sphere = Sphere(n = 1.59, r = .5)
     schema = detector_grid(spacing=.1, shape=1)
-    assert_raises(MissingParameter, calc_holo, schema, sphere, 1.33, .66, [1, 0])
+    assert_raises(MissingParameter, calc_holo, schema, sphere,
+                  1.33, .66, [1, 0])
 
 
-@attr("fast")
+@pytest.mark.fast
 def test_ellipsoid():
     test = Ellipsoid(n = 1.585, r = [.4,0.4,1.5], center = [10,10,20])
     assert_equal(test.voxelate(.4), np.array(

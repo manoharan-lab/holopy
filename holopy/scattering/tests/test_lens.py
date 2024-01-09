@@ -3,7 +3,8 @@ import unittest
 import numpy as np
 import xarray as xr
 from numpy.testing import assert_allclose, assert_equal
-from nose.plugins.attrib import attr
+import pytest
+
 from scipy.special import iv
 
 from holopy.core import detector_points, update_metadata, detector_grid
@@ -153,7 +154,8 @@ class TestLens(unittest.TestCase):
         holo = calc_holo(pts, scatterer, theory=theory)
         self.assertTrue(True)
 
-    @unittest.skipUnless(lens.NUMEXPR_INSTALLED, "numexpr package required")
+    @pytest.mark.skipif(not lens.NUMEXPR_INSTALLED,
+                        reason = "numexpr package required")
     def test_integrand_prefactor_same_with_numexpr_as_without(self):
         np.random.seed(1649)
         krho, phi, kz = np.random.randn(3, 101)
@@ -163,7 +165,8 @@ class TestLens(unittest.TestCase):
 
         self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
 
-    @unittest.skipUnless(lens.NUMEXPR_INSTALLED, "numexpr package required")
+    @pytest.mark.skipif(not lens.NUMEXPR_INSTALLED,
+                        reason = "numexpr package required")
     def test_integrand_parallel_same_with_numexpr_as_without(self):
         np.random.seed(1659)
         krho, phi, kz = np.random.randn(3, 10)
@@ -179,7 +182,8 @@ class TestLens(unittest.TestCase):
 
         self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
 
-    @unittest.skipUnless(lens.NUMEXPR_INSTALLED, "numexpr package required")
+    @pytest.mark.skipif(not lens.NUMEXPR_INSTALLED,
+                        reason = "numexpr package required")
     def test_integrand_perpendicular_same_with_numexpr_as_without(self):
         np.random.seed(1659)
         krho, phi, kz = np.random.randn(3, 10)
@@ -195,7 +199,7 @@ class TestLens(unittest.TestCase):
 
         self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
 
-    @attr('medium')
+    @pytest.mark.medium
     def test_polarization_rotation_produces_small_changes_to_image(self):
         # we test that, for two sphere, rotating the polarization
         # does not drastically change the image
@@ -228,7 +232,7 @@ class TestLens(unittest.TestCase):
         tols = {'atol': 5e-2, 'rtol': 5e-2}
         self.assertTrue(np.allclose(intensity_xpol, intensity_ypol, **tols))
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_from_parameters(self):
         np.random.seed(1323)
         lens_angle_0 = np.random.rand()
@@ -247,7 +251,7 @@ class TestLens(unittest.TestCase):
         for k, v in kwargs.items():
             self.assertEqual(getattr(theory_out, k), v)
 
-    @attr('fast')
+    @pytest.mark.fast
     def test_parameters_has_correct_keys(self):
         np.random.seed(1323)
         theory = Lens(np.random.rand(), Mie(False, True))
