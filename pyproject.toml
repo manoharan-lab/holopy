@@ -40,7 +40,8 @@ filterwarnings = [
     # ignore these warnings until schwimmbad is removed or updated
     'ignore:^pkg_resources:::',
     'ignore:^Deprecated call to `pkg_resources:::',
-    'ignore:^Exception ignored in.*<function Pool:::'
+    'ignore:^Exception ignored in.*<function Pool:::',
+    'ignore::pytest.PytestUnraisableExceptionWarning'
 ]
 # pytest markers replace nose attrs
 markers = [
