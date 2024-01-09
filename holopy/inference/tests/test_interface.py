@@ -40,6 +40,11 @@ DATA = data_grid(np.ones((2, 2)), spacing=1, medium_index=1,
 SPHERE = Sphere(n=1, center=[2, 2, 2])
 GUESSES = {'n': 1, 'r': 2, 'center.0': 3}
 
+try:
+    import schwimmbad
+    SCHWIMMBAD_INSTALLED = True
+except ModuleNotFoundError:
+    SCHWIMMBAD_INSTALLED = False
 
 class TestUserFacingFunctions(unittest.TestCase):
     @pytest.mark.fast
@@ -47,6 +52,7 @@ class TestUserFacingFunctions(unittest.TestCase):
         self.assertRaises(ValueError, sample, DATA, Sphere())
 
     @pytest.mark.fast
+    @pytest.mark.skipif(not SCHWIMMBAD_INSTALLED, reason="requires schwimmbad")
     def test_sample_function_calls_model_sample(self):
         strategy = EmceeStrategy(nsamples=1)
         result = sample(DATA, SimpleModel(), strategy=strategy)
@@ -99,6 +105,7 @@ class TestUserFacingFunctions(unittest.TestCase):
         self.assertEqual(strategy_result, model_result)
 
     @pytest.mark.medium
+    @pytest.mark.skipif(not SCHWIMMBAD_INSTALLED, reason="requires schwimmbad")
     def test_sample_function_identical_to_strategy_method(self):
         model = SimpleModel()
         strategy = EmceeStrategy(nwalkers=6, nsamples=10, seed=123)
@@ -116,6 +123,7 @@ class TestStrategyHandling(unittest.TestCase):
         self.assertEqual(result.strategy, NmpfitStrategy())
 
     @pytest.mark.slow
+    @pytest.mark.skipif(not SCHWIMMBAD_INSTALLED, reason="requires schwimmbad")
     def test_default_sampling_strategy_is_emcee(self):
         # for speed, we monkey-patch emcee.default_nsamples
         # FIXME this is maybe not the best way to do this.
@@ -152,12 +160,14 @@ class TestStrategyHandling(unittest.TestCase):
         self.assertEqual(result.strategy, strategy)
 
     @pytest.mark.medium
+    @pytest.mark.skipif(not SCHWIMMBAD_INSTALLED, reason="requires schwimmbad")
     def test_sample_takes_strategy_object(self):
         strategy = EmceeStrategy(nsamples=2)
         result = sample(DATA, SimpleModel(), strategy)
         self.assertEqual(result.strategy, strategy)
 
     @pytest.mark.medium
+    @pytest.mark.skipif(not SCHWIMMBAD_INSTALLED, reason="requires schwimmbad")
     def test_fit_takes_strategy_by_name(self):
         result = fit(DATA, SimpleModel(), strategy='cma')
         self.assertTrue(isinstance(result.strategy, CmaStrategy))

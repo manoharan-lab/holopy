@@ -68,7 +68,7 @@ class testEmcee(unittest.TestCase):
     def test_EmceeStrategy(self):
         data = np.array(.5)
         mod = SimpleModel(1)
-        strat = EmceeStrategy(10, 15, None, None, seed=48)
+        strat = EmceeStrategy(10, 15, None, None, seed=48, parallel=None)
         r = strat.sample(mod, data)
         assert_allclose(r._parameters, .5, rtol=.001)
 
