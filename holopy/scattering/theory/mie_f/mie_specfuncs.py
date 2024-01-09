@@ -83,7 +83,7 @@ def riccati_psi_xi(x, nstop):
     return rbh
 
 def log_der_1(z, nmx, nstop):
-    '''
+    r'''
     Computes logarithmic derivative of Riccati-Bessel function \psi_n(z)
     by downward recursion as in BHMIE.
 
@@ -145,7 +145,7 @@ def log_der_13(z, nstop, eps1 = 1e-3, eps2 = 1e-16):
 # calculate ratio of RB's defined in Yang eqn. 23 by up recursion relation
 def Qratio(z1, z2, nstop, dns1 = None, dns2 = None, eps1 = 1e-3, eps2 = 1e-16):
     '''
-    Calculate ratio of Riccati-Bessel functions defined in [Yang2003]_ 
+    Calculate ratio of Riccati-Bessel functions defined in [Yang2003]_
     eq. 23 by up recursion.
 
     Notes
@@ -187,7 +187,7 @@ def Qratio(z1, z2, nstop, dns1 = None, dns2 = None, eps1 = 1e-3, eps2 = 1e-16):
     return qns
 
 def R_psi(z1, z2, nmax, eps1 = 1e-3, eps2 = 1e-16):
-    '''
+    r'''
     Calculate ratio of Riccati-Bessel function \psi: \psi(z1)/\psi(z2).
 
     Notes
