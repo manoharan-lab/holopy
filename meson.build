@@ -76,3 +76,23 @@ inc_np = include_directories(incdir_numpy, incdir_f2py)
 # makes the build process more efficient.
 
 subdir('holopy')
+
+# the original setup.py (used in the old installation method that relied on
+# numpy.distutils) copied the data files into the package. The lines below are
+# from setup.py. They won't work with meson, but are placed here so that we have
+# a record of what files used to be copied, in case we want to add them to the
+# meson build in the future.
+
+    # config.add_data_files(['.', [join(hp_root, 'AUTHORS')]])
+    # config.add_data_files(join(hp_root, 'holopy', 'scattering', 'tests',
+    #                            'gold', 'full_data', '*.h5'))
+    # config.add_data_files(join(hp_root, 'holopy', 'scattering', 'tests',
+    #                            'gold', '*.yaml'))
+    # config.add_data_files(join(hp_root, 'holopy', 'core', 'tests',
+    #                            'exampledata', '*.h5'))
+    # config.add_data_files(join(hp_root, 'holopy', 'core', 'tests',
+    #                            'exampledata', '*.jpg'))
+    # config.add_data_files(join(hp_root, 'holopy', 'propagation', 'tests',
+    #                            'gold', 'full_data', '*.h5'))
+    # config.add_data_files(join(hp_root, 'holopy', 'propagation', 'tests',
+    #                            'gold', '*.yaml'))
