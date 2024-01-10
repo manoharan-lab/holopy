@@ -288,9 +288,9 @@ class UncertainValue(HoloPyObject):
         from IPython.display import Math
         confidence = ""
         if self.n_sigma != 1:
-            confidence = " (\mathrm{{{}\ sigma}})".format(self.n_sigma)
+            confidence = " (\\mathrm{{{}\\ sigma}})".format(self.n_sigma)
         display_precision = int(
-            round(np.log10(self.guess/(min(self.plus, self.minus))) + .6))
+            np.round(np.log10(self.guess/(min(self.plus, self.minus))) + .6))
         guess_fmt = "{{:.{}g}}".format(max(display_precision, 2))
         guess = guess_fmt.format(self.guess)
         return "${guess}^{{+{s.plus:.2g}}}_{{-{s.minus:.2g}}}{conf}$".format(

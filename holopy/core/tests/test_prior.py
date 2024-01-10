@@ -588,6 +588,10 @@ class TestPriorMath(unittest.TestCase):
         transformed = TransformedPrior(np.maximum, [prior_1, prior_2])
         self.assertEqual(np.maximum(prior_1, prior_2), transformed)
 
+    # this won't work in numpy 1.21 or later because numpy will now check to
+    # see if "name" is a valid kwarg of the ufunc before passing it on to
+    # __array_ufunc__.  See
+    # https://numpy.org/devdocs/release/1.21.0-notes.html#array-ufunc-argument-validation
     @pytest.mark.fast
     def test_numpy_ufunc_passes_through_name(self):
         prior_1 = Uniform(2, 8, name='unused')
