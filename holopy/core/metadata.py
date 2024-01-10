@@ -269,7 +269,9 @@ def copy_metadata(old, data, do_coords=True):
     if old_is_xarray:
         if not hasattr(new, 'coords'):
             # new is a numpy array, not xarray
-            new = xr.DataArray(new, dims=['x', 'y'])
+            new = xr.DataArray(new, coords=old.coords)
+            # coords already copied; no need to find and rename
+            do_coords = False
         new.attrs = old.attrs
         new.name = old.name
 
