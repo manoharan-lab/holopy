@@ -38,14 +38,14 @@ def _reciprocal(val):
 
 
 class Prior(HoloPyObject):
-    """Base class for Bayesian priors in holopy.
-    
-       Prior subclasses should define at least the following methods:
-       
-           - guess
-           - sample
-           - prob
-           - lnprob
+    """
+    Base class for Bayesian priors in holopy.
+
+    Prior subclasses should define at least the following methods:
+    - guess
+    - sample
+    - prob
+    - lnprob
     """
 
     def __init__(self):
@@ -341,7 +341,6 @@ class TransformedPrior(Prior):
         else:
             return np.array([self.transformation(*sample_set)
                              for sample_set in zip(*raw_samples)])
-        return samples
 
     @property
     def guess(self):

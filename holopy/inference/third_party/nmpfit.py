@@ -16,20 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 """
-nmpfit.py
-
 Levenberg-Marquardt minimizer obtained from
 
 http://stsdas.stsci.edu/pyraf/stscidocs/pytools_pkg/pytools_api/pytools.nmpfit-module.html
 
 The source code above was modified by Jerome Fung (jerome.fung@post.harvard.edu) to
-be independent of the rest of the stsci_python package, since holopy does
-
+be independent of the rest of the stsci_python package, since holopy does not
 use Numeric.
 '''
 
 '''
-Python/Numeric version of this module was called mpfit. This version was modified to use numpy.
+Python/Numeric version of this module was called mpfit. This version was
+modified to use numpy.
 
 The license for stsci_python is included below:
 
@@ -51,7 +49,8 @@ THIS SOFTWARE IS PROVIDED BY AURA ``AS IS'' AND ANY EXPRESS OR IMPLIED
 WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
 MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
 EVENT SHALL AURA BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
 INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
 IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
@@ -464,10 +463,10 @@ Perform Levenberg-Marquardt least-squares minimization, based on MINPACK-1.
         August, 2002.  Mark Rivers
 """
 
-#The following lines are irrelevant to holopy and were commented out
-#from the stsci_python version by J. Fung.
-#import numerixenv
-#numerixenv.check()
+# The following lines are irrelevant to holopy and were commented out
+# from the stsci_python version by J. Fung.
+# import numerixenv
+# numerixenv.check()
 
 import numpy
 import types
@@ -1043,7 +1042,7 @@ e.g. mpfit.status, mpfit.errmsg, mpfit.params, npfit.niter, mpfit.covar.
             else: qanylim = 0
         else:
             ## Fill in local variables with dummy values
-            qulim = numpy.zeros(nfree, dtype=n.int8)
+            qulim = numpy.zeros(nfree, dtype=numpy.int8)
             ulim  = x * 0.
             qllim = qulim
             llim  = x * 0.

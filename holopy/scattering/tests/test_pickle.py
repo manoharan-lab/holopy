@@ -17,13 +17,21 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+try:
+   import cPickle as pickle
+except:
+   import pickle
 
-from holopy.core.tests.common import assert_pickle_roundtrip
+from holopy.core.tests.common import (
+    assert_pickle_roundtrip,
+    assert_method_equal
+)
 from holopy.scattering.theory import Mie
 
+# currently not tested
 def assert_method_roundtrip(o):
-    #assert_method_equal(o, pickle.loads(pickle.dumps(o)), 'pickled method')
-    assert_method_equal(o, cPickle.loads(cPickle.dumps(o)), 'pickled method')
+    assert_method_equal(o, pickle.loads(pickle.dumps(o)), 'pickled method')
+    #assert_method_equal(o, cPickle.loads(cPickle.dumps(o)), 'pickled method')
 
 @pytest.mark.fast
 def test_pickle_mie_object():

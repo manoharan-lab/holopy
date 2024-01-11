@@ -46,14 +46,14 @@ class VisualizationNotImplemented(Exception):
             self.o.__class__.__name__)
 
 
-def show(o, scaling='auto', vert_axis='x', horiz_axis='y',
-                    depth_axis='z', colour_axis='illumination'):
+def show(obj, scaling='auto', vert_axis='x', horiz_axis='y',
+         depth_axis='z', colour_axis='illumination'):
     """
     Visualize a hologram or reconstruction
 
     Parameters
     ----------
-    o : xarray.DataArray or ndarray
+    obj : xarray.DataArray or ndarray
         Object to visualize
     scaling : (float, float), optional
         (min, max) value to display in image, default is full range of o.
@@ -72,11 +72,11 @@ def show(o, scaling='auto', vert_axis='x', horiz_axis='y',
     to import all of matplotlib or mayavi just to load holopy)
     """
 
-    if isinstance(o, (xr.DataArray, np.ndarray, list, tuple)):
-        Show2D(display_image(o, scaling, vert_axis, horiz_axis, depth_axis,
-                                                                colour_axis))
+    if isinstance(obj, (xr.DataArray, np.ndarray, list, tuple)):
+        Show2D(display_image(obj, scaling, vert_axis, horiz_axis, depth_axis,
+                             colour_axis))
     else:
-        raise VisualizationNotImplemented(o)
+        raise VisualizationNotImplemented(obj)
 
 
 def save_plot(filenames, data, scaling='auto', vert_axis='x', horiz_axis='y',
@@ -87,10 +87,7 @@ def save_plot(filenames, data, scaling='auto', vert_axis='x', horiz_axis='y',
     Parameters
     ----------
     filenames : list / str
-        Name(s) of the file(s). If there is only one image contained (e.g.
-        hologram), the name will be used as a file name. If o contains more
-        plottable images (e.g. reconstruction volume), it should be a list of
-        filenames with the same length as objects.
+        Name(s) of the file(s).
     data : xarray.DataArray or ndarray
         Object to save.
     scaling : (float, float), optional
@@ -118,7 +115,7 @@ def save_plot(filenames, data, scaling='auto', vert_axis='x', horiz_axis='y',
         else:
             s.save(filenames)
     else:
-        raise VisualizationNotImplemented(o)
+        raise VisualizationNotImplemented(data)
 
 
 class Show2D(object):
@@ -309,26 +306,26 @@ def show_sphere_cluster(s, color):
     we hope to re-implement this functionality eventually.
     """
     raise NotImplementedError("3D renders of Spheres not currently supported")
-    # Delayed imports to avoid hard dependencies on plotting packages and to
-    # avoid the cost of importing them in noninteractive code
-    from matplotlib import cm
+    # # Delayed imports to avoid hard dependencies on plotting packages and to
+    # # avoid the cost of importing them in noninteractive code
+    # from matplotlib import cm
 
-    mlab = import_mayavi()
+    # mlab = import_mayavi()
 
-    # scale factor is 2 because mayavi interprets 4th
-    # argument as a diameter, we keep track of radii
-    # view is chosen to be looking from the incoming laser's point of view
-    if color == 'rainbow':
-        for i in arange(0,len(s.x)):
-            numberofcolors = max(10,len(s.x))
-            mlab.points3d(s.x[i], s.y[i], s.z[i], s.r[i],
-                scale_factor=2.0, resolution=32,
-                color=cm.gist_rainbow(float(i)/numberofcolors)[0:3])
-            mlab.view(-90,0,s.z[:].mean())
-    else:
-        mlab.points3d(s.x, s.y, s.z, s.r, scale_factor=2.0,
-            resolution=32, color=color)
-        mlab.view(-90,0,s.z[:].mean())
+    # # scale factor is 2 because mayavi interprets 4th
+    # # argument as a diameter, we keep track of radii
+    # # view is chosen to be looking from the incoming laser's point of view
+    # if color == 'rainbow':
+    #     for i in arange(0,len(s.x)):
+    #         numberofcolors = max(10,len(s.x))
+    #         mlab.points3d(s.x[i], s.y[i], s.z[i], s.r[i],
+    #             scale_factor=2.0, resolution=32,
+    #             color=cm.gist_rainbow(float(i)/numberofcolors)[0:3])
+    #         mlab.view(-90,0,s.z[:].mean())
+    # else:
+    #     mlab.points3d(s.x, s.y, s.z, s.r, scale_factor=2.0,
+    #         resolution=32, color=color)
+    #     mlab.view(-90,0,s.z[:].mean())
 
 
 def show_scatterer_slices(scatterer, spacing):
