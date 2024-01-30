@@ -24,11 +24,28 @@ from numpy.testing import assert_allclose
 import pytest
 
 from holopy.core.process import center_find, subimage, fft, ifft
+from holopy.core.process import detrend, normalize
 from holopy.core.metadata import data_grid, detector_grid
 from holopy.core.tests.common import get_example_data, assert_obj_close
 
 #Test centerfinder
 gold_location = np.array([ 48.5729142,  50.23217416])
+
+
+def check_copied_dataarrays(arr1, arr2):
+    """
+    Checks to make sure two DataArrays have the same indexing coordinates,
+    names, and attrs are the same for two DataArrays. Does not check
+    non-indexing coordinates.
+    """
+    try:
+        xr.align(arr1, arr2, join='exact')
+    except ValueError:
+        raise ValueError("Coordinates not copied properly"
+                         "in processing operation")
+    assert arr1.attrs == arr2.attrs
+    assert arr1.name == arr2.name
+
 
 @pytest.mark.medium
 def test_FoundLocation():
@@ -37,23 +54,39 @@ def test_FoundLocation():
     assert_allclose(location, gold_location, atol=0.01)
 
 
-#Test img_proc
-@pytest.mark.fast
-def test_subimage():
-    i = detector_grid(shape=(10, 10), spacing=1)
-    s = subimage(i, (5,5), 2)
-    assert s.shape == (1,2,2)
+# Test img_proc.py
+class TestImageProcessing:
+    @pytest.mark.fast
+    def test_subimage(self):
+        i = detector_grid(shape=(10, 10), spacing=1)
+        s = subimage(i, (5, 5), 2)
+        assert s.shape == (1, 2, 2)
 
-    i2 = data_grid(i, 1)
-    s2 = subimage(i2, (5, 5), 2)
+        i2 = data_grid(i, 1)
+        s2 = subimage(i2, (5, 5), 2)
 
+    @pytest.mark.fast
+    def test_subimage_floats(self):
+        i = data_grid(np.zeros((100, 100)), .1)
+        s1 = subimage(i, (5.2, 5.6), 2)
+        s2 = subimage(i, (5, 6), 2)
+        assert_obj_close(s1, s2)
 
-@pytest.mark.fast
-def test_subimage_floats():
-    i = data_grid(np.zeros((100, 100)), .1)
-    s1 = subimage(i, (5.2,5.6), 2)
-    s2 = subimage(i, (5,6), 2)
-    assert_obj_close(s1, s2)
+    # does not test correctness; just tests that coords and attrs are copied
+    # correctly
+    @pytest.mark.fast
+    def test_detrend(self):
+        holo = get_example_data('image0001')
+        new_holo = detrend(holo)
+        check_copied_dataarrays(holo, new_holo)
+
+    @pytest.mark.fast
+    def test_normalize(self):
+        holo = get_example_data('image0001')
+        new_holo = normalize(holo)
+        check_copied_dataarrays(holo, new_holo)
+        # check that image was actually normalized
+        assert new_holo.mean(['x', 'y', 'z']) == pytest.approx(1.0)
 
 
 class TestFourier(unittest.TestCase):
