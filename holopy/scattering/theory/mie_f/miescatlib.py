@@ -127,7 +127,7 @@ def nstop(x):
     Criterion taken from [Wiscombe1980]_.
     '''
     # 7/7/08: generalize to apply same criterion when x is complex
-    return int(np.round_(np.absolute(x+4.05*x**(1./3.)+2)))
+    return int(np.round(np.absolute(x+4.05*x**(1./3.)+2)))
 
 def asymmetry_parameter(al, bl):
     '''

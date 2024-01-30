@@ -43,7 +43,7 @@ illumination = 'illumination'
 
 
 def detector_grid(shape, spacing, name=None, extra_dims=None):
-    """
+    r"""
     Create a rectangular grid of pixels to represent a detector on which
     scattering calculations are to be performed.
 
