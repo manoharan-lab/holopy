@@ -25,14 +25,13 @@ scatterers (e.g. two trimers).
 
 
 from copy import copy
-from numbers import Number
-import warnings
 
 import numpy as np
 
 from holopy.scattering.scatterer.scatterer import Scatterer
 from holopy.core.math import rotate_points
-from holopy.core.utils import ensure_array, dict_without
+from holopy.core.utils import ensure_array
+from holopy.scattering.errors import InvalidScatterer
 
 
 class Scatterers(Scatterer):

@@ -256,7 +256,7 @@ def load_image(inf, spacing=None, medium_index=None, illum_wavelen=None,
             channel = range(arr.shape[2])
         channel = ensure_array(channel)
         if channel.max() >= arr.shape[2]:
-            raise LoadError(filename,
+            raise LoadError(inf,
                 "The image doesn't have a channel number {0}".format(channel.max()))
         else:
             arr = arr[:, :, channel].squeeze()
@@ -415,7 +415,7 @@ def _save_im(filename, im, depth=8):
             depth = depth-1
             typestr = 'int' + str(depth)
         else:
-            raise Error("Unknown image depth")
+            raise ValueError("Unknown image depth")
 
         if im.max() <= 1:
             im = im * ((2**depth)-1) + .499999

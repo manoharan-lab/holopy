@@ -24,6 +24,7 @@ Compute holograms using Mishchenko's T-matrix method for axisymmetric scatterers
 import copy
 
 import numpy as np
+import warnings
 
 from holopy.scattering.scatterer import Sphere, Spheroid, Cylinder
 from holopy.scattering.errors import TheoryNotCompatibleError, TmatrixFailure

@@ -56,10 +56,9 @@ def test_minimizer():
 
     # now test limiting minimizer iterations
     minimizer = Nmpfit(maxiter=1)
-    try:
-        result, minimization_details = minimizer.minimize(parameters, cost_func)
-    except MinimizerConvergenceFailed as cf: # the fit shouldn't converge
-        result, minimization_details = cf.result, cf.details
+    result, minimization_details = minimizer.minimize(parameters, cost_func)
+    # the fit shouldn't converge (error code 5 from nmpfit)
+    assert minimization_details.status==5
     assert_equal(minimization_details.niter, 2) # there's always an offset of 1
 
 
