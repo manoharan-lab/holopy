@@ -9,7 +9,9 @@ version: 2
 build:
   os: ubuntu-22.04
   tools:
-    python: "mambaforge-22.9"
+    # need to use mamba 1.55 because of a bug in earlier versions
+    # https://github.com/readthedocs/readthedocs.org/issues/11416#issuecomment-2201305755
+    python: "mambaforge-23.11"
 
 conda:
   environment: environment.yml
