@@ -20,18 +20,8 @@ dependencies:
   - numexpr
   - matplotlib
   - seaborn
-
-  # installs compilers on linux and OSX
-  - compilers
   
   # for building documentation
   - sphinx
   - sphinx_rtd_theme
   - numpydoc
-
-  # for building fortran extensions and python package
-  - meson
-  - meson-python
-
-  # for running tests
-  - pytest
