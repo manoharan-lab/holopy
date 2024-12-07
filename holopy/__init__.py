@@ -38,4 +38,5 @@ from holopy.propagation import propagate
 from holopy.inference import fit, sample
 
 __version__ = '3.6.0pre'
-__version_info__ = tuple([int(num) for num in __version__.split('.') if num.isdigit()])
+__version_info__ = tuple([int(num) for num in __version__.split('.')
+                          if num.isdigit()])
