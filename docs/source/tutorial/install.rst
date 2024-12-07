@@ -27,7 +27,7 @@ You can also build HoloPy from source by following the instructions for :ref:`de
 Dependencies
 ------------
 
-HoloPy's hard dependencies can be found in `requirements.txt <https://github.com/manoharan-lab/holopy/blob/master/requirements.txt>`_.
+HoloPy's hard dependencies can be found in the `environment.yml` file in the root of the GitHub repository.
 Optional dependencies for certain calculations include:
 
 * `a-dda <http://code.google.com/p/a-dda/>`_ (Discrete Dipole calculations of arbitrary scatterers)
