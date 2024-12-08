@@ -19,7 +19,7 @@ dependencies:
   - scipy
   - pyyaml
   - pillow
-  - pandas
+  - pandas=1.5.3
   - xarray
   - h5netcdf
   - h5py

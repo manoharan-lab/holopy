@@ -17,6 +17,8 @@ import sys
 import os
 from datetime import datetime
 
+# add root of repository to path so that readthedocs can import correctly
+sys.path.insert(0, os.path.abspath("../../"))
 import holopy as hp
 
 from sphinx.ext import apidoc

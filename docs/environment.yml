@@ -1,0 +1,27 @@
+# environment for building documentation on readthedocs
+#
+# This environment has a reduced set of packages from the 
+# one in the root of the repository, to make building 
+# documentation more efficient and avoid errors.
+name: holopy-rtd
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - numpy<1.21
+  - scipy
+  - pyyaml
+  - pillow
+  - pandas=1.5.3
+  - xarray
+  - h5netcdf
+  - h5py
+  - numexpr
+  - matplotlib
+  - seaborn
+  
+  # for building documentation
+  - sphinx
+  - sphinx_rtd_theme
+  - numpydoc
