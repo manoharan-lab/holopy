@@ -1,8 +1,8 @@
 Holography and Light Scattering in Python
 =========================================
 
-.. image:: https://travis-ci.com/manoharan-lab/holopy.svg?branch=develop
-    :target: https://travis-ci.com/github/manoharan-lab/holopy
+.. image:: https://github.com/manoharan-lab/holopy/actions/workflows/build_and_test.yml/badge.svg?branch=develop
+    :target: https://github.com/manoharan-lab/holopy/actions/workflows/build_and_test.yml
     :alt: Development Branch Build Status
 
 .. image:: https://readthedocs.org/projects/holopy/badge/?version=latest
