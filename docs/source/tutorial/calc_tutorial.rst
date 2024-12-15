@@ -44,11 +44,12 @@ The next line describes the *scatterer* we would like to model:
 
     sphere = Sphere(n=1.59, r=0.5, center=(4, 4, 5))
 
-Scatterers are described in HoloPy by a :class:`.Scatterer` object. Here, we use a :class:`.Sphere` as the scatterer object. A :class:`.Scatterer` object
+Scatterers are described in HoloPy by a :class:`.Scatterer` object. Here, we use
+a :class:`.Sphere` as the scatterer object. A :class:`.Scatterer` object
 contains information about the geometry (position, size, shape) and optical
 properties (refractive index) of the object that is scattering light. We've
-defined a spherical scatterer with radius 0.5 microns and index of refraction
-1.59. This refractive index is approximately that of polystyrene.
+defined a spherical scatterer with radius 0.5 micrometers and index of
+refraction 1.59. This refractive index is approximately that of polystyrene.
 
 Next, we need to describe the *experimental setup*, including how we are
 illuminating our sphere, and how that light will be detected:
@@ -66,13 +67,16 @@ the x-direction to illuminate a sphere immersed in water (refractive index =
 about how the wavelength and polarization are specified.
 
 The scattered light will be collected at a detector, which is frequently a
-digital camera mounted onto a microscope.  We defined our detector as a 100 x
-100 pixel array, with each square pixel of side length .1 microns.  The
+digital camera mounted onto a microscope. We defined our detector as a 100 x 100
+pixel array, with each square pixel of side length 0.1 micrometers. The
 ``shape`` argument tells HoloPy how many pixels are in the detector and affects
-computation time. The ``spacing`` argument tells HoloPy how far apart each
-pixel is. Both parameters affect the absolute size of the detector.
+computation time. The ``spacing`` argument tells HoloPy how far apart each pixel
+is. Both parameters affect the absolute size of the detector.
 
-Finally, we need to specify the *scattering theory* which knows how to calculate the hologram from the experimental setup and the scatterer. By setting ``theory='auto'``, we let HoloPy automatically select a theory. If no theory is specified, HoloPy will automatically select a theory as well.
+Finally, we need to specify the *scattering theory* which knows how to calculate
+the hologram from the experimental setup and the scatterer. By setting
+``theory='auto'``, we let HoloPy automatically select a theory. If no theory is
+specified, HoloPy will automatically select a theory as well.
 
 After getting everything ready, the actual scattering calculation is straightforward:
 
@@ -217,10 +221,17 @@ sphere objects and passing a longer list of spheres to the
 Non-spherical Objects
 ---------------------
 
-To define a non-spherical scatterer, use :class:`.Spheroid` or :class:`.Cylinder` objects. These axisymmetric scatterers are defined by two dimensions, and can describe scatterers that are elongated or squashed along one direction.
-By default, these objects are aligned with the z-axis, but they can be rotated into any orientation by passing a set of Euler angles to the ``rotation`` argument when defining the scatterer. See :ref:`rotations` for information on how these angles are defined.
-As an example, here is a hologram produced by a cylinder aligned with the vertical axis (``x-axis`` according to the HoloPy :ref:`coordinate_system`).
-Note that the hologram image is elongated in the horizontal direction since the sides of the cylinder scatter light more than the ends.
+To define a non-spherical scatterer, use :class:`.Spheroid` or
+:class:`.Cylinder` objects. These axisymmetric scatterers are defined by two
+dimensions, and can describe scatterers that are elongated or squashed along one
+direction. By default, these objects are aligned with the z-axis, but they can
+be rotated into any orientation by passing a set of Euler angles to the
+``rotation`` argument when defining the scatterer. See :ref:`rotations` for
+information on how these angles are defined. As an example, here is a hologram
+produced by a cylinder aligned with the vertical axis (``x-axis`` according to
+the HoloPy :ref:`coordinate_system`). Note that the hologram image is elongated
+in the horizontal direction since the sides of the cylinder scatter light more
+than the ends.
 
 ..  testcode::
 
@@ -300,10 +311,10 @@ with the optical train in varying degrees of complexity. HoloPy has
 scattering theories that describe scattering from individual spheres,
 layered spheres, clusters of spheres, spheroids, cylinders, and
 arbitrary objects. Some of these scattering theories can take parameters
-to modify how the theory performs the calculation (by, *e.g.*, making
-certain approximations or specifying properties of the optical train).
-For a more thorough description of these scattering theories and how
-HoloPy chooses default scattering theories, see the user guide,
+to modify how the theory performs the calculation (by, for example,
+making certain approximations or specifying properties of the optical
+train). For a more thorough description of these scattering theories and
+how HoloPy chooses default scattering theories, see the user guide,
 :ref:`theories_user`.
 
 
