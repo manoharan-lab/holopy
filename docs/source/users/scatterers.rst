@@ -104,8 +104,11 @@ Component scatterer handling
       New scatterer rotated about its center according to
       :ref:`HoloPy rotation conventions<rotations>`
 
-There are two specific composite scatterer classes for working with collections of
-spheres that have additional functionality:
+Although you can add any scatterer to a :class:`.Scatterers` object, HoloPy
+cannot yet calculate holograms from a :class:`.Scatterers` object consisting of
+non-spherical particles. However, you can calculate holograms of collections of
+spheres using the two specific composite scatterer classes below, which have
+additional functionality:
 
 :class:`.Spheres`
     A collection of spherical scatterers, with the following properties:
