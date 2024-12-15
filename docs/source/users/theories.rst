@@ -70,13 +70,15 @@ Lens-Free Scattering Theories
     * Can handle :class:`.Sphere` objects, :class:`.LayeredSphere` objects, or
       :class:`.Spheres` through superposition.
     * Computes scattered fields using Mie theory.
+    * By default, calculates the radial (near-field) component of
+      scattered electric fields, which is nonradiative.
 - :class:`.Multisphere`
     * Can handle :class:`.Spheres` objects.
     * Cannot handle :class:`.Spheres` objects composed of layered
       spheres.
-    * Computes scattered fields through a T-matrix-based solution of
-      scattering, accounting for multiple scattering between spheres to
-      find a (numerically) exact solution.
+    * Computes scattered fields through a superposition solution of
+      scattering, accounting for near-field and far-field coupling
+      (multiple scattering) to find a (numerically) exact solution.
 - :class:`.Tmatrix`
     * Can handle :class:`.Sphere`, :class:`.Cylinder`, or :class:`.Spheroid`
       objects.
@@ -123,10 +125,9 @@ HoloPy chooses a default scattering theory based off the scatterer type,
 currently determined by the function
 :func:`.determine_default_theory_for`. If you're not satisfied with
 HoloPy's default scattering theory selection, you should choose the
-scattering theory based off of (1) the scatterer that you are modeling,
+scattering theory based on (1) the scatterer that you are modeling,
 and (2) whether you want to describe the effect of the lens on the
 recorded hologram in detail.
-
 
 An Individual Sphere
 ~~~~~~~~~~~~~~~~~~~~
@@ -137,34 +138,57 @@ solution to Maxwell's equations for the scattered field from a spherical
 particle, originally derived by Gustav Mie and (independently) by Ludvig
 Lorenz in the early 1900s.
 
-Multiple Spheres
-~~~~~~~~~~~~~~~~
-
-A scatterer composed of multiple spheres can exhibit multiple scattering and
-coupling of the near-fields of neighbouring particles. Mie theory doesn't
-include these effects, so :class:`.Spheres` objects are by default calculated
-using the :class:`.Multisphere` theory, which accounts for multiple
-scattering by using the SCSMFO package from `Daniel Mackowski
-<http://www.eng.auburn.edu/~dmckwski/>`_.  This calculation uses
-T-matrix methods to give the exact solution to Maxwell's equation for
-the scattering from an arbitrary arrangement of non-overlapping spheres.
-
-Sometimes you might want to calculate scattering from multiple spheres
-using Mie theory if you are worried about computation time or if your
-spheres are widely separated (such that optical coupling between the
-spheres is negligible) You can specify Mie theory manually when calling
-the :func:`.calc_holo` function, as the following code snippet shows:
-
+By default, HoloPy computes the radial components of the scattered
+fields, which can affect the hologram if the detector is very close to
+the detector. But if you have a spherical particle that is far (more
+than a few wavelengths) from the detector, you can save time and avoid
+numerical issues by telling HoloPy to use the far-field Mie solutions,
+as in this example:
 
 ..  testcode::
 
     import holopy as hp
+    from holopy.scattering import Sphere, Mie, calc_holo
+
+    sphere = Sphere(center=(100, 100, 1500), n = 1.59, r = 7.5)
+
+    medium_index = 1.33
+    illum_wavelen = 0.465
+    illum_polarization = (1, 0)
+    detector = hp.detector_grid(shape=200, spacing=1.0)
+
+    far_field_mie = Mie(compute_escat_radial=False, full_radial_dependence=False)
+
+    holo = calc_holo(detector, sphere, medium_index, illum_wavelen,
+                     illum_polarization, theory=far_field_mie)
+
+
+Multiple Spheres
+~~~~~~~~~~~~~~~~
+
+A scatterer composed of multiple spheres can exhibit multiple scattering
+and coupling of the near-fields of neighboring particles. Mie theory
+doesn't include these effects, so :class:`.Spheres` objects are by
+default calculated using the :class:`.Multisphere` theory, which
+accounts for near- and far-field coupling of the scattered fields
+through the SCSMFO package from `Daniel Mackowski
+<http://www.eng.auburn.edu/~dmckwski/>`_. This calculation relies on the
+exact solution to Maxwell's equation for the scattering from an
+arbitrary arrangement of non-overlapping spheres.
+
+If you want to reduce computation time, or your spheres are widely
+separated (such that optical coupling between the spheres is
+negligible), you can approximate the scattering from a cluster of
+spheres by adding the far fields. To perform such a calculation, which
+does not account for multiple scattering, you can specify Mie theory
+manually when calling the :func:`.calc_holo` function, as the following
+code snippet shows:
+
+
+..  testcode::
+
     from holopy.core.io import get_example_data_path
-    from holopy.scattering import (
-        Sphere,
-        Spheres,
-        Mie,
-        calc_holo)
+    from holopy.scattering import Spheres
 
     s1 = Sphere(center=(5, 5, 5), n = 1.59, r = .5)
     s2 = Sphere(center=(4, 4, 5), n = 1.59, r = .5)
@@ -188,7 +212,7 @@ the :func:`.calc_holo` function, as the following code snippet shows:
 
 Note that the multisphere theory does not work with collections of
 multi-layered spheres; in this case HoloPy defaults to using Mie theory
-with superposition.
+with superposition (that is, neglecting multiple scattering).
 
 Non-spherical particles
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -218,25 +242,27 @@ details.
 Including the effect of the lens
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Most of the scattering theories in HoloPy treat the fields on the detector as
-a (magnified) image of the fields at the focal plane. While these theories
-usually provide a good description of holograms of particles far above the
-focus, when the particle is near near the focus subtle optical effects can
-cause deviations between the recorded hologram and theories which do not
-specifically describe the effects of the lens. To deal with this, HoloPy
-currently offers two scattering theories which describe the effects of a
-perfect lens on the recorded hologram. Both of these scattering theories
-need information about the lens to make predictions, specifically the
-acceptance angle of the lens. The acceptance angle :math:`\beta` is
-related to the numerical aperture or NA of the lens by :math:`\beta =
-\arcsin(NA / n_f)`, where :math:`n_f` is the refractive of the immersion
-fluid. For more details on the effect of the lens on the recorded
-hologram, see [Leahy2020]_ and [Martin2021]_.
+Most of the scattering theories in HoloPy treat the fields on the
+detector as a (magnified) image of the fields at the focal plane. While
+these theories usually provide a good description of holograms of
+particles far above the focus, when the particle is near the focus
+subtle optical effects can cause deviations between the recorded
+hologram and theories which do not specifically describe the effects of
+the lens. To deal with this, HoloPy currently offers two scattering
+theories which describe the effects of a perfect lens on the recorded
+hologram. Both of these scattering theories need information about the
+lens to make predictions, specifically the acceptance angle of the lens.
+The acceptance angle :math:`\beta` is related to the numerical aperture
+or NA of the lens by :math:`\beta = \arcsin(\text{NA} / n_f)`, where
+:math:`n_f` is the refractive index of the immersion fluid. For more
+details on the effect of the lens on the recorded hologram, see
+[Leahy2020]_ and [Martin2021]_.
 
-The :class:`.Lens` theory allows HoloPy to include the effects of a perfect
-objective lens with any scattering theory. The Lens theory works by wrapping a
-normal scattering theory. For instance, to calculate the image of a sphere in
-an objective lens with an acceptance angle of 1.0, do
+The :class:`.Lens` theory allows HoloPy to include the effects of a
+perfect objective lens with any scattering theory. The Lens theory works
+by wrapping a normal scattering theory. For instance, to calculate the
+image of a sphere in an objective lens with an acceptance angle of 1.0,
+do
 
 ..  testcode::
 
@@ -282,11 +308,12 @@ other scattering theory:
         lens_angle=lens_angle)
 
 
-My Scattering theory isn't here?!?!
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Why isn't my scattering theory here?!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Add your own scattering theory to HoloPy! See :ref:`scat_theory` for
-details. If you think your new scattering theory may be useful for other
-users, please consider submitting a `pull request
+If you don't see your favorite scattering theory, you can add it to
+HoloPy! See :ref:`scat_theory` for details. If you think your new
+scattering theory may be useful for other users, please consider
+submitting a `pull request
 <https://github.com/manoharan-lab/holopy/pulls>`_.
 
