@@ -158,7 +158,7 @@ same image::
 
     hp.save('outfilename', holo)
 
-saves your processed image to a compact HDF5 file. In fact, you can use :func:`.save`
+saves your processed image to a compact HDF5 file. In fact, you can use :func:`~.io.save`
 on any holopy object. To reload your same hologram with metadata you would write::
 
     holo = hp.load('outfilename')
@@ -169,4 +169,4 @@ If you would like to save your hologram to an image format for easy visualizatio
 
 Additional options of :func:`.save_image` allow you to control how image intensity is scaled.
 Although HoloPy stores metadata when writing to .tif image files, you should save
-holograms in HDF5 format using :func:`.save` to avoid rounding.
+holograms in HDF5 format using :func:`~.io.save` to avoid rounding.
