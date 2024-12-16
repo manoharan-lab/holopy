@@ -18,7 +18,9 @@ dependencies:
   - numpy<1.21
   - scipy
   - pyyaml
-  - pillow
+  # pillow 10.4.0 and later require numpy versions higher than 1.20.3. Tests
+  # will not work with these later versions of pillow.
+  - pillow<10.4.0
   - pandas=1.5.3
   - xarray
   - h5netcdf
@@ -26,7 +28,10 @@ dependencies:
   - numexpr
   - matplotlib
   - emcee=2.2.1
-  - schwimmbad
+  # schwimmbad 0.4 and later use multiprocess and dill rather than
+  # multiprocessing and pickle. This change may require us to change
+  # serialization of HoloPy objects
+  - schwimmbad<0.4.0
   - memory_profiler
   - cma
   - ipython
@@ -36,7 +41,7 @@ dependencies:
   # for amd64 platforms only; won't be found for aarch64
   # - mkl-service
   # uncomment to install compilers on windows
-  #  - m2w64-toolchain
+  # - m2w64-toolchain
 
   # for building documentation
   - sphinx

@@ -120,13 +120,14 @@ def test_dda_2_cpu(optics):
     mie_holo = calc_holo(schema, sc, index, wavelen)
     try:
         dda_n2 = DDA(n_cpu=2)
-    except DependencyMissing:
+    except (DependencyMissing):
         pytest.skip("Requires ADDA")
     try:
         dda_holo = calc_holo(schema, sc, index, wavelen, theory=dda_n2)
-    except CalledProcessError:
+    except (CalledProcessError, FileNotFoundError):
         # DDA only compiled for serial calculations
-        pytest.skip("DDA not compiled for parallel calculations")
+        pytest.skip("DDA not compiled for parallel calculations"
+                    " or MPI not available on this machine")
     # TODO: figure out how to actually test that it runs on multiple cpus
 
 def in_sphere(r):
