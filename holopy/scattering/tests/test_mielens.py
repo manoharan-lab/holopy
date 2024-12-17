@@ -89,7 +89,7 @@ class TestMieLens(unittest.TestCase):
             this_sphere = Sphere(n=sphere_index, r=radius, center=center)
             holo = calc_holo(xschema, this_sphere, index, wavelen,
                              xpolarization, theory=theory)
-            is_ok.append(holo.data.ptp() > 0)
+            is_ok.append(np.ptp(holo.data) > 0)
         self.assertTrue(all(is_ok))
 
     @pytest.mark.fast
@@ -159,7 +159,7 @@ class TestMieLens(unittest.TestCase):
 
         # but their max and min values should be close:
         ptp_close_ish = np.isclose(
-            holo_mielens.values.ptp(), holo_mieonly.values.ptp(), atol=0.1)
+            np.ptp(holo_mielens.values), np.ptp(holo_mieonly.values), atol=0.1)
         # and their median should be close:
         median_close_ish = np.isclose(
             np.median(holo_mielens), np.median(holo_mieonly), atol=0.1)

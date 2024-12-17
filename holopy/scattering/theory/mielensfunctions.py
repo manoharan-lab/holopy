@@ -223,7 +223,7 @@ class MieLensCalculator(object):
             The value of the integrand evaluated at the krho points.
         """
         if self.interpolate_integrals == 'check':
-            n_interp_pnts = (self.interpolator_degree * krho.ptp() /
+            n_interp_pnts = (self.interpolator_degree * np.ptp(krho) /
                              self.interpolator_window_size)
             n_krho_pts = krho.size
             interpolate_integrals = n_interp_pnts < 1.1 * n_krho_pts
