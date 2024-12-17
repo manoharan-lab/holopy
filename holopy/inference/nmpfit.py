@@ -171,7 +171,7 @@ class NmpfitStrategy(HoloPyObject):
         nmp_pars = []
         for par in parameters:
             d = {'parname': par.name, 'value': par.scale(par.guess),
-                 'limited': [False, False], 'limits': [np.NaN, np.NaN]}
+                 'limited': [False, False], 'limits': [np.nan, np.nan]}
             if hasattr(par, "lower_bound") and par.lower_bound > -np.inf:
                 d['limited'][0] = True
                 d['limits'][0] = par.scale(par.lower_bound)

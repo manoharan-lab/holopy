@@ -292,7 +292,7 @@ def display_image(im, scaling='auto', vert_axis='x', horiz_axis='y',
             im = clean_concat(channels, colour_axis)
         elif len(im[colour_axis]) == 2:
             dummy = xr.full_like(im[{colour_axis:0}], fill_value=im.min())
-            dummy = dummy.expand_dims({colour_axis: [np.NaN]})
+            dummy = dummy.expand_dims({colour_axis: [np.nan]})
             im.attrs['_dummy_channel'] = -1
             im = clean_concat([im, dummy], colour_axis)
     dim_order = [depth_axis, vert_axis, horiz_axis, colour_axis][:im.ndim]
