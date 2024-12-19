@@ -23,7 +23,7 @@ University <http://manoharan.seas.harvard.edu/holopy>`_. If you use HoloPy,
 you may wish to cite one or more of the sources listed in
 :ref:`credits`. We also encourage you to sign up for our `User Mailing
 List <https://groups.google.com/d/forum/holopy-users>`_ or join us on `GitHub
-<https://github.com/manoharan-lab/holopy>`_ to keep up to date on releases, 
+<https://github.com/manoharan-lab/holopy>`_ to keep up to date on releases,
 answer questions, and benefit from other users' questions.
 
 .. toctree::
@@ -36,6 +36,6 @@ answer questions, and benefit from other users' questions.
    reference/holopy
    credits
 
-HoloPy is based upon work supported by the National Science Foundation
-under grant numbers CBET-0747625, DMR-0820484, DMR-1306410, and
-DMR-1420570. 
+HoloPy is based upon work supported by the National Science Foundation under
+grant numbers CBET-0747625, DMR-0820484, DMR-1306410, DMR-1420570, and
+DMR-2011754.

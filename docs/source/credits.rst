@@ -13,6 +13,8 @@ The following references describe applications of HoloPy and technical advances.
 If you use HoloPy, we ask that you cite the articles that are relevant to your
 application.
 
+.. [Martin2022] Martin, Caroline, Lauren E. Altman, Siddharth Rawat, Anna Wang, David G. Grier, and Vinothan N. Manoharan. “In-Line Holographic Microscopy with Model-Based Analysis.” Nature Reviews Methods Primers 2, no. 1 (October 20, 2022): 1–17. doi:10.1038/s43586-022-00165-z.
+
 .. [Martin2021] Martin, Caroline, Brian Leahy, and Vinothan N. Manoharan. “Improving Holographic Particle Characterization by Modeling Spherical Aberration.” Optics Express 29, no. 12 (June 7, 2021): 18212–23. doi:10.1364/OE.424043.
 
 .. [Leahy2020] Leahy, Brian, Ronald Alexander, Caroline Martin, Solomon Barkley, and Vinothan N. Manoharan.  “Large depth-of-field tracking of colloidal spheres in holographic microscopy by modeling the objective lens.” Optics Express 28, no. 2 (2020): 1061-1075. doi:10.1364/OE.382159
@@ -68,8 +70,8 @@ For an introduction to Bayesian analysis of experimental data, we recommend
 .. [Gregory2010] P\. Gregory, *Bayesian Logical Data Analysis for the Physical Sciences*, Cambridge University Press (2010)
 
 The package includes code from several sources. We thank Daniel Mackowski for
-allowing us to include his T-Matrix code, which computes scattering from
-clusters of spheres: SCSMFO1B_.
+allowing us to include his multisphere superposition code, which computes
+scattering from clusters of spheres: SCSMFO1B_.
 
 .. _SCSMFO1B: ftp://ftp.eng.auburn.edu/pub/dmckwski/scatcodes/index.html
 
