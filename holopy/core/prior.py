@@ -110,7 +110,8 @@ class Prior(HoloPyObject):
     def __array_ufunc__(self, ufunc, method, *args, name=None, **kwargs):
         if method == "__call__" and len(kwargs) == 0:
             if name is not None:
-                msg = ("Setting the name of a transformed prior in a ufunc is deprecated. "
+                msg = ("Setting the name of a transformed prior in a ufunc "
+                       "is deprecated. "
                        "Instead set the name explicitly after creation.")
                 warn(msg, DeprecationWarning, stacklevel=2)
                 return TransformedPrior(ufunc, args, name)
