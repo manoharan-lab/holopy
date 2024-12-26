@@ -449,7 +449,7 @@ class TestMieScatteringMatrix(unittest.TestCase):
         msm_highl = mielensfunctions.MieScatteringMatrix(
             parallel_or_perpendicular='perpendicular', max_l=1000,
             **self.default_kwargs)
-        should_be_warned = 'invalid value encountered in cdouble_scalars'
+        should_be_warned = 'invalid value encountered'
         with self.assertWarnsRegex(Warning, should_be_warned):
             warnings.simplefilter('always')
             s_theta = msm_highl._eval(theta)
