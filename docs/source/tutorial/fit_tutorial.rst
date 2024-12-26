@@ -215,16 +215,12 @@ intermediate values:
     shell = np.sqrt(prior.Uniform(1, 2, name='base_area')) / 2 + 0.1
     shell.name = 'shell'
 
-It's always a good idea to assign your priors names when working with
-:class:`.TransformedPrior` objects to keep track of their relationships.
-Parameter names will be generated if none are provided but they might not be
-very informative. To help with naming, you can even assign names to
-:class:`.TransformedPrior` objects when using numpy ufuncs!
-
-..  testcode::
-
-    diameter = np.sqrt(sphere_area / np.pi, name='diameter')
-
+In the second line we assigned the name ``shell`` to the
+:class:`.TransformedPrior` object that was automatically created in the first
+line. Without this line, our new :class:`.TransformedPrior` would have retained
+the name ``base_area``, which is no longer a proper description of the prior.
+It's always a good idea to explicitly assign names to your priors when working
+with objects to keep track of their relationships.
 
 .. _infer_tutorial:
 
