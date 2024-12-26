@@ -5,6 +5,7 @@ import itertools
 import numpy as np
 from numpy.polynomial.chebyshev import Chebyshev
 from scipy.special import jn_zeros
+from scipy.integrate import trapezoid
 
 import pytest
 
@@ -802,7 +803,7 @@ class CheckEnergyIsConserved(object):
         i2 = self.mielenscalculator._eval_mielens_i_n(krho, n=2)
 
         integrand = (np.abs(i0)**2 + np.abs(i2)**2) * krho
-        return 0.5 * np.trapz(integrand, krho)
+        return 0.5 * trapezoid(integrand, krho)
 
     def check_if_energy_is_conserved(self):
         ratio = self.get_ratio_of_powerin_to_powerout()
