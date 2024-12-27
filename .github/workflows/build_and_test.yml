@@ -21,13 +21,6 @@ jobs:
       max-parallel: 5
 
     steps:
-    - name: Check the versions of gfortran
-      shell: bash
-      run: |
-        which gfortran && gfortran --version
-        if [[ $(uname) == "Darwin" ]]; then
-          xcodebuild -version
-        fi
     - uses: actions/checkout@v4
     - name: Set up miniforge
       uses: conda-incubator/setup-miniconda@v3
@@ -40,6 +33,17 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Check versions of gfortran and gcc
+      shell: bash -el {0}
+      run: |
+        conda info
+        conda list
+        # gfortran in path should be the one installed by conda
+        # compare the version below to that reported by 'conda list' above
+        which gfortran
+        gfortran --version
+        which gcc
+        gcc --version
     - name: Build package and install
       run: |
         python -m pip install --no-build-isolation --editable .
