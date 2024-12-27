@@ -26,16 +26,23 @@ dependencies:
   - h5netcdf
   - h5py
   - numexpr
-  - matplotlib
   - emcee=2.2.1
   # schwimmbad 0.4 and later use multiprocess and dill rather than
   # multiprocessing and pickle. This change may require us to change
   # serialization of HoloPy objects
   - schwimmbad<0.4.0
-  - memory_profiler
   - cma
-  - ipython
-  - seaborn
+
+  # for building documentation
+  - sphinx
+  - sphinx_rtd_theme
+  - numpydoc
+  - matplotlib
+
+  # for building fortran extensions and python package
+  - meson
+  - meson-python
+  - gfortran
   # installs compilers on linux and OSX
   # - compilers
   # for amd64 platforms only; won't be found for aarch64
@@ -43,22 +50,15 @@ dependencies:
   # uncomment to install compilers on windows
   # - m2w64-toolchain
 
-  # for building documentation
-  - sphinx
-  - sphinx_rtd_theme
-  - numpydoc
-
-
-  # for building fortran extensions and python package
-  - meson
-  - meson-python
 
   # for running tests: "cov" is coverage plugin, "xdist" is to run pytest in
-  # parallel; "timeout" is to set timeout for tests
+  # parallel; "timeout" is to set timeout for tests. memory_profiler is needed
+  # for one test in test_io.py
   - pytest
   - pytest-cov
   - pytest-xdist
   - pytest-timeout
+  - memory_profiler
 
   # optional packages to make development easier in (e.g.) emacs
   - pyright
@@ -75,6 +75,8 @@ dependencies:
   - pip:
       - importmagic
 
-  # include jupyterlab for convenience
+  # for interactive use
+  - ipython
+  - seaborn
   - jupyterlab
 
