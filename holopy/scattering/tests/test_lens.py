@@ -2,7 +2,8 @@ import unittest
 
 import numpy as np
 import xarray as xr
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import (assert_allclose, assert_equal,
+                           assert_array_almost_equal_nulp)
 import pytest
 
 from scipy.special import iv
@@ -29,6 +30,26 @@ SMALL_DETECTOR = update_metadata(
     medium_index=test_common.index,
     illum_polarization=test_common.xpolarization)
 
+if lens.NUMEXPR_INSTALLED:
+    import numexpr as ne
+
+# test that numexpr reproduces numpy exactly without Intel MKL/VML and
+# approximately with Intel MKL/VML.
+@pytest.mark.skipif(not lens.NUMEXPR_INSTALLED,
+                    reason = "numexpr package required")
+def test_vml():
+    ne.set_vml_accuracy_mode('high')
+    theta = np.linspace(0, 2*np.pi, 100)
+    numexpr_cos = ne.evaluate('cos(theta)')
+    numpy_cos = np.cos(theta)
+    if ne.get_vml_version() is None:
+        assert_equal(numexpr_cos, numpy_cos)
+    else:
+        # arrays should agree to within floating-point precision for
+        # high accuracy VML mode.  Need to increase NULP if using 'low' or
+        # 'fast' accuracy modes.
+        assert_array_almost_equal_nulp(numexpr_cos, numpy_cos,
+                                       nulp=1)
 
 class TestLens(unittest.TestCase):
     def test_can_handle(self):
@@ -162,9 +183,23 @@ class TestLens(unittest.TestCase):
 
         prefactor_numexpr = LENSMIE._integrand_prefactor(krho, phi, kz)
         prefactor_numpy = LENSMIE_NO_NE._integrand_prefactor(krho, phi, kz)
+        if ne.get_vml_version() is None:
+            assert_equal(prefactor_numexpr, prefactor_numpy)
+        else:
+            ne.set_vml_accuracy_mode('high')
+            # arrays should agree to within a few ULPs. According to Intel, in
+            # high accuracy mode the max error for an elementary function is 1
+            # ULP (4 ULP for low accuracy). But this error is propagated in the
+            # calculation of the prefactor, which involves multiple elementary
+            # function calculations, so we have to set a higher value for nulp.
+            # Minimum value of nulp required for test to pass is 4, based on
+            # experiments on Windows/MKL 20230613)
+            assert_array_almost_equal_nulp(prefactor_numpy, prefactor_numexpr,
+                                           nulp=5)
 
-        self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
-
+    # for the following two tests, numexpr should agree exactly with numpy even
+    # if MKL is used; this is because the numexpr expressions involve only
+    # addition and multiplications (no trig functions or exponentials)
     @pytest.mark.skipif(not lens.NUMEXPR_INSTALLED,
                         reason = "numexpr package required")
     def test_integrand_parallel_same_with_numexpr_as_without(self):
