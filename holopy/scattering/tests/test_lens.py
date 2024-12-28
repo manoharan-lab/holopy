@@ -165,6 +165,7 @@ class TestLens(unittest.TestCase):
         assert_allclose(fields_1[0],  fields_0[1], **tols)
         assert_allclose(fields_1[1], -fields_0[0], **tols)
 
+
     def test_calc_holo_theta_npts_not_equal_phi_npts(self):
         scatterer = test_common.sphere
         pts = detector_grid(shape=4, spacing=test_common.pixel_scale)
@@ -215,7 +216,7 @@ class TestLens(unittest.TestCase):
         prefactor_numpy = LENSMIE_NO_NE._integrand_prll(
             prefactor, pol_angle, *scat_matrix)
 
-        self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
+        assert_equal(prefactor_numpy, prefactor_numexpr)
 
     @pytest.mark.skipif(not lens.NUMEXPR_INSTALLED,
                         reason = "numexpr package required")
@@ -232,7 +233,7 @@ class TestLens(unittest.TestCase):
         prefactor_numpy = LENSMIE_NO_NE._integrand_perp(
             prefactor, pol_angle, *scat_matrix)
 
-        self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
+        assert_equal(prefactor_numpy, prefactor_numexpr)
 
     @pytest.mark.medium
     def test_polarization_rotation_produces_small_changes_to_image(self):
@@ -265,7 +266,7 @@ class TestLens(unittest.TestCase):
         # We are just trying to check that rotating the polarization
         # does not rotate the image, so we can afford soft tolerances:
         tols = {'atol': 5e-2, 'rtol': 5e-2}
-        self.assertTrue(np.allclose(intensity_xpol, intensity_ypol, **tols))
+        assert_allclose(intensity_xpol, intensity_ypol, **tols)
 
     @pytest.mark.fast
     def test_from_parameters(self):
