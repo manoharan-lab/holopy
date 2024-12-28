@@ -37,7 +37,8 @@ down the problem.
 
 import os
 import yaml
-from numpy.testing import assert_allclose
+from numpy.testing import (assert_allclose,
+                           assert_array_almost_equal_nulp)
 import numpy as np
 from numpy import sqrt, dot, pi, conj, real, imag, exp
 
@@ -350,7 +351,12 @@ def test_asm():
     limit = lmax**2 + 2*lmax
     amn = amn0[:, 0:limit, :]
     asm_fwd = _asm_far(0, 0, amn, lmax)
-    assert_allclose(asm_fwd, np.array([[  2.73439859e-01 -6.75495808e-01j,
-         -1.94648171e-18 -1.09606063e-18j],
-       [  1.94648171e-18 +1.09606063e-18j,
-          2.73439859e-01 -6.75495808e-01j]]))
+    gold = np.array([[ 2.73439859e-01 - 6.75495808e-01j,
+                       -1.94648171e-18 - 1.09606063e-18j],
+                     [ 1.94648171e-18 + 1.09606063e-18j,
+                       2.73439859e-01 - 6.75495808e-01j]])
+    # need to set a small but nonzero atol below. Using the default atol=0 will
+    # lead to test failures when comparing gold results to results from arm64
+    # because the near-zero values in the matrix differ by about 1e-18 between
+    # architectures
+    assert_allclose(asm_fwd, gold, atol=1e-16)
