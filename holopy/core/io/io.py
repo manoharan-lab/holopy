@@ -395,7 +395,7 @@ def _save_im(filename, im, depth=8):
 
     metadat = False
     if os.path.splitext(filename)[1] in tiflist:
-        if im.name == None:
+        if im.name is None:
             im.name = os.path.splitext(os.path.split(filename)[-1])[0]
         metadat = pack_attrs(im, do_spacing=True)
         # import ifd2 - hidden here since it doesn't play nice in some cases.

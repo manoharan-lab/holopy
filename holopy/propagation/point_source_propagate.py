@@ -264,7 +264,7 @@ def interpolate2D(data,i,j,fill=None):
 
     #replace the values that were out of bounds with fill
     #if (not isinstance(fill, str) ):
-    if fill != None:
+    if fill is not None:
         result = np.where(i <= (data.shape[0]-1), result, fill)
         result = np.where(i >= 0, result, fill)
         result = np.where(j <= (data.shape[1]-1), result, fill)
