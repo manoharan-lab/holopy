@@ -516,13 +516,15 @@ class TestMieScatteringMatrix(unittest.TestCase):
 class TestGaussQuad(unittest.TestCase):
     @pytest.mark.fast
     def test_constant_integrand(self):
-        f = lambda x: np.ones_like(x, dtype='float')
+        def f(x):
+            return np.ones_like(x, dtype='float')
         should_be_one = integrate_like_mielens(f, [3, 4])
         self.assertTrue(np.isclose(should_be_one, 1.0, **TOLS))
 
     @pytest.mark.fast
     def test_linear_integrand(self):
-        f = lambda x: x
+        def f(x):
+            return x
         should_be_onehalf = integrate_like_mielens(f, [0, 1])
         self.assertTrue(np.isclose(should_be_onehalf, 0.5, **TOLS))
 

@@ -339,9 +339,11 @@ class TransformedPrior(Prior):
 
     def sample(self, size=None):
         if size is None:
-            repeat = lambda x: x
+            def repeat(x):
+                return x
         else:
-            repeat = lambda x: np.repeat(x, size)
+            def repeat(x):
+                return np.repeat(x, size)
         raw_samples = [bp.sample(size) if isinstance(bp, Prior) else repeat(bp)
                        for bp in self.base_prior]
         if size is None:
