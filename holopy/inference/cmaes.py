@@ -21,10 +21,7 @@ Stochastic fitting of models to data
 .. moduleauthor:: Solomon Barkley
 """
 import time
-import os
-import sys
 import tempfile
-import shutil
 import warnings
 
 import numpy as np
@@ -39,7 +36,6 @@ from holopy.core.holopy_object import HoloPyObject
 from holopy.core.metadata import make_subset_data
 from holopy.core.utils import choose_pool, LnpostWrapper
 from holopy.core.errors import DependencyMissing
-from holopy.inference import prior
 from holopy.inference.result import FitResult, UncertainValue
 
 

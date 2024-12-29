@@ -31,7 +31,7 @@ import xarray as xr
 
 from holopy.core.errors import BadImage
 from holopy.core.metadata import (
-    copy_metadata, update_metadata, detector_grid, get_spacing, get_values)
+    copy_metadata, update_metadata, get_spacing, get_values)
 
 
 def normalize(image):

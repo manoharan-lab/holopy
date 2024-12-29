@@ -15,11 +15,10 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
-import numpy as np
 
 import pytest
 
-from holopy.core.tests.common import assert_pickle_roundtrip, get_example_data
+from holopy.core.tests.common import assert_pickle_roundtrip
 
 from holopy.inference.model import AlphaModel, ExactModel
 from holopy.inference import prior

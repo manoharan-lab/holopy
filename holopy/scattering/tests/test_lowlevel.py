@@ -37,8 +37,8 @@ down the problem.
 
 import os
 import yaml
-from numpy.testing import (assert_allclose,
-                           assert_array_almost_equal_nulp)
+from numpy.testing import assert_allclose
+
 import numpy as np
 from numpy import sqrt, dot, pi, conj, real, imag, exp
 

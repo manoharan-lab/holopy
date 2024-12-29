@@ -17,7 +17,7 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from numpy import sin, cos, arccos, arctan2, sqrt, pi
+from numpy import sin, cos, pi
 from holopy.core.utils import repeat_sing_dims
 
 

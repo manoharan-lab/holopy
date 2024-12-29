@@ -27,7 +27,6 @@ from holopy.scattering.scatterer import Scatterer
 from holopy.core.math import rotate_points
 
 import numpy as np
-from numpy import logical_and, logical_not, logical_or
 from copy import copy
 
 class CsgScatterer(Scatterer):

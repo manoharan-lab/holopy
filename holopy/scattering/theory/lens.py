@@ -11,7 +11,6 @@ except ModuleNotFoundError:
     _LENS_WARNING = ("numexpr not found. Falling back to using numpy only." +
                      " Note that Lens class is faster with numexpr")
 
-from holopy.core import detector_points, update_metadata
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 
 

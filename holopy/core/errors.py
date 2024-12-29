@@ -21,8 +21,6 @@ Error classes used in holopy
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 """
-import warnings
-
 
 class LoadError(Exception):
     def __init__(self, filename, message):

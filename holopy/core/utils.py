@@ -23,9 +23,7 @@ Misc utility functions to make coding more convenient
 
 
 import os
-import io
 import sys
-import shutil
 import errno
 from copy import copy
 import itertools

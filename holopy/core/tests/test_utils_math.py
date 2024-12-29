@@ -45,8 +45,6 @@ from holopy.core.math import (
     transform_cylindrical_to_cartesian, transform_cylindrical_to_spherical,
     transform_spherical_to_cylindrical, find_transformation_function,
     keep_in_same_coordinates)
-from holopy.core.tests.common import assert_obj_close, get_example_data
-
 
 TOLS = {'atol': 1e-14, 'rtol': 1e-14}
 

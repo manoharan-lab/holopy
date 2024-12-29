@@ -24,13 +24,8 @@ package. Tries to correctly interpret dimensions from xarray.
 .. moduleauthor:: Tom G. Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Jerome Fung <jerome.fung@post.harvard.edu>
 """
-import warnings
-
 import numpy as np
 import xarray as xr
-
-from holopy.core.utils import ensure_array
-
 
 def fft(data, shift=True):
     """

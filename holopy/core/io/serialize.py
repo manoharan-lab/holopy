@@ -28,8 +28,7 @@ analysis procedures.
 
 import numpy as np
 import yaml
-from yaml.reader import ReaderError
-import inspect
+from yaml.reader import ReaderError as ReaderError
 import types
 
 from holopy.core.holopy_object import SerializableMetaclass, YAMLLOADERS

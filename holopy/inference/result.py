@@ -21,7 +21,6 @@ Results of sampling
 .. moduleauthor:: Thomas G. Dimiduk <tom@dimiduk.net>
 """
 from copy import copy
-from warnings import warn
 
 import yaml
 import xarray as xr
@@ -285,7 +284,6 @@ class UncertainValue(HoloPyObject):
         self.name = name
 
     def _repr_latex_(self):
-        from IPython.display import Math
         confidence = ""
         if self.n_sigma != 1:
             confidence = " (\\mathrm{{{}\\ sigma}})".format(self.n_sigma)

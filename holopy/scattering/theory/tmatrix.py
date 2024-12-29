@@ -27,7 +27,7 @@ import numpy as np
 import warnings
 
 from holopy.scattering.scatterer import Sphere, Spheroid, Cylinder
-from holopy.scattering.errors import TheoryNotCompatibleError, TmatrixFailure
+from holopy.scattering.errors import TheoryNotCompatibleError
 from holopy.core.errors import DependencyMissing
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 try:

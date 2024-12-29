@@ -17,7 +17,7 @@
 # along with HoloPy.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-Defines cylinder scatterers.
+Defines bisphere scatterers.
 
 .. moduleauthor:: Thomas G. Dimiduk <tdimiduk@physics.harvard.edu>
 '''
@@ -25,7 +25,7 @@ Defines cylinder scatterers.
 
 import numpy as np
 
-from .scatterer import CenteredScatterer, Indicators
+from .scatterer import CenteredScatterer
 from ..errors import InvalidScatterer
 
 class Bisphere(CenteredScatterer):

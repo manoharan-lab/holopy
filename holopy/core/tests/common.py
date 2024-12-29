@@ -28,8 +28,8 @@ import xarray as xr
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 
-from holopy.core.io import load, save, get_example_data
-
+from holopy.core.io import load, save
+from holopy.core.io import get_example_data as get_example_data
 
 def assert_read_matches_write(original):
     # for Windows, must specify delete=False so that the load statement can run
