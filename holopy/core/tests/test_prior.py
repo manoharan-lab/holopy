@@ -596,7 +596,9 @@ class TestPriorMath(unittest.TestCase):
     def test_numpy_ufunc_passes_through_name(self):
         prior_1 = Uniform(2, 8, name='unused')
         new_name = 'name_from_numpy'
-        transformed = np.sqrt(prior_1, name=new_name)
+        # ensure DeprecationWarning appears:
+        with pytest.deprecated_call():
+            transformed = np.sqrt(prior_1, name=new_name)
         self.assertEqual(transformed.name, new_name)
 
     @pytest.mark.fast
