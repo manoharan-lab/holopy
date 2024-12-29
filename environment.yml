@@ -43,13 +43,10 @@ dependencies:
   - meson
   - meson-python
   - gfortran
-  # installs compilers on linux and OSX
-  # - compilers
-  # for amd64 platforms only; won't be found for aarch64
-  # - mkl-service
-  # uncomment to install compilers on windows
-  # - m2w64-toolchain
 
+  # linting
+  - flake8
+  - flake8-pytest-style
 
   # for running tests: "cov" is coverage plugin, "xdist" is to run pytest in
   # parallel; "timeout" is to set timeout for tests. memory_profiler is needed
@@ -63,8 +60,6 @@ dependencies:
   # optional packages to make development easier in (e.g.) emacs
   - pyright
   - pylint
-  - flake8
-  - flake8-pytest-style
   - autoflake
   - epc
   - isort

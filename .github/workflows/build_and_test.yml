@@ -22,10 +22,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: truncate environment file to include only necessary packages
+      shell: bash -el {0}
+      run: |
+        awk -F '# optional' '{print $1} NF>1{exit}' environment.yml > environment-truncated.yml
     - name: Set up miniforge
       uses: conda-incubator/setup-miniconda@v3
       with:
-        environment-file: environment.yml
+        environment-file: environment-truncated.yml
         miniforge-version: latest
     - name: Lint with flake8
       run: |
