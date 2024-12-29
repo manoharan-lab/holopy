@@ -45,9 +45,12 @@ from numpy import array, sin, zeros, arange, real, imag, exp
 
 from scipy.special import riccati_jn, riccati_yn
 
+# From commit 0666fe4. The construction below apparently was necessary to get
+# docstrings to compile on systems without fortran compilers. Added noqa line
+# so that this is no longer flagged by linters
 try:
-    from . import mieangfuncs
-    from .mieangfuncs import dn_1_down, lentz_dn1
+    from . import mieangfuncs   # noqa F401
+    from .mieangfuncs import dn_1_down, lentz_dn1   # noqa F401
 except ImportError:
     pass
 

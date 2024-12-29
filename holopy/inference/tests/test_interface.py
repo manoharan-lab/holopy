@@ -19,6 +19,7 @@
 
 import unittest
 import warnings
+import importlib.util
 
 import numpy as np
 
@@ -40,10 +41,11 @@ DATA = data_grid(np.ones((2, 2)), spacing=1, medium_index=1,
 SPHERE = Sphere(n=1, center=[2, 2, 2])
 GUESSES = {'n': 1, 'r': 2, 'center.0': 3}
 
-try:
-    import schwimmbad
+spec = importlib.util.find_spec("schwimmbad")
+if spec is not None:
+    schwimmbad = importlib.util.module_from_spec(spec)
     SCHWIMMBAD_INSTALLED = True
-except ModuleNotFoundError:
+else:
     SCHWIMMBAD_INSTALLED = False
 
 class TestUserFacingFunctions(unittest.TestCase):
