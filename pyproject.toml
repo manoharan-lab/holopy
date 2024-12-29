@@ -50,3 +50,7 @@ markers = [
     "slow: mark tests as slow",
     "dda: mark tests that use ADDA",
 ]
+
+[tool.ruff]
+src = ['holopy']
+exclude = ["third_party"]
