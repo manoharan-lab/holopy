@@ -23,12 +23,6 @@ Then activate the new environment::
 
   conda activate holopy-devel
 
-For Linux, you will need to install the gcc and gfortran compilers before
-building the package.
-
-For Windows, if you don't already have Fortran and C compilers installed, you
-can edit the environment file to install the ``m2w64-toolchain`` package.
-
 Now you can build and install the package. Let's say you downloaded or cloned
 HoloPy to ``/home/me/holopy``. Then open a terminal, ``cd`` to
 ``/home/me/holopy`` and run::
@@ -40,32 +34,11 @@ stub in your current environment that loads the package from the build
 directory. If you change the code and re-import holopy, it will be automatically
 rebuilt by meson.
 
-**Note for Mac users:**
-gfortran may put its library in a place python can't find it. If you get errors
-including something like ``can't find /usr/local/libgfortran.3.dynlib`` you can
-add symlinks to fix them::
-
-  sudo ln -s /usr/local/gfortran/lib/libgfortran.3.dynlib /usr/local/lib
-  sudo ln -s /usr/local/gfortran/lib/libquadmath.3.dynlib /usr/local/lib
-
-**Note for Windows users:** The above build instructions *should* work with
-Windows. Be aware that if you use the ``m2w64-toolchain`` conda package to
-install the compilers, you will get a fairly old version of gcc (5.3.0). If you
-want to compile with a more recent version of gcc, you can download the
-compilers and install them manually. One of the easiest ways to do this (as
-recommended by Scipy) is to install the `RTools bundle, version 4.0
-<https://cran.r-project.org/bin/windows/Rtools/rtools40.html>`_. Then update
-your ``PATH`` variable to include the directory ``[PATH TO RTOOLS]\ucrt64\bin``,
-replacing ``[PATH TO RTOOLS]`` with the directory of the RTools installation. In
-Powershell, you can edit your ``PATH`` (for the duration of your Powershell
-session only) with::
-
-  $env:Path += ';[PATH TO RTOOLS]\ucrt64\bin'
-
-Then follow the instructions above.
-
-If this procedure doesn't work, or you find something else that does, please
-`let us know <https://github.com/manoharan-lab/holopy/issues>`_ so that we can
+**Notes:** Because the environment file includes the ``gfortran`` package, which
+packages the compilers needed, this procedure should work on all platforms. You
+should not need to install any compilers prior to building the package. But if
+this procedure doesn't work, or you find something else that does, please `let
+us know <https://github.com/manoharan-lab/holopy/issues>`_ so that we can
 improve these instructions.
 
 ..  _xarray:
