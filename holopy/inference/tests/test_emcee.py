@@ -29,7 +29,6 @@ from holopy.inference import prior, TemperedStrategy
 from holopy.core.process import normalize
 from holopy.core.tests.common import assert_obj_close, get_example_data
 from holopy.scattering import Sphere, MieLens
-from holopy.inference import prior
 from holopy.inference.model import AlphaModel, Model
 from holopy.inference.emcee import sample_emcee, EmceeStrategy
 from holopy.inference.tests.common import SimpleModel

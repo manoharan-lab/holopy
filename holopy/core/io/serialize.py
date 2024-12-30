@@ -30,6 +30,7 @@ import numpy as np
 import yaml
 from yaml.reader import ReaderError as ReaderError
 import types
+import copyreg
 
 from holopy.core.holopy_object import SerializableMetaclass, YAMLLOADERS
 from holopy.core.holopy_object import FullLoader # necessary for pyyaml < 5
@@ -59,10 +60,6 @@ def _pickle_method(method):
 def _unpickle_method(func_name, obj):
     return getattr(obj, func_name)
 
-
-
-import copyreg
-import types
 copyreg.pickle(types.MethodType, _pickle_method, _unpickle_method)
 
 ###################################################################
