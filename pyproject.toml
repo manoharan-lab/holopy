@@ -54,6 +54,7 @@ markers = [
 [tool.ruff]
 src = ['holopy']
 exclude = ["third_party"]
+line-length = 79
 
 [tool.ruff.lint.per-file-ignores]
 # for now, ignore "module not found" in __init__.py

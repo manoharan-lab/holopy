@@ -45,8 +45,7 @@ dependencies:
   - gfortran
 
   # linting
-  - flake8
-  - flake8-pytest-style
+  - ruff
 
   # for running tests: "cov" is coverage plugin, "xdist" is to run pytest in
   # parallel; "timeout" is to set timeout for tests. memory_profiler is needed
@@ -60,6 +59,8 @@ dependencies:
   # optional packages to make development easier in (e.g.) emacs
   - pyright
   - pylint
+  - flake8
+  - flake8-pytest-style
   - autoflake
   - epc
   - isort
