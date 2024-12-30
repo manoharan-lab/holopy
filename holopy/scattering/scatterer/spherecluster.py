@@ -78,7 +78,7 @@ class Spheres(Scatterers):
                 try:
                     if cartesian_distance(s1.center, s2.center) < (np.max(s1.r) + np.max(s2.r)):
                         overlaps.append((i, j))
-                except:
+                except Exception:
                     # if the coordinates are not something that we can do
                     # arithmatic on, just pass for now, hopefully the overlap
                     # will be caught later.

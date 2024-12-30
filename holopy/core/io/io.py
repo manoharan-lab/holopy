@@ -175,7 +175,11 @@ def load(inf, lazy=False):
             try:
                 spacing = meta['spacing']
                 assert spacing is not None
-            except:
+            # TODO: figure out what kind of errors this construction is
+            # designed to catch. Originally this was a simple "if spacing is
+            # None: raise NoMetadata" but the current syntax comes from c892c5f
+            # which claims that it fixes bugs.
+            except Exception:
                 raise NoMetadata
             else:
                 with warnings.catch_warnings():

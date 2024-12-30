@@ -233,7 +233,8 @@ class TestCoordinateTransformations(unittest.TestCase):
             method = find_transformation_function(*version_to_check)
             try:
                 _result = method(coords)
-            except:
+            # the below just outputs some useful info if the test fails.
+            except Exception:
                 msg = '_to_'.join(version_to_check) + ' failed'
                 self.assertTrue(False, msg=msg)
         pass
