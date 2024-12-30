@@ -75,8 +75,8 @@ class TestLoadingAndSaving(unittest.TestCase):
     def test_image_io(self):
         filename = os.path.join(self.tempdir, 'image0001.tif')
         save_image(filename, self.holo, scaling=None)
-        l = self.load_image_with_metadata(filename)
-        assert_obj_close(l, self.holo)
+        holo = self.load_image_with_metadata(filename)
+        assert_obj_close(holo, self.holo)
 
     @pytest.mark.fast
     def test_save_images_checks_names_and_holograms_are_same_length(self):
@@ -106,22 +106,22 @@ class TestLoadingAndSaving(unittest.TestCase):
     def test_default_save_is_tif(self):
         filename = os.path.join(self.tempdir, 'image0002')
         save_image(filename, self.holo, scaling=None)
-        l = self.load_image_with_metadata(filename + '.tif')
-        assert_obj_close(l, self.holo)
+        holo = self.load_image_with_metadata(filename + '.tif')
+        assert_obj_close(holo, self.holo)
 
     @pytest.mark.fast
     def test_non_tif_image(self):
         filename = os.path.join(self.tempdir, 'image0001.bmp')
         save_image(filename, self.holo, scaling=None)
-        l = self.load_image_with_metadata(filename)
-        assert_obj_close(l, self.holo)
+        holo = self.load_image_with_metadata(filename)
+        assert_obj_close(holo, self.holo)
 
     @pytest.mark.fast
     def test_specify_scaling(self):
         filename = os.path.join(self.tempdir, 'image0001.tif')
         save_image(filename, self.holo, scaling=(0, 255))
-        l = self.load_image_with_metadata(filename)
-        assert_obj_close(l, self.holo)
+        holo = self.load_image_with_metadata(filename)
+        assert_obj_close(holo, self.holo)
 
     @pytest.mark.fast
     def test_auto_scaling(self):
@@ -129,18 +129,20 @@ class TestLoadingAndSaving(unittest.TestCase):
         save_image(filename, self.holo, depth='float')
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            l = load_image(filename, name=self.holo.name, spacing=get_spacing(self.holo))
+            holo = load_image(filename, name=self.holo.name,
+                              spacing=get_spacing(self.holo))
         # skip checking full DataArray attrs because it is akward to keep
         # them through arithmetic. Ideally we would figure out a way to
         # preserve them and switch back to testing fully
-        assert_allclose(l, (self.holo-self.holo.min())/(self.holo.max()-self.holo.min()))
+        assert_allclose(holo, ((self.holo-self.holo.min()) /
+                               (self.holo.max()-self.holo.min())))
 
     @pytest.mark.fast
     def test_saving_16_bit(self):
         filename = os.path.join(self.tempdir, 'image0003')
         save_image(filename, self.holo, scaling=None, depth=16)
-        l = self.load_image_with_metadata(filename + '.tif')
-        assert_obj_close(l, self.holo)
+        holo = self.load_image_with_metadata(filename + '.tif')
+        assert_obj_close(holo, self.holo)
 
     @pytest.mark.fast
     def test_save_load_h5(self):
@@ -181,8 +183,8 @@ class TestLoadingAndSaving(unittest.TestCase):
         # load doesn't work
         self.assertRaises(NoMetadata, load, filename)
         # load_image does
-        l = load_image(filename, spacing=get_spacing(self.holo))
-        assert_obj_close(l, copy_metadata(l, self.holo))
+        holo = load_image(filename, spacing=get_spacing(self.holo))
+        assert_obj_close(holo, copy_metadata(holo, self.holo))
 
 
 class test_custom_yaml_output(unittest.TestCase):

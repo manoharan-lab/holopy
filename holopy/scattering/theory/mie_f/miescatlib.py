@@ -148,7 +148,7 @@ def asymmetry_parameter(al, bl):
     The output of this function omits the prefactor of 4/(x^2 Q_sca).
     '''
     lmax = al.shape[0]
-    l = np.arange(lmax) + 1
+    l = np.arange(lmax) + 1 # noqa E741
     selfterm = (l[:-1] * (l[:-1] + 2.) / (l[:-1] + 1.) *
                 np.real(al[:-1] * np.conj(al[1:]) +
                         bl[:-1] * np.conj(bl[1:]))).sum()
@@ -178,7 +178,7 @@ def cross_sections(al, bl):
     '''
     lmax = al.shape[0]
 
-    l = np.arange(lmax) + 1
+    l = np.arange(lmax) + 1 # noqa E741
     prefactor = (2. * l + 1.)
     cscat = (prefactor * (np.abs(al)**2 + np.abs(bl)**2)).sum()
     cext = (prefactor * np.real(al + bl)).sum()

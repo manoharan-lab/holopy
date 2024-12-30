@@ -309,11 +309,11 @@ def test_radialEscat():
 
 @pytest.mark.medium
 def test_layered():
-    l = LayeredSphere(n = (1, 2), t = (1, 1), center = (2, 2, 2))
+    ls = LayeredSphere(n = (1, 2), t = (1, 1), center = (2, 2, 2))
     s = Sphere(n = (1,2), r = (1, 2), center = (2, 2, 2))
     sch = detector_grid((10, 10), .2)
     wavelen = .66
-    hl = calc_holo(sch, l, index, wavelen, illum_polarization=xpolarization)
+    hl = calc_holo(sch, ls, index, wavelen, illum_polarization=xpolarization)
     hs = calc_holo(sch, s, index, wavelen, illum_polarization=xpolarization)
     assert_obj_close(hl, hs, rtol=0)
 
