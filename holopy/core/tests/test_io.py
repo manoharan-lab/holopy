@@ -259,28 +259,32 @@ class TestAccumulator(unittest.TestCase):
     def test_push(self):
         accumulator = Accumulator()
         data  = np.arange(10)
-        for point in data: accumulator.push(point)
+        for point in data:
+            accumulator.push(point)
         self.assertTrue(accumulator._n == 10)
 
     @pytest.mark.fast
     def test_push_hologram(self):
         accumulator = Accumulator()
         data = _load_example_data_backgrounds()
-        for holo in data: accumulator.push(holo)
+        for holo in data:
+            accumulator.push(holo)
         self.assertTrue(accumulator._n == 3)
 
     @pytest.mark.fast
     def test_mean(self):
         accumulator = Accumulator()
         data = np.arange(10)
-        for point in data: accumulator.push(point)
+        for point in data:
+            accumulator.push(point)
         self.assertTrue(accumulator.mean() == np.mean(data))
 
     @pytest.mark.fast
     def test_mean_hologram_value(self):
         accumulator = Accumulator()
         data = _load_example_data_backgrounds()
-        for holo in data: accumulator.push(holo)
+        for holo in data:
+            accumulator.push(holo)
         numpy_mean = np.mean([holo.values for holo in data], axis=0)
         self.assertTrue(np.allclose(numpy_mean, accumulator.mean().values))
 
@@ -290,14 +294,16 @@ class TestAccumulator(unittest.TestCase):
         expected_type = xarray.core.dataarray.DataArray
         accumulator = Accumulator()
         data = _load_example_data_backgrounds()
-        for holo in data: accumulator.push(holo)
+        for holo in data:
+            accumulator.push(holo)
         self.assertTrue(isinstance(accumulator.mean(), expected_type))
 
     @pytest.mark.fast
     def test_std(self):
         accumulator = Accumulator()
         data = np.arange(10)
-        for point in data: accumulator.push(point)
+        for point in data:
+            accumulator.push(point)
         self.assertTrue(accumulator.std() == np.std(data))
 
     @pytest.mark.fast

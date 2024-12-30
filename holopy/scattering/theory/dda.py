@@ -100,7 +100,9 @@ class DDA(ScatteringTheory):
         self.keep_raw_calculations = keep_raw_calculations
         self.addacmd = addacmd
         self.suppress_C_output = suppress_C_output
-        if use_gpu and n_cpu>1: warnings.warn("Adda cannot run on multiple CPUs, when running on GPU. 1 CPU will be used.")
+        if use_gpu and n_cpu > 1:
+            warnings.warn("Adda cannot run on multiple CPUs, when running on GPU. "
+                          "1 CPU will be used.")
         super().__init__()
 
     @classmethod
@@ -114,7 +116,8 @@ class DDA(ScatteringTheory):
         medium_wavelen = 2*np.pi/medium_wavevec
         if self.use_gpu:
             cmd = ['adda_ocl']
-            if self.gpu_id is not None: cmd.extend(['-gpu',str(self.gpu_id)])
+            if self.gpu_id is not None:
+                cmd.extend(['-gpu',str(self.gpu_id)])
         elif self.n_cpu == 1:
             cmd = ['adda']
         elif self.n_cpu > 1:

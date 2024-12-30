@@ -391,7 +391,8 @@ def _save_im(filename, im, depth=8):
         images without some kind of scaling.
     """
     # if we don't have an extension, default to tif
-    if os.path.splitext(filename)[1] == '': filename += '.tif'
+    if os.path.splitext(filename)[1] == '':
+        filename += '.tif'
 
     metadat = False
     if os.path.splitext(filename)[1] in tiflist:
@@ -405,7 +406,8 @@ def _save_im(filename, im, depth=8):
         tiffinfo[270] = yaml.dump(metadat, default_flow_style=True)
 
     im = im.values
-    if im.ndim > 2: im = im[0]
+    if im.ndim > 2:
+        im = im[0]
 
     if depth != 'float':
         if depth == 8:
