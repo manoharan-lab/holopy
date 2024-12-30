@@ -125,7 +125,6 @@ class Tmatrix(ScatteringTheory):
 
     def _run_tmat(self, args):
         med_wavelen = args[2]
-        nang = args[-1]
         s11, s12, s21, s22 = ampld(*args)
         for s in [s11, s12, s21, s22]:
             s *= (-2j*np.pi/med_wavelen)

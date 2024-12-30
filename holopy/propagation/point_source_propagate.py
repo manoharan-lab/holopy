@@ -113,7 +113,7 @@ def ps_propagate_plane(data, d, L, beam_c, out_schema = None, old_Ip = False):
 
     npix0 = float(len(data.x))  # size of original image in pixels
     wavelen = float(data.illum_wavelen)  # laser wavelength in meters
-    n_medium = float(data.medium_index)  # not used (assumes n_medium = 1)
+    # n_medium = float(data.medium_index)  # not used (assumes n_medium = 1)
     datavals = data.values.squeeze()
 
     Dx, Dy = get_spacing(data)  # size of pixels on camera

@@ -76,7 +76,7 @@ def ignore_aliases(data):
             return True
         if isinstance(data, (str, bool, int, float)):
             return True
-    except TypeError as e:
+    except TypeError:
         pass
 yaml.representer.SafeRepresenter.ignore_aliases = \
     staticmethod(ignore_aliases)
