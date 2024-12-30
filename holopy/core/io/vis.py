@@ -255,7 +255,7 @@ def display_image(im, scaling='auto', vert_axis='x', horiz_axis='y',
             if not isinstance(horiz_axis, int):
                 horiz_axis = axes[0]
         im = im.transpose([depth_axis, vert_axis, horiz_axis])
-        depth_axis='z'; vert_axis='x'; horiz_axis='y'
+        depth_axis, vert_axis, horiz_axis = ('z', 'x', 'y')
         im = data_grid(im, spacing=1, z=range(len(im)))
     if np.iscomplex(im).any():
         warn("Image contains complex values. Taking image magnitude.")
