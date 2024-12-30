@@ -64,14 +64,14 @@ def test_Spheres_construction_typechecking():
     cs = Ellipsoid(n=1.59+0.0001j, r=(5e-7, 5e-7, 8e-7),
                       center=[-5e-6, 0,0])
     with pytest.raises(InvalidScatterer):
-        sc = Spheres(scatterers=[s1, s2, s3, cs])
+        _sc = Spheres(scatterers=[s1, s2, s3, cs])
 
 @pytest.mark.fast
 def test_Spheres_ovelap_checking():
     s1 = Sphere(n = 1.59, r = 5e-7, center=(1e-6, -1e-6, 10e-6))
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter('always', OverlapWarning)
-        sc = Spheres([s1, s1, s1])
+        _sc = Spheres([s1, s1, s1])
         assert len(w) > 0
 
 

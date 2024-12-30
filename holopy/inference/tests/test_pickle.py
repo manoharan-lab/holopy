@@ -31,10 +31,12 @@ def test_prior():
     assert_pickle_roundtrip(g)
     assert_pickle_roundtrip(g.lnprob)
 
-
+# Not sure why these tests are called "holo_likelihood".
+# They don't actually calculate the likelihood, but might have
+# in a previous version.  Commented out the "holo ="  lines
 @pytest.mark.fast
 def test_AlphaModelholo_likelihood():
-    holo = get_example_data('image0001')
+    # holo = get_example_data('image0001')
     s = Sphere(
         prior.Gaussian(.5, .1), prior.Gaussian(1.6, .1),
         (prior.Gaussian(5, 1), prior.Gaussian(5, 1), prior.Gaussian(5, 1)))
@@ -44,7 +46,7 @@ def test_AlphaModelholo_likelihood():
 
 @pytest.mark.fast
 def test_ExactModelholo_likelihood():
-    holo = get_example_data('image0001')
+    # holo = get_example_data('image0001')
     sphere_center = (prior.Gaussian(5, 1),
                      prior.Gaussian(5, 1),
                      prior.Gaussian(5, 1))

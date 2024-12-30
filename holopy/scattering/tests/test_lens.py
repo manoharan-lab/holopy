@@ -173,7 +173,7 @@ class TestLens(unittest.TestCase):
                               medium_index=test_common.index,
                               illum_polarization=test_common.xpolarization)
         theory = Lens(LENS_ANGLE, Mie(), quad_npts_theta=8, quad_npts_phi=10)
-        holo = calc_holo(pts, scatterer, theory=theory)
+        _holo = calc_holo(pts, scatterer, theory=theory)
         self.assertTrue(True)
 
     @pytest.mark.skipif(not lens.NUMEXPR_INSTALLED,
@@ -343,7 +343,6 @@ class TestLensVsMielens(unittest.TestCase):
             detector, scatterer.center, wavevec=medium_wavevec)
 
         theory_new = LENSMIE
-        imageformer_new = ImageFormation(theory_new)
         pos_new = ImageFormation(theory_new)._transform_to_desired_coordinates(
             detector, scatterer.center, wavevec=medium_wavevec)
 
@@ -379,9 +378,6 @@ class TestLensVsMielens(unittest.TestCase):
     def test_calculate_scattered_field_lensmie_same_as_mielens(self):
         detector = test_common.xschema_lens
         scatterer = test_common.sphere
-        medium_wavevec = 2 * np.pi / test_common.wavelen
-        medium_index = test_common.index
-        illum_polarization = test_common.xpolarization
 
         imageformer_old = ImageFormation(MieLens(lens_angle=LENS_ANGLE))
         imageformer_new = ImageFormation(LENSMIE)

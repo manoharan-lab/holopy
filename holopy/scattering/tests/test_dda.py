@@ -117,13 +117,13 @@ def test_dda_2_cpu(optics):
     if os.name == 'nt': # windows
         pytest.skip("Requires ADDA")
     sc = Sphere(n=1.59, r=3e-1, center=(1, -1, 30))
-    mie_holo = calc_holo(schema, sc, index, wavelen)
+    _mie_holo = calc_holo(schema, sc, index, wavelen)
     try:
         dda_n2 = DDA(n_cpu=2)
     except (DependencyMissing):
         pytest.skip("Requires ADDA")
     try:
-        dda_holo = calc_holo(schema, sc, index, wavelen, theory=dda_n2)
+        _dda_holo = calc_holo(schema, sc, index, wavelen, theory=dda_n2)
     except (CalledProcessError, FileNotFoundError):
         # DDA only compiled for serial calculations
         pytest.skip("DDA not compiled for parallel calculations"

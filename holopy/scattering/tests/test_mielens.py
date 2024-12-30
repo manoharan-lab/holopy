@@ -436,7 +436,6 @@ class TestAberratedMieLens(unittest.TestCase):
 
 def calculate_central_lobe_at(zs):
     illum_wavelength = 0.66  # 660 nm red light
-    k = 2 * np.pi / illum_wavelength
     detector = detector_grid(4, 2.0)
 
     central_lobes = []

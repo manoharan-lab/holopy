@@ -101,24 +101,33 @@ class TestHologramCalculation(unittest.TestCase):
 
 @pytest.mark.medium
 def test_prep_schema():
-    sch_f = detector_grid(shape=5,spacing=1)
-    sch_x = detector_grid(shape=5,spacing=1,extra_dims={'illumination':['red','green','blue']})
+    # glossary:
+    # sch: schema
+    # wl: wavelength
+    # pol: polarization
+    # _l: list
+    # _d: dict
+    # _x: xarray
+    sch_f = detector_grid(shape=5, spacing=1)
+    sch_x = detector_grid(shape=5, spacing=1,
+                          extra_dims={'illumination':['red','green','blue']})
 
-    wl_f = 0.5
-    wl_l = [0.5,0.6,0.7]
-    wl_d = dict([('red', 0.5), ('green', 0.6), ('blue', 0.7)])
-    wl_x = xr.DataArray([0.5,0.6,0.7],dims='illumination',coords={'illumination':['red','green','blue']})
+    wl_l = [0.5, 0.6, 0.7]
+    wl_d = dict([('red',  0.5), ('green', 0.6), ('blue', 0.7)])
+    wl_x = xr.DataArray([0.5, 0.6, 0.7], dims='illumination',
+                        coords={'illumination':['red', 'green', 'blue']})
 
-    pol_f = (0,1)
-    pol_d = dict([('red', (0,1)), ('green', (1,0)), ('blue', (0.5,0.5))])
+    pol_d = dict([('red', (0, 1)), ('green', (1, 0)), ('blue', (0.5, 0.5))])
 
-    pol_x = xr.concat([to_vector((0,1)),to_vector((1,0)),to_vector((0.5,0.5))], wl_x.illumination)
+    pol_x = xr.concat([to_vector((0, 1)), to_vector((1, 0)),
+                       to_vector((0.5, 0.5))], wl_x.illumination)
 
-    all_in = prep_schema(sch_x,1,wl_x,pol_x)
+    all_in = prep_schema(sch_x, 1, wl_x, pol_x)
 
-    assert_obj_close(prep_schema(sch_x,1,wl_d,pol_d),all_in)
-    assert_obj_close(prep_schema(sch_x,1,wl_l,pol_d),all_in)
-    assert_obj_close(prep_schema(sch_f,1,wl_x,pol_x),all_in)
+    assert_obj_close(prep_schema(sch_x, 1, wl_d, pol_d), all_in)
+    assert_obj_close(prep_schema(sch_x, 1, wl_l, pol_d), all_in)
+    # schema should receive illumination coord from wl
+    assert_obj_close(prep_schema(sch_f, 1, wl_x, pol_x), all_in)
 
 
 if __name__ == '__main__':

@@ -787,7 +787,7 @@ class CheckEnergyIsConserved(object):
     def evaluate_scattered_power_incident_on_pupil(self):
         parallel = self.mielenscalculator._scat_prll_values.squeeze()
         perpendicular = self.mielenscalculator._scat_perp_values.squeeze()
-        cos_theta = self.mielenscalculator._quad_pts.squeeze()
+        _cos_theta = self.mielenscalculator._quad_pts.squeeze()
         wts = self.mielenscalculator._quad_wts.squeeze()
         integrand = np.abs(parallel)**2 + np.abs(perpendicular)**2
         # mielenscalculator uses x = cos(theta), so sin(theta) dtheta = dx

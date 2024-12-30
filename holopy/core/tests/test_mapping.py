@@ -156,7 +156,7 @@ class TestParameterMapping(unittest.TestCase):
         mapper = Mapper()
         base_prior = [prior.Uniform(0, 2, name='first'), prior.Uniform(1, 2)]
         transformed = {'trans': prior.TransformedPrior(np.maximum, base_prior)}
-        parameter_map = mapper.convert_to_map(transformed)
+        _parameter_map = mapper.convert_to_map(transformed)
         self.assertEqual(mapper.parameter_names[-2:], ['first', 'trans.1'])
 
     @pytest.mark.fast
@@ -165,7 +165,7 @@ class TestParameterMapping(unittest.TestCase):
         base_prior = [prior.Uniform(0, 2, name='first'), prior.Uniform(1, 2)]
         transform = prior.TransformedPrior(np.maximum, base_prior, name='real')
         transform = {'fake': transform}
-        parameter_map = mapper.convert_to_map(transform)
+        _parameter_map = mapper.convert_to_map(transform)
         self.assertEqual(mapper.parameter_names[-2:], ['first', 'real.1'])
 
     @pytest.mark.fast
@@ -293,7 +293,7 @@ class TestParameterTying(unittest.TestCase):
         scatterer = Sphere(n=tied, r=prior.Uniform(0.5, 1.5),
                            center=[tied, 10, prior.Uniform(0, 10)])
         mapper = Mapper()
-        parameter_map = mapper.convert_to_map(scatterer.parameters)
+        _parameter_map = mapper.convert_to_map(scatterer.parameters)
         expected = [prior.Uniform(0, 1),
                     prior.Uniform(0.5, 1.5),
                     prior.Uniform(0, 10)]
@@ -305,7 +305,7 @@ class TestParameterTying(unittest.TestCase):
         scatterer = Sphere(n=tied, r=prior.Uniform(0.5, 1.5),
                            center=[tied, 10, prior.Uniform(0, 10)])
         mapper = Mapper()
-        parameter_map = mapper.convert_to_map(scatterer.parameters)
+        _parameter_map = mapper.convert_to_map(scatterer.parameters)
         expected = ['n', 'r', 'center.2']
         self.assertEqual(mapper.parameter_names, expected)
 
@@ -325,7 +325,7 @@ class TestParameterTying(unittest.TestCase):
         scatterer = Sphere(n=prior.Uniform(1, 2), r=prior.Uniform(1, 2),
                            center=[10, 10, prior.Uniform(1, 2)])
         mapper = Mapper()
-        parameter_amp = mapper.convert_to_map(scatterer.parameters)
+        _parameter_map = mapper.convert_to_map(scatterer.parameters)
         expected_priors = [prior.Uniform(1, 2),
                            prior.Uniform(1, 2),
                            prior.Uniform(1, 2)]
@@ -340,7 +340,7 @@ class TestParameterTying(unittest.TestCase):
         scatterer = Sphere(n=1.5, r=0.5, center=[base_prior, transformed,
                                                  prior.Uniform(5, 10)])
         mapper = Mapper()
-        parameter_map = mapper.convert_to_map(scatterer.parameters)
+        _parameter_map = mapper.convert_to_map(scatterer.parameters)
         expected_priors = [base_prior, prior.Uniform(5, 10)]
         expected_names = ['x', 'center.2']
         self.assertEqual(mapper.parameters, expected_priors)
@@ -352,7 +352,7 @@ class TestParameterTying(unittest.TestCase):
         s0 = Sphere(n=prior.Uniform(1, 2), r=tied, center=[1, 1, 1])
         s1 = Sphere(n=prior.Uniform(1, 2), r=tied, center=[1, 1, 1])
         mapper = Mapper()
-        parameter_map = mapper.convert_to_map(Spheres([s0, s1]).parameters)
+        _parameter_map = mapper.convert_to_map(Spheres([s0, s1]).parameters)
         expected_names = ['0:n', 'r', '1:n']
         self.assertEqual(mapper.parameter_names, expected_names)
 
@@ -363,7 +363,7 @@ class TestParameterTying(unittest.TestCase):
         s0 = Sphere(r=s0_r, n=1.5, center=[0, 3, 4])
         s1 = Sphere(r=s1_r, n=1.5, center=[s0_r + s1_r, 3, 4])
         mapper = Mapper()
-        parameter_map = mapper.convert_to_map(Spheres([s0, s1]).parameters)
+        _parameter_map = mapper.convert_to_map(Spheres([s0, s1]).parameters)
         expected_names = ['0:r', '1:r']
         self.assertEqual(mapper.parameter_names, expected_names)
 
@@ -373,7 +373,7 @@ class TestParameterTying(unittest.TestCase):
         sphere = Sphere(n=prior.Uniform(1, 2, name='index'), r=0.5,
                         center=[tied, tied, prior.Uniform(0, 10, name='z')])
         mapper = Mapper()
-        parameter_map = mapper.convert_to_map(sphere.parameters)
+        _parameter_map = mapper.convert_to_map(sphere.parameters)
         expected_names = ['index', tied.name, 'z']
         self.assertEqual(mapper.parameter_names, expected_names)
 
@@ -383,7 +383,7 @@ class TestParameterTying(unittest.TestCase):
         sphere = Sphere(n=prior.Uniform(1, 2, name='dummy'), r=0.5,
                         center=[tied, tied, prior.Uniform(0, 10, name='z')])
         mapper = Mapper()
-        parameter_map = mapper.convert_to_map(sphere.parameters)
+        _parameter_map = mapper.convert_to_map(sphere.parameters)
         expected = ['dummy', 'dummy_0', 'z']
         self.assertEqual(mapper.parameter_names, expected)
 
@@ -394,7 +394,7 @@ class TestParameterTying(unittest.TestCase):
                         r=prior.Uniform(1, 2, name='dummy'),
                         center=[tied, tied, prior.Uniform(0, 10, name='z')])
         mapper = Mapper()
-        parameter_map = mapper.convert_to_map(sphere.parameters)
+        _parameter_map = mapper.convert_to_map(sphere.parameters)
         expected = ['dummy', 'dummy_0', 'dummy_1', 'z']
         self.assertEqual(mapper.parameter_names, expected)
 
@@ -404,11 +404,11 @@ class TestParameterTying(unittest.TestCase):
         parameters1 = {'tie': tied, 'dummy1': 3, 'dummy2': prior.Uniform(0, 1)}
         parameters2 = {'tie': tied, 'dummy1': 3, 'dummy2': prior.Uniform(0, 1)}
         mapper = Mapper()
-        map1 = mapper.convert_to_map(parameters1)
-        map2 = mapper.convert_to_map(parameters2)
-        s0 = Sphere(n=prior.Uniform(1, 2, name='dummy'),
-                    r=prior.Uniform(1, 2, name='dummy'),
-                    center=[tied, tied, prior.Uniform(0, 10, name='z')])
+        _map1 = mapper.convert_to_map(parameters1)
+        _map2 = mapper.convert_to_map(parameters2)
+        _s0 = Sphere(n=prior.Uniform(1, 2, name='dummy'),
+                     r=prior.Uniform(1, 2, name='dummy'),
+                     center=[tied, tied, prior.Uniform(0, 10, name='z')])
         expected_priors = [tied, prior.Uniform(0, 1), prior.Uniform(0, 1)]
         expected_names = ['to_tie', 'dummy2', 'dummy2_0']
         self.assertEqual(mapper.parameters, expected_priors)

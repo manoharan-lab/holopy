@@ -62,9 +62,9 @@ def test_single_sphere():
     field = calc_field(xschema, sphere, index, wavelen, xpolarization,
                        theory=thry)
 
-    intensity = calc_intensity(xschema, sphere, medium_index=index,
-                               illum_wavelen=wavelen,
-                               illum_polarization=xpolarization, theory=thry)
+    _intensity = calc_intensity(xschema, sphere, medium_index=index,
+                                illum_wavelen=wavelen,
+                                illum_polarization=xpolarization, theory=thry)
 
     verify(holo, 'single_holo')
     verify(field, 'single_field')
@@ -150,24 +150,27 @@ def test_mie_polarization():
 
     # test holograms for orthogonal polarizations; make sure they're
     # not the same, nor too different from one another.
-    thry = Mie(False)
-    xholo = calc_holo(xschema, sphere, index, wavelen,
-                      illum_polarization=xpolarization, scaling=scaling_alpha)
-    yholo = calc_holo(yschema, sphere, index, wavelen,
-                      illum_polarization=ypolarization, scaling=scaling_alpha)
+    thry = [Mie(), Mie(False)]
+    for theory in thry:
+        xholo = calc_holo(xschema, sphere, index, wavelen,
+                          illum_polarization=xpolarization,
+                          scaling=scaling_alpha, theory=theory)
+        yholo = calc_holo(yschema, sphere, index, wavelen,
+                          illum_polarization=ypolarization,
+                          scaling=scaling_alpha, theory=theory)
 
-    # the two arrays should not be equal
-    try:
-        assert_array_almost_equal(xholo, yholo)
-    except AssertionError:
-        pass
-    else:
-        raise AssertionError("Holograms computed for both x- and y-polarized "
-                             "light are too similar.")
+        # the two arrays should not be equal
+        try:
+            assert_array_almost_equal(xholo, yholo)
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError("Holograms computed for both x- and "
+                                "y-polarized light are too similar.")
 
-    # but their max and min values should be close
-    assert_obj_close(xholo.max(), yholo.max())
-    assert_obj_close(xholo.min(), yholo.min())
+        # but their max and min values should be close
+        assert_obj_close(xholo.max(), yholo.max())
+        assert_obj_close(xholo.min(), yholo.min())
 
 
 @pytest.mark.medium
@@ -291,7 +294,7 @@ def test_radialEscat():
     sphere = Sphere(r = 1e-6, n = 1.4 + 0.01j, center = [10e-6, 10e-6,
                                                          1.2e-6])
     h1 = calc_holo(xschema, sphere, index, wavelen,
-                   illum_polarization=xpolarization)
+                   illum_polarization=xpolarization, theory=thry_1)
     h2 = calc_holo(xschema, sphere, index, wavelen,
                    illum_polarization=xpolarization, theory=thry_2)
 

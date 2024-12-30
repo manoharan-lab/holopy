@@ -249,7 +249,6 @@ def test_niter():
 def test_cross_sections():
     wavelen = 1.
     index = 1.
-    polarization = [1., 0]
     a = 1./(2 * np.pi) # size parameter 1
     n = 1.5 + 0.1j
     sc = Spheres([Sphere(n = n, r = a, center = [0., 0., a]),
@@ -259,7 +258,10 @@ def test_cross_sections():
     # as well as all the scattering coefficients
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', scipy.integrate.IntegrationWarning)
-        xsects = calc_cross_sections(sc, illum_wavelen=wavelen, medium_index=index, illum_polarization=ypolarization)
+        xsects = calc_cross_sections(sc, illum_wavelen=wavelen,
+                                     medium_index=index,
+                                     illum_polarization=ypolarization,
+                                     theory=thry)
 
     gold_xsects = np.array([0.03830316, 0.04877015, 0.08707331])
     # calculated directly by SCSMFO. Efficiencies normalized
@@ -281,7 +283,8 @@ def test_farfield():
     cluster = Spheres([Sphere(n = n, r = r, center = [0., 0., r]),
                        Sphere(n = n, r = r, center = [0., 0., -r])])
 
-    matr = calc_scat_matrix(schema, cluster, illum_wavelen=.66, medium_index=index, theory=Multisphere)
+    _matr = calc_scat_matrix(schema, cluster, illum_wavelen=.66,
+                             medium_index=index, theory=Multisphere)
 
 
 @pytest.mark.medium

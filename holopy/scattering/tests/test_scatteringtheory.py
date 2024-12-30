@@ -151,7 +151,6 @@ class TestMockScatteringMatrixBasedTheory(unittest.TestCase):
         theory = MockScatteringMatrixBasedTheory()
         positions = np.random.randn(3, 65)
         scattering_matrices = theory.raw_scat_matrs(SPHERE, positions)
-        eye = np.eye(2)
         each_is_eye = [
             np.isclose(np.diag(m).std(), 0, **TOLS)
             for m in scattering_matrices]
