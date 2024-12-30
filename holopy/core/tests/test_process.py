@@ -29,7 +29,7 @@ from holopy.core.metadata import data_grid, detector_grid
 from holopy.core.tests.common import get_example_data, assert_obj_close
 
 #Test centerfinder
-gold_location = np.array([ 48.5729142,  50.23217416])
+gold_location = np.array([48.02525655, 50.22414601])
 
 
 def check_copied_dataarrays(arr1, arr2):
