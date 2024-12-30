@@ -40,10 +40,12 @@ from holopy.core.metadata import get_spacing, copy_metadata
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.tests.common import (
     assert_obj_close, assert_read_matches_write, get_example_data)
-
+from holopy.core.io.io import default_extension
 
 IMAGE01_METADATA = {'spacing': 0.0851, 'medium_index': 1.33,
                     'illum_wavelen': 0.66, 'illum_polarization':  (1,0)}
+
+
 
 class TestLoadingAndSaving(unittest.TestCase):
     def setUp(self):
@@ -66,6 +68,14 @@ class TestLoadingAndSaving(unittest.TestCase):
                                 illum_polarization=self.holo.illum_polarization,
                                 noise_sd=self.holo.noise_sd)
         return loaded
+
+    @pytest.mark.fast
+    def test_default_extension(self):
+        assert default_extension("image") == "image.h5"
+        assert default_extension("image.ext") == "image.ext"
+        imagefile = tempfile.TemporaryFile(dir=self.tempdir)
+        assert default_extension(imagefile) == imagefile
+        imagefile.close()
 
     @pytest.mark.fast
     def test_hologram_io(self):
