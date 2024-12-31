@@ -393,7 +393,7 @@ class MieScatteringMatrix(object):
         als, bls = [np.array(i) for i in zip(*als_bls)]
         coeffs = np.array([
             (2 * l + 1) / (l * (l + 1))
-            for l in range(1, truncated_max_l + 1)]).reshape(1, -1) # noqa E741
+            for l in range(1, truncated_max_l + 1)]).reshape(1, -1) # noqa: E741
         pils, tauls = calculate_pil_taul(theta, truncated_max_l)
 
         if self.parallel_or_perpendicular == 'perpendicular':
@@ -436,7 +436,7 @@ def gauss_legendre_pts_wts(a, b, npts=NPTS):
     return pts, wts
 
 
-def calculate_al_bl(index_ratio, size_parameter, l):    # noqa E741
+def calculate_al_bl(index_ratio, size_parameter, l):    # noqa: E741
     return AlBlFunctions.calculate_al_bl(index_ratio, size_parameter, l)
 
 
@@ -471,7 +471,7 @@ class AlBlFunctions(object):
     """
 
     @staticmethod
-    def calculate_al_bl(index_ratio, size_parameter, l):    # noqa E741
+    def calculate_al_bl(index_ratio, size_parameter, l):    # noqa: E741
         """Returns `a_l` and `b_l`; see class docstring.
 
         Parameters

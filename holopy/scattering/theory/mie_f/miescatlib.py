@@ -178,7 +178,7 @@ def cross_sections(al, bl):
     '''
     lmax = al.shape[0]
 
-    l = np.arange(lmax) + 1 # noqa E741
+    l = np.arange(lmax) + 1 # noqa: E741
     prefactor = (2. * l + 1.)
     cscat = (prefactor * (np.abs(al)**2 + np.abs(bl)**2)).sum()
     cext = (prefactor * np.real(al + bl)).sum()
