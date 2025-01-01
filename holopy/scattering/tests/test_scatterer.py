@@ -39,22 +39,22 @@ from holopy.scattering.errors import InvalidScatterer, MissingParameter
 
 @pytest.mark.fast
 def test_Sphere_construction():
-    s = Sphere(n=1.59, r=5e-7, center=(1e-6, -1e-6, 10e-6))
-    s = Sphere(n=1.59, r=5e-7)
+    _s = Sphere(n=1.59, r=5e-7, center=(1e-6, -1e-6, 10e-6))
+    _s = Sphere(n=1.59, r=5e-7)
     # index can be complex
-    s = Sphere(n=1.59+0.0001j, r=5e-7)
-    s = Sphere()
+    _s = Sphere(n=1.59+0.0001j, r=5e-7)
+    _s = Sphere()
 
     with assert_raises(InvalidScatterer):
         Sphere(n=1.59, r=-2, center=(1, 1, 1))
 
     # now test multilayer spheres
-    cs = Sphere(n=(1.59, 1.59), r=(5e-7, 1e-6), center=(1e-6, -1e-6, 10e-6))
-    cs = Sphere(n=(1.59, 1.33), r=(5e-7, 1e-6))
+    _cs = Sphere(n=(1.59, 1.59), r=(5e-7, 1e-6), center=(1e-6, -1e-6, 10e-6))
+    _cs = Sphere(n=(1.59, 1.33), r=(5e-7, 1e-6))
     # index can be complex
-    cs = Sphere(n=(1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6))
+    _cs = Sphere(n=(1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6))
     center = np.array([1e-6, -1e-6, 10e-6])
-    cs = Sphere(n=(1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6), center=center)
+    _cs = Sphere(n=(1.59+0.0001j, 1.33+0.0001j), r=(5e-7, 1e-6), center=center)
 
 
 @pytest.mark.fast
@@ -135,7 +135,7 @@ def test_from_parameters():
 @pytest.mark.fast
 def test_Composite_construction():
     # empty composite
-    comp_empty = Scatterers()
+    _comp_empty = Scatterers()
 
     # composite of multiple spheres
     s1 = Sphere(n = 1.59, r = 5e-7, center = (1e-6, -1e-6, 10e-6))
@@ -157,7 +157,7 @@ def test_Composite_construction():
     comp2 = Scatterers(scatterers=[comp_spheres, comp])
 
     # even more levels
-    comp3 = Scatterers(scatterers=[comp2, cs])
+    _comp3 = Scatterers(scatterers=[comp2, cs])
 
 
 @pytest.mark.fast

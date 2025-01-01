@@ -33,11 +33,12 @@ def test_ps():
     bgpath = get_example_data_path('ps_bg01.jpg')
     L = 0.0407 # distance from light source to screen
     cam_spacing = 12e-6 # linear size of camera pixels
-    mag = 9.0 # magnification
-    npix_out = 1020 # linear size of output image (pixels)
+    # mag = 9.0 # magnification
+    # npix_out = 1020 # linear size of output image (pixels)
     zstack = [1.08e-3, 1.18e-3] # distances from camera to reconstruct
 
-    holo = load_image(imagepath, spacing=cam_spacing, illum_wavelen=406e-9, medium_index=1) # load hologram
+    holo = load_image(imagepath, spacing=cam_spacing,
+                      illum_wavelen=406e-9, medium_index=1) # load hologram
     bg = load_image(bgpath, spacing=cam_spacing) # load background image
     holo = bg_correct(holo, bg+1, bg) # subtract background
     holo = subimage(holo,[250,500],300)

@@ -27,7 +27,7 @@ import numpy as np
 import warnings
 
 from holopy.scattering.scatterer import Sphere, Spheroid, Cylinder
-from holopy.scattering.errors import TheoryNotCompatibleError, TmatrixFailure
+from holopy.scattering.errors import TheoryNotCompatibleError
 from holopy.core.errors import DependencyMissing
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 try:
@@ -125,7 +125,6 @@ class Tmatrix(ScatteringTheory):
 
     def _run_tmat(self, args):
         med_wavelen = args[2]
-        nang = args[-1]
         s11, s12, s21, s22 = ampld(*args)
         for s in [s11, s12, s21, s22]:
             s *= (-2j*np.pi/med_wavelen)

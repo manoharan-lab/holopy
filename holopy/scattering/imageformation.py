@@ -6,7 +6,7 @@ from holopy.core.holopy_object import HoloPyObject
 from holopy.scattering.scatterer import Scatterers
 from holopy.scattering.errors import TheoryNotCompatibleError, MissingParameter
 from holopy.core.metadata import (
-    vector, illumination, flat, update_metadata, clean_concat)
+    vector, flat, update_metadata, clean_concat)
 from holopy.core.utils import ensure_array
 
 

@@ -2,7 +2,8 @@ import unittest
 
 import numpy as np
 import xarray as xr
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import (assert_allclose, assert_equal,
+                           assert_array_almost_equal_nulp)
 import pytest
 
 from scipy.special import iv
@@ -29,6 +30,26 @@ SMALL_DETECTOR = update_metadata(
     medium_index=test_common.index,
     illum_polarization=test_common.xpolarization)
 
+if lens.NUMEXPR_INSTALLED:
+    import numexpr as ne
+
+# test that numexpr reproduces numpy exactly without Intel MKL/VML and
+# approximately with Intel MKL/VML.
+@pytest.mark.skipif(not lens.NUMEXPR_INSTALLED,
+                    reason = "numexpr package required")
+def test_vml():
+    ne.set_vml_accuracy_mode('high')
+    theta = np.linspace(0, 2*np.pi, 100)
+    numexpr_cos = ne.evaluate('cos(theta)')
+    numpy_cos = np.cos(theta)
+    if ne.get_vml_version() is None:
+        assert_equal(numexpr_cos, numpy_cos)
+    else:
+        # arrays should agree to within floating-point precision for
+        # high accuracy VML mode.  Need to increase NULP if using 'low' or
+        # 'fast' accuracy modes.
+        assert_array_almost_equal_nulp(numexpr_cos, numpy_cos,
+                                       nulp=1)
 
 class TestLens(unittest.TestCase):
     def test_can_handle(self):
@@ -144,6 +165,7 @@ class TestLens(unittest.TestCase):
         assert_allclose(fields_1[0],  fields_0[1], **tols)
         assert_allclose(fields_1[1], -fields_0[0], **tols)
 
+
     def test_calc_holo_theta_npts_not_equal_phi_npts(self):
         scatterer = test_common.sphere
         pts = detector_grid(shape=4, spacing=test_common.pixel_scale)
@@ -151,7 +173,7 @@ class TestLens(unittest.TestCase):
                               medium_index=test_common.index,
                               illum_polarization=test_common.xpolarization)
         theory = Lens(LENS_ANGLE, Mie(), quad_npts_theta=8, quad_npts_phi=10)
-        holo = calc_holo(pts, scatterer, theory=theory)
+        _holo = calc_holo(pts, scatterer, theory=theory)
         self.assertTrue(True)
 
     @pytest.mark.skipif(not lens.NUMEXPR_INSTALLED,
@@ -162,9 +184,23 @@ class TestLens(unittest.TestCase):
 
         prefactor_numexpr = LENSMIE._integrand_prefactor(krho, phi, kz)
         prefactor_numpy = LENSMIE_NO_NE._integrand_prefactor(krho, phi, kz)
+        if ne.get_vml_version() is None:
+            assert_equal(prefactor_numexpr, prefactor_numpy)
+        else:
+            ne.set_vml_accuracy_mode('high')
+            # arrays should agree to within a few ULPs. According to Intel, in
+            # high accuracy mode the max error for an elementary function is 1
+            # ULP (4 ULP for low accuracy). But this error is propagated in the
+            # calculation of the prefactor, which involves multiple elementary
+            # function calculations, so we have to set a higher value for nulp.
+            # Minimum value of nulp required for test to pass is 4, based on
+            # experiments on Windows/MKL 20230613)
+            assert_array_almost_equal_nulp(prefactor_numpy, prefactor_numexpr,
+                                           nulp=5)
 
-        self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
-
+    # for the following two tests, numexpr should agree exactly with numpy even
+    # if MKL is used; this is because the numexpr expressions involve only
+    # addition and multiplications (no trig functions or exponentials)
     @pytest.mark.skipif(not lens.NUMEXPR_INSTALLED,
                         reason = "numexpr package required")
     def test_integrand_parallel_same_with_numexpr_as_without(self):
@@ -180,7 +216,7 @@ class TestLens(unittest.TestCase):
         prefactor_numpy = LENSMIE_NO_NE._integrand_prll(
             prefactor, pol_angle, *scat_matrix)
 
-        self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
+        assert_equal(prefactor_numpy, prefactor_numexpr)
 
     @pytest.mark.skipif(not lens.NUMEXPR_INSTALLED,
                         reason = "numexpr package required")
@@ -197,7 +233,7 @@ class TestLens(unittest.TestCase):
         prefactor_numpy = LENSMIE_NO_NE._integrand_perp(
             prefactor, pol_angle, *scat_matrix)
 
-        self.assertTrue(np.all(prefactor_numpy == prefactor_numexpr))
+        assert_equal(prefactor_numpy, prefactor_numexpr)
 
     @pytest.mark.medium
     def test_polarization_rotation_produces_small_changes_to_image(self):
@@ -230,7 +266,7 @@ class TestLens(unittest.TestCase):
         # We are just trying to check that rotating the polarization
         # does not rotate the image, so we can afford soft tolerances:
         tols = {'atol': 5e-2, 'rtol': 5e-2}
-        self.assertTrue(np.allclose(intensity_xpol, intensity_ypol, **tols))
+        assert_allclose(intensity_xpol, intensity_ypol, **tols)
 
     @pytest.mark.fast
     def test_from_parameters(self):
@@ -307,7 +343,6 @@ class TestLensVsMielens(unittest.TestCase):
             detector, scatterer.center, wavevec=medium_wavevec)
 
         theory_new = LENSMIE
-        imageformer_new = ImageFormation(theory_new)
         pos_new = ImageFormation(theory_new)._transform_to_desired_coordinates(
             detector, scatterer.center, wavevec=medium_wavevec)
 
@@ -343,9 +378,6 @@ class TestLensVsMielens(unittest.TestCase):
     def test_calculate_scattered_field_lensmie_same_as_mielens(self):
         detector = test_common.xschema_lens
         scatterer = test_common.sphere
-        medium_wavevec = 2 * np.pi / test_common.wavelen
-        medium_index = test_common.index
-        illum_polarization = test_common.xpolarization
 
         imageformer_old = ImageFormation(MieLens(lens_angle=LENS_ANGLE))
         imageformer_new = ImageFormation(LENSMIE)

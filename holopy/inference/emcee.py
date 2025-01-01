@@ -20,7 +20,6 @@ Sample posterior probabilities given model and data
 
 .. moduleauthor:: Thomas G. Dimiduk <tom@dimiduk.net>
 """
-import multiprocessing
 import time
 
 import xarray as xr

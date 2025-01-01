@@ -28,13 +28,10 @@ import warnings
 import numpy as np
 
 from holopy.core.holopy_object import HoloPyObject
-from holopy.core.metadata import flat, make_subset_data
-from holopy.core.math import chisq, rsq
+from holopy.core.metadata import make_subset_data
 from holopy.inference.third_party import nmpfit
-from holopy.scattering.errors import (
-    ParameterSpecificationError, MissingParameter)
+from holopy.scattering.errors import MissingParameter
 from holopy.inference.result import FitResult, UncertainValue
-
 
 # FIXME the errors from NmpfitStrategy seem to be incorrect! They do
 # not agree with those from scipy least squares

@@ -28,8 +28,8 @@ import xarray as xr
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 
-from holopy.core.io import load, save, get_example_data
-
+from holopy.core.io import load, save
+from holopy.core.io import get_example_data as get_example_data
 
 def assert_read_matches_write(original):
     # for Windows, must specify delete=False so that the load statement can run
@@ -48,15 +48,8 @@ def assert_read_matches_write(original):
     assert_obj_close(original, loaded)
 
 
-def assert_pickle_roundtrip(o, cPickle_only=False):
-    # TODO: Our pickling code currently works for cPickle but fails in
-    # a memoization check in regular pickle., for now I am testing
-    # cPickle only in those cases, but it would be good to fix that
-    # and test both in all cases
-    if not cPickle_only:
-        assert_obj_close(o, pickle.loads(pickle.dumps(o)))
+def assert_pickle_roundtrip(o):
     assert_obj_close(o, pickle.loads(pickle.dumps(o)))
-
 
 
 def assert_obj_close(actual, desired, rtol=1e-7, atol = 0, context = 'tested_object'):

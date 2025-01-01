@@ -214,7 +214,7 @@ class TestModel(unittest.TestCase):
         post_model = take_yaml_round_trip(model)
         self.assertEqual(model.parameters, post_model.parameters)
 
-    def test_yaml_preserves_parameter_names(self):
+    def test_yaml_preserves_parameter_names_2(self):
         sphere = Sphere(r=prior.Uniform(0, 1), n=prior.Uniform(1, 2, name='a'))
         model = AlphaModel(sphere)
         model._parameter_names = ['b', 'c']

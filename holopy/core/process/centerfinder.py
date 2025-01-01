@@ -85,7 +85,13 @@ def center_find(image, centers=1, threshold=.5, blursize=3.):
     contribute to finding the centers and the code will take a little
     bit longer.
     """
-    image=copy(image)
+    # cast image to float to avoid running gaussian filter on 8-bit images.
+    # As noted in the documentation for scipy.ndimage.gaussian_filter, "...for
+    # output types with a limited precision, the results may be imprecise
+    # because intermediate results may be stored with insufficient precision.
+    # The imprecision when using 8-bit data will be platform dependent, leading
+    # to test failures.
+    image=copy(image.astype(float))
     if blursize>0:
         image.values = gaussian_filter(image.values, blursize)
     col_deriv, row_deriv = image_gradient(image)

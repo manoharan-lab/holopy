@@ -46,7 +46,7 @@ tiflist = ['.tif', '.TIF', '.tiff', '.TIFF']
 def default_extension(inf, defext='.h5'):
     try:
         file, ext = os.path.splitext(inf)
-    except:
+    except TypeError:
         # this will happen if inf is already a file, which means we don't
         # need to do anything here
         return inf
@@ -175,7 +175,11 @@ def load(inf, lazy=False):
             try:
                 spacing = meta['spacing']
                 assert spacing is not None
-            except:
+            # TODO: figure out what kind of errors this construction is
+            # designed to catch. Originally this was a simple "if spacing is
+            # None: raise NoMetadata" but the current syntax comes from c892c5f
+            # which claims that it fixes bugs.
+            except Exception:
                 raise NoMetadata
             else:
                 with warnings.catch_warnings():
@@ -391,11 +395,12 @@ def _save_im(filename, im, depth=8):
         images without some kind of scaling.
     """
     # if we don't have an extension, default to tif
-    if os.path.splitext(filename)[1] == '': filename += '.tif'
+    if os.path.splitext(filename)[1] == '':
+        filename += '.tif'
 
     metadat = False
     if os.path.splitext(filename)[1] in tiflist:
-        if im.name == None:
+        if im.name is None:
             im.name = os.path.splitext(os.path.split(filename)[-1])[0]
         metadat = pack_attrs(im, do_spacing=True)
         # import ifd2 - hidden here since it doesn't play nice in some cases.
@@ -405,7 +410,8 @@ def _save_im(filename, im, depth=8):
         tiffinfo[270] = yaml.dump(metadat, default_flow_style=True)
 
     im = im.values
-    if im.ndim > 2: im = im[0]
+    if im.ndim > 2:
+        im = im[0]
 
     if depth != 'float':
         if depth == 8:

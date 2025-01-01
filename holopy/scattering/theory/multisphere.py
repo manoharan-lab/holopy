@@ -378,7 +378,6 @@ class Multisphere(ScatteringTheory):
             Dimensional scattering, absorption, and extinction
             cross sections, and <cos \theta>
         """
-        pol = normalize_polarization(illum_polarization)
         # calculate amn coefficients
         amn, lmax = self._scsmfo_setup(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index)
         cext = self._calc_cext(scatterer, medium_wavevec=medium_wavevec, medium_index=medium_index, illum_polarization=illum_polarization, amn=amn, lmax=lmax)

@@ -29,7 +29,7 @@ import numpy as np
 
 from holopy.scattering.scatterer.scatterer import CenteredScatterer, Indicators
 from holopy.scattering.errors import InvalidScatterer
-from holopy.core.utils import ensure_array, updated
+from holopy.core.utils import ensure_array
 
 
 class Sphere(CenteredScatterer):

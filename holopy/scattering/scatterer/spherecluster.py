@@ -28,13 +28,12 @@ Defines Spheres, a Scatterers scatterer consisting of Spheres
 import numpy as np
 import warnings
 from copy import copy
-from numbers import Number
 
 from holopy.scattering.scatterer.sphere import Sphere
 from holopy.scattering.scatterer.composite import Scatterers
 from holopy.scattering.errors import OverlapWarning, InvalidScatterer
-from holopy.core.math import cartesian_distance, rotate_points
-from holopy.core.utils import ensure_array, dict_without, ensure_listlike
+from holopy.core.math import cartesian_distance
+from holopy.core.utils import ensure_array, ensure_listlike
 
 # default to always warning the user about overlaps.  This can be overriden by
 # calling this function again with a different action.
@@ -79,7 +78,7 @@ class Spheres(Scatterers):
                 try:
                     if cartesian_distance(s1.center, s2.center) < (np.max(s1.r) + np.max(s2.r)):
                         overlaps.append((i, j))
-                except:
+                except Exception:
                     # if the coordinates are not something that we can do
                     # arithmatic on, just pass for now, hopefully the overlap
                     # will be caught later.

@@ -29,7 +29,7 @@ from holopy.core.metadata import data_grid, detector_grid
 from holopy.core.tests.common import get_example_data, assert_obj_close
 
 #Test centerfinder
-gold_location = np.array([ 48.5729142,  50.23217416])
+gold_location = np.array([48.02525655, 50.22414601])
 
 
 def check_copied_dataarrays(arr1, arr2):
@@ -63,7 +63,7 @@ class TestImageProcessing:
         assert s.shape == (1, 2, 2)
 
         i2 = data_grid(i, 1)
-        s2 = subimage(i2, (5, 5), 2)
+        _s2 = subimage(i2, (5, 5), 2)
 
     @pytest.mark.fast
     def test_subimage_floats(self):
@@ -134,6 +134,7 @@ class TestFourier(unittest.TestCase):
             -0.01661491+0.06769537j, -0.03353658+0.00998524j,
             -0.04443262+0.01863101j,  0.02483062-0.09611888j])
 
+        assert_allclose(ifft(a, shift=False), ift, rtol=1e-7, atol=1e-7)
         assert_allclose(ifft(a, shift=False), np.fft.ifft(a))
 
     @pytest.mark.fast

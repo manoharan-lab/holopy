@@ -13,6 +13,8 @@ python -m numpy.f2py uts_scsmfo.for ../../third_party/SBSEJY.F -m uts_scsmfo --l
 Note that f2py by default compiles with optimization
 flags.  Not sure about meson.
 
+Previous notes from Tom Dimiduk for the numpy.distutils version:
+
 Ignore compiler warnings of unused variables, unused dummy
 arguments, and variables being used uninitialized from compiling
 scsmfo_min. The former is relics of how scsmfo was written which I

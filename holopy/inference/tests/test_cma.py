@@ -19,16 +19,19 @@
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 import pytest
+import importlib.util
 
 from holopy.inference.cmaes import run_cma, CmaStrategy
 from holopy.inference import prior
 from holopy.inference.tests.common import SimpleModel
 
-try:
-    import schwimmbad
+spec = importlib.util.find_spec("schwimmbad")
+if spec is not None:
+    schwimmbad = importlib.util.module_from_spec(spec)
     SCHWIMMBAD_INSTALLED = True
-except ModuleNotFoundError:
+else:
     SCHWIMMBAD_INSTALLED = False
+
 
 def simplefunc(x):
     """Has a global minium at x = 0.5"""

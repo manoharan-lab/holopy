@@ -11,7 +11,6 @@ except ModuleNotFoundError:
     _LENS_WARNING = ("numexpr not found. Falling back to using numpy only." +
                      " Note that Lens class is faster with numexpr")
 
-from holopy.core import detector_points, update_metadata
 from holopy.scattering.theory.scatteringtheory import ScatteringTheory
 
 
@@ -131,7 +130,6 @@ class Lens(ScatteringTheory):
 
     def _calc_scattering_matrix(self, scatterer, medium_wavevec, medium_index):
         theta, phi = np.meshgrid(self._theta_pts, self._phi_pts)
-        illum_wavelen = 2 * np.pi * medium_index / medium_wavevec
         pos = np.array([0 * theta, theta, phi]).reshape(3, -1)
         S = self.theory.raw_scat_matrs(
             scatterer, pos, medium_wavevec, medium_index)

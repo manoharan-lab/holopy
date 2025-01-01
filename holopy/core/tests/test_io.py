@@ -31,7 +31,6 @@ import pytest
 from PIL import Image as pilimage
 from PIL.TiffImagePlugin import ImageFileDirectory_v2 as ifd2
 
-import holopy as hp
 from holopy.core import load, save, load_image, save_image, save_images
 from holopy.core.errors import NoMetadata
 from holopy.core.io import load_average, get_example_data_path
@@ -41,10 +40,12 @@ from holopy.core.metadata import get_spacing, copy_metadata
 from holopy.core.holopy_object import HoloPyObject
 from holopy.core.tests.common import (
     assert_obj_close, assert_read_matches_write, get_example_data)
-
+from holopy.core.io.io import default_extension
 
 IMAGE01_METADATA = {'spacing': 0.0851, 'medium_index': 1.33,
                     'illum_wavelen': 0.66, 'illum_polarization':  (1,0)}
+
+
 
 class TestLoadingAndSaving(unittest.TestCase):
     def setUp(self):
@@ -69,6 +70,14 @@ class TestLoadingAndSaving(unittest.TestCase):
         return loaded
 
     @pytest.mark.fast
+    def test_default_extension(self):
+        assert default_extension("image") == "image.h5"
+        assert default_extension("image.ext") == "image.ext"
+        imagefile = tempfile.TemporaryFile(dir=self.tempdir)
+        assert default_extension(imagefile) == imagefile
+        imagefile.close()
+
+    @pytest.mark.fast
     def test_hologram_io(self):
         assert_read_matches_write(normalize(self.holo))
 
@@ -76,8 +85,8 @@ class TestLoadingAndSaving(unittest.TestCase):
     def test_image_io(self):
         filename = os.path.join(self.tempdir, 'image0001.tif')
         save_image(filename, self.holo, scaling=None)
-        l = self.load_image_with_metadata(filename)
-        assert_obj_close(l, self.holo)
+        holo = self.load_image_with_metadata(filename)
+        assert_obj_close(holo, self.holo)
 
     @pytest.mark.fast
     def test_save_images_checks_names_and_holograms_are_same_length(self):
@@ -107,22 +116,22 @@ class TestLoadingAndSaving(unittest.TestCase):
     def test_default_save_is_tif(self):
         filename = os.path.join(self.tempdir, 'image0002')
         save_image(filename, self.holo, scaling=None)
-        l = self.load_image_with_metadata(filename + '.tif')
-        assert_obj_close(l, self.holo)
+        holo = self.load_image_with_metadata(filename + '.tif')
+        assert_obj_close(holo, self.holo)
 
     @pytest.mark.fast
     def test_non_tif_image(self):
         filename = os.path.join(self.tempdir, 'image0001.bmp')
         save_image(filename, self.holo, scaling=None)
-        l = self.load_image_with_metadata(filename)
-        assert_obj_close(l, self.holo)
+        holo = self.load_image_with_metadata(filename)
+        assert_obj_close(holo, self.holo)
 
     @pytest.mark.fast
     def test_specify_scaling(self):
         filename = os.path.join(self.tempdir, 'image0001.tif')
         save_image(filename, self.holo, scaling=(0, 255))
-        l = self.load_image_with_metadata(filename)
-        assert_obj_close(l, self.holo)
+        holo = self.load_image_with_metadata(filename)
+        assert_obj_close(holo, self.holo)
 
     @pytest.mark.fast
     def test_auto_scaling(self):
@@ -130,18 +139,20 @@ class TestLoadingAndSaving(unittest.TestCase):
         save_image(filename, self.holo, depth='float')
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            l = load_image(filename, name=self.holo.name, spacing=get_spacing(self.holo))
+            holo = load_image(filename, name=self.holo.name,
+                              spacing=get_spacing(self.holo))
         # skip checking full DataArray attrs because it is akward to keep
         # them through arithmetic. Ideally we would figure out a way to
         # preserve them and switch back to testing fully
-        assert_allclose(l, (self.holo-self.holo.min())/(self.holo.max()-self.holo.min()))
+        assert_allclose(holo, ((self.holo-self.holo.min()) /
+                               (self.holo.max()-self.holo.min())))
 
     @pytest.mark.fast
     def test_saving_16_bit(self):
         filename = os.path.join(self.tempdir, 'image0003')
         save_image(filename, self.holo, scaling=None, depth=16)
-        l = self.load_image_with_metadata(filename + '.tif')
-        assert_obj_close(l, self.holo)
+        holo = self.load_image_with_metadata(filename + '.tif')
+        assert_obj_close(holo, self.holo)
 
     @pytest.mark.fast
     def test_save_load_h5(self):
@@ -182,8 +193,8 @@ class TestLoadingAndSaving(unittest.TestCase):
         # load doesn't work
         self.assertRaises(NoMetadata, load, filename)
         # load_image does
-        l = load_image(filename, spacing=get_spacing(self.holo))
-        assert_obj_close(l, copy_metadata(l, self.holo))
+        holo = load_image(filename, spacing=get_spacing(self.holo))
+        assert_obj_close(holo, copy_metadata(holo, self.holo))
 
 
 class test_custom_yaml_output(unittest.TestCase):
@@ -258,28 +269,32 @@ class TestAccumulator(unittest.TestCase):
     def test_push(self):
         accumulator = Accumulator()
         data  = np.arange(10)
-        for point in data: accumulator.push(point)
+        for point in data:
+            accumulator.push(point)
         self.assertTrue(accumulator._n == 10)
 
     @pytest.mark.fast
     def test_push_hologram(self):
         accumulator = Accumulator()
         data = _load_example_data_backgrounds()
-        for holo in data: accumulator.push(holo)
+        for holo in data:
+            accumulator.push(holo)
         self.assertTrue(accumulator._n == 3)
 
     @pytest.mark.fast
     def test_mean(self):
         accumulator = Accumulator()
         data = np.arange(10)
-        for point in data: accumulator.push(point)
+        for point in data:
+            accumulator.push(point)
         self.assertTrue(accumulator.mean() == np.mean(data))
 
     @pytest.mark.fast
     def test_mean_hologram_value(self):
         accumulator = Accumulator()
         data = _load_example_data_backgrounds()
-        for holo in data: accumulator.push(holo)
+        for holo in data:
+            accumulator.push(holo)
         numpy_mean = np.mean([holo.values for holo in data], axis=0)
         self.assertTrue(np.allclose(numpy_mean, accumulator.mean().values))
 
@@ -289,14 +304,16 @@ class TestAccumulator(unittest.TestCase):
         expected_type = xarray.core.dataarray.DataArray
         accumulator = Accumulator()
         data = _load_example_data_backgrounds()
-        for holo in data: accumulator.push(holo)
+        for holo in data:
+            accumulator.push(holo)
         self.assertTrue(isinstance(accumulator.mean(), expected_type))
 
     @pytest.mark.fast
     def test_std(self):
         accumulator = Accumulator()
         data = np.arange(10)
-        for point in data: accumulator.push(point)
+        for point in data:
+            accumulator.push(point)
         self.assertTrue(accumulator.std() == np.std(data))
 
     @pytest.mark.fast

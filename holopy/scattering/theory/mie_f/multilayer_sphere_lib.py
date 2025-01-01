@@ -29,7 +29,6 @@ sphere," Applied Optics 42, 1710-1720, (1993).
 '''
 
 import numpy as np
-from numpy import exp, sin, cos, real, imag
 
 from ...errors import InvalidScatterer
 

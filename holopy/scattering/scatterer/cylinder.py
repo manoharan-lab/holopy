@@ -25,7 +25,7 @@ Defines cylinder scatterers.
 
 import numpy as np
 
-from .scatterer import CenteredScatterer, Indicators
+from .scatterer import CenteredScatterer
 from ..errors import InvalidScatterer
 
 class Cylinder(CenteredScatterer):

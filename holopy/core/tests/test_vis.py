@@ -140,7 +140,7 @@ class TestDisplayImage(unittest.TestCase):
 
     @pytest.mark.fast
     def test_custom_extra_dimension_name(self):
-        xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
+        _xarray_real = convert_ndarray_to_xarray(ARRAY_3D)
         extra_dims = dict([["t", [0, 1, 2]], [ILLUM, [0, 1, 2]]])
         xarray_5d = convert_ndarray_to_xarray(
             ARRAY_5D.transpose([4, 1, 2, 0, 3]),
@@ -180,7 +180,7 @@ class TestDisplayImage(unittest.TestCase):
     @pytest.mark.fast
     def test_specify_axes_for_numpy_arrays(self):
         transposed = np.transpose(ARRAY_3D, [1, 0, 2])
-        displayed_transposed = display_image(transposed, scaling=None)
+        _displayed_transposed = display_image(transposed, scaling=None)
         xr_transposed = convert_ndarray_to_xarray(transposed)
         assert_obj_close(
             display_image(ARRAY_3D, depth_axis=1, scaling=None), xr_transposed)

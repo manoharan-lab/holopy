@@ -6,7 +6,7 @@ import pytest
 
 from holopy.core.metadata import (
     detector_grid, detector_points, clean_concat, update_metadata,
-    get_spacing, get_extents, copy_metadata, make_subset_data, data_grid)
+    get_spacing, get_extents, copy_metadata, make_subset_data)
 from holopy.core.errors import CoordSysError
 
 

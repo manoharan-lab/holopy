@@ -45,8 +45,6 @@ from holopy.core.math import (
     transform_cylindrical_to_cartesian, transform_cylindrical_to_spherical,
     transform_spherical_to_cylindrical, find_transformation_function,
     keep_in_same_coordinates)
-from holopy.core.tests.common import assert_obj_close, get_example_data
-
 
 TOLS = {'atol': 1e-14, 'rtol': 1e-14}
 
@@ -234,8 +232,9 @@ class TestCoordinateTransformations(unittest.TestCase):
         for *version_to_check, coords in versions_to_check:
             method = find_transformation_function(*version_to_check)
             try:
-                result = method(coords)
-            except:
+                _result = method(coords)
+            # the below just outputs some useful info if the test fails.
+            except Exception:
                 msg = '_to_'.join(version_to_check) + ' failed'
                 self.assertTrue(False, msg=msg)
         pass
@@ -381,7 +380,6 @@ class TestChoosePool(unittest.TestCase):
     @pytest.mark.fast
     def test_custom_pool(self):
         custom_pool = DummyPool(17)
-        chosen_pool = choose_pool(custom_pool)
         self.assertTrue(choose_pool(custom_pool) is custom_pool)
 
     @pytest.mark.fast

@@ -210,13 +210,13 @@ class TestInterpretTheory(unittest.TestCase):
     @pytest.mark.fast
     def test_interpret_auto_theory(self):
         theory = interpret_theory(SCATTERER, theory='auto')
-        theory_ok = type(theory) == Mie
+        theory_ok = type(theory) == Mie # noqa: E721
         self.assertTrue(theory_ok)
 
     @pytest.mark.fast
     def test_interpret_specified_theory(self):
         theory = interpret_theory(SCATTERER, theory=Mie)
-        theory_ok = type(theory) == Mie
+        theory_ok = type(theory) == Mie # noqa: E721
         self.assertTrue(theory_ok)
 
 

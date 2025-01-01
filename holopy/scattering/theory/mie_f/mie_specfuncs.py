@@ -41,13 +41,15 @@ sphere," Applied Optics 42, 1710-1720, (1993).
 
 
 import numpy as np
-from numpy import array, sin, cos, zeros, arange, real, imag, exp
+from numpy import array, sin, zeros, arange, real, imag, exp
 
-import scipy
 from scipy.special import riccati_jn, riccati_yn
 
+# From commit 0666fe4. The construction below apparently was necessary to get
+# docstrings to compile on systems without fortran compilers. Added noqa line
+# so that this is no longer flagged by linters
 try:
-    from . import mieangfuncs
+    from . import mieangfuncs   # noqa: F401
     from .mieangfuncs import dn_1_down, lentz_dn1
 except ImportError:
     pass
@@ -158,7 +160,7 @@ def Qratio(z1, z2, nstop, dns1 = None, dns2 = None, eps1 = 1e-3, eps2 = 1e-16):
     z1 = np.complex128(z1)
     z2 = np.complex128(z2)
 
-    if dns1 == None:
+    if dns1 is None:
         logdersz1 = log_der_13(z1, nstop, eps1, eps2)
         logdersz2 = log_der_13(z2, nstop, eps1, eps2)
         d1z1 = logdersz1[0]

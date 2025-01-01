@@ -185,7 +185,7 @@ class Scatterers(Scatterer):
             alpha, beta, gamma = ang1
         elif ang2 is not None and ang3 is not None:
             #entered 3 angles
-            alpha=ang1; beta=ang2; gamma=ang3
+            alpha, beta, gamma = (ang1, ang2, ang3)
         else:
             raise InvalidScatterer(self, "Cannot interpret rotation coordinates")
 
