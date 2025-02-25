@@ -184,19 +184,20 @@ class TestLens(unittest.TestCase):
 
         prefactor_numexpr = LENSMIE._integrand_prefactor(krho, phi, kz)
         prefactor_numpy = LENSMIE_NO_NE._integrand_prefactor(krho, phi, kz)
-        if ne.get_vml_version() is None:
-            assert_equal(prefactor_numexpr, prefactor_numpy)
-        else:
+        if ne.get_vml_version() is not None:
             ne.set_vml_accuracy_mode('high')
-            # arrays should agree to within a few ULPs. According to Intel, in
-            # high accuracy mode the max error for an elementary function is 1
-            # ULP (4 ULP for low accuracy). But this error is propagated in the
-            # calculation of the prefactor, which involves multiple elementary
-            # function calculations, so we have to set a higher value for nulp.
-            # Minimum value of nulp required for test to pass is 4, based on
-            # experiments on Windows/MKL 20230613)
-            assert_array_almost_equal_nulp(prefactor_numpy, prefactor_numexpr,
-                                           nulp=5)
+
+        # arrays should agree to within a few ULPs. According to
+        # Intel, in high accuracy mode the max error for an elementary
+        # function is 1 ULP (4 ULP for low accuracy). But this error
+        # is propagated in the calculation of the prefactor, which
+        # involves multiple elementary function calculations, so we
+        # have to set a higher value for nulp.  Minimum value of nulp
+        # required for test to pass is 4, based on experiments on
+        # Windows/MKL 20230613). Apple Accelerate BLAS/LAPACK may have
+        # similar accuracy, so we'll set nulp=5 for all platforms
+        assert_array_almost_equal_nulp(prefactor_numpy, prefactor_numexpr,
+                                       nulp=5)
 
     # for the following two tests, numexpr should agree exactly with numpy even
     # if MKL is used; this is because the numexpr expressions involve only
