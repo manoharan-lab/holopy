@@ -9,7 +9,7 @@ Holopy 3.5
 
 Announcements
 -------------
-If you encounter errors loading prevoiusly saved HoloPy objects, try loading
+If you encounter errors loading previously saved HoloPy objects, try loading
 them with HoloPy 3.4 and saving a new version. See deprecation notes below.
 
 New Features

@@ -1,7 +1,7 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = ['meson-python', 'cython', 'numpy<1.20', 'scipy', 'pyYaml', 'pillow',
-            'h5py', 'matplotlib', 'xarray', 'h5netcdf', 'nose']
+            'h5py', 'matplotlib', 'xarray', 'h5netcdf']
 
 [project]
 name = 'HoloPy'
@@ -12,7 +12,6 @@ readme = 'README.rst'
 license = {file = 'LICENSE'}
 authors = [{name = 'Manoharan Lab, Harvard University', email='vnm@seas.harvard.edu'},]
 homepage = 'https://manoharan.seas.harvard.edu/holopy'
-test_suite = 'nose.collector'
 package = ['HoloPy']
 
 
