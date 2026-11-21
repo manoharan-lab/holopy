@@ -166,14 +166,22 @@ class TestLens:
         assert_allclose(fields_1[1], -fields_0[0], **tols)
 
     def test_calc_holo_theta_npts_not_equal_phi_npts(self):
+        """Tests that calc_holo() works when the number of theta points is not
+        equal to the number of phi points
+        """
         scatterer = test_common.sphere
         pts = detector_grid(shape=4, spacing=test_common.pixel_scale)
         pts = update_metadata(pts, illum_wavelen=test_common.wavelen,
                               medium_index=test_common.index,
                               illum_polarization=test_common.xpolarization)
         theory = Lens(LENS_ANGLE, Mie(), quad_npts_theta=8, quad_npts_phi=10)
-        # for now, just check that calc_holo runs
+        # check that calc_holo runs
         calc_holo(pts, scatterer, theory=theory)
+        # regression test: phi should be the second axis (axis=1).  Test by
+        # making sure S1 for a sphere has a constant value across phi
+        S1, _, _, _ = theory._calc_scattering_matrix(
+            scatterer, 2 * np.pi / test_common.wavelen, test_common.index)
+        assert_allclose(np.diff(S1, axis=1), 0, atol=1e-12 * np.abs(S1).max())
 
     @pytest.mark.skipif(not lens.NUMEXPR_INSTALLED,
                         reason = "numexpr package required")

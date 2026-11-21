@@ -129,12 +129,11 @@ class Lens(ScatteringTheory):
         return prefactor
 
     def _calc_scattering_matrix(self, scatterer, medium_wavevec, medium_index):
-        theta, phi = np.meshgrid(self._theta_pts, self._phi_pts)
+        theta, phi = np.meshgrid(self._theta_pts, self._phi_pts, indexing="ij")
         pos = np.array([0 * theta, theta, phi]).reshape(3, -1)
         S = self.theory.raw_scat_matrs(
             scatterer, pos, medium_wavevec, medium_index)
         S = np.conj(S).reshape(self.quad_npts_theta, self.quad_npts_phi, 2, 2)
-        S = np.swapaxes(S, 0, 1)
         S1 = S[:, :, 1, 1].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
         S2 = S[:, :, 0, 0].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
         S3 = S[:, :, 0, 1].reshape(self.quad_npts_theta, self.quad_npts_phi, 1)
