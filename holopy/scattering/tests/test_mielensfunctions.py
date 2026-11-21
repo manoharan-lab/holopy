@@ -503,6 +503,31 @@ class TestMieScatteringMatrix:
         assert np.isfinite(out).all()
 
 
+class TestCrossSections:
+    """Tests to make sure that the absorption cross-section is physically
+    reasonable. B&H and van de Hulst sign conventions differ for the imaginary
+    part of the index. Our convention, which matches B&H, is that Im(n) > 0
+    corresponds to absorption. If competing sign conventions are used, these
+    tests can help identify the problem (note that calc_qext_qsca() uses the
+    Mie coefficients from MieLens)
+
+    """
+    @pytest.mark.fast
+    @pytest.mark.parametrize("x", [0.5, 5.0, 15.0])
+    @pytest.mark.parametrize("n_im", [1e-4, 1e-2, 1e-1])
+    def test_absorption_is_positive_for_absorbing_sphere(self, x, n_im):
+        m = (1.59 + n_im * 1j) / 1.33
+        qext, qsca = calc_qext_qsca(m, x)
+        assert qext - qsca > 0
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("x", [0.5, 5.0, 15.0])
+    def test_absorption_is_zero_for_nonabsorbing_sphere(self, x):
+        m = 1.59 / 1.33
+        qext, qsca = calc_qext_qsca(m, x)
+        assert_allclose(qext - qsca, 0, atol=1e-12 * qext)
+
+
 class TestGaussQuad:
     @pytest.mark.fast
     def test_constant_integrand(self):
@@ -749,6 +774,20 @@ def evaluate_intensity_at_rho_zero(kz, index_ratio=1.05):
 def integrate_like_mielens(function, bounds):
     pts, wts = mielensfunctions.gauss_legendre_pts_wts(bounds[0], bounds[1])
     return (function(pts) * wts).sum()
+
+
+def calc_qext_qsca(m, x):
+    """Uses Bohren and Huffman eqs 4.61 and 4.62 to calculate the scattering
+    and extinction efficiencies from the MieLens model
+    """
+    # BHMIE truncation criterion
+    nmax = int(np.round(x + 4 * x**(1 / 3) + 2))
+    n = np.arange(1, nmax + 1)
+    an, bn = mielensfunctions.calculate_al_bl(m, x, n)
+    qsca = 2 / x**2 * np.sum((2 * n + 1) * (np.abs(an)**2 + np.abs(bn)**2))
+    qext = 2 / x**2 * np.sum((2 * n + 1) * np.real(an + bn))
+
+    return qext, qsca
 
 
 class CheckEnergyIsConserved(object):
