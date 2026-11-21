@@ -1,5 +1,3 @@
-import unittest
-
 import numpy as np
 import xarray as xr
 from numpy.testing import (assert_allclose, assert_equal,
@@ -33,6 +31,7 @@ SMALL_DETECTOR = update_metadata(
 if lens.NUMEXPR_INSTALLED:
     import numexpr as ne
 
+
 # test that numexpr reproduces numpy exactly without Intel MKL/VML and
 # approximately with Intel MKL/VML.
 @pytest.mark.skipif(not lens.NUMEXPR_INSTALLED,
@@ -51,10 +50,11 @@ def test_vml():
         assert_array_almost_equal_nulp(numexpr_cos, numpy_cos,
                                        nulp=1)
 
-class TestLens(unittest.TestCase):
+
+class TestLens:
     def test_can_handle(self):
         theory = LENSMIE
-        self.assertTrue(theory.can_handle(test_common.sphere))
+        assert theory.can_handle(test_common.sphere)
 
     def test_theta_quad_pts_min(self):
         assert_allclose(np.min(LENSMIE._theta_pts), 0., **QLIM_TOL)
@@ -126,8 +126,8 @@ class TestLens(unittest.TestCase):
         expected_size = 4 * theory.quad_npts_theta * theory.quad_npts_phi
         expected_shape = (4, theory.quad_npts_theta, theory.quad_npts_phi, 1)
 
-        self.assertTrue(actual_size == expected_size)
-        self.assertTrue(actual_shape == expected_shape)
+        assert actual_size == expected_size
+        assert actual_shape == expected_shape
 
     def test_transforms_correctly_with_polarization_rotation(self):
         # We test that rotating the lab frame correctly rotates
@@ -165,7 +165,6 @@ class TestLens(unittest.TestCase):
         assert_allclose(fields_1[0],  fields_0[1], **tols)
         assert_allclose(fields_1[1], -fields_0[0], **tols)
 
-
     def test_calc_holo_theta_npts_not_equal_phi_npts(self):
         scatterer = test_common.sphere
         pts = detector_grid(shape=4, spacing=test_common.pixel_scale)
@@ -173,8 +172,8 @@ class TestLens(unittest.TestCase):
                               medium_index=test_common.index,
                               illum_polarization=test_common.xpolarization)
         theory = Lens(LENS_ANGLE, Mie(), quad_npts_theta=8, quad_npts_phi=10)
-        _holo = calc_holo(pts, scatterer, theory=theory)
-        self.assertTrue(True)
+        # for now, just check that calc_holo runs
+        calc_holo(pts, scatterer, theory=theory)
 
     @pytest.mark.skipif(not lens.NUMEXPR_INSTALLED,
                         reason = "numexpr package required")
@@ -283,19 +282,19 @@ class TestLens(unittest.TestCase):
         pars = {'lens_angle': lens_angle_1}
         theory_out = theory_in.from_parameters(pars)
 
-        self.assertEqual(theory_out.lens_angle, lens_angle_1)
-        self.assertEqual(theory_out.theory, theory_in.theory)
+        assert theory_out.lens_angle == lens_angle_1
+        assert theory_out.theory == theory_in.theory
         for k, v in kwargs.items():
-            self.assertEqual(getattr(theory_out, k), v)
+            assert getattr(theory_out, k) == v
 
     @pytest.mark.fast
     def test_parameters_has_correct_keys(self):
         np.random.seed(1323)
         theory = Lens(np.random.rand(), Mie(False, True))
-        self.assertEqual(set(theory.parameters.keys()), {'lens_angle'})
+        assert set(theory.parameters.keys()) == {'lens_angle'}
 
 
-class TestLensVsMielens(unittest.TestCase):
+class TestLensVsMielens:
     def test_quadrature_scattering_matrix_same_as_mielens(self):
         scatterer = test_common.sphere
         medium_wavevec = 2 * np.pi / test_common.wavelen
@@ -461,7 +460,3 @@ def _get_smatrix_theta_near_phi_is_pi_over_2(smatrix, sinphi, phi, theta):
     s = smatrix[sinphi == max(abs(sinphi))]
     t = theta[sinphi == max(abs(sinphi))]
     return s / sp, t
-
-
-if __name__ == '__main__':
-    unittest.main()
