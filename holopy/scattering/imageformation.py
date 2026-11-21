@@ -198,7 +198,7 @@ class ImageFormation(HoloPyObject):
             raise ValueError(msg)
         return point_or_flat
 
-    def _transform_to_desired_coordinates(self, detector, origin, wavevec=1):
+    def _transform_to_desired_coordinates(self, detector, origin, wavevec=1.0):
         if hasattr(detector, 'theta') and hasattr(detector, 'phi'):
             original_coordinate_system = 'spherical'
             original_coordinate_values = [
