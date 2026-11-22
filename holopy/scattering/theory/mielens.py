@@ -80,17 +80,21 @@ class MieLens(ScatteringTheory):
         scatterer : ``scatterer.Sphere`` object
         medium_wavevec : float
         medium_index : float
-        illum_polarization : 2-element tuple
-            The (x, y) field polarizations.
+        illum_polarization : `xr.DataArray`
+            The polarization vector of the incident field (z component, if any,
+            is ignored).
         """
         index_ratio = scatterer.n / medium_index
         size_parameter = medium_wavevec * scatterer.r
 
-        rho, phi, z = positions
+        # phi_lab is the azimuthal coordinate in the lab frame
+        rho, phi_lab, z = positions
         pol_angle = np.arctan2(
             illum_polarization.values[1], illum_polarization.values[0])
-        phi += pol_angle
-        phi %= (2 * np.pi)
+        # Because MieLensCalculator assumes the incident polarization is along
+        # x, we compute each azimuthal angle relative to the polarization
+        # (phi_pol) before doing the calculation
+        phi_pol = (phi_lab - pol_angle) % (2 * np.pi)
 
         # FIXME mielens assumes that the detector points are at a fixed z!
         # right now I'm picking one z:
@@ -107,9 +111,10 @@ class MieLens(ScatteringTheory):
             )
 
         fields_pll, fields_prp = field_calculator.calculate_scattered_field(
-            rho, phi)  # parallel and perp to the polarization
+            rho, phi_pol)  # parallel and perp to the polarization
 
-        # Transfer from (parallel to, perpendicular to) polarziation
+        # Now convert back to lab frame
+        # Transfer from (parallel to, perpendicular to) polarization
         # to (x, y)
         parallel = np.array([np.cos(pol_angle), np.sin(pol_angle)])
         perpendicular = np.array([-np.sin(pol_angle), np.cos(pol_angle)])

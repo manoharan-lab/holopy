@@ -339,21 +339,22 @@ class TestLensVsMielens:
         assert_allclose(s_perp_new, s_perp, rtol=5e-3)
         assert_allclose(s_prll_new, s_prll, rtol=5e-3)
 
-    def test_raw_fields_exact_mielens(self):
+    @pytest.mark.parametrize("pol_angle_deg", [0, 30, 45, 90])
+    def test_raw_fields_exact_mielens(self, pol_angle_deg):
+        """Tests that fields from MieLens match those of Lens(Mie) at various
+        polarization angles
+
+        """
         detector = SMALL_DETECTOR
         scatterer = test_common.sphere
         medium_wavevec = 2 * np.pi / test_common.wavelen
         medium_index = test_common.index
-        illum_polarization = detector.illum_polarization
+        pol_angle = np.deg2rad(pol_angle_deg)
+        illum_polarization = xr.DataArray([np.cos(pol_angle),
+                                           np.sin(pol_angle), 0])
 
-        theory_mielens = MieLens(
-            lens_angle=LENS_ANGLE,
-            calculator_accuracy_kwargs={'quad_npts': 400})
-        theory_lensmie = Lens(
-            lens_angle=LENS_ANGLE,
-            theory=Mie(False, False),
-            quad_npts_theta=400,
-            quad_npts_phi=400)
+        theory_mielens = MieLens(lens_angle=LENS_ANGLE)
+        theory_lensmie = LENSMIE
 
         pos_mielens = (ImageFormation(theory_mielens)
                        ._transform_to_desired_coordinates(
@@ -368,51 +369,9 @@ class TestLensVsMielens:
         for fa, fb in zip(fields_mielens, fields_lensmie):
             assert_allclose(fa, fb, atol=1e-8, rtol=1e-8)
 
-    def test_raw_fields_similar_mielens_xpolarization(self):
-        detector = SMALL_DETECTOR
-        scatterer = test_common.sphere
-        medium_wavevec = 2 * np.pi / test_common.wavelen
-        medium_index = test_common.index
-        illum_polarization = xr.DataArray([1.0, 0, 0])
-
-        theory_old = MieLens(lens_angle=LENS_ANGLE)
-        pos_old = ImageFormation(theory_old)._transform_to_desired_coordinates(
-            detector, scatterer.center, wavevec=medium_wavevec)
-
-        theory_new = LENSMIE
-        pos_new = ImageFormation(theory_new)._transform_to_desired_coordinates(
-            detector, scatterer.center, wavevec=medium_wavevec)
-
-        args = (scatterer, medium_wavevec, medium_index, illum_polarization)
-        f0x, f0y, f0z = theory_old.raw_fields(pos_old, *args)
-        f1x, f1y, f1z = theory_new.raw_fields(pos_new, *args)
-        assert_allclose(f0x, f1x, atol=2e-3)
-        assert_allclose(f0y, f1y, atol=2e-3)
-        assert_allclose(f0z, f1z, atol=2e-3)
-
-    def test_raw_fields_similar_mielens_ypolarization(self):
-        detector = SMALL_DETECTOR
-        scatterer = test_common.sphere
-        medium_wavevec = 2 * np.pi / test_common.wavelen
-        medium_index = test_common.index
-        illum_polarization = xr.DataArray([0, 1.0, 0])
-
-        theory_old = MieLens(lens_angle=LENS_ANGLE)
-        pos_old = ImageFormation(theory_old)._transform_to_desired_coordinates(
-            detector, scatterer.center, wavevec=medium_wavevec)
-
-        theory_new = LENSMIE
-        pos_new = ImageFormation(theory_new)._transform_to_desired_coordinates(
-            detector, scatterer.center, wavevec=medium_wavevec)
-
-        args = (scatterer, medium_wavevec, medium_index, illum_polarization)
-        f0x, f0y, f0z = theory_old.raw_fields(pos_old, *args)
-        fx, fy, fz = theory_new.raw_fields(pos_new, *args)
-        assert_allclose(f0x, fx, atol=2e-3)
-        assert_allclose(f0y, fy, atol=2e-3)
-        assert_allclose(f0z, fz, atol=2e-3)
-
     def test_calculate_scattered_field_lensmie_same_as_mielens(self):
+        # this test works on a larger detector, but can probably be removed or
+        # integrated into the previous test at some point
         detector = test_common.xschema_lens
         scatterer = test_common.sphere
 
