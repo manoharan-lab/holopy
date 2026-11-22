@@ -58,8 +58,9 @@ class MieLens(ScatteringTheory):
             `calculator_accuracy_kwargs.` Valid keys are {`quad_npts`,
             `interpolate_integrals`, `interpolator_window_size`,
             `interpolator_degree`}, as explained in
-            mielensfunctions.MieLensCalculator.  The default calculation
-            accuracy is roughly 1e-12 relative accuracy.
+            mielensfunctions.MieLensCalculator. The default number of
+            quadrature points is chosen from the defocus and detector size;
+            specify quad_npts to override the default.
         """
         super(MieLens, self).__init__()
         self.lens_angle = lens_angle
@@ -104,10 +105,19 @@ class MieLens(ScatteringTheory):
                    "z from the particle")
             raise ValueError(msg)
 
+        # Scale the number of quadrature points with the defocus and detector
+        # size, since the integrand over the pupil oscillates with phase
+        # kz (1 - cos theta) + krho sin theta. Expected relative error is
+        # 1e-10 at one point per 3 radians.
+        max_phase = (np.abs(particle_kz) * (1 - np.cos(self.lens_angle)) +
+                     np.max(rho))
+        quad_npts = max(100, int(np.ceil(max_phase / 3)))
+
         field_calculator = self._create_calculator(
             particle_kz=particle_kz,
             index_ratio=index_ratio,
             size_parameter=size_parameter,
+            quad_npts=quad_npts,
             )
 
         fields_pll, fields_prp = field_calculator.calculate_scattered_field(
@@ -138,13 +148,15 @@ class MieLens(ScatteringTheory):
         return field_xyz
 
     def _create_calculator(
-            self, particle_kz=None, index_ratio=None, size_parameter=None):
+            self, particle_kz=None, index_ratio=None, size_parameter=None,
+            quad_npts=100):
         field_calculator = MieLensCalculator(
             particle_kz=particle_kz,
             index_ratio=index_ratio,
             size_parameter=size_parameter,
             lens_angle=self.lens_angle,
-            **self.calculator_accuracy_kwargs)
+            # user-specified quad_npts will override auto-calculated one
+            **{'quad_npts': quad_npts, **self.calculator_accuracy_kwargs})
         return field_calculator
 
 
@@ -173,8 +185,9 @@ class AberratedMieLens(MieLens):
             `calculator_accuracy_kwargs.` Valid keys are {`quad_npts`,
             `interpolate_integrals`, `interpolator_window_size`,
             `interpolator_degree`}, as explained in
-            mielensfunctions.MieLensCalculator.  The default calculation
-            accuracy is roughly 1e-12 relative accuracy.
+            mielensfunctions.MieLensCalculator. The default number of
+            quadrature points is chosen from the defocus and detector size;
+            specify quad_npts to override the default.
         """
         super(AberratedMieLens, self).__init__(
             lens_angle=lens_angle,
@@ -182,12 +195,14 @@ class AberratedMieLens(MieLens):
         self.spherical_aberration = spherical_aberration
 
     def _create_calculator(
-            self, particle_kz=None, index_ratio=None, size_parameter=None):
+            self, particle_kz=None, index_ratio=None, size_parameter=None,
+            quad_npts=100):
         field_calculator = AberratedMieLensCalculator(
             particle_kz=particle_kz,
             index_ratio=index_ratio,
             size_parameter=size_parameter,
             lens_angle=self.lens_angle,
             spherical_aberration=self.spherical_aberration,
-            **self.calculator_accuracy_kwargs)
+            # user-specified quad_npts will override auto-calculated one
+            **{'quad_npts': quad_npts, **self.calculator_accuracy_kwargs})
         return field_calculator

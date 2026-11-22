@@ -157,8 +157,6 @@ class TestMieLens:
         assert_allclose(np.median(holo_mielens),
                         np.median(holo_mieonly), atol=0.1)
 
-    @pytest.mark.xfail(strict=True, raises=AssertionError,
-                       reason="problem in quadrature at large heights")
     @pytest.mark.medium
     def test_mielens_matches_mieonly_far_from_focus(self):
         """Tests that MieLens and Mie produce nearly the same hologram when the
