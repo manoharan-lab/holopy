@@ -157,6 +157,28 @@ class TestMieLens:
         assert_allclose(np.median(holo_mielens),
                         np.median(holo_mieonly), atol=0.1)
 
+    @pytest.mark.xfail(strict=True, raises=AssertionError,
+                       reason="problem in quadrature at large heights")
+    @pytest.mark.medium
+    def test_mielens_matches_mieonly_far_from_focus(self):
+        """Tests that MieLens and Mie produce nearly the same hologram when the
+        particle is far from the focal plane.
+
+        """
+        # use detector with fine spacing but large area to subtend an angle
+        # smaller than the lens angle but still large enough to test for errors
+        # in the MieLens calculations
+        pixels = 128
+        spacing = 0.3
+        detector = detector_grid(pixels, spacing)
+        # 1 micrometer PS sphere 40 micrometers above the detector center
+        sphere_center = (pixels*spacing/2, pixels*spacing/2, 40)
+        test_sphere = Sphere(n=1.59, r=0.5, center=sphere_center)
+        holo_mielens = calc_holo(detector, test_sphere, 1.33, 0.66, (1, 0),
+                                 theory=MieLens(lens_angle=1.0))
+        holo_mieonly = calc_holo(detector, test_sphere, 1.33, 0.66, (1, 0),
+                                 theory=Mie(), scaling=1.0)
+        assert_allclose(holo_mielens, holo_mieonly, atol=1e-2)
 
     @pytest.mark.medium
     def test_mielens_x_polarization_differs_from_y(self):
