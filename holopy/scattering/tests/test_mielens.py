@@ -21,9 +21,8 @@ Test the ability of the mielens calculations to interface with holopy.
 .. moduleauthor:: Brian D. Leahy <bleahy@seas.harvard.edu>
 """
 
-import unittest
-
 import numpy as np
+from numpy.testing import assert_allclose, assert_array_less, assert_equal
 import xarray as xr
 
 import pytest
@@ -43,22 +42,21 @@ from holopy.scattering.tests.common import (
 
 TOLS = {'atol': 1e-13, 'rtol': 1e-13}
 MEDTOLS = {"atol": 1e-6, "rtol": 1e-6}
-SOFTTOLS = {"atol": 1e-3, "rtol": 1e-3}
 
 
-class TestMieLens(unittest.TestCase):
+class TestMieLens:
     @pytest.mark.fast
     def test_raises_error_if_multiple_z_values(self):
         theory = MieLens()
         np.random.seed(10)
         positions = np.random.randn(3, 10)  # the zs will differ by chance
-        self.assertRaises(
-            ValueError, theory.raw_fields, positions, sphere, 1.0, 1.33,
-            xschema.illum_polarization)
+        with pytest.raises(ValueError):
+            theory.raw_fields(positions, sphere, 1.0, 1.33,
+                              xschema.illum_polarization)
 
     @pytest.mark.fast
     def test_desired_coordinate_system_is_cylindrical(self):
-        self.assertTrue(MieLens.desired_coordinate_system == 'cylindrical')
+        assert MieLens.desired_coordinate_system == 'cylindrical'
 
     @pytest.mark.fast
     def test_create_calculator(self):
@@ -73,24 +71,21 @@ class TestMieLens(unittest.TestCase):
         calculator = theory._create_calculator(**kwargs)
         kwargs.update({"lens_angle": lens_angle})
 
-        self.assertIsInstance(calculator, mielensfunctions.MieLensCalculator)
+        assert isinstance(calculator, mielensfunctions.MieLensCalculator)
         for key, value in kwargs.items():
-            self.assertEqual(getattr(calculator, key), value)
+            assert getattr(calculator, key) == value
 
     @pytest.mark.medium
-    def test_can_calculate_for_positive_and_negative_z(self):
+    @pytest.mark.parametrize("kz", [-50., 0., 50.])
+    def test_can_calculate_for_positive_and_negative_z(self, kz):
         theory = MieLens()
         ka = 5.0
         radius = ka * wavelen * 0.5 / np.pi
-        sphere_index = 1.59
-        is_ok = []
-        for kz in [-50., 0., 50.]:
-            center = (0, 0, kz * wavelen * 0.5 / np.pi)
-            this_sphere = Sphere(n=sphere_index, r=radius, center=center)
-            holo = calc_holo(xschema, this_sphere, index, wavelen,
-                             xpolarization, theory=theory)
-            is_ok.append(np.ptp(holo.data) > 0)
-        self.assertTrue(all(is_ok))
+        center = (0, 0, kz * wavelen * 0.5 / np.pi)
+        test_sphere = Sphere(n=1.59, r=radius, center=center)
+        holo = calc_holo(xschema, test_sphere, index, wavelen, xpolarization,
+                         theory=theory)
+        assert np.ptp(holo.data) > 0
 
     @pytest.mark.fast
     def test_holopy_hologram_equal_to_exact_calculation(self):
@@ -121,9 +116,7 @@ class TestMieLens(unittest.TestCase):
             detector, scatterer, illum_wavelen=illum_wavelength,
             medium_index=1., illum_polarization=(1, 0), theory=theory_mielens)
 
-        is_ok = np.allclose(holo_calculate, holo_holopy.values.squeeze(),
-                            **TOLS)
-        self.assertTrue(is_ok)
+        assert_allclose(holo_calculate, holo_holopy.values.squeeze(), **TOLS)
 
     @pytest.mark.medium
     def test_central_lobe_is_bright_when_particle_is_above_focus(self):
@@ -131,7 +124,7 @@ class TestMieLens(unittest.TestCase):
         # beam is everywhere weaker than the unscattered:
         zs = np.linspace(2, 10, 11)
         central_lobes = calculate_central_lobe_at(zs)
-        self.assertTrue(np.all(central_lobes > 1))
+        assert_array_less(1.0, central_lobes)
 
     @pytest.mark.medium
     def test_central_lobe_is_dark_when_particle_is_below_focus(self):
@@ -139,7 +132,7 @@ class TestMieLens(unittest.TestCase):
         # beam is everywhere weaker than the unscattered:
         zs = np.linspace(-2, -10, 11)
         central_lobes = calculate_central_lobe_at(zs)
-        self.assertTrue(np.all(central_lobes < 1))
+        assert_array_less(central_lobes, 1.0)
 
     @pytest.mark.medium
     def test_mielens_is_close_to_mieonly(self):
@@ -155,17 +148,15 @@ class TestMieLens(unittest.TestCase):
             scaling=1.0, theory=theory_mieonly)
 
         # the two arrays should not be equal
-        self.assertFalse(np.allclose(holo_mielens, holo_mieonly, **TOLS))
+        assert_array_less(1e-3, np.abs(holo_mielens - holo_mieonly).max())
 
         # but their max and min values should be close:
-        ptp_close_ish = np.isclose(
-            np.ptp(holo_mielens.values), np.ptp(holo_mieonly.values), atol=0.1)
+        assert_allclose(np.ptp(holo_mielens.values),
+                        np.ptp(holo_mieonly.values), atol=0.1)
         # and their median should be close:
-        median_close_ish = np.isclose(
-            np.median(holo_mielens), np.median(holo_mieonly), atol=0.1)
+        assert_allclose(np.median(holo_mielens),
+                        np.median(holo_mieonly), atol=0.1)
 
-        self.assertTrue(ptp_close_ish)
-        self.assertTrue(median_close_ish)
 
     @pytest.mark.medium
     def test_mielens_x_polarization_differs_from_y(self):
@@ -178,12 +169,12 @@ class TestMieLens(unittest.TestCase):
                            illum_polarization=ypolarization, theory=theory)
 
         # the two arrays should not be equal
-        self.assertFalse(np.allclose(holo_x, holo_y, **SOFTTOLS))
+        assert_array_less(1e-3, np.abs(holo_x - holo_y).max())
 
         # but their max and min values should be very close
         # (really exact because we lose no symmetry from the grid)
-        self.assertTrue(np.isclose(holo_x.max(), holo_y.max(), **MEDTOLS))
-        self.assertTrue(np.isclose(holo_x.min(), holo_y.min(), **MEDTOLS))
+        assert_allclose(holo_x.max(), holo_y.max(), **MEDTOLS)
+        assert_allclose(holo_x.min(), holo_y.min(), **MEDTOLS)
 
     @pytest.mark.medium
     def test_mielens_multiple_returns_nonzero(self):
@@ -198,8 +189,7 @@ class TestMieLens(unittest.TestCase):
         schema = yschema
         holo = calc_holo(schema, sphere_collection, index, wavelen,
                          theory=theory)
-        self.assertTrue(holo is not None)
-        self.assertTrue(holo.values.std() > 0)
+        assert holo.values.std() > 0
 
     @pytest.mark.fast
     def test_transforms_correctly_with_polarization_rotation(self):
@@ -229,8 +219,8 @@ class TestMieLens(unittest.TestCase):
         fields_0 = theory.raw_fields(pos_0, *args, pol_0)
         fields_1 = theory.raw_fields(pos_1, *args, pol_1)
 
-        self.assertTrue(np.allclose(fields_1[0],  fields_0[1], **TOLS))
-        self.assertTrue(np.allclose(fields_1[1], -fields_0[0], **TOLS))
+        assert_allclose(fields_1[0],  fields_0[1], **TOLS)
+        assert_allclose(fields_1[1], -fields_0[0], **TOLS)
 
     @pytest.mark.fast
     def test_parameters_returns_correct_keys_and_values(self):
@@ -239,7 +229,7 @@ class TestMieLens(unittest.TestCase):
         theory = MieLens(lens_angle=lens_angle)
 
         correct = {'lens_angle': lens_angle}
-        self.assertEqual(theory.parameters, correct)
+        assert theory.parameters == correct
 
     @pytest.mark.fast
     def test_from_parameters_correctly_sets_parameters(self):
@@ -248,8 +238,8 @@ class TestMieLens(unittest.TestCase):
         parameters = {'lens_angle': lens_angle}
 
         theory = MieLens().from_parameters(parameters)
-        self.assertIsInstance(theory, MieLens)
-        self.assertEqual(theory.lens_angle, lens_angle)
+        assert isinstance(theory, MieLens)
+        assert theory.lens_angle == lens_angle
 
     @pytest.mark.fast
     def test_from_parameters_leaves_original_theory_alone(self):
@@ -261,7 +251,7 @@ class TestMieLens(unittest.TestCase):
         parameters = {'lens_angle': lens_angle_new}
         _ = theory.from_parameters(parameters)
 
-        self.assertEqual(theory.lens_angle, lens_angle_original)
+        assert theory.lens_angle == lens_angle_original
 
     @pytest.mark.fast
     def test_theory_from_parameters_respects_nonfittable_options(self):
@@ -279,10 +269,10 @@ class TestMieLens(unittest.TestCase):
             lens_angle=1.0,
             calculator_accuracy_kwargs=correct)
         theory_out = theory_in.from_parameters(pars)
-        self.assertEqual(theory_out.calculator_accuracy_kwargs, correct)
+        assert theory_out.calculator_accuracy_kwargs == correct
 
 
-class TestAberratedMieLens(unittest.TestCase):
+class TestAberratedMieLens:
     @pytest.mark.fast
     def test_init_stores_params(self):
         np.random.seed(1007)
@@ -292,8 +282,8 @@ class TestAberratedMieLens(unittest.TestCase):
             }
         theory = AberratedMieLens(**kwargs)
         for key, value in kwargs.items():
-            self.assertTrue(hasattr(theory, key))
-            self.assertEqual(getattr(theory, key), value)
+            assert hasattr(theory, key)
+            assert getattr(theory, key) == value
 
     @pytest.mark.fast
     def test_create_calculator(self):
@@ -310,10 +300,10 @@ class TestAberratedMieLens(unittest.TestCase):
         theory = AberratedMieLens(**init_kwargs)
         calculator = theory._create_calculator(**calc_kwargs)
 
-        self.assertIsInstance(calculator, mielensfunctions.MieLensCalculator)
+        assert isinstance(calculator, mielensfunctions.MieLensCalculator)
         for kwargs in [init_kwargs, calc_kwargs]:
             for key, value in kwargs.items():
-                self.assertEqual(getattr(calculator, key), value)
+                assert getattr(calculator, key) == value
 
     @pytest.mark.fast
     def test_holopy_hologram_equal_to_exact_calculation(self):
@@ -351,14 +341,11 @@ class TestAberratedMieLens(unittest.TestCase):
             medium_index=1., illum_polarization=(1, 0),
             theory=theory_aberrated)
 
-        is_ok = np.allclose(
-            holo_calculate, holo_holopy.values.squeeze(), **TOLS)
-        self.assertTrue(is_ok)
+        assert_allclose(holo_calculate, holo_holopy.values.squeeze(), **TOLS)
 
     @pytest.mark.medium
     def test_aberratedmielens_is_same_as_mielens_when_unaberrated(self):
-        np.random.seed(1017)
-        lens_angle = np.random.rand()
+        lens_angle = 0.8
         theory_unaberrated = MieLens(lens_angle=lens_angle)
         theory_aberrated = AberratedMieLens(
             lens_angle=lens_angle, spherical_aberration=0)
@@ -370,12 +357,12 @@ class TestAberratedMieLens(unittest.TestCase):
             xschema, sphere, index, wavelen, xpolarization,
             theory=theory_aberrated)
 
-        self.assertTrue(np.allclose(holo_unaberrated, holo_aberrated, **TOLS))
+        assert_allclose(holo_unaberrated, holo_aberrated, **TOLS)
 
     @pytest.mark.medium
     def test_aberratedmielens_differs_from_mielens_when_aberrated(self):
-        np.random.seed(1017)
-        lens_angle = np.random.rand()
+        # use a large lens angle to change hologram significantly
+        lens_angle = 0.8
         theory_unaberrated = MieLens(lens_angle=lens_angle)
         theory_aberrated = AberratedMieLens(
             lens_angle=lens_angle, spherical_aberration=1.0)
@@ -387,12 +374,14 @@ class TestAberratedMieLens(unittest.TestCase):
             xschema, sphere, index, wavelen, xpolarization,
             theory=theory_aberrated)
 
-        self.assertFalse(np.allclose(holo_unaberrated, holo_aberrated, **TOLS))
+        assert_array_less(1e-3,
+                          np.abs(holo_unaberrated - holo_aberrated).max())
 
     @pytest.mark.medium
     def test_aberratedmielens_accepts_arbitrary_order_aberration(self):
         np.random.seed(1017)
-        lens_angle = np.random.rand()
+        # use a lens angle large enough to test higher-order aberrations
+        lens_angle = 0.8
         aberrations = 10 * np.random.randn(10)
         theory_low = AberratedMieLens(
             lens_angle=lens_angle, spherical_aberration=aberrations[0])
@@ -404,7 +393,9 @@ class TestAberratedMieLens(unittest.TestCase):
         holo_hi = calc_holo(
             xschema, sphere, index, wavelen, xpolarization, theory=theory_hi)
 
-        self.assertFalse(np.allclose(holo_low, holo_hi, **TOLS))
+        # there should be a significant difference between the model with
+        # higher-order aberrations and the one with only first-order
+        assert_array_less(1e-3, np.abs(holo_hi - holo_low).max())
 
     @pytest.mark.fast
     def test_parameters_returns_correct_keys_and_values(self):
@@ -417,21 +408,22 @@ class TestAberratedMieLens(unittest.TestCase):
 
         parameters = theory.parameters
         correct_keys = {'lens_angle', 'spherical_aberration'}
-        self.assertEqual(correct_keys, set(parameters.keys()))
-        self.assertEqual(parameters['lens_angle'], lens_angle)
-        self.assertEqual(
-            sph_ab.tolist(),
-            parameters['spherical_aberration'].tolist())
+        assert set(parameters.keys()) == correct_keys
+        assert parameters['lens_angle'] == lens_angle
+        assert sph_ab.tolist() == parameters['spherical_aberration'].tolist()
 
     @pytest.mark.fast
     def test_from_parameters_correctly_sets_parameters(self):
         np.random.seed(1709)
         lens_angle = np.random.rand()
-        parameters = {'lens_angle': lens_angle}
+        parameters = {'lens_angle': lens_angle,
+                      'spherical_aberration': np.random.randn(3)}
 
-        theory = MieLens().from_parameters(parameters)
-        self.assertIsInstance(theory, MieLens)
-        self.assertEqual(theory.lens_angle, lens_angle)
+        theory = AberratedMieLens().from_parameters(parameters)
+        assert isinstance(theory, AberratedMieLens)
+        assert theory.lens_angle == lens_angle
+        assert_equal(theory.spherical_aberration,
+                     parameters['spherical_aberration'])
 
 
 def calculate_central_lobe_at(zs):
@@ -448,7 +440,3 @@ def calculate_central_lobe_at(zs):
         central_lobe = holo.values.squeeze()[0, 0]
         central_lobes.append(central_lobe)
     return np.array(central_lobes)
-
-
-if __name__ == '__main__':
-    unittest.main()
