@@ -477,8 +477,9 @@ class AlBlFunctions(object):
         Parameters
         ----------
         index_ratio : float
-              relative index of refraction
-        size_paramter : float
+              relative index of refraction.  Follows B&H convention for sign of
+              imaginary component.
+        size_parameter : float
               Size parameter
         l : int, array-like
               Order of scattering coefficient
@@ -487,6 +488,16 @@ class AlBlFunctions(object):
         -------
         a_l, b_l : numpy.ndarray
         """
+        # Note that the index ratio is specified in B&H convention, which is
+        # the default for holopy, whereas MieLens uses van de Hulst's
+        # convention. In B&H, the imaginary part of m is positive for
+        # absorption, whereas in van de Hulst, the imaginary part of m is
+        # negative for absorption. We must therefore take the complex conjugate
+        # before calculating the coefficients with MieLens. The returned
+        # coefficients use van de Hulst's convention, so they are the complex
+        # conjugate of B&H's a_n and b_n.
+        index_ratio = np.conj(index_ratio)
+
         psi_nx = AlBlFunctions.riccati_psin(
             l, index_ratio * size_parameter)
         dpsi_nx = AlBlFunctions.riccati_psin(

@@ -1,9 +1,8 @@
 import warnings
-import unittest
-import itertools
 
 import numpy as np
 from numpy.polynomial.chebyshev import Chebyshev
+from numpy.testing import assert_allclose, assert_array_less, assert_equal
 from scipy.special import jn_zeros
 from scipy.integrate import trapezoid
 
@@ -18,10 +17,11 @@ MEDTOLS = {"atol": 1e-6, "rtol": 1e-6}
 SOFTTOLS = {'atol': 1e-3, 'rtol': 1e-3}
 
 
-class TestMieLensCalculator(unittest.TestCase):
+class TestMieLensCalculator:
     @pytest.mark.fast
     def test_raises_error_when_no_params_are_specified(self):
-        self.assertRaises(MissingParameter, mielensfunctions.MieLensCalculator)
+        with pytest.raises(MissingParameter):
+            mielensfunctions.MieLensCalculator()
 
     @pytest.mark.fast
     def test_raises_error_when_any_params_isnt_specified(self):
@@ -37,7 +37,8 @@ class TestMieLensCalculator(unittest.TestCase):
         for key in kwargs.keys():
             value = kwargs[key]  # popping it out
             kwargs[key] = None
-            self.assertRaises(MissingParameter, create_calculator, **kwargs)
+            with pytest.raises(MissingParameter):
+                create_calculator(**kwargs)
             kwargs[key] = value  # putting it back
 
     @pytest.mark.fast
@@ -47,9 +48,8 @@ class TestMieLensCalculator(unittest.TestCase):
             lens_angle=0.9)
         krho = np.linspace(0, 30, 300)
         phi = np.full(krho.size - 4, 0.25 * np.pi)
-        self.assertRaises(
-            ValueError, miecalculator.calculate_scattered_field,
-            krho, phi)
+        with pytest.raises(ValueError):
+            miecalculator.calculate_scattered_field(krho, phi)
 
     @pytest.mark.fast
     def test_raises_error_integral_is_not_i0_or_i2(self):
@@ -57,15 +57,14 @@ class TestMieLensCalculator(unittest.TestCase):
             particle_kz=10, index_ratio=1.2, size_parameter=10.0,
             lens_angle=0.9)
         krho = np.linspace(0, 30, 300)
-        self.assertRaises(
-            ValueError, miecalculator._eval_mielens_i_n, krho, n=1)
+        with pytest.raises(ValueError):
+            miecalculator._eval_mielens_i_n(krho, n=1)
 
     @pytest.mark.fast
     def test_fields_nonzero(self):
         field1_x, field1_y = evaluate_scattered_field_in_lens()
-        should_be_nonzero = [np.linalg.norm(f) for f in [field1_x, field1_y]]
-        should_be_false = [np.isclose(v, 0, **TOLS) for v in should_be_nonzero]
-        self.assertFalse(any(should_be_false))
+        assert np.linalg.norm(field1_x) > TOLS['atol']
+        assert np.linalg.norm(field1_y) > TOLS['atol']
 
     @pytest.mark.fast
     def test_calculation_doesnt_crash_for_large_rho(self):
@@ -75,7 +74,7 @@ class TestMieLensCalculator(unittest.TestCase):
         krho = np.linspace(1000, 1100, 10)
         kphi = np.full_like(krho, 0.25 * np.pi)
         fields = miecalculator.calculate_scattered_field(krho, kphi)
-        self.assertTrue(fields is not None)
+        assert fields is not None
 
     @pytest.mark.medium
     def test_central_lobe_is_bright_when_particle_is_above_focus(self):
@@ -86,7 +85,7 @@ class TestMieLensCalculator(unittest.TestCase):
         central_lobes = np.squeeze(
             [evaluate_intensity_at_rho_zero(k * z, index_ratio=1.05)
              for z in zs])
-        self.assertTrue(np.all(central_lobes > 1))
+        assert np.all(central_lobes > 1)
 
     @pytest.mark.medium
     def test_central_lobe_is_dark_when_particle_is_below_focus(self):
@@ -97,7 +96,7 @@ class TestMieLensCalculator(unittest.TestCase):
         central_lobes = np.squeeze(
             [evaluate_intensity_at_rho_zero(k * z, index_ratio=1.05)
              for z in zs])
-        self.assertTrue(np.all(central_lobes < 1))
+        assert np.all(central_lobes < 1)
 
     @pytest.mark.fast
     def test_scatteredfield_linear_at_low_contrast(self):
@@ -111,8 +110,7 @@ class TestMieLensCalculator(unittest.TestCase):
         x_ratio = np.linalg.norm(field1_x) / np.linalg.norm(field2_x)
         y_ratio = np.linalg.norm(field1_y) / np.linalg.norm(field2_y)
         expected_ratio = dn1 / dn2
-        self.assertTrue(np.isclose(x_ratio, expected_ratio, **SOFTTOLS))
-        self.assertTrue(np.isclose(y_ratio, expected_ratio, **SOFTTOLS))
+        assert_allclose([x_ratio, y_ratio], expected_ratio, **SOFTTOLS)
 
     @pytest.mark.fast
     def test_xpolarization_is_larger_along_phi_equals_0(self):
@@ -126,8 +124,7 @@ class TestMieLensCalculator(unittest.TestCase):
         fx_0, fy_0 = fieldcalc.calculate_scattered_field(krho, phi_0)
         fx_pi4, fy_pi4 = fieldcalc.calculate_scattered_field(krho, phi_pi4)
 
-        is_ok = fx_0.real > fx_pi4.real
-        self.assertTrue(np.all(is_ok))
+        assert_array_less(fx_pi4.real, fx_0.real)
 
     @pytest.mark.fast
     def test_fields_are_correct_values(self):
@@ -236,11 +233,10 @@ class TestMieLensCalculator(unittest.TestCase):
                       -9.93414154e-21+6.60789257e-21j,
                       -1.18858814e-20-9.70067410e-21j]))
 
-
         # compare; medtols b/c fields are only copied to 9 digits
-        self.assertTrue(np.allclose(field_0, truefield_0, **MEDTOLS))
-        self.assertTrue(np.allclose(field_pi2, truefield_pi2, **MEDTOLS))
-        self.assertTrue(np.allclose(field_pi4, truefield_pi4, **MEDTOLS))
+        assert_allclose(field_0, truefield_0, **MEDTOLS)
+        assert_allclose(field_pi2, truefield_pi2, **MEDTOLS)
+        assert_allclose(field_pi4, truefield_pi4, **MEDTOLS)
 
     @pytest.mark.fast
     def test_fields_go_to_zero_at_large_distances(self):
@@ -248,9 +244,8 @@ class TestMieLensCalculator(unittest.TestCase):
         calculator = mielensfunctions.MieLensCalculator(
             size_parameter=10, lens_angle=1.0, particle_kz=10.,
             index_ratio=1.1)
-        field_x, field_y = calculator.calculate_scattered_field(rho, 0*rho)
-        fields_dont_explode = np.all(np.abs(field_x < 2e-4))
-        self.assertTrue(fields_dont_explode)
+        field_x, _ = calculator.calculate_scattered_field(rho, 0*rho)
+        assert_array_less(np.abs(field_x), 1e-3)
 
     @pytest.mark.fast
     def test_calculate_phase(self):
@@ -262,43 +257,39 @@ class TestMieLensCalculator(unittest.TestCase):
 
         correct_phase = kz * (1 - calculator._quad_pts)
         phase = calculator._calculate_phase()
-        self.assertTrue(np.allclose(correct_phase, phase, **TOLS))
+        assert_allclose(correct_phase, phase, **TOLS)
 
     @pytest.mark.slow
-    def test_interpolate_is_same_as_direct_computation(self):
+    # Test over a few particle parameters:
+    @pytest.mark.parametrize("rad", [0.5, 1.5, 6.5])
+    @pytest.mark.parametrize("z", [5.0, 10.0, -10.0])
+    @pytest.mark.parametrize("index_ratio", [1.1, 1.2, 1.3])
+    def test_interpolate_is_same_as_direct_computation(self, rad, z,
+                                                       index_ratio):
         k = 2 * np.pi / 0.66
 
         rho = np.linspace(0, 15, 151)
         phi = np.linspace(0, 8 * np.pi, rho.size)
 
-        # Test over a few particle parameters:
-        radii = [0.5, 1.5, 6.5]
-        zs = [5.0, 10.0, -10.]
-        index_ratios = [1.1, 1.2, 1.3]
+        kz = k * z
+        ka = k * rad
+        kwargs = {'particle_kz': kz,
+                  'size_parameter': ka,
+                  'index_ratio': index_ratio,
+                  'lens_angle': 1.0,
+                  }
+        direct_calculator = mielensfunctions.MieLensCalculator(
+            interpolate_integrals=False, **kwargs)
+        interpolating_calculator = mielensfunctions.MieLensCalculator(
+            interpolate_integrals=True, **kwargs)
 
-        for rad, z, index_ratio in itertools.product(radii, zs, index_ratios):
-            kz = k * z
-            ka = k * rad
-            kwargs = {'particle_kz': kz,
-                      'size_parameter': ka,
-                      'index_ratio': index_ratio,
-                      'lens_angle': 1.0,
-                      }
-            direct_calculator = mielensfunctions.MieLensCalculator(
-                interpolate_integrals=False, **kwargs)
-            interpolating_calculator = mielensfunctions.MieLensCalculator(
-                interpolate_integrals=True, **kwargs)
+        fdx, fdy = direct_calculator.calculate_scattered_field(
+            k * rho, phi)
+        fix, fiy = interpolating_calculator.calculate_scattered_field(
+            k * rho, phi)
 
-            fdx, fdy = direct_calculator.calculate_scattered_field(
-                k * rho, phi)
-            fix, fiy = interpolating_calculator.calculate_scattered_field(
-                k * rho, phi)
-
-            with self.subTest(rad=rad, z=z, index_ratio=index_ratio):
-                close_enough_x = np.allclose(fdx, fix, **TOLS)
-                close_enough_y = np.allclose(fdy, fiy, **TOLS)
-                self.assertTrue(close_enough_x)
-                self.assertTrue(close_enough_y)
+        assert_allclose(fdx, fix, **TOLS)
+        assert_allclose(fdy, fiy, **TOLS)
 
     @pytest.mark.medium
     def test_energy_is_conserved(self):
@@ -332,19 +323,19 @@ class TestMieLensCalculator(unittest.TestCase):
         # be slightly _negative_. Unfortunately I don't know exactly how
         # much... so we just check that it is consistent with what I have
         # now.
-        ok = (excess_power < 0) and (excess_power > -0.15)
-        self.assertTrue(ok)
+        assert excess_power < 0
+        assert excess_power > -0.15
 
     # other possible tests:
     # 1. E(x, y) = E(-x, -y)
     # 2. E_x = 0 at phi = pi/2, E_y = 0 at phi = 0
 
 
-class TestAberratedMieLensCalculator(unittest.TestCase):
+class TestAberratedMieLensCalculator:
     @pytest.mark.fast
     def test_raises_error_when_no_params_are_specified(self):
-        self.assertRaises(
-            MissingParameter, mielensfunctions.AberratedMieLensCalculator)
+        with pytest.raises(MissingParameter):
+            mielensfunctions.AberratedMieLensCalculator()
 
     @pytest.mark.fast
     def test_raises_error_when_any_params_isnt_specified(self):
@@ -361,7 +352,8 @@ class TestAberratedMieLensCalculator(unittest.TestCase):
         for key in kwargs.keys():
             value = kwargs[key]  # popping it out
             kwargs[key] = None
-            self.assertRaises(MissingParameter, create_calculator, **kwargs)
+            with pytest.raises(MissingParameter):
+                create_calculator(**kwargs)
             kwargs[key] = value  # putting it back
 
     @pytest.mark.fast
@@ -371,7 +363,7 @@ class TestAberratedMieLensCalculator(unittest.TestCase):
 
         theta = np.arccos(calculator._quad_pts)
         correct_aberration = (np.cos(theta) - 1.0)
-        self.assertTrue(np.allclose(aberration, correct_aberration, **TOLS))
+        assert_allclose(aberration, correct_aberration, **TOLS)
 
     @pytest.mark.fast
     def test_calculate_phase(self):
@@ -384,7 +376,7 @@ class TestAberratedMieLensCalculator(unittest.TestCase):
         correct_phase = (
             kz * (1 - calculator._quad_pts) +
             spherical_aberration * calculator._pupil_x_squared**2)
-        self.assertTrue(np.allclose(correct_phase, phase, **TOLS))
+        assert_allclose(correct_phase, phase, **TOLS)
 
     @pytest.mark.fast
     def test_gives_correct_values(self):
@@ -404,8 +396,8 @@ class TestAberratedMieLensCalculator(unittest.TestCase):
             -1.33377823e-03 - 3.21410269e-03j,
             6.26057275e-04 + 2.38456278e-03j])
         fy_true = 0
-        self.assertTrue(np.allclose(fx_calc, fx_true, atol=1e-9))
-        self.assertTrue(np.allclose(fy_calc, fy_true, **TOLS))
+        assert_allclose(fx_calc, fx_true, atol=1e-9)
+        assert_allclose(fy_calc, fy_true, **TOLS)
 
     @pytest.mark.fast
     def test_higher_order_aberrations_differ_from_3rd_order(self):
@@ -415,9 +407,9 @@ class TestAberratedMieLensCalculator(unittest.TestCase):
         calc_low = make_calculator_with_aberration_of(high_order[:1])
 
         krho = np.linspace(0, 100, 10)
-        fields_high = calc_high.calculate_scattered_field(krho, 0*krho)
-        fields_low = calc_low.calculate_scattered_field(krho, 0*krho)
-        self.assertFalse(np.allclose(fields_high, fields_low, **TOLS))
+        field_x_high, _ = calc_high.calculate_scattered_field(krho, 0*krho)
+        field_x_low, _ = calc_low.calculate_scattered_field(krho, 0*krho)
+        assert_array_less(1e-2, np.abs(field_x_high - field_x_low).max())
 
     @pytest.mark.fast
     def test_higher_order_aberrations_zero_same_as_3rd_order(self):
@@ -428,12 +420,12 @@ class TestAberratedMieLensCalculator(unittest.TestCase):
         calc_low = make_calculator_with_aberration_of(high_order[:1])
 
         krho = np.linspace(0, 100, 10)
-        fields_high = calc_high.calculate_scattered_field(krho, 0*krho)
-        fields_low = calc_low.calculate_scattered_field(krho, 0*krho)
-        self.assertTrue(np.allclose(fields_high, fields_low, **TOLS))
+        field_x_high, _ = calc_high.calculate_scattered_field(krho, 0*krho)
+        field_x_low, _ = calc_low.calculate_scattered_field(krho, 0*krho)
+        assert_allclose(field_x_high, field_x_low, **TOLS)
 
 
-class TestMieScatteringMatrix(unittest.TestCase):
+class TestMieScatteringMatrix:
     default_kwargs = {'index_ratio': 1.1, 'size_parameter': 10.0}
 
     @pytest.mark.fast
@@ -441,7 +433,8 @@ class TestMieScatteringMatrix(unittest.TestCase):
         theta = np.array([np.nan])
         interpolator = mielensfunctions.MieScatteringMatrix(
             parallel_or_perpendicular='perpendicular', **self.default_kwargs)
-        self.assertRaises(RuntimeError, interpolator._eval, theta)
+        with pytest.raises(RuntimeError):
+            interpolator._eval(theta)
 
     @pytest.mark.fast
     def test_clips_high_max_l_to_avoid_nans(self):
@@ -451,11 +444,11 @@ class TestMieScatteringMatrix(unittest.TestCase):
             parallel_or_perpendicular='perpendicular', max_l=1000,
             **self.default_kwargs)
         should_be_warned = 'invalid value encountered'
-        with self.assertWarnsRegex(Warning, should_be_warned):
+        with pytest.warns(Warning, match=should_be_warned):
             warnings.simplefilter('always')
             s_theta = msm_highl._eval(theta)
 
-        self.assertFalse(np.isnan(s_theta))
+        assert np.isfinite(s_theta).all()
 
     @pytest.mark.fast
     def test_perpendicular_interpolator_accuracy(self):
@@ -467,8 +460,7 @@ class TestMieScatteringMatrix(unittest.TestCase):
         approx = interpolator(theta)
         rescale = np.abs(exact).max()
 
-        is_ok = np.allclose(exact / rescale, approx / rescale, **MEDTOLS)
-        self.assertTrue(is_ok)
+        assert_allclose(exact / rescale, approx / rescale, **MEDTOLS)
 
     @pytest.mark.fast
     def test_parallel_interpolator_accuracy(self):
@@ -480,8 +472,7 @@ class TestMieScatteringMatrix(unittest.TestCase):
         approx = interpolator(theta)
         rescale = np.abs(exact).max()
 
-        is_ok = np.allclose(exact / rescale, approx / rescale, **MEDTOLS)
-        self.assertTrue(is_ok)
+        assert_allclose(exact / rescale, approx / rescale, **MEDTOLS)
 
     @pytest.mark.fast
     def test_interpolator_maxl_accuracy(self):
@@ -498,8 +489,7 @@ class TestMieScatteringMatrix(unittest.TestCase):
         approx = interpolator_higher_l._eval(theta)
         rescale = np.abs(exact).max()
 
-        is_ok = np.allclose(exact / rescale, approx / rescale, **MEDTOLS)
-        self.assertTrue(is_ok)
+        assert_allclose(exact / rescale, approx / rescale, **MEDTOLS)
 
     @pytest.mark.medium
     def test_works_when_large_size_parameter(self):
@@ -510,65 +500,90 @@ class TestMieScatteringMatrix(unittest.TestCase):
             parallel_or_perpendicular='perpendicular')
 
         out = interpolator_low_l._eval(theta)
-        self.assertFalse(np.any(np.isnan(out)))
+        assert np.isfinite(out).all()
 
 
-class TestGaussQuad(unittest.TestCase):
+class TestCrossSections:
+    """Tests to make sure that the absorption cross-section is physically
+    reasonable. B&H and van de Hulst sign conventions differ for the imaginary
+    part of the index. Our convention, which matches B&H, is that Im(n) > 0
+    corresponds to absorption. If competing sign conventions are used, these
+    tests can help identify the problem (note that calc_qext_qsca() uses the
+    Mie coefficients from MieLens)
+
+    """
+    @pytest.mark.fast
+    @pytest.mark.parametrize("x", [0.5, 5.0, 15.0])
+    @pytest.mark.parametrize("n_im", [1e-4, 1e-2, 1e-1])
+    def test_absorption_is_positive_for_absorbing_sphere(self, x, n_im):
+        m = (1.59 + n_im * 1j) / 1.33
+        qext, qsca = calc_qext_qsca(m, x)
+        assert qext - qsca > 0
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("x", [0.5, 5.0, 15.0])
+    def test_absorption_is_zero_for_nonabsorbing_sphere(self, x):
+        m = 1.59 / 1.33
+        qext, qsca = calc_qext_qsca(m, x)
+        assert_allclose(qext - qsca, 0, atol=1e-12 * qext)
+
+
+class TestGaussQuad:
     @pytest.mark.fast
     def test_constant_integrand(self):
         def f(x):
             return np.ones_like(x, dtype='float')
         should_be_one = integrate_like_mielens(f, [3, 4])
-        self.assertTrue(np.isclose(should_be_one, 1.0, **TOLS))
+        assert_allclose(should_be_one, 1.0, **TOLS)
 
     @pytest.mark.fast
     def test_linear_integrand(self):
         def f(x):
             return x
         should_be_onehalf = integrate_like_mielens(f, [0, 1])
-        self.assertTrue(np.isclose(should_be_onehalf, 0.5, **TOLS))
+        assert_allclose(should_be_onehalf, 0.5, **TOLS)
 
     @pytest.mark.fast
     def test_transcendental_integrand(self):
         should_be_two = integrate_like_mielens(np.sin, [0, np.pi])
-        self.assertTrue(np.isclose(should_be_two, 2.0, **TOLS))
+        assert_allclose(should_be_two, 2.0, **TOLS)
 
 
-class TestMiscMath(unittest.TestCase):
+class TestMiscMath:
     @pytest.mark.fast
     def test_fastj2_zeros(self):
         j2_zeros = jn_zeros(2, 50)
         should_be_zero = mielensfunctions.j2(j2_zeros)
-        self.assertTrue(np.allclose(should_be_zero, 0, atol=1e-13))
+        assert_allclose(should_be_zero, 0, atol=1e-13)
 
     @pytest.mark.fast
     def test_fastj2_notzero(self):
         # We pick some values that should not be zero or close to it
         j0_zeros = jn_zeros(0, 50)  # some conjecture -- bessel functions
         # only share the zero at z=0, which is not for j0
-        should_not_be_zero = mielensfunctions.j2(j0_zeros)
-        self.assertFalse(np.isclose(should_not_be_zero, 0, atol=1e-10).any())
+        j2_values = mielensfunctions.j2(j0_zeros)
+        assert_array_less(1e-10, np.abs(j2_values))
 
     @pytest.mark.fast
     def test_guass_legendre_pts_wts_n10_uses_10_points(self):
         npts = 10
         p10, w10 = mielensfunctions.gauss_legendre_pts_wts(0, 1, npts=npts)
-        self.assertEqual(p10.size, npts)
-        self.assertEqual(w10.size, npts)
+        assert_equal(p10.size, npts)
+        assert_equal(w10.size, npts)
 
     @pytest.mark.fast
     def test_guass_legendre_pts_wts_n10_gives_correct_value(self):
         p10, w10 = mielensfunctions.gauss_legendre_pts_wts(0, 1, npts=10)
         quad_10 = np.sum(np.cos(p10) * w10)
         truth = np.sin(1) - np.sin(0)
-        self.assertTrue(np.isclose(quad_10, truth, **TOLS))
+        assert_allclose(quad_10, truth, **TOLS)
 
     @pytest.mark.fast
     def test_guass_legendre_pts_wts_ndefault(self):
         p100, w100 = mielensfunctions.gauss_legendre_pts_wts(0, 1)
         quad_100 = np.sum(np.cos(p100) * w100)
         truth = np.sin(1) - np.sin(0)
-        self.assertTrue(np.isclose(quad_100, truth, **TOLS))
+        assert_allclose(quad_100, truth, **TOLS)
 
     @pytest.mark.fast
     def test_spherical_hankel_1(self):
@@ -578,7 +593,7 @@ class TestMiscMath(unittest.TestCase):
         z = np.random.rand(10) * 10
         calculated = mielensfunctions.spherical_h1n(1, z, derivative=False)
         truth = -np.exp(1j*z) * (z + 1j) / z**2  # from wolfram
-        self.assertTrue(np.allclose(truth, calculated, **TOLS))
+        assert_allclose(truth, calculated, **TOLS)
 
     @pytest.mark.fast
     def test_spherical_hankel_2(self):
@@ -588,10 +603,10 @@ class TestMiscMath(unittest.TestCase):
         z = np.random.rand(10) * 10
         calculated = mielensfunctions.spherical_h2n(1, z, derivative=False)
         truth = -np.exp(-1j*z) * (z - 1j) / z**2  # from wolfram
-        self.assertTrue(np.allclose(truth, calculated, **TOLS))
+        assert_allclose(truth, calculated, **TOLS)
 
 
-class TestCalculation(unittest.TestCase):
+class TestCalculation:
     # We use a weak tolerance
     _lowna_tols = {'atol': 2e-2, 'rtol': 0}
     _highna_tols = {'atol': 3e-3, 'rtol': 0}
@@ -600,32 +615,32 @@ class TestCalculation(unittest.TestCase):
     def test_energy_is_conserved_at_low_na_pointparticle(self):
         ratio = get_ratio_of_scattered_powerin_to_scattered_powerout(
             lens_angle=0.1, index_ratio=1.5, particle_kz=0, size_parameter=0.1)
-        self.assertTrue(np.isclose(ratio, 1.0, **self._lowna_tols))
+        assert_allclose(ratio, 1.0, **self._lowna_tols)
 
     @pytest.mark.medium
     def test_energy_is_conserved_at_low_na_largeparticle(self):
         ratio = get_ratio_of_scattered_powerin_to_scattered_powerout(
             lens_angle=0.1, index_ratio=1.5, particle_kz=0, size_parameter=40.)
-        self.assertTrue(np.isclose(ratio, 1.0, **self._lowna_tols))
+        assert_allclose(ratio, 1.0, **self._lowna_tols)
 
     @pytest.mark.fast
     def test_energy_is_conserved_at_high_na_pointparticle(self):
         ratio = get_ratio_of_scattered_powerin_to_scattered_powerout(
             lens_angle=0.9, index_ratio=1.5, particle_kz=0, size_parameter=0.1)
-        self.assertTrue(np.isclose(ratio, 1.0, **self._highna_tols))
+        assert_allclose(ratio, 1.0, **self._highna_tols)
 
     @pytest.mark.medium
     def test_energy_is_conserved_at_high_na_largeparticle(self):
         ratio = get_ratio_of_scattered_powerin_to_scattered_powerout(
             lens_angle=0.9, index_ratio=1.5, particle_kz=0, size_parameter=40.)
-        self.assertTrue(np.isclose(ratio, 1.0, **self._highna_tols))
+        assert_allclose(ratio, 1.0, **self._highna_tols)
 
     @pytest.mark.medium
     def test_energy_is_conserved_at_high_na_largeparticle_defocus(self):
         ratio = get_ratio_of_scattered_powerin_to_scattered_powerout(
             lens_angle=0.9, index_ratio=1.5, particle_kz=200.,
             size_parameter=40.)
-        self.assertTrue(np.isclose(ratio, 1.0, **self._highna_tols))
+        assert_allclose(ratio, 1.0, **self._highna_tols)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -633,15 +648,15 @@ class TestCalculation(unittest.TestCase):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-class TestPiecewiseChebyshevApproximant(unittest.TestCase):
+class TestPiecewiseChebyshevApproximant:
     @pytest.mark.fast
     def test_mask_window(self):
         window = (0, 1)
         x = np.linspace(0, 2, 101)
         mask = mielensfunctions.PiecewiseChebyshevApproximant._mask_window(
             x, window)
-        self.assertLess(x[mask].max(), 1.0)
-        self.assertGreaterEqual(x[~mask].min(), 1.0)
+        assert x[mask].max() < 1.0
+        assert x[~mask].min() >= 1.0
 
     @pytest.mark.fast
     def test_setup_windows_splits_into_n_windows(self):
@@ -650,7 +665,7 @@ class TestPiecewiseChebyshevApproximant(unittest.TestCase):
             np.sin, degree=10,
             window_breakpoints=np.linspace(0, 1, nwindows + 1))
         windows = piecewisecheb._setup_windows()
-        self.assertEqual(len(windows), nwindows)
+        assert len(windows) == nwindows
 
     @pytest.mark.fast
     def test_setup_windows_partitions_window(self):
@@ -665,7 +680,7 @@ class TestPiecewiseChebyshevApproximant(unittest.TestCase):
         x = np.random.rand(101) * np.ptp(window) + window[0]
         masks = [piecewisecheb._mask_window(x, w) for w in windows]
         number_of_masks_contained = np.sum(masks, axis=0)
-        self.assertTrue(np.all(number_of_masks_contained == 1))
+        assert_equal(number_of_masks_contained, 1)
 
     @pytest.mark.fast
     def test_setup_approximants_generates_approximants(self):
@@ -673,41 +688,44 @@ class TestPiecewiseChebyshevApproximant(unittest.TestCase):
             np.sin, degree=10, window_breakpoints=np.linspace(0, 1, 6))
         approximants = piecewisecheb._setup_approximants()
         for approximant in approximants:
-            self.assertTrue(isinstance(approximant, Chebyshev))
+            assert isinstance(approximant, Chebyshev)
 
     @pytest.mark.fast
     def test_dtype_on_float(self):
         piecewisecheb = mielensfunctions.PiecewiseChebyshevApproximant(
             np.sin, 10, window_breakpoints=np.linspace(0, 1, 6))
-        self.assertEqual(piecewisecheb._dtype.name, 'float64')
+        assert piecewisecheb._dtype.name == 'float64'
 
     @pytest.mark.fast
     def test_dtype_on_complex(self):
         piecewisecheb = mielensfunctions.PiecewiseChebyshevApproximant(
             lambda x: np.exp(1j * x), 10,
             window_breakpoints=np.linspace(0, 1, 6))
-        self.assertEqual(piecewisecheb._dtype.name, 'complex128')
+        assert piecewisecheb._dtype.name == 'complex128'
 
     @pytest.mark.fast
     def test_call_raises_error_when_x_less_than_window(self):
         window = (0, 10)
         piecewisecheb = mielensfunctions.PiecewiseChebyshevApproximant(
             np.sin, 10, window_breakpoints=np.linspace(*window, 6))
-        self.assertRaises(ValueError, piecewisecheb, window[0] - 1)
+        with pytest.raises(ValueError):
+            piecewisecheb(window[0] - 1)
 
     @pytest.mark.fast
     def test_call_raises_error_when_x_greater_than_window(self):
         window = (0, 10)
         piecewisecheb = mielensfunctions.PiecewiseChebyshevApproximant(
             np.sin, 10, window_breakpoints=np.linspace(*window, 6))
-        self.assertRaises(ValueError, piecewisecheb, window[1] + 1)
+        with pytest.raises(ValueError):
+            piecewisecheb(window[1] + 1)
 
     @pytest.mark.fast
     def test_call_raises_error_when_x_equal_to_max_window(self):
         window = (0, 10)
         piecewisecheb = mielensfunctions.PiecewiseChebyshevApproximant(
             np.sin, 10, window_breakpoints=np.linspace(*window, 6))
-        self.assertRaises(ValueError, piecewisecheb, window[1])
+        with pytest.raises(ValueError):
+            piecewisecheb(window[1])
 
     @pytest.mark.fast
     def test_call_returns_correct_shape(self):
@@ -717,7 +735,7 @@ class TestPiecewiseChebyshevApproximant(unittest.TestCase):
         x = np.linspace(window[0], window[1] - 0.1, 101)
         true = np.sin(x)
         approx = piecewisecheb(x)
-        self.assertEqual(true.shape, approx.shape)
+        assert true.shape == approx.shape
 
     @pytest.mark.fast
     def test_call_accurately_approximates(self):
@@ -728,7 +746,7 @@ class TestPiecewiseChebyshevApproximant(unittest.TestCase):
         x = np.linspace(window[0], window[1] - 0.1, 101)
         true = np.sin(x)
         approx = piecewisecheb(x)
-        self.assertTrue(np.allclose(true, approx, **TOLS))
+        assert_allclose(true, approx, **TOLS)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -756,6 +774,20 @@ def evaluate_intensity_at_rho_zero(kz, index_ratio=1.05):
 def integrate_like_mielens(function, bounds):
     pts, wts = mielensfunctions.gauss_legendre_pts_wts(bounds[0], bounds[1])
     return (function(pts) * wts).sum()
+
+
+def calc_qext_qsca(m, x):
+    """Uses Bohren and Huffman eqs 4.61 and 4.62 to calculate the scattering
+    and extinction efficiencies from the MieLens model
+    """
+    # BHMIE truncation criterion
+    nmax = int(np.round(x + 4 * x**(1 / 3) + 2))
+    n = np.arange(1, nmax + 1)
+    an, bn = mielensfunctions.calculate_al_bl(m, x, n)
+    qsca = 2 / x**2 * np.sum((2 * n + 1) * (np.abs(an)**2 + np.abs(bn)**2))
+    qext = 2 / x**2 * np.sum((2 * n + 1) * np.real(an + bn))
+
+    return qext, qsca
 
 
 class CheckEnergyIsConserved(object):
@@ -787,7 +819,7 @@ class CheckEnergyIsConserved(object):
     def evaluate_scattered_power_incident_on_pupil(self):
         parallel = self.mielenscalculator._scat_prll_values.squeeze()
         perpendicular = self.mielenscalculator._scat_perp_values.squeeze()
-        _cos_theta = self.mielenscalculator._quad_pts.squeeze()
+        # _cos_theta = self.mielenscalculator._quad_pts.squeeze()
         wts = self.mielenscalculator._quad_wts.squeeze()
         integrand = np.abs(parallel)**2 + np.abs(perpendicular)**2
         # mielenscalculator uses x = cos(theta), so sin(theta) dtheta = dx
@@ -808,7 +840,7 @@ class CheckEnergyIsConserved(object):
         return 0.5 * trapezoid(integrand, krho)
 
     def check_if_energy_is_conserved(self):
-        ratio = self.get_ratio_of_powerin_to_powerout()
+        ratio = self.get_ratio_of_scattered_powerin_to_scattered_powerout()
         return np.isclose(ratio, 1, atol=1e-3, rtol=0)
 
     def get_ratio_of_scattered_powerin_to_scattered_powerout(self):
@@ -833,8 +865,3 @@ def make_calculator_with_aberration_of(spherical_aberration):
         index_ratio=1.1,
         spherical_aberration=spherical_aberration)
     return calculator
-
-
-if __name__ == '__main__':
-    unittest.main()
-

@@ -1,5 +1,3 @@
-import unittest
-
 import numpy as np
 import xarray as xr
 from numpy.testing import (assert_allclose, assert_equal,
@@ -33,6 +31,7 @@ SMALL_DETECTOR = update_metadata(
 if lens.NUMEXPR_INSTALLED:
     import numexpr as ne
 
+
 # test that numexpr reproduces numpy exactly without Intel MKL/VML and
 # approximately with Intel MKL/VML.
 @pytest.mark.skipif(not lens.NUMEXPR_INSTALLED,
@@ -51,10 +50,11 @@ def test_vml():
         assert_array_almost_equal_nulp(numexpr_cos, numpy_cos,
                                        nulp=1)
 
-class TestLens(unittest.TestCase):
+
+class TestLens:
     def test_can_handle(self):
         theory = LENSMIE
-        self.assertTrue(theory.can_handle(test_common.sphere))
+        assert theory.can_handle(test_common.sphere)
 
     def test_theta_quad_pts_min(self):
         assert_allclose(np.min(LENSMIE._theta_pts), 0., **QLIM_TOL)
@@ -126,8 +126,8 @@ class TestLens(unittest.TestCase):
         expected_size = 4 * theory.quad_npts_theta * theory.quad_npts_phi
         expected_shape = (4, theory.quad_npts_theta, theory.quad_npts_phi, 1)
 
-        self.assertTrue(actual_size == expected_size)
-        self.assertTrue(actual_shape == expected_shape)
+        assert actual_size == expected_size
+        assert actual_shape == expected_shape
 
     def test_transforms_correctly_with_polarization_rotation(self):
         # We test that rotating the lab frame correctly rotates
@@ -165,16 +165,23 @@ class TestLens(unittest.TestCase):
         assert_allclose(fields_1[0],  fields_0[1], **tols)
         assert_allclose(fields_1[1], -fields_0[0], **tols)
 
-
     def test_calc_holo_theta_npts_not_equal_phi_npts(self):
+        """Tests that calc_holo() works when the number of theta points is not
+        equal to the number of phi points
+        """
         scatterer = test_common.sphere
         pts = detector_grid(shape=4, spacing=test_common.pixel_scale)
         pts = update_metadata(pts, illum_wavelen=test_common.wavelen,
                               medium_index=test_common.index,
                               illum_polarization=test_common.xpolarization)
         theory = Lens(LENS_ANGLE, Mie(), quad_npts_theta=8, quad_npts_phi=10)
-        _holo = calc_holo(pts, scatterer, theory=theory)
-        self.assertTrue(True)
+        # check that calc_holo runs
+        calc_holo(pts, scatterer, theory=theory)
+        # regression test: phi should be the second axis (axis=1).  Test by
+        # making sure S1 for a sphere has a constant value across phi
+        S1, _, _, _ = theory._calc_scattering_matrix(
+            scatterer, 2 * np.pi / test_common.wavelen, test_common.index)
+        assert_allclose(np.diff(S1, axis=1), 0, atol=1e-12 * np.abs(S1).max())
 
     @pytest.mark.skipif(not lens.NUMEXPR_INSTALLED,
                         reason = "numexpr package required")
@@ -283,19 +290,19 @@ class TestLens(unittest.TestCase):
         pars = {'lens_angle': lens_angle_1}
         theory_out = theory_in.from_parameters(pars)
 
-        self.assertEqual(theory_out.lens_angle, lens_angle_1)
-        self.assertEqual(theory_out.theory, theory_in.theory)
+        assert theory_out.lens_angle == lens_angle_1
+        assert theory_out.theory == theory_in.theory
         for k, v in kwargs.items():
-            self.assertEqual(getattr(theory_out, k), v)
+            assert getattr(theory_out, k) == v
 
     @pytest.mark.fast
     def test_parameters_has_correct_keys(self):
         np.random.seed(1323)
         theory = Lens(np.random.rand(), Mie(False, True))
-        self.assertEqual(set(theory.parameters.keys()), {'lens_angle'})
+        assert set(theory.parameters.keys()) == {'lens_angle'}
 
 
-class TestLensVsMielens(unittest.TestCase):
+class TestLensVsMielens:
     def test_quadrature_scattering_matrix_same_as_mielens(self):
         scatterer = test_common.sphere
         medium_wavevec = 2 * np.pi / test_common.wavelen
@@ -332,51 +339,39 @@ class TestLensVsMielens(unittest.TestCase):
         assert_allclose(s_perp_new, s_perp, rtol=5e-3)
         assert_allclose(s_prll_new, s_prll, rtol=5e-3)
 
-    def test_raw_fields_similar_mielens_xpolarization(self):
+    @pytest.mark.parametrize("pol_angle_deg", [0, 30, 45, 90])
+    def test_raw_fields_exact_mielens(self, pol_angle_deg):
+        """Tests that fields from MieLens match those of Lens(Mie) at various
+        polarization angles
+
+        """
         detector = SMALL_DETECTOR
         scatterer = test_common.sphere
         medium_wavevec = 2 * np.pi / test_common.wavelen
         medium_index = test_common.index
-        illum_polarization = xr.DataArray([1.0, 0, 0])
+        pol_angle = np.deg2rad(pol_angle_deg)
+        illum_polarization = xr.DataArray([np.cos(pol_angle),
+                                           np.sin(pol_angle), 0])
 
-        theory_old = MieLens(lens_angle=LENS_ANGLE)
-        pos_old = ImageFormation(theory_old)._transform_to_desired_coordinates(
-            detector, scatterer.center, wavevec=medium_wavevec)
+        theory_mielens = MieLens(lens_angle=LENS_ANGLE)
+        theory_lensmie = LENSMIE
 
-        theory_new = LENSMIE
-        pos_new = ImageFormation(theory_new)._transform_to_desired_coordinates(
-            detector, scatterer.center, wavevec=medium_wavevec)
-
-        args = (scatterer, medium_wavevec, medium_index, illum_polarization)
-        f0x, f0y, f0z = theory_old.raw_fields(pos_old, *args)
-        f1x, f1y, f1z = theory_new.raw_fields(pos_new, *args)
-        assert_allclose(f0x, f1x, atol=2e-3)
-        assert_allclose(f0y, f1y, atol=2e-3)
-        assert_allclose(f0z, f1z, atol=2e-3)
-
-    def test_raw_fields_similar_mielens_ypolarization(self):
-        detector = SMALL_DETECTOR
-        scatterer = test_common.sphere
-        medium_wavevec = 2 * np.pi / test_common.wavelen
-        medium_index = test_common.index
-        illum_polarization = xr.DataArray([0, 1.0, 0])
-
-        theory_old = MieLens(lens_angle=LENS_ANGLE)
-        pos_old = ImageFormation(theory_old)._transform_to_desired_coordinates(
-            detector, scatterer.center, wavevec=medium_wavevec)
-
-        theory_new = LENSMIE
-        pos_new = ImageFormation(theory_new)._transform_to_desired_coordinates(
-            detector, scatterer.center, wavevec=medium_wavevec)
+        pos_mielens = (ImageFormation(theory_mielens)
+                       ._transform_to_desired_coordinates(
+                           detector, scatterer.center, wavevec=medium_wavevec))
+        pos_lensmie = (ImageFormation(theory_lensmie)
+                       ._transform_to_desired_coordinates(
+                           detector, scatterer.center, wavevec=medium_wavevec))
 
         args = (scatterer, medium_wavevec, medium_index, illum_polarization)
-        f0x, f0y, f0z = theory_old.raw_fields(pos_old, *args)
-        fx, fy, fz = theory_new.raw_fields(pos_new, *args)
-        assert_allclose(f0x, fx, atol=2e-3)
-        assert_allclose(f0y, fy, atol=2e-3)
-        assert_allclose(f0z, fz, atol=2e-3)
+        fields_mielens = theory_mielens.raw_fields(pos_mielens, *args)
+        fields_lensmie = theory_lensmie.raw_fields(pos_lensmie, *args)
+        for fa, fb in zip(fields_mielens, fields_lensmie):
+            assert_allclose(fa, fb, atol=1e-8, rtol=1e-8)
 
     def test_calculate_scattered_field_lensmie_same_as_mielens(self):
+        # this test works on a larger detector, but can probably be removed or
+        # integrated into the previous test at some point
         detector = test_common.xschema_lens
         scatterer = test_common.sphere
 
@@ -432,7 +427,3 @@ def _get_smatrix_theta_near_phi_is_pi_over_2(smatrix, sinphi, phi, theta):
     s = smatrix[sinphi == max(abs(sinphi))]
     t = theta[sinphi == max(abs(sinphi))]
     return s / sp, t
-
-
-if __name__ == '__main__':
-    unittest.main()
