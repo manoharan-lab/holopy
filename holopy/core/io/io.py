@@ -19,7 +19,7 @@
 Common entry point for holopy io.  Dispatches to the correct load/save
 functions.
 
-.. moduleauthor:: Tom Dimiduk <tdimiduk@physics.havard.edu>
+.. moduleauthor:: Tom Dimiduk <tdimiduk@physics.harvard.edu>
 .. moduleauthor:: Ron Alexander <ralexander@g.harvard.edu>
 """
 import os

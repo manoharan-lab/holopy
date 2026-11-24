@@ -64,7 +64,7 @@ def propagate(data, d, medium_index=None, illum_wavelen=None, cfsp=0,
     Returns
     -------
     data : xarray.DataArray
-       The hologram progagated to a distance d from its current location.
+       The hologram propagated to a distance d from its current location.
 
     Notes
     -----
@@ -175,10 +175,10 @@ def trans_func(schema, d, med_wavelen, cfsp=0, gradient_filter=0):
 
     # Set the transfer function to zero where the sqrt is imaginary
     # (this is equivalent to making sure that the largest spatial
-    # frequency is 1/wavelength).  (root>=0) returns a boolean matrix
+    # frequency is 1/wavelength).  (root>0) returns a boolean matrix
     # that is equal to 1 where the condition is true and 0 where it is
     # false.  Multiplying by this boolean matrix masks the array.
-    g = g * (root >= 0)
+    g = g * (root > 0)
 
     if cfsp > 0:
         g = g ** cfsp

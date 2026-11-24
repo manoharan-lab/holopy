@@ -6,8 +6,8 @@ Getting Started
 Installation
 ~~~~~~~~~~~~
 
-As of version 3.0, HoloPy supports only Python 3. We recommend using the
-`anaconda <https://www.continuum.io/anaconda-overview>`_ distribution of Python,
+As of version 3.0, HoloPy supports only Python 3 (Python 3.7 or later). We recommend using the
+`anaconda <https://www.anaconda.com/>`_ distribution of Python,
 which makes it easy to install the required dependencies. HoloPy is available on
 `conda-forge <https://conda-forge.github.io/>`_, so you can install it with::
 
@@ -73,7 +73,7 @@ An additional option in Spyder is to change the backend through the menu: Tools
 restart your kernel, but it will then remember your backend for future sessions,
 which can be convenient.
 
-Additional options for inline interactive polts in jupyter are::
+Additional options for inline interactive plots in jupyter are::
 
     %matplotlib nbagg
     %matplotlib widget
