@@ -140,7 +140,7 @@ class Uniform(Prior):
 
         Parameters
         ----------
-        lower_bouund, upper_bound : float
+        lower_bound, upper_bound : float
         guess : float or None, optional
             The value to take as an initial guess from the prior. If
             guess is None, defaults to the midpoint of the prior for
@@ -263,7 +263,7 @@ class BoundedGaussian(Gaussian):
         ----------
         mu, sd : float
             The mean and standard deviation of the Gaussian.
-        lower_bouund, upper_bound : float, optional
+        lower_bound, upper_bound : float, optional
             Defaults to +- infinity.
         name : string or None, optional
             The name of the parameter.
